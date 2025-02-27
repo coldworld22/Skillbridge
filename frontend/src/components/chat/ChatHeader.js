@@ -1,0 +1,75 @@
+import { useRouter } from "next/router";
+import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+
+const ChatHeader = ({ selectedChat }) => {
+  const router = useRouter();
+
+  if (!selectedChat) {
+    return <div className="text-gray-400 text-center p-4">No chat selected</div>;
+  }
+
+  console.log("Selected Chat Data:", selectedChat); // ✅ Debugging Log
+
+  const handleVideoCall = () => {
+    router.push(`/video-call?chatId=${selectedChat.id}`);
+  };
+
+  const handleWhatsAppChat = () => {
+    if (selectedChat.phone) {
+      const phoneNumber = selectedChat.phone.replace(/\D/g, ""); // ✅ Remove non-numeric characters
+      window.open(`https://wa.me/${phoneNumber}`, "_blank");
+    } else {
+      alert("Phone number is missing!");
+    }
+  };
+
+  const handleSendEmail = () => {
+    if (selectedChat.email) {
+      window.location.href = `mailto:${selectedChat.email}?subject=Let's Chat&body=Hello!`;
+    } else {
+      alert("Email is missing!");
+    }
+  };
+
+  return (
+    <div className="flex justify-between items-center mb-4 border-b pb-2 border-gray-700">
+      {/* Chat Name */}
+      <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
+        {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
+      </h3>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        {/* ✅ Video Call Button */}
+        <button
+          className="px-3 py-2 bg-yellow-500 text-white rounded flex items-center gap-2 hover:bg-yellow-600 transition"
+          onClick={handleVideoCall}
+        >
+          <FaVideo /> Video Call
+        </button>
+
+        {/* ✅ WhatsApp Button (Only If Phone Exists) */}
+        {selectedChat.phone && (
+          <button
+            className="px-3 py-2 bg-green-500 text-white rounded flex items-center gap-2 hover:bg-green-600 transition"
+            onClick={handleWhatsAppChat}
+          >
+            <FaWhatsapp /> WhatsApp
+          </button>
+        )}
+
+        {/* ✅ Email Button (Only If Email Exists) */}
+        {selectedChat.email && (
+          <button
+            className="px-3 py-2 bg-gray-600 text-white rounded flex items-center gap-2 hover:bg-gray-700 transition"
+            onClick={handleSendEmail}
+          >
+            <FaEnvelope /> Email
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ChatHeader;

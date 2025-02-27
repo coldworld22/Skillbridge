@@ -1,0 +1,25 @@
+import { FaMicrophone, FaVideo, FaPhoneSlash, FaUsers, FaCommentDots } from "react-icons/fa";
+
+const CallControls = ({ onChatToggle, onParticipantsToggle, onEndCall }) => {
+  return (
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4 bg-gray-800 p-3 rounded-full shadow-lg transition-all">
+      <button className="p-3 bg-green-500 rounded-full hover:scale-110 transition">
+        <FaMicrophone size={18} />
+      </button>
+      <button className="p-3 bg-blue-500 rounded-full hover:scale-110 transition">
+        <FaVideo size={18} />
+      </button>
+      <button className="p-3 bg-gray-700 rounded-full hover:bg-yellow-500 transition" onClick={onParticipantsToggle}>
+        <FaUsers size={18} />
+      </button>
+      <button className="p-3 bg-gray-700 rounded-full hover:bg-yellow-500 transition" onClick={onChatToggle}>
+        <FaCommentDots size={18} />
+      </button>
+      <button className="p-3 bg-red-500 rounded-full hover:scale-110 transition" onClick={onEndCall}>
+        <FaPhoneSlash size={18} />
+      </button>
+    </div>
+  );
+};
+
+export default CallControls;
