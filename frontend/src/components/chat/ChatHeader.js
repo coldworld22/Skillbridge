@@ -9,7 +9,7 @@ const ChatHeader = ({ selectedChat }) => {
   }
 
   console.log("Selected Chat Data:", selectedChat); // ✅ Debugging Log
-
+ 
   const handleVideoCall = () => {
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
