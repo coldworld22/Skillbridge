@@ -3,78 +3,104 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FileUploader from "@/components/FileUploader";
 import RichTextEditor from "@/components/RichTextEditor";
-import { FaPaperPlane, FaUserPlus, FaTrash } from "react-icons/fa";
+import { FaPaperPlane, FaEdit, FaCheckCircle } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 
-const popularTags = ["React", "Next.js", "Node.js", "JavaScript", "API", "MongoDB", "Tailwind CSS"];
+// ✅ AI API URL - Update with your actual backend API endpoint
+const AI_API_URL = "/api/ai-assistance";
+
+// ✅ Predefined Popular Tags for Suggestions
+const popularTags = ["React", "Next.js", "JavaScript", "Node.js", "API", "MongoDB", "Tailwind CSS"];
 
 const AskQuestionPage = () => {
-  const [activeTab, setActiveTab] = useState("community"); // "community" or "ai"
+  // ✅ Manage Active Tab (Community or AI Assistance)
+  const [activeTab, setActiveTab] = useState("community");
+
+  // ✅ Form Inputs
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
-  const [suggestedTags, setSuggestedTags] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showUserFilter, setShowUserFilter] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // ✅ Fetch Top-rated Experts
+  // ✅ AI Assistance States
+  const [aiResponse, setAIResponse] = useState("");
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [confidenceScore, setConfidenceScore] = useState(null);
+  const [relatedQuestions, setRelatedQuestions] = useState([]);
+  const [editableResponse, setEditableResponse] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+
+  // ✅ Fetch Related Questions Based on Title Input
   useEffect(() => {
-    setTimeout(() => {
-      setUsers([
-        { id: "1", name: "John Doe", reputation: 500 },
-        { id: "2", name: "Alice Smith", reputation: 700 },
-        { id: "3", name: "Robert Brown", reputation: 900 },
-      ]);
-    }, 1000);
+    if (title.trim().length > 3) {
+      fetch(`/api/related-questions?query=${title}`)
+        .then(res => res.json())
+        .then(data => setRelatedQuestions(data.questions))
+        .catch(error => console.error("Error fetching related questions:", error));
+    }
+  }, [title]);
+
+  // ✅ Retrieve Drafts from Local Storage
+  useEffect(() => {
+    setTitle(localStorage.getItem("draftTitle") || "");
+    setDescription(localStorage.getItem("draftDescription") || "");
+    setTags(JSON.parse(localStorage.getItem("draftTags")) || []);
   }, []);
 
-  // ✅ Auto-Save Draft
+  // ✅ Auto-Save Draft Every 2 Seconds
   useEffect(() => {
     const saveDraft = setTimeout(() => {
-      setIsSaving(true);
       localStorage.setItem("draftTitle", title);
       localStorage.setItem("draftDescription", description);
       localStorage.setItem("draftTags", JSON.stringify(tags));
-      setTimeout(() => setIsSaving(false), 1000);
     }, 2000);
-
     return () => clearTimeout(saveDraft);
   }, [title, description, tags]);
 
-  // ✅ Handle Tag Input with Auto-Complete & Future Saving
-  const handleTagInput = (e) => {
-    const value = e.target.value.trim();
-    if (value && e.key === "Enter") {
-      if (tags.includes(value)) return;
-      setTags([...tags, value]);
-      setSuggestedTags([...suggestedTags, value]); // Save for future suggestions
-      e.target.value = "";
+  // ✅ Handle File Upload
+  const handleFileUpload = (files) => {
+    setUploadedFiles([...uploadedFiles, ...files]);
+  };
+
+  // ✅ Fetch AI Response for Given Question
+  const fetchAIResponse = async () => {
+    if (!title.trim()) return;
+
+    setIsProcessingAI(true);
+    setAIResponse("");
+    setConfidenceScore(null);
+
+    try {
+      const response = await fetch(AI_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: title }),
+      });
+
+      const data = await response.json();
+      setAIResponse(data.answer);
+      setEditableResponse(data.answer);
+      setConfidenceScore(data.confidence);
+      setRelatedQuestions(data.relatedQuestions || []);
+    } catch (error) {
+      console.error("AI Response Error:", error);
+      setAIResponse("⚠️ Error generating AI response.");
+    } finally {
+      setIsProcessingAI(false);
     }
   };
 
-  // ✅ Filter Users for Invitations
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.reputation > 600
-  );
-
-  // ✅ Handle User Selection for Invitations
-  const handleUserSelect = (user) => {
-    if (!selectedUsers.find(u => u.id === user.id)) {
-      setSelectedUsers([...selectedUsers, user]);
-      setNotifications([...notifications, `${user.name} has been invited.`]);
-    }
-    setShowUserFilter(false);
+  // ✅ Accept AI Answer & Convert to Community Question
+  const handleAcceptAIResponse = () => {
+    setDescription(editableResponse);
+    setActiveTab("community");
   };
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <Navbar />
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-6 py-8 mt-16">
+
         <h1 className="text-3xl font-bold text-yellow-500">Ask a Question</h1>
 
         {/* ✅ Tab Selection */}
@@ -87,59 +113,67 @@ const AskQuestionPage = () => {
           </button>
         </div>
 
+        {/* ✅ Community Tab */}
         {activeTab === "community" && (
           <form className="bg-gray-800 p-6 rounded-md mt-6">
-            {/* ✅ Title Input */}
             <label className="block font-bold">Title</label>
-            <p className="text-gray-400 text-sm">Be specific and imagine you’re asking a question to another person.</p>
             <input className="w-full p-3 mt-2 bg-gray-700 rounded-md text-white" placeholder="Enter question title" value={title} onChange={(e) => setTitle(e.target.value)} />
 
-            {/* ✅ Description with Formatting */}
-            <label className="block font-bold mt-4">Description</label>
-            <p className="text-gray-400 text-sm">Include all the information someone would need to answer your question.</p>
-            <RichTextEditor onChange={setDescription} />
-
-            {/* ✅ Tags */}
-            <label className="block font-bold mt-4">Tags</label>
-            <input className="w-full p-3 mt-2 bg-gray-700 rounded-md text-white" placeholder="Press Enter to add tags" onKeyDown={handleTagInput} />
-            <div className="flex gap-2 mt-2">
-              {[...popularTags, ...suggestedTags].map(tag => (
-                <span key={tag} className="cursor-pointer bg-gray-700 text-white px-3 py-1 rounded-md hover:bg-gray-600">
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* ✅ Expert Invitation */}
-            <button type="button" className="mt-4 px-4 py-2 bg-blue-500 rounded-lg text-white flex items-center gap-2" onClick={() => setShowUserFilter(true)}>
-              <FaUserPlus /> Invite Experts
-            </button>
-
-            {showUserFilter && (
-              <div className="absolute bg-gray-800 p-4 rounded-md shadow-lg mt-2">
-                <input type="text" className="w-full p-3 bg-gray-700 rounded-md text-white" placeholder="Search experts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                {filteredUsers.map(user => (
-                  <div key={user.id} className="cursor-pointer bg-gray-700 p-2 rounded-md mt-2" onClick={() => handleUserSelect(user)}>
-                    {user.name} ({user.reputation} rep)
-                  </div>
+            {/* ✅ Show Related Questions */}
+            {relatedQuestions.length > 0 && (
+              <div className="bg-gray-700 p-4 rounded-md mt-4">
+                <h3 className="text-yellow-500 font-bold">🔗 Related Questions:</h3>
+                {relatedQuestions.map((q, index) => (
+                  <p key={index} className="text-gray-300 cursor-pointer hover:text-yellow-500">{q}</p>
                 ))}
               </div>
             )}
 
+            {/* ✅ Description Input & Markdown Preview */}
+            <label className="block font-bold mt-4 flex justify-between">
+              Description
+              <button type="button" className="text-yellow-500 text-sm" onClick={() => setShowPreview(!showPreview)}>
+                {showPreview ? "✏️ Edit Mode" : "👀 Preview"}
+              </button>
+            </label>
+            {showPreview ? <ReactMarkdown className="bg-gray-800 p-4 rounded-md mt-2 text-gray-300">{description}</ReactMarkdown> : <RichTextEditor value={description} onChange={setDescription} />}
+
             {/* ✅ File Upload */}
-            <FileUploader onFileUpload={setUploadedFiles} />
+            <FileUploader onFileUpload={handleFileUpload} />
 
-            {isSaving && <p className="text-gray-400 text-sm mt-2">Saving draft...</p>}
-
+            {/* ✅ Submit Question Button */}
             <button type="submit" className="mt-6 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg flex items-center gap-2">
               <FaPaperPlane /> Submit Question
             </button>
           </form>
         )}
 
+        {/* ✅ AI Assistance Tab */}
         {activeTab === "ai" && (
           <div className="bg-gray-800 p-6 rounded-md mt-6">
-            <h2 className="text-2xl font-bold text-yellow-500">💡 AI Assistance Coming Soon...</h2>
+            <h2 className="text-2xl font-bold text-yellow-500">💡 AI Assistance</h2>
+
+            {/* ✅ AI Question Input */}
+            <input className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white" placeholder="Ask AI a question..." value={title} onChange={(e) => setTitle(e.target.value)} />
+
+            {/* ✅ Get AI Answer Button */}
+            <button onClick={fetchAIResponse} className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg flex items-center gap-2">
+              <FaPaperPlane /> Get AI Answer
+            </button>
+
+            {/* ✅ AI Answer Display */}
+            {aiResponse && (
+              <div className="bg-gray-800 p-4 rounded-md mt-4 text-gray-300">
+                <h3 className="text-yellow-500 font-bold">AI Answer:</h3>
+                <div className="prose prose-invert">
+                  <ReactMarkdown>{aiResponse}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+
+            {/* ✅ Accept AI Answer */}
+            {aiResponse && <button onClick={handleAcceptAIResponse} className="mt-4 px-6 py-3 bg-green-500 text-white font-bold rounded-lg flex items-center gap-2"><FaCheckCircle /> Accept & Post</button>}
           </div>
         )}
       </div>

@@ -117,12 +117,18 @@ const Hero = () => {
                 <FaQuestionCircle /> Ask a Question
               </button>
             </Link>
-            <button className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
-              <FaChalkboardTeacher /> Browse Online Classes
-            </button>
-            <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
-              <FaBookOpen /> Explore Tutorials
-            </button>
+
+            <Link href="/online-classes">
+              <button className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
+                <FaChalkboardTeacher /> Browse Online Classes
+              </button>
+            </Link>
+
+            <Link href="/classes">
+              <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
+                <FaBookOpen /> Explore Tutorials
+              </button>
+            </Link>
           </motion.div>
         </div>
 

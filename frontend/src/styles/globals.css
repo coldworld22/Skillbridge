@@ -41,4 +41,34 @@
   .animate-float {
     animation: float infinite ease-in-out;
   }
+
+  /* Light Mode (Default) */
+body {
+  background-color: white;
+  color: black;
+}
+
+/* Dark Mode */
+.dark body {
+  background-color: #111827;
+  color: white;
+}
+
+/* Optional: Dark Mode for Components */
+.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+.dark .text-gray-900 {
+  color: white !important;
+}
+
+.dark .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.dark .bg-gray-900 {
+  background-color: #1f2937 !important;
+}
+
   

@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaUser, FaHeart, FaVideo, FaPaperclip, FaMicrophone } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaUser, FaHeart, FaVideo, FaPaperclip, FaMicrophone, FaTrash, FaEdit } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { useRouter } from "next/router";
+import RichTextEditor from "@/components/RichTextEditor";
+import ReactMarkdown from "react-markdown";
 
 const sampleQuestion = {
   id: 1,
@@ -31,14 +33,21 @@ const sampleQuestion = {
 
 const QuestionDetails = () => {
   const [likes, setLikes] = useState(sampleQuestion.likes);
+  const [votes, setVotes] = useState(sampleQuestion.votes);
   const [replyText, setReplyText] = useState("");
+  const [replies, setReplies] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
   const [file, setFile] = useState(null);
-  const [replies, setReplies] = useState([]);
-  const router = useRouter(); 
+  const router = useRouter();
 
   // ✅ Handle Like Button
   const handleLike = () => setLikes(likes + 1);
+
+  // ✅ Handle Vote System
+  const handleVote = (type) => {
+    if (type === "up") setVotes(votes + 1);
+    if (type === "down") setVotes(votes - 1);
+  };
 
   // ✅ Handle Audio Upload
   const handleAudioUpload = (e) => setAudioFile(e.target.files[0]);
@@ -48,7 +57,7 @@ const QuestionDetails = () => {
 
   // ✅ Handle Video Call Invitation
   const handleVideoInvite = () => {
-    const chatId = Math.random().toString(36).substr(2, 9); // Generate unique chatId
+    const chatId = Math.random().toString(36).substr(2, 9);
     router.push(`/video-call/${chatId}`);
   };
 
@@ -63,14 +72,28 @@ const QuestionDetails = () => {
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <Navbar />
-
-      {/* ✅ Question Section */}
-      <div className="container mx-auto px-6 py-10">
+      <div className="container mx-auto px-6 py-8 mt-16">
         <h1 className="text-3xl font-bold text-yellow-500">{sampleQuestion.title}</h1>
         <div className="flex items-center text-gray-400 text-sm mt-2">
           <FaUser className="mr-2 text-yellow-500" />
-          <span className="font-bold text-white">{sampleQuestion.user.name}</span> 
+          <span className="font-bold text-white">{sampleQuestion.user.name}</span>
           <span className="ml-4">{sampleQuestion.date}</span>
+        </div>
+
+        {/* ✅ Voting, Likes, Views */}
+        <div className="flex items-center gap-6 mt-4 text-gray-400">
+          <button className="flex items-center gap-1 text-gray-400 hover:text-red-500" onClick={handleLike}>
+            <FaHeart /> {likes} Likes
+          </button>
+          <button className="flex items-center gap-1" onClick={() => handleVote("up")}>
+            <FaArrowUp /> {votes} Votes
+          </button>
+          <button className="flex items-center gap-1" onClick={() => handleVote("down")}>
+            <FaArrowDown /> Downvote
+          </button>
+          <span className="flex items-center gap-1">
+            <FaEye /> {sampleQuestion.views} views
+          </span>
         </div>
 
         {/* ✅ Question Content */}
@@ -85,31 +108,12 @@ const QuestionDetails = () => {
           ))}
         </div>
 
-        {/* ✅ Votes, Likes, Views */}
-        <div className="flex items-center gap-6 mt-4 text-gray-400">
-          <button className="flex items-center gap-1 text-gray-400 hover:text-red-500" onClick={handleLike}>
-            <FaHeart /> {likes} Likes
-          </button>
-          <span className="flex items-center gap-1">
-            <FaEye /> {sampleQuestion.views} views
-          </span>
-        </div>
-
         {/* ✅ Answers Section */}
         <h2 className="text-2xl font-bold text-yellow-500 mt-8">Answers</h2>
         <div className="mt-4 space-y-6">
           {sampleQuestion.answers.map((answer) => (
             <div key={answer.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
-              <p className="text-gray-300 mt-2">{answer.text}</p>
-
-              {/* ✅ Nested Replies */}
-              {answer.replies && answer.replies.length > 0 && (
-                <div className="mt-3 ml-6 space-y-3 border-l-2 border-yellow-600 pl-4">
-                  {answer.replies.map((reply) => (
-                    <p key={reply.id} className="text-gray-400"><strong>{reply.user.name}:</strong> {reply.text}</p>
-                  ))}
-                </div>
-              )}
+              <p className="text-gray-300 mt-2"><ReactMarkdown>{answer.text}</ReactMarkdown></p>
 
               {/* ✅ Reply to Answer */}
               <textarea
@@ -124,28 +128,16 @@ const QuestionDetails = () => {
           ))}
         </div>
 
-        {/* ✅ Reply Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-yellow-500">Your Reply</h2>
-          <textarea
-            className="w-full mt-3 p-3 bg-gray-800 text-white rounded-lg"
-            rows="4"
-            placeholder="Write your reply here..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-          ></textarea>
-          <button onClick={handleReply} className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600">
-            Post Reply
-          </button>
-        </div>
+        {/* ✅ User Reply Section */}
+        <h2 className="text-2xl font-bold text-yellow-500 mt-8">Your Reply</h2>
+        <RichTextEditor onChange={setReplyText} />
+        <button onClick={handleReply} className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600">
+          Post Reply
+        </button>
 
-        {/* ✅ Audio & File Upload */}
-        <div className="mt-6">
-          <input type="file" accept="audio/*" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleAudioUpload} />
-          <input type="file" accept=".pdf,.jpg,.png" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleFileUpload} />
-        </div>
-
-        {/* ✅ Video Call Invite */}
+        {/* ✅ File & Video Call */}
+        <input type="file" accept="audio/*" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleAudioUpload} />
+        <input type="file" accept=".pdf,.jpg,.png" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleFileUpload} />
         <button onClick={handleVideoInvite} className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 flex items-center gap-2">
           <FaVideo /> Start Video Call
         </button>
