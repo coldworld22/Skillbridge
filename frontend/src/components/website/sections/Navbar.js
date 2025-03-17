@@ -309,12 +309,23 @@ const Navbar = () => {
               >
                 <ul>
                   <li>
-                    <Link href="/website/pages/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                    <Link href="/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
                       <FaCog /> Edit Profile
                     </Link>
                   </li>
                   <li>
-                    <Link href="/website/pages/profile/change-password" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                    <Link href="/profile/certificates" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                      🎓 Certificates
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link href="/profile/orders" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                      🛒 My Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/profile/change-password" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
                       <FaLock /> Change Password
                     </Link>
                   </li>

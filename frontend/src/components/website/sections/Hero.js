@@ -3,6 +3,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Typewriter from "typewriter-effect";
+import SearchBar from "@/components/shared/SearchBar";
+import { useSwipeable } from "react-swipeable"; // ✅ New for mobile swipe
 import {
   FaBars, FaRobot, FaSearch, FaArrowRight, FaChalkboardTeacher,
   FaBookOpen, FaMouse, FaChevronLeft, FaChevronRight, FaQuestionCircle
@@ -12,9 +14,9 @@ import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
 
 const ads = [
-  { id: 1, title: "🔥 Black Friday Deal: 50% Off!", description: "All courses now at half price!", image: "/shared/assets/images/ads/black-friday.jpg", link: "#" },
-  { id: 2, title: "📢 Python Bootcamp Enrollment Open!", description: "Join our advanced Python bootcamp!", image: "/shared/assets/images/ads/python-bootcamp.jpg", link: "#" },
-  { id: 3, title: "🚀 AI Masterclass Discount!", description: "Learn AI from top instructors!", image: "/shared/assets/images/ads/ai-masterclass.jpg", link: "#" },
+  { id: 1, title: "🔥 Black Friday Deal: 50% Off!", description: "All courses now at half price!", image: "/shared/assets/images/ads/black-friday.jpg", link: "/promotions" },
+  { id: 2, title: "📢 Python Bootcamp Enrollment Open!", description: "Join our advanced Python bootcamp!", image: "/shared/assets/images/ads/python-bootcamp.jpg", link: "/promotions" },
+  { id: 3, title: "🚀 AI Masterclass Discount!", description: "Learn AI from top instructors!", image: "/shared/assets/images/ads/ai-masterclass.jpg", link: "/promotions" },
 ];
 
 const Hero = () => {
@@ -51,6 +53,11 @@ const Hero = () => {
   // Handle Ad Navigation
   const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
   const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
+
+  const handleSearchSelect = (selectedValue) => {
+    setSearchText(selectedValue);
+    alert(`Navigating to results for: ${selectedValue}`); // Replace with real navigation
+  };
 
   return (
     <motion.section
@@ -95,18 +102,9 @@ const Hero = () => {
             <Typewriter options={{ strings: typewriterText, autoStart: true, loop: true }} />
           </motion.h1>
 
-          {/* Search Box */}
+          {/* 🔍 Modern Search Box */}
           <div className="relative w-full max-w-lg mx-auto mb-6">
-            <div className="flex items-center bg-white/90 backdrop-blur-lg shadow-lg rounded-lg overflow-hidden relative">
-              <input
-                type="text"
-                placeholder="Search courses, instructors, or topics..."
-                className="w-full p-4 text-gray-900 bg-transparent focus:outline-none"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              <FaSearch className="text-gray-600 text-xl mr-4" />
-            </div>
+            <SearchBar value={searchText} onChange={setSearchText} onSelect={handleSearchSelect} />
           </div>
 
           {/* CTA Buttons */}

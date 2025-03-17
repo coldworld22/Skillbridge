@@ -16,11 +16,10 @@ import TutorialsSection from "@/components/website/sections/TutorialsSection";
 import Footer from "@/components/website/sections/Footer";
 import ProblemSolvingSection from "@/components/website/sections/ProblemSolvingSection";
 import AITutoring from "@/components/website/sections/AITutoring";
-import NFTMarketplace from "@/components/website/sections/NFTMarketplace";
 
 export default function Home() {
   const sections = [
-    Hero, OnlineClasses, LearningMarketplace, NFTMarketplace, StudyCategories,
+    Hero, OnlineClasses, LearningMarketplace, StudyCategories,
     StudyGroups, InstructorBooking, SubscriptionPlans, TutorialsSection,
     ProblemSolvingSection, AITutoring, FeaturedCourses, CommunityEngagement,
     FeaturedInstructors, Footer // ✅ Removed last section before the footer

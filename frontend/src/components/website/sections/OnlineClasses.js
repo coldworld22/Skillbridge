@@ -1,62 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaSearch, FaCalendarAlt, FaUserPlus, FaBookOpen } from "react-icons/fa";
+import { FaSearch, FaCalendarAlt, FaUserPlus, FaBookOpen, FaVideo, FaClock } from "react-icons/fa";
+import LiveClassCard from "@/components/online-classes/LiveClassCard";
+import { useRouter } from "next/router";
 
-// Sample class data
+// Sample data
 const classes = [
-  { id: 1, title: "AI & Machine Learning", instructor: "Dr. Smith", date: "2024-06-10", category: "Data Science" },
-  { id: 2, title: "Front-end Web Development", instructor: "Jane Doe", date: "2024-06-15", category: "Programming" },
-  { id: 3, title: "Medical Ethics", instructor: "Dr. John", date: "2024-06-12", category: "Medicine" },
-  { id: 4, title: "Cybersecurity Basics", instructor: "David Wilson", date: "2024-06-18", category: "Cybersecurity" },
-  { id: 5, title: "Blockchain for Beginners", instructor: "Sarah Lee", date: "2024-06-20", category: "Finance & Blockchain" },
-  { id: 6, title: "Cloud Computing Essentials", instructor: "Michael Brown", date: "2024-06-22", category: "Technology" },
-  { id: 7, title: "Data Science with Python", instructor: "Emily Davis", date: "2024-06-25", category: "Data Science" },
-  { id: 8, title: "Deep Learning for AI", instructor: "Robert White", date: "2024-06-28", category: "Data Science" },
+  { id: 1, title: "AI & Machine Learning", instructor: "Dr. Smith", date: "June 10, 2024", category: "Data Science", type: "Recorded" },
+  { id: 2, title: "Front-end Web Development", instructor: "Jane Doe", date: "June 15, 2024", category: "Programming", type: "Live" },
+  { id: 3, title: "Medical Ethics", instructor: "Dr. John", date: "June 12, 2024", category: "Medicine", type: "Recorded" },
+  { id: 4, title: "Cybersecurity Basics", instructor: "David Wilson", date: "June 18, 2024", category: "Cybersecurity", type: "Live" },
+  { id: 5, title: "Blockchain for Beginners", instructor: "Sarah Lee", date: "June 20, 2024", category: "Finance & Blockchain", type: "Recorded" },
 ];
 
-// List of available categories
-const categories = ["All", "Programming", "Data Science", "Medicine", "Cybersecurity", "Finance & Blockchain", "Technology"];
+// Categories for filtering
+const categories = ["All", "Programming", "Data Science", "Medicine", "Cybersecurity", "Finance & Blockchain"];
 
 const OnlineClasses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(6); // Show 6 classes initially
+  const [showLiveClasses, setShowLiveClasses] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const router = useRouter();
 
   // Filter classes based on category & search
   const filteredClasses = classes.filter(
     (classItem) =>
       (selectedCategory === "All" || classItem.category === selectedCategory) &&
+      (showLiveClasses ? classItem.type === "Live" : true) &&
       classItem.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
+    <div className="bg-gray-900 min-h-screen text-white">
 
-    <motion.section
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      viewport={{ once: true }}
-    >
-      <section className="relative w-full py-20 bg-gray-900 text-white text-center">
+
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        viewport={{ once: true }}
+        className="relative w-full py-20 text-center"
+      >
         <div className="max-w-7xl mx-auto px-6">
 
-          {/* Section Heading */}
+          {/* Heading */}
           <motion.h2
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-4xl font-extrabold mb-6 text-yellow-500"
           >
-            Join Ongoing & Upcoming Classes
+            📚 Explore Online Classes & Live Sessions
           </motion.h2>
 
+          {/* Description */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg text-gray-300 mb-8"
           >
-            Browse and request to join classes in various fields. Connect with experts and expand your knowledge!
+            Browse and join expert-led courses. Filter by category or search to find your next learning opportunity.
           </motion.p>
 
           {/* Search & Filters */}
@@ -84,6 +89,16 @@ const OnlineClasses = () => {
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
+
+            {/* Live Classes Toggle */}
+            <button
+              onClick={() => setShowLiveClasses(!showLiveClasses)}
+              className={`p-3 rounded-lg shadow-lg transition ${
+                showLiveClasses ? "bg-yellow-500 text-gray-900" : "bg-gray-800 text-white"
+              }`}
+            >
+              {showLiveClasses ? "📹 Show All Classes" : "🎥 Show Only Live Classes"}
+            </button>
           </div>
 
           {/* Classes Grid */}
@@ -94,7 +109,7 @@ const OnlineClasses = () => {
                 whileHover={{ scale: 1.05 }}
                 className="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center text-center"
               >
-                <FaBookOpen className="text-yellow-500 text-5xl mb-4" />
+                {classItem.type === "Live" ? <FaVideo className="text-red-500 text-5xl mb-4" /> : <FaBookOpen className="text-yellow-500 text-5xl mb-4" />}
                 <h3 className="text-xl font-bold mb-2">{classItem.title}</h3>
                 <p className="text-gray-400 text-sm">Instructor: {classItem.instructor}</p>
                 <p className="text-gray-400 text-sm flex items-center gap-2 mt-2">
@@ -102,9 +117,9 @@ const OnlineClasses = () => {
                 </p>
                 <button
                   className="mt-4 bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600 transition"
-                  onClick={() => alert(`Request to join ${classItem.title} sent!`)}
+                  onClick={() => router.push(`/online-classes/${classItem.id}`)}
                 >
-                  <FaUserPlus /> Request to Join
+                  {classItem.type === "Live" ? <FaClock /> : <FaUserPlus />} {classItem.type === "Live" ? "Join Live" : "Request to Join"}
                 </button>
               </motion.div>
             ))}
@@ -121,11 +136,8 @@ const OnlineClasses = () => {
             </motion.button>
           )}
         </div>
-      </section>
-    </motion.section>
-
-
-
+      </motion.section>
+    </div>
   );
 };
 

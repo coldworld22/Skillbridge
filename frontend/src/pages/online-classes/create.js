@@ -11,7 +11,6 @@ const CreateLiveClass = () => {
   const [price, setPrice] = useState("");
   const [maxParticipants, setMaxParticipants] = useState(50);
   const [category, setCategory] = useState("Web Development");
-  const [streamingPlatform, setStreamingPlatform] = useState("zoom");
   const [resources, setResources] = useState([]);
   const [thumbnail, setThumbnail] = useState(null);
   const [generatedLink, setGeneratedLink] = useState("");
@@ -37,9 +36,9 @@ const CreateLiveClass = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Generate unique class link
+    // Generate unique class ID & streaming link
     const classId = uuidv4();
-    const classLink = `/online-classes/${classId}`;
+    const classLink = `/live-streams/${classId}`;
     setGeneratedLink(classLink);
 
     const newClass = {
@@ -51,14 +50,13 @@ const CreateLiveClass = () => {
       price,
       maxParticipants,
       category,
-      streamingPlatform,
       resources,
       classLink,
       thumbnail,
     };
 
     console.log("New Class Created:", newClass);
-    alert(`Live class has been created successfully!\nClass Link: ${classLink}`);
+    alert(`Live class has been created successfully!\nLive Stream Link: ${classLink}`);
   };
 
   return (
@@ -139,32 +137,6 @@ const CreateLiveClass = () => {
             </div>
           </div>
 
-          {/* Category Selection */}
-          <label className="block mt-4 text-white font-semibold">Category:</label>
-          <select
-            className="w-full p-3 mt-2 bg-gray-700 text-white rounded-lg focus:outline-none"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option>Web Development</option>
-            <option>Data Science</option>
-            <option>AI & Machine Learning</option>
-            <option>Cyber Security</option>
-          </select>
-
-          {/* Streaming Platform */}
-          <label className="block mt-4 text-white font-semibold">Streaming Platform:</label>
-          <select
-            className="w-full p-3 mt-2 bg-gray-700 text-white rounded-lg focus:outline-none"
-            value={streamingPlatform}
-            onChange={(e) => setStreamingPlatform(e.target.value)}
-          >
-            <option value="zoom">Zoom</option>
-            <option value="google-meet">Google Meet</option>
-            <option value="youtube">YouTube Live</option>
-            <option value="custom">Custom URL</option>
-          </select>
-
           {/* Thumbnail Upload */}
           <label className="block mt-4 text-white font-semibold">Upload Thumbnail:</label>
           <input
@@ -187,7 +159,7 @@ const CreateLiveClass = () => {
         {/* Display Generated Link */}
         {generatedLink && (
           <p className="text-green-400 mt-4 font-semibold">
-            ✅ Class Created! Share this link:{" "}
+            ✅ Live Class Created! Share this link:{" "}
             <span className="text-yellow-400">{generatedLink}</span>
           </p>
         )}

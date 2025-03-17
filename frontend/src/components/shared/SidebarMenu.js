@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/router";
+import Link from "next/link";
 import {
   FaHome, FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers, FaComments,
   FaVideo, FaCalendarAlt, FaPlus, FaChartLine, FaCog, FaStar, FaGift, FaStore, 
-  FaTimes, FaDollarSign, FaUserShield, FaUserGraduate, FaUserTie, FaUserFriends, 
-  FaCheckCircle, FaBullhorn
+  FaTimes, FaDollarSign, FaUserShield, FaCheckCircle, FaBullhorn, FaExternalLinkAlt,
+  FaGlobe, FaQuestionCircle, FaFileAlt, FaEnvelope
 } from "react-icons/fa";
 
 const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
   const sidebarRef = useRef(null);
+  const router = useRouter();
 
   // Close sidebar when clicking outside
   useEffect(() => {
@@ -31,6 +34,21 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
       document.body.appendChild(script);
     }
   }, [showAds]);
+
+  // Function to redirect to the dashboard
+  const redirectToDashboard = () => {
+    let dashboardUrl = "/dashboard";
+    
+    if (userRole === "admin") {
+      dashboardUrl = "/dashboard/admin";
+    } else if (userRole === "instructor") {
+      dashboardUrl = "/dashboard/instructor";
+    } else if (userRole === "student") {
+      dashboardUrl = "/dashboard/student";
+    }
+
+    window.location.href = dashboardUrl; // Redirecting outside Next.js route
+  };
 
   return (
     <AnimatePresence>
@@ -65,85 +83,84 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
             {/* Sidebar Content */}
             <h3 className="text-xl font-bold mb-4">Dashboard Navigation</h3>
             <div className="space-y-4">
-              
-              {/* Dashboard Home */}
+
+              {/* Quick Link to Dashboard */}
+              <div className="mt-2">
+                <button
+                  onClick={redirectToDashboard}
+                  className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition"
+                >
+                  <FaExternalLinkAlt /> Go to Dashboard
+                </button>
+              </div>
+
+              {/* Useful Links */}
               <div>
+                <h4 className="font-bold text-lg mt-4 mb-2">Useful Links</h4>
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                    <FaHome /> Dashboard Home
+                  <li>
+                    <Link href="/courses" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaBookOpen /> Explore Courses
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/community" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaUsers /> Community Forum
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/blog" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaFileAlt /> Blog & News
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/support" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaQuestionCircle /> Help & Support
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/contact" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaEnvelope /> Contact Us
+                    </Link>
                   </li>
                 </ul>
               </div>
 
               {/* Student Section (Only for Students) */}
               {userRole === "student" && (
-                <>
-                  <div>
-                    <h4 className="font-bold text-lg mb-2">Learning</h4>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaBookOpen /> My Courses
-                      </li>
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaChalkboardTeacher /> My Instructors
-                      </li>
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaGraduationCap /> Certificates
-                      </li>
-                    </ul>
-                  </div>
-                </>
+                <div>
+                  <h4 className="font-bold text-lg mt-4 mb-2">Learning</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaBookOpen /> My Courses
+                    </li>
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaChalkboardTeacher /> My Instructors
+                    </li>
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaGraduationCap /> Certificates
+                    </li>
+                  </ul>
+                </div>
               )}
 
               {/* Instructor Section (Only for Instructors) */}
               {userRole === "instructor" && (
-                <>
-                  <div>
-                    <h4 className="font-bold text-lg mb-2">Instructor</h4>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaCalendarAlt /> Scheduled Classes
-                      </li>
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaPlus /> Create Course
-                      </li>
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaChartLine /> Earnings & Reports
-                      </li>
-                    </ul>
-                  </div>
-                </>
+                <div>
+                  <h4 className="font-bold text-lg mt-4 mb-2">Instructor</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaCalendarAlt /> Scheduled Classes
+                    </li>
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaPlus /> Create Course
+                    </li>
+                    <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                      <FaChartLine /> Earnings & Reports
+                    </li>
+                  </ul>
+                </div>
               )}
-
-              {/* Admin Section (Only for Admins) */}
-              {userRole === "admin" && (
-                <>
-                  <div>
-                    <h4 className="font-bold text-lg mb-2">Admin Panel</h4>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaUserShield /> User Management
-                      </li>
-                      <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                        <FaCheckCircle /> Course Approvals
-                      </li>
-                    </ul>
-                  </div>
-                </>
-              )}
-
-              {/* Marketplace */}
-              <div>
-                <h4 className="font-bold text-lg mb-2">Marketplace</h4>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                    <FaStore /> Learning Marketplace
-                  </li>
-                  <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                    <FaDollarSign /> NFT Marketplace
-                  </li>
-                </ul>
-              </div>
 
               {/* Google AdSense Ads (If Enabled) */}
               {showAds && (
@@ -152,7 +169,6 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
                     <FaBullhorn /> Sponsored Ads
                   </h4>
                   <div className="text-center">
-                    {/* Google AdSense Ad Slot */}
                     <ins className="adsbygoogle"
                       style={{ display: "block" }}
                       data-ad-client="ca-pub-xxxxxxxxxxxxxxxx"
