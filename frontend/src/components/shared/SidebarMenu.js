@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import {
   FaHome, FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers, FaComments,
-  FaVideo, FaCalendarAlt, FaPlus, FaChartLine, FaCog, FaStar, FaGift, FaStore, 
+  FaVideo, FaCalendarAlt, FaPlus, FaChartLine, FaCog, FaStar, FaGift, FaStore,
   FaTimes, FaDollarSign, FaUserShield, FaCheckCircle, FaBullhorn, FaExternalLinkAlt,
   FaGlobe, FaQuestionCircle, FaFileAlt, FaEnvelope
 } from "react-icons/fa";
@@ -38,7 +38,7 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
   // Function to redirect to the dashboard
   const redirectToDashboard = () => {
     let dashboardUrl = "/dashboard";
-    
+
     if (userRole === "admin") {
       dashboardUrl = "/dashboard/admin";
     } else if (userRole === "instructor") {
@@ -55,7 +55,7 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
       {isOpen && (
         <>
           {/* Overlay Background */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
@@ -73,8 +73,8 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
             className="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-yellow-500 to-yellow-400 text-gray-900 shadow-lg p-6 z-50"
           >
             {/* Close Button */}
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="absolute top-4 right-4 text-gray-900 hover:text-gray-800 transition"
             >
               <FaTimes className="text-2xl" />
@@ -85,14 +85,19 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
             <div className="space-y-4">
 
               {/* Quick Link to Dashboard */}
-              <div className="mt-2">
-                <button
-                  onClick={redirectToDashboard}
-                  className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition"
-                >
-                  <FaExternalLinkAlt /> Go to Dashboard
-                </button>
+
+              <div className="mt-2 space-y-2">
+                <Link href="/dashboard/admin" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
+                  <FaUserShield /> Admin Dashboard
+                </Link>
+                <Link href="/dashboard/student" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
+                  <FaGraduationCap /> Student Dashboard
+                </Link>
+                <Link href="/dashboard/instructor" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
+                  <FaChalkboardTeacher /> Instructor Dashboard
+                </Link>
               </div>
+
 
               {/* Useful Links */}
               <div>

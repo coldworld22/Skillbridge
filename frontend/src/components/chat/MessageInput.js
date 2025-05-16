@@ -1,33 +1,35 @@
 import { useState, useRef, useEffect } from "react";
 import EmojiPicker from "emoji-picker-react";
-import { FaMicrophone, FaPaperPlane, FaPaperclip, FaSmile } from "react-icons/fa";
+import {
+  FaMicrophone,
+  FaPaperPlane,
+  FaPaperclip,
+  FaSmile,
+  FaTimes,
+} from "react-icons/fa";
 
-const MessageInput = ({ sendMessage }) => {
+const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
   const [recording, setRecording] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   const mediaRecorderRef = useRef(null);
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
 
-  // ✅ Ensure `sendMessage` is defined
-  if (typeof sendMessage !== "function") {
-    console.error("❌ sendMessage function is missing or invalid!");
-  }
-
-  // ✅ Handle Sending Messages
   const handleSend = () => {
     if (!message.trim() && !file && !audioBlob) return;
 
     const newMessage = {
-      text: message || "",
+      text: message,
       sender: "You",
       timestamp: new Date().toLocaleTimeString(),
       status: "sent",
       image: file ? URL.createObjectURL(file) : null,
       audio: audioBlob ? URL.createObjectURL(audioBlob) : null,
+      replyTo: replyTo?.text || null,
     };
 
     sendMessage(newMessage);
@@ -35,106 +37,131 @@ const MessageInput = ({ sendMessage }) => {
     setFile(null);
     setAudioBlob(null);
     setShowEmojiPicker(false);
+    onCancelReply?.();
   };
 
-  // ✅ Insert Emoji into Text Input
   const handleEmojiClick = (emoji) => {
     setMessage((prev) => prev + emoji.emoji);
   };
 
-  // 🎙️ Start Voice Recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      const audioChunks = [];
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunks.push(event.data);
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/wav" });
+        setAudioBlob(blob);
       };
 
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-        setAudioBlob(audioBlob);
-      };
-
-      mediaRecorderRef.current.start();
+      recorder.start();
+      mediaRecorderRef.current = recorder;
       setRecording(true);
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
+    } catch (err) {
+      console.error("Microphone error:", err);
     }
   };
 
-  // 🎙️ Stop Voice Recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-    }
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
   };
 
-  // ✅ Close Emoji Picker When Clicking Outside
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+    const closeEmojiPicker = (e) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
         setShowEmojiPicker(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    };
+    document.addEventListener("mousedown", closeEmojiPicker);
+    return () => document.removeEventListener("mousedown", closeEmojiPicker);
   }, []);
 
   return (
-    <div className="relative flex flex-col bg-gray-700 p-3 rounded-lg">
-      <div className="flex items-center gap-2">
-        {/* 🎙️ Record Audio Button */}
-        <button
-          className={`p-2 ${recording ? "bg-red-600" : "bg-gray-600"} rounded`}
-          onClick={recording ? stopRecording : startRecording}
-        >
-          <FaMicrophone className="text-yellow-500" />
-        </button>
+    <div className="relative bg-gray-800/80 backdrop-blur-md px-3 py-2 border-t border-gray-700 rounded-b-xl shadow-inner">
+      {/* Reply Preview */}
+      {replyTo && (
+        <div className="mb-2 px-3 py-2 bg-gray-700 border-l-4 border-yellow-400 rounded flex justify-between items-start text-sm text-yellow-300 shadow-sm">
+          <span className="italic truncate">Replying to: “{replyTo.text}”</span>
+          <button onClick={onCancelReply} className="ml-2 text-red-400 hover:text-red-600">
+            <FaTimes size={12} />
+          </button>
+        </div>
+      )}
 
-        {/* 😀 Emoji Picker Button */}
-        <div className="relative">
-          <button className="p-2 bg-gray-600 rounded" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-            <FaSmile className="text-yellow-500" />
+      {/* Controls Row */}
+      <div className="flex items-center gap-2">
+        {/* Button Group */}
+        <div className="flex items-center gap-1">
+          {/* Audio */}
+          <button
+            onClick={recording ? stopRecording : startRecording}
+            className={`h-8 w-8 flex items-center justify-center rounded-md transition-all duration-200 ${
+              recording ? "bg-red-600" : "bg-gray-700 hover:bg-gray-600"
+            } shadow-sm`}
+          >
+            <FaMicrophone className="text-yellow-400 text-sm" />
           </button>
 
-          {/* 🌟 Emoji Picker */}
-          {showEmojiPicker && (
-            <div ref={emojiPickerRef} className="absolute bottom-[50px] left-0 w-64 bg-gray-800 p-2 rounded-lg shadow-lg z-50 border border-gray-600">
-              <EmojiPicker onEmojiClick={handleEmojiClick} />
-            </div>
-          )}
+          {/* Emoji */}
+          <div className="relative">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="h-8 w-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm"
+            >
+              <FaSmile className="text-yellow-400 text-sm" />
+            </button>
+            {showEmojiPicker && (
+              <div
+                ref={emojiPickerRef}
+                className="absolute bottom-[50px] left-0 z-50 w-72 bg-gray-900 border border-gray-700 rounded-lg shadow-lg"
+              >
+                <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+              </div>
+            )}
+          </div>
+
+          {/* Attachment */}
+          <button
+            onClick={() => fileInputRef.current.click()}
+            className="h-8 w-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm"
+          >
+            <FaPaperclip className="text-white text-xs" />
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => setFile(e.target.files[0])}
+            className="hidden"
+          />
         </div>
 
-        {/* 📂 Upload Files Button */}
-        <button className="p-2 bg-gray-600 rounded" onClick={() => fileInputRef.current.click()}>
-          <FaPaperclip className="text-white" />
-        </button>
-        <input 
-          ref={fileInputRef} 
-          type="file" 
-          accept="*/*"
-          className="hidden" 
-          onChange={(e) => setFile(e.target.files[0])} 
-        />
-
-        {/* 📝 Text Input */}
-        <input 
-          type="text" 
-          value={message} 
+        {/* Text Input */}
+        <input
+          type="text"
+          value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..." 
-          className="w-full p-2 bg-gray-600 text-white rounded-md" 
+          placeholder="Type a message..."
+          className="flex-1 px-2 py-[2px] text-xs bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-[1px] focus:ring-yellow-400 shadow-sm"
         />
 
-        {/* 🚀 Send Button */}
-        <button className="p-2 bg-green-500 rounded text-white" onClick={handleSend}>
+        {/* Send */}
+       <button
+          onClick={handleSend}
+          className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+        >
           <FaPaperPlane />
         </button>
       </div>
+
+      {/* File name preview */}
+      {file && (
+        <div className="text-xs text-gray-400 mt-1 truncate">
+          📎 Attached: <span className="italic">{file.name}</span>
+        </div>
+      )}
     </div>
   );
 };

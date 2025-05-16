@@ -12,26 +12,12 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   const chatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // ✅ Function to send messages
-  const sendMessage = (newMessage) => {
-    if (replyingTo) {
-      newMessage.replyTo = replyingTo;
-      setReplyingTo(null);
-    }
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setTyping(false);
-
-    toast.success("New message sent!");
-  };
-
-  // ✅ Auto-scroll to latest message
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // ✅ Fix Typing Indicator - Reset after inactivity
   useEffect(() => {
     if (typing) {
       clearTimeout(typingTimeoutRef.current);
@@ -39,104 +25,157 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
     }
   }, [typing]);
 
-  // ✅ Toggle Pin Message
+  const sendMessage = (newMessage) => {
+    if (!newMessage.text && !newMessage.image && !newMessage.audio) {
+      toast.error("Message is empty!");
+      return;
+    }
+
+    if (replyingTo) {
+      newMessage.replyTo = replyingTo;
+      setReplyingTo(null);
+    }
+
+    setMessages((prev) => [...prev, { ...newMessage, timestamp: new Date().toLocaleTimeString() }]);
+    setTyping(false);
+    toast.success("Message sent!");
+  };
+
   const togglePinMessage = (msg) => {
     setPinnedMessages((prev) =>
       prev.includes(msg) ? prev.filter((m) => m !== msg) : [...prev, msg]
     );
   };
 
-  // ✅ Delete Message
   const deleteMessage = (index) => {
-    setMessages((prevMessages) => prevMessages.filter((_, i) => i !== index));
+    setMessages((prev) => prev.filter((_, i) => i !== index));
     toast.info("Message deleted.");
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg col-span-3 flex flex-col">
-      {/* ✅ Chat Header */}
-      <ChatHeader selectedChat={selectedChat} onStartVideoCall={onStartVideoCall} />
+    <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      {/* Header */}
+      <div className="border-b border-gray-700">
+        <ChatHeader selectedChat={selectedChat} onStartVideoCall={onStartVideoCall} />
+      </div>
 
-      {/* ✅ Pinned Messages Section */}
+      {/* Pinned */}
       {pinnedMessages.length > 0 && (
-        <div className="mb-2 p-2 rounded-lg bg-gray-900">
-          <h3 className="text-sm text-yellow-500 font-semibold">📌 Pinned Messages</h3>
-          {pinnedMessages.map((msg, index) => (
-            <div key={index} className="text-gray-300 text-xs p-2 border-b border-gray-700">
+        <div className="bg-gray-900 p-3 text-sm text-yellow-400 overflow-x-auto">
+          📌 Pinned:
+          {pinnedMessages.map((msg, i) => (
+            <div key={i} className="text-xs mt-1 border-l-4 border-yellow-400 pl-2">
               {msg.text}
             </div>
           ))}
         </div>
       )}
 
-      {/* ✅ Message Display Area */}
-      <div ref={chatRef} className="mt-4 space-y-4 max-h-80 overflow-y-auto p-4 border border-gray-700 rounded-lg">
-        {messages.map((msg, index) => (
-          <div key={index} className={`flex items-end gap-3 ${msg.sender === "You" ? "justify-end" : "justify-start"}`}>
-            
-            {/* ✅ Profile Icon */}
-            {msg.sender !== "You" && (
-              <img
-                src={msg.profileImage || "/default-avatar.png"}
-                alt="User"
-                className="w-10 h-10 rounded-full border-2 border-yellow-500"
+     <div
+  ref={chatRef}
+  className="flex-1 overflow-y-auto px-3 py-2 space-y-3 bg-gray-700 rounded-md"
+>
+  {messages.map((msg, index) => {
+    const isYou = msg.sender === "You";
+    return (
+      <div
+        key={index}
+        className={`flex items-end gap-2 ${isYou ? "justify-end" : "justify-start"}`}
+      >
+        {!isYou && (
+          <img
+            src={msg.profileImage || "/default-avatar.png"}
+            className="w-7 h-7 rounded-full border border-gray-500"
+            alt="avatar"
+          />
+        )}
+
+        <div
+          className={`px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
+            isYou ? "bg-blue-600 text-white" : "bg-gray-600 text-white"
+          }`}
+        >
+          {msg.replyTo && (
+            <div className="text-xs italic text-yellow-300 mb-1 line-clamp-1">
+              ↪ {msg.replyTo.text}
+            </div>
+          )}
+
+          {!isYou && (
+            <div className="text-[11px] font-semibold text-gray-300 mb-1">
+              {msg.sender}
+            </div>
+          )}
+
+          {msg.image && (
+            <img
+              src={msg.image}
+              className="w-full max-w-[160px] rounded-md mb-1"
+              alt="media"
+            />
+          )}
+          {msg.audio && (
+            <audio controls src={msg.audio} className="w-40 mb-1" />
+          )}
+
+          <p className="text-[13px] leading-snug break-words">{msg.text}</p>
+
+          {/* Meta info + actions */}
+          <div className="flex justify-between items-center text-[10px] text-gray-300 mt-1">
+            <span className="whitespace-nowrap">{msg.timestamp}</span>
+            <div className="flex items-center gap-2 ml-2">
+              <FaCheckDouble
+                className={`${
+                  msg.status === "read" ? "text-blue-300" : "text-gray-400"
+                }`}
               />
-            )}
-
-            {/* ✅ Message Bubble */}
-            <div className={`p-3 rounded-lg flex flex-col shadow-md max-w-xs ${msg.sender === "You" ? "bg-blue-500 text-white" : "bg-gray-700 text-white"}`}>
-              
-              {/* ✅ Reply-to Feature */}
-              {msg.replyTo && (
-                <div className="text-xs bg-gray-600 p-1 rounded mb-1">
-                  <span className="text-yellow-400">Replying to:</span> {msg.replyTo.text}
-                </div>
-              )}
-
-              {/* ✅ Sender Name */}
-              {msg.sender !== "You" && <span className="text-xs text-gray-300 mb-1">{msg.sender}</span>}
-
-              {/* ✅ Message Content */}
-              {msg.image && <img src={msg.image} alt="Sent" className="w-24 h-24 rounded-lg" />}
-              {msg.audio && <audio controls src={msg.audio} className="w-32 mt-1" />}
-              <p className="text-sm">{msg.text}</p>
-
-              {/* ✅ Timestamp, Read Status, Actions */}
-              <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                <span>{msg.timestamp}</span>
-                <div className="flex items-center gap-2">
-                  <FaCheckDouble className={`text-sm ${msg.status === "read" ? "text-blue-400" : "text-gray-400"}`} />
-                  <button className="text-yellow-500 hover:text-yellow-600" onClick={() => togglePinMessage(msg)}>
-                    <FaThumbtack />
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-500" onClick={() => setReplyingTo(msg)}>
-                    <FaReply />
-                  </button>
-                  <button className="text-red-500 hover:text-red-600" onClick={() => deleteMessage(index)}>
-                    <FaTrash />
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => togglePinMessage(msg)}
+                title="Pin"
+                className="hover:text-yellow-400"
+              >
+                <FaThumbtack className="text-xs" />
+              </button>
+              <button
+                onClick={() => setReplyingTo(msg)}
+                title="Reply"
+                className="hover:text-blue-300"
+              >
+                <FaReply className="text-xs" />
+              </button>
+              <button
+                onClick={() => deleteMessage(index)}
+                title="Delete"
+                className="hover:text-red-400"
+              >
+                <FaTrash className="text-xs" />
+              </button>
             </div>
           </div>
-        ))}
-
-        {/* ✅ Typing Indicator */}
-        {typing && <div className="text-gray-400 text-xs italic text-center">User is typing...</div>}
+        </div>
       </div>
+    );
+  })}
+  {typing && (
+    <div className="text-center text-gray-300 italic text-xs mt-2">
+      Typing...
+    </div>
+  )}
+</div>
 
-      {/* ✅ Replying to Message Notification */}
+
+      {/* Reply Preview */}
       {replyingTo && (
-        <div className="text-sm text-yellow-500 bg-gray-700 p-2 rounded-lg mt-2">
+        <div className="bg-gray-900 text-yellow-300 px-4 py-2 text-sm border-t border-gray-600">
           Replying to: {replyingTo.text}
-          <button className="ml-2 text-red-400 hover:text-red-500" onClick={() => setReplyingTo(null)}>
-            ✖
-          </button>
+          <button className="ml-2 text-red-400 hover:text-red-500" onClick={() => setReplyingTo(null)}>✖</button>
         </div>
       )}
 
-      {/* ✅ Message Input Field */}
-      <MessageInput sendMessage={sendMessage} setTyping={setTyping} />
+      {/* Input */}
+      <div className="border-t border-gray-700 bg-gray-800 p-3">
+        <MessageInput sendMessage={sendMessage} setTyping={setTyping} />
+      </div>
     </div>
   );
 };

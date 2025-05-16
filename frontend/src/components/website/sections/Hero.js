@@ -14,10 +14,29 @@ import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
 
 const ads = [
-  { id: 1, title: "🔥 Black Friday Deal: 50% Off!", description: "All courses now at half price!", image: "/shared/assets/images/ads/black-friday.jpg", link: "/promotions" },
-  { id: 2, title: "📢 Python Bootcamp Enrollment Open!", description: "Join our advanced Python bootcamp!", image: "/shared/assets/images/ads/python-bootcamp.jpg", link: "/promotions" },
-  { id: 3, title: "🚀 AI Masterclass Discount!", description: "Learn AI from top instructors!", image: "/shared/assets/images/ads/ai-masterclass.jpg", link: "/promotions" },
+  {
+    id: 1,
+    title: "🔥 Black Friday Deal: 50% Off!",
+    description: "All courses now at half price!",
+    image: "/shared/assets/images/ads/black-friday.jpg",
+    link: "/promotions/1"
+  },
+  {
+    id: 2,
+    title: "📢 Python Bootcamp Enrollment Open!",
+    description: "Join our advanced Python bootcamp!",
+    image: "/shared/assets/images/ads/python-bootcamp.jpg",
+    link: "/promotions/2"
+  },
+  {
+    id: 3,
+    title: "🚀 AI Masterclass Discount!",
+    description: "Learn AI from top instructors!",
+    image: "/shared/assets/images/ads/ai-masterclass.jpg",
+    link: "/promotions/3"
+  },
 ];
+
 
 const Hero = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -122,7 +141,7 @@ const Hero = () => {
               </button>
             </Link>
 
-            <Link href="/classes">
+            <Link href="/tutorials">
               <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
                 <FaBookOpen /> Explore Tutorials
               </button>

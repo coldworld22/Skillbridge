@@ -1,6 +1,24 @@
-import { FaMicrophone, FaVideo, FaPhoneSlash, FaUsers, FaCommentDots } from "react-icons/fa";
+import {
+  FaMicrophone,
+  FaVideo,
+  FaPhoneSlash,
+  FaUsers,
+  FaCommentDots,
+  FaRecordVinyl,
+  FaStopCircle,
+  FaDownload,
+} from "react-icons/fa";
 
-const CallControls = ({ onChatToggle, onParticipantsToggle, onEndCall }) => {
+const CallControls = ({
+  onChatToggle,
+  onParticipantsToggle,
+  onEndCall,
+  userRole,
+  isRecording,
+  startRecording,
+  stopRecording,
+  downloadRecording,
+}) => {
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4 bg-gray-800 p-3 rounded-full shadow-lg transition-all">
       <button className="p-3 bg-green-500 rounded-full hover:scale-110 transition">
@@ -18,6 +36,28 @@ const CallControls = ({ onChatToggle, onParticipantsToggle, onEndCall }) => {
       <button className="p-3 bg-red-500 rounded-full hover:scale-110 transition" onClick={onEndCall}>
         <FaPhoneSlash size={18} />
       </button>
+
+      {(userRole === "host" || userRole === "co-host") && (
+        <>
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`p-3 rounded-full transition ${isRecording ? "bg-red-600" : "bg-gray-700 hover:bg-yellow-500"}`}
+            title={isRecording ? "Stop Recording" : "Start Recording"}
+          >
+            {isRecording ? <FaStopCircle size={18} /> : <FaRecordVinyl size={18} />}
+          </button>
+
+          {!isRecording && (
+            <button
+              onClick={downloadRecording}
+              className="p-3 bg-gray-700 rounded-full hover:bg-green-500 transition"
+              title="Download Recording"
+            >
+              <FaDownload size={18} />
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 };

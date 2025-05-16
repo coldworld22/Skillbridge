@@ -1,0 +1,226 @@
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import StudentLayout from '@/components/layouts/StudentLayout';
+import toast from 'react-hot-toast';
+
+const allGroups = [
+  {
+    id: 'g1',
+    name: 'Frontend Wizards',
+    description: 'React, Vue, and modern UI lovers',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
+    createdAt: '2025-01-01',
+  },
+  {
+    id: 'g2',
+    name: 'AI Pioneers',
+    description: 'Discuss machine learning and AI trends',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
+    createdAt: '2025-02-10',
+  },
+  {
+    id: 'g3',
+    name: 'Design Guild',
+    description: 'Figma, UX, and UI talks',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
+    createdAt: '2024-12-05',
+  },
+  {
+    id: 'g4',
+    name: 'Fullstack Ninjas',
+    description: 'Talk everything backend and frontend',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
+    createdAt: '2025-03-01',
+  },
+  {
+    id: 'g5',
+    name: 'Crypto Coders',
+    description: 'Blockchain, Web3, and decentralization',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
+    createdAt: '2024-11-20',
+  },
+  {
+    id: 'g6',
+    name: 'Math Masters',
+    description: 'Solving equations and proofs together',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
+    createdAt: '2024-10-10',
+  },
+  {
+    id: 'g7',
+    name: 'Cyber Security Squad',
+    description: 'Pen testing, exploits and more',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
+    createdAt: '2025-03-15',
+  },
+];
+
+const initialStudentGroups = [
+  { groupId: 'g1', role: 'admin' },
+  { groupId: 'g2', role: 'member' },
+  { groupId: 'g3', role: 'pending' },
+  { groupId: 'g4', role: 'admin' },
+  { groupId: 'g5', role: 'member' },
+  { groupId: 'g6', role: 'pending' },
+  { groupId: 'g7', role: 'member' },
+];
+
+export default function MyGroupsPage() {
+  const [studentGroups, setStudentGroups] = useState(initialStudentGroups);
+  const [filteredGroups, setFilteredGroups] = useState([]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [visibleCount, setVisibleCount] = useState(6);
+
+  const tabs = ['all', 'admin', 'member', 'pending'];
+
+  useEffect(() => {
+    const enriched = studentGroups.map((sg) => {
+      const group = allGroups.find((g) => g.id === sg.groupId);
+      return { ...group, role: sg.role };
+    });
+
+    let filtered = activeTab === 'all' ? enriched : enriched.filter((g) => g.role === activeTab);
+
+    if (sortBy === 'newest') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sortBy === 'az') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    setFilteredGroups(filtered);
+  }, [studentGroups, activeTab, sortBy]);
+
+  const cancelJoinRequest = (groupId) => {
+    setStudentGroups((prev) => prev.filter((g) => g.groupId !== groupId));
+    toast.success('Join request cancelled.');
+  };
+
+  const renderGroupCard = (group) => (
+    <div key={group.id} className="bg-white border rounded-lg p-4 shadow space-y-2 hover:shadow-md transition">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{group.name}</h3>
+        <span
+          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium capitalize ${
+            group.role === 'admin'
+              ? 'bg-green-100 text-green-700'
+              : group.role === 'member'
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-yellow-100 text-yellow-800'
+          }`}
+        >
+          {group.role === 'admin' && '👑 Admin'}
+          {group.role === 'member' && '🙋 Member'}
+          {group.role === 'pending' && '⏳ Pending'}
+        </span>
+      </div>
+      <img src={group.image} alt={group.name} className="w-full h-32 object-cover rounded" />
+      <p className="text-sm text-gray-600">{group.description}</p>
+      <p className="text-xs text-gray-400">🕒 Last updated: 2d ago</p>
+
+      <div className="flex -space-x-2 pt-1">
+        {[...Array(3)].map((_, i) => (
+          <img
+            key={i}
+            src={`https://i.pravatar.cc/40?img=${i + 1}`}
+            className="w-6 h-6 rounded-full border"
+            alt="member avatar"
+          />
+        ))}
+      </div>
+
+      <div className="pt-2 flex gap-2">
+        {group.role === 'admin' && (
+          <Link href={`/dashboard/student/groups/${group.id}`}>
+            <button className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 text-sm">
+              Manage Group
+            </button>
+          </Link>
+        )}
+        {group.role === 'member' && (
+          <Link href={`/dashboard/student/groups/${group.id}`}>
+            <button className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 text-sm">
+              Open Group
+            </button>
+          </Link>
+        )}
+        {group.role === 'pending' && (
+          <>
+            <button
+              disabled
+              className="bg-yellow-400 text-white px-4 py-1 rounded text-sm cursor-not-allowed"
+            >
+              Waiting Approval
+            </button>
+            <button
+              onClick={() => cancelJoinRequest(group.id)}
+              className="text-red-500 text-sm underline ml-1"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <StudentLayout>
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <h1 className="text-2xl font-bold">📂 My Groups</h1>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-3 mb-4">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                activeTab === tab
+                  ? 'bg-yellow-500 text-white border-yellow-500'
+                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="ml-auto px-2 py-1 text-sm border rounded"
+          >
+            <option value="newest">🆕 Newest</option>
+            <option value="az">🔤 A-Z</option>
+          </select>
+        </div>
+
+        {/* Group Cards */}
+        {filteredGroups.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {filteredGroups.slice(0, visibleCount).map(renderGroupCard)}
+            </div>
+            {visibleCount < filteredGroups.length && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 6)}
+                  className="px-4 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                >
+                  Load More
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-gray-500">
+            No groups in this category.{' '}
+            <Link href="/dashboard/student/groups/explore" className="text-blue-600 underline">
+              Explore public groups
+            </Link>
+          </p>
+        )}
+      </div>
+    </StudentLayout>
+  );
+}

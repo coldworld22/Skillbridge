@@ -1,50 +1,64 @@
-import React from "react";
-import { FaMicrophone, FaVideo, FaPhoneSlash, FaCommentDots, FaDesktop, FaUserCircle } from "react-icons/fa";
+// ParticipantList.js
+import { FaMicrophoneSlash, FaUserShield, FaTimes } from "react-icons/fa";
 
-const CallControls = ({ onChatToggle, onEndCall }) => {
+const participantsMock = [
+  { id: 1, name: "Ayman", role: "host", isMuted: false },
+  { id: 2, name: "Sara", role: "participant", isMuted: false },
+  { id: 3, name: "Omar", role: "participant", isMuted: true },
+];
+
+export default function ParticipantList({ chatId, userRole = "participant" }) {
+  const handleMute = (id) => {
+    console.log("Muted", id);
+    // TODO: Emit socket event or API call
+  };
+
+  const handleRemove = (id) => {
+    console.log("Removed", id);
+    // TODO: Emit socket event or API call
+  };
+
+  const handleMakeCoHost = (id) => {
+    console.log("Promoted to Co-Host", id);
+    // TODO: Emit socket event or API call
+  };
+
   return (
-    <div className="bg-gray-700 p-4 flex justify-center gap-6">
-      <button className="p-3 bg-gray-600 rounded-full text-white hover:bg-gray-500">
-        <FaMicrophone />
-      </button>
-      <button className="p-3 bg-gray-600 rounded-full text-white hover:bg-gray-500">
-        <FaVideo />
-      </button>
-      <button className="p-3 bg-red-600 rounded-full text-white hover:bg-red-500" onClick={onEndCall}>
-        <FaPhoneSlash />
-      </button>
-      <button className="p-3 bg-gray-600 rounded-full text-white hover:bg-gray-500" onClick={onChatToggle}>
-        <FaCommentDots />
-      </button>
-      <button className="p-3 bg-gray-600 rounded-full text-white hover:bg-gray-500">
-        <FaDesktop />
-      </button>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-yellow-400">👥 Participants</h3>
+      {participantsMock.map((user) => (
+        <div
+          key={user.id}
+          className="flex justify-between items-center bg-gray-700 p-3 rounded-lg"
+        >
+          <div>
+            <div className="font-medium">{user.name}</div>
+            <div className="text-sm text-gray-300">{user.role}</div>
+          </div>
+          {userRole === "host" && user.role !== "host" && (
+            <div className="flex gap-2">
+              <button
+                className="p-2 bg-yellow-500 rounded hover:bg-yellow-600"
+                onClick={() => handleMute(user.id)}
+              >
+                <FaMicrophoneSlash />
+              </button>
+              <button
+                className="p-2 bg-blue-500 rounded hover:bg-blue-600"
+                onClick={() => handleMakeCoHost(user.id)}
+              >
+                <FaUserShield />
+              </button>
+              <button
+                className="p-2 bg-red-500 rounded hover:bg-red-600"
+                onClick={() => handleRemove(user.id)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
-};
-
-const ParticipantList = ({ participants = [] }) => {
-  return (
-    <div className="bg-gray-800 p-4 w-1/4 min-h-full border-l border-gray-600">
-      <h3 className="text-lg font-semibold text-white mb-4">Participants</h3>
-      <ul className="space-y-3">
-        {participants.length > 0 ? (
-          participants.map((participant, index) => (
-            <li key={index} className="flex items-center gap-3 text-white bg-gray-700 p-2 rounded-lg">
-              <FaUserCircle className="text-gray-400 text-2xl" />
-              <span>{participant.name}</span>
-              <span className={`ml-auto text-sm ${participant.isMuted ? 'text-red-500' : 'text-green-500'}`}>
-                {participant.isMuted ? 'Muted' : 'Active'}
-              </span>
-            </li>
-          ))
-        ) : (
-          <p className="text-gray-400">No participants yet.</p>
-        )}
-      </ul>
-    </div>
-  );
-};
-
-export { CallControls, ParticipantList };
-export default CallControls;
+}

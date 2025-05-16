@@ -1,31 +1,58 @@
-import { useState } from "react";
-import { FaUsers, FaCheck } from "react-icons/fa";
+import { useState } from 'react';
+import MessageInput from './MessageInput';
+import MessageList from './MessageList';
+import TypingIndicator from './TypingIndicator';
+import ChatGroupHeader from './ChatGroupHeader';
 
-const GroupChat = () => {
-  const [groupName, setGroupName] = useState("");
-  const [members, setMembers] = useState([]);
+const mockMessages = [
+  { id: 1, sender: 'Sarah', text: 'Welcome to the group!', timestamp: new Date().toISOString() },
+  { id: 2, sender: 'Ali', text: 'Thanks! Happy to be here.', timestamp: new Date().toISOString() },
+];
 
-  const createGroup = () => {
-    console.log("Group Created:", groupName, members);
+export default function GroupChat({ groupId }) {
+  const [messages, setMessages] = useState(mockMessages);
+  const [typing, setTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+
+  const sendMessage = (newMessage) => {
+    setMessages((prev) => [...prev, { ...newMessage, id: Date.now(), timestamp: new Date().toISOString() }]);
+  };
+
+  const handleDelete = (id) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  };
+
+  const handlePin = (id) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, pinned: !msg.pinned } : msg))
+    );
+  };
+
+  const handleReply = (message) => {
+    setReplyTo(message);
   };
 
   return (
-    <div className="p-6 bg-gray-900 rounded-lg text-white">
-      <h2 className="text-xl font-bold flex items-center">
-        <FaUsers className="mr-2 text-yellow-500" /> Create Group Chat
-      </h2>
-      <input
-        type="text"
-        placeholder="Group Name"
-        value={groupName}
-        onChange={(e) => setGroupName(e.target.value)}
-        className="w-full p-2 mt-2 bg-gray-800 rounded"
+    <div className="space-y-4">
+      <ChatGroupHeader groupId={groupId} />
+
+      <div className="h-64 overflow-y-auto bg-gray-100 dark:bg-gray-800 border rounded p-3">
+        <MessageList
+          messages={messages}
+          onDelete={handleDelete}
+          onPin={handlePin}
+          onReply={handleReply}
+        />
+      </div>
+
+      <TypingIndicator isTyping={typing} />
+
+      <MessageInput
+        sendMessage={sendMessage}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+        onTyping={(isTyping) => setTyping(isTyping)}
       />
-      <button onClick={createGroup} className="mt-4 bg-yellow-500 p-2 rounded flex items-center justify-center">
-        <FaCheck className="mr-2" /> Create
-      </button>
     </div>
   );
-};
-
-export default GroupChat;
+}

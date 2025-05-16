@@ -1,0 +1,252 @@
+// ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
+import { useState } from "react";
+import Link from "next/link";
+import {
+  FaCalendarAlt,
+  FaSearch,
+  FaDownload,
+  FaUserGraduate,
+  FaChartBar,
+  FaCheck,
+  FaTimes,
+  FaEdit,
+  FaTrash,
+  FaChevronLeft,
+  FaChevronRight
+} from "react-icons/fa";
+
+export default function AdminClassesTable({ classes = [] }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [sortKey, setSortKey] = useState("date");
+  const [classList, setClassList] = useState(classes);
+  const [modalClass, setModalClass] = useState(null);
+  const [modalType, setModalType] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const filteredClasses = classList
+    .filter((cls) =>
+      cls.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cls.instructor.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((cls) => (filterStatus ? cls.status === filterStatus : true))
+    .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
+
+  const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
+  const paginatedClasses = filteredClasses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const exportCSV = () => {
+    const headers = ["Title", "Instructor", "Date", "Category", "Price", "Status"];
+    const rows = classList.map(cls => [
+      cls.title, cls.instructor, cls.date, cls.category, cls.price, cls.status
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "online_classes.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleStatusChange = (id, newStatus) => {
+    setClassList(prev =>
+      prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
+    );
+    setModalClass(null);
+  };
+
+  const handleDeleteClass = (id) => {
+    setClassList(prev => prev.filter(cls => cls.id !== id));
+    setModalClass(null);
+  };
+
+  const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const handleNext = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+
+  return (
+    <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 w-full sm:w-1/2">
+          <FaSearch className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by title or instructor"
+            className="border border-gray-300 rounded-xl px-4 py-2 w-full text-sm focus:ring-2 focus:ring-yellow-500"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 w-full sm:w-1/2 justify-end items-center">
+          <select
+            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <select
+            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
+            onChange={(e) => setSortKey(e.target.value)}
+          >
+            <option value="date">Sort by Date</option>
+            <option value="title">Sort by Title</option>
+            <option value="instructor">Sort by Instructor</option>
+          </select>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            className="border border-gray-300 rounded-xl px-2 py-2 text-sm"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={filteredClasses.length}>All</option>
+          </select>
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-xl px-4 py-2"
+            title="Export all classes to CSV"
+          >
+            <FaDownload /> Export
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-gray-700 text-sm uppercase">
+            <tr>
+              <th className="px-6 py-3 text-left">Title</th>
+              <th className="px-6 py-3 text-left">Instructor</th>
+              <th className="px-6 py-3 text-left">Date</th>
+              <th className="px-6 py-3 text-left">Category</th>
+              <th className="px-6 py-3 text-left">Price</th>
+              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {paginatedClasses.map((cls) => (
+              <tr key={cls.id} className="hover:bg-yellow-50">
+                <td className="px-6 py-4 font-semibold">{cls.title}</td>
+                <td className="px-6 py-4">{cls.instructor}</td>
+                <td className="px-6 py-4">{cls.date}</td>
+                <td className="px-6 py-4">{cls.category}</td>
+                <td className="px-6 py-4">${cls.price}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
+                    Upcoming: 'bg-green-100 text-green-800',
+                    Ongoing: 'bg-blue-100 text-blue-800',
+                    Completed: 'bg-gray-300 text-gray-800',
+                    Rejected: 'bg-red-100 text-red-700'
+                  }[cls.status] || 'bg-yellow-100 text-yellow-700'}`}>
+                    {cls.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right space-x-1 space-y-1">
+                  <button title="Approve Class"
+                    onClick={() => handleStatusChange(cls.id, 'Approved')}
+                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
+                    <FaCheck />
+                  </button>
+                  <button title="Reject Class"
+                    onClick={() => { setModalClass(cls); setModalType('reject'); }}
+                    className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
+                    <FaTimes />
+                  </button>
+                  <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} title="Manage Class">
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+                      <FaEdit />
+                    </button>
+                  </Link>
+                  <button title="Delete Class"
+                    onClick={() => { setModalClass(cls); setModalType('delete'); }}
+                    className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">
+                    <FaTrash />
+                  </button>
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}/students`} title="View Enrolled Students">
+                    <button className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow">
+                      <FaUserGraduate />
+                    </button>
+                  </Link>
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}`} title="View Class Details">
+                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow">
+                      <FaCalendarAlt />
+                    </button>
+                  </Link>
+                  <Link href={`/dashboard/admin/online-classes/${cls.id}/analytics`}>
+                    <button
+                      title="View Analytics"
+                      className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
+                    >
+                      <FaChartBar /> Analytics
+                    </button>
+                  </Link>
+
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-gray-500">
+            Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredClasses.length)} of {filteredClasses.length} classes
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handlePrev} disabled={currentPage === 1} className="text-sm px-3 py-1 bg-gray-200 hover:bg-yellow-100 rounded disabled:opacity-50">
+              <FaChevronLeft />
+            </button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`text-sm px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-yellow-500 text-white' : 'bg-gray-100 hover:bg-yellow-100'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button onClick={handleNext} disabled={currentPage === totalPages} className="text-sm px-3 py-1 bg-gray-200 hover:bg-yellow-100 rounded disabled:opacity-50">
+              <FaChevronRight />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal */}
+      {modalClass && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl text-center">
+            <h2 className="text-xl font-bold mb-2">{modalType === 'reject' ? 'Confirm Rejection' : 'Confirm Deletion'}</h2>
+            <p className="mb-4 text-gray-600">Are you sure you want to {modalType} <strong>{modalClass.title}</strong>?</p>
+            <div className="flex justify-center gap-4">
+              <button onClick={() => setModalClass(null)} className="bg-gray-200 px-4 py-2 rounded">Cancel</button>
+              <button
+                onClick={() => modalType === 'reject'
+                  ? handleStatusChange(modalClass.id, 'Rejected')
+                  : handleDeleteClass(modalClass.id)}
+                className={`px-4 py-2 rounded text-white ${modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'}`}
+              >
+                Yes, {modalType === 'reject' ? 'Reject' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

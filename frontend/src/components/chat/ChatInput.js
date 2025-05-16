@@ -1,32 +1,40 @@
-import { useState } from "react";
-import { FaPaperPlane } from "react-icons/fa";
-import EmojiPicker from "./EmojiPicker";
+import React, { useState } from 'react';
+import { filterMessage } from './MessageFilter';
 
-const ChatInput = ({ onSendMessage }) => {
-  const [message, setMessage] = useState("");
+function ChatInput() {
+  const [message, setMessage] = useState('');
 
-  const sendMessage = () => {
-    if (message.trim() !== "") {
-      onSendMessage(message);
-      setMessage("");
+  const handleSend = () => {
+    const { isClean, matchedWords } = filterMessage(message);
+
+    if (!isClean) {
+      alert(`⚠️ Inappropriate language detected: ${matchedWords.join(', ')}`);
+      // TODO: log to moderation system or send to admin
+      return;
     }
+
+    // send message
+    console.log('Message sent:', message);
+    setMessage('');
   };
 
   return (
-    <div className="flex mt-2">
-      <EmojiPicker onSelectEmoji={(emoji) => setMessage((prev) => prev + emoji)} />
+    <div className="flex items-center w-full">
       <input
         type="text"
+        placeholder="Type a message..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="Type a message..."
-        className="w-full p-2 border rounded-l-lg focus:outline-none"
+        className="flex-1 px-4 py-2 rounded-md bg-gray-800 text-white focus:outline-none"
       />
-      <button onClick={sendMessage} className="px-6 bg-yellow-500 text-black rounded-r-lg hover:bg-yellow-600 transition">
-        <FaPaperPlane />
+      <button
+        onClick={handleSend}
+        className="ml-2 bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-md"
+      >
+        Send
       </button>
     </div>
   );
-};
+}
 
 export default ChatInput;

@@ -64,24 +64,8 @@ const NFTMarketplace = () => {
           </div>
 
           {/* NFT Grid (Show up to `visibleCount` NFTs) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {filteredNFTs.slice(0, visibleCount).map((nft) => (
-              <motion.div key={nft.id} whileHover={{ scale: 1.05 }}
-                className="bg-gray-800 p-6 rounded-lg shadow-xl relative">
-                <Image src={nft.image} alt={nft.title} className="rounded-lg" width={400} height={300} />
-                <h3 className="text-xl font-bold mt-4">{nft.title}</h3>
-                <p className="text-gray-400 text-sm">{nft.category}</p>
-                <div className="flex justify-between items-center mt-4">
-                  <span className="text-yellow-400 flex items-center gap-2">
-                    <FaEthereum /> {nft.price} ETH
-                  </span>
-                  <button className="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600 transition">
-                    <FaShoppingCart /> Buy Now
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          
+          
 
           {/* Show More Button */}
           {visibleCount < filteredNFTs.length && (
@@ -101,4 +85,4 @@ const NFTMarketplace = () => {
   );
 };
 
-export default NFTMarketplace;
+export default NFT ;

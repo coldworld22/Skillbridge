@@ -71,4 +71,59 @@ body {
   background-color: #1f2937 !important;
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+.input-floating {
+  @apply block w-full rounded-md border border-gray-300 dark:border-gray-700 
+  bg-white dark:bg-gray-800 px-3 pt-5 pb-2 text-sm text-gray-900 dark:text-white 
+  placeholder-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500 
+  focus:border-yellow-500 transition-all;
+}
+
+.form-label {
+  @apply block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300;
+}
+
+.form-section {
+  @apply mb-8;
+}
+
+.transition-base {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+  -webkit-text-fill-color: #000 !important;
+}
+.dark input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(229, 231, 235, 0.3);
+}
+
+
+
+
   

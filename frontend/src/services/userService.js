@@ -1,19 +1,43 @@
-import axios from "axios";
+// src/services/userService.js
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const mockUsers = [
+  { id: 'u1', name: 'Ali Hassan', email: 'ali@example.com' },
+  { id: 'u2', name: 'Sarah Youssef', email: 'sarah@example.com' },
+  { id: 'u3', name: 'Mohammed Fathy', email: 'm.fathy@example.com' },
+  { id: 'u4', name: 'Lina Ahmed', email: 'lina.ahmed@example.com' },
+];
 
-// Get User Profile
-export const getUserProfile = async (userId) => {
-  const response = await axios.get(`${API_URL}/users/${userId}`);
-  return response.data;
+// ✅ Mock: Search Users by name/email
+const searchUsers = async (query) => {
+  return mockUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(query.toLowerCase()) ||
+      user.email.toLowerCase().includes(query.toLowerCase())
+  );
 };
 
-// Update User Profile
-export const updateUserProfile = async (userId, userData) => {
-  return await axios.put(`${API_URL}/users/${userId}`, userData);
+// ✅ Mock: Get User Profile
+const getUserProfile = async (userId) => {
+  return mockUsers.find((u) => u.id === userId);
 };
 
-// Change Password
-export const changePassword = async (userId, passwordData) => {
-  return await axios.post(`${API_URL}/users/change-password/${userId}`, passwordData);
+// ✅ Mock: Update User Profile
+const updateUserProfile = async (userId, userData) => {
+  console.log(`Updating user ${userId}`, userData);
+  return { ...userData, id: userId };
 };
+
+// ✅ Mock: Change Password
+const changePassword = async (userId, passwordData) => {
+  console.log(`Changing password for ${userId}`, passwordData);
+  return true;
+};
+
+const userService = {
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+  searchUsers,
+};
+
+export default userService;

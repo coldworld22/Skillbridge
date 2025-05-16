@@ -1,61 +1,79 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { FaUpload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
-export default function AIFeedback() {
-  const [file, setFile] = useState(null);
+const models = [
+  { key: "chatgpt", label: "ChatGPT 4" },
+  { key: "deepseek", label: "DeepSeek AI" }
+];
+
+export default function InstantFeedbackPage() {
+  const [selectedModel, setSelectedModel] = useState("chatgpt");
+  const [text, setText] = useState("");
   const [feedback, setFeedback] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleFileUpload = (event) => {
-    setFile(event.target.files[0]);
-  };
+  const handleSubmit = () => {
+    if (!text.trim()) return;
+    setLoading(true);
+    setFeedback(null);
 
-  const handleSubmit = async () => {
-    if (!file) return;
-    setIsSubmitting(true);
+    setTimeout(() => {
+      setFeedback(
+        `🤖 [${selectedModel.toUpperCase()}] Feedback:
 
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("/api/ai-feedback", {
-      method: "POST",
-      body: formData,
-    });
-    
-    const data = await response.json();
-    setFeedback(data.feedback);
-    setIsSubmitting(false);
+Great structure! Make sure to elaborate more on paragraph 2.
+Keep your tone consistent and cite sources properly.`
+      );
+      setLoading(false);
+    }, 1500);
   };
 
   return (
-    <div className="p-10 bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold">🔍 AI-Powered Feedback</h1>
-      <p className="mt-4 text-lg text-gray-300">Submit your assignment and get AI-generated feedback.</p>
-      
-      <div className="mt-6 bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-xl w-full">
-        <label className="block mb-4 cursor-pointer p-4 border border-dashed border-gray-500 rounded-lg text-gray-300 hover:bg-gray-700 transition">
-          <FaUpload className="inline-block text-yellow-500 mr-2" /> Upload Assignment
-          <input type="file" className="hidden" onChange={handleFileUpload} />
-        </label>
-        {file && <p className="text-gray-400">📄 {file.name}</p>}
-        
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          disabled={!file || isSubmitting}
-          onClick={handleSubmit}
-          className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-semibold text-lg rounded-lg shadow-lg hover:bg-yellow-600 transition w-full disabled:opacity-50"
-        >
-          {isSubmitting ? "Submitting..." : "Get AI Feedback"}
-        </motion.button>
-      </div>
-      
-      {feedback && (
-        <div className="mt-6 bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full text-left">
-          <h2 className="text-2xl font-bold text-yellow-400">Feedback</h2>
-          <p className="text-gray-300 mt-2">{feedback}</p>
+    <div className="min-h-screen bg-gray-900 text-white py-20 px-6">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold text-yellow-400 mb-4">📄 Instant Feedback</h1>
+        <p className="text-gray-300 mb-6">
+          Paste or type your assignment below and receive instant AI-powered feedback.
+        </p>
+
+        {/* Model Selector */}
+        <div className="flex gap-6 mb-4">
+          {models.map((m) => (
+            <label key={m.key} className="flex items-center gap-2 text-sm text-gray-300">
+              <input
+                type="radio"
+                name="model"
+                value={m.key}
+                checked={selectedModel === m.key}
+                onChange={() => setSelectedModel(m.key)}
+                className="accent-yellow-500"
+              />
+              {m.label}
+            </label>
+          ))}
         </div>
-      )}
+
+        <textarea
+          rows={8}
+          className="w-full bg-gray-800 border border-gray-600 text-white p-4 rounded-lg mb-4"
+          placeholder="Paste your assignment text here..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        ></textarea>
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !text.trim()}
+          className="bg-yellow-500 text-gray-900 px-6 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
+        >
+          {loading ? "Analyzing..." : "Get Feedback"}
+        </button>
+
+        {feedback && (
+          <div className="mt-6 bg-gray-800 p-4 rounded-lg text-gray-300 whitespace-pre-wrap">
+            {feedback}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

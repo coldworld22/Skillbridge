@@ -5,24 +5,20 @@ import Navbar from "@/components/website/sections/Navbar";
 import Hero from "@/components/website/sections/Hero";
 import OnlineClasses from "@/components/website/sections/OnlineClasses";
 import StudyCategories from "@/components/website/sections/StudyCategories";
-import FeaturedCourses from "@/components/website/sections/FeaturedCourses";
 import CommunityEngagement from "@/components/website/sections/CommunityEngagement";
-import FeaturedInstructors from "@/components/website/sections/FeaturedInstructors";
 import LearningMarketplace from "@/components/website/sections/LearningMarketplace";
 import StudyGroups from "@/components/website/sections/StudyGroups";
 import InstructorBooking from "@/components/website/sections/InstructorBooking";
 import SubscriptionPlans from "@/components/website/sections/SubscriptionPlans";
 import TutorialsSection from "@/components/website/sections/TutorialsSection";
 import Footer from "@/components/website/sections/Footer";
-import ProblemSolvingSection from "@/components/website/sections/ProblemSolvingSection";
 import AITutoring from "@/components/website/sections/AITutoring";
 
 export default function Home() {
   const sections = [
-    Hero, OnlineClasses, LearningMarketplace, StudyCategories,
-    StudyGroups, InstructorBooking, SubscriptionPlans, TutorialsSection,
-    ProblemSolvingSection, AITutoring, FeaturedCourses, CommunityEngagement,
-    FeaturedInstructors, Footer // ✅ Removed last section before the footer
+    Hero, OnlineClasses, TutorialsSection, LearningMarketplace, StudyCategories,
+    StudyGroups, InstructorBooking, SubscriptionPlans
+    , AITutoring, CommunityEngagement, Footer // ✅ Removed last section before the footer
   ];
 
   const sectionRefs = useRef(sections.map(() => useRef(null)));

@@ -1,75 +1,128 @@
-import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
-import Navbar from "@/components/website/sections/Navbar";
-import Footer from "@/components/website/sections/Footer";
-import LiveClassDetails from "@/components/online-classes/LiveClassDetails";
+// pages/online-classes/[id].js
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import Navbar from '@/components/website/sections/Navbar';
+import Footer from '@/components/website/sections/Footer';
+import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 
-// Dummy Data (Replace this with API call in the future)
-const dummyLiveClasses = [
+const mockClassList = [
   {
-    id: 1,
-    title: "Live React.js Bootcamp",
-    instructor: "John Doe",
-    date: "March 25, 2025",
-    time: "10:00 AM - 12:00 PM",
-    description: "Join us for a hands-on React.js bootcamp!",
-    resources: [
-      { name: "React Cheat Sheet", url: "/files/react-cheat-sheet.pdf" },
-      { name: "Class Slides", url: "/files/react-slides.pdf" },
+    id: '2',
+    title: 'React & Next.js Bootcamp',
+    instructor: 'Ayman Khalid',
+    date: '2025-05-13',
+    price: 49,
+    spotsLeft: 4,
+    duration: '1 Month',
+    category: 'Web Development',
+    image: 'https://bs-uploads.toptal.io/blackfish-uploads/components/blog_post_page/5912616/cover_image/retina_1708x683/1015_Next.js_vs._React-_A_Comparative_Tutorial_Illustration_Brief_Blog-e14319490440a98149fbda4e651f8526.png',
+    description: "This intensive bootcamp covers React fundamentals, advanced hooks, and dives deep into building fullstack apps with Next.js — perfect for frontend developers looking to scale up.",
+    syllabus: [
+      "Introduction to React",
+      "JSX and State Management",
+      "React Router and Hooks",
+      "Next.js Basics and Routing",
+      "Server-Side Rendering",
+      "Deploying Next.js Apps"
     ],
-  },
-  {
-    id: 2,
-    title: "AI & Machine Learning Live Session",
-    instructor: "Alice Smith",
-    date: "April 5, 2025",
-    time: "2:00 PM - 4:00 PM",
-    description: "Explore AI & ML with top experts!",
-    resources: [
-      { name: "AI Research Paper", url: "/files/ai-research.pdf" },
-      { name: "Machine Learning Basics", url: "/files/ml-basics.pdf" },
-    ],
-  },
+    instructorBio: "Ayman Khalid is a full-stack engineer with 10+ years of experience building web apps, teaching over 1,200 students.",
+    instructorImage: 'https://randomuser.me/api/portraits/men/32.jpg'
+  }
 ];
 
-const LiveClassPage = () => {
+export default function ClassDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [liveClass, setLiveClass] = useState(null);
+  const [classInfo, setClassInfo] = useState(null);
 
-  // Simulating fetching data (Replace with API call)
   useEffect(() => {
     if (id) {
-      const foundClass = dummyLiveClasses.find((c) => c.id === parseInt(id));
-      setLiveClass(foundClass || null);
+      const found = mockClassList.find((cls) => cls.id === id);
+      setClassInfo(found);
     }
   }, [id]);
 
-  if (!liveClass) {
-    return (
-      <div className="bg-gray-900 min-h-screen text-white">
-        <Navbar />
-        <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-3xl font-bold text-red-500">Class Not Found</h1>
-          <button
-            onClick={() => router.push("/online-classes")}
-            className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
-          >
-            Go Back to Classes
-          </button>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (
-    <div className="bg-gray-900 min-h-screen text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
       <Navbar />
-      <LiveClassDetails liveClass={liveClass} />
+
+      <main className="max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row items-start gap-8 mb-10">
+          <div className="flex-1">
+            <h1 className="text-yellow-400 text-xl font-semibold uppercase tracking-wide mb-2">Featured Class</h1>
+            <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-yellow-400 mb-4">
+              {classInfo.title}
+            </h2>
+            <p className="text-sm text-gray-400">
+              <span className="font-semibold text-white">Instructor:</span> {classInfo.instructor}
+            </p>
+            <p className="italic mt-2 text-gray-400">{classInfo.instructorBio}</p>
+          </div>
+          <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-yellow-400 shadow-md">
+            <img src={classInfo.instructorImage} alt={classInfo.instructor} className="w-full h-full object-cover" />
+          </div>
+        </div>
+
+        <img
+          src={classInfo.image}
+          alt={classInfo.title}
+          className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
+        />
+
+        <p className="mb-8 text-lg leading-relaxed text-gray-300 text-justify">
+          {classInfo.description}
+        </p>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 text-sm text-gray-300">
+          <p><strong>Date:</strong> {classInfo.date}</p>
+          <p><strong>Duration:</strong> {classInfo.duration}</p>
+          <p><strong>Category:</strong> {classInfo.category}</p>
+          <p><strong>Available Spots:</strong> {classInfo.spotsLeft}</p>
+          <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
+        </div>
+
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">What you'll learn</h2>
+          <ul className="list-disc pl-6 space-y-2 text-gray-300">
+            {classInfo.syllabus?.map((topic, index) => (
+              <li key={index}>{topic}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="text-xl font-semibold mb-4 text-white">Student Reviews</h2>
+          <div className="bg-gray-800 p-6 rounded-xl shadow-lg space-y-3">
+            <p className="text-yellow-400 font-bold text-lg">⭐⭐⭐⭐☆</p>
+            <p className="text-sm text-gray-300">“Great content and well-paced lessons!” – Sarah M.</p>
+            <p className="text-sm text-gray-300">“The live sessions helped a lot.” – Ahmed F.</p>
+          </div>
+        </section>
+
+        <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
+          <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
+          <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
+          <button
+            onClick={() => router.push(`/payments/checkout?classId=${id}`)}
+            className="w-full sm:w-auto px-8 py-3 bg-yellow-500 text-gray-900 font-semibold rounded-full hover:bg-yellow-600 transition duration-300 shadow-lg"
+          >
+            {classInfo.price === 0 ? 'Enroll for Free' : 'Proceed to Payment'}
+          </button>
+        </section>
+
+        <div className="flex flex-wrap items-center gap-4 text-gray-300">
+          <span className="font-medium">Share this class:</span>
+          <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaFacebook size={22} /></a>
+          <a href={`https://twitter.com/intent/tweet?url=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaTwitter size={22} /></a>
+          <a href={`https://wa.me/?text=${shareUrl}`} target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaWhatsapp size={22} /></a>
+        </div>
+      </main>
+
       <Footer />
     </div>
   );
-};
-
-export default LiveClassPage;
+}

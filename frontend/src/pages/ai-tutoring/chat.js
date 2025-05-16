@@ -1,88 +1,82 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FaRobot, FaPaperPlane } from 'react-icons/fa';
+import { useState } from "react";
 
-/**
- * AI Chat Tutor component
- */
-export default function AIChatTutor() {
-  const [message, setMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
+const models = [
+  { key: "chatgpt", label: "ChatGPT 4" },
+  { key: "deepseek", label: "DeepSeek AI" }
+];
 
-  /**
-   * Handles sending a message
-   */
-  const handleSendMessage = async () => {
-    if (!message.trim()) return;
+export default function AIChatTutorPage() {
+  const [selectedModel, setSelectedModel] = useState("chatgpt");
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
 
-    const userMessage = { sender: 'user', text: message };
-    setChatHistory((prev) => [...prev, userMessage]);
-    setMessage('');
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const userMessage = { sender: "user", text: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
 
-    try {
-      const response = await fetch('/api/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
-      });
-      const data = await response.json();
-
-      setChatHistory((prev) => [
-        ...prev,
-        { sender: 'ai', text: data.response },
-      ]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
+    // Simulate AI response
+    setTimeout(() => {
+      const aiReply = {
+        sender: "ai",
+        text: `🤖 [${selectedModel.toUpperCase()}] Here’s a helpful explanation for: "${userMessage.text}"`
+      };
+      setMessages((prev) => [...prev, aiReply]);
+    }, 1000);
   };
 
   return (
-    <div className="p-10 bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold">
-        <FaRobot className="inline-block mr-2" />
-        AI Chat Tutor
-      </h1>
-      <p className="mt-4 text-lg text-gray-300">
-        Chat with an AI tutor for real-time answers and explanations.
-      </p>
-
-      <div className="mt-6 w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col">
-        <div className="h-80 overflow-y-auto p-4 border border-gray-700 rounded-lg bg-gray-900">
-          {chatHistory.length === 0 ? (
-            <p className="text-gray-500 text-center">
-              Start a conversation by asking a question...
-            </p>
-          ) : (
-            chatHistory.map((msg, index) => (
-              <div
-                key={index}
-                className={`p-3 my-2 rounded-lg w-fit ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-500 self-end'
-                    : 'bg-gray-700 self-start'
-                }`}
-              >
-                {msg.text}
-              </div>
-            ))
-          )}
+    <div className="min-h-screen bg-gray-900 text-white py-10 px-4">
+      <div className="max-w-3xl mx-auto flex flex-col h-[80vh] border border-gray-700 rounded-lg overflow-hidden">
+        {/* Model Selector */}
+        <div className="bg-gray-800 p-4 flex gap-6 justify-center border-b border-gray-700">
+          {models.map((model) => (
+            <label key={model.key} className="flex items-center gap-2 text-sm text-gray-300">
+              <input
+                type="radio"
+                name="model"
+                value={model.key}
+                checked={selectedModel === model.key}
+                onChange={() => setSelectedModel(model.key)}
+                className="accent-yellow-500"
+              />
+              {model.label}
+            </label>
+          ))}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        {/* Chat History */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900">
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`max-w-[80%] px-4 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                msg.sender === "user"
+                  ? "bg-yellow-500 text-gray-900 self-end"
+                  : "bg-gray-700 text-gray-200 self-start"
+              }`}
+            >
+              {msg.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Chat Input */}
+        <div className="bg-gray-800 p-4 flex gap-2 border-t border-gray-700">
           <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600"
-            placeholder="Ask the AI tutor..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Ask your AI tutor..."
+            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none"
           />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            onClick={handleSendMessage}
-            className="p-3 bg-yellow-500 text-gray-900 font-semibold rounded-lg shadow-lg hover:bg-yellow-600 transition"
+          <button
+            onClick={sendMessage}
+            className="bg-yellow-500 text-gray-900 font-semibold px-4 py-2 rounded-lg hover:bg-yellow-600"
           >
-            <FaPaperPlane />
-          </motion.button>
+            Send
+          </button>
         </div>
       </div>
     </div>

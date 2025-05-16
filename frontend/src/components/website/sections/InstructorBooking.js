@@ -1,124 +1,257 @@
-import { useState } from "react";
+// ✅ Enhanced Instructor Booking UI Component with All Features
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { FaSearch, FaChalkboardTeacher, FaStar, FaUserCheck, FaCalendarCheck } from "react-icons/fa";
+import {
+  FaChalkboardTeacher,
+  FaStar,
+  FaUserCheck,
+  FaComments,
+  FaCalendarCheck,
+  FaHeart,
+  FaCircleCheck,
+} from "react-icons/fa6";
+import { FaSearch } from "react-icons/fa";
 
-// Sample instructor data
 const instructors = [
-  { id: 1, name: "Dr. John Doe", expertise: "Data Science", experience: "10+ Years", rating: 4.9 },
-  { id: 2, name: "Jane Smith", expertise: "Web Development", experience: "8 Years", rating: 4.7 },
-  { id: 3, name: "Prof. Mark Wilson", expertise: "AI & Machine Learning", experience: "12+ Years", rating: 4.8 },
-  { id: 4, name: "Emily Davis", expertise: "Cybersecurity", experience: "7 Years", rating: 4.6 },
+  {
+    id: 1,
+    name: "Dr. John Doe",
+    expertise: "Data Science",
+    experience: "10+ Years",
+    rating: 4.9,
+    avatar: "https://www.iwcf.org/wp-content/uploads/2018/12/Instructor-top-of-page-image-new.jpg",
+    tags: ["Beginner Friendly", "Python"],
+    availableNow: true,
+    verified: true,
+  },
+  {
+    id: 2,
+    name: "Jane Smith",
+    expertise: "Web Development",
+    experience: "8 Years",
+    rating: 4.7,
+    avatar: "https://media.istockphoto.com/id/1468138682/photo/happy-elementary-teacher-in-front-of-his-students-in-the-classroom.jpg?s=612x612&w=0&k=20&c=E6m0JNBcrQBkPl0dr5CcTrYZiUm6fwMmgaiQfR8uW7s=",
+    tags: ["JavaScript", "React"],
+    availableNow: false,
+    verified: false,
+  },
+  {
+    id: 3,
+    name: "Ayman Osman",
+    expertise: "teacher ",
+    experience: "8 Years",
+    rating: 4.7,
+    avatar: "https://media.istockphoto.com/id/1328479378/photo/angry-math-teacher-showing-middle-finger.jpg?s=612x612&w=0&k=20&c=UPO13dXGZJ8lA9QKjwoZcGDR4Y-4OtvDJJlN-6IpKwM=",
+    tags: ["JavaScript", "React"],
+    availableNow: true,
+    verified: false,
+  },
 ];
 
-// List of available categories
-const categories = ["All", "Data Science", "Web Development", "AI & ML", "Cybersecurity"];
+const categories = ["All", "Data Science", "Web Development"];
+const sortOptions = ["Highest Rated", "Most Experienced"];
 
-const InstructorBooking = () => {
+export default function InstructorBooking() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [requestedInstructor, setRequestedInstructor] = useState(null);
+  const [chatWithInstructor, setChatWithInstructor] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [sortBy, setSortBy] = useState("Highest Rated");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
 
-  // Filter instructors based on category & search
-  const filteredInstructors = instructors.filter(
-    (instructor) =>
-      (selectedCategory === "All" || instructor.expertise === selectedCategory) &&
-      instructor.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = instructors
+    .filter(
+      (i) =>
+        (!onlyAvailable || i.availableNow) &&
+        (!showFavoritesOnly || favorites.includes(i.id)) &&
+        (selectedCategory === "All" || i.expertise === selectedCategory) &&
+        i.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "Highest Rated") return b.rating - a.rating;
+      if (sortBy === "Most Experienced") {
+        const getYears = (exp) => parseInt(exp);
+        return getYears(b.experience) - getYears(a.experience);
+      }
+      return 0;
+    });
+
+  const toggleFavorite = (id) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
+    );
+  };
 
   return (
-
     <motion.section
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      transition={{ duration: 0.8 }}
       viewport={{ once: true }}
+      className="py-16 bg-gray-900 text-white text-center"
     >
-      <section className="py-16 bg-gray-900 text-white text-center">
-        <h2 className="text-4xl font-bold mb-6 text-yellow-500">Book a Private Lesson with an Instructor</h2>
-        <p className="text-lg text-gray-300 mb-8">
-          Browse expert instructors and request private lessons in your preferred subject.
-        </p>
+      <h2 className="text-4xl font-bold mb-6 text-yellow-500">Book or Chat with Instructors</h2>
+      <p className="text-lg text-gray-300 mb-8">Request tutorials or private lessons directly.</p>
 
-        {/* Search & Filter */}
-        <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-8">
-          {/* Search Input */}
-          <div className="relative w-full max-w-lg">
-            <input
-              type="text"
-              placeholder="Search instructors..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 pl-10 rounded-lg border border-gray-500 focus:ring-2 focus:ring-yellow-500 focus:outline-none text-gray-900"
-            />
-            <FaSearch className="absolute left-3 top-4 text-gray-600 text-xl" />
-          </div>
-
-          {/* Category Dropdown */}
-          <select
-            className="p-3 border border-gray-500 rounded-lg bg-gray-800 text-white shadow-lg"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+      {/* Search & Filter */}
+      <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search instructors..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full p-3 pl-10 rounded-lg border border-gray-500 text-gray-900"
+          />
+          <FaSearch className="absolute left-3 top-4 text-gray-600" />
         </div>
 
-        {/* Instructor Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {filteredInstructors.map((instructor) => (
-            <motion.div
-              key={instructor.id}
-              whileHover={{ scale: 1.05 }}
-              className="p-6 bg-gray-800 rounded-lg shadow-lg text-center flex flex-col items-center hover:bg-yellow-500 transition"
-            >
-              <FaChalkboardTeacher className="text-yellow-500 text-4xl mb-3" />
-              <h3 className="text-xl font-semibold">{instructor.name}</h3>
-              <p className="text-gray-300 text-sm">{instructor.expertise}</p>
-              <p className="text-gray-400 text-sm">{instructor.experience}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <FaStar className="text-yellow-400" />
-                <p className="text-gray-200">{instructor.rating} Rating</p>
-              </div>
+        <select
+          className="p-3 border border-gray-500 rounded-lg bg-gray-800 text-white"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
 
-              {/* Request Lesson Button */}
+        <select
+          className="p-3 border border-gray-500 rounded-lg bg-gray-800 text-white"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          {sortOptions.map((opt) => (
+            <option key={opt}>{opt}</option>
+          ))}
+        </select>
+
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={onlyAvailable}
+            onChange={(e) => setOnlyAvailable(e.target.checked)}
+          />
+          Only Available Now
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={showFavoritesOnly}
+            onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+          />
+          Show Favorites Only
+        </label>
+      </div>
+
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {filtered.map((i) => (
+          <motion.div
+            key={i.id}
+            whileHover={{ scale: 1.05 }}
+            className="p-6 bg-gray-800 rounded-lg shadow-lg text-center flex flex-col items-center relative"
+          >
+            {i.availableNow && (
+              <span className="absolute top-2 right-2 bg-green-500 text-xs px-2 py-1 rounded-full">Online</span>
+            )}
+            {i.verified && (
+              <span className="absolute top-2 left-2 text-green-400 text-sm flex items-center gap-1">
+                <FaCircleCheck /> Verified
+              </span>
+            )}
+            <img src={i.avatar} className="w-20 h-20 rounded-full border-2 border-yellow-500 mb-3" alt={i.name} />
+            <h3 className="text-xl font-semibold cursor-pointer hover:underline" onClick={() => router.push(`/instructors/${i.id}`)}>{i.name}</h3>
+            <p className="text-gray-300 text-sm">{i.expertise}</p>
+            <p className="text-gray-400 text-sm">{i.experience}</p>
+            <div className="flex items-center justify-center gap-1 mt-2">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <FaStar
+                  key={idx}
+                  className={idx < Math.floor(i.rating) ? "text-yellow-400" : "text-gray-500"}
+                />
+              ))}
+              <span className="text-sm text-gray-300">({i.rating})</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 mt-2">
+              {i.tags.map((tag, idx) => (
+                <span key={idx} className="bg-yellow-700 text-xs px-2 py-1 rounded-full text-white">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-3 mt-4">
               <button
-                className="mt-4 bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600 transition"
-                onClick={() => setRequestedInstructor(instructor.name)}
+                onClick={() => setRequestedInstructor(i.name)}
+                className="bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600"
               >
                 <FaUserCheck /> Request Lesson
               </button>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Booking Confirmation Modal */}
-        {requestedInstructor && (
-          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-900 p-6 rounded-lg text-white shadow-xl max-w-lg text-center"
-            >
-              <h3 className="text-xl font-bold mb-4">Lesson Request Sent!</h3>
-              <p className="text-gray-300">Your request has been sent to {requestedInstructor}. The instructor will review and respond shortly.</p>
               <button
-                className="mt-4 bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600 transition"
-                onClick={() => setRequestedInstructor(null)}
+                onClick={() => setChatWithInstructor(i.id)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
               >
-                <FaCalendarCheck /> OK, Got It!
+                <FaComments /> Chat
               </button>
-            </motion.div>
-          </div>
-        )}
-      </section>
+              <button
+                onClick={() => toggleFavorite(i.id)}
+                className={`px-2 py-2 rounded-full hover:bg-yellow-700 transition ${favorites.includes(i.id) ? 'bg-yellow-500 text-black' : 'bg-gray-600 text-white'}`}
+                aria-label="Save to Favorites"
+              >
+                <FaHeart />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Request Modal */}
+      {requestedInstructor && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-60 z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-gray-900 p-6 rounded-xl max-w-md text-center"
+          >
+            <h3 className="text-xl font-bold mb-3">Request Sent!</h3>
+            <p className="text-gray-300">Lesson request sent to {requestedInstructor}.</p>
+            <button
+              onClick={() => setRequestedInstructor(null)}
+              className="mt-4 bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 flex items-center gap-2"
+            >
+              <FaCalendarCheck /> Close
+            </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Chat Modal */}
+      {chatWithInstructor && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-60 z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-gray-900 p-6 rounded-xl max-w-md text-center"
+          >
+            <h3 className="text-xl font-bold mb-3">Open Chat</h3>
+            <p className="text-gray-300">Start chatting with this instructor now.</p>
+            <button
+              onClick={() => {
+                setChatWithInstructor(null);
+                router.push(`/website/pages/messages?userId=${chatWithInstructor}`);
+              }}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2"
+            >
+              <FaComments /> Go to Chat
+            </button>
+          </motion.div>
+        </div>
+      )}
     </motion.section>
-
-
   );
-};
-
-export default InstructorBooking;
+}
