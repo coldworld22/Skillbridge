@@ -1,5 +1,5 @@
 import React from "react";
-import RoleManagement from "@/components/admin/RoleManagement";
+import RoleManagement from "@/components/admin/roleManagement";
 
 export default function RolesPermissionsPage() {
   return (
