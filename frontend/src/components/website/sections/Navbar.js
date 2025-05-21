@@ -6,6 +6,10 @@ import {
   FaBell, FaEnvelope, FaGlobe, FaShoppingCart, FaUserCircle, FaCog,
   FaLock, FaSignOutAlt, FaLanguage
 } from "react-icons/fa";
+import useAuthStore from "@/store/auth/authStore";
+import { useRouter } from "next/router";
+import { toast } from "react-toastify";
+
 
 // ✅ Import Logo & Flags
 import login from "@/shared/assets/images/login/logo.png";
@@ -38,6 +42,30 @@ const Navbar = () => {
   ]);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
+  const logout = useAuthStore((state) => state.logout);
+  const router = useRouter();
+  const sidebarRef = useRef(null);
+  const { user } = useAuthStore();
+  const userRole = user?.role?.toLowerCase();
+
+  useEffect(() => {
+  if (user && user.profile_complete === false) {
+    const profilePaths = {
+      admin: "/dashboard/admin/profile/edit",
+      instructor: "/dashboard/instructor/profile/edit",
+      student: "/dashboard/student/profile/edit",
+    };
+
+    const rolePath = profilePaths[userRole] || "/auth/login";
+
+    if (router.pathname !== rolePath) {
+      router.replace(rolePath);
+      toast.info("Please complete your profile to continue.");
+    }
+  }
+}, [user, userRole, router]);
+
+
 
   // Handle Scroll Change
   useEffect(() => {
@@ -125,7 +153,7 @@ const Navbar = () => {
                 className="absolute left-0 mt-2 bg-white text-gray-900 w-64 shadow-xl rounded-lg p-4 border"
               >
                 {unreadMessages.map((msg) => (
-                  <Link key={msg.id} href="/website/pages/messages" className="block p-2 hover:bg-gray-200 rounded">
+                  <Link key={msg.id} href="/messages" className="block p-2 hover:bg-gray-200 rounded">
                     {msg.text}
                   </Link>
 
@@ -159,7 +187,7 @@ const Navbar = () => {
                 className="absolute left-0 mt-2 bg-yellow-100 text-gray-900 w-64 shadow-xl rounded-lg p-4 border"
               >
                 {unreadNotifications.map((notif) => (
-                  <Link key={notif.id} href="/website/pages/notifications" className="block p-2 hover:bg-gray-200 rounded">
+                  <Link key={notif.id} href="/notifications" className="block p-2 hover:bg-gray-200 rounded">
                     {notif.text}
                   </Link>
                 ))}
@@ -277,7 +305,7 @@ const Navbar = () => {
                     <span className="text-yellow-600">{item.price}</span>
                   </Link>
                 ))}
-                <Link href="/website/pages/cart">
+                <Link href="/cart">
                   <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mt-2">
                     Go to Cart
                   </button>
@@ -309,7 +337,17 @@ const Navbar = () => {
               >
                 <ul>
                   <li>
-                    <Link href="/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                    <Link href="/dashboard/admin/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                      <FaCog /> Edit Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/dashboard/instructor/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
+                      <FaCog /> Edit Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/dashboard/student/profile/edit" className="flex items-center gap-2 p-3 hover:bg-gray-200 rounded-md cursor-pointer transition">
                       <FaCog /> Edit Profile
                     </Link>
                   </li>
@@ -330,10 +368,26 @@ const Navbar = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/auth/logout" className="flex items-center gap-2 p-3 text-red-500 hover:bg-red-100 rounded-md cursor-pointer transition">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await logout(); // Clear auth state
+                          toast.success("You’ve been logged out. See you soon!");
+                          setTimeout(() => {
+                            router.push("/auth/login");
+                          }, 800); // ⏳ Delay for toast to show
+
+                        } catch (err) {
+                          toast.error("Logout failed. Please try again.");
+                        }
+                      }}
+                      className="w-full text-left flex items-center gap-2 p-3 text-red-500 hover:bg-red-100 rounded-md cursor-pointer transition"
+                    >
                       <FaSignOutAlt /> Logout
-                    </Link>
+                    </button>
+
                   </li>
+
                 </ul>
               </motion.div>
             )}

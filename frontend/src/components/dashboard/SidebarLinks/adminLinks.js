@@ -34,7 +34,7 @@ export const adminNavLinks = [
       { label: 'Bookings', href: '/dashboard/admin/bookings', icon: CalendarCheck2 },
       { label: 'Community', href: '/dashboard/admin/community', icon: Users },
       { label: 'Community Groups', href: '/dashboard/admin/groups', icon: Users },
-      { label: 'Roles & Permissions', href: '/dashboard/admin/roles/roles-permissions', icon: ShieldCheck },
+      { label: 'Roles & Permissions', href: '/dashboard/admin/roles', icon: ShieldCheck },
     ]
   },
   {

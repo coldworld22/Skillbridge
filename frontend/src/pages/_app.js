@@ -1,15 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import "@/styles/globals.css";
-import 'react-quill/dist/quill.snow.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // ✅ Toast notifications
+import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
+import "@/styles/globals.css";    
+           // ✅ Global styles
 
-
-
+/**
+ * Custom App component for Next.js
+ * - Applies framer-motion transitions
+ * - Injects per-page layout support
+ * - Includes global toast notifications
+ */
 function MyApp({ Component, pageProps, router }) {
+  // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
 
   return (
     <AnimatePresence mode="wait">
-      
+      {/* Motion wrapper for route transition */}
       <motion.div
         key={router.route}
         initial={{ opacity: 0, y: 10 }}
@@ -17,7 +25,21 @@ function MyApp({ Component, pageProps, router }) {
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3 }}
       >
+        {/* Render page with layout */}
         {getLayout(<Component {...pageProps} />)}
+
+        {/* Global Toast Message Container */}
+        <ToastContainer
+          position="top-center"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
       </motion.div>
     </AnimatePresence>
   );

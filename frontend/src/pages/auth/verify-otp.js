@@ -11,7 +11,7 @@ export default function VerifyOTP() {
   const [isVerified, setIsVerified] = useState(false);
   const router = useRouter();
 
-  // Start countdown when page loads
+  // Countdown for resend button
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -21,13 +21,15 @@ export default function VerifyOTP() {
     }
   }, [resendTimer]);
 
+  // Handle OTP verification (mocked)
   const handleVerifyOTP = () => {
     setIsVerified(true);
     setTimeout(() => {
       router.push("/auth/reset-password");
-    }, 2500); // Redirect after 2.5 seconds
+    }, 2500);
   };
 
+  // Handle resend OTP (mocked)
   const handleResendOTP = () => {
     setCanResend(false);
     setResendTimer(30);

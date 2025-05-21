@@ -13,6 +13,8 @@ import SubscriptionPlans from "@/components/website/sections/SubscriptionPlans";
 import TutorialsSection from "@/components/website/sections/TutorialsSection";
 import Footer from "@/components/website/sections/Footer";
 import AITutoring from "@/components/website/sections/AITutoring";
+import IncompleteAlertModal from "@/components/auth/IncompleteAlertModal";
+
 
 export default function Home() {
   const sections = [
@@ -49,6 +51,7 @@ export default function Home() {
   return (
     <div>
       <Navbar />
+      <IncompleteAlertModal />
 
       {sections.map((Component, index) => (
         <section key={index} ref={sectionRefs.current[index]}>

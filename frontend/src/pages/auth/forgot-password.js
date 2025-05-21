@@ -1,14 +1,34 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
+import * as authService from "@/services/auth/authService";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const handleSendOTP = () => {
-    router.push("/auth/verify-otp");
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const handleSendOTP = async () => {
+    if (!isValidEmail) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await authService.requestOtp(email);
+      toast.success("OTP sent successfully!");
+      router.push({ pathname: "/auth/verify-otp", query: { email } });
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Failed to send OTP.";
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,10 +60,11 @@ export default function ForgotPassword() {
         {/* Send OTP Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
-          className="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold"
+          disabled={isSubmitting}
+          className={`w-full py-2 rounded-lg font-semibold transition ${isSubmitting ? "bg-gray-500 cursor-not-allowed text-white" : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"}`}
           onClick={handleSendOTP}
         >
-          Send OTP
+          {isSubmitting ? "Sending..." : "Send OTP"}
         </motion.button>
       </motion.div>
     </div>

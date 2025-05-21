@@ -1,5 +1,8 @@
-// pages/dashboard/admin/index.js
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import useAuthStore from "@/store/auth/authStore";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import PendingApprovals from "@/components/admin/PendingApprovals";
@@ -14,12 +17,34 @@ import UpcomingEvents from "@/components/admin/widgets/UpcomingEvents";
 import MiniAuditLog from "@/components/admin/widgets/MiniAuditLog";
 
 function AdminDashboardHome() {
+  const { user } = useAuthStore();
+  const router = useRouter();
+  const [hydrated, setHydrated] = useState(false);
+
+  // Wait for hydration to access Zustand state safely
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      if (!user) {
+        router.replace("/auth/login");
+      } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+        router.replace("/403");
+      }
+    }
+  }, [user, hydrated]);
+
+  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+    return null; 
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-10">
-      {/* Welcome Banner */}
-      <WelcomeBanner name="Admin" />
+      <WelcomeBanner name={user.full_name || "Admin"} />
 
-      {/* Security Summary Alerts */}
+      {/* Alerts Summary */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">🚨 Recent Alerts</h3>
@@ -48,35 +73,31 @@ function AdminDashboardHome() {
         </div>
       </section>
 
-      {/* Platform Insights: Stats + Charts */}
+      {/* Charts & Stats */}
       <section>
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-6 h-full">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow p-6">
             <RevenueChart />
           </div>
-          <div className="bg-white rounded-xl shadow p-6 h-full">
+          <div className="bg-white rounded-xl shadow p-6">
             <SignupsChart />
           </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-          <div className="bg-white rounded-xl shadow p-6 h-full">
+          <div className="bg-white rounded-xl shadow p-6">
             <CategoryPieChart />
           </div>
-          <div className="bg-white rounded-xl shadow p-6 h-full">
+          <div className="bg-white rounded-xl shadow p-6">
             <InstructorActivityChart />
           </div>
         </div>
-        
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">📊 Platform Insights</h2>
-        <div className="mb-6">
-          <StatsGrid />
-        </div>
 
-       
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
+        <StatsGrid />
       </section>
 
-      {/* Pending + Shortcuts side by side */}
+      {/* Approvals + Shortcuts */}
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow p-6">
           <PendingApprovals />
@@ -86,14 +107,14 @@ function AdminDashboardHome() {
         </div>
       </section>
 
-      {/* System Monitor Widgets */}
+      {/* System Monitoring */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <SystemWarnings />
         <UpcomingEvents />
         <MiniAuditLog />
       </section>
 
-      {/* Recent Activity */}
+      {/* Activity Feed */}
       <section>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">📰 Recent Activity</h2>
         <div className="bg-white rounded-xl shadow p-6 max-h-96 overflow-y-auto">
@@ -104,8 +125,10 @@ function AdminDashboardHome() {
   );
 }
 
-AdminDashboardHome.getLayout = function getLayout(page) {
+const ProtectedAdminDashboard = withAuthProtection(AdminDashboardHome, ["admin", "superadmin"]);
+
+ProtectedAdminDashboard.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default AdminDashboardHome;
+export default ProtectedAdminDashboard;

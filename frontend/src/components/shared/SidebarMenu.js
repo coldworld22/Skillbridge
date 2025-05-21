@@ -3,17 +3,32 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import {
-  FaHome, FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers, FaComments,
-  FaVideo, FaCalendarAlt, FaPlus, FaChartLine, FaCog, FaStar, FaGift, FaStore,
-  FaTimes, FaDollarSign, FaUserShield, FaCheckCircle, FaBullhorn, FaExternalLinkAlt,
-  FaGlobe, FaQuestionCircle, FaFileAlt, FaEnvelope
+  FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers,
+  FaCalendarAlt, FaPlus, FaChartLine, FaTimes, FaUserShield,
+  FaBullhorn, FaQuestionCircle, FaFileAlt, FaEnvelope
 } from "react-icons/fa";
+import useAuthStore from "@/store/auth/authStore";
 
-const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
+const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const sidebarRef = useRef(null);
   const router = useRouter();
+  const { user } = useAuthStore();
+  const userRole = user?.role?.toLowerCase();
 
-  // Close sidebar when clicking outside
+  console.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user)
+
+  const [hydrated, setHydrated] = useState(false);
+
+  // Ensure hydration-safe rendering
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+  document.body.style.overflow = isOpen ? "hidden" : "auto";
+}, [isOpen]);
+
+  // Close sidebar on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (isOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -24,7 +39,7 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Load Google AdSense Script
+  // Load Google AdSense
   useEffect(() => {
     if (showAds) {
       const script = document.createElement("script");
@@ -35,26 +50,39 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
     }
   }, [showAds]);
 
-  // Function to redirect to the dashboard
-  const redirectToDashboard = () => {
-    let dashboardUrl = "/dashboard";
+  if (!hydrated) return null;
 
-    if (userRole === "admin") {
-      dashboardUrl = "/dashboard/admin";
-    } else if (userRole === "instructor") {
-      dashboardUrl = "/dashboard/instructor";
-    } else if (userRole === "student") {
-      dashboardUrl = "/dashboard/student";
-    }
-
-    window.location.href = dashboardUrl; // Redirecting outside Next.js route
+  // Role-based dashboard link
+  const dashboardConfig = {
+    admin: {
+      href: "/dashboard/admin",
+      label: "Admin Dashboard",
+      icon: <FaUserShield />,
+    },
+    superadmin: {
+      href: "/dashboard/admin",
+      label: "Admin Dashboard",
+      icon: <FaUserShield />,
+    },
+    instructor: {
+      href: "/dashboard/instructor",
+      label: "Instructor Dashboard",
+      icon: <FaChalkboardTeacher />,
+    },
+    student: {
+      href: "/dashboard/student",
+      label: "Student Dashboard",
+      icon: <FaGraduationCap />,
+    },
   };
+
+  const currentDashboard = dashboardConfig[userRole];
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay Background */}
+          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
@@ -63,14 +91,15 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
             onClick={onClose}
           />
 
-          {/* Sidebar Panel */}
+          {/* Sidebar */}
           <motion.div
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
             ref={sidebarRef}
-            className="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-yellow-500 to-yellow-400 text-gray-900 shadow-lg p-6 z-50"
+            className="fixed top-0 left-0 h-screen w-72 bg-gradient-to-b from-yellow-500 to-yellow-400 text-gray-900 shadow-lg z-[60] pt-20 overflow-y-auto"
+
           >
             {/* Close Button */}
             <button
@@ -80,28 +109,22 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
               <FaTimes className="text-2xl" />
             </button>
 
-            {/* Sidebar Content */}
             <h3 className="text-xl font-bold mb-4">Dashboard Navigation</h3>
             <div className="space-y-4">
 
-              {/* Quick Link to Dashboard */}
-
-              <div className="mt-2 space-y-2">
-                <Link href="/dashboard/admin" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
-                  <FaUserShield /> Admin Dashboard
+              {/* Dashboard Link */}
+              {currentDashboard && (
+                <Link
+                  href={currentDashboard.href}
+                  className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition"
+                >
+                  {currentDashboard.icon} {currentDashboard.label}
                 </Link>
-                <Link href="/dashboard/student" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
-                  <FaGraduationCap /> Student Dashboard
-                </Link>
-                <Link href="/dashboard/instructor" className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition rounded-lg">
-                  <FaChalkboardTeacher /> Instructor Dashboard
-                </Link>
-              </div>
-
+              )}
 
               {/* Useful Links */}
               <div>
-                <h4 className="font-bold text-lg mt-4 mb-2">Useful Links</h4>
+                <h4 className="font-bold text-lg mt-6 mb-2">Useful Links</h4>
                 <ul className="space-y-2">
                   <li>
                     <Link href="/courses" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
@@ -131,10 +154,10 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
                 </ul>
               </div>
 
-              {/* Student Section (Only for Students) */}
+              {/* Student Section */}
               {userRole === "student" && (
                 <div>
-                  <h4 className="font-bold text-lg mt-4 mb-2">Learning</h4>
+                  <h4 className="font-bold text-lg mt-6 mb-2">Learning</h4>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
                       <FaBookOpen /> My Courses
@@ -149,10 +172,10 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
                 </div>
               )}
 
-              {/* Instructor Section (Only for Instructors) */}
+              {/* Instructor Section */}
               {userRole === "instructor" && (
                 <div>
-                  <h4 className="font-bold text-lg mt-4 mb-2">Instructor</h4>
+                  <h4 className="font-bold text-lg mt-6 mb-2">Instructor Tools</h4>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
                       <FaCalendarAlt /> Scheduled Classes
@@ -167,7 +190,7 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
                 </div>
               )}
 
-              {/* Google AdSense Ads (If Enabled) */}
+              {/* Google Ads */}
               {showAds && (
                 <div className="mt-6 p-3 bg-white text-gray-900 shadow-lg rounded-lg">
                   <h4 className="text-lg font-bold mb-2 flex items-center gap-2">
@@ -179,12 +202,11 @@ const SidebarMenu = ({ isOpen, onClose, userRole, showAds }) => {
                       data-ad-client="ca-pub-xxxxxxxxxxxxxxxx"
                       data-ad-slot="1234567890"
                       data-ad-format="auto"
-                      data-full-width-responsive="true">
-                    </ins>
+                      data-full-width-responsive="true"
+                    ></ins>
                   </div>
                 </div>
               )}
-
             </div>
           </motion.div>
         </>
