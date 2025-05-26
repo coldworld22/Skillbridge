@@ -68,6 +68,11 @@ exports.findByEmail = (email) => {
   return db("users").where({ email }).first();
 };
 
+exports.findByPhone = async (phone) => {
+  return db("users").where({ phone }).first();
+};
+
+
 /**
  * ➕ Insert a new user
  * - Expects pre-validated user object

@@ -5,13 +5,20 @@ export default function BackgroundAnimation() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    // 👇 Ensure canvas is sized correctly immediately
+    resizeCanvas();
 
     const particlesArray = [];
-    const numberOfParticles = 80; // Adjust density
+    const numberOfParticles = 80;
 
     class Particle {
       constructor(x, y, directionX, directionY, size, color) {
@@ -39,20 +46,19 @@ export default function BackgroundAnimation() {
         }
         this.x += this.directionX;
         this.y += this.directionY;
-
         this.draw();
       }
     }
 
     function init() {
+      particlesArray.length = 0; // reset array
       for (let i = 0; i < numberOfParticles; i++) {
         let size = Math.random() * 3 + 1;
         let x = Math.random() * (canvas.width - size * 2) + size;
         let y = Math.random() * (canvas.height - size * 2) + size;
         let directionX = Math.random() * 2 - 1;
         let directionY = Math.random() * 2 - 1;
-        let color = "rgba(234, 179, 8, 0.8)"; // Matches theme color
-
+        let color = "rgba(234, 179, 8, 0.8)";
         particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
       }
     }
@@ -89,10 +95,15 @@ export default function BackgroundAnimation() {
     animate();
 
     window.addEventListener("resize", () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      resizeCanvas();
+      init(); // re-init particles after resizing
     });
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+    };
   }, []);
+
 
   return (
     <canvas

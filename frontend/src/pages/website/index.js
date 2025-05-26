@@ -14,6 +14,7 @@ import TutorialsSection from "@/components/website/sections/TutorialsSection";
 import Footer from "@/components/website/sections/Footer";
 import AITutoring from "@/components/website/sections/AITutoring";
 import IncompleteAlertModal from "@/components/auth/IncompleteAlertModal";
+import useAuthStore from "@/store/auth/authStore";
 
 
 export default function Home() {
@@ -26,6 +27,15 @@ export default function Home() {
   const sectionRefs = useRef(sections.map(() => useRef(null)));
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { user, hasHydrated } = useAuthStore();
+
+  // ─────────────────────────────────────────────
+  // Ensure user data is loaded before rendering
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    console.log("✅ hasHydrated:", hasHydrated);
+    console.log("👤 User object:", user);
+  }, [hasHydrated, user]);
 
   // Track scrolling position
   useEffect(() => {

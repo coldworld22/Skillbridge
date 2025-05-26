@@ -1,10 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['picsum.photos'], // Allow external images from picsum.photos
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5001',
+        pathname: '/uploads/**', // Allows all files under /uploads
+      },
+    ],
   },
   eslint: {
-    ignoreDuringBuilds: true, // ✅ Disable ESLint on Vercel build
+    ignoreDuringBuilds: true,
   },
 };
 

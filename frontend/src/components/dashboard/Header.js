@@ -1,23 +1,73 @@
-import { Bell, ChevronDown, Mail, Moon, Sun, Search } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Bell,
+  ChevronDown,
+  Mail,
+  Moon,
+  Sun,
+  Search,
+  Home,
+  LogOut,
+} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import useAuthStore from "@/store/auth/authStore";
+import { toast } from "react-toastify";
+import { FaCog } from "react-icons/fa";
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dark, setDark] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const userRole = user?.role?.toLowerCase();
 
-  const handleLogout = () => {
-    router.push('/auth/login');
+  const profileLink =
+    userRole === "superadmin" || userRole === "admin"
+      ? "/dashboard/admin/profile/edit"
+      : `/dashboard/${userRole}/profile/edit`;
+
+ const handleLogout = async () => {
+  try {
+    await logout();
+    toast.success("You’ve been logged out. See you soon!");
+
+    // ⏳ Delay before redirecting to login
+    setTimeout(() => {
+      router.push("/auth/login");
+    }, 1200);
+  } catch (err) {
+    toast.error("Logout failed. Please try again.");
+  }
+};
+
+
+  const toggleDarkMode = () => {
+    const newDark = !dark;
+    setDark(newDark);
+    document.documentElement.classList.toggle("dark", newDark);
+    localStorage.setItem("theme", newDark ? "dark" : "light");
   };
 
-  // Handle click outside dropdowns
+  const getPageTitle = () => {
+    const slug = router.pathname.split("/").pop();
+    if (!slug || slug === "index") return "Dashboard";
+    return slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
   useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
+      setDark(true);
+      document.documentElement.classList.add("dark");
+    }
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -26,33 +76,27 @@ export default function Header() {
         setNotifOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    document.documentElement.classList.toggle('dark');
-    setDark(!dark);
-  };
-
-  // Extract page title from route
-  const getPageTitle = () => {
-    const slug = router.pathname.split('/').pop();
-    if (!slug || slug === 'index') return 'Dashboard';
-    return slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const notifications = [
+    "🔔 New user registered",
+    "💬 You have 2 new messages",
+    "⚙️ Settings updated",
+  ];
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
-      {/* Page Title */}
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
-        {getPageTitle()}
-      </h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
+          {getPageTitle()}
+        </h1>
 
-      {/* Right Section */}
+      </div>
+
       <div className="flex items-center gap-4 sm:gap-6 relative">
-        {/* Search Input */}
         <div className="relative hidden md:block">
           <input
             type="text"
@@ -64,29 +108,31 @@ export default function Header() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
         </div>
 
-        {/* Dark Mode Toggle */}
         <button
           onClick={toggleDarkMode}
           className="text-gray-500 hover:text-yellow-500 transition"
+          aria-label="Toggle dark mode"
         >
           {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        {/* Messages */}
         <div className="relative group cursor-pointer">
           <Mail className="w-6 h-6 text-gray-500 dark:text-gray-300 hover:text-yellow-500 transition duration-200" />
-          <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">5</span>
+          <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            5
+          </span>
         </div>
 
-        {/* Notifications */}
         <div className="relative group cursor-pointer" ref={notifRef}>
           <Bell
             className="w-6 h-6 text-gray-500 dark:text-gray-300 hover:text-yellow-500 transition duration-200"
             onClick={() => setNotifOpen(!notifOpen)}
+            aria-label="Toggle notifications"
           />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            {notifications.length}
+          </span>
 
-          {/* Notification Dropdown */}
           <AnimatePresence>
             {notifOpen && (
               <motion.div
@@ -97,36 +143,42 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
-                  <li className="px-4 py-2">🔔 New user registered</li>
-                  <li className="px-4 py-2">💬 You have 2 new messages</li>
-                  <li className="px-4 py-2">⚙️ Settings updated</li>
+                  {notifications.map((n, idx) => (
+                    <li key={idx} className="px-4 py-2">
+                      {n}
+                    </li>
+                  ))}
                 </ul>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* User Avatar */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 cursor-pointer group"
+            aria-haspopup="true"
+            aria-expanded={dropdownOpen}
           >
             <img
-              src="/images/logo.png"
+              src={user?.avatar_url || "/images/default-avatar.png"}
               alt="User Avatar"
               className="w-9 h-9 rounded-full border border-gray-300 shadow"
             />
             <div className="text-left hidden sm:block">
-              <div className="text-sm font-medium text-gray-800 dark:text-white">John Doe</div>
+              <div className="text-sm font-medium text-gray-800 dark:text-white">
+                {user?.full_name || "Guest"}
+              </div>
               <div className="text-xs text-gray-500 dark:text-gray-300">
-                <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Admin</span>
+                <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                  {userRole?.toUpperCase() || "USER"}
+                </span>
               </div>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300 group-hover:text-yellow-500 transition" />
           </button>
 
-          {/* Dropdown */}
           <AnimatePresence>
             {dropdownOpen && (
               <motion.div
@@ -137,9 +189,30 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-gray-700 dark:text-gray-200 text-sm">
-                  <li className="hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 cursor-pointer" onClick={() => router.push('/profile')}>View Profile</li>
-                  <li className="hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 cursor-pointer" onClick={() => router.push('/profile/edit')}>Edit Profile</li>
-                  <li className="hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 cursor-pointer" onClick={handleLogout}>Logout</li>
+                  <li
+                    className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-700"
+                    onClick={() => router.push("/website")}
+                  >
+                    <Home className="w-4 h-4 text-gray-500" />
+                    <span>visit Website</span>
+                  </li>
+                  <li>
+                    <Link
+                      href={profileLink}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-yellow-50 dark:hover:bg-yellow-700 transition rounded-md"
+                    >
+                      <FaCog className="text-gray-500" />
+                      <span>Edit Profile</span>
+                    </Link>
+                  </li>
+                  <li
+                    className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-700 text-red-600 dark:text-red-400"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </li>
+
                 </ul>
               </motion.div>
             )}

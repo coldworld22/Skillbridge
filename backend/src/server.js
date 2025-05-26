@@ -9,10 +9,17 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 
 // ───── Import Route Modules ─────
-const authRoutes = require("./modules/auth/auth.routes");
+const authRoutes = require("./modules/auth/routes/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
+const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP routes
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔧 Global Middleware Setup
+// ─────────────────────────────────────────────────────────────────────────────
+const path = require("path");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔧 Global Middleware Setup
@@ -24,41 +31,55 @@ app.use(express.json());
 // 🍪 Parse cookies from incoming requests
 app.use(cookieParser());
 
-// 🌐 Allow frontend to communicate with backend (Cross-Origin Resource Sharing)
+// 🌐 Allow frontend to communicate with backend (CORS)
 app.use(
   cors({
-    origin: "http://localhost:3000", // ✅ Your frontend app origin
-    credentials: true,               // ✅ Allow cookies in cross-origin requests
+    origin: "http://localhost:3000", // ✅ Replace with your frontend domain
+    credentials: true,
   })
 );
 
-// 📋 Log HTTP requests (development only)
+// 📋 HTTP request logger
 app.use(morgan("dev"));
 
-// 📁 Serve static files (e.g. uploaded avatars)
-app.use("/uploads", express.static("uploads"));
+// 📁 Serve uploaded static files (avatars, identity, etc.)
+// Optional: Support both `/uploads` and `/api/uploads`
+app.use("/api/uploads", express.static(path.join(__dirname, "../uploads")));
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 📦 API Routes
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 🔐 Auth routes (login, register, refresh, logout, OTP, reset password)
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);      // 🔐 Auth: login, register, password reset
+app.use("/api/users", userRoutes);     // 👤 Users: profile, avatar, demo video
+app.use("/api/verify", verifyRoutes);  // ✅ OTP: send/confirm email/phone
 
-// 👤 User routes (CRUD, profile editing, role updates, export)
-app.use("/api/users", userRoutes);
-
-// 🩺 Health check route (optional, for CI/CD or uptime bots)
+// 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
   res.send("🚀 SkillBridge API is live.");
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Global Error Handler (Optional)
+// ⚠️ Global Error Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use((err, req, res, next) => {
-  console.error("❌ Unhandled Error:", err.stack);
-  res.status(500).json({ error: "Internal Server Error" });
+  const status = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  console.error(`❌ Error: ${message}`);
+  res.status(status).json({ message });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 📦 Custom Error Handler Middleware
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+app.use(errorHandler); // ✅ After all routes
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🚀 Start Server

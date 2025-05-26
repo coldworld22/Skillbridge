@@ -23,8 +23,8 @@ const ChangePasswordPage = ({ prevStep }) => {
     }
 
     // 🔹 Validate Password Strength
-    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/\d/.test(newPassword) || !/[!@#$%^&*]/.test(newPassword)) {
-      setError("❌ Password must be 8+ characters, include an uppercase letter, a number, and a special character.");
+    if (newPassword.length < 5 || !/[A-Z]/.test(newPassword) || !/\d/.test(newPassword) || !/[!@#$%^&*]/.test(newPassword)) {
+      setError("❌ Password must be 5+ characters, include an uppercase letter, a number, and a special character.");
       return;
     }
 

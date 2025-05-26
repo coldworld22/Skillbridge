@@ -1,30 +1,23 @@
-// src/components/auth/RoleRedirector.js
+// ───────────────────────────────────────
+// 📁 frontend/src/pages/auth/login.js
+//  ──────────────────────────────────────
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 
 export default function RoleRedirector() {
-  const { user } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
   const router = useRouter();
 
+  // ───────────────────────────────
+  // 🔄 Redirect based on user role
+  // ───────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!hasHydrated || !user) return;
+    else if (user.role === "Instructor") router.replace("/dashboard/instructor");
+    else if (user.role === "Student") router.replace("/dashboard/student");
+  }, [user, hasHydrated, router]);
 
-    switch (user.role) {
-      case "admin":
-      case "superadmin":
-        router.replace("/dashboard/admin");
-        break;
-      case "instructor":
-        router.replace("/dashboard/instructor");
-        break;
-      case "student":
-        router.replace("/dashboard/student");
-        break;
-      default:
-        router.replace("/website");
-    }
-  }, [user]);
 
   return null;
 }

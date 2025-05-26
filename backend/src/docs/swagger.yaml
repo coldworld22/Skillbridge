@@ -1,0 +1,14 @@
+openapi: 3.0.0
+info:
+  title: SkillBridge API
+  version: 1.0.0
+tags:
+  - name: Users
+paths:
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get authenticated user's base profile
+      responses:
+        '200':
+          description: Profile fetched

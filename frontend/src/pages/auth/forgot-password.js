@@ -20,7 +20,7 @@ export default function ForgotPassword() {
 
     setIsSubmitting(true);
     try {
-      await authService.requestOtp(email);
+      await authService.requestPasswordReset(email);
       toast.success("OTP sent successfully!");
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {

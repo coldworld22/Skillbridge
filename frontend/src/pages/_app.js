@@ -1,8 +1,12 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // ✅ Toast notifications
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "@/styles/globals.css";    
+import "@/services/api/tokenInterceptor";
+import useAuthStore from "@/store/auth/authStore";
+
            // ✅ Global styles
 
 /**
@@ -14,6 +18,20 @@ import "@/styles/globals.css";
 function MyApp({ Component, pageProps, router }) {
   // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
+
+    useEffect(() => {
+    const local = localStorage.getItem("auth");
+    if (local) {
+      const parsed = JSON.parse(local)?.state;
+      if (parsed?.user) {
+        useAuthStore.setState({
+          user: parsed.user,
+          accessToken: parsed.accessToken,
+          hasHydrated: true, // ✅ manually set hydration flag
+        });
+      }
+    }
+  }, []);
 
   return (
     <AnimatePresence mode="wait">

@@ -1,80 +1,90 @@
-// src/services/authService.js
-import api from "../api/api"; // FIXED path
+// 📁 src/services/auth/authService.js
+import api from "@/services/api/api";
 
-export const registerUser = (userData) =>
-  api.post("/auth/register", userData);
-
-
-
-export const loginUser = async (credentials) => {
-  try {
-    const response = await api.post("/auth/login", credentials, {
-      withCredentials: true, // Includes cookies (for refreshToken)
-    });
-
-    const { accessToken, user } = response.data;
-
-    // ✅ Basic validation: make sure data exists
-    if (!accessToken || !user || !user.id || !user.role) {
-      throw new Error("Invalid login response. Please try again.");
-    }
-
-    // ✅ Clean user object if needed (optional, defensive)
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      full_name: user.full_name,
-      role: user.role,
-      avatar_url: user.avatar_url,
-      status: user.status,
-    };
-
-    // 🧠 Dev log (remove in production)
-    console.log("✅ Secure loginUser():", { accessToken, role: user.role });
-
-    return { accessToken, user: safeUser };
-  } catch (error) {
-    console.error("❌ loginUser() error:", error.response?.data || error.message);
-
-    // Re-throw error to show toast on frontend
-    throw new Error(
-      error.response?.data?.error || "Login failed. Please check your credentials."
-    );
-  }
+/**
+ * 🔐 Log in a user and retrieve access token and user info.
+ * Stores refresh token via HttpOnly cookie (server-side).
+ * 
+ * @param {Object} credentials - User credentials
+ * @param {string} credentials.email
+ * @param {string} credentials.password
+ * @returns {Promise<{ accessToken: string, user: object }>}
+ */
+export const loginUser = async ({ email, password }) => {
+  const res = await api.post("/auth/login", { email, password });
+  return res.data;
 };
 
-export const getCurrentUser = async () => {
-  const res = await fetch("/api/auth/me", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // if you use cookies for auth
+/**
+ * 🧾 Register a new user account (Student, Instructor, Admin).
+ * 
+ * @param {Object} payload - Registration data
+ * @returns {Promise<{ accessToken: string, user: object }>}
+ */
+export const registerUser = async (payload) => {
+  const res = await api.post("/auth/register", payload);
+  return res.data;
+};
+
+/**
+ * 📧 Request OTP to reset password (step 1).
+ * 
+ * @param {string} email - Email to send OTP to
+ * @returns {Promise<{ message: string }>}
+ */
+export const requestPasswordReset = async (email) => {
+  const res = await api.post("/auth/request-reset", { email });
+  return res.data;
+};
+
+/**
+ * 🔢 Verify OTP code (step 2).
+ * 
+ * @param {Object} data
+ * @param {string} data.email
+ * @param {string} data.code
+ * @returns {Promise<{ valid: boolean }>}
+ */
+export const verifyOtpCode = async ({ email, code }) => {
+  const res = await api.post("/auth/verify-otp", { email, code });
+  return res.data;
+};
+
+/**
+ * 🔐 Reset user password using verified OTP (step 3).
+ * 
+ * @param {Object} data
+ * @param {string} data.email
+ * @param {string} data.code
+ * @param {string} data.new_password
+ * @returns {Promise<{ message: string }>}
+ */
+export const resetPassword = async ({ email, code, new_password }) => {
+  const res = await api.post("/auth/reset-password", {
+    email,
+    code,
+    new_password,
   });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch current user");
-  }
-
-  const user = await res.json();
-  return { user };
+  return res.data;
 };
 
+/**
+ * 🔁 Manually refresh the access token.
+ * Uses HttpOnly refresh cookie set during login.
+ * 
+ * @returns {Promise<{ accessToken: string }>}
+ */
+export const refreshAccessToken = async () => {
+  const res = await api.post("/auth/refresh");
+  return res.data;
+};
 
-
-
-
-export const logoutUser = () =>
-  api.post("/auth/logout", {}, { withCredentials: true });
-
-export const refreshToken = () =>
-  api.get("/auth/refresh-token", { withCredentials: true });
-
-export const requestOtp = (email) =>
-  api.post("/auth/request-reset", { email });
-
-export const verifyOtp = (email, code) =>
-  api.post("/auth/verify-otp", { email, code });
-
-export const resetPassword = (email, code, newPassword) =>
-  api.post("/auth/reset-password", { email, code, new_password: newPassword });
+/**
+ * 🚪 Log out user and clear the refresh token cookie.
+ * 
+ * @returns {Promise<{ message: string }>}
+ */
+export const logoutUser = async () => {
+  const res = await api.post("/auth/logout");
+  return res.data;
+};

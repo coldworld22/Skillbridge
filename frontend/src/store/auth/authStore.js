@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import * as authService from "@/services/auth/authService"; // replace with your actual service
+import * as authService from "@/services/auth/authService";
 
 const useAuthStore = create(
   persist(
@@ -8,33 +8,42 @@ const useAuthStore = create(
       user: null,
       accessToken: null,
       hasHydrated: false,
-      
-      markHydrated: () => set({ hasHydrated: true }),
-      
-      login: async (credentials, rememberMe = false) => {
-        const { user, accessToken } = await authService.loginUser(credentials);
-        set({ user, accessToken });
-        localStorage.setItem("rememberMe", rememberMe ? "true" : "false");
+
+      setUser: (userData) => set({ user: userData }),
+
+      login: async (credentials) => {
+        const { accessToken, user } = await authService.loginUser(credentials);
+        if (user.avatar_url?.startsWith("blob:")) user.avatar_url = null;
+        set({ accessToken, user });
         return user;
       },
-      
-      logout: async () => {
-        set({ user: null, accessToken: null });
-        const remember = localStorage.getItem("rememberMe") === "true";
-        if (!remember) {
-          localStorage.removeItem("auth-store");
-        }
-        localStorage.removeItem("rememberMe");
+
+      register: async (data) => {
+        const { accessToken, user } = await authService.registerUser(data);
+        if (user.avatar_url?.startsWith("blob:")) user.avatar_url = null;
+        set({ accessToken, user });
+        return user;
       },
+
+      logout: async () => {
+        try {
+          await authService.logoutUser();
+        } catch (_) {}
+        set({ accessToken: null, user: null });
+      },
+
+      setToken: (token) => set({ accessToken: token }),
+
+      // ✅ Manual fallback to trigger hydration if needed
+      markHydrated: () => set({ hasHydrated: true }),
     }),
     {
-      name: "auth-store",
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-      }),
-      onRehydrateStorage: () => (state) => {
-        state.markHydrated?.();
+      name: "auth",
+      onRehydrateStorage: () => {
+        return (state) => {
+          console.log("🔥 Zustand hydrated");
+          set({ hasHydrated: true }); // 🔥 Ensure hydration flag gets set
+        };
       },
     }
   )

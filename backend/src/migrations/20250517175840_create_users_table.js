@@ -8,8 +8,7 @@ exports.up = function(knex) {
     table.enu('role', ['Student', 'Instructor', 'User', 'Admin']).notNullable();
     table.string('avatar_url');
     table.boolean('is_email_verified').defaultTo(false);
-    table.boolean('is_phone_verified').defaultTo(false);
-    table.enu('status', ['active', 'inactive', 'banned']).defaultTo('active');
+    table.enu("status", ["pending", "active", "banned"]).notNullable().defaultTo("pending");
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
   });

@@ -1,14 +1,28 @@
+// 📁 src/pages/auth/success-reset.js
+import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
+import { toast } from "react-toastify";
+
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 
 export default function SuccessReset() {
   const router = useRouter();
 
+  useEffect(() => {
+    const verifiedEmail = localStorage.getItem("otp_verified_email");
+    if (!verifiedEmail) {
+      toast.info("Please complete the OTP verification first.");
+      router.replace("/auth/forgot-password");
+    } else {
+      toast.success("Password reset successful!");
+      localStorage.removeItem("otp_verified_email"); // Clean up
+    }
+  }, [router]);
+
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
-      {/* Background Animation */}
       <BackgroundAnimation />
 
       <motion.div
@@ -27,14 +41,13 @@ export default function SuccessReset() {
           <FaCheckCircle className="text-yellow-500 text-6xl" />
         </motion.div>
 
-        <h2 className="text-2xl font-bold text-yellow-400 mb-4">Password Reset Successful!</h2>
+        <h2 className="text-2xl font-bold text-yellow-400 mb-4">
+          Password Reset Successful!
+        </h2>
         <p className="text-gray-400 text-center mb-4">
-          Your password has been successfully reset. You can now log in with your new password.
+          Your password has been updated. You can now log in with your new credentials.
         </p>
 
-    
-
-        {/* Login Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           className="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold mt-6"

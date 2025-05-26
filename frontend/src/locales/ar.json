@@ -1,0 +1,80 @@
+{
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirm_password": "تأكيد كلمة المرور",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "remember_me": "تذكرني",
+    "login_success": "تم تسجيل الدخول بنجاح",
+    "invalid_credentials": "بيانات الدخول غير صحيحة"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "my_profile": "ملفي الشخصي",
+    "online_classes": "الدورات المباشرة",
+    "assignments": "الواجبات",
+    "certificates": "الشهادات",
+    "groups": "المجموعات",
+    "offers": "العروض",
+    "community": "المجتمع",
+    "support": "الدعم",
+    "settings": "الإعدادات"
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "submit": "إرسال",
+    "upload": "رفع",
+    "preview": "معاينة",
+    "back": "عودة",
+    "next": "التالي"
+  },
+  "profile": {
+    "personal_info": "المعلومات الشخصية",
+    "verification": "التحقق",
+    "select_role": "اختر الدور",
+    "student_details": "تفاصيل الطالب",
+    "instructor_details": "تفاصيل المعلم",
+    "social_links": "روابط التواصل",
+    "final_review": "مراجعة نهائية",
+    "complete_profile": "أكمل ملفك الشخصي"
+  },
+  "classroom": {
+    "enrolled_classes": "الدورات المسجلة",
+    "join_class": "الانضمام إلى الدورة",
+    "view_lessons": "عرض الدروس",
+    "download_resources": "تحميل الموارد",
+    "mark_complete": "وضع علامة كمكتمل"
+  },
+  "assignments": {
+    "my_assignments": "واجباتي",
+    "submit_assignment": "تسليم الواجب",
+    "upload_file": "رفع ملف",
+    "grade": "الدرجة",
+    "feedback": "ملاحظات"
+  },
+  "certificates": {
+    "my_certificates": "شهاداتي",
+    "download_certificate": "تحميل الشهادة",
+    "verify_certificate": "التحقق من الشهادة"
+  },
+  "notifications": {
+    "no_notifications": "لا توجد إشعارات حالياً",
+    "view_all": "عرض الكل"
+  },
+  "errors": {
+    "required_field": "هذا الحقل مطلوب",
+    "invalid_email": "بريد إلكتروني غير صالح",
+    "upload_failed": "فشل في رفع الملف"
+  },
+  "success": {
+    "profile_updated": "تم تحديث الملف الشخصي بنجاح",
+    "assignment_submitted": "تم تسليم الواجب بنجاح",
+    "class_joined": "تم الانضمام إلى الدورة"
+  }
+}

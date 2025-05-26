@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
+import { resetPassword } from "@/services/auth/authService";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");
@@ -12,13 +14,28 @@ export default function ResetPassword() {
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
 
-  // ✅ Password Rules
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+
+  useEffect(() => {
+    const verifiedEmail = localStorage.getItem("otp_verified_email");
+    const verifiedCode = localStorage.getItem("otp_verified_code");
+
+    if (!verifiedEmail || !verifiedCode) {
+      toast.error("Missing OTP verification. Please try again.");
+      router.replace("/auth/forgot-password");
+    } else {
+      setEmail(verifiedEmail);
+      setCode(verifiedCode);
+    }
+  }, [router]);
+
   const isStrongPassword =
     newPassword.length >= 8 &&
     /[A-Z]/.test(newPassword) &&
     /[\W_]/.test(newPassword);
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!isStrongPassword) {
       toast.error("Password must be at least 8 characters with uppercase and special character.");
       return;
@@ -29,10 +46,16 @@ export default function ResetPassword() {
       return;
     }
 
-    toast.success("Password reset successful!");
-    setTimeout(() => {
+    try {
+      await resetPassword({ email, code, new_password: newPassword });
+      localStorage.removeItem("otp_verified_email");
+      localStorage.removeItem("otp_verified_code");
+      toast.success("Password reset successful!");
       router.push("/auth/success-reset");
-    }, 1000);
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Password reset failed.";
+      toast.error(msg);
+    }
   };
 
   return (
@@ -46,7 +69,7 @@ export default function ResetPassword() {
       >
         <h2 className="text-2xl font-bold text-yellow-400 mb-6">Reset Password</h2>
         <p className="text-gray-400 text-sm text-center mb-4">
-          Enter a new password for your account.
+          Enter a new password for <span className="text-yellow-300 font-medium">{email}</span>
         </p>
 
         {/* ✅ New Password Input */}
