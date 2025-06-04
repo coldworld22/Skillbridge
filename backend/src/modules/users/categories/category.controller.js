@@ -5,6 +5,8 @@ const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");
 const fs = require("fs");
 const path = require("path");
+const { v4: uuidv4 } = require("uuid");
+
 
 // Create category
 exports.createCategory = catchAsync(async (req, res) => {
@@ -24,13 +26,15 @@ exports.createCategory = catchAsync(async (req, res) => {
   const image_url = req.file ? `/uploads/categories/${req.file.filename}` : null;
   const slug = slugify(name, { lower: true, strict: true });
 
-  const category = await service.create({
-    name: name.trim(),
-    parent_id: parent_id || null,
-    status,
-    image_url,
-    slug,
-  });
+const category = await service.create({
+  id: uuidv4(), // ✅ add this line
+  name: name.trim(),
+  parent_id: parent_id || null,
+  status,
+  image_url,
+  slug,
+});
+
 
   sendSuccess(res, category, "Category created");
 });
