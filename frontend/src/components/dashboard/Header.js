@@ -33,19 +33,19 @@ export default function Header() {
       ? "/dashboard/admin/profile/edit"
       : `/dashboard/${userRole}/profile/edit`;
 
- const handleLogout = async () => {
-  try {
-    await logout();
-    toast.success("You’ve been logged out. See you soon!");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("You’ve been logged out. See you soon!");
 
-    // ⏳ Delay before redirecting to login
-    setTimeout(() => {
-      router.push("/auth/login");
-    }, 1200);
-  } catch (err) {
-    toast.error("Logout failed. Please try again.");
-  }
-};
+      // ⏳ Delay before redirecting to login
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 1200);
+    } catch (err) {
+      toast.error("Logout failed. Please try again.");
+    }
+  };
 
 
   const toggleDarkMode = () => {
@@ -162,9 +162,15 @@ export default function Header() {
             aria-expanded={dropdownOpen}
           >
             <img
-              src={user?.avatar_url || "/images/default-avatar.png"}
+              src={
+                user?.avatar_url
+                  ? user.avatar_url.startsWith("http") || user.avatar_url.startsWith("blob:")
+                    ? user.avatar_url
+                    : `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+                  : "/images/default-avatar.png"
+              }
               alt="User Avatar"
-              className="w-9 h-9 rounded-full border border-gray-300 shadow"
+              className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
             />
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">

@@ -9,6 +9,12 @@ const { adminProfileSchema } = require("./admin.validator");
 const { adminChangePasswordSchema } = require("./admin.validator");
 const { verifyToken, isAdmin, isSuperAdmin } = require("../../../middleware/auth/authMiddleware");
 const upload = require("./adminUploadMiddleware");
+const categoryRoutes = require("../categories/category.routes");
+// const classRoutes = require("../classes/class.routes");
+
+
+
+
 
 
 
@@ -53,9 +59,23 @@ router.post(
 // ─────────────────────────────────────────────
 router.post("/reset-password/:userId", isSuperAdmin, controller.resetPasswordAsAdmin);
 
+// ─────────────────────────────────────────────
+// 📋 Modular route loading
+// ─────────────────────────────────────────────
 
 
+router.use("/", require("../usersmanagement/users.routes"));
 
+// ─────────────────────────────────────────────
+// 📋 Category CRUD (GET/POST/PUT/DELETE )
+// ─────────────────────────────────────────────
+router.use("/categories", categoryRoutes);
+
+
+// ─────────────────────────────────────────────
+// 📋 Class CRUD (GET/POST/PUT/DELETE )
+// ─────────────────────────────────────────────
+// router.use("/classes", classRoutes);
 // ─────────────────────────────────────────────
 // 📋 Profile CRUD (GET/PUT)
 // GET /api/users/admin/profile

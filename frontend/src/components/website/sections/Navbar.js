@@ -27,7 +27,9 @@ const Navbar = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
   const { profile, fetchProfile, clearAdmin } = useAdminStore();
   const router = useRouter();
   const userRole = user?.role?.toLowerCase();
@@ -172,22 +174,21 @@ const Navbar = () => {
             <motion.button
               whileHover={{ scale: 1.1 }}
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden flex items-center justify-center shadow-lg"
+              className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg flex items-center justify-center bg-white"
             >
               <img
                 src={getAvatarUrl(user.avatar_url)}
                 alt="Avatar"
-                width={36}
-                height={36}
-                className="rounded-full border-2 border-gray-800 shadow object-cover"
+                width={48}
+                height={48}
+                className="w-full h-full object-cover rounded-full"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = "/images/profile/user.png";
                 }}
               />
-
-
             </motion.button>
+
 
 
 

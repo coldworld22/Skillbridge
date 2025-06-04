@@ -10,17 +10,25 @@ const useAuthStore = create(
       hasHydrated: false,
 
       setUser: (userData) => set({ user: userData }),
+      setToken: (token) => set({ accessToken: token }),
+      markHydrated: () => set({ hasHydrated: true }),
+
+      isAuthenticated: () => !!get().accessToken && !!get().user,
 
       login: async (credentials) => {
         const { accessToken, user } = await authService.loginUser(credentials);
-        if (user.avatar_url?.startsWith("blob:")) user.avatar_url = null;
+        if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
+          user.avatar_url = null;
+        }
         set({ accessToken, user });
         return user;
       },
 
       register: async (data) => {
         const { accessToken, user } = await authService.registerUser(data);
-        if (user.avatar_url?.startsWith("blob:")) user.avatar_url = null;
+        if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
+          user.avatar_url = null;
+        }
         set({ accessToken, user });
         return user;
       },
@@ -29,20 +37,16 @@ const useAuthStore = create(
         try {
           await authService.logoutUser();
         } catch (_) {}
+        localStorage.removeItem("auth");
         set({ accessToken: null, user: null });
       },
-
-      setToken: (token) => set({ accessToken: token }),
-
-      // ✅ Manual fallback to trigger hydration if needed
-      markHydrated: () => set({ hasHydrated: true }),
     }),
     {
       name: "auth",
       onRehydrateStorage: () => {
         return (state) => {
           console.log("🔥 Zustand hydrated");
-          set({ hasHydrated: true }); // 🔥 Ensure hydration flag gets set
+          set({ hasHydrated: true });
         };
       },
     }

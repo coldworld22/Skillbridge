@@ -7,20 +7,35 @@ const db = require("../../config/database");
  * - Supports case-insensitive name or email search
  * - Returns basic public user fields
  */
-exports.queryUsers = ({ search, limit = 10, offset = 0 }) => {
-  return db("users")
-    .select("id", "full_name", "email", "role", "status", "profile_complete","is_email_verified", "is_phone_verified", "created_at")
-    .whereNot("status", "banned")
-    .modify((qb) => {
-      if (search) {
-        qb.whereILike("full_name", `%${search}%`)
-          .orWhereILike("email", `%${search}%`);
-      }
-    })
-    .limit(limit)
-    .offset(offset)
-    .orderBy("created_at", "desc");
+exports.getAllUsers = async (filters) => {
+  let query = db("users").select(
+    "id",
+    "full_name",
+    "email",
+    "role",
+    "status",
+    "profile_complete",
+    "is_email_verified",
+    "is_phone_verified",
+    "avatar_url",          // ✅ Add this
+    "phone",               // ✅ Optional
+    "gender",              // ✅ Optional
+    "date_of_birth",       // ✅ Optional
+    "created_at"
+  );
+
+  if (filters.role) query.where("role", filters.role);
+  if (filters.status) query.where("status", filters.status);
+  if (filters.search) {
+    query.andWhere((qb) => {
+      qb.whereILike("full_name", `%${filters.search}%`)
+        .orWhereILike("email", `%${filters.search}%`);
+    });
+  }
+
+  return await query.orderBy("created_at", "desc");
 };
+
 
 /**
  * 📊 Count total users for pagination (excluding banned)
