@@ -25,8 +25,8 @@ router.use("/categories", categoryRoutes);
  *          - Admin management (POST/PUT/DELETE /admin/...)
  *          Uses internal middleware for protection
  */
-const tutorialRoutes = require("./tutorials/tutorial.routes")
-router.use("/users/tutorials", tutorialRoutes);
+const tutorialRoutes = require("./tutorials/tutorial.routes");
+router.use("/tutorials", tutorialRoutes);
 
 
 // ==============================================
