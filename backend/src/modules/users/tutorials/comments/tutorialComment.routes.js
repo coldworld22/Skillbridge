@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const ctrl = require("./tutorialComment.controller");
-const { verifyToken, isStudent } = require("../../../middleware/authMiddleware");
+const { verifyToken, isStudent } = require("../../../../middleware/auth/authMiddleware");
 
 router.post("/:tutorialId", verifyToken, isStudent, ctrl.createComment);
 router.get("/:tutorialId", ctrl.getComments);

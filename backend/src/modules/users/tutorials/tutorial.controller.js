@@ -4,6 +4,9 @@ const fs = require("fs");
 const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
 
+const catchAsync = require("../../../utils/catchAsync");
+const { v4: uuidv4 } = require("uuid");
+
 
 const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");

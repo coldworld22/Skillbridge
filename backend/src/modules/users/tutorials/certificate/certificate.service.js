@@ -1,4 +1,4 @@
-const db = require("../../../config/database");
+const db = require("../../../../config/database");
 const { v4: uuidv4 } = require("uuid");
 
 // Generate a unique certificate code

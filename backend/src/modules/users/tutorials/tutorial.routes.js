@@ -63,8 +63,6 @@ router.use("/enroll", require("./enrollments/tutorialEnrollment.routes"));
 
 router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
-app.use("/api/certificates", require("./modules/users/certificates/certificatePublic.routes"));
-
 
 
 

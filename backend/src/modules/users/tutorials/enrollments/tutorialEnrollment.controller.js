@@ -1,6 +1,6 @@
-const db = require("../../../config/database");
-const catchAsync = require("../../../utils/catchAsync");
-const { sendSuccess } = require("../../../utils/response");
+const db = require("../../../../config/database");
+const catchAsync = require("../../../../utils/catchAsync");
+const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 
 // Enroll in tutorial

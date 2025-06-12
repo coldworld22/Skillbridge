@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ctrl = require("./tutorialChapter.controller");
-const { verifyToken, isInstructorOrAdmin } = require("../../../middleware/authMiddleware");
+const { verifyToken, isInstructorOrAdmin } = require("../../../../middleware/auth/authMiddleware");
 
 router.post("/", verifyToken, isInstructorOrAdmin, ctrl.createChapter);
 router.patch("/:id", verifyToken, isInstructorOrAdmin, ctrl.updateChapter);
