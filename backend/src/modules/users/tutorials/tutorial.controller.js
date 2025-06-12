@@ -19,30 +19,49 @@ const generateUniqueSlug = async (title) => {
   return slug;
 };
 
-exports.createTutorial = async (req, res) => {
-  const data = req.body;
+exports.createTutorial = catchAsync(async (req, res) => {
+  const {
+    title, description, category_id, level, duration,
+    price, status = "draft", chapters = []
+  } = req.body;
 
-  // 🔄 Handle uploads
-  if (req.files?.thumbnail) {
-    data.cover_image = `/uploads/tutorials/${req.files.thumbnail[0].filename}`;
-  }
-  if (req.files?.preview) {
-    data.preview_video = `/uploads/tutorials/${req.files.preview[0].filename}`;
+  const instructor_id = req.user.id;
+  const slug = slugify(title, { lower: true, strict: true });
+  const id = uuidv4();
+
+  // Save tutorial
+  const tutorial = {
+    id,
+    title,
+    slug,
+    description,
+    category_id,
+    level,
+    duration,
+    price,
+    instructor_id,
+    status,
+    thumbnail_url: req.file ? `/uploads/tutorials/${req.file.filename}` : null,
+  };
+  await tutorialService.create(tutorial);
+
+  // Save chapters (if any)
+  for (let i = 0; i < chapters.length; i++) {
+    const ch = chapters[i];
+    await chapterService.create({
+      id: uuidv4(),
+      tutorial_id: id,
+      title: ch.title,
+      video_url: ch.video_url,
+      duration: ch.duration,
+      order: ch.order ?? i + 1,
+      is_preview: ch.is_preview ?? false,
+    });
   }
 
-  // 🔐 Auto-fill instructor_id from auth if not in body
-  if (!data.instructor_id && req.user?.id) {
-    data.instructor_id = req.user.id;
-  }
+  sendSuccess(res, tutorial, "Tutorial with chapters created");
+});
 
-  // ✅ Add unique slug
-  if (!data.slug && data.title) {
-    data.slug = await generateUniqueSlug(data.title);
-  }
-
-  const tutorial = await service.createTutorial(data);
-  sendSuccess(res, tutorial);
-};
 
 exports.getAllTutorials = async (req, res) => {
   const tutorials = await service.getAllTutorials(req.query);
