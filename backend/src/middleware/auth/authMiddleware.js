@@ -63,6 +63,17 @@ const isInstructor = (req, res, next) => {
 };
 
 /**
+ * 🔐 Middleware: Allow Instructor or Admin roles
+ */
+const isInstructorOrAdmin = (req, res, next) => {
+  const role = req.user?.role;
+  if (role === "Instructor" || isAdminRole(role)) {
+    return next();
+  }
+  return res.status(403).json({ message: "Instructor or Admin access only" });
+};
+
+/**
  * 🔐 Middleware: Restrict access to Student only
  */
 const isStudent = (req, res, next) => {
@@ -86,6 +97,7 @@ module.exports = {
   isAdmin,
   isSuperAdmin,
   isInstructor,
+  isInstructorOrAdmin,
   isStudent,
   isSelfOrAdmin,
 };

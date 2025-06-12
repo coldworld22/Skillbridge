@@ -5,13 +5,13 @@ const controller = require("./tutorial.controller");
 const validate = require("../../../middleware/validate");
 const upload = require("./tutorialUploadMiddleware");
 const tutorialValidator = require("./tutorial.validator");
-const { isAdmin, verifyToken } = require("../../../middleware/auth/authMiddleware");
+const { isAdmin, verifyToken, isInstructorOrAdmin } = require("../../../middleware/auth/authMiddleware");
 
 // ✅ Admin routes
 router.post(
   "/admin",
   verifyToken,
-  isAdmin,
+  isInstructorOrAdmin,
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "preview", maxCount: 1 },
@@ -20,13 +20,13 @@ router.post(
   controller.createTutorial
 );
 
-router.get("/admin", verifyToken, isAdmin, controller.getAllTutorials);
-router.get("/admin/:id", verifyToken, isAdmin, controller.getTutorialById);
+router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllTutorials);
+router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getTutorialById);
 
 router.put(
   "/admin/:id",
   verifyToken,
-  isAdmin,
+  isInstructorOrAdmin,
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "preview", maxCount: 1 },
@@ -35,12 +35,12 @@ router.put(
   controller.updateTutorial
 );
 
-router.patch("/admin/:id/trash", verifyToken, isAdmin, controller.softDeleteTutorial);
-router.patch("/admin/:id/restore", verifyToken, isAdmin, controller.restoreTutorial);
-router.delete("/admin/:id", verifyToken, isAdmin, controller.permanentlyDeleteTutorial);
+router.patch("/admin/:id/trash", verifyToken, isInstructorOrAdmin, controller.softDeleteTutorial);
+router.patch("/admin/:id/restore", verifyToken, isInstructorOrAdmin, controller.restoreTutorial);
+router.delete("/admin/:id", verifyToken, isInstructorOrAdmin, controller.permanentlyDeleteTutorial);
 
 // ✅ Status and moderation
-router.patch("/admin/:id/status", verifyToken, isAdmin, controller.togglePublishStatus);
+router.patch("/admin/:id/status", verifyToken, isInstructorOrAdmin, controller.togglePublishStatus);
 router.patch("/admin/:id/approve", verifyToken, isAdmin, controller.approveTutorial);
 router.patch(
   "/admin/:id/reject",
@@ -70,7 +70,7 @@ router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
 // ✅ Bulk actions
 router.patch("/admin/bulk/approve", verifyToken, isAdmin, controller.bulkApproveTutorials);
-router.patch("/admin/bulk/trash", verifyToken, isAdmin, controller.bulkTrashTutorials);
+router.patch("/admin/bulk/trash", verifyToken, isInstructorOrAdmin, controller.bulkTrashTutorials);
 
 // ✅ Public routes (no auth required)
 router.get("/featured", controller.getFeaturedTutorials);
