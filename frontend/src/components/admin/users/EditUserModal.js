@@ -46,7 +46,8 @@ export default function EditUserModal({ isOpen = false, onClose, user, onUserUpd
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
-        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        {/* headlessui v2 does not expose a Dialog.Overlay component */}
+        <div className="fixed inset-0 bg-black opacity-30" aria-hidden="true" />
 
         <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-50 relative">
           <Dialog.Title className="text-lg font-bold mb-4">Edit User</Dialog.Title>

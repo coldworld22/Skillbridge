@@ -1,6 +1,6 @@
 // pages/dashboard/admin/users/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import AddUserForm from "@/components/admin/users/AddUserForm"; // you'll move form logic from modal here
+import AddUserForm from "@/components/admin/users/AddUserForm";
 
 export default function CreateUserPage() {
   return (
