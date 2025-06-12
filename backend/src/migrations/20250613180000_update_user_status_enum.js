@@ -1,17 +1,24 @@
-exports.up = function(knex) {
-  return knex.raw(`
-    ALTER TABLE users
-    DROP CONSTRAINT IF EXISTS users_status_check,
-    ADD CONSTRAINT users_status_check
-    CHECK (status IN ('pending', 'active', 'inactive', 'suspended', 'banned'));
-  `);
+
+exports.up = async function(knex) {
+  // ✅ Simply alter category_id to UUID
+  await knex.schema.alterTable('tutorials', (table) => {
+    table.uuid('category_id').alter();
+  });
+
+  // ✅ Recreate FK if desired (optional)
+  await knex.schema.alterTable('tutorials', (table) => {
+    table
+      .foreign('category_id')
+      .references('id')
+      .inTable('categories')
+      .onDelete('SET NULL');
+  });
 };
 
-exports.down = function(knex) {
-  return knex.raw(`
-    ALTER TABLE users
-    DROP CONSTRAINT IF EXISTS users_status_check,
-    ADD CONSTRAINT users_status_check
-    CHECK (status IN ('pending', 'active', 'banned'));
-  `);
+exports.down = async function(knex) {
+  await knex.schema.alterTable('tutorials', (table) => {
+    table.dropForeign('category_id');
+    table.integer('category_id').alter();
+  });
+
 };
