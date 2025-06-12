@@ -141,7 +141,7 @@ exports.updateRole = async (req, res) => {
 
 exports.bulkUpdateStatus = catchAsync(async (req, res) => {
   const { ids, status } = req.body;
-  if (!Array.isArray(ids) || !["active", "pending"].includes(status)) {
+  if (!Array.isArray(ids) || !["active", "inactive", "suspended", "pending"].includes(status)) {
     throw new AppError("Invalid input for bulk update", 400);
   }
 
