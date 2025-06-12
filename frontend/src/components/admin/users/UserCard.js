@@ -37,10 +37,12 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
 
   const toggleStatus = async () => {
     const newStatus = enabled ? "inactive" : "active";
+    if (!window.confirm(`Set ${user.name} as ${newStatus}?`)) return;
     try {
       await updateUserStatus(user.id, newStatus);
       setEnabled(!enabled);
       toast.success(`${user.name} is now ${newStatus}`);
+      alert(`${user.name} is now ${newStatus}`);
     } catch (err) {
       toast.error("Failed to update status");
       console.error("Status error:", err);
@@ -65,6 +67,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
       await deleteUser(user.id);
       onDelete(user.id);
       toast.success(`${user.name} deleted`);
+      alert(`${user.name} deleted`);
     } catch (err) {
       toast.error("Failed to delete user");
       console.error("Delete error:", err);

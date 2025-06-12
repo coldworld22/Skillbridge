@@ -13,8 +13,8 @@ exports.up = async function (knex) {
     await knex('tutorials').where({ id: t.id }).update({ category_id_tmp: newId });
   }
 
+  await knex.raw('ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_category_id_foreign');
   await knex.schema.table('tutorials', (table) => {
-    table.dropForeign('category_id');
     table.dropColumn('category_id');
   });
   await knex.schema.table('tutorials', (table) => {
@@ -41,8 +41,8 @@ exports.down = async function (knex) {
     await knex('tutorials').where({ id: t.id }).update({ category_id_tmp: idx });
   }
 
+  await knex.raw('ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_category_id_foreign');
   await knex.schema.table('tutorials', (table) => {
-    table.dropForeign('category_id');
     table.dropColumn('category_id');
   });
   await knex.schema.table('tutorials', (table) => {
