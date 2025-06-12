@@ -28,12 +28,19 @@ exports.createUser = catchAsync(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  const formattedRole =
+    role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  const allowedRoles = ["Admin", "Superadmin", "Instructor", "Student"];
+  if (!allowedRoles.includes(formattedRole)) {
+    return res.status(400).json({ message: "Invalid role" });
+  }
+
   const user = await service.createUser({
     full_name,
     email,
     phone,
     password_hash: hashedPassword, // ✅ renamed here
-    role,
+    role: formattedRole,
   });
 
   sendSuccess(res, user, "User created");
