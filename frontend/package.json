@@ -45,6 +45,7 @@
     "paypal-checkout-components": "^4.1.35",
     "paypal-rest-sdk": "^1.8.1",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-big-calendar": "^1.18.0",
     "react-calendar": "^5.1.0",
     "react-chartjs-2": "^5.3.0",

@@ -36,7 +36,6 @@ const verifyToken = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Admin and SuperAdmin roles
  */
 const isAdmin = (req, res, next) => {
-   console.log("🧪 Role:", req.user?.role);
   if (!req.user || !isAdminRole(req.user.role)) {
     return res.status(403).json({ message: "Admin access only" });
   }

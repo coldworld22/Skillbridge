@@ -50,6 +50,26 @@ router.patch(
   controller.rejectTutorial
 );
 
+/*
+ * ✅ Tutorial chapters routes  
+*/
+router.use("/chapters", require("./chapters/tutorialChapter.routes"));
+
+router.use("/reviews", require("./reviews/tutorialReview.routes"));
+
+router.use("/comments", require("./comments/tutorialComment.routes"));
+
+router.use("/enroll", require("./enrollments/tutorialEnrollment.routes"));
+
+router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
+
+app.use("/api/certificates", require("./modules/users/certificates/certificatePublic.routes"));
+
+
+
+
+
+
 // ✅ Bulk actions
 router.patch("/admin/bulk/approve", verifyToken, isAdmin, controller.bulkApproveTutorials);
 router.patch("/admin/bulk/trash", verifyToken, isAdmin, controller.bulkTrashTutorials);
