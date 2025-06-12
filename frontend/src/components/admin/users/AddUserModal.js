@@ -4,11 +4,14 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: "",
+    full_name: "",
     email: "",
+    phone: "",
+    password: "",
     role: "student",
     status: "active",
     avatar: null,
+    gender: "male",
   });
 
   const [loading, setLoading] = useState(false);
@@ -17,11 +20,14 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        name: "",
+        full_name: "",
         email: "",
+        phone: "",
+        password: "",
         role: "student",
         status: "active",
         avatar: null,
+        gender: "male",
       });
       setPreview(null);
     }
@@ -46,7 +52,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.email.trim()) {
+    if (!formData.full_name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.phone.trim()) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -83,9 +89,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
 
         <input
           type="text"
-          name="name"
+          name="full_name"
           placeholder="Full Name"
-          value={formData.name}
+          value={formData.full_name}
           onChange={handleChange}
           className="w-full border p-2 mb-3 rounded"
         />
@@ -98,6 +104,36 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
           onChange={handleChange}
           className="w-full border p-2 mb-3 rounded"
         />
+
+        <input
+          type="text"
+          name="phone"
+          placeholder="Phone"
+          value={formData.phone}
+          onChange={handleChange}
+          className="w-full border p-2 mb-3 rounded"
+        />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          className="w-full border p-2 mb-3 rounded"
+        />
+
+        <select
+          name="gender"
+          value={formData.gender}
+          onChange={handleChange}
+          className="w-full border p-2 mb-3 rounded"
+        >
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+          <option value="prefer-not-to-say">Prefer not to say</option>
+        </select>
 
         <select
           name="role"

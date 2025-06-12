@@ -157,7 +157,16 @@ export default function UserList({ users, setUsers }) {
 
       {/* Edit Modal */}
       {selectedUser && (
-        <UserEditModal user={selectedUser} onClose={closeEditModal} />
+        <UserEditModal
+          isOpen={Boolean(selectedUser)}
+          user={selectedUser}
+          onClose={closeEditModal}
+          onUserUpdated={(updated) =>
+            setUsers((prev) =>
+              prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
+            )
+          }
+        />
       )}
     </div>
   );
