@@ -32,6 +32,7 @@
 - **Purpose**: Handles password reset OTPs
 - **Primary Key**: `id`
 - **Foreign Keys**: `user_id → users(id)`
+- **Columns**: `user_id`, `code`, `expires_at`, `used`, `created_at`
 
 
 ## Classes Tables
