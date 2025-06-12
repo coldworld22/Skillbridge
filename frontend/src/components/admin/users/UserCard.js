@@ -37,6 +37,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
 
   const toggleStatus = async () => {
     const newStatus = enabled ? "inactive" : "active";
+    if (!window.confirm(`Set ${user.name} as ${newStatus}?`)) return;
     try {
       await updateUserStatus(user.id, newStatus);
       setEnabled(!enabled);
