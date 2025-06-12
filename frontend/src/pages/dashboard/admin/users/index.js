@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import UserList from "@/components/admin/users/UserList";
-import { fetchAllUsers, createUser } from "@/services/admin/userService";
+import { fetchAllUsers } from "@/services/admin/userService";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 
 export default function UsersPage() {
-  const [showModal, setShowModal] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editUser, setEditUser] = useState(null);
@@ -65,34 +64,13 @@ export default function UsersPage() {
     );
   }
 
-  const handleAddUser = async (newUser) => {
-    try {
-      const created = await createUser(newUser);
-      const formatted = {
-        ...created,
-        name: created.full_name || created.email?.split("@")[0],
-        createdAt: created.created_at,
-        status: created.status?.toLowerCase() ?? "inactive",
-        role: created.role?.toLowerCase() ?? "student",
-        avatar_url: created.avatar_url
-          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${created.avatar_url}`
-          : null,
-      };
-      setUsers((prev) => [...prev, formatted]);
-      toast.success("User added successfully");
-    } catch (err) {
-      toast.error("Failed to add user");
-      console.error(err);
-    }
-  };
-
   return (
     <AdminLayout>
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => router.push("/dashboard/admin/users/create")}
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
           >
             + Add User
@@ -124,8 +102,6 @@ export default function UsersPage() {
         ) : (
           <UserList users={users} setUsers={setUsers} />
         )}
-
-        
       </div>
     </AdminLayout>
   );
