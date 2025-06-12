@@ -2,24 +2,22 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import EditUserForm from "@/components/admin/users/EditUserForm"; // move modal form logic here
+import EditUserForm from "@/components/admin/users/EditUserForm";
 import { fetchUserById } from "@/services/admin/userService";
 import { toast } from "react-toastify";
-import useAuthStore from "@/store/auth/authStore";
 
 export default function EditUserPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { accessToken } = useAuthStore();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (id && accessToken) {
-      fetchUserById(id, accessToken)
+    if (id) {
+      fetchUserById(id)
         .then((u) => setUser(u))
         .catch(() => toast.error("Failed to load user"));
     }
-  }, [id, accessToken]);
+  }, [id]);
 
   if (!user) {
     return <div className="p-8">Loading...</div>;
