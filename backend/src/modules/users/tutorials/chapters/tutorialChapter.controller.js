@@ -72,3 +72,18 @@ exports.getChaptersByTutorial = catchAsync(async (req, res) => {
   sendSuccess(res, chapters, "Chapters fetched");
 });
 
+// Reorder chapters within a tutorial
+exports.reorderChapters = catchAsync(async (req, res) => {
+  const { tutorialId } = req.params;
+  const { orderedIds } = req.body;
+
+  if (!Array.isArray(orderedIds)) {
+    throw new AppError("orderedIds must be an array", 400);
+  }
+
+  const updates = orderedIds.map((id, index) => ({ id, order: index + 1 }));
+  await service.reorderChapters(tutorialId, updates);
+
+  sendSuccess(res, null, "Chapters reordered");
+});
+

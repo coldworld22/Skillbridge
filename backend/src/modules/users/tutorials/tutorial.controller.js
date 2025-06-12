@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
+const chapterService = require("./chapters/tutorialChapter.service");
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
@@ -48,7 +49,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     status,
     thumbnail_url: req.file ? `/uploads/tutorials/${req.file.filename}` : null,
   };
-  await tutorialService.create(tutorial);
+  await service.createTutorial(tutorial);
 
   // Save chapters (if any)
   for (let i = 0; i < chapters.length; i++) {

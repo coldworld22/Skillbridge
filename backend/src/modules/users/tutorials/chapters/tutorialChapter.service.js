@@ -23,3 +23,14 @@ exports.getByTutorial = async (tutorial_id) => {
 exports.delete = async (id) => {
   return db("tutorial_chapters").where({ id }).del();
 };
+
+exports.reorderChapters = async (tutorial_id, orders) => {
+  return db.transaction(async (trx) => {
+    for (const { id, order } of orders) {
+      await db("tutorial_chapters")
+        .where({ id, tutorial_id })
+        .update({ order })
+        .transacting(trx);
+    }
+  });
+};
