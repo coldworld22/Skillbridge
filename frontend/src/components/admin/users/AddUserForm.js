@@ -10,9 +10,9 @@ export default function AddUserForm() {
     email: "",
     phone: "",
 
+
     password: "",
     role: "student",
-
     gender: "male",
   });
 
@@ -76,7 +76,6 @@ export default function AddUserForm() {
         <option value="instructor">Instructor</option>
         <option value="student">Student</option>
       </select>
-
 
       <select
         name="gender"
