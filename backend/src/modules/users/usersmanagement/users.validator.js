@@ -2,12 +2,12 @@
 const { z } = require("zod");
 
 exports.statusSchema = z.object({
-  status: z.enum(["pending", "active"]),
+  status: z.enum(["pending", "active", "inactive", "suspended"]),
 });
 
 exports.bulkStatusSchema = z.object({
   ids: z.array(z.string().uuid()),
-  status: z.enum(["pending", "active"]),
+  status: z.enum(["pending", "active", "inactive", "suspended"]),
 });
 
 
