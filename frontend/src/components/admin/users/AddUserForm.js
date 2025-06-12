@@ -9,6 +9,10 @@ export default function AddUserForm() {
     full_name: "",
     email: "",
     phone: "",
+
+    password: "",
+    role: "student",
+
     gender: "male",
   });
 
@@ -52,6 +56,28 @@ export default function AddUserForm() {
         placeholder="Phone"
         className="w-full px-3 py-2 border rounded"
       />
+
+      <input
+        type="password"
+        name="password"
+        value={formData.password}
+        onChange={handleChange}
+        placeholder="Password"
+        className="w-full px-3 py-2 border rounded"
+      />
+      <select
+        name="role"
+        value={formData.role}
+        onChange={handleChange}
+        className="w-full px-3 py-2 border rounded"
+      >
+        <option value="admin">Admin</option>
+        <option value="superadmin">Superadmin</option>
+        <option value="instructor">Instructor</option>
+        <option value="student">Student</option>
+      </select>
+
+
       <select
         name="gender"
         value={formData.gender}
