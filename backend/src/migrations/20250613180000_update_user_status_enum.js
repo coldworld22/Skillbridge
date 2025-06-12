@@ -1,3 +1,4 @@
+
 exports.up = async function(knex) {
   // ✅ Simply alter category_id to UUID
   await knex.schema.alterTable('tutorials', (table) => {
@@ -19,4 +20,5 @@ exports.down = async function(knex) {
     table.dropForeign('category_id');
     table.integer('category_id').alter();
   });
+
 };
