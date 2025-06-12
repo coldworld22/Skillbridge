@@ -5,18 +5,14 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const uploadChapterVideo = require("./uploadChapterVideo");
 
-// Inside the router:
-router.post(
-  "/upload",
-  verifyToken,
-  isInstructorOrAdmin,
-  uploadChapterVideo,
-  (req, res) => {
-    if (!req.file) return res.status(400).json({ message: "No video uploaded" });
-    const videoUrl = `/uploads/tutorials/chapters/${req.file.filename}`;
-    return res.status(200).json({ video_url: videoUrl });
+// Handle chapter video uploads
+exports.uploadVideo = (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No video uploaded" });
   }
-);
+  const videoUrl = `/uploads/tutorials/chapters/${req.file.filename}`;
+  return res.status(200).json({ video_url: videoUrl });
+};
 
 
 // Create chapter
