@@ -3,19 +3,19 @@ const db = require("../../../config/database");
 const service = require("./users.service");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
-const { success, sendSuccess } = require("../../../utils/response"); 
+const { sendSuccess } = require("../../../utils/response");
 const bcrypt = require("bcrypt");
 // Controller
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (_req, res) => {
   const users = await db("users").select("*"); // Add joins for profiles if needed
-  res.json(users);
+  sendSuccess(res, users, "Users fetched");
 };
 
 
 exports.getUserById = catchAsync(async (req, res) => {
   const user = await service.getUserById(req.params.id);
   if (!user) throw new AppError("User not found", 404);
-  sendSuccess(res, "User fetched", user);
+  sendSuccess(res, user, "User fetched");
 });
 
 
@@ -36,13 +36,13 @@ exports.createUser = catchAsync(async (req, res) => {
     role,
   });
 
-  success(res, "User created", user);
+  sendSuccess(res, user, "User created");
 });
 
 
 exports.updateUserProfile = catchAsync(async (req, res) => {
   const updatedUser = await service.updateUserProfile(req.params.id, req.body);
-  sendSuccess(res, "User profile updated", updatedUser);
+  sendSuccess(res, updatedUser, "User profile updated");
 });
 
 
@@ -59,7 +59,7 @@ exports.updateUserStatus = catchAsync(async (req, res) => {
   }
 
   const updated = await service.updateUserStatus(req.params.id, status);
-  sendSuccess(res, "User status updated", updated);
+  sendSuccess(res, updated, "User status updated");
 });
 
 
@@ -73,7 +73,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.resetUserPassword = catchAsync(async (req, res) => {
   const newPassword = await service.resetUserPassword(req.params.id);
-  sendSuccess(res, "Password reset successfully", { newPassword });
+  sendSuccess(res, { newPassword }, "Password reset successfully");
 });
 
 
@@ -110,18 +110,18 @@ exports.uploadUserAvatar = catchAsync(async (req, res) => {
 
   const avatar_url = `/api/uploads/avatars/${req.file.filename}`;
   const updatedUser = await service.updateUserAvatar(req.params.id, avatar_url);
-  sendSuccess(res, "User avatar updated", updatedUser);
+  sendSuccess(res, updatedUser, "User avatar updated");
 });
 
 
 exports.removeUserIdentity = catchAsync(async (req, res) => {
   await service.removeUserIdentity(req.params.id);
-  sendSuccess(res, "Identity document removed");
+  sendSuccess(res, null, "Identity document removed");
 });
 
 exports.restoreUser = catchAsync(async (req, res) => {
   const user = await service.restoreUser(req.params.id);
-  sendSuccess(res, "User restored", user);
+  sendSuccess(res, user, "User restored");
 });
 
 exports.updateStatus = async (req, res) => {
@@ -146,7 +146,7 @@ exports.bulkUpdateStatus = catchAsync(async (req, res) => {
   }
 
   await service.bulkUpdateStatus(ids, status);
-  sendSuccess(res, "Statuses updated for selected users");
+  sendSuccess(res, null, "Statuses updated for selected users");
 });
 
 exports.bulkDeleteUsers = catchAsync(async (req, res) => {
@@ -155,5 +155,5 @@ exports.bulkDeleteUsers = catchAsync(async (req, res) => {
     throw new AppError("Invalid user IDs for bulk delete", 400);
   }
   await service.bulkDeleteUsers(ids);
-  sendSuccess(res, "Selected users deleted");
+  sendSuccess(res, null, "Selected users deleted");
 });
