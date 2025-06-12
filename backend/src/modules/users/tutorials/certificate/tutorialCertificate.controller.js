@@ -1,4 +1,7 @@
 const service = require("./certificate.service");
+const catchAsync = require("../../../../utils/catchAsync");
+const { sendSuccess } = require("../../../../utils/response");
+const AppError = require("../../../../utils/AppError");
 
 exports.generateCertificate = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;

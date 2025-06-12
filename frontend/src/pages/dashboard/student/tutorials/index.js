@@ -1,25 +1,7 @@
 import { useState, useEffect } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { FaBookOpen, FaPlayCircle, FaCheckCircle, FaFilter, FaSearch } from "react-icons/fa";
-
-const mockTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    category: "Frontend",
-    instructor: "John Doe",
-    description: "Complete React.js course covering fundamentals and advanced topics.",
-    chapters: ["Intro", "Components", "Hooks", "State Management"],
-  },
-  {
-    id: 2,
-    title: "Advanced JavaScript",
-    category: "JavaScript",
-    instructor: "Elon Dev",
-    description: "Deep dive into JS ES6+, closures, promises, and more.",
-    chapters: ["Scope", "Promises", "Async/Await", "Advanced Patterns"],
-  },
-];
+import { FaBookOpen, FaPlayCircle, FaCheckCircle } from "react-icons/fa";
+import { fetchPublishedTutorials } from "@/services/tutorialService";
 
 export default function StudentTutorialsPage() {
   const [search, setSearch] = useState("");
@@ -27,17 +9,25 @@ export default function StudentTutorialsPage() {
   const [tutorials, setTutorials] = useState([]);
 
   useEffect(() => {
-    const enriched = mockTutorials.map((tut) => {
-      const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-      const progress = saved ? JSON.parse(saved) : { completedChapters: [], completedQuiz: false };
-      return {
-        ...tut,
-        completedLessons: progress.completedChapters.length,
-        totalLessons: tut.chapters.length,
-        isCompleted: progress.completedQuiz,
-      };
-    });
-    setTutorials(enriched);
+    const load = async () => {
+      try {
+        const data = await fetchPublishedTutorials();
+        const enriched = data.map((tut) => {
+          const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+          const progress = saved ? JSON.parse(saved) : { completedChapters: [], completedQuiz: false };
+          return {
+            ...tut,
+            completedLessons: progress.completedChapters.length,
+            totalLessons: tut.chapters?.length || 0,
+            isCompleted: progress.completedQuiz,
+          };
+        });
+        setTutorials(enriched);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
   }, []);
 
   const filtered = tutorials.filter(tut => {

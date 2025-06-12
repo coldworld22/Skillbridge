@@ -12,6 +12,7 @@ require("dotenv").config(); // ✅ Load environment variables from .env file
 const authRoutes = require("./modules/auth/routes/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
 const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP routes
+const certificatePublicRoutes = require("./modules/users/tutorials/certificate/certificatePublic.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);      // 🔐 Auth: login, register, password reset
 app.use("/api/users", userRoutes);     // 👤 Users: profile, avatar, demo video
 app.use("/api/verify", verifyRoutes);  // ✅ OTP: send/confirm email/phone
+app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificate verification
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
