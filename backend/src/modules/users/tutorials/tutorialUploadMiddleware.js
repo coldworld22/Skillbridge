@@ -3,14 +3,21 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Ensure uploads/tutorials folder exists
-const uploadPath = path.join(__dirname, "../../../../uploads/tutorials");
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+// Helper to determine base directory based on user role
+const resolveUploadPath = (req) => {
+  const base = path.join(__dirname, "../../../../uploads/tutorials");
+  let role = req.user?.role?.toLowerCase() || "other";
+  if (["superadmin", "admin"].includes(role)) role = "admin";
+  const roleDir = path.join(base, role);
+  if (!fs.existsSync(roleDir)) fs.mkdirSync(roleDir, { recursive: true });
+  return roleDir;
+};
 
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadPath);
+    const dir = resolveUploadPath(req);
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
