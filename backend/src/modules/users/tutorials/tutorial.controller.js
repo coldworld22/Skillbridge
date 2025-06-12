@@ -78,7 +78,7 @@ exports.getTutorialById = catchAsync(async (req, res) => {
   const tutorial = await service.getTutorialById(req.params.id);
 
   sendSuccess(res, tutorial);
-};
+});
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
@@ -92,84 +92,84 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   const tutorial = await service.updateTutorial(req.params.id, data);
 
   sendSuccess(res, tutorial);
-};
+});
 
 
 exports.softDeleteTutorial = catchAsync(async (req, res) => {
   await service.updateStatus(req.params.id, { status: "archived" });
 
   sendSuccess(res, { message: "Archived" });
-};
+});
 
 
 exports.restoreTutorial = catchAsync(async (req, res) => {
   await service.updateStatus(req.params.id, { status: "draft" });
 
   sendSuccess(res, { message: "Restored to draft" });
-};
+});
 
 
 exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
   await service.permanentlyDeleteTutorial(req.params.id);
 
   sendSuccess(res, { message: "Permanently deleted" });
-};
+});
 
 
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   await service.togglePublishStatus(req.params.id);
 
   sendSuccess(res, { message: "Status toggled" });
-};
+});
 
 
 exports.approveTutorial = catchAsync(async (req, res) => {
   await service.updateModeration(req.params.id, "approved");
 
   sendSuccess(res, { message: "Tutorial approved" });
-};
+});
 
 
 exports.rejectTutorial = catchAsync(async (req, res) => {
   await service.updateModeration(req.params.id, "rejected", req.body.reason);
 
   sendSuccess(res, { message: "Tutorial rejected" });
-};
+});
 
 
 exports.bulkApproveTutorials = catchAsync(async (req, res) => {
   await service.bulkUpdateModeration(req.body.ids, "approved");
 
   sendSuccess(res, { message: "Bulk approval done" });
-};
+});
 
 
 exports.bulkTrashTutorials = catchAsync(async (req, res) => {
   await service.bulkUpdateStatus(req.body.ids, "archived");
 
   sendSuccess(res, { message: "Bulk archived" });
-};
+});
 
 
 exports.getFeaturedTutorials = catchAsync(async (req, res) => {
   const featured = await service.getFeaturedTutorials();
 
   sendSuccess(res, featured);
-};
+});
 
 
 exports.getPublishedTutorials = catchAsync(async (req, res) => {
   const tutorials = await service.getPublishedTutorials(req.query);
 
   sendSuccess(res, tutorials);
-};
+});
 
 
 exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
   const tutorial = await service.getPublicTutorialDetails(req.params.id);
 
   sendSuccess(res, tutorial);
-};
+});
 exports.getTutorialsByCategory = async (req, res) => {
   const { categoryId } = req.params;
   const tutorials = await service.getTutorialsByCategory(categoryId);
