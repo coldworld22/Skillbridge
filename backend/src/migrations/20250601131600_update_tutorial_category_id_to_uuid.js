@@ -17,14 +17,13 @@ exports.up = async function (knex) {
   }
 
   await knex.raw('ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_category_id_foreign');
-  const hasCol = await knex.schema.hasColumn('tutorials', 'category_id');
-  if (hasCol) {
-    await knex.schema.alterTable('tutorials', (table) => {
-      table.dropColumn('category_id');
-    });
-  }
-  await knex.schema.alterTable('tutorials', (table) => {
-    table.uuid('category_id');
+
+  await knex.schema.table('tutorials', (table) => {
+    table.dropColumn('category_id');
+  });
+  await knex.schema.table('tutorials', (table) => {
+    table.uuid('category_id').references('id').inTable('categories').onDelete('SET NULL');
+
   });
   await knex.raw(`DO $$
   BEGIN
@@ -63,14 +62,13 @@ exports.down = async function (knex) {
   }
 
   await knex.raw('ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_category_id_foreign');
-  const hasCol = await knex.schema.hasColumn('tutorials', 'category_id');
-  if (hasCol) {
-    await knex.schema.alterTable('tutorials', (table) => {
-      table.dropColumn('category_id');
-    });
-  }
-  await knex.schema.alterTable('tutorials', (table) => {
-    table.integer('category_id');
+
+  await knex.schema.table('tutorials', (table) => {
+    table.dropColumn('category_id');
+  });
+  await knex.schema.table('tutorials', (table) => {
+    table.integer('category_id').references('id').inTable('categories').onDelete('SET NULL');
+
   });
   await knex.raw(`DO $$
   BEGIN
