@@ -24,8 +24,10 @@ export default function AdminCategoryIndex() {
         search,
         status: statusFilter,
       });
-      const fetched = result?.data || [];
-      setCategories(fetched);
+
+      const filtered = result.data || [];
+      setCategories(filtered);
+
     } catch (err) {
       console.error("Failed to fetch categories", err);
       setError("Failed to load categories.");
