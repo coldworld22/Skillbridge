@@ -83,7 +83,12 @@ export default function EditCategory() {
       router.push("/dashboard/admin/categories");
     } catch (err) {
       console.error("Failed to update category", err);
-      toast.error("Failed to update category");
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update category";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
