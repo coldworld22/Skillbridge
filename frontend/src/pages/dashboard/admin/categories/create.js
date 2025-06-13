@@ -1,8 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/router";
+import {
+  fetchCategoryTree,
+  createCategory,
+} from "@/services/admin/categoryService";
 
 export default function CreateCategory() {
   const [name, setName] = useState("");
@@ -12,25 +17,27 @@ export default function CreateCategory() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [parentCategories, setParentCategories] = useState([]);
+  const router = useRouter();
 
-  const rawCategories = [
-    { id: "1", name: "Medical", parent_id: null },
-    { id: "2", name: "Nursing", parent_id: "1" },
-    { id: "3", name: "Pediatrics", parent_id: "2" },
-    { id: "4", name: "Programming", parent_id: null },
-    { id: "5", name: "Web Development", parent_id: "4" },
-    { id: "6", name: "Frontend", parent_id: "5" }
-  ];
-
-  const formatCategories = (list, parent = null, prefix = "") => {
-    return list
-      .filter(cat => cat.parent_id === parent)
-      .flatMap(cat => [
-        { id: cat.id, name: `${prefix}${cat.name}` },
-        ...formatCategories(list, cat.id, `${prefix}${cat.name} > `)
-      ]);
+  const formatCategories = (nodes, prefix = "") => {
+    return nodes.flatMap((node) => [
+      { id: node.id, name: `${prefix}${node.name}` },
+      ...(node.children ? formatCategories(node.children, `${prefix}${node.name} > `) : []),
+    ]);
   };
-  const parentCategories = formatCategories(rawCategories);
+
+  useEffect(() => {
+    const loadParents = async () => {
+      try {
+        const tree = await fetchCategoryTree();
+        setParentCategories(formatCategories(tree));
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    loadParents();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -42,7 +49,7 @@ export default function CreateCategory() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       setError("Category name is required.");
@@ -51,16 +58,22 @@ export default function CreateCategory() {
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      console.log({ name, parentId, status, image });
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      if (parentId) formData.append("parent_id", parentId);
+      formData.append("status", status);
+      if (image) formData.append("image", image);
+
+      await createCategory(formData);
       toast.success("Category created!");
+      router.push("/dashboard/admin/categories");
+    } catch (err) {
+      console.error("Failed to create category", err);
+      toast.error("Failed to create category");
+    } finally {
       setLoading(false);
-      setName("");
-      setParentId("");
-      setStatus("active");
-      setImage(null);
-      setPreview(null);
-    }, 500);
+    }
   };
 
   return (

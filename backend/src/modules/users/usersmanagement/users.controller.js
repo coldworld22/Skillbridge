@@ -28,12 +28,23 @@ exports.createUser = catchAsync(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  const allowedRoles = ["Admin", "SuperAdmin", "Instructor", "Student"];
+  let formattedRole;
+  if (role.toLowerCase() === "superadmin") {
+    formattedRole = "SuperAdmin";
+  } else {
+    formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  }
+  if (!allowedRoles.includes(formattedRole)) {
+    return res.status(400).json({ message: "Invalid role" });
+  }
+
   const user = await service.createUser({
     full_name,
     email,
     phone,
     password_hash: hashedPassword, // ✅ renamed here
-    role,
+    role: formattedRole,
   });
 
   sendSuccess(res, user, "User created");
@@ -88,10 +99,15 @@ exports.changeUserRole = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Role must be a string" });
   }
 
-  // Capitalize to match DB constraints
-  const formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  // Normalize and validate role
+  const allowedRoles = ["Admin", "SuperAdmin", "Instructor", "Student"];
+  let formattedRole;
+  if (role.toLowerCase() === "superadmin") {
+    formattedRole = "SuperAdmin";
+  } else {
+    formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  }
 
-  const allowedRoles = ["Admin", "Superadmin", "Instructor", "Student"];
   if (!allowedRoles.includes(formattedRole)) {
     return res.status(400).json({ message: "Invalid role" });
   }

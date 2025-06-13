@@ -9,10 +9,8 @@ export default function AddUserForm() {
     full_name: "",
     email: "",
     phone: "",
-
     password: "",
     role: "student",
-
     gender: "male",
   });
 
@@ -56,7 +54,6 @@ export default function AddUserForm() {
         placeholder="Phone"
         className="w-full px-3 py-2 border rounded"
       />
-
       <input
         type="password"
         name="password"
@@ -76,8 +73,6 @@ export default function AddUserForm() {
         <option value="instructor">Instructor</option>
         <option value="student">Student</option>
       </select>
-
-
       <select
         name="gender"
         value={formData.gender}
