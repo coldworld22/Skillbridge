@@ -135,7 +135,7 @@ export default function AdminCategoryIndex() {
                     <td className="px-4 py-3">{parent.name}</td>
                     <td className="px-4 py-3">
                       <img
-                        src={getImage(parent.image)}
+                        src={getImage(parent.image_url)}
                         alt={parent.name}
                         onError={(e) => { e.target.src = getImage(); }}
                         className="h-10 w-10 rounded object-cover"
@@ -167,7 +167,7 @@ export default function AdminCategoryIndex() {
                       </td>
                       <td className="px-4 py-3">
                         <img
-                          src={getImage(child.image)}
+                          src={getImage(child.image_url)}
                           alt={child.name}
                           onError={(e) => { e.target.src = getImage(); }}
                           className="h-10 w-10 rounded object-cover"
