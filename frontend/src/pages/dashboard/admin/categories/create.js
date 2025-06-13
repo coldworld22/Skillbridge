@@ -76,6 +76,7 @@ export default function CreateCategory() {
         err?.message ||
         "Failed to create category";
       toast.error(msg);
+
     } finally {
       setLoading(false);
     }
