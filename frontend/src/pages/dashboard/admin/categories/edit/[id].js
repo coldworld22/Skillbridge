@@ -4,6 +4,11 @@ import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { toast } from "react-hot-toast";
+import {
+  fetchCategoryTree,
+  fetchCategoryById,
+  updateCategory,
+} from "@/services/admin/categoryService";
 
 export default function EditCategory() {
   const router = useRouter();
@@ -17,32 +22,34 @@ export default function EditCategory() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const parentCategories = [
-    { id: "1", name: "Medical" },
-    { id: "2", name: "Medical > Nursing" },
-    { id: "3", name: "Medical > Nursing > Pediatrics" },
-    { id: "4", name: "Programming" },
-    { id: "5", name: "Programming > Web Development" },
-    { id: "6", name: "Programming > Web Development > Frontend" }
-  ];
+  const [parentCategories, setParentCategories] = useState([]);
+
+  const formatCategories = (nodes, prefix = "") =>
+    nodes.flatMap((n) => [
+      { id: n.id, name: `${prefix}${n.name}` },
+      ...(n.children ? formatCategories(n.children, `${prefix}${n.name} > `) : []),
+    ]);
 
   useEffect(() => {
-    if (id) {
-      // Simulate API fetch
-      setTimeout(() => {
-        const mockCategory = {
-          id,
-          name: "Nursing",
-          parentId: "1",
-          status: "active",
-          imageUrl: "https://cdn.prod.website-files.com/...image.jpg"
-        };
-        setName(mockCategory.name);
-        setParentId(mockCategory.parentId);
-        setStatus(mockCategory.status);
-        setPreview(mockCategory.imageUrl);
-      }, 300);
-    }
+    const loadData = async () => {
+      if (!id) return;
+      try {
+        const [tree, category] = await Promise.all([
+          fetchCategoryTree(),
+          fetchCategoryById(id),
+        ]);
+        setParentCategories(formatCategories(tree));
+        if (category) {
+          setName(category.name);
+          setParentId(category.parent_id || "");
+          setStatus(category.status);
+          if (category.image_url) setPreview(category.image_url);
+        }
+      } catch (err) {
+        console.error("Failed to load category", err);
+      }
+    };
+    loadData();
   }, [id]);
 
   const handleImageChange = (e) => {
@@ -55,7 +62,7 @@ export default function EditCategory() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       setError("Category name is required.");
@@ -64,11 +71,22 @@ export default function EditCategory() {
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      console.log({ id, name, parentId, status, image });
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      if (parentId) formData.append("parent_id", parentId);
+      formData.append("status", status);
+      if (image) formData.append("image", image);
+
+      await updateCategory(id, formData);
       toast.success("Category updated!");
+      router.push("/dashboard/admin/categories");
+    } catch (err) {
+      console.error("Failed to update category", err);
+      toast.error("Failed to update category");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
