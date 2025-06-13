@@ -3,7 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   fetchCategoryTree,
   fetchCategoryById,
