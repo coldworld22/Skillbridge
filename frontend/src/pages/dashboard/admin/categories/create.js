@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import {
   fetchCategoryTree,
