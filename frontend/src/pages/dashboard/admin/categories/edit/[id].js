@@ -89,6 +89,7 @@ export default function EditCategory() {
         err?.message ||
         "Failed to update category";
       toast.error(msg);
+
     } finally {
       setLoading(false);
     }
