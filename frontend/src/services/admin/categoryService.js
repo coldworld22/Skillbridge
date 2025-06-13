@@ -16,20 +16,20 @@ export const fetchCategoryById = async (id) => {
 };
 
 export const createCategory = async (formData) => {
-  const { data } = await api.post("/users/categories/create", formData, {
+  const { data } = await api.post("/users/admin/categories/create", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 export const updateCategory = async (id, formData) => {
-  const { data } = await api.put(`/users/categories/${id}`, formData, {
+  const { data } = await api.put(`/users/admin/categories/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data;
 };
 
 export const deleteCategory = async (id) => {
-  await api.delete(`/users/categories/${id}`);
+  await api.delete(`/users/admin/categories/${id}`);
   return true;
 };
