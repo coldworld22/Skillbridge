@@ -6,7 +6,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "student",
+    role: "Student",
     status: "active",
     avatar: null,
   });
@@ -19,7 +19,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
       setFormData({
         name: "",
         email: "",
-        role: "student",
+        role: "Student",
         status: "active",
         avatar: null,
       });
@@ -103,12 +103,14 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
           name="role"
           value={formData.role}
           onChange={handleChange}
-          className="w-full border p-2 mb-3 rounded"
+          className="w-full px-3 py-2 border rounded"
         >
-          <option value="admin">Admin</option>
-          <option value="instructor">Instructor</option>
-          <option value="student">Student</option>
+          <option value="Admin">Admin</option>
+          <option value="Instructor">Instructor</option>
+          <option value="Student">Student</option>
         </select>
+
+
 
         <select
           name="status"
@@ -116,8 +118,10 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
           onChange={handleChange}
           className="w-full border p-2 mb-4 rounded"
         >
+          <option value="pending">Pending</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="banned">Banned</option>
+
         </select>
 
         <div className="mb-4">
