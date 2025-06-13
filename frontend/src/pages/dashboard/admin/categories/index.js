@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 
 export default function AdminCategoryIndex() {
   const [categories, setCategories] = useState([]);
@@ -19,24 +20,12 @@ export default function AdminCategoryIndex() {
     setLoading(true);
     setError(null);
     try {
-      await new Promise((res) => setTimeout(res, 300));
-
-      const mock = [
-        { id: 1, name: "Medical", image: "https://i.pinimg.com/736x/5e/6b/1c/5e6b1c6a633aeeaa013312b69c89ab11.jpg", status: "active", parent_id: null },
-        { id: 2, name: "Nursing", image: "https://cdn.prod.website-files.com/63a1cbc81b0e903002cf9cec/642604b850060e114dc20476_I%27m%20Tired%20of%20Working%20with%20Patients-%20Now%20What%3F%208%20Non-Bedside%20Nursing%20Jobs%20to%20Consider%20.webp", status: "active", parent_id: 1, classes_count: 7 },
-        { id: 3, name: "Dentistry", image: "https://static.vecteezy.com/system/resources/previews/036/594/504/non_2x/ai-generated-dental-clinic-advertisment-background-with-copy-space-free-photo.jpg", status: "inactive", parent_id: 1, classes_count: 3 },
-        { id: 4, name: "Programming", image: "https://static.vecteezy.com/system/resources/previews/002/949/141/non_2x/programming-code-coding-or-hacker-background-vector.jpg", status: "active", parent_id: null },
-        { id: 5, name: "Python", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcee1d7BKUYRz9G1VSsNuBO7D-6PWc73VSXw&s", status: "active", parent_id: 4, classes_count: 5 },
-        { id: 6, name: "Web Development", image: "https://img.freepik.com/free-vector/laptop-with-program-code-isometric-icon-software-development-programming-applications-dark-neon_39422-971.jpg?semt=ais_hybrid&w=740", status: "active", parent_id: 4, classes_count: 4 }
-      ];
-
-      const filtered = mock.filter((cat) => {
-        const matchesSearch = cat.name.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = statusFilter === "all" || cat.status === statusFilter;
-        return matchesSearch && matchesStatus;
+      const result = await fetchAllCategories({
+        search,
+        status: statusFilter,
       });
-
-      setCategories(filtered);
+      const fetched = result?.data || [];
+      setCategories(fetched);
     } catch (err) {
       console.error("Failed to fetch categories", err);
       setError("Failed to load categories.");
