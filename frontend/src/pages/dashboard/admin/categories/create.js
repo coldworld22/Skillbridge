@@ -70,7 +70,13 @@ export default function CreateCategory() {
       router.push("/dashboard/admin/categories");
     } catch (err) {
       console.error("Failed to create category", err);
-      toast.error("Failed to create category");
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to create category";
+      toast.error(msg);
+      setError(msg);
     } finally {
       setLoading(false);
     }
