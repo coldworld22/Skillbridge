@@ -51,6 +51,7 @@ export default function EditTutorialPage() {
           category: tutorial.category,
           categoryName: tutorial.categoryName,
           level: tutorial.level,
+          language: tutorial.language || "",
           tags: tutorial.tags || [],
           chapters: mappedChapters,
           thumbnail: tutorial.thumbnail,
@@ -76,11 +77,12 @@ export default function EditTutorialPage() {
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (!tutorialData) return <div className="p-6">Loading...</div>;
+  if (!tutorialData)
+    return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
 
   return (
     <AdminLayout>
-      <div className="p-6">
+      <div className="p-6 bg-gray-100 min-h-screen max-w-4xl mx-auto">
         {step === 1 && (
           <BasicInfoStep
             tutorialData={tutorialData}
