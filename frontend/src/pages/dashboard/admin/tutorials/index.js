@@ -6,7 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
-import { fetchAllTutorials } from "@/services/admin/tutorialService";
+import { fetchAllTutorials, permanentlyDeleteTutorial } from "@/services/admin/tutorialService";
 
 
 export default function AdminTutorialsPage() {
@@ -47,7 +47,6 @@ export default function AdminTutorialsPage() {
 
   // Filtering
   const filteredTutorials = tutorials
-    .filter((tut) => !tut.isDeleted)
     .filter((tut) => {
       const matchesSearch =
         tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,14 +111,16 @@ export default function AdminTutorialsPage() {
     setIsRejectionModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (tutorialToDelete) {
-      setTutorials((prev) =>
-        prev.map((tut) =>
-          tut.id === tutorialToDelete ? { ...tut, isDeleted: true, updatedAt: new Date().toISOString() } : tut
-        )
-      );
+  const handleConfirmDelete = async () => {
+    if (!tutorialToDelete) return;
+    try {
+      await permanentlyDeleteTutorial(tutorialToDelete);
+      setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
       toast.success("Tutorial deleted!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete tutorial");
+    } finally {
       setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
       setIsModalOpen(false);
@@ -148,17 +149,18 @@ export default function AdminTutorialsPage() {
     toast.success(`Tutorial ${status === "Approved" ? "approved" : "rejected"} successfully!`);
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedTutorials.length === 0) return;
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        selectedTutorials.includes(tut.id)
-          ? { ...tut, isDeleted: true, updatedAt: new Date().toISOString() }
-          : tut
-      )
-    );
-    setSelectedTutorials([]);
-    toast.success("Selected tutorials deleted!");
+    try {
+      await Promise.all(selectedTutorials.map((id) => permanentlyDeleteTutorial(id)));
+      setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
+      toast.success("Selected tutorials deleted!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete tutorials");
+    } finally {
+      setSelectedTutorials([]);
+    }
   };
 
   const handleBulkApprove = () => {
