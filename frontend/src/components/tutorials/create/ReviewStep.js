@@ -25,7 +25,10 @@ export default function ReviewStep({ tutorialData, onBack, onPublish }) {
           </h3>
           <p><strong>Title:</strong> {tutorialData.title}</p>
           <p><strong>Short Description:</strong> {tutorialData.shortDescription}</p>
-          <p><strong>Category:</strong> {tutorialData.category}</p>
+          <p>
+            <strong>Category:</strong>{" "}
+            {tutorialData.categoryName || tutorialData.category}
+          </p>
           <p><strong>Level:</strong> {tutorialData.level}</p>
           {tutorialData.tags.length > 0 && (
             <p><strong>Tags:</strong> {tutorialData.tags.join(", ")}</p>

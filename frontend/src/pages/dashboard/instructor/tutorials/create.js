@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
@@ -11,6 +12,7 @@ export default function CreateTutorialPage() {
     title: "",
     shortDescription: "",
     category: "",
+    categoryName: "",
     level: "",
     tags: [],
     chapters: [],
@@ -20,12 +22,25 @@ export default function CreateTutorialPage() {
     isFree: false,
   });
 
+  const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
       const draft = JSON.parse(savedDraft);
       setTutorialData({ ...draft, thumbnail: null, preview: null });
     }
+
+    const loadCategories = async () => {
+      try {
+        const result = await fetchAllCategories();
+        setCategories(result || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   const nextStep = () => setStep((prev) => prev + 1);
@@ -64,6 +79,7 @@ export default function CreateTutorialPage() {
               tutorialData={tutorialData}
               setTutorialData={setTutorialData}
               onNext={nextStep}
+              categories={categories}
             />
           )}
           {step === 2 && (

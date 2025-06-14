@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function BasicInfoStep({ tutorialData, setTutorialData, onNext }) {
+export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
   const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
@@ -71,17 +71,22 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext })
         <select
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.category}
-          onChange={(e) => handleChange("category", e.target.value)}
+          onChange={(e) => {
+            const selected = categories.find((c) => c.id === e.target.value);
+            handleChange("category", e.target.value);
+            handleChange("categoryName", selected ? selected.name : "");
+          }}
         >
           <option value="">Select a Category</option>
-          <option value="React">React</option>
-          <option value="Node.js">Node.js</option>
-          <option value="AI">AI</option>
-          <option value="Design">Design</option>
-          <option value="Medical">Medical</option>
-          <option value="Nursing">Nursing</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
         </select>
-        {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+        {errors.category && (
+          <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+        )}
       </div>
 
       {/* Level */}
