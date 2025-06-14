@@ -79,6 +79,7 @@
 - **Purpose**: Tutorial master table
 - **Primary Key**: `id`
 - **Foreign Keys**: `creator_id, category_id → categories(id)`
+- **Columns**: `moderation_status`, `rejection_reason`
 
 ### `tutorial_chapters`
 - **Purpose**: Chapters per tutorial
