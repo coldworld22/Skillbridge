@@ -26,15 +26,18 @@ exports.createCategory = catchAsync(async (req, res) => {
   const image_url = req.file ? `/uploads/categories/${req.file.filename}` : null;
   const slug = slugify(name, { lower: true, strict: true });
 
-const category = await service.create({
-  id: uuidv4(), // ✅ add this line
-  name: name.trim(),
-  parent_id: parent_id || null,
-  status,
-  image_url,
-  slug,
-});
+  // Prevent duplicate slug across categories
+  const slugExists = await service.findBySlug(slug);
+  if (slugExists) throw new AppError("Category slug already exists", 409);
 
+  const category = await service.create({
+    id: uuidv4(),
+    name: name.trim(),
+    parent_id: parent_id || null,
+    status,
+    image_url,
+    slug,
+  });
 
   sendSuccess(res, category, "Category created");
 });
