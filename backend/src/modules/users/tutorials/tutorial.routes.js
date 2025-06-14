@@ -68,6 +68,7 @@ router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
 // ✅ Bulk actions
 router.patch("/admin/bulk/approve", verifyToken, isAdmin, controller.bulkApproveTutorials);
+router.post("/admin/bulk-delete", verifyToken, isAdmin, controller.bulkDeleteTutorials);
 
 
 
