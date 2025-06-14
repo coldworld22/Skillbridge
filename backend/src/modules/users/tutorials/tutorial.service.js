@@ -8,12 +8,29 @@ exports.createTutorial = async (data) => {
 
 exports.getAllTutorials = async () => {
   return db("tutorials")
-    .whereNot("status", "archived")
-    .orderBy("created_at", "desc");
+    .leftJoin("categories", "tutorials.category_id", "categories.id")
+    .leftJoin("users", "tutorials.instructor_id", "users.id")
+    .whereNot("tutorials.status", "archived")
+    .orderBy("tutorials.created_at", "desc")
+    .select(
+      "tutorials.*",
+      "categories.name as category_name",
+      "categories.image_url as category_image_url",
+      "users.full_name as instructor_name"
+    );
 };
 
 exports.getTutorialById = async (id) => {
-  return db("tutorials").where({ id }).first();
+  return db("tutorials")
+    .leftJoin("categories", "tutorials.category_id", "categories.id")
+    .leftJoin("users", "tutorials.instructor_id", "users.id")
+    .where("tutorials.id", id)
+    .first(
+      "tutorials.*",
+      "categories.name as category_name",
+      "categories.image_url as category_image_url",
+      "users.full_name as instructor_name"
+    );
 };
 
 exports.updateTutorial = async (id, data) => {
