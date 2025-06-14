@@ -4,6 +4,9 @@ exports.create = async (data) => db("categories").insert(data).returning("*").th
 
 exports.findById = async (id) => db("categories").where({ id }).first();
 
+// Find category by slug
+exports.findBySlug = async (slug) => db("categories").where({ slug }).first();
+
 exports.exists = async ({ name, parent_id }) => {
   return db("categories")
     .where({ name })
