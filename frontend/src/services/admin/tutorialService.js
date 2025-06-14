@@ -99,4 +99,14 @@ export const updateTutorial = async (id, formData) => {
   return data?.data;
 };
 
+export const bulkApproveTutorials = async (ids) => {
+  await api.patch("/users/tutorials/admin/bulk/approve", { ids });
+  return true;
+};
+
+export const bulkDeleteTutorials = async (ids) => {
+  await api.post("/users/tutorials/admin/bulk-delete", { ids });
+  return true;
+};
+
 

@@ -69,6 +69,10 @@ exports.bulkUpdateStatus = async (ids, status) => {
   return db("tutorials").whereIn("id", ids).update({ status });
 };
 
+exports.bulkDeleteTutorials = async (ids) => {
+  return db("tutorials").whereIn("id", ids).del();
+};
+
 exports.getArchivedTutorials = async () => {
   return db("tutorials")
     .where({ status: "archived" })

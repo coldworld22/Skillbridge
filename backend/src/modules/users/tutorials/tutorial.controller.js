@@ -193,10 +193,10 @@ exports.bulkApproveTutorials = catchAsync(async (req, res) => {
 });
 
 
-exports.bulkTrashTutorials = catchAsync(async (req, res) => {
-  await service.bulkUpdateStatus(req.body.ids, "archived");
+exports.bulkDeleteTutorials = catchAsync(async (req, res) => {
+  await service.bulkDeleteTutorials(req.body.ids);
 
-  sendSuccess(res, { message: "Bulk archived" });
+  sendSuccess(res, { message: "Selected tutorials deleted" });
 });
 
 exports.getArchivedTutorials = catchAsync(async (req, res) => {

@@ -22,6 +22,7 @@ export default function CreateTutorialPage() {
     chapters: [],
     thumbnail: null,
     preview: null,
+    language: "",
     price: "",
     isFree: false,
   });
@@ -106,7 +107,7 @@ export default function CreateTutorialPage() {
   return (
     <AdminLayout>
       <Toaster position="top-center" />
-      <div className="p-8 bg-gray-100 min-h-screen">
+      <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
 
         {/* Step Indicators */}

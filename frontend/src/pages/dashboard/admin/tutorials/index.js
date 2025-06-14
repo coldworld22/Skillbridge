@@ -12,6 +12,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkApproveTutorials,
+  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 
 
@@ -182,7 +184,7 @@ export default function AdminTutorialsPage() {
   const handleBulkDelete = async () => {
     if (selectedTutorials.length === 0) return;
     try {
-      await Promise.all(selectedTutorials.map((id) => permanentlyDeleteTutorial(id)));
+      await bulkDeleteTutorials(selectedTutorials);
       setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
       toast.success("Selected tutorials deleted!");
     } catch (err) {
@@ -193,17 +195,23 @@ export default function AdminTutorialsPage() {
     }
   };
 
-  const handleBulkApprove = () => {
+  const handleBulkApprove = async () => {
     if (selectedTutorials.length === 0) return;
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        selectedTutorials.includes(tut.id)
-          ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
-          : tut
-      )
-    );
+    try {
+      await bulkApproveTutorials(selectedTutorials);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          selectedTutorials.includes(tut.id)
+            ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
+            : tut
+        )
+      );
+      toast.success("Selected tutorials approved!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to approve tutorials");
+    }
     setSelectedTutorials([]);
-    toast.success("Selected tutorials approved!");
   };
 
   return (
@@ -237,7 +245,13 @@ export default function AdminTutorialsPage() {
               ✅ Approve Selected
             </Button>
 
-            
+            <Button
+              onClick={handleBulkDelete}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+              disabled={selectedTutorials.length === 0}
+            >
+              🗑️ Delete Selected
+            </Button>
 
             <Button
               onClick={clearSelected}
@@ -304,6 +318,7 @@ export default function AdminTutorialsPage() {
 
 
         {/* TABLE */}
+        <div className="overflow-x-auto">
         <table className="min-w-full table-auto">
           <thead className="bg-gray-200 text-gray-700">
             <tr>
@@ -389,7 +404,13 @@ export default function AdminTutorialsPage() {
                   >
                     <FaEdit />
                   </button>
-                  
+                  <button
+                    onClick={() => openDeleteModal(tutorial.id)}
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete"
+                  >
+                    <FaTrash />
+                  </button>
                   {tutorial.approvalStatus === "Pending" && (
                     <>
                       <button
@@ -422,6 +443,7 @@ export default function AdminTutorialsPage() {
             )}
           </tbody>
         </table>
+        </div>
 
 
         {/* Modals */}
