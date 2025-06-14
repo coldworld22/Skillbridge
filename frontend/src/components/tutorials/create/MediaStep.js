@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export default function MediaStep({ tutorialData, setTutorialData, onNext, onBack }) {
-  const [thumbnailPreview, setThumbnailPreview] = useState(tutorialData.thumbnail || null);
-  const [previewVideo, setPreviewVideo] = useState(tutorialData.preview || null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [previewVideo, setPreviewVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleThumbnailUpload = (e) => {
