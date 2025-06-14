@@ -39,7 +39,11 @@ exports.updateChapter = catchAsync(async (req, res) => {
   const chapter = await service.findById(id);
   if (!chapter) throw new AppError("Chapter not found", 404);
 
-  const updated = await service.update(id, req.body);
+  const data = { ...req.body };
+  if (data.duration) {
+    data.duration = parseInt(data.duration);
+  }
+  const updated = await service.update(id, data);
   sendSuccess(res, updated, "Chapter updated");
 });
 
