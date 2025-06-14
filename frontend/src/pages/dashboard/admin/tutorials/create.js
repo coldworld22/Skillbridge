@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
@@ -53,18 +53,14 @@ export default function CreateTutorialPage() {
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
 
-  const saveDraft = () => {
-    const { thumbnail, preview, ...serializable } = tutorialData;
-    localStorage.setItem("tutorialDraft", JSON.stringify(serializable));
-    alert("✅ Draft saved successfully!");
-  };
 
-  const publishTutorial = async () => {
+  const submitTutorial = async (status) => {
     const formData = new FormData();
     formData.append("title", tutorialData.title);
     formData.append("description", tutorialData.shortDescription);
     formData.append("category_id", tutorialData.category);
     formData.append("level", tutorialData.level);
+    formData.append("status", status);
     formData.append("is_paid", (!tutorialData.isFree).toString());
     if (!tutorialData.isFree) {
       formData.append("price", tutorialData.price);
@@ -87,17 +83,29 @@ export default function CreateTutorialPage() {
 
     try {
       await createTutorial(formData);
-      toast.success("Tutorial created successfully!");
+      toast.success(
+        status === "draft"
+          ? "Tutorial saved as draft!"
+          : "Tutorial submitted for approval!"
+      );
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create tutorial");
+      if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to create tutorial");
+      }
     }
   };
 
+  const publishTutorial = () => submitTutorial("published");
+  const saveDraft = () => submitTutorial("draft");
+
   return (
     <AdminLayout>
+      <Toaster position="top-center" />
       <div className="p-8 bg-gray-100 min-h-screen">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
 
