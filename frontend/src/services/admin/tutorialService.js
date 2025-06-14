@@ -68,3 +68,35 @@ export const rejectTutorial = async (id, reason) => {
   return data?.data;
 };
 
+
+export const fetchTutorialById = async (id) => {
+  const { data } = await api.get(`/users/tutorials/admin/${id}`);
+  const t = data?.data;
+  if (!t) return null;
+  return {
+    id: t.id,
+    title: t.title,
+    shortDescription: t.description,
+    category: t.category_id,
+    categoryName: t.category_name,
+    level: t.level,
+    tags: t.tags || [],
+    thumbnail: t.thumbnail_url
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
+      : null,
+    preview: t.preview_video
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.preview_video}`
+      : null,
+    price: t.price,
+    isFree: !t.is_paid,
+  };
+};
+
+export const updateTutorial = async (id, formData) => {
+  const { data } = await api.put(`/users/tutorials/admin/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
+};
+
+

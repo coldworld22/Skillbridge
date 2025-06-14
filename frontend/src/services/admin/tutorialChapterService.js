@@ -9,3 +9,12 @@ export const uploadChapterVideo = async (file, onUploadProgress) => {
   });
   return res.data;
 };
+
+
+export const fetchChaptersByTutorial = async (tutorialId) => {
+  const { data } = await api.get(
+    `/users/tutorials/chapters/tutorial/${tutorialId}`
+  );
+  return data?.data || [];
+};
+

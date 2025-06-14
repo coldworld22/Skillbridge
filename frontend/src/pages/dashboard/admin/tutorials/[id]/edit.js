@@ -1,11 +1,18 @@
 // EditTutorialPage.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import toast from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import BasicInfoStep from '@/components/tutorials/create/BasicInfoStep';
-import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
-import MediaStep from '@/components/tutorials/create/MediaStep';
-import ReviewStep from '@/components/tutorials/create/ReviewStep';
+import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
+import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
+import MediaStep from "@/components/tutorials/create/MediaStep";
+import ReviewStep from "@/components/tutorials/create/ReviewStep";
+import {
+  fetchTutorialById,
+  updateTutorial,
+} from "@/services/admin/tutorialService";
+import { fetchAllCategories } from "@/services/admin/categoryService";
+import { fetchChaptersByTutorial } from "@/services/admin/tutorialChapterService";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -13,31 +20,51 @@ export default function EditTutorialPage() {
 
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    if (id) {
-      const draft = localStorage.getItem(`editTutorialDraft-${id}`);
-      if (draft) {
-        setTutorialData(JSON.parse(draft));
-      } else {
-        // Mock fetch tutorial by ID
-        const found = sampleTutorials.find((tut) => tut.id === parseInt(id));
-        if (found) {
-          setTutorialData({
-            title: found.title,
-            shortDescription: "",
-            category: "",
-            level: "",
-            tags: [],
-            chapters: [],
-            thumbnail: found.thumbnail,
-            preview: null,
-            price: "",
-            isFree: false,
-          });
-        }
-      }
+    if (!id) return;
+
+    const draft = localStorage.getItem(`editTutorialDraft-${id}`);
+    if (draft) {
+      setTutorialData(JSON.parse(draft));
+      return;
     }
+
+    const load = async () => {
+      try {
+        const [tutorial, chapters, cats] = await Promise.all([
+          fetchTutorialById(id),
+          fetchChaptersByTutorial(id),
+          fetchAllCategories(),
+        ]);
+        const mappedChapters = chapters.map((ch) => ({
+          title: ch.title,
+          duration: ch.duration,
+          video: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ch.video_url}`,
+          videoUrl: ch.video_url,
+          preview: ch.is_preview,
+        }));
+        setTutorialData({
+          title: tutorial.title,
+          shortDescription: tutorial.shortDescription || "",
+          category: tutorial.category,
+          categoryName: tutorial.categoryName,
+          level: tutorial.level,
+          tags: tutorial.tags || [],
+          chapters: mappedChapters,
+          thumbnail: tutorial.thumbnail,
+          preview: tutorial.preview,
+          price: tutorial.price || "",
+          isFree: tutorial.isFree,
+        });
+        setCategories(cats?.data || cats);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    load();
   }, [id]);
 
   useEffect(() => {
@@ -59,6 +86,7 @@ export default function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
+            categories={categories}
           />
         )}
         {step === 2 && (
@@ -81,10 +109,46 @@ export default function EditTutorialPage() {
           <ReviewStep
             tutorialData={tutorialData}
             onPrev={onPrev}
-            onSubmit={() => {
-              alert("✅ Tutorial Updated Successfully!");
-              localStorage.removeItem(`editTutorialDraft-${id}`); // optional: clear draft after submit
-              router.push("/dashboard/instructor/tutorials"); // go back to tutorials list
+            actionLabel="Save Changes"
+            onPublish={async () => {
+              const formData = new FormData();
+              formData.append("title", tutorialData.title);
+              formData.append("description", tutorialData.shortDescription);
+              formData.append("category_id", tutorialData.category);
+              formData.append("level", tutorialData.level);
+              formData.append("is_paid", (!tutorialData.isFree).toString());
+              if (!tutorialData.isFree) {
+                formData.append("price", tutorialData.price);
+              }
+              if (tutorialData.tags.length) {
+                formData.append("tags", JSON.stringify(tutorialData.tags));
+              }
+              if (tutorialData.chapters.length) {
+                const chapters = tutorialData.chapters.map((ch, idx) => ({
+                  title: ch.title,
+                  duration: ch.duration,
+                  video_url: ch.videoUrl,
+                  order: idx + 1,
+                  is_preview: ch.preview,
+                }));
+                formData.append("chapters", JSON.stringify(chapters));
+              }
+              if (tutorialData.thumbnail instanceof File) {
+                formData.append("thumbnail", tutorialData.thumbnail);
+              }
+              if (tutorialData.preview instanceof File) {
+                formData.append("preview", tutorialData.preview);
+              }
+
+              try {
+                await updateTutorial(id, formData);
+                toast.success("Tutorial updated successfully!");
+                localStorage.removeItem(`editTutorialDraft-${id}`);
+                router.push("/dashboard/admin/tutorials");
+              } catch (err) {
+                console.error(err);
+                toast.error("Failed to update tutorial");
+              }
             }}
           />
         )}
@@ -92,28 +156,3 @@ export default function EditTutorialPage() {
     </AdminLayout>
   );
 }
-
-const sampleTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    status: "Draft",
-    updatedAt: "2024-05-01T10:00:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-    progress: 40,
-  },
-  {
-    id: 2,
-    title: "Node.js Basics",
-    status: "Submitted",
-    updatedAt: "2024-05-02T14:30:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-  },
-  {
-    id: 3,
-    title: "Introduction to AI",
-    status: "Approved",
-    updatedAt: "2024-05-03T09:00:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-  },
-];

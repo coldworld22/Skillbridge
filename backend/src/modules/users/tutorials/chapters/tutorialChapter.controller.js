@@ -10,7 +10,9 @@ exports.uploadVideo = (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No video uploaded" });
   }
-  const videoUrl = `/uploads/tutorials/chapters/${req.file.filename}`;
+  let role = req.user?.role?.toLowerCase() || "other";
+  if (["superadmin", "admin"].includes(role)) role = "admin";
+  const videoUrl = `/uploads/tutorials/chapters/${role}/${req.file.filename}`;
   return res.status(200).json({ video_url: videoUrl });
 };
 
