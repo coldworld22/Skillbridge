@@ -310,6 +310,7 @@ export default function AdminTutorialsPage() {
 
 
         {/* TABLE */}
+        <div className="overflow-x-auto">
         <table className="min-w-full table-auto">
           <thead className="bg-gray-200 text-gray-700">
             <tr>
@@ -434,6 +435,7 @@ export default function AdminTutorialsPage() {
             )}
           </tbody>
         </table>
+        </div>
 
 
         {/* Modals */}
