@@ -25,7 +25,10 @@ export default function ReviewStep({ tutorialData, onBack, onPublish }) {
           </h3>
           <p><strong>Title:</strong> {tutorialData.title}</p>
           <p><strong>Short Description:</strong> {tutorialData.shortDescription}</p>
-          <p><strong>Category:</strong> {tutorialData.category}</p>
+          <p>
+            <strong>Category:</strong>{" "}
+            {tutorialData.categoryName || tutorialData.category}
+          </p>
           <p><strong>Level:</strong> {tutorialData.level}</p>
           {tutorialData.tags.length > 0 && (
             <p><strong>Tags:</strong> {tutorialData.tags.join(", ")}</p>
@@ -56,14 +59,14 @@ export default function ReviewStep({ tutorialData, onBack, onPublish }) {
             <FaCheckCircle /> Media
           </h3>
           <div className="flex gap-6 items-center">
-            {tutorialData.thumbnail && (
+            {tutorialData.thumbnail instanceof File && (
               <img
                 src={URL.createObjectURL(tutorialData.thumbnail)}
                 alt="Thumbnail Preview"
                 className="w-32 h-20 object-cover rounded shadow"
               />
             )}
-            {tutorialData.preview && (
+            {tutorialData.preview instanceof File && (
               <video
                 src={URL.createObjectURL(tutorialData.preview)}
                 controls
