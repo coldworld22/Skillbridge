@@ -38,7 +38,12 @@ export default function CreateTutorialPage() {
     const loadCategories = async () => {
       try {
         const result = await fetchAllCategories();
+
+
         setCategories(result?.data || []);
+
+      
+
       } catch (err) {
         console.error("Failed to load categories", err);
       }
