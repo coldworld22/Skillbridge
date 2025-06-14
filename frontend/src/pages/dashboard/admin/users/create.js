@@ -1,14 +1,26 @@
 // pages/dashboard/admin/users/create.js
+import { useState } from "react";
+import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import AddUserForm from "@/components/admin/users/AddUserForm";
+import AddUserModal from "@/components/admin/users/AddUserModal";
+import { createUser } from "@/services/admin/userService";
 
 export default function CreateUserPage() {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    router.push("/dashboard/admin/users");
+  };
+
+  const handleSubmit = async (formData) => {
+    await createUser(formData);
+  };
+
   return (
     <AdminLayout>
-      <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Add New User</h1>
-        <AddUserForm />
-      </div>
+      <AddUserModal isOpen={isOpen} onClose={handleClose} onSubmit={handleSubmit} />
     </AdminLayout>
   );
 }
