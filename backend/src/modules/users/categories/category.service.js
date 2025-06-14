@@ -20,6 +20,19 @@ exports.update = async (id, data) => {
 
 exports.delete = async (id) => db("categories").where({ id }).del();
 
+// Count subcategories under a parent
+exports.countChildren = async (parent_id) => {
+  const result = await db("categories")
+    .where({ parent_id })
+    .count("id as count")
+    .first();
+  return parseInt(result.count);
+};
+
+// Update only the status column
+exports.updateStatus = async (id, status) =>
+  db("categories").where({ id }).update({ status });
+
 exports.getAll = async ({ search, status, page = 1, limit = 10 }) => {
   const offset = (page - 1) * limit;
 

@@ -67,12 +67,33 @@ exports.updateCategory = catchAsync(async (req, res) => {
   sendSuccess(res, updated, "Category updated");
 });
 
+// Update only status
+exports.updateCategoryStatus = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!["active", "inactive"].includes(status)) {
+    throw new AppError("Invalid status", 400);
+  }
+
+  const existing = await service.findById(id);
+  if (!existing) throw new AppError("Category not found", 404);
+
+  await service.updateStatus(id, status);
+  sendSuccess(res, null, "Status updated");
+});
+
 // Delete category
 exports.deleteCategory = catchAsync(async (req, res) => {
   const { id } = req.params;
 
   const existing = await service.findById(id);
   if (!existing) throw new AppError("Category not found", 404);
+
+  const subCount = await service.countChildren(id);
+  if (subCount > 0) {
+    throw new AppError("Cannot delete category with subcategories", 400);
+  }
 
   if (existing.image_url) {
     const imgPath = path.join(__dirname, "../../../../", existing.image_url);
