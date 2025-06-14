@@ -68,6 +68,7 @@ export const rejectTutorial = async (id, reason) => {
   return data?.data;
 };
 
+
 export const fetchTutorialById = async (id) => {
   const { data } = await api.get(`/users/tutorials/admin/${id}`);
   const t = data?.data;
@@ -97,4 +98,5 @@ export const updateTutorial = async (id, formData) => {
   });
   return data?.data;
 };
+
 
