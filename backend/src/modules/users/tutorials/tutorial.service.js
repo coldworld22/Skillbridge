@@ -60,20 +60,20 @@ exports.getArchivedTutorials = async () => {
 
 exports.getFeaturedTutorials = async () => {
   return db("tutorials")
-    .where({ status: "published", moderation_status: "approved" })
+    .where({ status: "published", moderation_status: "Approved" })
     .orderBy("created_at", "desc")
     .limit(6);
 };
 
 exports.getPublishedTutorials = async () => {
   return db("tutorials")
-    .where({ status: "published", moderation_status: "approved" })
+    .where({ status: "published", moderation_status: "Approved" })
     .orderBy("created_at", "desc");
 };
 
 exports.getPublicTutorialDetails = async (id) => {
   const tutorial = await db("tutorials")
-    .where({ id, status: "published", moderation_status: "approved" })
+    .where({ id, status: "published", moderation_status: "Approved" })
     .first();
 
   if (!tutorial) return null;

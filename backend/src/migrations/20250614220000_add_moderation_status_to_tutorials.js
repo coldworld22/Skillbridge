@@ -5,7 +5,7 @@ exports.up = async function(knex) {
 
   await knex.schema.alterTable("tutorials", function(table) {
     if (!hasModeration) {
-      table.enu("moderation_status", ["pending", "approved", "rejected"]).defaultTo("pending");
+      table.enu("moderation_status", ["Pending", "Approved", "Rejected"]).defaultTo("Pending");
     }
     if (!hasRejectionReason) {
       table.text("rejection_reason");
@@ -20,7 +20,7 @@ exports.up = async function(knex) {
     `ALTER TABLE tutorials DROP CONSTRAINT IF EXISTS tutorials_moderation_status_check`
   );
   await knex.raw(
-    `ALTER TABLE tutorials ADD CONSTRAINT tutorials_moderation_status_check CHECK (moderation_status IS NULL OR moderation_status IN ('pending','approved','rejected'))`
+    `ALTER TABLE tutorials ADD CONSTRAINT tutorials_moderation_status_check CHECK (moderation_status IS NULL OR moderation_status IN ('Pending','Approved','Rejected'))`
   );
 };
 

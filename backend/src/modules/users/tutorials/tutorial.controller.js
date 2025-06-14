@@ -59,7 +59,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     price,
     instructor_id,
     status,
-    moderation_status: status === "published" ? "pending" : null,
+    moderation_status: status === "published" ? "Pending" : null,
     thumbnail_url: req.file ? `/uploads/tutorials/${req.file.filename}` : null,
   };
   await service.createTutorial(tutorial);
@@ -141,21 +141,21 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
 
 
 exports.approveTutorial = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "approved");
+  await service.updateModeration(req.params.id, "Approved");
 
   sendSuccess(res, { message: "Tutorial approved" });
 });
 
 
 exports.rejectTutorial = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "rejected", req.body.reason);
+  await service.updateModeration(req.params.id, "Rejected", req.body.reason);
 
   sendSuccess(res, { message: "Tutorial rejected" });
 });
 
 
 exports.bulkApproveTutorials = catchAsync(async (req, res) => {
-  await service.bulkUpdateModeration(req.body.ids, "approved");
+  await service.bulkUpdateModeration(req.body.ids, "Approved");
 
   sendSuccess(res, { message: "Bulk approval done" });
 });
