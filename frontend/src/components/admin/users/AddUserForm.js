@@ -69,7 +69,6 @@ export default function AddUserForm() {
         className="w-full px-3 py-2 border rounded"
       >
         <option value="admin">Admin</option>
-        <option value="superadmin">Superadmin</option>
         <option value="instructor">Instructor</option>
         <option value="student">Student</option>
       </select>
