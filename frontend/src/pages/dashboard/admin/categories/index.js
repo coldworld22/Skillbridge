@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchAllCategories } from "@/services/admin/categoryService";
+import { fetchAllCategories, deleteCategory } from "@/services/admin/categoryService";
+import { toast } from "react-toastify";
 
 export default function AdminCategoryIndex() {
   const [categories, setCategories] = useState([]);
@@ -36,9 +37,20 @@ export default function AdminCategoryIndex() {
     setCategories(updated);
   };
 
-  const handleDelete = (id, name) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    try {
+      await deleteCategory(id);
       setCategories(categories.filter((cat) => cat.id !== id));
+      toast.success("Category deleted!");
+    } catch (err) {
+      console.error("Failed to delete category", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to delete category";
+      toast.error(msg);
     }
   };
 
