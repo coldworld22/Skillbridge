@@ -21,8 +21,6 @@ router.post(
 );
 
 router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllTutorials);
-// List archived tutorials before any :id match to avoid UUID errors
-router.get("/admin/trash", verifyToken, isInstructorOrAdmin, controller.getArchivedTutorials);
 router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getTutorialById);
 
 router.put(
@@ -37,8 +35,6 @@ router.put(
   controller.updateTutorial
 );
 
-router.patch("/admin/:id/trash", verifyToken, isInstructorOrAdmin, controller.softDeleteTutorial);
-router.patch("/admin/:id/restore", verifyToken, isInstructorOrAdmin, controller.restoreTutorial);
 router.delete("/admin/:id", verifyToken, isInstructorOrAdmin, controller.permanentlyDeleteTutorial);
 
 // ✅ Status and moderation
@@ -72,10 +68,8 @@ router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
 // ✅ Bulk actions
 router.patch("/admin/bulk/approve", verifyToken, isAdmin, controller.bulkApproveTutorials);
-router.patch("/admin/bulk/trash", verifyToken, isInstructorOrAdmin, controller.bulkTrashTutorials);
 
-// Archived tutorials
-router.get("/admin/trash", verifyToken, isInstructorOrAdmin, controller.getArchivedTutorials);
+
 
 // ✅ Public routes (no auth required)
 router.get("/featured", controller.getFeaturedTutorials);
