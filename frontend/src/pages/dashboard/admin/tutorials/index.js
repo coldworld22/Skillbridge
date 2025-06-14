@@ -237,13 +237,7 @@ export default function AdminTutorialsPage() {
               ✅ Approve Selected
             </Button>
 
-            <Button
-              onClick={handleBulkDelete}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-              disabled={selectedTutorials.length === 0}
-            >
-              🗑️ Move to Trash
-            </Button>
+            
 
             <Button
               onClick={clearSelected}
@@ -395,13 +389,7 @@ export default function AdminTutorialsPage() {
                   >
                     <FaEdit />
                   </button>
-                  <button
-                    onClick={() => openDeleteModal(tutorial.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Move to Trash"
-                  >
-                    <FaTrash />
-                  </button>
+                  
                   {tutorial.approvalStatus === "Pending" && (
                     <>
                       <button
