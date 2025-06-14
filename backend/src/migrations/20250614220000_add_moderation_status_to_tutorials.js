@@ -3,7 +3,7 @@ exports.up = async function(knex) {
   const hasModeration = await knex.schema.hasColumn("tutorials", "moderation_status");
   const hasRejectionReason = await knex.schema.hasColumn("tutorials", "rejection_reason");
 
-  return knex.schema.alterTable("tutorials", function(table) {
+  await knex.schema.alterTable("tutorials", function(table) {
     if (!hasModeration) {
       table.enu("moderation_status", ["pending", "approved", "rejected"]).defaultTo("pending");
     }
