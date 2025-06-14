@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
-import { toast } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
@@ -176,6 +176,7 @@ export default function AdminTutorialsPage() {
 
   return (
     <AdminLayout>
+      <Toaster position="top-center" />
       <div className="p-6 bg-gray-100 min-h-screen space-y-8">
 
         {/* Header */}
