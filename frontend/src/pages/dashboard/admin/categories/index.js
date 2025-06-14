@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -20,14 +19,8 @@ export default function AdminCategoryIndex() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAllCategories({
-        search,
-        status: statusFilter,
-      });
-
-      const filtered = result.data || [];
-      setCategories(filtered);
-
+      const result = await fetchAllCategories({ search, status: statusFilter });
+      setCategories(result.data || []);
     } catch (err) {
       console.error("Failed to fetch categories", err);
       setError("Failed to load categories.");
@@ -44,20 +37,20 @@ export default function AdminCategoryIndex() {
   };
 
   const handleDelete = (id, name) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete "${name}"?`);
-    if (!confirmDelete) return;
-    const updated = categories.filter((cat) => cat.id !== id);
-    setCategories(updated);
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+      setCategories(categories.filter((cat) => cat.id !== id));
+    }
   };
 
+  const getImage = (src) =>
+    src ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/${src.replace(/^\/+/, "")}` : "https://via.placeholder.com/80x80?text=No+Image";
+
   const groupedCategories = categories
-    .filter((c) => c.parent_id === null)
+    .filter((cat) => !cat.parent_id)
     .map((parent) => ({
       ...parent,
       children: categories.filter((child) => child.parent_id === parent.id),
     }));
-
-  const getImage = (src) => src || "https://via.placeholder.com/80x80?text=No+Image";
 
   return (
     <div className="p-6">
@@ -144,8 +137,7 @@ export default function AdminCategoryIndex() {
                     <td className="px-4 py-3">—</td>
                     <td className="px-4 py-3">
                       <button
-                        className={`px-2 py-1 text-sm rounded ${parent.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                          }`}
+                        className={`px-2 py-1 text-sm rounded ${parent.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
                         onClick={() => toggleStatus(parent.id, parent.status)}
                       >
                         {parent.status}
@@ -155,7 +147,9 @@ export default function AdminCategoryIndex() {
                       <Link href={`/dashboard/admin/categories/edit/${parent.id}`}>
                         <button className="text-blue-500 hover:text-blue-700"><Pencil size={16} /></button>
                       </Link>
-                      <button className="text-red-500 hover:text-red-700" onClick={() => handleDelete(parent.id, parent.name)}><Trash2 size={16} /></button>
+                      <button onClick={() => handleDelete(parent.id, parent.name)} className="text-red-500 hover:text-red-700">
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
 
@@ -176,31 +170,26 @@ export default function AdminCategoryIndex() {
                       <td className="px-4 py-3">{child.classes_count ?? "—"}</td>
                       <td className="px-4 py-3">
                         <button
-                          className={`px-2 py-1 text-sm rounded ${child.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                            }`}
+                          className={`px-2 py-1 text-sm rounded ${child.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
                           onClick={() => toggleStatus(child.id, child.status)}
                         >
                           {child.status}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-right space-x-2">
-                        <Link href={`/dashboard/admin/categories/edit/${parent.id}`}>
-                          <button
-                            className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-3 py-1 rounded-full text-sm transition"
-                            title="Edit Category"
-                          >
+                        <Link href={`/dashboard/admin/categories/edit/${child.id}`}>
+                          <button className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-3 py-1 rounded-full text-sm transition" title="Edit Category">
                             <Pencil size={14} /> Edit
                           </button>
                         </Link>
                         <button
-                          onClick={() => handleDelete(parent.id, parent.name)}
+                          onClick={() => handleDelete(child.id, child.name)}
                           className="inline-flex items-center gap-2 bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1 rounded-full text-sm transition"
                           title="Delete Category"
                         >
                           <Trash2 size={14} /> Delete
                         </button>
                       </td>
-
                     </tr>
                   ))}
                 </React.Fragment>
