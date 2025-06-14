@@ -119,7 +119,7 @@ export default function AdminTutorialsPage() {
           tut.id === tutorialToDelete ? { ...tut, isDeleted: true, updatedAt: new Date().toISOString() } : tut
         )
       );
-      toast.success("Tutorial moved to trash!");
+      toast.success("Tutorial deleted!");
       setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
       setIsModalOpen(false);
@@ -158,7 +158,7 @@ export default function AdminTutorialsPage() {
       )
     );
     setSelectedTutorials([]);
-    toast.success("Selected tutorials moved to trash!");
+    toast.success("Selected tutorials deleted!");
   };
 
   const handleBulkApprove = () => {
@@ -276,15 +276,6 @@ export default function AdminTutorialsPage() {
           </select>
         </div>
 
-        {/* Trash Button */}
-        <div className="flex justify-end">
-          <Button
-            onClick={() => router.push("/dashboard/admin/tutorials/trash")}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-          >
-            🗑️ View Trash
-          </Button>
-        </div>
 
         {/* TABLE */}
         <table className="min-w-full table-auto">
@@ -418,7 +409,7 @@ export default function AdminTutorialsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          message="Are you sure you want to move this tutorial to trash?"
+          message="Are you sure you want to delete this tutorial?"
         />
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}

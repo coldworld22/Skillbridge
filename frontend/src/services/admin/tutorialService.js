@@ -28,27 +28,6 @@ export const fetchAllTutorials = async () => {
 };
 
 /**
- * Fetch tutorials that have been archived (trashed).
- *
- * @returns {Promise<Array>} Array of trashed tutorials
- */
-export const fetchTrashedTutorials = async () => {
-  const res = await api.get("/users/tutorials/admin/trash");
-  return res.data?.data ?? [];
-};
-
-/**
- * Restore a trashed tutorial back to draft status.
- *
- * @param {string} id - Tutorial UUID
- * @returns {Promise<Object>} Server response
- */
-export const restoreTutorial = async (id) => {
-  const res = await api.patch(`/users/tutorials/admin/${id}/restore`);
-  return res.data;
-};
-
-/**
  * Permanently delete a tutorial.
  *
  * @param {string} id - Tutorial UUID
