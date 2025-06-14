@@ -27,8 +27,13 @@ const generateUniqueSlug = async (title) => {
 
 exports.createTutorial = catchAsync(async (req, res) => {
   const {
-    title, description, category_id, level, duration,
-    price, status = "draft", chapters = []
+    title,
+    description,
+    category_id,
+    level,
+    price,
+    status = "draft",
+    chapters = [],
   } = req.body;
 
   const instructor_id = req.user.id;
@@ -43,7 +48,6 @@ exports.createTutorial = catchAsync(async (req, res) => {
     description,
     category_id,
     level,
-    duration,
     price,
     instructor_id,
     status,
@@ -59,7 +63,6 @@ exports.createTutorial = catchAsync(async (req, res) => {
       tutorial_id: id,
       title: ch.title,
       video_url: ch.video_url,
-      duration: ch.duration,
       order: ch.order ?? i + 1,
       is_preview: ch.is_preview ?? false,
     });

@@ -17,7 +17,7 @@ exports.uploadVideo = (req, res) => {
 
 // Create chapter
 exports.createChapter = catchAsync(async (req, res) => {
-  const { tutorial_id, title, order, video_url, duration, is_preview = false } = req.body;
+  const { tutorial_id, title, order, video_url, is_preview = false } = req.body;
   if (!title || !tutorial_id) throw new AppError("Tutorial ID and title are required", 400);
 
   const chapter = await service.create({
@@ -26,7 +26,6 @@ exports.createChapter = catchAsync(async (req, res) => {
     title,
     order: parseInt(order) || 1,
     video_url,
-    duration: parseInt(duration) || 0,
     is_preview: Boolean(is_preview)
   });
 
