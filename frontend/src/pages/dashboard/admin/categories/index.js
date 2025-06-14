@@ -55,14 +55,69 @@ export default function AdminCategoryIndex() {
   };
 
   const getImage = (src) =>
-    src ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/${src.replace(/^\/+/, "")}` : "https://via.placeholder.com/80x80?text=No+Image";
+    src ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/${src.replace(/^\/+/, "")}` :
+    "https://via.placeholder.com/80x80?text=No+Image";
 
-  const groupedCategories = categories
-    .filter((cat) => !cat.parent_id)
-    .map((parent) => ({
-      ...parent,
-      children: categories.filter((child) => child.parent_id === parent.id),
-    }));
+  const buildTree = (list, parentId = null) =>
+    list
+      .filter((item) => item.parent_id === parentId)
+      .map((item) => ({
+        ...item,
+        children: buildTree(list, item.id),
+      }));
+
+  const categoryTree = buildTree(categories);
+
+  const renderRows = (nodes, level = 0) =>
+    nodes.flatMap((node) => [
+      (
+        <tr key={node.id} className={`border-t ${level === 0 ? "bg-gray-50 font-medium" : ""}`}> 
+          <td className="px-4 py-3" style={{ paddingLeft: `${16 + level * 20}px` }}>
+            {level > 0 && "↳ "}
+            {node.name}
+            {level > 0 && (
+              <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
+                Subcategory
+              </span>
+            )}
+          </td>
+          <td className="px-4 py-3">
+            <img
+              src={getImage(node.image_url)}
+              alt={node.name}
+              onError={(e) => {
+                e.target.src = getImage();
+              }}
+              className="h-10 w-10 rounded object-cover"
+            />
+          </td>
+          <td className="px-4 py-3">{node.classes_count ?? "—"}</td>
+          <td className="px-4 py-3">
+            <button
+              className={`px-2 py-1 text-sm rounded ${node.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+              onClick={() => toggleStatus(node.id, node.status)}
+            >
+              {node.status}
+            </button>
+          </td>
+          <td className="px-4 py-3 text-right space-x-2">
+            <Link href={`/dashboard/admin/categories/edit/${node.id}`}>
+              <button className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-3 py-1 rounded-full text-sm transition" title="Edit Category">
+                <Pencil size={14} /> Edit
+              </button>
+            </Link>
+            <button
+              onClick={() => handleDelete(node.id, node.name)}
+              className="inline-flex items-center gap-2 bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1 rounded-full text-sm transition"
+              title="Delete Category"
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          </td>
+        </tr>
+      ),
+      ...(node.children && node.children.length > 0 ? renderRows(node.children, level + 1) : []),
+    ]);
 
   return (
     <div className="p-6">
@@ -127,85 +182,14 @@ export default function AdminCategoryIndex() {
               <tr>
                 <td colSpan="5" className="text-center py-6 text-red-500">{error}</td>
               </tr>
-            ) : groupedCategories.length === 0 ? (
+            ) : categoryTree.length === 0 ? (
               <tr>
                 <td colSpan="5" className="text-center py-6 text-gray-500">
                   No categories found. <Link href="/dashboard/admin/categories/create" className="text-blue-600 underline">Create one now</Link>
                 </td>
               </tr>
             ) : (
-              groupedCategories.map((parent) => (
-                <React.Fragment key={parent.id}>
-                  <tr className="border-t bg-gray-50 font-medium">
-                    <td className="px-4 py-3">{parent.name}</td>
-                    <td className="px-4 py-3">
-                      <img
-                        src={getImage(parent.image_url)}
-                        alt={parent.name}
-                        onError={(e) => { e.target.src = getImage(); }}
-                        className="h-10 w-10 rounded object-cover"
-                      />
-                    </td>
-                    <td className="px-4 py-3">—</td>
-                    <td className="px-4 py-3">
-                      <button
-                        className={`px-2 py-1 text-sm rounded ${parent.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                        onClick={() => toggleStatus(parent.id, parent.status)}
-                      >
-                        {parent.status}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <Link href={`/dashboard/admin/categories/edit/${parent.id}`}>
-                        <button className="text-blue-500 hover:text-blue-700"><Pencil size={16} /></button>
-                      </Link>
-                      <button onClick={() => handleDelete(parent.id, parent.name)} className="text-red-500 hover:text-red-700">
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-
-                  {parent.children.map((child) => (
-                    <tr key={child.id} className="border-t">
-                      <td className="px-4 py-3 pl-8">
-                        ↳ {child.name}
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Subcategory</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <img
-                          src={getImage(child.image_url)}
-                          alt={child.name}
-                          onError={(e) => { e.target.src = getImage(); }}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      </td>
-                      <td className="px-4 py-3">{child.classes_count ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          className={`px-2 py-1 text-sm rounded ${child.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                          onClick={() => toggleStatus(child.id, child.status)}
-                        >
-                          {child.status}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-right space-x-2">
-                        <Link href={`/dashboard/admin/categories/edit/${child.id}`}>
-                          <button className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-3 py-1 rounded-full text-sm transition" title="Edit Category">
-                            <Pencil size={14} /> Edit
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(child.id, child.name)}
-                          className="inline-flex items-center gap-2 bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1 rounded-full text-sm transition"
-                          title="Delete Category"
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </React.Fragment>
-              ))
+              renderRows(categoryTree)
             )}
           </tbody>
         </table>
