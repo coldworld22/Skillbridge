@@ -33,3 +33,10 @@ export const deleteCategory = async (id) => {
   await api.delete(`/users/admin/categories/${id}`);
   return true;
 };
+
+export const updateCategoryStatus = async (id, status) => {
+  const { data } = await api.patch(`/users/admin/categories/${id}/status`, {
+    status,
+  });
+  return data?.data;
+};

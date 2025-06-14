@@ -17,6 +17,12 @@ const { verifyToken, isAdmin } = require("../../../middleware/auth/authMiddlewar
  */
 router.post("/create", verifyToken, isAdmin, upload, controller.createCategory);
 router.put("/:id", verifyToken, isAdmin, upload, controller.updateCategory);
+router.patch(
+  "/:id/status",
+  verifyToken,
+  isAdmin,
+  controller.updateCategoryStatus
+);
 router.delete("/:id", verifyToken, isAdmin, controller.deleteCategory);
 
 /**

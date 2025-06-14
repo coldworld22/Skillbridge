@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchAllCategories, deleteCategory } from "@/services/admin/categoryService";
+import {
+  fetchAllCategories,
+  deleteCategory,
+  updateCategoryStatus,
+} from "@/services/admin/categoryService";
 import { toast } from "react-toastify";
 
 export default function AdminCategoryIndex() {
@@ -30,11 +34,26 @@ export default function AdminCategoryIndex() {
     }
   };
 
-  const toggleStatus = (id, currentStatus) => {
-    const updated = categories.map((cat) =>
-      cat.id === id ? { ...cat, status: currentStatus === "active" ? "inactive" : "active" } : cat
-    );
-    setCategories(updated);
+  const toggleStatus = async (id, currentStatus, name) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    if (!window.confirm(`Set ${name} to ${newStatus}?`)) return;
+
+    try {
+      await updateCategoryStatus(id, newStatus);
+      const updated = categories.map((cat) =>
+        cat.id === id ? { ...cat, status: newStatus } : cat
+      );
+      setCategories(updated);
+      toast.success("Status updated");
+    } catch (err) {
+      console.error("Failed to update status", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update status";
+      toast.error(msg);
+    }
   };
 
   const handleDelete = async (id, name) => {
@@ -95,7 +114,7 @@ export default function AdminCategoryIndex() {
           <td className="px-4 py-3">
             <button
               className={`px-2 py-1 text-sm rounded ${node.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-              onClick={() => toggleStatus(node.id, node.status)}
+              onClick={() => toggleStatus(node.id, node.status, node.name)}
             >
               {node.status}
             </button>
