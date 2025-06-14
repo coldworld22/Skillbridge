@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaPlus, FaTrash, FaPlay } from "react-icons/fa";
+import { uploadChapterVideo } from "@/services/admin/tutorialChapterService";
 
 export default function CurriculumStep({ tutorialData, setTutorialData, onNext, onBack }) {
   const [uploadingIndex, setUploadingIndex] = useState(null);
@@ -11,7 +12,7 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
       ...prev,
       chapters: [
         ...prev.chapters,
-        { title: "", duration: "", video: null, preview: false },
+        { title: "", duration: "", video: null, videoUrl: "", preview: false },
       ],
     }));
   };
@@ -34,25 +35,27 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
     }));
   };
 
-  const handleVideoUpload = (index, file) => {
+  const handleVideoUpload = async (index, file) => {
     if (!file) return;
     setUploadingIndex(index);
     setUploadProgress(0);
 
-    // Simulate upload
-    const simulateUpload = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(simulateUpload);
-          const videoUrl = URL.createObjectURL(file);
-          handleChange(index, "video", videoUrl);
-          setUploadingIndex(null);
-          toast.success("🎬 Video uploaded successfully!");
-          return 0;
-        }
-        return prev + 10;
+    try {
+      const res = await uploadChapterVideo(file, (e) => {
+        const progress = Math.round((e.loaded * 100) / e.total);
+        setUploadProgress(progress);
       });
-    }, 150);
+      const serverPath = res.video_url;
+      const previewUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}${serverPath}`;
+      handleChange(index, "video", previewUrl);
+      handleChange(index, "videoUrl", serverPath);
+      toast.success("🎬 Video uploaded successfully!");
+    } catch (err) {
+      toast.error("Failed to upload video");
+    } finally {
+      setUploadingIndex(null);
+      setUploadProgress(0);
+    }
   };
 
   return (
