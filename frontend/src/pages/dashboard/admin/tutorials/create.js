@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import { toast } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
 import ReviewStep from "@/components/tutorials/create/ReviewStep";
+import { createTutorial } from "@/services/admin/tutorialService";
 
 export default function CreateTutorialPage() {
   const [step, setStep] = useState(1);
+  const router = useRouter();
   const [tutorialData, setTutorialData] = useState({
     title: "",
     shortDescription: "",
@@ -33,6 +37,43 @@ export default function CreateTutorialPage() {
   const saveDraft = () => {
     localStorage.setItem("tutorialDraft", JSON.stringify(tutorialData));
     alert("✅ Draft saved successfully!");
+  };
+
+  const publishTutorial = async () => {
+    const formData = new FormData();
+    formData.append("title", tutorialData.title);
+    formData.append("description", tutorialData.shortDescription);
+    formData.append("category_id", tutorialData.category);
+    formData.append("level", tutorialData.level);
+    formData.append("is_paid", (!tutorialData.isFree).toString());
+    if (!tutorialData.isFree) {
+      formData.append("price", tutorialData.price);
+    }
+    if (tutorialData.tags.length) {
+      formData.append("tags", JSON.stringify(tutorialData.tags));
+    }
+    if (tutorialData.chapters.length) {
+      const chapters = tutorialData.chapters.map((ch, idx) => ({
+        title: ch.title,
+        duration: ch.duration,
+        video_url: ch.video,
+        order: idx + 1,
+        is_preview: ch.preview,
+      }));
+      formData.append("chapters", JSON.stringify(chapters));
+    }
+    if (tutorialData.thumbnail) formData.append("thumbnail", tutorialData.thumbnail);
+    if (tutorialData.preview) formData.append("preview", tutorialData.preview);
+
+    try {
+      await createTutorial(formData);
+      toast.success("Tutorial created successfully!");
+      localStorage.removeItem("tutorialDraft");
+      router.push("/dashboard/admin/tutorials");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create tutorial");
+    }
   };
 
   return (
@@ -84,6 +125,7 @@ export default function CreateTutorialPage() {
             <ReviewStep
               tutorialData={tutorialData}
               onBack={prevStep}
+              onPublish={publishTutorial}
             />
           )}
         </div>
