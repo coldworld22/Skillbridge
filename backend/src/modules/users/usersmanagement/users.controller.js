@@ -28,13 +28,8 @@ exports.createUser = catchAsync(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const allowedRoles = ["Admin", "SuperAdmin", "Instructor", "Student"];
-  let formattedRole;
-  if (role.toLowerCase() === "superadmin") {
-    formattedRole = "SuperAdmin";
-  } else {
-    formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-  }
+  const allowedRoles = ["Admin", "Instructor", "Student"];
+  const formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   if (!allowedRoles.includes(formattedRole)) {
     return res.status(400).json({ message: "Invalid role" });
   }
@@ -100,13 +95,8 @@ exports.changeUserRole = catchAsync(async (req, res) => {
   }
 
   // Normalize and validate role
-  const allowedRoles = ["Admin", "SuperAdmin", "Instructor", "Student"];
-  let formattedRole;
-  if (role.toLowerCase() === "superadmin") {
-    formattedRole = "SuperAdmin";
-  } else {
-    formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-  }
+  const allowedRoles = ["Admin", "Instructor", "Student"];
+  const formattedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 
   if (!allowedRoles.includes(formattedRole)) {
     return res.status(400).json({ message: "Invalid role" });

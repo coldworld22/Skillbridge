@@ -116,7 +116,6 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
           className="mt-2 w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
         >
           <option value="admin">Admin</option>
-          <option value="superadmin">SuperAdmin</option>
           <option value="instructor">Instructor</option>
           <option value="student">Student</option>
         </select>

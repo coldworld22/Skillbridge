@@ -12,7 +12,7 @@ exports.bulkStatusSchema = z.object({
 
 
 exports.roleSchema = z.object({
-  role: z.enum(["admin", "superadmin", "instructor", "student"]),
+  role: z.enum(["admin", "instructor", "student"]),
 });
 
 
@@ -27,7 +27,7 @@ exports.createUserSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(8),
   password: z.string().min(8), // ✅ Still called "password" for frontend clarity
-  role: z.enum(["admin", "superadmin", "instructor", "student"]),
+  role: z.enum(["admin", "instructor", "student"]),
 });
 
 
