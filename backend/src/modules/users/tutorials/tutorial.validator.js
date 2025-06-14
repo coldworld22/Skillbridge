@@ -24,6 +24,7 @@ exports.create = z.object({
     description: z.string().optional(),
     category_id: z.string(), // assuming UUID
     level: z.string(),
+    status: z.enum(["draft", "published", "archived"]).optional(),
     price: z.string().optional(),
     is_paid: z.preprocess(toBoolean, z.boolean().optional()),
     tags: z.preprocess(parseJson, z.array(z.string()).optional()),

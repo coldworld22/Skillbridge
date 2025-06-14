@@ -27,12 +27,24 @@ const generateUniqueSlug = async (title) => {
 
 exports.createTutorial = catchAsync(async (req, res) => {
   const {
-    title, description, category_id, level, duration,
-    price, status = "draft", chapters = []
+    title,
+    description,
+    category_id,
+    level,
+    duration,
+    price,
+    status = "draft",
+    chapters = [],
   } = req.body;
 
+  // 🚫 Prevent duplicate titles
+  const existing = await db("tutorials").where({ title }).first();
+  if (existing) {
+    return res.status(400).json({ message: "Tutorial title already exists" });
+  }
+
   const instructor_id = req.user.id;
-  const slug = slugify(title, { lower: true, strict: true });
+  const slug = await generateUniqueSlug(title);
   const id = uuidv4();
 
   // Save tutorial
@@ -47,6 +59,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     price,
     instructor_id,
     status,
+    moderation_status: status === "published" ? "pending" : null,
     thumbnail_url: req.file ? `/uploads/tutorials/${req.file.filename}` : null,
   };
   await service.createTutorial(tutorial);
@@ -152,6 +165,12 @@ exports.bulkTrashTutorials = catchAsync(async (req, res) => {
   await service.bulkUpdateStatus(req.body.ids, "archived");
 
   sendSuccess(res, { message: "Bulk archived" });
+});
+
+exports.getArchivedTutorials = catchAsync(async (req, res) => {
+  const tutorials = await service.getArchivedTutorials();
+
+  sendSuccess(res, tutorials);
 });
 
 

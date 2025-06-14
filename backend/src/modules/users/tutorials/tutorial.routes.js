@@ -21,6 +21,8 @@ router.post(
 );
 
 router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllTutorials);
+// List archived tutorials before any :id match to avoid UUID errors
+router.get("/admin/trash", verifyToken, isInstructorOrAdmin, controller.getArchivedTutorials);
 router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getTutorialById);
 
 router.put(

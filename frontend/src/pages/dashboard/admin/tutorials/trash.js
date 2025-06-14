@@ -1,35 +1,62 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import toast, { Toaster } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import {
+  fetchTrashedTutorials,
+  restoreTutorial,
+  permanentlyDeleteTutorial,
+} from "@/services/admin/tutorialService";
 
 export default function TrashTutorialsPage() {
   const router = useRouter();
+  const [tutorials, setTutorials] = useState([]);
 
-  const [tutorials, setTutorials] = useState(JSON.parse(localStorage.getItem("tutorials")) || []);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchTrashedTutorials();
+        setTutorials(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load trash");
+      }
+    };
+    load();
+  }, []);
 
-  const deletedTutorials = tutorials.filter((tut) => tut.isDeleted);
-
-  const restoreTutorial = (id) => {
-    const updated = tutorials.map((tut) =>
-      tut.id === id ? { ...tut, isDeleted: false } : tut
-    );
-    localStorage.setItem("tutorials", JSON.stringify(updated));
-    setTutorials(updated);
+  const handleRestore = async (id) => {
+    try {
+      await restoreTutorial(id);
+      setTutorials((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Tutorial restored");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to restore");
+    }
   };
 
-  const permanentlyDelete = (id) => {
-    const updated = tutorials.filter((tut) => tut.id !== id);
-    localStorage.setItem("tutorials", JSON.stringify(updated));
-    setTutorials(updated);
+  const handlePermanentDelete = async (id) => {
+    try {
+      await permanentlyDeleteTutorial(id);
+      setTutorials((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Tutorial permanently deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete");
+    }
   };
+
+  const trashedTutorials = tutorials;
 
   return (
     <AdminLayout>
+      <Toaster position="top-center" />
       <div className="p-8 bg-gray-100 min-h-screen">
         <h1 className="text-2xl font-bold text-gray-800 mb-8">🗑️ Tutorials Trash</h1>
 
-        {deletedTutorials.length === 0 ? (
+        {trashedTutorials.length === 0 ? (
           <p className="text-center text-gray-500">Trash is empty.</p>
         ) : (
           <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -42,20 +69,20 @@ export default function TrashTutorialsPage() {
                 </tr>
               </thead>
               <tbody>
-                {deletedTutorials.map((tutorial) => (
+                {trashedTutorials.map((tutorial) => (
                   <tr key={tutorial.id} className="border-t hover:bg-gray-50">
                     <td className="py-3 px-4">{tutorial.title}</td>
                     <td className="py-3 px-4">{tutorial.instructor}</td>
                     <td className="py-3 px-4 flex gap-2">
                       <Button
                         className="bg-green-500 hover:bg-green-600 text-white"
-                        onClick={() => restoreTutorial(tutorial.id)}
+                        onClick={() => handleRestore(tutorial.id)}
                       >
                         ♻️ Restore
                       </Button>
                       <Button
                         className="bg-red-500 hover:bg-red-600 text-white"
-                        onClick={() => permanentlyDelete(tutorial.id)}
+                        onClick={() => handlePermanentDelete(tutorial.id)}
                       >
                         🗑️ Permanently Delete
                       </Button>
