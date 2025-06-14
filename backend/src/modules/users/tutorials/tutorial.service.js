@@ -54,20 +54,20 @@ exports.bulkUpdateStatus = async (ids, status) => {
 
 exports.getFeaturedTutorials = async () => {
   return db("tutorials")
-    .where({ status: "published" })
+    .where({ status: "published", moderation_status: "approved" })
     .orderBy("created_at", "desc")
     .limit(6);
 };
 
 exports.getPublishedTutorials = async () => {
   return db("tutorials")
-    .where({ status: "published" })
+    .where({ status: "published", moderation_status: "approved" })
     .orderBy("created_at", "desc");
 };
 
 exports.getPublicTutorialDetails = async (id) => {
   const tutorial = await db("tutorials")
-    .where({ id, status: "published" })
+    .where({ id, status: "published", moderation_status: "approved" })
     .first();
 
   if (!tutorial) return null;
