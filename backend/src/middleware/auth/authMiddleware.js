@@ -4,8 +4,12 @@ const jwt = require("jsonwebtoken");
 /**
  * ✅ Helper: Determines if a role has admin-level access
  */
+// Normalize role string for consistent comparisons
+const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
+
 const isAdminRole = (role = "") => {
-  return ["admin", "superadmin"].includes(role.toLowerCase());
+  const normalized = normalizeRole(role);
+  return ["admin", "superadmin"].includes(normalized);
 };
 
 
@@ -46,7 +50,7 @@ const isAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to SuperAdmin only
  */
 const isSuperAdmin = (req, res, next) => {
-  if (req.user?.role === "SuperAdmin") {
+  if (normalizeRole(req.user?.role) === "superadmin") {
     return next();
   }
   return res.status(403).json({ message: "SuperAdmin access only" });
@@ -56,7 +60,7 @@ const isSuperAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Instructor only
  */
 const isInstructor = (req, res, next) => {
-  if (req.user?.role === "Instructor") {
+  if (normalizeRole(req.user?.role) === "instructor") {
     return next();
   }
   return res.status(403).json({ message: "Instructor access only" });
@@ -66,8 +70,8 @@ const isInstructor = (req, res, next) => {
  * 🔐 Middleware: Allow Instructor or Admin roles
  */
 const isInstructorOrAdmin = (req, res, next) => {
-  const role = req.user?.role;
-  if (role === "Instructor" || isAdminRole(role)) {
+  const role = normalizeRole(req.user?.role);
+  if (role === "instructor" || ["admin", "superadmin"].includes(role)) {
     return next();
   }
   return res.status(403).json({ message: "Instructor or Admin access only" });
@@ -77,7 +81,7 @@ const isInstructorOrAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Student only
  */
 const isStudent = (req, res, next) => {
-  const role = req.user?.role?.toLowerCase();
+  const role = normalizeRole(req.user?.role);
   if (role === "student") return next();
   return res.status(403).json({ message: "Access denied. Students only." });
 };
