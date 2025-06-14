@@ -16,6 +16,11 @@ const certificatePublicRoutes = require("./modules/users/tutorials/certificate/c
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
+app.disable('etag');       // prevent 304 responses due to ETag
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔧 Global Middleware Setup
