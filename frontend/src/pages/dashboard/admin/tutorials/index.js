@@ -12,6 +12,8 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  bulkApproveTutorials,
+  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 
 
@@ -182,7 +184,7 @@ export default function AdminTutorialsPage() {
   const handleBulkDelete = async () => {
     if (selectedTutorials.length === 0) return;
     try {
-      await Promise.all(selectedTutorials.map((id) => permanentlyDeleteTutorial(id)));
+      await bulkDeleteTutorials(selectedTutorials);
       setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
       toast.success("Selected tutorials deleted!");
     } catch (err) {
@@ -193,17 +195,23 @@ export default function AdminTutorialsPage() {
     }
   };
 
-  const handleBulkApprove = () => {
+  const handleBulkApprove = async () => {
     if (selectedTutorials.length === 0) return;
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        selectedTutorials.includes(tut.id)
-          ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
-          : tut
-      )
-    );
+    try {
+      await bulkApproveTutorials(selectedTutorials);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          selectedTutorials.includes(tut.id)
+            ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
+            : tut
+        )
+      );
+      toast.success("Selected tutorials approved!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to approve tutorials");
+    }
     setSelectedTutorials([]);
-    toast.success("Selected tutorials approved!");
   };
 
   return (
@@ -242,7 +250,7 @@ export default function AdminTutorialsPage() {
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
               disabled={selectedTutorials.length === 0}
             >
-              🗑️ Move to Trash
+              🗑️ Delete Selected
             </Button>
 
             <Button
@@ -399,7 +407,7 @@ export default function AdminTutorialsPage() {
                   <button
                     onClick={() => openDeleteModal(tutorial.id)}
                     className="text-red-500 hover:text-red-700"
-                    title="Move to Trash"
+                    title="Delete"
                   >
                     <FaTrash />
                   </button>
