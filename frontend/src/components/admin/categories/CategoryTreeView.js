@@ -40,7 +40,7 @@ function TreeNode({ node }) {
 
 function buildCategoryTree(categories, parentId = null) {
   return categories
-    .filter(cat => cat.parentId === parentId)
+    .filter(cat => cat.parent_id === parentId)
     .map(cat => ({
       ...cat,
       children: buildCategoryTree(categories, cat.id),
