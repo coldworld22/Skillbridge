@@ -167,6 +167,12 @@ exports.bulkTrashTutorials = catchAsync(async (req, res) => {
   sendSuccess(res, { message: "Bulk archived" });
 });
 
+exports.getArchivedTutorials = catchAsync(async (req, res) => {
+  const tutorials = await service.getArchivedTutorials();
+
+  sendSuccess(res, tutorials);
+});
+
 
 exports.getFeaturedTutorials = catchAsync(async (req, res) => {
   const featured = await service.getFeaturedTutorials();

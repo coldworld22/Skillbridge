@@ -52,6 +52,12 @@ exports.bulkUpdateStatus = async (ids, status) => {
   return db("tutorials").whereIn("id", ids).update({ status });
 };
 
+exports.getArchivedTutorials = async () => {
+  return db("tutorials")
+    .where({ status: "archived" })
+    .orderBy("updated_at", "desc");
+};
+
 exports.getFeaturedTutorials = async () => {
   return db("tutorials")
     .where({ status: "published", moderation_status: "approved" })
