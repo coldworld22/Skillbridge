@@ -27,7 +27,8 @@ export default function CreateTutorialPage() {
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
-      setTutorialData(JSON.parse(savedDraft));
+      const draft = JSON.parse(savedDraft);
+      setTutorialData({ ...draft, thumbnail: null, preview: null });
     }
   }, []);
 
@@ -35,7 +36,8 @@ export default function CreateTutorialPage() {
   const prevStep = () => setStep((prev) => prev - 1);
 
   const saveDraft = () => {
-    localStorage.setItem("tutorialDraft", JSON.stringify(tutorialData));
+    const { thumbnail, preview, ...serializable } = tutorialData;
+    localStorage.setItem("tutorialDraft", JSON.stringify(serializable));
     alert("✅ Draft saved successfully!");
   };
 
