@@ -72,7 +72,7 @@ export default function CreateTutorialPage() {
       const chapters = tutorialData.chapters.map((ch, idx) => ({
         title: ch.title,
         duration: ch.duration,
-        video_url: ch.video,
+        video_url: ch.videoUrl,
         order: idx + 1,
         is_preview: ch.preview,
       }));

@@ -6,7 +6,13 @@ import toast, { Toaster } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
-import { fetchAllTutorials, permanentlyDeleteTutorial } from "@/services/admin/tutorialService";
+import {
+  fetchAllTutorials,
+  permanentlyDeleteTutorial,
+  toggleTutorialStatus,
+  approveTutorial,
+  rejectTutorial,
+} from "@/services/admin/tutorialService";
 
 
 export default function AdminTutorialsPage() {
@@ -86,19 +92,25 @@ export default function AdminTutorialsPage() {
 
   const clearSelected = () => setSelectedTutorials([]);
 
-  const togglePublishStatus = (id) => {
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        tut.id === id
-          ? {
-            ...tut,
-            status: tut.status === "Published" ? "Draft" : "Published",
-            updatedAt: new Date().toISOString(),
-          }
-          : tut
-      )
-    );
-    toast.success("Tutorial status updated!");
+  const togglePublishStatus = async (id) => {
+    try {
+      await toggleTutorialStatus(id);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          tut.id === id
+            ? {
+                ...tut,
+                status: tut.status === "Published" ? "Draft" : "Published",
+                updatedAt: new Date().toISOString(),
+              }
+            : tut
+        )
+      );
+      toast.success("Tutorial status updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status");
+    }
   };
 
   const openDeleteModal = (id) => {
@@ -127,26 +139,44 @@ export default function AdminTutorialsPage() {
     }
   };
 
-  const handleConfirmReject = (reason) => {
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        tut.id === tutorialToReject
-          ? { ...tut, approvalStatus: "Rejected", rejectionReason: reason, updatedAt: new Date().toISOString() }
-          : tut
-      )
-    );
-    toast.success("Tutorial rejected with reason!");
-    setIsRejectionModalOpen(false);
-    setTutorialToReject(null);
+  const handleConfirmReject = async (reason) => {
+    try {
+      await rejectTutorial(tutorialToReject, reason);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          tut.id === tutorialToReject
+            ? {
+                ...tut,
+                approvalStatus: "Rejected",
+                rejectionReason: reason,
+                updatedAt: new Date().toISOString(),
+              }
+            : tut
+        )
+      );
+      toast.success("Tutorial rejected with reason!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to reject tutorial");
+    } finally {
+      setIsRejectionModalOpen(false);
+      setTutorialToReject(null);
+    }
   };
 
-  const handleApproval = (id, status) => {
-    setTutorials((prev) =>
-      prev.map((tut) =>
-        tut.id === id ? { ...tut, approvalStatus: status, updatedAt: new Date().toISOString() } : tut
-      )
-    );
-    toast.success(`Tutorial ${status === "Approved" ? "approved" : "rejected"} successfully!`);
+  const handleApproval = async (id) => {
+    try {
+      await approveTutorial(id);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          tut.id === id ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() } : tut
+        )
+      );
+      toast.success("Tutorial approved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update tutorial");
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -375,7 +405,7 @@ export default function AdminTutorialsPage() {
                   {tutorial.approvalStatus === "Pending" && (
                     <>
                       <button
-                        onClick={() => handleApproval(tutorial.id, "Approved")}
+                        onClick={() => handleApproval(tutorial.id)}
                         className="text-green-500 hover:text-green-700"
                         title="Approve"
                       >
