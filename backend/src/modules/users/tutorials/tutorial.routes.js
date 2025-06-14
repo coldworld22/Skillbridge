@@ -74,8 +74,7 @@ router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 router.patch("/admin/bulk/approve", verifyToken, isAdmin, controller.bulkApproveTutorials);
 router.patch("/admin/bulk/trash", verifyToken, isInstructorOrAdmin, controller.bulkTrashTutorials);
 
-// Archived tutorials
-router.get("/admin/trash", verifyToken, isInstructorOrAdmin, controller.getArchivedTutorials);
+
 
 // ✅ Public routes (no auth required)
 router.get("/featured", controller.getFeaturedTutorials);
