@@ -17,3 +17,13 @@ export const createTutorial = async (formData) => {
   return data?.data;
 };
 
+/**
+ * Fetch all tutorials for admin dashboard view.
+ *
+ * @returns {Promise<Array>} Array of tutorial objects
+ */
+export const fetchAllTutorials = async () => {
+  const res = await api.get("/users/tutorials/admin");
+  return res.data?.data ?? [];
+};
+
