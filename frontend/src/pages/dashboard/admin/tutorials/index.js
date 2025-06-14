@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
@@ -6,43 +6,12 @@ import { toast } from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
+import { fetchAllTutorials } from "@/services/admin/tutorialService";
 
-const sampleTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    instructor: "John Doe",
-    category: "React",
-    rating: 4.8,
-    views: 100,
-    thumbnail: "https://codemanbd.com/wp-content/uploads/2024/03/Mastering-React-JS.jpg",
-    status: "Published",
-    approvalStatus: "Approved",
-    createdAt: "2024-05-01T10:00:00Z",
-    updatedAt: "2024-05-02T12:00:00Z",
-    rejectionReason: "",
-    isDeleted: false,
-  },
-  {
-    id: 2,
-    title: "Node.js Full Stack",
-    instructor: "Jane Smith",
-    category: "Node.js",
-    rating: 4.2,
-    views: 200,
-    thumbnail: "https://i.ytimg.com/vi/YYmzj5DK_5s/hq720.jpg",
-    status: "Draft",
-    approvalStatus: "Pending",
-    createdAt: "2024-05-02T11:00:00Z",
-    updatedAt: "2024-05-03T09:30:00Z",
-    rejectionReason: "",
-    isDeleted: false,
-  },
-];
 
 export default function AdminTutorialsPage() {
   const router = useRouter();
-  const [tutorials, setTutorials] = useState(sampleTutorials);
+  const [tutorials, setTutorials] = useState([]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,6 +26,21 @@ export default function AdminTutorialsPage() {
   const [tutorialToReject, setTutorialToReject] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
+  // Load tutorials from backend on mount
+  useEffect(() => {
+    const loadTutorials = async () => {
+      try {
+        const data = await fetchAllTutorials();
+        setTutorials(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load tutorials");
+      }
+    };
+
+    loadTutorials();
+  }, []);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const tutorialsPerPage = 5;
@@ -66,8 +50,8 @@ export default function AdminTutorialsPage() {
     .filter((tut) => !tut.isDeleted)
     .filter((tut) => {
       const matchesSearch =
-        tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
       const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
