@@ -37,6 +37,21 @@ exports.createTutorial = catchAsync(async (req, res) => {
     chapters = [],
   } = req.body;
 
+  // In case chapters came as a serialized JSON string, parse it
+  let parsedChapters = chapters;
+  if (typeof parsedChapters === "string") {
+    try {
+      parsedChapters = JSON.parse(parsedChapters);
+    } catch (err) {
+      parsedChapters = [];
+    }
+  }
+
+  // Filter out any chapter objects missing a title
+  parsedChapters = Array.isArray(parsedChapters)
+    ? parsedChapters.filter((ch) => ch && ch.title)
+    : [];
+
   // 🚫 Prevent duplicate titles
   const existing = await db("tutorials").where({ title }).first();
   if (existing) {
@@ -65,8 +80,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
   await service.createTutorial(tutorial);
 
   // Save chapters (if any)
-  for (let i = 0; i < chapters.length; i++) {
-    const ch = chapters[i];
+  for (let i = 0; i < parsedChapters.length; i++) {
+    const ch = parsedChapters[i];
     await chapterService.create({
       id: uuidv4(),
       tutorial_id: id,
