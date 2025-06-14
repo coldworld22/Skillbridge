@@ -56,14 +56,14 @@ export default function ReviewStep({ tutorialData, onBack, onPublish }) {
             <FaCheckCircle /> Media
           </h3>
           <div className="flex gap-6 items-center">
-            {tutorialData.thumbnail && (
+            {tutorialData.thumbnail instanceof File && (
               <img
                 src={URL.createObjectURL(tutorialData.thumbnail)}
                 alt="Thumbnail Preview"
                 className="w-32 h-20 object-cover rounded shadow"
               />
             )}
-            {tutorialData.preview && (
+            {tutorialData.preview instanceof File && (
               <video
                 src={URL.createObjectURL(tutorialData.preview)}
                 controls
