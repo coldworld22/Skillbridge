@@ -1,6 +1,11 @@
 import { FaCheckCircle, FaEdit } from "react-icons/fa";
 
-export default function ReviewStep({ tutorialData, onBack, onPublish }) {
+export default function ReviewStep({
+  tutorialData,
+  onBack,
+  onPublish,
+  actionLabel = "Publish Tutorial",
+}) {
   return (
     <div className="space-y-8">
 
@@ -98,7 +103,7 @@ export default function ReviewStep({ tutorialData, onBack, onPublish }) {
           onClick={onPublish}
           className="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-full font-bold text-xl transition-all shadow-lg"
         >
-          🚀 Publish Tutorial
+          🚀 {actionLabel}
         </button>
       </div>
 

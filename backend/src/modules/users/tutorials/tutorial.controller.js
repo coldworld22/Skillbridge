@@ -12,6 +12,13 @@ const { v4: uuidv4 } = require("uuid");
 const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");
 
+// Helper to resolve uploads subdirectory based on user role
+const getRoleDir = (req) => {
+  let role = req.user?.role?.toLowerCase() || "other";
+  if (["superadmin", "admin"].includes(role)) role = "admin";
+  return role;
+};
+
 // ✅ Helper: Generate a unique slug based on title
 const generateUniqueSlug = async (title) => {
   const baseSlug = slugify(title, { lower: true, strict: true });
@@ -62,6 +69,10 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(title);
   const id = uuidv4();
 
+  const roleDir = getRoleDir(req);
+  const thumbnailFile = req.files?.thumbnail?.[0];
+  const previewFile = req.files?.preview?.[0];
+
   // Save tutorial
   const tutorial = {
     id,
@@ -75,7 +86,12 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
-    thumbnail_url: req.file ? `/uploads/tutorials/${req.file.filename}` : null,
+    thumbnail_url: thumbnailFile
+      ? `/uploads/tutorials/${roleDir}/${thumbnailFile.filename}`
+      : null,
+    preview_video: previewFile
+      ? `/uploads/tutorials/${roleDir}/${previewFile.filename}`
+      : null,
   };
   await service.createTutorial(tutorial);
 
@@ -115,11 +131,12 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   if (data.duration) {
     data.duration = parseInt(data.duration);
   }
+  const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
-    data.cover_image = `/uploads/tutorials/${req.files.thumbnail[0].filename}`;
+    data.thumbnail_url = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
   }
   if (req.files?.preview) {
-    data.preview_video = `/uploads/tutorials/${req.files.preview[0].filename}`;
+    data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
 
