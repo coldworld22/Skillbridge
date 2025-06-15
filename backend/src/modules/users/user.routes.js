@@ -28,6 +28,13 @@ router.use("/categories", categoryRoutes);
 const tutorialRoutes = require("./tutorials/tutorial.routes");
 router.use("/tutorials", tutorialRoutes);
 
+/**
+ * @route   /api/users/classes
+ * @desc    Online classes module
+ */
+const classRoutes = require("../classes/class.routes");
+router.use("/classes", classRoutes);
+
 
 // ==============================================
 // 🔐 ROLE-BASED FEATURES (protected by auth)
