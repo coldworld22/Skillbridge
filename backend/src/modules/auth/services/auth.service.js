@@ -42,10 +42,18 @@ exports.registerUser = async (data) => {
     updated_at: new Date(),
   });
 
-  const accessToken = generateAccessToken({ id: newUser.id, role: newUser.role });
+  const roleName = data.role || "Student";
+  const roleRow = await db("roles").where({ name: roleName }).first();
+  if (roleRow) {
+    await db("user_roles").insert({ user_id: newUser.id, role_id: roleRow.id });
+  }
+
+  const roles = await userModel.getUserRoles(newUser.id);
+
+  const accessToken = generateAccessToken({ id: newUser.id, role: roles[0], roles });
   const refreshToken = generateRefreshToken({ id: newUser.id });
 
-  return { accessToken, refreshToken, user: newUser };
+  return { accessToken, refreshToken, user: { ...newUser, roles } };
 };
 
 
@@ -59,10 +67,11 @@ exports.loginUser = async ({ email, password }) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new AppError("Invalid credentials", 401);
 
-  const accessToken = generateAccessToken({ id: user.id, role: user.role });
+  const roles = await userModel.getUserRoles(user.id);
+  const accessToken = generateAccessToken({ id: user.id, role: roles[0], roles });
   const refreshToken = generateRefreshToken({ id: user.id });
 
-  return { accessToken, refreshToken, user };
+  return { accessToken, refreshToken, user: { ...user, roles } };
 };
 
 /**

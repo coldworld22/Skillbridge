@@ -113,3 +113,24 @@ exports.toggleStatus = async (id) => {
   const newStatus = user?.status === "active" ? "inactive" : "active";
   return db("users").where({ id }).update({ status: newStatus }).returning("*");
 };
+
+// ─────────────────────────────────────────────────────────────
+// Roles Helpers
+// ─────────────────────────────────────────────────────────────
+
+exports.getUserRoles = async (userId) => {
+  const rows = await db("user_roles")
+    .join("roles", "user_roles.role_id", "roles.id")
+    .where("user_roles.user_id", userId)
+    .select("roles.name");
+  return rows.map((r) => r.name);
+};
+
+exports.setUserRoles = async (userId, roleIds) => {
+  await db("user_roles").where({ user_id: userId }).del();
+  if (roleIds.length) {
+    const rows = roleIds.map((rid) => ({ user_id: userId, role_id: rid }));
+    await db("user_roles").insert(rows);
+  }
+  return exports.getUserRoles(userId);
+};

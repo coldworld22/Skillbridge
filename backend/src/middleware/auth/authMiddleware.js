@@ -1,5 +1,6 @@
 // 📁 src/middleware/auth/authMiddleware.js
 const jwt = require("jsonwebtoken");
+const userModel = require("../../modules/users/user.model");
 
 /**
  * ✅ Helper: Determines if a role has admin-level access
@@ -7,9 +8,11 @@ const jwt = require("jsonwebtoken");
 // Normalize role string for consistent comparisons
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 
-const isAdminRole = (role = "") => {
-  const normalized = normalizeRole(role);
-  return ["admin", "superadmin"].includes(normalized);
+const isAdminRole = (roles = []) => {
+  const arr = Array.isArray(roles) ? roles : [roles];
+  return arr
+    .map((r) => normalizeRole(r))
+    .some((r) => ["admin", "superadmin"].includes(r));
 };
 
 
@@ -18,7 +21,7 @@ const isAdminRole = (role = "") => {
  * - Requires token in the Authorization header
  * - Decodes and attaches `req.user` if valid
  */
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -29,7 +32,8 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const roles = await userModel.getUserRoles(decoded.id);
+    req.user = { ...decoded, roles, role: roles[0] };
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
@@ -40,7 +44,7 @@ const verifyToken = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Admin and SuperAdmin roles
  */
 const isAdmin = (req, res, next) => {
-  if (!req.user || !isAdminRole(req.user.role)) {
+  if (!req.user || !isAdminRole(req.user.roles || req.user.role)) {
     return res.status(403).json({ message: "Admin access only" });
   }
   next();
@@ -50,7 +54,8 @@ const isAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to SuperAdmin only
  */
 const isSuperAdmin = (req, res, next) => {
-  if (normalizeRole(req.user?.role) === "superadmin") {
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("superadmin")) {
     return next();
   }
   return res.status(403).json({ message: "SuperAdmin access only" });
@@ -60,7 +65,8 @@ const isSuperAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Instructor only
  */
 const isInstructor = (req, res, next) => {
-  if (normalizeRole(req.user?.role) === "instructor") {
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("instructor")) {
     return next();
   }
   return res.status(403).json({ message: "Instructor access only" });
@@ -70,8 +76,9 @@ const isInstructor = (req, res, next) => {
  * 🔐 Middleware: Allow Instructor or Admin roles
  */
 const isInstructorOrAdmin = (req, res, next) => {
-  const role = normalizeRole(req.user?.role);
-  if (role === "instructor" || ["admin", "superadmin"].includes(role)) {
+  const roles = req.user.roles || [req.user.role];
+  const norm = roles.map((r) => normalizeRole(r));
+  if (norm.includes("instructor") || norm.some((r) => ["admin", "superadmin"].includes(r))) {
     return next();
   }
   return res.status(403).json({ message: "Instructor or Admin access only" });
@@ -81,8 +88,8 @@ const isInstructorOrAdmin = (req, res, next) => {
  * 🔐 Middleware: Restrict access to Student only
  */
 const isStudent = (req, res, next) => {
-  const role = normalizeRole(req.user?.role);
-  if (role === "student") return next();
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("student")) return next();
   return res.status(403).json({ message: "Access denied. Students only." });
 };
 
@@ -90,7 +97,7 @@ const isStudent = (req, res, next) => {
  * 🔐 Middleware: Allows access if user is self or has admin/superadmin role
  */
 const isSelfOrAdmin = (req, res, next) => {
-  if (isAdminRole(req.user.role) || req.user.id === req.params.id) {
+  if (isAdminRole(req.user.roles || req.user.role) || req.user.id === req.params.id) {
     return next();
   }
   return res.status(403).json({ message: "Access denied" });

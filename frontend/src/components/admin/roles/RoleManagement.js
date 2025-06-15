@@ -1,10 +1,25 @@
-import React, { useState } from "react";
-import { roles } from "@/mocks/rolesPermissionsMock";
-import PermissionAssignment from "./PermissionAssignment";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
+import PermissionAssignment from "./PermissionAssignment";
+import { fetchAllRoles, fetchRoleById } from "@/services/admin/roleService";
 
 export default function RoleManagement() {
-  const [selectedRole, setSelectedRole] = useState(roles[0]);
+  const [roles, setRoles] = useState([]);
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  useEffect(() => {
+    fetchAllRoles().then((data) => {
+      setRoles(data);
+      if (data.length) {
+        fetchRoleById(data[0].id).then((r) => setSelectedRole(r));
+      }
+    });
+  }, []);
+
+  const handleSelect = async (role) => {
+    const detailed = await fetchRoleById(role.id);
+    setSelectedRole(detailed);
+  };
 
   return (
     <div className="flex space-x-8">
@@ -16,12 +31,12 @@ export default function RoleManagement() {
           {roles.map((role) => (
             <li
               key={role.id}
-              className={`p-3 rounded-xl cursor-pointer transition duration-200 ${
-                selectedRole.id === role.id
+              className={`p-3 rounded-xl cursor-pointer transition duration-200$${'{'}
+                selectedRole?.id === role.id
                   ? "bg-yellow-500 text-white shadow-md"
                   : "hover:bg-yellow-50 text-gray-700"
               }`}
-              onClick={() => setSelectedRole(role)}
+              onClick={() => handleSelect(role)}
             >
               {role.name}
             </li>
@@ -30,7 +45,7 @@ export default function RoleManagement() {
       </div>
 
       <div className="w-3/4 bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-        <PermissionAssignment role={selectedRole} />
+        {selectedRole && <PermissionAssignment role={selectedRole} />}
       </div>
     </div>
   );
