@@ -15,6 +15,7 @@ const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP route
 const certificatePublicRoutes = require("./modules/users/tutorials/certificate/certificatePublic.routes");
 const adminBookingRoutes = require("./modules/bookings/bookings.routes");
 const adminCommunityRoutes = require("./modules/community/admin/admin.routes");
+const roleRoutes = require("./modules/roles/roles.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -66,6 +67,7 @@ app.use("/api/verify", verifyRoutes);  // ✅ OTP: send/confirm email/phone
 app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificate verification
 app.use("/api/bookings/admin", adminBookingRoutes); // 📅 Admin bookings management
 app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
+app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {

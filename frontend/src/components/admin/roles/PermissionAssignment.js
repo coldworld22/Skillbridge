@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { permissions as allPermissions, rolePermissions } from "@/mocks/rolesPermissionsMock";
 import { CheckCircle, CheckSquare, PlusCircle } from "lucide-react";
+import {
+  fetchAllPermissions,
+  updateRolePermissions,
+  fetchRoleById,
+} from "@/services/admin/roleService";
 
 export default function PermissionAssignment({ role }) {
   const [assignedPermissions, setAssignedPermissions] = useState([]);
-  const [permissions, setPermissions] = useState(allPermissions);
+  const [permissions, setPermissions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
 
   useEffect(() => {
-    setAssignedPermissions(rolePermissions[role.id] || []);
+    fetchAllPermissions().then(setPermissions);
+  }, []);
+
+  useEffect(() => {
+    if (role) {
+      fetchRoleById(role.id).then((r) => setAssignedPermissions(r.permissions || []));
+    }
   }, [role]);
 
   const handleTogglePermission = (perm) => {
@@ -33,6 +43,10 @@ export default function PermissionAssignment({ role }) {
     }
     setNewPermission("");
     setShowAddModal(false);
+  };
+
+  const handleSave = async () => {
+    await updateRolePermissions(role.id, assignedPermissions);
   };
 
   return (
@@ -81,11 +95,13 @@ export default function PermissionAssignment({ role }) {
         ))}
       </div>
 
-      <button className="mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200">
+      <button
+        className="mt-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:to-yellow-700 text-white px-6 py-2 rounded-xl shadow transition duration-200"
+        onClick={handleSave}
+      >
         Save Changes
       </button>
 
-      {/* Add Permission Modal */}
       {showAddModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-md">
