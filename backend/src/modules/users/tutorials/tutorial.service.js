@@ -92,6 +92,16 @@ exports.getPublishedTutorials = async () => {
     .orderBy("created_at", "desc");
 };
 
+exports.getTutorialsByCategory = async (categoryId) => {
+  return db("tutorials")
+    .where({
+      category_id: categoryId,
+      status: "published",
+      moderation_status: "Approved",
+    })
+    .orderBy("created_at", "desc");
+};
+
 exports.getPublicTutorialDetails = async (id) => {
   const tutorial = await db("tutorials")
     .where({ id, status: "published", moderation_status: "Approved" })
