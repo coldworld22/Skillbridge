@@ -20,3 +20,8 @@ exports.updateStatus = catchAsync(async (req, res) => {
   const updated = await service.updateInstructorStatus(req.params.id, status);
   sendSuccess(res, updated, "Status updated");
 });
+
+exports.deleteInstructor = catchAsync(async (req, res) => {
+  await service.deleteInstructor(req.params.id);
+  sendSuccess(res, null, "Instructor deleted");
+});

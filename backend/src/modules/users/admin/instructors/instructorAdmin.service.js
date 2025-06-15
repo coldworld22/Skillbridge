@@ -45,3 +45,7 @@ exports.updateInstructorStatus = async (id, status) => {
   await db("users").where({ id }).update({ status });
   return { id, status };
 };
+
+exports.deleteInstructor = async (id) => {
+  await db("users").where({ id }).del();
+};
