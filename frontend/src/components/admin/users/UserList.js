@@ -3,6 +3,7 @@ import UserCardGrid from "./UserCardGrid";
 import UserEditModal from "./EditUserModal";
 import UserFilters from "./UserFilters";
 import toast from "react-hot-toast";
+import { bulkDeleteUsers, bulkUpdateStatus } from "@/services/admin/userService";
 
 export default function UserList({ users, setUsers }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,11 +21,32 @@ export default function UserList({ users, setUsers }) {
     );
   };
 
-  const deleteSelected = () => {
-    if (confirm(`Delete ${selectedIds.length} selected user(s)?`)) {
+  const deleteSelected = async () => {
+    if (!confirm(`Delete ${selectedIds.length} selected user(s)?`)) return;
+    try {
+      await bulkDeleteUsers(selectedIds);
       setUsers((prev) => prev.filter((u) => !selectedIds.includes(u.id)));
       setSelectedIds([]);
       toast.success("Selected users deleted");
+    } catch (err) {
+      console.error("Bulk delete failed", err);
+      toast.error("Failed to delete selected users");
+    }
+  };
+
+  const applyBulkStatus = async (status) => {
+    if (!status) return;
+    try {
+      await bulkUpdateStatus(selectedIds, status);
+      setUsers((prev) =>
+        prev.map((u) =>
+          selectedIds.includes(u.id) ? { ...u, status } : u
+        )
+      );
+      toast.success(`Status set to ${status} for ${selectedIds.length} user(s)`);
+    } catch (err) {
+      console.error("Bulk status update failed", err);
+      toast.error("Failed to update status for selected users");
     }
   };
 
@@ -96,6 +118,7 @@ export default function UserList({ users, setUsers }) {
         onSortChange={setSortBy}
         selectedCount={selectedIds.length}
         onBulkDelete={deleteSelected}
+        onBulkStatusChange={applyBulkStatus}
       />
 
       {/* Selection Info */}
