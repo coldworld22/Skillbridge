@@ -2,7 +2,7 @@
 import {
   LayoutDashboard, CreditCard, Users, BadgeCheck, BookOpen, Brain, FileText, CalendarCheck2,
   UserCog, Megaphone, Settings, Phone, Plug, Globe, Mail, ImageIcon, ShieldCheck,
-  MessageCircleQuestion, BellRing, FileSignature, LayoutTemplate, Contact,
+  Key, MessageCircleQuestion, BellRing, FileSignature, LayoutTemplate, Contact,
   SearchCheck, ClipboardList, FolderKanban, DollarSign, Home, MessageCircle, Network, BookMarked,            // For Blogs
   HelpCircle,            // For FAQs
   LifeBuoy
@@ -34,7 +34,8 @@ export const adminNavLinks = [
       { label: 'Bookings', href: '/dashboard/admin/bookings', icon: CalendarCheck2 },
       { label: 'Community', href: '/dashboard/admin/community', icon: Users },
       { label: 'Community Groups', href: '/dashboard/admin/groups', icon: Users },
-      { label: 'Roles & Permissions', href: '/dashboard/admin/roles', icon: ShieldCheck },
+      { label: 'Roles', href: '/dashboard/admin/roles', icon: ShieldCheck },
+      { label: 'Permissions', href: '/dashboard/admin/permissions', icon: Key },
     ]
   },
   {

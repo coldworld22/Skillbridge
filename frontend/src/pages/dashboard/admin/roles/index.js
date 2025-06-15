@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import RoleManagement from "@/components/admin/roles/RoleManagement";
 
-export default function RolesPermissionsPage() {
+export default function RolesPage() {
   const [editingRules, setEditingRules] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
@@ -19,7 +19,7 @@ export default function RolesPermissionsPage() {
   return (
     <AdminLayout>
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Roles & Permissions Management</h1>
+        <h1 className="text-3xl font-bold mb-6">Roles Management</h1>
 
         <RoleManagement onEditRules={handleEditRules} />
 
