@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/community/admin/admin.service', () => ({
   getAllDiscussions: jest.fn(),
+  getDashboardData: jest.fn(),
 }));
 
 
@@ -69,6 +70,18 @@ describe('GET /api/community/admin/announcements', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(annService.getAllAnnouncements).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/community/admin/stats', () => {
+  it('returns dashboard stats', async () => {
+    const mock = { totalDiscussions: 5 };
+    service.getDashboardData.mockResolvedValue(mock);
+
+    const res = await request(app).get('/api/community/admin/stats');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(service.getDashboardData).toHaveBeenCalled();
   });
 });
 

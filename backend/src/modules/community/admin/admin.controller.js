@@ -30,3 +30,9 @@ exports.unlockDiscussion = catchAsync(async (req, res) => {
   if (!row) throw new AppError("Discussion not found", 404);
   sendSuccess(res, row, "Discussion unlocked");
 });
+
+// Dashboard stats for admin overview
+exports.getDashboardData = catchAsync(async (_req, res) => {
+  const data = await service.getDashboardData();
+  sendSuccess(res, data);
+});

@@ -18,6 +18,9 @@ router.delete("/discussions/:id", controller.deleteDiscussion);
 router.patch("/discussions/:id/lock", controller.lockDiscussion);
 router.patch("/discussions/:id/unlock", controller.unlockDiscussion);
 
+// Dashboard stats
+router.get("/stats", controller.getDashboardData);
+
 
 // Tags
 router.get("/tags", tagsController.listTags);
