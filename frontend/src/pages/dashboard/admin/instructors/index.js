@@ -5,7 +5,7 @@ import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
 import InstructorDetailsModal from '@/components/admin/instructors/InstructorDetailsModal';
-import { fetchAllInstructors, updateInstructorStatus } from '@/services/admin/instructorService';
+import { fetchAllInstructors, updateInstructorStatus, deleteInstructor as apiDeleteInstructor } from '@/services/admin/instructorService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 
@@ -81,14 +81,28 @@ export default function AdminInstructorsPage() {
     }
   };
 
-  const deleteInstructor = (id) => {
-    setInstructors((prev) => prev.filter((i) => i.id !== id));
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+  const deleteInstructor = async (id) => {
+    try {
+      await apiDeleteInstructor(id);
+      setInstructors((prev) => prev.filter((i) => i.id !== id));
+      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      toast.success('Instructor deleted');
+    } catch (err) {
+      toast.error('Failed to delete instructor');
+      console.error('Delete instructor error:', err);
+    }
   };
 
-  const deleteSelected = () => {
-    setInstructors((prev) => prev.filter((i) => !selectedIds.includes(i.id)));
-    setSelectedIds([]);
+  const deleteSelected = async () => {
+    try {
+      await Promise.all(selectedIds.map((id) => apiDeleteInstructor(id)));
+      setInstructors((prev) => prev.filter((i) => !selectedIds.includes(i.id)));
+      setSelectedIds([]);
+      toast.success('Selected instructors deleted');
+    } catch (err) {
+      toast.error('Failed to delete selected');
+      console.error('Bulk delete error:', err);
+    }
   };
 
   const updateInstructor = (updated) => {
