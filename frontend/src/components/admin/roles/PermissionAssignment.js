@@ -22,23 +22,26 @@ export default function PermissionAssignment({ role }) {
     }
   }, [role]);
 
-  const handleTogglePermission = (perm) => {
+  const handleTogglePermission = (code) => {
     setAssignedPermissions((current) =>
-      current.includes(perm)
-        ? current.filter((p) => p !== perm)
-        : [...current, perm]
+      current.includes(code)
+        ? current.filter((p) => p !== code)
+        : [...current, code]
     );
   };
 
   const handleCheckAll = () => {
     setAssignedPermissions((prev) =>
-      prev.length === permissions.length ? [] : [...permissions]
+      prev.length === permissions.length
+        ? []
+        : permissions.map((p) => p.code)
     );
   };
 
   const handleAddNewPermission = () => {
-    if (newPermission && !permissions.includes(newPermission)) {
-      setPermissions([...permissions, newPermission]);
+    if (newPermission && !permissions.some((p) => p.code === newPermission)) {
+      const tempPerm = { id: `new_${newPermission}`, code: newPermission };
+      setPermissions([...permissions, tempPerm]);
       setAssignedPermissions([...assignedPermissions, newPermission]);
     }
     setNewPermission("");
@@ -77,20 +80,20 @@ export default function PermissionAssignment({ role }) {
       <div className="grid grid-cols-3 gap-4">
         {permissions.map((perm) => (
           <label
-            key={perm}
+            key={perm.id || perm.code}
             className={`flex items-center p-3 border rounded-xl cursor-pointer transition ${
-              assignedPermissions.includes(perm)
+              assignedPermissions.includes(perm.code)
                 ? "bg-yellow-50 border-yellow-400 text-yellow-700"
                 : "hover:bg-gray-50 border-gray-200"
             }`}
           >
             <input
               type="checkbox"
-              checked={assignedPermissions.includes(perm)}
-              onChange={() => handleTogglePermission(perm)}
+              checked={assignedPermissions.includes(perm.code)}
+              onChange={() => handleTogglePermission(perm.code)}
               className="mr-3 accent-yellow-500"
             />
-            <span className="capitalize">{perm.replace(/_/g, " ")}</span>
+            <span className="capitalize">{perm.code.replace(/_/g, " ")}</span>
           </label>
         ))}
       </div>
