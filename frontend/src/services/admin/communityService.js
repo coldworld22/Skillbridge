@@ -34,3 +34,27 @@ export const updateReportStatus = async (id, status) => {
   const { data } = await api.patch(`/community/admin/reports/${id}`, { status });
   return data?.data;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tags
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const fetchTags = async () => {
+  const { data } = await api.get('/community/admin/tags');
+  return data?.data ?? [];
+};
+
+export const createTag = async (payload) => {
+  const { data } = await api.post('/community/admin/tags', payload);
+  return data?.data;
+};
+
+export const updateTag = async (id, payload) => {
+  const { data } = await api.patch(`/community/admin/tags/${id}`, payload);
+  return data?.data;
+};
+
+export const deleteTag = async (id) => {
+  await api.delete(`/community/admin/tags/${id}`);
+  return true;
+};

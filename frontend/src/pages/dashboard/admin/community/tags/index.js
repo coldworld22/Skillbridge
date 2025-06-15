@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import {
+  fetchTags,
+  createTag,
+  updateTag,
+  deleteTag,
+} from "@/services/admin/communityService";
 
-const initialTags = [
-  { id: 1, name: "React" },
-  { id: 2, name: "Next.js" },
-  { id: 3, name: "Odoo" },
-];
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w ]+/g, "")
+    .replace(/ +/g, "-");
 
 export default function AdminTagsPage() {
   const [tags, setTags] = useState([]);
@@ -14,20 +21,35 @@ export default function AdminTagsPage() {
   const [editing, setEditing] = useState(null);
 
   useEffect(() => {
-    setTags(initialTags);
+    const load = async () => {
+      try {
+        const data = await fetchTags();
+        setTags(data || []);
+      } catch (err) {
+        console.error("Failed to load tags", err);
+      }
+    };
+    load();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newTag.trim()) return;
-    if (editing) {
-      setTags((prev) =>
-        prev.map((tag) => (tag.id === editing.id ? { ...tag, name: newTag } : tag))
-      );
-      setEditing(null);
-    } else {
-      setTags((prev) => [...prev, { id: Date.now(), name: newTag.trim() }]);
+    try {
+      const payload = { name: newTag, slug: slugify(newTag) };
+      if (editing) {
+        const updated = await updateTag(editing.id, payload);
+        setTags((prev) =>
+          prev.map((tag) => (tag.id === editing.id ? updated : tag))
+        );
+        setEditing(null);
+      } else {
+        const created = await createTag(payload);
+        setTags((prev) => [...prev, created]);
+      }
+      setNewTag("");
+    } catch (err) {
+      console.error("Failed to save tag", err);
     }
-    setNewTag("");
   };
 
   const handleEdit = (tag) => {
@@ -35,10 +57,14 @@ export default function AdminTagsPage() {
     setNewTag(tag.name);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmDelete = confirm("Delete this tag?");
-    if (confirmDelete) {
+    if (!confirmDelete) return;
+    try {
+      await deleteTag(id);
       setTags((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Failed to delete tag", err);
     }
   };
 
