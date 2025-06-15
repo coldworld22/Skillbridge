@@ -2,18 +2,13 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaLock, FaTrash, FaArrowLeft, FaCheck, FaStar } from "react-icons/fa";
-import { markAsResolved, lockDiscussion } from "@/utils/community/moderation";
+import { markAsResolved } from "@/utils/community/moderation";
+import {
+  fetchDiscussionById,
+  lockDiscussionById,
+  deleteDiscussionById,
+} from "@/services/admin/communityService";
 
-const mockDiscussion = {
-  id: 1,
-  title: "How to set up React with Docker?",
-  user: "John Doe",
-  status: "open",
-  replies: [
-    { id: 1, user: "Instructor Sarah", text: "Use a Dockerfile with node:18 base.", timestamp: "2h ago" },
-    { id: 2, user: "Jane", text: "Don't forget to expose port 3000!", timestamp: "1h ago" },
-  ],
-};
 
 export default function AdminDiscussionDetailsPage() {
   const router = useRouter();
@@ -22,24 +17,49 @@ export default function AdminDiscussionDetailsPage() {
   const [discussion, setDiscussion] = useState(null);
 
   useEffect(() => {
-    // Simulate fetch by ID
-    if (id) {
-      setDiscussion({ ...mockDiscussion, id: Number(id) });
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const data = await fetchDiscussionById(id);
+        if (data) {
+          setDiscussion({
+            id: data.id,
+            title: data.title,
+            user: data.user_id,
+            status: data.locked ? "locked" : data.resolved ? "resolved" : "open",
+            replies: data.replies || [],
+            content: data.content,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load discussion", err);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleLock = () => {
-    setDiscussion((prev) => ({ ...prev, status: "locked" }));
-    lockDiscussion(id);
+  const handleLock = async () => {
+    try {
+      await lockDiscussionById(id);
+      setDiscussion((prev) => ({ ...prev, status: "locked" }));
+    } catch (err) {
+      console.error("Failed to lock discussion", err);
+    }
   };
 
   const handleMarkResolved = () => {
     setDiscussion(markAsResolved(discussion));
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const confirmed = confirm("Delete this discussion?");
-    if (confirmed) router.push("/dashboard/admin/community/discussions");
+    if (!confirmed) return;
+    try {
+      await deleteDiscussionById(id);
+      router.push("/dashboard/admin/community/discussions");
+    } catch (err) {
+      console.error("Failed to delete discussion", err);
+    }
   };
 
   if (!discussion) return <div className="p-6">Loading...</div>;
@@ -80,10 +100,16 @@ export default function AdminDiscussionDetailsPage() {
           </button>
         </div>
 
+        {discussion.content && (
+          <div className="bg-white p-4 rounded shadow space-y-4 mb-6">
+            <p className="text-gray-800 whitespace-pre-line">{discussion.content}</p>
+          </div>
+        )}
+
         {/* Replies Section */}
         <div className="bg-white p-4 rounded shadow space-y-4">
           <h2 className="text-lg font-semibold mb-2">Replies</h2>
-          {discussion.replies.length > 0 ? (
+          {Array.isArray(discussion.replies) && discussion.replies.length > 0 ? (
             discussion.replies.map((reply) => (
               <div key={reply.id} className="border-b pb-3">
                 <p className="text-gray-800">{reply.text}</p>
