@@ -3,21 +3,35 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
+import { fetchTutorialDetails } from "@/services/tutorialService";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
   const { id } = router.query;
   const [tutorial, setTutorial] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [curriculumOpen, setCurriculumOpen] = useState(true); // For mobile accordion
 
   useEffect(() => {
-    if (id) {
-      const found = sampleTutorials.find((tut) => tut.id === parseInt(id));
-      setTutorial(found);
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const data = await fetchTutorialDetails(id);
+        setTutorial(data?.data || data || null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load tutorial");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  if (!tutorial) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+  if (!tutorial) return <div className="p-6">Tutorial not found.</div>;
 
   return (
     <InstructorLayout>
@@ -162,43 +176,3 @@ export default function ViewTutorialPage() {
   );
 }
 
-// Mock Data
-const sampleTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    status: "Draft",
-    updatedAt: "2024-05-01T10:00:00Z",
-    thumbnail: "https://via.placeholder.com/1200x600",
-    progress: 40,
-    shortDescription: "Learn everything about building modern web apps using React.js and Next.js.",
-    tags: ["React", "Frontend", "JavaScript"],
-    chapters: [
-      { title: "Getting Started", lessons: ["Introduction", "Installing Tools"] },
-      { title: "Core Concepts", lessons: ["JSX", "Components", "State Management"] }
-    ],
-    preview: null
-  },
-  {
-    id: 2,
-    title: "Node.js Basics",
-    status: "Submitted",
-    updatedAt: "2024-05-02T14:30:00Z",
-    thumbnail: "https://via.placeholder.com/1200x600",
-    shortDescription: "A practical guide to backend development using Node.js and Express.",
-    tags: ["Node.js", "Backend", "JavaScript"],
-    chapters: [],
-    preview: null
-  },
-  {
-    id: 3,
-    title: "Introduction to AI",
-    status: "Approved",
-    updatedAt: "2024-05-03T09:00:00Z",
-    thumbnail: "https://via.placeholder.com/1200x600",
-    shortDescription: "Understand the basics of artificial intelligence and machine learning.",
-    tags: ["AI", "Machine Learning", "Python"],
-    chapters: [],
-    preview: null
-  }
-];

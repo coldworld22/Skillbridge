@@ -7,6 +7,8 @@ export default function StudentTutorialsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [tutorials, setTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -23,8 +25,11 @@ export default function StudentTutorialsPage() {
           };
         });
         setTutorials(enriched);
+        setLoading(false);
       } catch (err) {
         console.error(err);
+        setError("Failed to load tutorials");
+        setLoading(false);
       }
     };
     load();
@@ -35,6 +40,14 @@ export default function StudentTutorialsPage() {
     const matchesFilter = filter === "all" || (filter === "completed" && tut.isCompleted) || (filter === "in-progress" && !tut.isCompleted);
     return matchesSearch && matchesFilter;
   });
+
+  if (loading) {
+    return <div className="p-6">Loading tutorials...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500">{error}</div>;
+  }
 
   return (
     <StudentLayout>

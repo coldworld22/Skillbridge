@@ -5,148 +5,13 @@ import { FaStar, FaClock, FaFire, FaEye, FaArrowUp } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-
-const tutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    instructor: "John Doe",
-    duration: "30 min",
-    category: "React",
-    level: "Beginner",
-    rating: 4.8,
-    views: 100,
-    thumbnail: "https://codemanbd.com/wp-content/uploads/2024/03/Mastering-React-JS.jpg",
-    trending: true,
-    preview: "https://www.w3schools.com/html/mov_bbb.mp4",
-    tags: ["Beginner Friendly", "Hands-on"]
-  },
-  {
-    id: 2,
-    title: "Node.js Full Stack",
-    instructor: "Jane Smith",
-    duration: "45 min",
-    category: "Node.js",
-    level: "Intermediate",
-    rating: 4.2,
-    views: 200,
-    thumbnail: "https://i.ytimg.com/vi/YYmzj5DK_5s/hq720.jpg",
-    tags: ["Full Stack"]
-  },
-  {
-    id: 3,
-    title: "Deep Learning Basics",
-    instructor: "Alan Turing",
-    duration: "1h 10m",
-    category: "AI",
-    level: "Advanced",
-    rating: 5.0,
-    views: 150,
-    thumbnail: "https://i.ytimg.com/vi/bpFjQGCa7Xg/maxresdefault.jpg",
-    trending: true,
-    tags: ["Top Rated"]
-  },
-  {
-    id: 4,
-    title: "UI/UX Design Mastery",
-    instructor: "Sarah Adams",
-    duration: "50 min",
-    category: "Design",
-    level: "Intermediate",
-    rating: 4.7,
-    views: 180,
-    thumbnail: "https://framerusercontent.com/assets/EKEOIDPjqN813mQCpOA23uDFcns.jpg",
-    tags: ["Design"]
-  },
-  {
-    id: 5,
-    title: "Advanced JavaScript",
-    instructor: "Elon Dev",
-    duration: "40 min",
-    category: "JavaScript",
-    level: "Advanced",
-    rating: 4.9,
-    views: 220,
-    thumbnail: "https://i.ytimg.com/vi/IljVmcDDrOg/maxresdefault.jpg",
-    tags: ["Advanced"]
-  },
-  {
-    id: 6,
-    title: "Intro to TypeScript",
-    instructor: "Clara Lee",
-    duration: "35 min",
-    category: "TypeScript",
-    level: "Beginner",
-    rating: 4.6,
-    views: 175,
-    thumbnail: "https://i.ytimg.com/vi/BCg4U1FzODs/maxresdefault.jpg",
-    tags: ["Beginner Friendly"]
-  },
-  {
-    id: 7,
-    title: "Next.js Crash Course",
-    instructor: "Mark Evans",
-    duration: "1h 20m",
-    category: "React",
-    level: "Intermediate",
-    rating: 4.9,
-    views: 320,
-    thumbnail: "https://i.ytimg.com/vi/1WmNXEVia8I/maxresdefault.jpg",
-    trending: true,
-    tags: ["Full Stack"]
-  },
-  {
-    id: 8,
-    title: "Responsive Web Design",
-    instructor: "Laura Bennett",
-    duration: "45 min",
-    category: "Design",
-    level: "Beginner",
-    rating: 4.5,
-    views: 250,
-    thumbnail: "https://i.ytimg.com/vi/srvUrASNj0s/maxresdefault.jpg",
-    tags: ["CSS", "HTML"]
-  },
-  {
-    id: 9,
-    title: "Python for Beginners",
-    instructor: "Dr. Zainab",
-    duration: "1h",
-    category: "Python",
-    level: "Beginner",
-    rating: 4.3,
-    views: 180,
-    thumbnail: "https://i.ytimg.com/vi/_uQrJ0TkZlc/maxresdefault.jpg",
-    tags: ["Beginner Friendly"]
-  },
-  {
-    id: 10,
-    title: "Docker Essentials",
-    instructor: "Mohamed Ali",
-    duration: "50 min",
-    category: "DevOps",
-    level: "Intermediate",
-    rating: 4.4,
-    views: 210,
-    thumbnail: "https://i.ytimg.com/vi/Gjnup-PuquQ/maxresdefault.jpg",
-    tags: ["Containers"]
-  },
-  {
-    id: 11,
-    title: "Git & GitHub Essentials",
-    instructor: "Emily Davis",
-    duration: "30 min",
-    category: "Tools",
-    level: "Beginner",
-    rating: 4.7,
-    views: 300,
-    thumbnail: "https://i.ytimg.com/vi/apGV9Kg7ics/maxresdefault.jpg",
-    tags: ["Git", "Version Control"]
-  },
-];
+import { fetchPublishedTutorials } from "@/services/tutorialService";
 
 
 const TutorialsSection = () => {
+  const [tutorials, setTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("default");
   const [visibleCount, setVisibleCount] = useState(6);
   const [searchQuery, setSearchQuery] = useState("");
@@ -160,6 +25,21 @@ const TutorialsSection = () => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadTutorials = async () => {
+      try {
+        const data = await fetchPublishedTutorials();
+        setTutorials(data?.data || data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load tutorials");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTutorials();
   }, []);
 
   const sortedTutorials = [...tutorials]
@@ -192,6 +72,22 @@ const TutorialsSection = () => {
       if (loader.current) observer.unobserve(loader.current);
     };
   }, [loader, sortedTutorials.length]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-yellow-400">
+        ⏳ Loading tutorials...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <section className="bg-gray-900 text-white min-h-screen relative">
@@ -287,6 +183,9 @@ const TutorialsSection = () => {
                   </div>
                 </motion.div>
               ))}
+              {visibleTutorials.length === 0 && (
+                <p className="col-span-full text-center text-gray-400">No tutorials found.</p>
+              )}
             </div>
 
             {visibleCount < sortedTutorials.length && (
