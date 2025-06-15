@@ -32,7 +32,14 @@ Follow these steps to run SkillBridge on your local machine.
    cd ..
    ```
 
-4. Start all services using Docker Compose:
+4. Initialize the PostgreSQL database:
+
+   ```bash
+   npx knex migrate:latest --knexfile backend/knexfile.js
+   npx knex seed:run --knexfile backend/knexfile.js
+   ```
+
+5. Start all services using Docker Compose:
 
    ```bash
    docker-compose up --build
@@ -43,7 +50,7 @@ Follow these steps to run SkillBridge on your local machine.
    - PostgreSQL: `localhost:5432`
    - pgAdmin: `http://localhost:5050`
 
-5. Open the frontend URL in your browser and log in or create an account.
+6. Open the frontend URL in your browser and log in or create an account.
 
 ## Running tests
 
