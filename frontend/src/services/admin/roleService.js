@@ -19,3 +19,18 @@ export const updateRolePermissions = async (id, permissionIds) => {
   const { data } = await api.post(`/roles/${id}/permissions`, { permissionIds });
   return data?.data;
 };
+
+export const createRole = async (payload) => {
+  const { data } = await api.post("/roles", payload);
+  return data?.data;
+};
+
+export const updateRole = async (id, payload) => {
+  const { data } = await api.put(`/roles/${id}`, payload);
+  return data?.data;
+};
+
+export const deleteRole = async (id) => {
+  await api.delete(`/roles/${id}`);
+  return true;
+};
