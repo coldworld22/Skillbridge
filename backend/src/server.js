@@ -14,6 +14,7 @@ const userRoutes = require("./modules/users/user.routes");
 const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP routes
 const certificatePublicRoutes = require("./modules/users/tutorials/certificate/certificatePublic.routes");
 const adminBookingRoutes = require("./modules/bookings/bookings.routes");
+const adminCommunityRoutes = require("./modules/community/admin/admin.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -64,6 +65,7 @@ app.use("/api/users", userRoutes);     // 👤 Users: profile, avatar, demo vide
 app.use("/api/verify", verifyRoutes);  // ✅ OTP: send/confirm email/phone
 app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificate verification
 app.use("/api/bookings/admin", adminBookingRoutes); // 📅 Admin bookings management
+app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
