@@ -1,31 +1,28 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaExclamationCircle, FaTrash, FaEye } from "react-icons/fa";
-
-const mockReports = [
-  {
-    id: 1,
-    type: "discussion",
-    reason: "Inappropriate language",
-    content: "This is stupid!",
-    user: "user123",
-    discussionId: 5,
-  },
-  {
-    id: 2,
-    type: "reply",
-    reason: "Spam / promotion",
-    content: "Buy my course here: spamlink.com",
-    user: "marketer99",
-    discussionId: 2,
-  },
-];
+import { fetchReports } from "@/services/admin/communityService";
 
 export default function AdminCommunityReportsPage() {
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
-    setReports(mockReports);
+    const load = async () => {
+      try {
+        const data = await fetchReports();
+        const formatted = (data || []).map((r) => ({
+          id: r.id,
+          reason: r.reason,
+          content: r.content || "",
+          user: r.reporter_id,
+          discussionId: r.discussion_id,
+        }));
+        setReports(formatted);
+      } catch (err) {
+        console.error("Failed to load reports", err);
+      }
+    };
+    load();
   }, []);
 
   const handleReview = (report) => {

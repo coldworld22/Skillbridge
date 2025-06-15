@@ -24,3 +24,13 @@ export const deleteDiscussionById = async (id) => {
   await api.delete(`/community/admin/discussions/${id}`);
   return true;
 };
+
+export const fetchReports = async () => {
+  const { data } = await api.get("/community/admin/reports");
+  return data?.data ?? [];
+};
+
+export const updateReportStatus = async (id, status) => {
+  const { data } = await api.patch(`/community/admin/reports/${id}`, { status });
+  return data?.data;
+};
