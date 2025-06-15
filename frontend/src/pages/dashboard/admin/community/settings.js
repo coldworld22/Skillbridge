@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import SettingsPanel from "@/components/admin/community/SettingsPanel";
+import {
+  fetchCommunitySettings,
+  updateCommunitySettings,
+} from "@/services/admin/communityService";
 
 const defaultSettings = [
   { key: "allowGuestPosts", label: "Allow guest users to post", enabled: false },
@@ -13,7 +17,11 @@ export default function AdminCommunitySettingsPage() {
   const [settings, setSettings] = useState([]);
 
   useEffect(() => {
-    setSettings(defaultSettings); // Load from API/backend in real use
+    const load = async () => {
+      const data = await fetchCommunitySettings();
+      setSettings(data.length ? data : defaultSettings);
+    };
+    load();
   }, []);
 
   const handleToggle = (key) => {
@@ -24,10 +32,9 @@ export default function AdminCommunitySettingsPage() {
     );
   };
 
-  const handleSave = () => {
-    // In real case, you'd call an API to save settings
+  const handleSave = async () => {
+    await updateCommunitySettings(settings);
     alert("Settings saved successfully!");
-    console.log("Saved settings:", settings);
   };
 
   return (

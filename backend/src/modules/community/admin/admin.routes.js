@@ -5,6 +5,7 @@ const tagsController = require("./tags.controller");
 const announcementsController = require("./announcements.controller");
 const reportsController = require("./reports.controller");
 const contributorsController = require("./contributors.controller");
+const settingsController = require("./settings.controller");
 
 const { verifyToken, isAdmin } = require("../../../middleware/auth/authMiddleware");
 
@@ -41,5 +42,9 @@ router.delete("/announcements/:id", announcementsController.deleteAnnouncement);
 // Reports
 router.get("/reports", reportsController.listReports);
 router.patch("/reports/:id", reportsController.updateReport);
+
+// Settings
+router.get("/settings", settingsController.getSettings);
+router.put("/settings", settingsController.updateSettings);
 
 module.exports = router;

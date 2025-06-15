@@ -24,6 +24,11 @@ jest.mock('../src/modules/community/admin/contributors.service', () => ({
   getTopContributors: jest.fn(),
 }));
 
+jest.mock('../src/modules/community/admin/settings.service', () => ({
+  getSettings: jest.fn(),
+  updateSettings: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
@@ -34,6 +39,7 @@ const service = require('../src/modules/community/admin/admin.service');
 const tagService = require('../src/modules/community/admin/tags.service');
 const annService = require('../src/modules/community/admin/announcements.service');
 const contributorsService = require('../src/modules/community/admin/contributors.service');
+const settingsService = require('../src/modules/community/admin/settings.service');
 
 const routes = require('../src/modules/community/admin/admin.routes');
 
@@ -99,6 +105,32 @@ describe('GET /api/community/admin/contributors', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(contributorsService.getTopContributors).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/community/admin/settings', () => {
+  it('returns settings', async () => {
+    const mock = [{ key: 'foo' }];
+    settingsService.getSettings.mockResolvedValue(mock);
+
+    const res = await request(app).get('/api/community/admin/settings');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(settingsService.getSettings).toHaveBeenCalled();
+  });
+});
+
+describe('PUT /api/community/admin/settings', () => {
+  it('updates settings', async () => {
+    const payload = [{ key: 'foo' }];
+    settingsService.updateSettings.mockResolvedValue(payload);
+
+    const res = await request(app)
+      .put('/api/community/admin/settings')
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(payload);
+    expect(settingsService.updateSettings).toHaveBeenCalledWith(payload);
   });
 });
 
