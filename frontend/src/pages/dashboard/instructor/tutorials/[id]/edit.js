@@ -6,6 +6,7 @@ import BasicInfoStep from '@/components/tutorials/create/BasicInfoStep';
 import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
+import { fetchTutorialDetails } from "@/services/tutorialService";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -13,31 +14,30 @@ export default function EditTutorialPage() {
 
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      const draft = localStorage.getItem(`editTutorialDraft-${id}`);
-      if (draft) {
-        setTutorialData(JSON.parse(draft));
-      } else {
-        // Mock fetch tutorial by ID
-        const found = sampleTutorials.find((tut) => tut.id === parseInt(id));
-        if (found) {
-          setTutorialData({
-            title: found.title,
-            shortDescription: "",
-            category: "",
-            level: "",
-            tags: [],
-            chapters: [],
-            thumbnail: found.thumbnail,
-            preview: null,
-            price: "",
-            isFree: false,
-          });
-        }
-      }
+    if (!id) return;
+    const draft = localStorage.getItem(`editTutorialDraft-${id}`);
+    if (draft) {
+      setTutorialData(JSON.parse(draft));
+      setLoading(false);
+      return;
     }
+
+    const load = async () => {
+      try {
+        const data = await fetchTutorialDetails(id);
+        setTutorialData(data?.data || data || null);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load tutorial");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
   useEffect(() => {
@@ -49,7 +49,9 @@ export default function EditTutorialPage() {
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (!tutorialData) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+  if (!tutorialData) return <div className="p-6">Tutorial not found.</div>;
 
   return (
     <InstructorLayout>
@@ -91,29 +93,5 @@ export default function EditTutorialPage() {
       </div>
     </InstructorLayout>
   );
-}
 
-const sampleTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    status: "Draft",
-    updatedAt: "2024-05-01T10:00:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-    progress: 40,
-  },
-  {
-    id: 2,
-    title: "Node.js Basics",
-    status: "Submitted",
-    updatedAt: "2024-05-02T14:30:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-  },
-  {
-    id: 3,
-    title: "Introduction to AI",
-    status: "Approved",
-    updatedAt: "2024-05-03T09:00:00Z",
-    thumbnail: "https://via.placeholder.com/300x180",
-  },
-];
+
