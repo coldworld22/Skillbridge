@@ -199,6 +199,33 @@
 - **Primary Key**: `id`
 - **Foreign Keys**: `discussion_id, user_id`
 
+### `community_tags`
+- **Purpose**: Categorize discussions
+- **Primary Key**: `id`
+
+### `community_discussion_tags`
+- **Purpose**: Many-to-many join of discussions and tags
+- **Primary Key**: `(discussion_id, tag_id)`
+
+### `community_reports`
+- **Purpose**: User reports of inappropriate content
+- **Primary Key**: `id`
+- **Foreign Keys**: `reporter_id, discussion_id?, reply_id?`
+
+### `community_votes`
+- **Purpose**: Up/down votes on discussions or replies
+- **Primary Key**: `id`
+- **Foreign Keys**: `user_id, discussion_id?, reply_id?`
+
+### `community_announcements`
+- **Purpose**: Admin posts shown to the community
+- **Primary Key**: `id`
+- **Foreign Keys**: `author_id`
+
+### `community_contributors`
+- **Purpose**: Aggregate stats for active users
+- **Primary Key**: `user_id (PK)`
+
 
 ## Bookings Tables
 
