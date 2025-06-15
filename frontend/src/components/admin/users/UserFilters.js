@@ -1,11 +1,15 @@
+import React from "react";
+
 export default function UserFilters({
   onSearch,
   onRoleFilter,
   onStatusFilter,
   onSortChange,
   onBulkDelete,
+  onBulkStatusChange,
   selectedCount,
 }) {
+  const [bulkStatus, setBulkStatus] = React.useState("");
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
       {/* Search & Filters */}
@@ -53,12 +57,35 @@ export default function UserFilters({
         </select>
 
         {selectedCount > 0 && (
-          <button
-            onClick={onBulkDelete}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
-          >
-            Delete Selected ({selectedCount})
-          </button>
+          <>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              className="p-2 border rounded-md"
+            >
+              <option value="">Set Status...</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button
+              onClick={() => {
+                if (!bulkStatus) return;
+                onBulkStatusChange(bulkStatus);
+                setBulkStatus("");
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+            >
+              Apply
+            </button>
+            <button
+              onClick={onBulkDelete}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+            >
+              Delete Selected ({selectedCount})
+            </button>
+          </>
         )}
       </div>
     </div>
