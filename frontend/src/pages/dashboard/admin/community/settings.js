@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import SettingsPanel from "@/components/admin/community/SettingsPanel";
+
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { toast } from "react-toastify";
+
 import {
   fetchCommunitySettings,
   updateCommunitySettings,
@@ -15,11 +19,19 @@ const defaultSettings = [
 
 export default function AdminCommunitySettingsPage() {
   const [settings, setSettings] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchCommunitySettings();
-      setSettings(data.length ? data : defaultSettings);
+
+      try {
+        const data = await fetchCommunitySettings();
+        setSettings(data.length ? data : defaultSettings);
+      } catch (_err) {
+        toast.error("Failed to load settings");
+        setSettings(defaultSettings);
+      }
+
     };
     load();
   }, []);
@@ -32,9 +44,17 @@ export default function AdminCommunitySettingsPage() {
     );
   };
 
-  const handleSave = async () => {
-    await updateCommunitySettings(settings);
-    alert("Settings saved successfully!");
+
+  const handleSave = () => setConfirmOpen(true);
+
+  const handleConfirmSave = async () => {
+    try {
+      await updateCommunitySettings(settings);
+      toast.success("Settings saved successfully!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save settings");
+    }
+
   };
 
   return (
@@ -50,6 +70,12 @@ export default function AdminCommunitySettingsPage() {
         >
           Save Changes
         </button>
+        <ConfirmModal
+          isOpen={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleConfirmSave}
+          message="Save changes to community settings?"
+        />
       </div>
     </AdminLayout>
   );
