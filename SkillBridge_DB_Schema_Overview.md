@@ -192,6 +192,7 @@
 - **Purpose**: Questions posted by users
 - **Primary Key**: `id`
 - **Foreign Keys**: `user_id`
+- **Columns**: `title`, `content`, `resolved`, `locked`, timestamps
 
 ### `community_replies`
 - **Purpose**: Answers/comments
