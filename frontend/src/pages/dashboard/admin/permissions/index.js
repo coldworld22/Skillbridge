@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { PlusCircle } from "lucide-react";
-import { fetchAllPermissions } from "@/services/admin/roleService";
+import { PlusCircle, Trash2 } from "lucide-react";
+import {
+  fetchAllPermissions,
+  createPermission,
+  deletePermission,
+} from "@/services/admin/roleService";
 
 export default function PermissionsPage() {
   const [permissions, setPermissions] = useState([]);
@@ -12,12 +16,19 @@ export default function PermissionsPage() {
     fetchAllPermissions().then(setPermissions);
   }, []);
 
-  const handleAdd = () => {
-    if (newPermission && !permissions.includes(newPermission)) {
-      setPermissions([...permissions, newPermission]);
-    }
+  const handleAdd = async () => {
+    if (!newPermission.trim()) return;
+    if (permissions.some((p) => p.code === newPermission)) return;
+    const created = await createPermission({ code: newPermission });
+    setPermissions([...permissions, created]);
     setNewPermission("");
     setShowAddModal(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this permission?")) return;
+    await deletePermission(id);
+    setPermissions((perms) => perms.filter((p) => p.id !== id));
   };
 
   return (
@@ -35,8 +46,15 @@ export default function PermissionsPage() {
 
         <ul className="space-y-2">
           {permissions.map((perm) => (
-            <li key={perm} className="p-3 border rounded-xl bg-white capitalize">
-              {perm.replace(/_/g, " ")}
+            <li
+              key={perm.id}
+              className="p-3 border rounded-xl bg-white capitalize flex justify-between items-center"
+            >
+              {perm.code.replace(/_/g, " ")}
+              <Trash2
+                className="w-4 h-4 text-red-600 cursor-pointer"
+                onClick={() => handleDelete(perm.id)}
+              />
             </li>
           ))}
         </ul>
