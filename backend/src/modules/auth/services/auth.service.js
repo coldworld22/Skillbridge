@@ -49,8 +49,9 @@ exports.registerUser = async (data) => {
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
+  const tokenRoles = roles.length ? roles : [newUser.role];
 
-  const accessToken = generateAccessToken({ id: newUser.id, role: roles[0], roles });
+  const accessToken = generateAccessToken({ id: newUser.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: newUser.id });
 
   return { accessToken, refreshToken, user: { ...newUser, roles } };
@@ -68,7 +69,8 @@ exports.loginUser = async ({ email, password }) => {
   if (!match) throw new AppError("Invalid credentials", 401);
 
   const roles = await userModel.getUserRoles(user.id);
-  const accessToken = generateAccessToken({ id: user.id, role: roles[0], roles });
+  const tokenRoles = roles.length ? roles : [user.role];
+  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: user.id });
 
   return { accessToken, refreshToken, user: { ...user, roles } };

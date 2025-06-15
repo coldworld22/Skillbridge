@@ -1,19 +1,21 @@
 const bcrypt = require("bcrypt");
 
 exports.seed = async function(knex) {
-  // Clear existing records (optional in dev environments)
+  // Clear existing user accounts but keep role definitions
   await knex("user_roles").del();
   await knex("users").del();
-  await knex("roles").del();
 
-  // ✅ Create SuperAdmin Role
-  const [superAdminRoleId] = await knex("roles")
-    .insert({
-      name: "SuperAdmin",
-      description: "Platform owner with full access",
-      created_at: knex.fn.now(),
-    })
-    .returning("id");
+  // Ensure the SuperAdmin role exists
+  let roleRecord = await knex("roles").where({ name: "SuperAdmin" }).first();
+  if (!roleRecord) {
+    [roleRecord] = await knex("roles")
+      .insert({
+        name: "SuperAdmin",
+        description: "Platform owner with full access",
+        created_at: knex.fn.now(),
+      })
+      .returning("*");
+  }
 
   // 🔐 Create SuperAdmin User
   const hashedPassword = await bcrypt.hash("supersecure123", 10); // Use a stronger password in production
@@ -37,7 +39,7 @@ exports.seed = async function(knex) {
   // 🔗 Link user to role (if using a many-to-many system)
   await knex("user_roles").insert({
     user_id: superAdminUserId.id || superAdminUserId,
-    role_id: superAdminRoleId.id || superAdminRoleId,
+    role_id: roleRecord.id || roleRecord,
   });
 
   console.log("✅ SuperAdmin seeded");

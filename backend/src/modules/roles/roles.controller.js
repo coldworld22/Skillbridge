@@ -55,7 +55,7 @@ exports.assignPermissions = catchAsync(async (req, res) => {
   const role = await service.assignPermissions(
     req.params.id,
     req.body.permissionIds || [],
-    req.user.id
+    req.user?.id
   );
   sendSuccess(res, role, "Permissions assigned");
 });
