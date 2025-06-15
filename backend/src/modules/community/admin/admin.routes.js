@@ -4,16 +4,20 @@ const controller = require("./admin.controller");
 const tagsController = require("./tags.controller");
 const announcementsController = require("./announcements.controller");
 const reportsController = require("./reports.controller");
+
 const { verifyToken, isAdmin } = require("../../../middleware/auth/authMiddleware");
 
 router.use(verifyToken, isAdmin);
 
 // Discussions
+
+
 router.get("/discussions", controller.getDiscussions);
 router.get("/discussions/:id", controller.getDiscussion);
 router.delete("/discussions/:id", controller.deleteDiscussion);
 router.patch("/discussions/:id/lock", controller.lockDiscussion);
 router.patch("/discussions/:id/unlock", controller.unlockDiscussion);
+
 
 // Tags
 router.get("/tags", tagsController.listTags);

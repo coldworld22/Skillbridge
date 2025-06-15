@@ -5,6 +5,7 @@ jest.mock('../src/modules/community/admin/admin.service', () => ({
   getAllDiscussions: jest.fn(),
 }));
 
+
 jest.mock('../src/modules/community/admin/tags.service', () => ({
   getAllTags: jest.fn(),
 }));
@@ -24,8 +25,10 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const service = require('../src/modules/community/admin/admin.service');
+
 const tagService = require('../src/modules/community/admin/tags.service');
 const annService = require('../src/modules/community/admin/announcements.service');
+
 const routes = require('../src/modules/community/admin/admin.routes');
 
 const app = express();
@@ -43,6 +46,7 @@ describe('GET /api/community/admin/discussions', () => {
     expect(service.getAllDiscussions).toHaveBeenCalled();
   });
 });
+
 
 describe('GET /api/community/admin/tags', () => {
   it('returns tags', async () => {
@@ -67,3 +71,4 @@ describe('GET /api/community/admin/announcements', () => {
     expect(annService.getAllAnnouncements).toHaveBeenCalled();
   });
 });
+
