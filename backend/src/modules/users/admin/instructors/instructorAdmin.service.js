@@ -10,6 +10,9 @@ exports.getAllInstructors = async () => {
       "users.phone",
       "users.status",
       "users.avatar_url",
+
+      "users.created_at",
+
       "instructor_profiles.expertise",
       "instructor_profiles.experience",
       "instructor_profiles.pricing"
@@ -27,6 +30,9 @@ exports.getInstructorById = async (id) => {
       "users.phone",
       "users.status",
       "users.avatar_url",
+
+      "users.created_at",
+
       "instructor_profiles.expertise",
       "instructor_profiles.experience",
       "instructor_profiles.pricing",
