@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import SettingsPanel from "@/components/admin/community/SettingsPanel";
+
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { toast } from "react-toastify";
+
 import {
   fetchCommunitySettings,
   updateCommunitySettings,
@@ -21,6 +23,7 @@ export default function AdminCommunitySettingsPage() {
 
   useEffect(() => {
     const load = async () => {
+
       try {
         const data = await fetchCommunitySettings();
         setSettings(data.length ? data : defaultSettings);
@@ -28,6 +31,7 @@ export default function AdminCommunitySettingsPage() {
         toast.error("Failed to load settings");
         setSettings(defaultSettings);
       }
+
     };
     load();
   }, []);
@@ -40,6 +44,7 @@ export default function AdminCommunitySettingsPage() {
     );
   };
 
+
   const handleSave = () => setConfirmOpen(true);
 
   const handleConfirmSave = async () => {
@@ -49,6 +54,7 @@ export default function AdminCommunitySettingsPage() {
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save settings");
     }
+
   };
 
   return (
