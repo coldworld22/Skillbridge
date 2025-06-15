@@ -19,26 +19,7 @@ import {
   Legend,
 } from "recharts";
 
-const mockStats = {
-  totalDiscussions: 128,
-  pendingReports: 6,
-  contributors: 87,
-  repliesThisWeek: 342,
-  topContributor: {
-    name: "John Doe",
-    avatar: "/avatars/john.png",
-    contributions: 50,
-    reputation: 820,
-  },
-};
-
-const activityData = [
-  { date: "May 1", discussions: 5, reports: 2, replies: 30 },
-  { date: "May 2", discussions: 8, reports: 1, replies: 40 },
-  { date: "May 3", discussions: 3, reports: 3, replies: 22 },
-  { date: "May 4", discussions: 6, reports: 0, replies: 35 },
-  { date: "May 5", discussions: 7, reports: 1, replies: 38 },
-];
+import { fetchDashboardStats } from "@/services/admin/communityService";
 
 const NavCard = ({ href, icon, label }) => (
   <Link href={href}>
@@ -57,7 +38,37 @@ const StatCard = ({ label, value, color }) => (
 );
 
 export default function AdminCommunityDashboard() {
-  const stats = mockStats;
+  const [stats, setStats] = useState(null);
+  const [activityData, setActivityData] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchDashboardStats();
+        if (data) {
+          setStats({
+            totalDiscussions: data.totalDiscussions,
+            pendingReports: data.pendingReports,
+            contributors: data.contributors,
+            repliesThisWeek: data.repliesThisWeek,
+            topContributor: data.topContributor || {},
+          });
+          setActivityData(data.activityData || []);
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
+    };
+    load();
+  }, []);
+
+  if (!stats) {
+    return (
+      <AdminLayout title="Community Dashboard">
+        <div className="p-6">Loading...</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Community Dashboard">
