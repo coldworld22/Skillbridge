@@ -1,8 +1,10 @@
 export default function BookingRow({ booking, onView }) {
   const statusColors = {
-    Scheduled: 'bg-yellow-100 text-yellow-800',
-    Completed: 'bg-green-100 text-green-700',
-    Cancelled: 'bg-red-100 text-red-600',
+    pending: 'bg-yellow-100 text-yellow-800',
+    approved: 'bg-blue-100 text-blue-700',
+    declined: 'bg-red-100 text-red-600',
+    cancelled: 'bg-red-100 text-red-600',
+    completed: 'bg-green-100 text-green-700',
   };
 
   return (
@@ -24,9 +26,11 @@ export default function BookingRow({ booking, onView }) {
       <td className="px-4 py-2">{booking.duration}</td>
       <td className="px-4 py-2">
         <span
-          className={`text-xs px-2 py-1 rounded-full ${statusColors[booking.status]}`}
+          className={`text-xs px-2 py-1 rounded-full ${
+            statusColors[booking.status?.toLowerCase()] || 'bg-gray-100 text-gray-600'
+          }`}
         >
-          {booking.status}
+          {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
         </span>
       </td>
     </tr>

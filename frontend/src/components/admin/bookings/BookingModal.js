@@ -1,14 +1,16 @@
 import { FaTimes } from 'react-icons/fa';
 import { useState } from 'react';
 
-export default function BookingModal({ booking, onClose }) {
+export default function BookingModal({ booking, onClose, onCancel }) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
   if (!booking) return null;
 
   const handleCancel = () => {
-    console.log(`Cancel booking ${booking.id} - Reason:`, cancelReason);
+    if (onCancel) {
+      onCancel(booking.id, cancelReason);
+    }
     setShowCancelConfirm(false);
     onClose();
   };
@@ -49,7 +51,8 @@ export default function BookingModal({ booking, onClose }) {
           <div><strong>Status:</strong> <span className="capitalize">{booking.status}</span></div>
         </div>
 
-        {booking.status === 'Scheduled' && (
+        {(booking.status?.toLowerCase() === 'pending' ||
+          booking.status?.toLowerCase() === 'approved') && (
           <div className="mt-6">
             <button
               onClick={() => setShowCancelConfirm(true)}
