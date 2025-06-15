@@ -1,43 +1,58 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaTrash } from "react-icons/fa";
-
-const mockAnnouncements = [
-  {
-    id: 1,
-    message: "🚀 Community v2 just launched! Check out the new features.",
-    timestamp: "2025-05-10 09:30",
-  },
-  {
-    id: 2,
-    message: "🛠️ Scheduled maintenance on Sunday at 3AM GMT.",
-    timestamp: "2025-05-08 14:22",
-  },
-];
+import {
+  fetchAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+} from "@/services/admin/communityService";
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
-    setAnnouncements(mockAnnouncements);
+    const load = async () => {
+      try {
+        const data = await fetchAnnouncements();
+        const formatted = (data || []).map((a) => ({
+          id: a.id,
+          message: a.message,
+          timestamp: new Date(a.created_at).toLocaleString(),
+        }));
+        setAnnouncements(formatted);
+      } catch (err) {
+        console.error("Failed to load announcements", err);
+      }
+    };
+    load();
   }, []);
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!newMessage.trim()) return;
-    const newEntry = {
-      id: Date.now(),
-      message: newMessage.trim(),
-      timestamp: new Date().toLocaleString(),
-    };
-    setAnnouncements((prev) => [newEntry, ...prev]);
-    setNewMessage("");
+    try {
+      const payload = { title: newMessage.trim(), message: newMessage.trim() };
+      const created = await createAnnouncement(payload);
+      const newEntry = {
+        id: created.id,
+        message: created.message,
+        timestamp: new Date(created.created_at).toLocaleString(),
+      };
+      setAnnouncements((prev) => [newEntry, ...prev]);
+      setNewMessage("");
+    } catch (err) {
+      console.error("Failed to post announcement", err);
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmDelete = confirm("Delete this announcement?");
-    if (confirmDelete) {
+    if (!confirmDelete) return;
+    try {
+      await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error("Failed to delete announcement", err);
     }
   };
 
