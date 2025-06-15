@@ -74,6 +74,7 @@ router.post("/admin/bulk-delete", verifyToken, isAdmin, controller.bulkDeleteTut
 
 // ✅ Public routes (no auth required)
 router.get("/featured", controller.getFeaturedTutorials);
+router.get("/category/:categoryId", controller.getTutorialsByCategory);
 router.get("/", controller.getPublishedTutorials);
 router.get("/:id", controller.getPublicTutorialDetails);
 
