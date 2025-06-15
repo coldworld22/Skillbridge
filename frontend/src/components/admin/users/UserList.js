@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import UserCardGrid from "./UserCardGrid";
 import UserEditModal from "./EditUserModal";
 import UserFilters from "./UserFilters";
-import toast from "react-hot-toast";
+
+import { toast } from "react-toastify";
+
 import { bulkDeleteUsers, bulkUpdateStatus } from "@/services/admin/userService";
 
 export default function UserList({ users, setUsers }) {

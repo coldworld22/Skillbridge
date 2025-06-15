@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Switch } from "@headlessui/react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { Edit, Trash2 } from "lucide-react";
 import {
   FaUserCircle,
