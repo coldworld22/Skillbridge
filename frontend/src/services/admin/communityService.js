@@ -82,3 +82,17 @@ export const deleteAnnouncement = async (id) => {
   await api.delete(`/community/admin/announcements/${id}`);
   return true;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const fetchCommunitySettings = async () => {
+  const { data } = await api.get('/community/admin/settings');
+  return data?.data ?? [];
+};
+
+export const updateCommunitySettings = async (payload) => {
+  const { data } = await api.put('/community/admin/settings', payload);
+  return data?.data;
+};
