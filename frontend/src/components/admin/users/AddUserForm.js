@@ -27,7 +27,7 @@ export default function AddUserForm() {
       router.push("/dashboard/admin/users");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create user");
+      toast.error(err.response?.data?.message || "Failed to create user");
     }
   };
 
