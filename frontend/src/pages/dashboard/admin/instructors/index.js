@@ -1,42 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
 import InstructorDetailsModal from '@/components/admin/instructors/InstructorDetailsModal';
+import { fetchAllInstructors, updateInstructorStatus } from '@/services/admin/instructorService';
+import useAuthStore from '@/store/auth/authStore';
+import { toast } from 'react-toastify';
 
-const mockInstructors = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-    status: true,
-    joinDate: '2024-12-15',
-    bio: 'Expert in business leadership and soft skills.',
-    classes: ['Leadership 101', 'Team Building Basics'],
-  },
-  {
-    id: 2,
-    name: 'Mark Lee',
-    email: 'mark@example.com',
-    avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-    status: false,
-    joinDate: '2025-01-08',
-    bio: 'Full-stack web developer and mentor.',
-    classes: ['Advanced React', 'Node.js Masterclass'],
-  },
-  {
-    id: 3,
-    name: 'Linda Adams',
-    email: 'linda@example.com',
-    avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
-    status: true,
-    joinDate: '2024-11-23',
-    bio: 'Specialist in medical education and anatomy.',
-    classes: ['Human Anatomy', 'Basic First Aid'],
-  },
-];
 
 export default function AdminInstructorsPage() {
   const [instructors, setInstructors] = useState([]);
@@ -46,14 +18,67 @@ export default function AdminInstructorsPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewInstructor, setViewInstructor] = useState(null);
 
-  useEffect(() => {
-    setInstructors(mockInstructors);
-  }, []);
+  const router = useRouter();
+  const { accessToken, user, hasHydrated } = useAuthStore();
+  const [loading, setLoading] = useState(true);
 
-  const toggleStatus = (id) => {
-    setInstructors((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status: !i.status } : i))
-    );
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    if (!accessToken || !user) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    const role = user.role?.toLowerCase() ?? '';
+    if (role !== 'admin' && role !== 'superadmin') {
+      router.replace('/403');
+      return;
+    }
+
+    const loadData = async () => {
+      try {
+        const data = await fetchAllInstructors();
+        const formatted = (data ?? []).map((i) => ({
+          id: i.id,
+          name: i.full_name || i.email?.split('@')[0],
+          email: i.email,
+          avatar: i.avatar_url
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${i.avatar_url}`
+            : 'https://via.placeholder.com/80',
+          status: i.status === 'active' || i.status === true,
+          joinDate: i.created_at
+            ? new Date(i.created_at).toISOString().split('T')[0]
+            : '',
+          bio: i.expertise || '',
+          classes: [],
+        }));
+        setInstructors(formatted);
+      } catch (err) {
+        toast.error('Failed to load instructors');
+        console.error('Instructor load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [accessToken, hasHydrated, router, user]);
+
+  const toggleStatus = async (id) => {
+    const inst = instructors.find((i) => i.id === id);
+    if (!inst) return;
+    const newStatus = inst.status ? 'inactive' : 'active';
+    try {
+      await updateInstructorStatus(id, newStatus);
+      setInstructors((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, status: !i.status } : i))
+      );
+      toast.success('Status updated');
+    } catch (err) {
+      toast.error('Failed to update status');
+      console.error('Status update error:', err);
+    }
   };
 
   const deleteInstructor = (id) => {
@@ -87,6 +112,22 @@ export default function AdminInstructorsPage() {
       if (sort === 'date') return new Date(b.joinDate) - new Date(a.joinDate);
       return 0;
     });
+
+  if (!hasHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500 text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="p-8 text-center text-gray-500">Loading instructors...</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

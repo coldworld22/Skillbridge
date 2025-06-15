@@ -10,6 +10,7 @@ const { adminChangePasswordSchema } = require("./admin.validator");
 const { verifyToken, isAdmin, isSuperAdmin } = require("../../../middleware/auth/authMiddleware");
 const upload = require("./adminUploadMiddleware");
 const categoryRoutes = require("../categories/category.routes");
+const instructorAdminRoutes = require("./instructors/instructorAdmin.routes");
 // const classRoutes = require("../classes/class.routes");
 
 
@@ -65,6 +66,11 @@ router.post("/reset-password/:userId", isSuperAdmin, controller.resetPasswordAsA
 
 
 router.use("/", require("../usersmanagement/users.routes"));
+
+// ─────────────────────────────────────────────
+// 📋 Instructor management (GET/POST/PATCH)
+// ─────────────────────────────────────────────
+router.use("/instructors", instructorAdminRoutes);
 
 // ─────────────────────────────────────────────
 // 📋 Category CRUD (GET/POST/PUT/DELETE )
