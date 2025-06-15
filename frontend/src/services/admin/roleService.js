@@ -34,3 +34,18 @@ export const deleteRole = async (id) => {
   await api.delete(`/roles/${id}`);
   return true;
 };
+
+export const createPermission = async (payload) => {
+  const { data } = await api.post('/roles/permissions', payload);
+  return data?.data;
+};
+
+export const updatePermission = async (id, payload) => {
+  const { data } = await api.put(`/roles/permissions/${id}`, payload);
+  return data?.data;
+};
+
+export const deletePermission = async (id) => {
+  await api.delete(`/roles/permissions/${id}`);
+  return true;
+};
