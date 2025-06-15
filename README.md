@@ -10,12 +10,19 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    cp backend/.env.example backend/.env
    ```
 
-2. Build and launch the entire stack:
+2. Initialize the database (run migrations and seeds):
+
+   ```bash
+   npx knex migrate:latest --knexfile backend/knexfile.js
+   npx knex seed:run --knexfile backend/knexfile.js
+   ```
+
+3. Build and launch the entire stack:
 
    ```bash
    docker-compose up --build
    ```
 
-3. Visit `http://localhost:3001` to access the frontend. The API is available at `http://localhost:5000`.
+4. Visit `http://localhost:3001` to access the frontend. The API is available at `http://localhost:5000`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
