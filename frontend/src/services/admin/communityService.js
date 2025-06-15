@@ -35,6 +35,11 @@ export const updateReportStatus = async (id, status) => {
   return data?.data;
 };
 
+export const fetchContributors = async () => {
+  const { data } = await api.get('/community/admin/contributors');
+  return data?.data ?? [];
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tags
 // ─────────────────────────────────────────────────────────────────────────────

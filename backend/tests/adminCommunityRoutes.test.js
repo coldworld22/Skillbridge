@@ -20,6 +20,10 @@ jest.mock('../src/modules/community/admin/reports.service', () => ({
   updateStatus: jest.fn(),
 }));
 
+jest.mock('../src/modules/community/admin/contributors.service', () => ({
+  getTopContributors: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
@@ -29,6 +33,7 @@ const service = require('../src/modules/community/admin/admin.service');
 
 const tagService = require('../src/modules/community/admin/tags.service');
 const annService = require('../src/modules/community/admin/announcements.service');
+const contributorsService = require('../src/modules/community/admin/contributors.service');
 
 const routes = require('../src/modules/community/admin/admin.routes');
 
@@ -82,6 +87,18 @@ describe('GET /api/community/admin/stats', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(service.getDashboardData).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/community/admin/contributors', () => {
+  it('returns contributors', async () => {
+    const mock = [{ name: 'Jane' }];
+    contributorsService.getTopContributors.mockResolvedValue(mock);
+
+    const res = await request(app).get('/api/community/admin/contributors');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(contributorsService.getTopContributors).toHaveBeenCalled();
   });
 });
 

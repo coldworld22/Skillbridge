@@ -4,6 +4,7 @@ const controller = require("./admin.controller");
 const tagsController = require("./tags.controller");
 const announcementsController = require("./announcements.controller");
 const reportsController = require("./reports.controller");
+const contributorsController = require("./contributors.controller");
 
 const { verifyToken, isAdmin } = require("../../../middleware/auth/authMiddleware");
 
@@ -20,6 +21,9 @@ router.patch("/discussions/:id/unlock", controller.unlockDiscussion);
 
 // Dashboard stats
 router.get("/stats", controller.getDashboardData);
+
+// Contributors
+router.get("/contributors", contributorsController.listContributors);
 
 
 // Tags

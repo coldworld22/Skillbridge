@@ -1,19 +1,22 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSearch, FaDownload } from "react-icons/fa";
-
-const mockContributors = [
-  { name: "John Doe", contributions: 50, reputation: 800, avatar: "/avatars/john.png" },
-  { name: "Jane Smith", contributions: 45, reputation: 720, avatar: "/avatars/jane.png" },
-  { name: "Emily Johnson", contributions: 38, reputation: 650, avatar: "" },
-];
+import { fetchContributors } from "@/services/admin/communityService";
 
 export default function AdminContributorsPage() {
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    setContributors(mockContributors);
+    const load = async () => {
+      try {
+        const data = await fetchContributors();
+        setContributors(data);
+      } catch (err) {
+        console.error("Contributors fetch error:", err);
+      }
+    };
+    load();
   }, []);
 
   const filtered = contributors.filter((c) =>
