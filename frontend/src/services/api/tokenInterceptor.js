@@ -5,6 +5,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import api from "./api";
 import { toast } from "react-toastify";
+import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 
 let isRefreshing = false;
@@ -74,6 +75,9 @@ api.interceptors.response.use(
         authStore.logout();
         toast.info("You have been logged out.");
         toast.error("Session expired. Please log in again.");
+        if (typeof window !== "undefined") {
+          Router.push("/auth/login");
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
