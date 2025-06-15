@@ -4,29 +4,11 @@ import BookingRow from '@/components/admin/bookings/BookingRow';
 import BookingFilters from '@/components/admin/bookings/BookingFilters';
 import BookingStats from '@/components/admin/bookings/BookingStats';
 import BookingModal from '@/components/admin/bookings/BookingModal';
-
-const mockBookings = [
-  {
-    id: 1,
-    student: { name: 'Ali Hassan', avatar: 'https://randomuser.me/api/portraits/men/11.jpg' },
-    instructor: { name: 'Sarah Johnson', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-    classTitle: 'Python Basics',
-    date: '2025-05-10',
-    time: '10:00 AM',
-    duration: '1 hour',
-    status: 'Scheduled'
-  },
-  {
-    id: 2,
-    student: { name: 'Lina Ahmed', avatar: 'https://randomuser.me/api/portraits/women/12.jpg' },
-    instructor: { name: 'Mark Lee', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' },
-    classTitle: 'React Deep Dive',
-    date: '2025-05-09',
-    time: '3:00 PM',
-    duration: '90 mins',
-    status: 'Completed'
-  },
-];
+import {
+  fetchAllBookings,
+  updateBooking,
+} from '@/services/admin/bookingService';
+import { toast } from 'react-toastify';
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -34,8 +16,60 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
 
+  const handleCancel = async (id, reason) => {
+    try {
+      await updateBooking(id, { status: 'cancelled', notes: reason });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: 'cancelled' } : b))
+      );
+      toast.success('Booking cancelled');
+    } catch (err) {
+      console.error('Cancel booking failed', err);
+      toast.error('Failed to cancel booking');
+    }
+  };
+
   useEffect(() => {
-    setBookings(mockBookings);
+    const loadBookings = async () => {
+      try {
+        const data = await fetchAllBookings();
+        const formatted = (data || []).map((b) => ({
+          id: b.id,
+          student: {
+            name: b.student_name || b.student_id,
+            avatar:
+              b.student_avatar_url ||
+              "https://via.placeholder.com/40x40?text=S",
+          },
+          instructor: {
+            name: b.instructor_name || b.instructor_id,
+            avatar:
+              b.instructor_avatar_url ||
+              "https://via.placeholder.com/40x40?text=I",
+          },
+          classTitle: b.class_title || "—",
+          date: b.start_time
+            ? new Date(b.start_time).toISOString().split("T")[0]
+            : "",
+          time: b.start_time
+            ? new Date(b.start_time).toISOString().split("T")[1].slice(0, 5)
+            : "",
+          duration:
+            b.start_time && b.end_time
+              ? `${Math.round(
+                  (new Date(b.end_time) - new Date(b.start_time)) / 60000
+                )} mins`
+              : "",
+          status: b.status,
+          notes: b.notes,
+        }));
+        setBookings(formatted);
+      } catch (err) {
+        console.error("Failed to load bookings", err);
+        toast.error("Failed to load bookings");
+      }
+    };
+    loadBookings();
   }, []);
 
   const filtered = bookings.filter((b) => {
@@ -96,6 +130,7 @@ export default function AdminBookingsPage() {
           <BookingModal
             booking={selectedBooking}
             onClose={() => setSelectedBooking(null)}
+            onCancel={handleCancel}
           />
         )}
       </div>
