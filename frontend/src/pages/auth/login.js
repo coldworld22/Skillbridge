@@ -50,8 +50,19 @@ export default function Login() {
   });
 
   useEffect(() => {
-    if (!hasHydrated) return;
-    if (user) router.replace("/website");
+    if (!hasHydrated || !user) return;
+
+    if (user.profile_complete === false) {
+      const profilePaths = {
+        admin: "/dashboard/admin/profile/edit",
+        instructor: "/dashboard/instructor/profile/edit",
+        student: "/dashboard/student/profile/edit",
+      };
+      const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
+      router.replace(rolePath);
+    } else {
+      router.replace("/website");
+    }
   }, [hasHydrated, user]);
 
   // ─────────────────────────────
@@ -59,12 +70,23 @@ export default function Login() {
   // ─────────────────────────────
   const onSubmit = async (data) => {
   try {
-    await login(data);
+    const loggedInUser = await login(data);
     toast.success("Login successful");
+
+    const profilePaths = {
+      admin: "/dashboard/admin/profile/edit",
+      instructor: "/dashboard/instructor/profile/edit",
+      student: "/dashboard/student/profile/edit",
+    };
+
+    const targetPath =
+      loggedInUser.profile_complete === false
+        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+        : "/website";
 
     // ⏳ Delay before redirecting (e.g., 1.2 seconds)
     setTimeout(() => {
-      router.push("/website");
+      router.push(targetPath);
     }, 1200);
   } catch (err) {
     const msg =
