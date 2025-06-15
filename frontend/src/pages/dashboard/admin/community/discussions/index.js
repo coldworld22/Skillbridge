@@ -8,13 +8,12 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
-import { lockDiscussion } from "@/utils/community/moderation";
+import {
+  fetchDiscussions,
+  lockDiscussionById,
+  deleteDiscussionById,
+} from "@/services/admin/communityService";
 
-const mockDiscussions = [
-  { id: 1, title: "How to set up React with Docker?", user: "John Doe", replies: 8, status: "open" },
-  { id: 2, title: "Best way to secure API tokens?", user: "Jane Smith", replies: 12, status: "locked" },
-  { id: 3, title: "How to learn Next.js quickly?", user: "Ali Zain", replies: 4, status: "open" },
-];
 
 export default function AdminCommunityDiscussionsPage() {
   const [discussions, setDiscussions] = useState([]);
@@ -22,26 +21,51 @@ export default function AdminCommunityDiscussionsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    setDiscussions(mockDiscussions);
+    const load = async () => {
+      try {
+        const data = await fetchDiscussions();
+        const formatted = (data || []).map((d) => ({
+          id: d.id,
+          title: d.title,
+          user: d.user_id,
+          replies: d.replies_count ?? 0,
+          status: d.locked ? "locked" : "open",
+        }));
+        setDiscussions(formatted);
+      } catch (err) {
+        console.error("Failed to load discussions", err);
+      }
+    };
+    load();
   }, []);
 
   const handleView = (discussion) => {
     window.location.href = `/dashboard/admin/community/discussions/${discussion.id}`;
   };
 
-  const handleLock = (discussion) => {
-    alert(`Locked discussion: ${discussion.title}`);
-    setDiscussions((prev) =>
-      prev.map((d) =>
-        d.id === discussion.id ? { ...d, status: "locked" } : d
-      )
-    );
+  const handleLock = async (discussion) => {
+    try {
+      await lockDiscussionById(discussion.id);
+      setDiscussions((prev) =>
+        prev.map((d) =>
+          d.id === discussion.id ? { ...d, status: "locked" } : d
+        )
+      );
+    } catch (err) {
+      console.error("Failed to lock discussion", err);
+    }
   };
 
-  const handleDelete = (discussion) => {
-    const confirmed = window.confirm("Are you sure you want to delete this discussion?");
-    if (confirmed) {
+  const handleDelete = async (discussion) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this discussion?"
+    );
+    if (!confirmed) return;
+    try {
+      await deleteDiscussionById(discussion.id);
       setDiscussions((prev) => prev.filter((d) => d.id !== discussion.id));
+    } catch (err) {
+      console.error("Failed to delete discussion", err);
     }
   };
 
