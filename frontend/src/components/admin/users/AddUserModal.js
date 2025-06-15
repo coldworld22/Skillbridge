@@ -65,7 +65,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
       toast.success("User added successfully.");
       onClose();
     } catch (err) {
-      toast.error("Something went wrong.");
+      toast.error(err.response?.data?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@
 const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
+const AppError = require("../../../utils/AppError");
 
 /**
  * Update user status (active, inactive, suspended)
@@ -43,8 +44,26 @@ exports.updateUserProfile = async (id, data) => {
 
 exports.createUser = async (data) => {
   const {
-    full_name, email, phone, password_hash, role, gender, date_of_birth,
+    full_name,
+    email,
+    phone,
+    password_hash,
+    role,
+    gender,
+    date_of_birth,
   } = data;
+
+  // Check duplicate email
+  const existingEmail = await db("users").where({ email }).first();
+  if (existingEmail) {
+    throw new AppError("Email is already in use", 409);
+  }
+
+  // Check duplicate phone number
+  const existingPhone = await db("users").where({ phone }).first();
+  if (existingPhone) {
+    throw new AppError("Phone number is already in use", 409);
+  }
 
   const [user] = await db("users")
     .insert({
