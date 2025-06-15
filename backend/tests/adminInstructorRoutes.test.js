@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/users/admin/instructors/instructorAdmin.service', () => ({
   getAllInstructors: jest.fn(),
+  deleteInstructor: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -25,5 +26,15 @@ describe('GET /api/users/admin/instructors', () => {
     const res = await request(app).get('/api/users/admin/instructors');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockInstructors);
+  });
+});
+
+describe('DELETE /api/users/admin/instructors/:id', () => {
+  it('deletes instructor', async () => {
+    service.deleteInstructor.mockResolvedValue();
+
+    const res = await request(app).delete('/api/users/admin/instructors/123');
+    expect(res.status).toBe(200);
+    expect(service.deleteInstructor).toHaveBeenCalledWith('123');
   });
 });

@@ -8,5 +8,6 @@ router.use(verifyToken, isAdmin);
 router.get("/", controller.getAll);
 router.get("/:id", controller.getById);
 router.patch("/:id/status", controller.updateStatus);
+router.delete("/:id", controller.deleteInstructor);
 
 module.exports = router;
