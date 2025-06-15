@@ -63,3 +63,22 @@ export const deleteTag = async (id) => {
   await api.delete(`/community/admin/tags/${id}`);
   return true;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Announcements
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const fetchAnnouncements = async () => {
+  const { data } = await api.get('/community/admin/announcements');
+  return data?.data ?? [];
+};
+
+export const createAnnouncement = async (payload) => {
+  const { data } = await api.post('/community/admin/announcements', payload);
+  return data?.data;
+};
+
+export const deleteAnnouncement = async (id) => {
+  await api.delete(`/community/admin/announcements/${id}`);
+  return true;
+};
