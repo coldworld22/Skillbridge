@@ -150,7 +150,7 @@ const CourseDashboard = () => {
                         </div>
                     </div>
                      {/* 📊 Progress Bar */}
-                <CourseProgress />
+                <CourseProgress percentage={progressPercentage} />
                 </div>
 
 
