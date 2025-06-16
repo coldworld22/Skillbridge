@@ -26,7 +26,7 @@ exports.getUserById = async (id) => {
 exports.resetUserPassword = async (id) => {
   const newPassword = uuidv4().slice(0, 10);
   const hashed = await bcrypt.hash(newPassword, 10);
-  await db("users").where({ id }).update({ password: hashed });
+  await db("users").where({ id }).update({ password_hash: hashed });
   return newPassword;
 };
 
