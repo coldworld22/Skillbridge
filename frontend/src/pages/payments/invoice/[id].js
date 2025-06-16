@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaDownload } from 'react-icons/fa';
-import QRCode from 'qrcode.react';
+import QRCode from 'react-qr-code';
 
 export default function InvoicePage() {
   const router = useRouter();

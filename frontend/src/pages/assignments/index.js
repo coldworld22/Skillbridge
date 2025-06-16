@@ -1,7 +1,7 @@
 // src/pages/assignments/index.js
 import { useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import AssignmentList from './AssignmentList';
+import AssignmentList from '@/components/assignments/AssignmentList';
 import AssignmentUpload from './AssignmentUpload';
 
 const mockAssignments = [

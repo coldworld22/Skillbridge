@@ -93,5 +93,6 @@ export default function EditTutorialPage() {
       </div>
     </InstructorLayout>
   );
+}
 
 
