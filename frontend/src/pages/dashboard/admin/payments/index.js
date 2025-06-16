@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
@@ -15,6 +15,13 @@ import {
   Line,
   Doughnut
 } from 'react-chartjs-2';
+
+import { fetchPayments } from '@/services/admin/paymentService';
+import {
+  fetchMethods,
+  updateMethod,
+  deleteMethod,
+} from '@/services/admin/paymentMethodService';
 
 import {
   Chart as ChartJS,
@@ -37,13 +44,6 @@ ChartJS.register(
   Legend
 );
 
-
-const summaryCards = [
-  { label: "Total Revenue", value: "$12,500", icon: "💰" },
-  { label: "Total Transactions", value: "340", icon: "🔁" },
-  { label: "Active Payment Methods", value: "4", icon: "💳" },
-  { label: "Pending Payouts", value: "$850", icon: "🕒" },
-];
 
 const recentTransactions = [
   { user: "John Doe", method: "PayPal", amount: "$29.99", status: "Success" },
@@ -109,134 +109,47 @@ export default function AdminPaymentsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Transaction mock
-  const mockTransactions = [
-    {
-      id: "TXN-0001",
-      date: "2025-05-10",
-      user: "John Doe",
-      role: "Student",
-      type: "Subscription",
-      method: "PayPal",
-      amount: 29.99,
-      status: "Success",
-    },
-    {
-      id: "TXN-0002",
-      date: "2025-05-09",
-      user: "Jane Smith",
-      role: "Instructor",
-      type: "Ad Payment",
-      method: "Stripe",
-      amount: 49.99,
-      status: "Failed",
-    },
-    {
-      id: "TXN-0003",
-      date: "2025-05-08",
-      user: "Ali Hassan",
-      role: "Student",
-      type: "Class Enrollment",
-      method: "Crypto Wallet",
-      amount: 19.99,
-      status: "Pending",
-    },
-  ];
+  const [transactions, setTransactions] = useState([]);
+  const [methods, setMethods] = useState([]);
 
-  // Payment methods mock
-const [methods, setMethods] = useState([
-  {
-    id: 1,
-    name: "Stripe",
-    type: "Gateway",
-    active: true,
-    best: true,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/stripe", // API keys, webhook secret
-  },
-  {
-    id: 2,
-    name: "PayPal",
-    type: "Gateway",
-    active: true,
-    best: true,
-    advanced: false,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/paypal", // Client ID, secret
-  },
-  {
-    id: 3,
-    name: "Moyasar",
-    type: "Gateway",
-    active: false,
-    best: false,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/moyasar", // API key, environment
-  },
-  {
-    id: 4,
-    name: "Paystack",
-    type: "Gateway",
-    active: false,
-    best: false,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/paystack", // Public key, secret key
-  },
-  {
-    id: 5,
-    name: "Bank Transfer",
-    type: "Manual",
-    active: true,
-    best: false,
-    advanced: false,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/bank-transfer", // Bank name, account number, IBAN
-  },
-  {
-    id: 6,
-    name: "USDT (Tether)",
-    type: "Crypto",
-    active: false,
-    best: false,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/usdt", // Wallet address (TRC20/ERC20)
-  },
-  {
-    id: 7,
-    name: "Binance Pay",
-    type: "Crypto",
-    active: false,
-    best: false,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/binance", // API Key, PayID
-  },
-  {
-    id: 8,
-    name: "Coinbase Commerce",
-    type: "Crypto",
-    active: false,
-    best: false,
-    advanced: true,
-    configurable: true,
-    configPath: "/dashboard/admin/payments/methods/configure/coinbase", // API key, webhook secret
-  }
-]);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [txns, mths] = await Promise.all([
+          fetchPayments(),
+          fetchMethods(),
+        ]);
+        setTransactions(txns);
+        setMethods(mths);
+      } catch (err) {
+        console.error('Failed to load payment data', err);
+      }
+    };
+    loadData();
+  }, []);
 
 
 
-  const toggleStatus = (id) => {
-    setMethods((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
-    );
+  const toggleStatus = async (id) => {
+    try {
+      const method = methods.find((m) => m.id === id);
+      if (!method) return;
+      await updateMethod(id, { active: !method.active });
+      setMethods((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
+      );
+    } catch (err) {
+      console.error('Failed to update method', err);
+    }
   };
 
-  const handleDelete = (id) => {
-    setMethods((prev) => prev.filter((m) => m.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await deleteMethod(id);
+      setMethods((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error('Failed to delete method', err);
+    }
   };
 
   // Configuration mock
@@ -303,6 +216,32 @@ const [methods, setMethods] = useState([
       status: "Rejected",
     },
   ]);
+
+  const summaryCards = [
+    {
+      label: "Total Revenue",
+      value: `$${transactions
+        .filter((t) => t.status === 'paid')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        .toFixed(2)}`,
+      icon: '💰',
+    },
+    {
+      label: "Total Transactions",
+      value: transactions.length.toString(),
+      icon: '🔁',
+    },
+    {
+      label: "Active Payment Methods",
+      value: methods.filter((m) => m.active).length.toString(),
+      icon: '💳',
+    },
+    {
+      label: "Pending Payouts",
+      value: payouts.filter((p) => p.status === 'Pending').length.toString(),
+      icon: '🕒',
+    },
+  ];
 
   const updateStatus = (id, newStatus) => {
     setPayouts((prev) =>
@@ -437,7 +376,7 @@ const [methods, setMethods] = useState([
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTransactions.map((txn) => (
+                  {transactions.map((txn) => (
                     <tr key={txn.id} className="border-t hover:bg-gray-50">
                       <td className="px-4 py-2 font-mono">{txn.id}</td>
                       <td className="px-4 py-2">{txn.date}</td>
