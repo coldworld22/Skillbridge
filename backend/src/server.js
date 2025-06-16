@@ -16,6 +16,7 @@ const certificatePublicRoutes = require("./modules/users/tutorials/certificate/c
 const adminBookingRoutes = require("./modules/bookings/bookings.routes");
 const adminCommunityRoutes = require("./modules/community/admin/admin.routes");
 const roleRoutes = require("./modules/roles/roles.routes");
+const planRoutes = require("./modules/plans/plans.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -68,6 +69,7 @@ app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificat
 app.use("/api/bookings/admin", adminBookingRoutes); // 📅 Admin bookings management
 app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
 app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
+app.use("/api/plans", planRoutes); // 💳 Subscription plans
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
