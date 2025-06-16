@@ -32,9 +32,18 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await userModel.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
     const roles = await userModel.getUserRoles(decoded.id);
-    const userRoles = roles.length ? roles : [decoded.role];
-    req.user = { ...decoded, roles: userRoles, role: userRoles[0] };
+    const userRoles = roles.length ? roles : [user.role];
+    req.user = {
+      ...decoded,
+      ...user,
+      roles: userRoles,
+      role: userRoles[0],
+    };
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
