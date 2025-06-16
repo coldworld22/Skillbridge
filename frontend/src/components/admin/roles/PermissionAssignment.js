@@ -4,6 +4,7 @@ import {
   fetchAllPermissions,
   updateRolePermissions,
   fetchRoleById,
+  createPermission,
 } from "@/services/admin/roleService";
 
 export default function PermissionAssignment({ role }) {
@@ -38,18 +39,21 @@ export default function PermissionAssignment({ role }) {
     );
   };
 
-  const handleAddNewPermission = () => {
+  const handleAddNewPermission = async () => {
     if (newPermission && !permissions.some((p) => p.code === newPermission)) {
-      const tempPerm = { id: `new_${newPermission}`, code: newPermission };
-      setPermissions([...permissions, tempPerm]);
-      setAssignedPermissions([...assignedPermissions, newPermission]);
+      const created = await createPermission({ code: newPermission });
+      setPermissions([...permissions, created]);
+      setAssignedPermissions([...assignedPermissions, created.code]);
     }
     setNewPermission("");
     setShowAddModal(false);
   };
 
   const handleSave = async () => {
-    await updateRolePermissions(role.id, assignedPermissions);
+    const ids = assignedPermissions
+      .map((code) => permissions.find((p) => p.code === code)?.id)
+      .filter(Boolean);
+    await updateRolePermissions(role.id, ids);
   };
 
   return (
