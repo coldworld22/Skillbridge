@@ -54,7 +54,7 @@ exports.login = catchAsync(async (req, res) => {
  * @desc Refresh access token using refresh token cookie
  * @access Public
  */
-exports.refreshToken = catchAsync((req, res) => {
+exports.refreshToken = catchAsync(async (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ message: "Missing refresh token" });
 
