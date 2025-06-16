@@ -67,7 +67,7 @@ export default function RoleManagement() {
           {roles.map((role) => (
             <li
               key={role.id}
-              className={`p-3 rounded-xl cursor-pointer transition duration-200$${'{'}
+              className={`p-3 rounded-xl cursor-pointer transition duration-200 ${
                 selectedRole?.id === role.id
                   ? "bg-yellow-500 text-white shadow-md"
                   : "hover:bg-yellow-50 text-gray-700"
