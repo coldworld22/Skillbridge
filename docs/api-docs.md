@@ -29,6 +29,10 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 
 `/api/bookings/admin` – CRUD operations for session bookings (admin only).
 
+## Payment Management
+
+`/api/payments/admin` – CRUD operations for user payments (admin only).
+
 ## Community Management
 
 `/api/community/admin` – manage announcements, reports, tags and settings.
