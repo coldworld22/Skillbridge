@@ -58,10 +58,17 @@ exports.refreshToken = catchAsync((req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ message: "Missing refresh token" });
 
-  const decoded = authService.verifyRefreshToken(token);
-  const accessToken = authService.generateAccessToken({ id: decoded.id, role: decoded.role });
-
-  res.json({ accessToken });
+  try {
+    const decoded = authService.verifyRefreshToken(token);
+    const accessToken = authService.generateAccessToken({
+      id: decoded.id,
+      role: decoded.role,
+    });
+    res.json({ accessToken });
+  } catch (err) {
+    console.error("❌ Refresh token error:", err.message);
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
+  }
 });
 
 /**
