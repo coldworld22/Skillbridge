@@ -83,12 +83,16 @@ function generateAccessToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
 }
 
+exports.generateAccessToken = generateAccessToken;
+
 /**
  * Generate JWT refresh token
  */
 function generateRefreshToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
 }
+
+exports.generateRefreshToken = generateRefreshToken;
 
 /**
  * Verify JWT refresh token
