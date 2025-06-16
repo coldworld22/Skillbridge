@@ -1,3 +1,5 @@
+const { ROLE_NAMES } = require("../utils/enums");
+
 exports.up = function(knex) {
   return knex.schema.createTable('users', function(table) {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
@@ -5,7 +7,7 @@ exports.up = function(knex) {
     table.string('email').notNullable().unique();
     table.string('phone').unique();
     table.text('password_hash').notNullable();
-    table.enu('role', ['Student', 'Instructor', 'User', 'Admin']).notNullable();
+    table.enu('role', ROLE_NAMES).notNullable();
     table.string('avatar_url');
     table.boolean('is_email_verified').defaultTo(false);
     table.enu("status", ["pending", "active", "banned"]).notNullable().defaultTo("pending");
