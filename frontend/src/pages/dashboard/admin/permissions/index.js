@@ -58,49 +58,53 @@ export default function PermissionsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Permissions</h1>
+      <div className="p-6 sm:p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Permissions</h1>
+          <button
+            className="inline-flex items-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600 transition px-4 py-2 rounded-lg shadow-sm"
+            onClick={() => setShowAddModal(true)}
+          >
+            <PlusCircle className="w-5 h-5" />
+            Add Permission
+          </button>
+        </div>
 
-        <button
-          className="flex items-center mb-4 bg-yellow-100 hover:bg-yellow-200 rounded-xl py-2 px-4"
-          onClick={() => setShowAddModal(true)}
-        >
-          <PlusCircle className="w-5 h-5 mr-2 text-yellow-600" />
-          Add Permission
-        </button>
-
-        <div className="overflow-x-auto rounded-xl shadow">
+        <div className="overflow-x-auto bg-white rounded-xl shadow border">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-100 text-gray-700 text-left">
               <tr>
-                <th className="px-4 py-2 text-left">Permission</th>
-                <th className="px-4 py-2 text-right">Actions</th>
+                <th className="px-6 py-3 font-semibold">Permission</th>
+                <th className="px-6 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y text-gray-800">
               {permissions.map((perm) => (
-                <tr key={perm.id} className="bg-white hover:bg-gray-50">
-                  <td className="px-4 py-2 capitalize">
+                <tr key={perm.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-3 capitalize">
                     {perm.code.replace(/_/g, " ")}
                   </td>
-                  <td className="px-4 py-2 text-right">
-                    <Trash2
-                      className="w-4 h-4 text-red-600 cursor-pointer"
+                  <td className="px-6 py-3 text-right">
+                    <button
                       onClick={() => handleDelete(perm.id)}
-                    />
+                      className="text-red-600 hover:text-red-800 transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </td>
                 </tr>
               ))}
               {permissions.length === 0 && !loading && (
                 <tr>
-                  <td className="px-4 py-3 text-center" colSpan="2">
+                  <td className="px-6 py-4 text-center text-gray-500" colSpan="2">
                     No permissions found
                   </td>
                 </tr>
               )}
               {loading && (
                 <tr>
-                  <td className="px-4 py-3 text-center" colSpan="2">
+                  <td className="px-6 py-4 text-center text-gray-500" colSpan="2">
                     Loading...
                   </td>
                 </tr>
@@ -109,26 +113,27 @@ export default function PermissionsPage() {
           </table>
         </div>
 
+        {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white p-6 rounded-xl w-full max-w-md">
-              <h3 className="text-lg font-bold mb-4">Add New Permission</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-xl">
+              <h3 className="text-lg font-bold mb-4 text-gray-800">Add New Permission</h3>
               <input
                 value={newPermission}
                 onChange={(e) => setNewPermission(e.target.value)}
                 placeholder="e.g. manage_users"
-                className="w-full border p-2 rounded mb-4"
+                className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-yellow-500 focus:outline-none mb-4"
               />
-              <div className="flex justify-end gap-4">
+              <div className="flex justify-end gap-3">
                 <button
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
                   onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded"
                 >
                   Cancel
                 </button>
                 <button
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
                   onClick={handleAdd}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
                 >
                   Add
                 </button>
