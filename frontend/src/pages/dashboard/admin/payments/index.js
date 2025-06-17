@@ -142,6 +142,7 @@ export default function AdminPaymentsPage() {
         ]);
         setTransactions(txns);
         setMethods(mths);
+
         if (cfg) {
           const merged = {
             ...defaultConfig,
@@ -159,6 +160,7 @@ export default function AdminPaymentsPage() {
         } else {
           setForm(defaultConfig);
         }
+
       } catch (err) {
         console.error('Failed to load payment data', err);
       }
