@@ -12,8 +12,9 @@ import {
 import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
+import { getAds } from "@/services/adsService";
 
-const ads = [
+const defaultAds = [
   {
     id: 1,
     title: "🔥 Black Friday Deal: 50% Off!",
@@ -41,19 +42,33 @@ const ads = [
 const Hero = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [ads, setAds] = useState(defaultAds);
   const [currentAd, setCurrentAd] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState([]);
 
   const typewriterText = ["Empower Learning", "Connect Minds", "Master New Skills"];
 
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const data = await getAds();
+        if (data.length) setAds(data);
+      } catch (err) {
+        console.error("Failed to fetch ads", err);
+      }
+    };
+    fetchAds();
+  }, []);
+
   // Auto-rotate Ads Every 5 Seconds
   useEffect(() => {
+    if (!ads.length) return;
     const interval = setInterval(() => {
       setCurrentAd((prev) => (prev + 1) % ads.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [ads]);
 
   // Search Suggestions
   useEffect(() => {
