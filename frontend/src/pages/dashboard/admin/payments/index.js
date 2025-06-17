@@ -144,14 +144,23 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  const setDefaultMethod = async (id) => {
+  const toggleDefault = async (id) => {
     try {
-      await updateMethod(id, { is_default: true });
+      const method = methods.find((m) => m.id === id);
+      if (!method) return;
+      const newState = !method.is_default;
+      await updateMethod(id, { is_default: newState });
       setMethods((prev) =>
-        prev.map((m) => ({ ...m, is_default: m.id === id }))
+        prev.map((m) =>
+          m.id === id
+            ? { ...m, is_default: newState }
+            : newState
+            ? { ...m, is_default: false }
+            : m
+        )
       );
     } catch (err) {
-      console.error('Failed to set default method', err);
+      console.error('Failed to update default method', err);
     }
   };
 
@@ -445,6 +454,7 @@ export default function AdminPaymentsPage() {
                     <th className="px-4 py-2">Name</th>
                     <th className="px-4 py-2">Type</th>
                     <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Default</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
@@ -469,6 +479,15 @@ export default function AdminPaymentsPage() {
                           )}
                         </button>
                       </td>
+                      <td className="px-4 py-2">
+                        <button onClick={() => toggleDefault(method.id)} className="text-xl">
+                          {method.is_default ? (
+                            <FaToggleOn className="text-yellow-500" />
+                          ) : (
+                            <FaToggleOff className="text-gray-400" />
+                          )}
+                        </button>
+                      </td>
                       <td className="px-4 py-2 flex gap-2">
                         {method.configurable && method.configPath && (
                           <button
@@ -476,15 +495,6 @@ export default function AdminPaymentsPage() {
                             className="px-3 py-1 bg-indigo-600 text-white rounded shadow text-xs hover:bg-indigo-700 transition"
                           >
                             Configure
-                          </button>
-                        )}
-
-                        {!method.is_default && (
-                          <button
-                            onClick={() => setDefaultMethod(method.id)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded shadow text-xs hover:bg-blue-600 transition"
-                          >
-                            Set Default
                           </button>
                         )}
 
