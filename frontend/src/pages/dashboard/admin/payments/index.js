@@ -24,6 +24,7 @@ import {
   deleteMethod,
 } from '@/services/admin/paymentMethodService';
 import { fetchPaymentConfig, updatePaymentConfig } from '@/services/admin/paymentConfigService';
+import { fetchPayouts, updatePayout } from '@/services/admin/payoutService';
 import { toast } from 'react-toastify';
 
 import {
@@ -135,13 +136,15 @@ export default function AdminPaymentsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [txns, mths, cfg] = await Promise.all([
+        const [txns, mths, cfg, pouts] = await Promise.all([
           fetchPayments(),
           fetchMethods(),
           fetchPaymentConfig(),
+          fetchPayouts(),
         ]);
         setTransactions(txns);
         setMethods(mths);
+        setPayouts(pouts);
 
         if (cfg) {
           const merged = {
@@ -242,33 +245,7 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  // Payouts mock
-  const [payouts, setPayouts] = useState([
-    {
-      id: "PAYOUT-001",
-      date: "2025-05-10",
-      instructor: "Ahmed Salah",
-      amount: 150.0,
-      method: "Bank Transfer",
-      status: "Pending",
-    },
-    {
-      id: "PAYOUT-002",
-      date: "2025-05-08",
-      instructor: "Nour Hassan",
-      amount: 90.0,
-      method: "Crypto Wallet",
-      status: "Paid",
-    },
-    {
-      id: "PAYOUT-003",
-      date: "2025-05-07",
-      instructor: "Mariam Omar",
-      amount: 120.0,
-      method: "PayPal",
-      status: "Rejected",
-    },
-  ]);
+  const [payouts, setPayouts] = useState([]);
 
   const summaryCards = [
     {
@@ -296,10 +273,15 @@ export default function AdminPaymentsPage() {
     },
   ];
 
-  const updateStatus = (id, newStatus) => {
-    setPayouts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
-    );
+  const updateStatus = async (id, newStatus) => {
+    try {
+      const updated = await updatePayout(id, { status: newStatus });
+      setPayouts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: updated.status } : p))
+      );
+    } catch (err) {
+      toast.error("Failed to update payout status");
+    }
   };
 
   const renderTabContent = () => {
