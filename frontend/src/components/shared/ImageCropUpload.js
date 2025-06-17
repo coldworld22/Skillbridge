@@ -47,7 +47,7 @@ export default function ImageCropUpload({ value, onChange }) {
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={2.5 / 1}
+            aspect={16 / 10}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
