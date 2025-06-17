@@ -5,6 +5,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
+import { createAd } from "@/services/admin/adService";
 
 const currentUserPlan = "basic"; // "basic" | "regular" | "prime"
 const { maxAdDuration } = plansConfig[currentUserPlan];
@@ -46,28 +47,24 @@ export default function CreateAdPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const start = new Date(formData.startAt);
-    const end = new Date(formData.endAt);
-    const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-
-    if (!formData.title || !formData.image || !formData.startAt || !formData.endAt) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-    if (start > end) {
-      setError("End date must be after start date.");
-      return;
-    }
-    if (diffInDays > maxAdDuration) {
-      setError(`Your plan only allows ads for up to ${maxAdDuration} days.`);
+    if (!formData.title || !formData.image) {
+      setError("Title and image are required.");
       return;
     }
 
-    console.log("Creating ad:", formData);
-    alert("Ad created successfully!");
-    router.push("/admin/ads");
+    try {
+      await createAd({
+        title: formData.title,
+        description: formData.description,
+        image_url: formData.image,
+        link_url: formData.link,
+      });
+      router.push("/dashboard/admin/ads");
+    } catch (err) {
+      setError("Failed to create ad");
+    }
   };
 
   return (
