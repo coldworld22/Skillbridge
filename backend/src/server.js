@@ -19,6 +19,7 @@ const roleRoutes = require("./modules/roles/roles.routes");
 const planRoutes = require("./modules/plans/plans.routes");
 const paymentRoutes = require("./modules/payments/payments.routes");
 const paymentMethodRoutes = require("./modules/paymentMethods/paymentMethods.routes");
+const paymentConfigRoutes = require("./modules/paymentConfig/paymentConfig.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -74,6 +75,7 @@ app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
 app.use("/api/plans", planRoutes); // 💳 Subscription plans
 app.use("/api/payments/admin", paymentRoutes); // 💵 Payments management
 app.use("/api/payment-methods/admin", paymentMethodRoutes); // 💳 Payment methods
+app.use("/api/payments/config", paymentConfigRoutes); // ⚙️ Payment settings
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
