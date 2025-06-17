@@ -10,6 +10,7 @@ import {
   FaToggleOn,
   FaToggleOff,
   FaPlus,
+  FaStar,
 } from "react-icons/fa";
 import {
   Line,
@@ -140,6 +141,17 @@ export default function AdminPaymentsPage() {
       );
     } catch (err) {
       console.error('Failed to update method', err);
+    }
+  };
+
+  const setDefaultMethod = async (id) => {
+    try {
+      await updateMethod(id, { is_default: true });
+      setMethods((prev) =>
+        prev.map((m) => ({ ...m, is_default: m.id === id }))
+      );
+    } catch (err) {
+      console.error('Failed to set default method', err);
     }
   };
 
@@ -445,6 +457,7 @@ export default function AdminPaymentsPage() {
                         {method.name === 'Bank Transfer' && '🏦'}
                         {method.name === 'Crypto Wallet' && '₿'}
                         {method.name}
+                        {method.is_default && <FaStar className="text-yellow-500" />}
                       </td>
                       <td className="px-4 py-2">{method.type}</td>
                       <td className="px-4 py-2">
@@ -463,6 +476,15 @@ export default function AdminPaymentsPage() {
                             className="px-3 py-1 bg-indigo-600 text-white rounded shadow text-xs hover:bg-indigo-700 transition"
                           >
                             Configure
+                          </button>
+                        )}
+
+                        {!method.is_default && (
+                          <button
+                            onClick={() => setDefaultMethod(method.id)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded shadow text-xs hover:bg-blue-600 transition"
+                          >
+                            Set Default
                           </button>
                         )}
 

@@ -11,6 +11,7 @@ export default function CreatePaymentMethodPage() {
     type: "Gateway",
     icon: "",
     active: true,
+    is_default: false,
   });
 
   const handleChange = (e) => {
@@ -85,6 +86,15 @@ export default function CreatePaymentMethodPage() {
               onChange={handleChange}
             />
             <span className="text-sm font-medium">Active</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="is_default"
+              checked={form.is_default}
+              onChange={handleChange}
+            />
+            <span className="text-sm font-medium">Default Method</span>
           </label>
           <button
             type="submit"
