@@ -17,7 +17,10 @@ export default function ImageCropUpload({ value, onChange }) {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
-        setImageSrc(reader.result);
+        const dataUrl = reader.result;
+        setImageSrc(dataUrl);
+        setPreview(dataUrl);
+        onChange(dataUrl); // prefill with original image in case cropping is skipped
       };
     }
   };
