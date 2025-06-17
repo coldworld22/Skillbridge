@@ -146,6 +146,7 @@
 - **Purpose**: Available payment methods
 - **Primary Key**: `id`
 - **Foreign Keys**: `—`
+- **Columns**: `name`, `type`, `icon`, `active`, `settings`, `is_default`
 
 ### `payments`
 - **Purpose**: All user payments

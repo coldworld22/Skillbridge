@@ -1,8 +1,13 @@
 const db = require("../../config/database");
 
 exports.create = async (data) => {
-  const [row] = await db("payment_methods_config").insert(data).returning("*");
-  return row;
+  return db.transaction(async (trx) => {
+    if (data.is_default) {
+      await trx("payment_methods_config").update({ is_default: false });
+    }
+    const [row] = await trx("payment_methods_config").insert(data).returning("*");
+    return row;
+  });
 };
 
 exports.getAll = () => {
@@ -14,11 +19,18 @@ exports.getById = (id) => {
 };
 
 exports.update = async (id, data) => {
-  const [row] = await db("payment_methods_config")
-    .where({ id })
-    .update(data)
-    .returning("*");
-  return row;
+  return db.transaction(async (trx) => {
+    if (data.is_default) {
+      await trx("payment_methods_config")
+        .whereNot({ id })
+        .update({ is_default: false });
+    }
+    const [row] = await trx("payment_methods_config")
+      .where({ id })
+      .update(data)
+      .returning("*");
+    return row;
+  });
 };
 
 exports.delete = (id) => {
