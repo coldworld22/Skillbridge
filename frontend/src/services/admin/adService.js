@@ -1,7 +1,9 @@
 import api from "@/services/api/api";
 
 export const createAd = async (payload) => {
-  const { data } = await api.post("/ads/admin", payload);
+  const { data } = await api.post("/ads/admin", payload, {
+    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
+  });
   return data?.data;
 };
 
