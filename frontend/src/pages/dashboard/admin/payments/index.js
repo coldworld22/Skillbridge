@@ -142,7 +142,25 @@ export default function AdminPaymentsPage() {
         ]);
         setTransactions(txns);
         setMethods(mths);
-        if (cfg) setForm(cfg);
+
+        if (cfg) {
+          const merged = {
+            ...defaultConfig,
+            ...cfg,
+            platformCut: {
+              ...defaultConfig.platformCut,
+              ...(cfg.platformCut || {}),
+            },
+            invoice: {
+              ...defaultConfig.invoice,
+              ...(cfg.invoice || {}),
+            },
+          };
+          setForm(merged);
+        } else {
+          setForm(defaultConfig);
+        }
+
       } catch (err) {
         console.error('Failed to load payment data', err);
       }
