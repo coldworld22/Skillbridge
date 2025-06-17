@@ -59,7 +59,9 @@ app.use(morgan("dev"));
 
 // 📁 Serve uploaded static files (avatars, identity, etc.)
 // Support both `/uploads` and `/api/uploads` to allow direct access in production
-const uploadsDir = path.join(__dirname, "../uploads");
+// Use project root uploads directory (one level above backend)
+// Example paths from modules resolve to "../../uploads"
+const uploadsDir = path.join(__dirname, "../../uploads");
 app.use("/api/uploads", express.static(uploadsDir));
 app.use("/uploads", express.static(uploadsDir));
 
