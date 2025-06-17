@@ -23,6 +23,8 @@ import {
   updateMethod,
   deleteMethod,
 } from '@/services/admin/paymentMethodService';
+import { fetchPaymentConfig, updatePaymentConfig } from '@/services/admin/paymentConfigService';
+import { toast } from 'react-toastify';
 
 import {
   Chart as ChartJS,
@@ -105,6 +107,23 @@ const revenueLineOptions = {
   },
 };
 
+const defaultConfig = {
+  currency: "USD",
+  platformCut: {
+    subscriptions: 10,
+    classSales: 15,
+    adPayments: 20,
+    bookings: 5,
+  },
+  invoice: {
+    logoUrl: "",
+    footerText: "Thank you for using our platform!",
+    autoEmail: true,
+  },
+  refundPolicy:
+    "Refunds can be requested within 7 days of payment. Contact support for processing.",
+};
+
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
@@ -116,12 +135,14 @@ export default function AdminPaymentsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [txns, mths] = await Promise.all([
+        const [txns, mths, cfg] = await Promise.all([
           fetchPayments(),
           fetchMethods(),
+          fetchPaymentConfig(),
         ]);
         setTransactions(txns);
         setMethods(mths);
+        if (cfg) setForm(cfg);
       } catch (err) {
         console.error('Failed to load payment data', err);
       }
@@ -173,23 +194,7 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  // Configuration mock
-  const [form, setForm] = useState({
-    currency: "USD",
-    platformCut: {
-      subscriptions: 10,
-      classSales: 15,
-      adPayments: 20,
-      bookings: 5,
-    },
-    invoice: {
-      logoUrl: "",
-      footerText: "Thank you for using our platform!",
-      autoEmail: true,
-    },
-    refundPolicy:
-      "Refunds can be requested within 7 days of payment. Contact support for processing.",
-  });
+  const [form, setForm] = useState(defaultConfig);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -207,6 +212,15 @@ export default function AdminPaymentsPage() {
       }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await updatePaymentConfig(form);
+      toast.success("Configuration saved successfully!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save configuration");
     }
   };
 
@@ -593,7 +607,7 @@ export default function AdminPaymentsPage() {
               />
             </div>
 
-            <button className="bg-indigo-600 text-white px-6 py-2 rounded shadow">Save Configuration</button>
+            <button onClick={handleSave} className="bg-indigo-600 text-white px-6 py-2 rounded shadow">Save Configuration</button>
           </div>
         );
 
