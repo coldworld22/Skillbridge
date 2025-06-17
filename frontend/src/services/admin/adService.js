@@ -7,5 +7,12 @@ export const createAd = async (payload) => {
 
 export const fetchAds = async () => {
   const { data } = await api.get("/ads");
-  return data?.data ?? [];
+
+  const ads = data?.data ?? [];
+  return ads.map((ad) => ({
+    ...ad,
+    image: ad.image_url,
+    link: ad.link_url,
+  }));
+
 };

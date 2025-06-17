@@ -2,5 +2,12 @@ import api from "@/services/api/api";
 
 export const getAds = async () => {
   const { data } = await api.get("/ads");
-  return data?.data ?? [];
+
+  const ads = data?.data ?? [];
+  return ads.map((ad) => ({
+    ...ad,
+    image: ad.image_url,
+    link: ad.link_url,
+  }));
+
 };
