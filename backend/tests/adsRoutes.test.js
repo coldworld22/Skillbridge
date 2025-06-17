@@ -5,6 +5,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   getAds: jest.fn(),
   createAd: jest.fn(),
   getAdById: jest.fn(),
+  findByTitle: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({

@@ -12,3 +12,7 @@ exports.getAds = async () => {
 exports.getAdById = async (id) => {
   return db("ads").where({ id }).first();
 };
+
+exports.findByTitle = async (title) => {
+  return db("ads").where({ title }).first();
+};

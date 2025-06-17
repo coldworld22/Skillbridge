@@ -55,12 +55,15 @@ export default function CreateAdPage() {
     }
 
     try {
-      await createAd({
-        title: formData.title,
-        description: formData.description,
-        image_url: formData.image,
-        link_url: formData.link,
-      });
+      const blob = await fetch(formData.image).then((r) => r.blob());
+      const file = new File([blob], "ad.jpg", { type: blob.type });
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("description", formData.description);
+      payload.append("link_url", formData.link);
+      payload.append("image", file);
+
+      await createAd(payload);
       router.push("/dashboard/admin/ads");
     } catch (err) {
       setError("Failed to create ad");
