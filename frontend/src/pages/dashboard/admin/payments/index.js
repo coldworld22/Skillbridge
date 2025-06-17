@@ -12,10 +12,7 @@ import {
   FaPlus,
   FaStar,
 } from "react-icons/fa";
-import {
-  Line,
-  Doughnut
-} from 'react-chartjs-2';
+import OverviewTab from './OverviewTab';
 
 import { fetchPayments } from '@/services/admin/paymentService';
 import {
@@ -27,34 +24,6 @@ import { fetchPaymentConfig, updatePaymentConfig } from '@/services/admin/paymen
 import { fetchPayouts, updatePayout } from '@/services/admin/payoutService';
 import { toast } from 'react-toastify';
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend
-);
-
-
-const recentTransactions = [
-  { user: "John Doe", method: "PayPal", amount: "$29.99", status: "Success" },
-  { user: "Jane Smith", method: "Stripe", amount: "$49.99", status: "Failed" },
-  { user: "Ali Hassan", method: "Crypto Wallet", amount: "$19.99", status: "Pending" },
-];
-
 const tabs = [
   { key: "overview", label: "Overview", icon: <FaChartBar /> },
   { key: "transactions", label: "Transactions", icon: <FaList /> },
@@ -63,50 +32,6 @@ const tabs = [
   { key: "payouts", label: "Payouts", icon: <FaWallet /> },
 ];
 
-const revenueLineData = {
-  labels: ['May 1', 'May 2', 'May 3', 'May 4', 'May 5', 'May 6'],
-  datasets: [
-    {
-      label: 'Revenue ($)',
-      data: [200, 300, 180, 250, 320, 270],
-      borderColor: 'rgba(99, 102, 241, 1)', // Indigo
-      backgroundColor: 'rgba(99, 102, 241, 0.2)',
-      fill: true,
-      tension: 0.4,
-    },
-  ],
-};
-
-const transactionStatusData = {
-  labels: ['Success', 'Pending', 'Failed'],
-  datasets: [
-    {
-      data: [120, 30, 15],
-      backgroundColor: ['#22c55e', '#eab308', '#ef4444'],
-      hoverOffset: 8,
-    },
-  ],
-};
-
-const transactionStatusOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'bottom',
-      labels: {
-        boxWidth: 12,
-      },
-    },
-  },
-};
-
-
-const revenueLineOptions = {
-  responsive: true,
-  plugins: {
-    legend: { display: false },
-  },
-};
 
 const defaultConfig = {
   currency: "USD",
@@ -247,31 +172,6 @@ export default function AdminPaymentsPage() {
 
   const [payouts, setPayouts] = useState([]);
 
-  const summaryCards = [
-    {
-      label: "Total Revenue",
-      value: `$${transactions
-        .filter((t) => t.status === 'paid')
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-        .toFixed(2)}`,
-      icon: '💰',
-    },
-    {
-      label: "Total Transactions",
-      value: transactions.length.toString(),
-      icon: '🔁',
-    },
-    {
-      label: "Active Payment Methods",
-      value: methods.filter((m) => m.active).length.toString(),
-      icon: '💳',
-    },
-    {
-      label: "Pending Payouts",
-      value: payouts.filter((p) => p.status === 'Pending').length.toString(),
-      icon: '🕒',
-    },
-  ];
 
   const updateStatus = async (id, newStatus) => {
     try {
@@ -288,85 +188,12 @@ export default function AdminPaymentsPage() {
     switch (activeTab) {
       case "overview":
         return (
-          <div className="space-y-6">
-            {/* Enhanced Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {summaryCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white p-5 shadow rounded flex items-center gap-4 hover:shadow-lg transition"
-                >
-                  <div className="text-white text-xl p-3 rounded-full bg-indigo-500">
-                    {card.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">{card.label}</p>
-                    <p className="text-xl font-semibold">{card.value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white p-4 shadow rounded">
-                <h3 className="font-semibold text-gray-700 mb-2">📈 Revenue Over Time</h3>
-                <Line data={revenueLineData} options={revenueLineOptions} className="w-full" />
-              </div>
-              <div className="bg-white p-4 shadow rounded">
-                <h3 className="font-semibold text-gray-700 mb-2">📊 Transactions by Status</h3>
-                <Doughnut data={transactionStatusData} options={transactionStatusOptions} className="w-full" />
-              </div>
-            </div>
-
-            {/* Recent Transactions Preview */}
-            <div className="bg-white shadow rounded">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-semibold">🧾 Recent Transactions</h3>
-                <button
-                  onClick={() => router.push("/dashboard/admin/payments/transactions")}
-                  className="text-indigo-600 hover:underline text-sm"
-                >
-                  View All
-                </button>
-              </div>
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left">User</th>
-                    <th className="px-4 py-2 text-left">Method</th>
-                    <th className="px-4 py-2 text-left">Amount</th>
-                    <th className="px-4 py-2 text-left">Status</th>
-                    <th className="px-4 py-2 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentTransactions.map((txn, idx) => (
-                    <tr key={idx} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 font-medium">{txn.user}</td>
-                      <td className="px-4 py-2">{txn.method}</td>
-                      <td className="px-4 py-2 text-green-600 font-medium">{txn.amount}</td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${txn.status === "Success"
-                            ? "bg-green-100 text-green-800"
-                            : txn.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {txn.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <button className="text-indigo-600 hover:underline text-xs">View Invoice</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <OverviewTab
+            transactions={transactions}
+            methods={methods}
+            payouts={payouts}
+            onViewAll={() => router.push("/dashboard/admin/payments/transactions")}
+          />
         );
 
 
