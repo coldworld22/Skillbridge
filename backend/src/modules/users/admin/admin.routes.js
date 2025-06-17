@@ -51,6 +51,11 @@ router.post(
   controller.uploadIdentityDoc
 );
 
+// ---------------------------------------------------------------------------
+// 📊 Dashboard stats
+// ---------------------------------------------------------------------------
+router.get("/dashboard-stats", controller.getDashboardStats);
+
 
 
 

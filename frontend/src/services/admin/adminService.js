@@ -81,3 +81,11 @@ export const changeAdminPassword = async (adminId, newPassword) => {
   });
   return res.data;
 };
+
+/**
+ * 📊 Fetch dashboard statistics for admin home page
+ */
+export const fetchAdminDashboardStats = async () => {
+  const res = await api.get('/users/admin/dashboard-stats');
+  return res.data?.data;
+};

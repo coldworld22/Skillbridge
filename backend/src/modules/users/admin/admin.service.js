@@ -33,3 +33,27 @@ exports.updateAdminProfile = async (userId, data) => {
     });
   }
 };
+
+// ---------------------------------------------------------------------------
+// 📊 Dashboard statistics for the main admin dashboard
+// ---------------------------------------------------------------------------
+
+exports.getDashboardStats = async () => {
+  const [userRow] = await db("users").count();
+  const [instructorRow] = await db("users")
+    .where({ role: "Instructor" })
+    .count();
+  const [studentRow] = await db("users")
+    .where({ role: "Student" })
+    .count();
+  const [tutorialRow] = await db("tutorials").count();
+  const [classRow] = await db("online_classes").count();
+
+  return {
+    totalUsers: parseInt(userRow.count, 10) || 0,
+    instructors: parseInt(instructorRow.count, 10) || 0,
+    students: parseInt(studentRow.count, 10) || 0,
+    tutorials: parseInt(tutorialRow.count, 10) || 0,
+    classes: parseInt(classRow.count, 10) || 0,
+  };
+};

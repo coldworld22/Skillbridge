@@ -5,6 +5,8 @@ import useAuthStore from "@/store/auth/authStore";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
+import { fetchAdminDashboardStats } from "@/services/admin/adminService";
+import { FaUsers, FaChalkboardTeacher, FaBook, FaVideo } from "react-icons/fa";
 import PendingApprovals from "@/components/admin/PendingApprovals";
 import RecentActivity from "@/components/admin/RecentActivity";
 import ManagementShortcuts from "@/components/admin/ManagementShortcuts";
@@ -20,6 +22,7 @@ function AdminDashboardHome() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
+  const [stats, setStats] = useState(null);
 
   // Wait for hydration to access Zustand state safely
   useEffect(() => {
@@ -36,9 +39,33 @@ function AdminDashboardHome() {
     }
   }, [user, hydrated]);
 
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await fetchAdminDashboardStats();
+        setStats(data);
+      } catch (err) {
+        console.error('Failed to load dashboard stats', err);
+      }
+    };
+    if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+      loadStats();
+    }
+  }, [hydrated, user]);
+
   if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-    return null; 
+    return null;
   }
+
+  const statsArray = stats
+    ? [
+        { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers />, label: "Students", value: stats.students, color: "text-green-500" },
+        { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+      ]
+    : [];
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-10">
@@ -94,7 +121,7 @@ function AdminDashboardHome() {
         </div>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
-        <StatsGrid />
+        <StatsGrid stats={statsArray} />
       </section>
 
       {/* Approvals + Shortcuts */}

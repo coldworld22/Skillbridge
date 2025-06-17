@@ -182,3 +182,13 @@ exports.uploadIdentityDoc = async (req, res) => {
     res.status(500).json({ message: "Failed to upload identity document" });
   }
 };
+
+/**
+ * @desc Get aggregated dashboard statistics
+ * @route GET /api/users/admin/dashboard-stats
+ * @access Admin
+ */
+exports.getDashboardStats = async (_req, res) => {
+  const data = await require("./admin.service").getDashboardStats();
+  res.status(200).json({ data });
+};
