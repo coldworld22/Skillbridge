@@ -1,5 +1,6 @@
 // pages/admin/ads/create.js
 import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
@@ -27,6 +28,7 @@ export default function CreateAdPage() {
   });
   const [error, setError] = useState(null);
   const [titleError, setTitleError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -53,6 +55,16 @@ export default function CreateAdPage() {
       setError("Title and image are required.");
       return;
     }
+    if (!formData.startAt || !formData.endAt) {
+      setError("Start and end dates are required.");
+      return;
+    }
+    if (new Date(formData.endAt) < new Date(formData.startAt)) {
+      setError("End date cannot be before start date.");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const blob = await fetch(formData.image).then((r) => r.blob());
@@ -64,6 +76,7 @@ export default function CreateAdPage() {
       payload.append("image", file);
 
       await createAd(payload);
+      toast.success("Ad created!");
       router.push("/dashboard/admin/ads");
     } catch (err) {
       const message = err?.response?.data?.message || "Failed to create ad";
@@ -71,12 +84,16 @@ export default function CreateAdPage() {
         setTitleError(message);
       } else {
         setError(message);
+        toast.error(message);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <AdminLayout>
+      <Toaster position="top-center" />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">📢 Create New Advertisement</h1>
         {error && (
@@ -180,9 +197,11 @@ export default function CreateAdPage() {
             </label>
           </section>
 
-          <button type="submit"
-            className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium px-6 py-2 rounded transition">
-            ➕ Create Ad
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-60 text-white font-medium px-6 py-2 rounded transition">
+            {isSubmitting ? "Creating..." : "➕ Create Ad"}
           </button>
         </form>
       </div>
