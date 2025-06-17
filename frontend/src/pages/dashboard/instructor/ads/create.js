@@ -20,13 +20,13 @@ export default function CreateAdPage() {
     endAt: "",
     targetRoles: [],
     adType: "promotion",
-    placement: "dashboard",
     priority: 0,
     link: "",
     allowBranding: false,
     isActive: true,
   });
   const [error, setError] = useState(null);
+  const [titleError, setTitleError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -66,7 +66,12 @@ export default function CreateAdPage() {
       await createAd(payload);
       router.push("/dashboard/instructor/ads");
     } catch (err) {
-      setError("Failed to create ad");
+      const message = err?.response?.data?.message || "Failed to create ad";
+      if (message.toLowerCase().includes("title")) {
+        setTitleError(message);
+      } else {
+        setError(message);
+      }
     }
   };
 
@@ -85,8 +90,19 @@ export default function CreateAdPage() {
             <div className="space-y-4">
               <div>
                 <label className="block font-medium">Title *</label>
-                <input type="text" name="title" value={formData.title} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-blue-500" />
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={(e) => {
+                    setTitleError(null);
+                    handleChange(e);
+                  }}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-blue-500"
+                />
+                {titleError && (
+                  <p className="text-red-600 text-sm mt-1">{titleError}</p>
+                )}
               </div>
               <div>
                 <label className="block font-medium">Description</label>
