@@ -5,6 +5,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { CSVLink } from "react-csv";
 import AdCard from "@/components/admin/ads/AdCard"; // Extract AdCard for maintainability
 import PreviewModal from "@/components/admin/ads/PreviewModal"; // Extract modal too
+import { fetchAds, deleteAd, updateAd } from "@/services/admin/adService";
 
 export default function AdminAdsPage() {
     const [ads, setAds] = useState([]);
@@ -18,23 +19,28 @@ export default function AdminAdsPage() {
     const ITEMS_PER_PAGE = 6;
 
     useEffect(() => {
-        setAds(mockAds); // Load mock ads or replace with real API call
+        fetchAds().then(setAds).catch(() => setAds([]));
     }, []);
 
-    const toggleAdStatus = (id) => {
+    const toggleAdStatus = async (id) => {
         setAds((prev) =>
             prev.map((ad) =>
                 ad.id === id ? { ...ad, isActive: !ad.isActive } : ad
             )
         );
+        const ad = ads.find((a) => a.id === id);
+        if (ad) {
+            await updateAd(id, { is_active: !ad.isActive }).catch(() => {});
+        }
     };
 
     const handleEdit = (ad) => {
         window.location.href = `/dashboard/admin/ads/edit/${ad.id}`;
       };
       
-    const handleDelete = (ad) => {
+    const handleDelete = async (ad) => {
         if (confirm(`Delete "${ad.title}"?`)) {
+            await deleteAd(ad.id).catch(() => {});
             setAds((prev) => prev.filter((a) => a.id !== ad.id));
         }
     };
@@ -181,15 +187,3 @@ export default function AdminAdsPage() {
     );
 }
 
-const mockAds = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    title: `Ad Campaign ${i + 1}`,
-    description: "Promote your course now!",
-    image: `https://picsum.photos/seed/${i}/400/200`,
-    adType: ["promotion", "event", "announcement", "internal"][i % 4],
-    targetRoles: ["student", "instructor"].filter((_, r) => (i + r) % 2 === 0),
-    isActive: i % 2 === 0,
-    startAt: "2025-05-01",
-    endAt: "2025-05-10",
-    views: Math.floor(Math.random() * 300),
-}));

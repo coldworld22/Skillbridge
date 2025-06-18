@@ -5,6 +5,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
+import { fetchAdById, updateAd } from "@/services/admin/adService";
 
 const currentUserPlan = "basic";
 const { maxAdDuration } = plansConfig[currentUserPlan];
@@ -17,32 +18,12 @@ export default function EditAdPage() {
 
   useEffect(() => {
     if (id) {
-      const ads = [
-        {
-          id: 1,
-          title: "Mock Ad 1",
-          description: "This is a mock ad",
-          image: "https://picsum.photos/seed/1/400/200",
-          adType: "promotion",
-          targetRoles: ["student"],
-          isActive: true,
-          startAt: "2025-05-01",
-          endAt: "2025-05-05",
-          placement: "dashboard",
-          priority: 1,
-          link: "https://example.com",
-          allowBranding: true,
-        }
-      ];
-      localStorage.setItem("ads", JSON.stringify(ads));
-  
-      // ✅ Immediately fetch and set the matching ad
-      const ad = ads.find((a) => a.id === Number(id));
-      if (ad) {
-        setFormData(ad);
-      } else {
-        setError("Ad not found.");
-      }
+      fetchAdById(id)
+        .then((ad) => {
+          if (ad) setFormData(ad);
+          else setError("Ad not found.");
+        })
+        .catch(() => setError("Failed to load ad"));
     }
   }, [id]);
   
@@ -67,7 +48,7 @@ export default function EditAdPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const start = new Date(formData.startAt);
     const end = new Date(formData.endAt);
@@ -86,13 +67,23 @@ export default function EditAdPage() {
       return;
     }
 
-    // Replace with API save
-    const ads = JSON.parse(localStorage.getItem("ads")) || [];
-    const updated = ads.map((ad) => (ad.id === Number(id) ? formData : ad));
-    localStorage.setItem("ads", JSON.stringify(updated));
+    try {
+      const payload = new FormData();
+      if (formData.image && formData.image.startsWith("data:")) {
+        const blob = await fetch(formData.image).then((r) => r.blob());
+        const file = new File([blob], "ad.jpg", { type: blob.type });
+        payload.append("image", file);
+      }
+      payload.append("title", formData.title);
+      payload.append("description", formData.description);
+      payload.append("link_url", formData.link);
 
-    alert("Ad updated successfully!");
-    router.push("/admin/ads");
+      await updateAd(id, payload);
+      alert("Ad updated successfully!");
+      router.push("/dashboard/admin/ads");
+    } catch (err) {
+      setError("Failed to update ad");
+    }
   };
 
   if (!formData) {

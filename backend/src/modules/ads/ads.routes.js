@@ -16,5 +16,18 @@ router.post(
 );
 router.get("/", controller.getAds);
 router.get("/:id", controller.getAdById);
+router.put(
+  "/:id",
+  verifyToken,
+  isInstructorOrAdmin,
+  upload.single("image"),
+  controller.updateAd
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.deleteAd
+);
 
 module.exports = router;
