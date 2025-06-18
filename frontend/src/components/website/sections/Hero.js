@@ -179,9 +179,7 @@ const Hero = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.5 }}
-            className="relative w-full lg:w-1/2 min-h-[450px] rounded-lg overflow-hidden shadow-2xl"
-
-
+            className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500"
             {...handlers}
           >
             <Image
@@ -192,28 +190,31 @@ const Hero = () => {
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-black/60 flex flex-col justify-center items-start px-6 py-10 md:px-10 md:py-12 text-white z-10">
-              <div className="max-w-md">
-                <h3 className="text-2xl md:text-4xl font-bold mb-2 drop-shadow-lg">{ads[currentAd].title}</h3>
-                <p className="text-base md:text-xl mb-4 drop-shadow">{ads[currentAd].description}</p>
+            <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent z-10 flex items-center">
+              <div className="px-6 md:px-10 py-8 max-w-xl text-white">
+                <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-snug drop-shadow-xl">
+                  {ads[currentAd].title}
+                </h3>
+                <p className="text-base md:text-lg mb-4 drop-shadow-lg text-white/90">
+                  {ads[currentAd].description}
+                </p>
                 <a
                   href={ads[currentAd].link}
-                  className="inline-flex items-center gap-2 px-5 py-2 bg-yellow-500 text-black rounded hover:bg-yellow-600 transition font-semibold"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-semibold shadow-md"
                 >
                   Learn More <FaArrowRight />
                 </a>
               </div>
             </div>
 
-
-            {/* Ad Navigation Arrows */}
+            {/* Navigation Arrows */}
             <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-20">
-              <button onClick={prevAd} className="p-2 bg-gray-800/70 hover:bg-gray-700 rounded-full text-white">
+              <button onClick={prevAd} className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white shadow-md">
                 <FaChevronLeft />
               </button>
             </div>
             <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
-              <button onClick={nextAd} className="p-2 bg-gray-800/70 hover:bg-gray-700 rounded-full text-white">
+              <button onClick={nextAd} className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white shadow-md">
                 <FaChevronRight />
               </button>
             </div>
@@ -224,12 +225,14 @@ const Hero = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentAd(index)}
-                  className={`w-3 h-3 rounded-full ${currentAd === index ? "bg-yellow-500" : "bg-white/50"}`}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${currentAd === index ? "bg-yellow-500 scale-110" : "bg-white/40"
+                    }`}
                 />
               ))}
             </div>
           </motion.div>
         </AnimatePresence>
+
 
 
         {/* ✅ Mouse Scroll Indicator (ADDED) */}
