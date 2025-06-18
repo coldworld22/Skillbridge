@@ -6,7 +6,13 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '5001',
-        pathname: '/uploads/**', // Allows all files under /uploads
+        pathname: '/uploads/**', // legacy path
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5001',
+        pathname: '/api/uploads/**', // Allow images served via API
       },
     ],
   },
