@@ -85,8 +85,8 @@ const Hero = () => {
   }, [searchText]);
 
   // Handle Ad Navigation
-const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
-const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
+  const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
+  const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
 
   // Swipe gestures for mobile
   const handlers = useSwipeable({
@@ -179,37 +179,58 @@ const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.5 }}
-            className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white"
-          >
-            <Image src={ads[currentAd].image} alt={ads[currentAd].title} width={400} height={250} className="rounded-lg object-cover" />
-            <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
-            <p className="text-gray-300">{ads[currentAd].description}</p>
-            <a href={ads[currentAd].link} className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
-              Learn More <FaArrowRight />
-            </a>
+            className="relative w-full lg:w-1/2 min-h-[450px] rounded-lg overflow-hidden shadow-2xl"
 
-            {/* Ad Navigation */}
-            <div className="flex justify-between mt-4">
-              <button onClick={prevAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+
+            {...handlers}
+          >
+            <Image
+              src={ads[currentAd].image}
+              alt={ads[currentAd].title}
+              layout="fill"
+              objectFit="cover"
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-black/60 flex flex-col justify-center items-start px-6 py-10 md:px-10 md:py-12 text-white z-10">
+              <div className="max-w-md">
+                <h3 className="text-2xl md:text-4xl font-bold mb-2 drop-shadow-lg">{ads[currentAd].title}</h3>
+                <p className="text-base md:text-xl mb-4 drop-shadow">{ads[currentAd].description}</p>
+                <a
+                  href={ads[currentAd].link}
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-yellow-500 text-black rounded hover:bg-yellow-600 transition font-semibold"
+                >
+                  Learn More <FaArrowRight />
+                </a>
+              </div>
+            </div>
+
+
+            {/* Ad Navigation Arrows */}
+            <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-20">
+              <button onClick={prevAd} className="p-2 bg-gray-800/70 hover:bg-gray-700 rounded-full text-white">
                 <FaChevronLeft />
               </button>
-              <button onClick={nextAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+            </div>
+            <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
+              <button onClick={nextAd} className="p-2 bg-gray-800/70 hover:bg-gray-700 rounded-full text-white">
                 <FaChevronRight />
               </button>
             </div>
 
-            {/* Ad Indicators */}
-            <div className="flex justify-center mt-4 space-x-2">
+            {/* Dot Indicators */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
               {ads.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentAd(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${currentAd === index ? "bg-yellow-500" : "bg-gray-600"}`}
+                  className={`w-3 h-3 rounded-full ${currentAd === index ? "bg-yellow-500" : "bg-white/50"}`}
                 />
               ))}
             </div>
           </motion.div>
         </AnimatePresence>
+
 
         {/* ✅ Mouse Scroll Indicator (ADDED) */}
         <motion.div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
