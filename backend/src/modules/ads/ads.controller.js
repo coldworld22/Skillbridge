@@ -37,3 +37,28 @@ exports.getAdById = catchAsync(async (req, res) => {
   const ad = await service.getAdById(req.params.id);
   sendSuccess(res, ad);
 });
+
+exports.updateAd = catchAsync(async (req, res) => {
+  const { title, description, link_url } = req.body;
+  const updates = { title, description, link_url };
+
+  if (title) {
+    const existing = await service.findByTitle(title);
+    if (existing && existing.id !== req.params.id)
+      throw new AppError("Ad title already exists", 409);
+  }
+
+  if (req.file) {
+    updates.image_url = `/uploads/ads/${req.file.filename}`;
+  }
+
+  const updated = await service.updateAd(req.params.id, updates);
+  if (!updated) throw new AppError("Ad not found", 404);
+  sendSuccess(res, updated, "Ad updated");
+});
+
+exports.deleteAd = catchAsync(async (req, res) => {
+  const count = await service.deleteAd(req.params.id);
+  if (!count) throw new AppError("Ad not found", 404);
+  sendSuccess(res, null, "Ad deleted");
+});
