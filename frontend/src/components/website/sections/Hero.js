@@ -85,8 +85,15 @@ const Hero = () => {
   }, [searchText]);
 
   // Handle Ad Navigation
-  const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
-  const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
+const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
+const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
+
+  // Swipe gestures for mobile
+  const handlers = useSwipeable({
+    onSwipedLeft: nextAd,
+    onSwipedRight: prevAd,
+    trackMouse: true,
+  });
 
   const handleSearchSelect = (selectedValue) => {
     setSearchText(selectedValue);
