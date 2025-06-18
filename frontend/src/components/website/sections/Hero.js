@@ -179,12 +179,21 @@ const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.5 }}
-            className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white"
+            className="relative w-full lg:w-1/2 flex flex-col items-center text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white"
           >
-            <Image src={ads[currentAd].image} alt={ads[currentAd].title} width={400} height={250} className="rounded-lg object-cover" />
+            <Image
+              src={ads[currentAd].image}
+              alt={ads[currentAd].title}
+              width={400}
+              height={250}
+              className="w-full rounded-lg object-cover"
+            />
             <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
-            <p className="text-gray-300">{ads[currentAd].description}</p>
-            <a href={ads[currentAd].link} className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
+            <p className="text-gray-300 mt-2">{ads[currentAd].description}</p>
+            <a
+              href={ads[currentAd].link}
+              className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+            >
               Learn More <FaArrowRight />
             </a>
 
