@@ -5,6 +5,7 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import AdCard from "@/components/admin/ads/AdCard"; // You can reuse this
 import PreviewModal from "@/components/admin/ads/PreviewModalinstrutor";
+import { fetchAds, deleteAd, updateAd } from "@/services/admin/adService";
 
 export default function InstructorAdsPage() {
   const [ads, setAds] = useState([]);
@@ -17,15 +18,19 @@ export default function InstructorAdsPage() {
   const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
-    setAds(mockAds); // Replace with real fetch scoped to instructor
+    fetchAds().then(setAds).catch(() => setAds([]));
   }, []);
 
-  const toggleAdStatus = (id) => {
+  const toggleAdStatus = async (id) => {
     setAds((prev) =>
       prev.map((ad) =>
         ad.id === id ? { ...ad, isActive: !ad.isActive } : ad
       )
     );
+    const ad = ads.find((a) => a.id === id);
+    if (ad) {
+      await updateAd(id, { is_active: !ad.isActive }).catch(() => {});
+    }
   };
 
   const handleEdit = (ad) => {
@@ -36,8 +41,9 @@ export default function InstructorAdsPage() {
     window.location.href = `/dashboard/instructor/ads/analytics/${ad.id}`;
   };
 
-  const handleDelete = (ad) => {
+  const handleDelete = async (ad) => {
     if (confirm(`Delete "${ad.title}"?`)) {
+      await deleteAd(ad.id).catch(() => {});
       setAds((prev) => prev.filter((a) => a.id !== ad.id));
     }
   };
@@ -155,15 +161,3 @@ export default function InstructorAdsPage() {
   );
 }
 
-const mockAds = Array.from({ length: 6 }, (_, i) => ({
-  id: i + 1,
-  title: `My Ad ${i + 1}`,
-  description: "Promote your course now!",
-  image: `https://picsum.photos/seed/instructor${i}/400/200`,
-  adType: ["promotion", "event", "announcement"][i % 3],
-  targetRoles: ["student"],
-  isActive: i % 2 === 0,
-  startAt: "2025-05-01",
-  endAt: "2025-05-10",
-  views: Math.floor(Math.random() * 300),
-}));
