@@ -6,6 +6,8 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   createAd: jest.fn(),
   getAdById: jest.fn(),
   findByTitle: jest.fn(),
+  updateAd: jest.fn(),
+  deleteAd: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -40,5 +42,24 @@ describe('POST /api/ads/admin', () => {
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
+  });
+});
+
+describe('PUT /api/ads/:id', () => {
+  it('updates ad', async () => {
+    const payload = { title: 'Updated' };
+    service.updateAd = jest.fn().mockResolvedValue({ id: '1', ...payload });
+    const res = await request(app).put('/api/ads/1').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.updateAd).toHaveBeenCalledWith('1', expect.any(Object));
+  });
+});
+
+describe('DELETE /api/ads/:id', () => {
+  it('deletes ad', async () => {
+    service.deleteAd = jest.fn().mockResolvedValue(1);
+    const res = await request(app).delete('/api/ads/1');
+    expect(res.status).toBe(200);
+    expect(service.deleteAd).toHaveBeenCalledWith('1');
   });
 });

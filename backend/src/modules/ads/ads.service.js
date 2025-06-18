@@ -16,3 +16,12 @@ exports.getAdById = async (id) => {
 exports.findByTitle = async (title) => {
   return db("ads").where({ title }).first();
 };
+
+exports.updateAd = async (id, data) => {
+  const [row] = await db("ads").where({ id }).update(data).returning("*");
+  return row;
+};
+
+exports.deleteAd = (id) => {
+  return db("ads").where({ id }).del();
+};
