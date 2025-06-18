@@ -174,7 +174,6 @@ const nextAd = () => setCurrentAd((prev) => (prev + 1) % ads.length);
         {/* Right Side - Ads */}
         <AnimatePresence mode="wait">
           <motion.div
-            {...handlers}
             key={ads[currentAd].id}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
