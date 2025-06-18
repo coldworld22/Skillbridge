@@ -165,24 +165,38 @@ const Hero = () => {
         </div>
 
         {/* Right Side - Ads */}
-        <motion.div key={ads[currentAd].id} className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white">
-          <Image src={ads[currentAd].image} alt={ads[currentAd].title} width={400} height={250} className="rounded-lg" />
-          <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
-          <p className="text-gray-300">{ads[currentAd].description}</p>
-          <a href={ads[currentAd].link} className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
-            Learn More <FaArrowRight />
-          </a>
+        {ads.length > 0 && (
+          <motion.div
+            key={ads[currentAd]?.id}
+            className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white"
+          >
+            <Image
+              src={ads[currentAd].image}
+              alt={ads[currentAd].title}
+              width={400}
+              height={250}
+              className="rounded-lg object-cover mx-auto"
+            />
+            <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
+            <p className="text-gray-300">{ads[currentAd].description}</p>
+            <a
+              href={ads[currentAd].link}
+              className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+            >
+              Learn More <FaArrowRight />
+            </a>
 
-          {/* Ad Navigation */}
-          <div className="flex justify-between mt-4">
-            <button onClick={prevAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
-              <FaChevronLeft />
-            </button>
-            <button onClick={nextAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
-              <FaChevronRight />
-            </button>
-          </div>
-        </motion.div>
+            <div className="flex justify-between mt-4">
+              <button onClick={prevAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+                <FaChevronLeft />
+              </button>
+              <button onClick={nextAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+                <FaChevronRight />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
 
         {/* ✅ Mouse Scroll Indicator (ADDED) */}
         <motion.div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
