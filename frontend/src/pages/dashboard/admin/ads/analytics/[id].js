@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { fetchAdById } from "@/services/admin/adService";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, ResponsiveContainer
@@ -13,11 +14,39 @@ export default function AdAnalyticsPage() {
   const { id } = router.query;
   const [ad, setAd] = useState(null);
 
+  const generateMockAnalytics = () => ({
+    views: Math.floor(Math.random() * 300),
+    ctr: `${(Math.random() * 2).toFixed(1)}%`,
+    conversions: Math.floor(Math.random() * 50),
+    reach: Math.floor(Math.random() * 800),
+    devices: ["Mobile", "Desktop", "Tablet"].sort(() => 0.5 - Math.random()).slice(0, 2),
+    locationStats: [
+      { country: "Egypt", views: Math.floor(Math.random() * 150) },
+      { country: "Saudi Arabia", views: Math.floor(Math.random() * 150) },
+      { country: "UAE", views: Math.floor(Math.random() * 150) },
+    ],
+    analytics: [
+      { day: "Mon", views: Math.floor(Math.random() * 100) },
+      { day: "Tue", views: Math.floor(Math.random() * 100) },
+      { day: "Wed", views: Math.floor(Math.random() * 100) },
+      { day: "Thu", views: Math.floor(Math.random() * 100) },
+      { day: "Fri", views: Math.floor(Math.random() * 100) },
+      { day: "Sat", views: Math.floor(Math.random() * 100) },
+      { day: "Sun", views: Math.floor(Math.random() * 100) },
+    ],
+  });
+
   useEffect(() => {
-    if (id) {
-      const foundAd = mockAds.find((ad) => ad.id === Number(id));
-      setAd(foundAd || null);
-    }
+    if (!id) return;
+    fetchAdById(id)
+      .then((data) => {
+        if (data) {
+          setAd({ ...data, ...generateMockAnalytics() });
+        } else {
+          setAd(null);
+        }
+      })
+      .catch(() => setAd(null));
   }, [id]);
 
   if (!ad) {
@@ -129,35 +158,3 @@ export default function AdAnalyticsPage() {
   );
   
 }
-
-// Mock data (update later with backend API)
-const mockAds = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  title: `Ad Campaign ${i + 1}`,
-  description: "Promote your course now!",
-  image: `https://picsum.photos/seed/${i}/400/200`,
-  adType: ["promotion", "event", "announcement", "internal"][i % 4],
-  targetRoles: ["student", "instructor"].filter((_, r) => (i + r) % 2 === 0),
-  isActive: i % 2 === 0,
-  startAt: "2025-05-01",
-  endAt: "2025-05-10",
-  views: Math.floor(Math.random() * 300),
-  ctr: `${(Math.random() * 2).toFixed(1)}%`,
-  conversions: Math.floor(Math.random() * 50),
-  reach: Math.floor(Math.random() * 800),
-  devices: ["Mobile", "Desktop", "Tablet"].sort(() => 0.5 - Math.random()).slice(0, 2),
-  locationStats: [
-    { country: "Egypt", views: Math.floor(Math.random() * 150) },
-    { country: "Saudi Arabia", views: Math.floor(Math.random() * 150) },
-    { country: "UAE", views: Math.floor(Math.random() * 150) }
-  ],
-  analytics: [
-    { day: "Mon", views: Math.floor(Math.random() * 100) },
-    { day: "Tue", views: Math.floor(Math.random() * 100) },
-    { day: "Wed", views: Math.floor(Math.random() * 100) },
-    { day: "Thu", views: Math.floor(Math.random() * 100) },
-    { day: "Fri", views: Math.floor(Math.random() * 100) },
-    { day: "Sat", views: Math.floor(Math.random() * 100) },
-    { day: "Sun", views: Math.floor(Math.random() * 100) }
-  ]
-}));
