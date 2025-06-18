@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Typewriter from "typewriter-effect";
 import SearchBar from "@/components/shared/SearchBar";
@@ -165,24 +165,44 @@ const Hero = () => {
         </div>
 
         {/* Right Side - Ads */}
-        <motion.div key={ads[currentAd].id} className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white">
-          <Image src={ads[currentAd].image} alt={ads[currentAd].title} width={400} height={250} className="rounded-lg" />
-          <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
-          <p className="text-gray-300">{ads[currentAd].description}</p>
-          <a href={ads[currentAd].link} className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
-            Learn More <FaArrowRight />
-          </a>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={ads[currentAd].id}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.5 }}
+            className="relative w-full lg:w-1/2 text-center bg-gray-900 p-6 rounded-lg shadow-2xl text-white"
+          >
+            <Image src={ads[currentAd].image} alt={ads[currentAd].title} width={400} height={250} className="rounded-lg object-cover" />
+            <h3 className="text-2xl font-bold mt-4">{ads[currentAd].title}</h3>
+            <p className="text-gray-300">{ads[currentAd].description}</p>
+            <a href={ads[currentAd].link} className="mt-4 inline-block bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
+              Learn More <FaArrowRight />
+            </a>
 
-          {/* Ad Navigation */}
-          <div className="flex justify-between mt-4">
-            <button onClick={prevAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
-              <FaChevronLeft />
-            </button>
-            <button onClick={nextAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
-              <FaChevronRight />
-            </button>
-          </div>
-        </motion.div>
+            {/* Ad Navigation */}
+            <div className="flex justify-between mt-4">
+              <button onClick={prevAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+                <FaChevronLeft />
+              </button>
+              <button onClick={nextAd} className="p-3 bg-gray-700 hover:bg-gray-600 rounded-full">
+                <FaChevronRight />
+              </button>
+            </div>
+
+            {/* Ad Indicators */}
+            <div className="flex justify-center mt-4 space-x-2">
+              {ads.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentAd(index)}
+                  className={`w-3 h-3 rounded-full transition-colors ${currentAd === index ? "bg-yellow-500" : "bg-gray-600"}`}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* ✅ Mouse Scroll Indicator (ADDED) */}
         <motion.div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
