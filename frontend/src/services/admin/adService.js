@@ -15,6 +15,7 @@ export const fetchAds = async () => {
     ...ad,
     image: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`,
     link: ad.link_url,
+    targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   }));
 };
 
@@ -26,6 +27,7 @@ export const fetchAdById = async (id) => {
     ...ad,
     image: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`,
     link: ad.link_url,
+    targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   };
 };
 

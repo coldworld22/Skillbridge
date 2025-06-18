@@ -42,8 +42,13 @@ export default function AdCard({
         <p className="text-sm text-gray-600 line-clamp-2">{ad.description}</p>
         <div className="flex flex-wrap gap-1 text-xs text-gray-500">
           <span className="bg-gray-100 px-2 py-0.5 rounded">{ad.adType}</span>
-          {ad.targetRoles.map(role => (
-            <span key={role} className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded capitalize">{role}</span>
+          {ad.targetRoles?.map((role) => (
+            <span
+              key={role}
+              className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded capitalize"
+            >
+              {role}
+            </span>
           ))}
         </div>
       </div>
