@@ -13,7 +13,9 @@ const PreviewModal = ({ ad, onClose }) => {
         <img src={ad.image} alt={ad.title} className="w-full h-48 object-cover rounded mb-4" />
         <h2 className="text-xl font-bold mb-2">{ad.title}</h2>
         <p className="text-sm text-gray-700 mb-2">{ad.description}</p>
-        <p className="text-xs text-gray-500 mb-1">🎯 Target: {ad.targetRoles.join(', ')}</p>
+        <p className="text-xs text-gray-500 mb-1">
+          🎯 Target: {(ad.targetRoles || []).join(', ')}
+        </p>
         <p className="text-xs text-gray-500 mb-1">📅 {ad.startAt} → {ad.endAt}</p>
         <p className="text-xs text-blue-500">👁️ {ad.views} views</p>
         <p className="text-xs text-purple-500">📌 Type: {ad.adType}</p>
