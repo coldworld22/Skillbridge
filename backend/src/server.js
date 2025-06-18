@@ -61,7 +61,7 @@ app.use(morgan("dev"));
 // Support both `/uploads` and `/api/uploads` to allow direct access in production
 // Use project root uploads directory (one level above backend)
 // Example paths from modules resolve to "../../uploads"
-const uploadsDir = path.join(__dirname, "../../uploads");
+const uploadsDir = path.join(__dirname, "../uploads");
 app.use("/api/uploads", express.static(uploadsDir));
 app.use("/uploads", express.static(uploadsDir));
 

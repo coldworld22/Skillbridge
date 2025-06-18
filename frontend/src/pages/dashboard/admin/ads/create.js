@@ -7,8 +7,9 @@ import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
+import { FaSpinner } from "react-icons/fa";
 
-const currentUserPlan = "basic"; // "basic" | "regular" | "prime"
+const currentUserPlan = "basic";
 const { maxAdDuration } = plansConfig[currentUserPlan];
 
 export default function CreateAdPage() {
@@ -51,6 +52,8 @@ export default function CreateAdPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+
     if (!formData.title || !formData.image) {
       setError("Title and image are required.");
       return;
@@ -76,10 +79,10 @@ export default function CreateAdPage() {
       payload.append("image", file);
 
       await createAd(payload);
-      toast.success("Ad created!");
+      toast.success("🎉 Advertisement created successfully!");
       router.push("/dashboard/admin/ads");
     } catch (err) {
-      const message = err?.response?.data?.message || "Failed to create ad";
+      const message = err?.response?.data?.message || "Failed to create ad.";
       if (message.toLowerCase().includes("title")) {
         setTitleError(message);
       } else {
@@ -94,19 +97,24 @@ export default function CreateAdPage() {
   return (
     <AdminLayout>
       <Toaster position="top-center" />
-      <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">📢 Create New Advertisement</h1>
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">🛠️ Create Advertisement</h1>
+
         {error && (
-          <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded mb-6">
+          <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded mb-6">
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <section>
-            <h2 className="text-xl font-semibold mb-2">🎯 Ad Details</h2>
-            <div className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Ad Details */}
+          <section className="bg-white rounded-2xl shadow border border-gray-200">
+            <header className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">🎯 Ad Details</h2>
+            </header>
+            <div className="px-5 py-6 space-y-4">
               <div>
-                <label className="block font-medium">Title *</label>
+                <label className="block text-sm font-medium mb-1">Title *</label>
                 <input
                   type="text"
                   name="title"
@@ -115,19 +123,22 @@ export default function CreateAdPage() {
                     setTitleError(null);
                     handleChange(e);
                   }}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-blue-500"
+                  className={`w-full border px-3 py-2 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${titleError ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {titleError && (
-                  <p className="text-red-600 text-sm mt-1">{titleError}</p>
-                )}
+                {titleError && <p className="text-sm text-red-600 mt-1">{titleError}</p>}
               </div>
               <div>
-                <label className="block font-medium">Description</label>
-                <textarea name="description" value={formData.description} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2" rows={3} />
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
               </div>
               <div>
-                <label className="block font-medium">Banner Image *</label>
+                <label className="block text-sm font-medium mb-1">Banner Image *</label>
                 <ImageCropUpload
                   value={formData.image}
                   onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
@@ -136,30 +147,52 @@ export default function CreateAdPage() {
             </div>
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold mb-2">📅 Schedule</h2>
-            <div className="grid md:grid-cols-2 gap-4">
+          {/* Schedule */}
+          <section className="bg-white rounded-2xl shadow border border-gray-200">
+            <header className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">📅 Schedule</h2>
+            </header>
+            <div className="px-5 py-6 grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block font-medium">Start Date *</label>
-                <input type="date" name="startAt" value={formData.startAt} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2" />
+                <label className="block text-sm font-medium mb-1">Start Date *</label>
+                <input
+                  type="date"
+                  name="startAt"
+                  value={formData.startAt}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
               </div>
               <div>
-                <label className="block font-medium">End Date *</label>
-                <input type="date" name="endAt" value={formData.endAt} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2" />
+                <label className="block text-sm font-medium mb-1">End Date *</label>
+                <input
+                  type="date"
+                  name="endAt"
+                  value={formData.endAt}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="col-span-2">
+                <PlanLimitHint plan={currentUserPlan} />
               </div>
             </div>
-            <PlanLimitHint plan={currentUserPlan} />
           </section>
 
-          <section>
-            <h2 className="text-xl font-semibold mb-2">⚙️ Configuration</h2>
-            <div className="grid md:grid-cols-2 gap-4">
+          {/* Configuration */}
+          <section className="bg-white rounded-2xl shadow border border-gray-200">
+            <header className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">⚙️ Configuration</h2>
+            </header>
+            <div className="px-5 py-6 grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block font-medium">Ad Type *</label>
-                <select name="adType" value={formData.adType} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2">
+                <label className="block text-sm font-medium mb-1">Ad Type *</label>
+                <select
+                  name="adType"
+                  value={formData.adType}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
                   <option value="promotion">Promotion</option>
                   <option value="event">Event</option>
                   <option value="announcement">Announcement</option>
@@ -167,42 +200,63 @@ export default function CreateAdPage() {
                 </select>
               </div>
               <div>
-                <label className="block font-medium">Priority *</label>
-                <select name="priority" value={formData.priority} onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2">
+                <label className="block text-sm font-medium mb-1">Priority *</label>
+                <select
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
                   <option value={0}>Low (0)</option>
                   <option value={1}>Medium (1)</option>
                   <option value={2}>High (2)</option>
                 </select>
               </div>
-              <div>
-                <label className="block font-medium">Optional Link</label>
-                <input type="url" name="link" value={formData.link} onChange={handleChange}
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Optional Link</label>
+                <input
+                  type="url"
+                  name="link"
+                  value={formData.link}
+                  onChange={handleChange}
                   placeholder="https://example.com"
-                  className="w-full border border-gray-300 rounded px-3 py-2" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="col-span-2 space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="allowBranding" checked={formData.allowBranding} onChange={handleChange} />
+                  Enable Custom Branding (Prime only)
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} />
+                  Activate this ad immediately
+                </label>
               </div>
             </div>
           </section>
 
-          <section className="grid gap-3">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="allowBranding"
-                checked={formData.allowBranding} onChange={handleChange} />
-              <span className="text-sm">Enable Custom Branding (Prime only)</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="isActive"
-                checked={formData.isActive} onChange={handleChange} />
-              <span className="text-sm">Activate this ad immediately</span>
-            </label>
-          </section>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-60 text-white font-medium px-6 py-2 rounded transition">
-            {isSubmitting ? "Creating..." : "➕ Create Ad"}
-          </button>
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`px-6 py-3 rounded-xl font-medium text-white text-sm transition-all ${
+                isSubmitting
+                  ? "bg-yellow-400 cursor-not-allowed"
+                  : "bg-yellow-600 hover:bg-yellow-700"
+              }`}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <FaSpinner className="animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                "➕ Create Advertisement"
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </AdminLayout>
