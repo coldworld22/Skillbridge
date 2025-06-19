@@ -26,3 +26,14 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 4. Visit `http://localhost:3001` to access the frontend. The API is available at `http://localhost:5000`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
+
+## Booking API
+
+The backend exposes role-based endpoints for managing instructor bookings:
+
+- `POST /api/bookings/student` – create a booking as the logged-in student
+- `GET /api/bookings/student` – list bookings for the current student
+- `GET /api/bookings/instructor` – list bookings for the logged-in instructor
+- `PATCH /api/bookings/instructor/:id` – update a booking (e.g. approve or decline)
+
+Admin routes remain available under `/api/bookings/admin`.

@@ -9,6 +9,20 @@ exports.getAll = async () => {
   return db("bookings").select("*").orderBy("requested_at", "desc");
 };
 
+// Get bookings for a specific student
+exports.getByStudent = async (studentId) => {
+  return db("bookings")
+    .where({ student_id: studentId })
+    .orderBy("requested_at", "desc");
+};
+
+// Get bookings for a specific instructor
+exports.getByInstructor = async (instructorId) => {
+  return db("bookings")
+    .where({ instructor_id: instructorId })
+    .orderBy("requested_at", "desc");
+};
+
 exports.getById = async (id) => {
   return db("bookings").where({ id }).first();
 };
