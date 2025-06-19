@@ -15,12 +15,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 import { FaCog } from "react-icons/fa";
+import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [available, setAvailable] = useState(user?.is_online ?? false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const router = useRouter();
@@ -68,6 +70,8 @@ export default function Header() {
       document.documentElement.classList.add("dark");
     }
 
+    setAvailable(user?.is_online ?? false);
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -79,7 +83,7 @@ export default function Header() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [user]);
 
   const notifications = [
     "🔔 New user registered",
@@ -115,6 +119,28 @@ export default function Header() {
         >
           {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
+
+        {userRole === "instructor" && (
+          <button
+            onClick={async () => {
+              const newStatus = !available;
+              try {
+                await toggleInstructorStatus(newStatus);
+                setAvailable(newStatus);
+                const setUser = useAuthStore.getState().setUser;
+                setUser({ ...user, is_online: newStatus });
+                toast.success(
+                  newStatus ? "You are now available" : "You are now unavailable"
+                );
+              } catch (err) {
+                toast.error("Failed to update availability");
+              }
+            }}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${available ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}
+          >
+            {available ? "Available" : "Unavailable"}
+          </button>
+        )}
 
         <div className="relative group cursor-pointer">
           <Mail className="w-6 h-6 text-gray-500 dark:text-gray-300 hover:text-yellow-500 transition duration-200" />
