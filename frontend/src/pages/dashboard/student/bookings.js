@@ -20,6 +20,24 @@ export default function StudentBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
+  const handleReschedule = async (booking) => {
+    const input = prompt('Enter new start time (YYYY-MM-DD HH:MM)');
+    if (!input) return;
+    const start = new Date(input);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    await updateStudentBooking(booking.id, {
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+      status: 'pending',
+    });
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === booking.id
+          ? { ...b, start_time: start.toISOString(), end_time: end.toISOString(), status: 'pending' }
+          : b
+      )
+    );
+  };
 
   useEffect(() => {
     fetchStudentBookings()
@@ -104,7 +122,7 @@ export default function StudentBookingsPage() {
                       {booking.subject} with {booking.instructor_name}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {new Date(booking.start_time).toLocaleString()}
+                      {new Date(booking.start_time).toLocaleString(undefined, { timeZoneName: 'short' })}
                     </p>
                   </div>
                 </div>
@@ -122,7 +140,7 @@ export default function StudentBookingsPage() {
                       </button>
                       <button
                         className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 text-sm"
-                        onClick={() => alert('Reschedule requested')}
+                        onClick={() => handleReschedule(booking)}
                       >
                         Reschedule
                       </button>
