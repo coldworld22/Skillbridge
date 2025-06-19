@@ -55,10 +55,10 @@ const ChangePasswordPage = ({ prevStep }) => {
       let body = {};
 
       if (user.role === "Student") {
-        endpoint = "http://localhost:5001/api/users/student/change-password";
+        endpoint = "http://localhost:5000/api/users/student/change-password";
         body = { currentPassword, newPassword };
       } else if (user.role === "Admin" || user.role === "SuperAdmin") {
-        endpoint = `http://localhost:5001/api/users/admin/reset-password/${user.id}`;
+        endpoint = `http://localhost:5000/api/users/admin/reset-password/${user.id}`;
         method = "POST";
         body = { newPassword };
       } else {

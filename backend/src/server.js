@@ -118,7 +118,8 @@ app.use(errorHandler); // ✅ After all routes
 // 🚀 Start Server
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PORT = process.env.PORT || 5001;
+// Default to port 5000 to match example env and docker-compose
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
