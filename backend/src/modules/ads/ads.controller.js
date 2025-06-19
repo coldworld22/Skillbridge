@@ -62,3 +62,18 @@ exports.deleteAd = catchAsync(async (req, res) => {
   if (!count) throw new AppError("Ad not found", 404);
   sendSuccess(res, null, "Ad deleted");
 });
+
+exports.getAdAnalytics = catchAsync(async (req, res) => {
+  const data = await service.getAdAnalytics(req.params.id);
+  if (!data) throw new AppError("Analytics not found", 404);
+  const response = {
+    views: data.views,
+    ctr: data.ctr,
+    conversions: data.clicks,
+    reach: data.unique_viewers,
+    devices: [],
+    locationStats: [],
+    analytics: [],
+  };
+  sendSuccess(res, response);
+});

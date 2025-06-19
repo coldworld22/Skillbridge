@@ -41,3 +41,8 @@ export const updateAd = async (id, payload) => {
 export const deleteAd = async (id) => {
   await api.delete(`/ads/${id}`);
 };
+
+export const fetchAdAnalytics = async (id) => {
+  const { data } = await api.get(`/ads/${id}/analytics`);
+  return data?.data ?? null;
+};

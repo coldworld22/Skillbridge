@@ -8,6 +8,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   findByTitle: jest.fn(),
   updateAd: jest.fn(),
   deleteAd: jest.fn(),
+  getAdAnalytics: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -61,5 +62,17 @@ describe('DELETE /api/ads/:id', () => {
     const res = await request(app).delete('/api/ads/1');
     expect(res.status).toBe(200);
     expect(service.deleteAd).toHaveBeenCalledWith('1');
+  });
+});
+
+describe('GET /api/ads/:id/analytics', () => {
+  it('returns ad analytics', async () => {
+    const analytics = { views: 5, ctr: 1, clicks: 2, unique_viewers: 3 };
+    service.getAdAnalytics = jest.fn().mockResolvedValue(analytics);
+    const res = await request(app).get('/api/ads/1/analytics');
+    expect(res.status).toBe(200);
+    expect(service.getAdAnalytics).toHaveBeenCalledWith('1');
+    expect(res.body.data.views).toBe(5);
+    expect(res.body.data.conversions).toBe(2);
   });
 });
