@@ -225,7 +225,9 @@ export default function StudentProfileEdit() {
       });
 
       toast.success("Profile updated successfully!");
-      router.push("/dashboard/student");
+
+      // 🚀 Direct new users to email/phone verification
+      router.push("/dashboard/student/profile/steps/Verification");
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
