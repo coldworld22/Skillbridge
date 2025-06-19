@@ -7,11 +7,12 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import PhoneInput from "react-phone-number-input";
+import 'react-phone-number-input/style.css';
 
 import logo from "@/shared/assets/images/login/logo.png";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
-import PhoneInputField from "@/shared/components/auth/PhoneInputField";
 import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
@@ -103,13 +104,19 @@ export default function Register() {
         <InputField label="Email" type="email" placeholder="Enter your email" {...register("email")} />
         {errors.email && <p className="text-xs text-left w-full text-red-400">{errors.email.message}</p>}
 
-        <PhoneInputField
-          label="Phone"
-          value={watch("phone")}
-          onChange={(val) => setValue("phone", `+${val}`)}
-        />
-        {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
+        {/* ✅ Styled Phone Input */}
+        <div className="w-full mb-3">
+          <label className="block text-sm text-gray-400 mb-1">Phone</label>
+          <PhoneInput
+            value={watch("phone")}
+            onChange={(val) => setValue("phone", val)}
+            defaultCountry="SA"
+            className="!w-full !px-3 !py-2 !bg-gray-700 !text-white !border !border-gray-600 !rounded-md focus:!outline-none focus:!ring-2 focus:!ring-yellow-500"
+          />
+          {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
+        </div>
 
+        {/* ✅ Password */}
         <div className="w-full mb-3">
           <label className="block text-sm text-gray-400 mb-1">Password</label>
           <div className="relative">
@@ -126,6 +133,7 @@ export default function Register() {
           {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
         </div>
 
+        {/* ✅ Confirm Password */}
         <div className="w-full mb-3">
           <label className="block text-sm text-gray-400 mb-1">Confirm Password</label>
           <div className="relative">
@@ -142,6 +150,7 @@ export default function Register() {
           {errors.confirmPassword && <p className="text-xs text-red-400 mt-1">{errors.confirmPassword.message}</p>}
         </div>
 
+        {/* ✅ Submit Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
@@ -155,6 +164,7 @@ export default function Register() {
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>
 
+        {/* ✅ Social Login + Footer */}
         <div className="mt-6 text-center text-gray-400 text-sm">or continue with</div>
         <SocialRegister />
 
