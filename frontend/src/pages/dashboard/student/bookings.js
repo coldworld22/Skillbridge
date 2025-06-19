@@ -1,6 +1,7 @@
 // pages/dashboard/student/bookings.js
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { useEffect, useState } from 'react';
+
 import { useRouter } from 'next/router';
 import { Dialog } from '@headlessui/react';
 import {
@@ -46,6 +47,7 @@ export default function StudentBookingsPage() {
       .finally(() => setLoading(false));
   }, [accessToken, hasHydrated, router, user]);
 
+
   const filtered = activeTab === 'All' ? bookings : bookings.filter(b => b.status === activeTab);
 
   const statusIcons = {
@@ -72,6 +74,7 @@ export default function StudentBookingsPage() {
       </StudentLayout>
     );
   }
+
 
   return (
     <StudentLayout>
@@ -114,6 +117,7 @@ export default function StudentBookingsPage() {
                     {statusIcons[booking.status]}
                     {booking.status === 'approved' && (
                       <>
+
                         <button
                           className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
                           onClick={() => (window.location.href = `/website/pages/messages?userId=${booking.instructor_id}`)}
@@ -126,6 +130,7 @@ export default function StudentBookingsPage() {
                         >
                           Reschedule
                         </button>
+
                       </>
                     )}
                     {booking.status === 'pending' && (
