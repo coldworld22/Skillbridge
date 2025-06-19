@@ -1,11 +1,24 @@
 // pages/dashboard/student/bookings.js
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { useEffect, useState } from 'react';
+
+import { useRouter } from 'next/router';
 import { Dialog } from '@headlessui/react';
-import { FaClock, FaCheckCircle, FaTimesCircle, FaComments } from 'react-icons/fa';
+import {
+  FaClock,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaComments,
+  FaSpinner,
+} from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import { fetchStudentBookings, updateStudentBooking } from '@/services/student/bookingService';
+import useAuthStore from '@/store/auth/authStore';
 
 export default function StudentBookingsPage() {
+  const router = useRouter();
+  const { accessToken, user, hasHydrated } = useAuthStore();
+
   const [bookings, setBookings] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -13,10 +26,27 @@ export default function StudentBookingsPage() {
   const [bookingToCancel, setBookingToCancel] = useState(null);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
+    if (!accessToken || !user) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (user.role?.toLowerCase() !== 'student') {
+      router.replace('/403');
+      return;
+    }
+
     fetchStudentBookings()
       .then(setBookings)
+      .catch((err) => {
+        console.error('Failed to load bookings', err);
+        toast.error('Failed to load bookings');
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [accessToken, hasHydrated, router, user]);
+
 
   const filtered = activeTab === 'All' ? bookings : bookings.filter(b => b.status === activeTab);
 
@@ -34,6 +64,17 @@ export default function StudentBookingsPage() {
     setBookings(prev => prev.map(b => (b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b)));
     setShowCancelModal(false);
   };
+
+  if (!hasHydrated) {
+    return (
+      <StudentLayout>
+        <div className="flex justify-center items-center h-64">
+          <FaSpinner className="animate-spin text-4xl text-yellow-600" />
+        </div>
+      </StudentLayout>
+    );
+  }
+
 
   return (
     <StudentLayout>
@@ -76,6 +117,7 @@ export default function StudentBookingsPage() {
                     {statusIcons[booking.status]}
                     {booking.status === 'approved' && (
                       <>
+
                         <button
                           className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
                           onClick={() => (window.location.href = `/website/pages/messages?userId=${booking.instructor_id}`)}
@@ -88,6 +130,7 @@ export default function StudentBookingsPage() {
                         >
                           Reschedule
                         </button>
+
                       </>
                     )}
                     {booking.status === 'pending' && (
@@ -129,3 +172,4 @@ export default function StudentBookingsPage() {
     </StudentLayout>
   );
 }
+
