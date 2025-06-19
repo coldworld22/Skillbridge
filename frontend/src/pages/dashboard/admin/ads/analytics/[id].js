@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { fetchAdById } from "@/services/admin/adService";
+import { fetchAdById, fetchAdAnalytics } from "@/services/admin/adService";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, ResponsiveContainer
@@ -14,34 +14,12 @@ export default function AdAnalyticsPage() {
   const { id } = router.query;
   const [ad, setAd] = useState(null);
 
-  const generateMockAnalytics = () => ({
-    views: Math.floor(Math.random() * 300),
-    ctr: `${(Math.random() * 2).toFixed(1)}%`,
-    conversions: Math.floor(Math.random() * 50),
-    reach: Math.floor(Math.random() * 800),
-    devices: ["Mobile", "Desktop", "Tablet"].sort(() => 0.5 - Math.random()).slice(0, 2),
-    locationStats: [
-      { country: "Egypt", views: Math.floor(Math.random() * 150) },
-      { country: "Saudi Arabia", views: Math.floor(Math.random() * 150) },
-      { country: "UAE", views: Math.floor(Math.random() * 150) },
-    ],
-    analytics: [
-      { day: "Mon", views: Math.floor(Math.random() * 100) },
-      { day: "Tue", views: Math.floor(Math.random() * 100) },
-      { day: "Wed", views: Math.floor(Math.random() * 100) },
-      { day: "Thu", views: Math.floor(Math.random() * 100) },
-      { day: "Fri", views: Math.floor(Math.random() * 100) },
-      { day: "Sat", views: Math.floor(Math.random() * 100) },
-      { day: "Sun", views: Math.floor(Math.random() * 100) },
-    ],
-  });
-
   useEffect(() => {
     if (!id) return;
-    fetchAdById(id)
-      .then((data) => {
-        if (data) {
-          setAd({ ...data, ...generateMockAnalytics() });
+    Promise.all([fetchAdById(id), fetchAdAnalytics(id)])
+      .then(([adData, analytics]) => {
+        if (adData) {
+          setAd({ ...adData, ...(analytics || {}) });
         } else {
           setAd(null);
         }

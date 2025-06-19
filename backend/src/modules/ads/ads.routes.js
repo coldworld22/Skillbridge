@@ -15,6 +15,7 @@ router.post(
   controller.createAd
 );
 router.get("/", controller.getAds);
+router.get("/:id/analytics", controller.getAdAnalytics);
 router.get("/:id", controller.getAdById);
 router.put(
   "/:id",

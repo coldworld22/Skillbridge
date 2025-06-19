@@ -25,3 +25,7 @@ exports.updateAd = async (id, data) => {
 exports.deleteAd = (id) => {
   return db("ads").where({ id }).del();
 };
+
+exports.getAdAnalytics = async (adId) => {
+  return db("ad_analytics").where({ ad_id: adId }).first();
+};
