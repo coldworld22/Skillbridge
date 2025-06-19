@@ -11,6 +11,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import logo from "@/shared/assets/images/login/logo.png";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
+import PhoneInputField from "@/shared/components/auth/PhoneInputField";
 import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
@@ -102,7 +103,11 @@ export default function Register() {
         <InputField label="Email" type="email" placeholder="Enter your email" {...register("email")} />
         {errors.email && <p className="text-xs text-left w-full text-red-400">{errors.email.message}</p>}
 
-        <InputField label="Phone" type="text" placeholder="Enter your phone number" {...register("phone")} />
+        <PhoneInputField
+          label="Phone"
+          value={watch("phone")}
+          onChange={(val) => setValue("phone", `+${val}`)}
+        />
         {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
 
         <div className="w-full mb-3">
