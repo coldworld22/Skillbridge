@@ -1,13 +1,13 @@
 /**
- * @file instructor.controller.js
+ * Student controller
  */
 const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
 
 /**
- * @desc Get instructor profile
- * @route GET /api/users/instructor/profile
- * @access Instructor
+ * @desc Get student profile
+ * @route GET /api/users/student/profile
+ * @access Student
  */
 exports.getProfile = async (req, res) => {
   const userId = req.user.id;
@@ -15,58 +15,72 @@ exports.getProfile = async (req, res) => {
   const [user] = await db("users")
     .where({ id: userId })
     .select(
-      "id", "full_name", "email", "phone",
-      "gender", "date_of_birth", "avatar_url",
-      "is_email_verified", "is_phone_verified",
-      "profile_complete", "created_at", "updated_at"
+      "id",
+      "full_name",
+      "email",
+      "phone",
+      "gender",
+      "date_of_birth",
+      "avatar_url",
+      "is_email_verified",
+      "is_phone_verified",
+      "profile_complete",
+      "created_at",
+      "updated_at"
     );
 
-  const [instructor] = await db("instructor_profiles")
+  const [student] = await db("student_profiles")
     .where({ user_id: userId })
-    .select(
-      "expertise", "experience", "certifications",
-      "availability", "pricing", "demo_video_url"
-    );
+    .select("education_level", "topics", "learning_goals", "identity_doc_url");
 
   const socialLinks = await db("user_social_links")
     .where({ user_id: userId })
     .select("platform", "url");
 
-  res.json({ ...user, instructor, social_links: socialLinks });
+  res.json({ ...user, student, social_links: socialLinks });
 };
 
 /**
- * @desc Update instructor profile
- * @route PUT /api/users/instructor/profile
- * @access Instructor
+ * @desc Update student profile
+ * @route PUT /api/users/student/profile
+ * @access Student
  */
 exports.updateProfile = async (req, res) => {
   const userId = req.user.id;
   const {
-    full_name, phone, gender, date_of_birth,
-    expertise, experience, certifications,
-    availability, pricing, demo_video_url,
-    social_links
+    full_name,
+    phone,
+    gender,
+    date_of_birth,
+    education_level,
+    topics,
+    learning_goals,
+    social_links,
   } = req.body;
 
   await db("users")
     .where({ id: userId })
     .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
 
-  const exists = await db("instructor_profiles").where({ user_id: userId }).first();
+  const exists = await db("student_profiles").where({ user_id: userId }).first();
+  const studentData = { education_level, topics, learning_goals };
   if (exists) {
-    await db("instructor_profiles")
+    await db("student_profiles")
       .where({ user_id: userId })
-      .update({ expertise, experience, certifications, availability, pricing, demo_video_url });
+      .update(studentData);
   } else {
-    await db("instructor_profiles").insert({ user_id: userId, expertise, experience, certifications, availability, pricing, demo_video_url });
+    await db("student_profiles").insert({ user_id: userId, ...studentData });
   }
 
   await db("user_social_links").where({ user_id: userId }).del();
   if (Array.isArray(social_links)) {
     for (const link of social_links) {
       if (link.url) {
-        await db("user_social_links").insert({ user_id: userId, platform: link.platform, url: link.url });
+        await db("user_social_links").insert({
+          user_id: userId,
+          platform: link.platform,
+          url: link.url,
+        });
       }
     }
   }
@@ -75,16 +89,18 @@ exports.updateProfile = async (req, res) => {
 };
 
 /**
- * @desc Change instructor password
- * @route PATCH /api/users/instructor/change-password
- * @access Instructor
+ * @desc Change student password
+ * @route PATCH /api/users/student/change-password
+ * @access Student
  */
 exports.changePassword = async (req, res) => {
   const userId = req.user.id;
   const { currentPassword, newPassword } = req.body;
 
   if (!newPassword || newPassword.length < 8) {
-    return res.status(400).json({ message: "New password must be at least 8 characters." });
+    return res
+      .status(400)
+      .json({ message: "New password must be at least 8 characters." });
   }
 
   const [user] = await db("users").where({ id: userId }).select("password_hash");
