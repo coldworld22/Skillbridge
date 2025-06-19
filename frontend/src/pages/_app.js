@@ -7,6 +7,8 @@ import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";    
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
+import "@/styles/globals.css"; // or whatever your path is
+
 
            // ✅ Global styles
 

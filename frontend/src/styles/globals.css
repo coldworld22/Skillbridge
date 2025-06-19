@@ -123,6 +123,39 @@ input:-webkit-autofill:focus {
   background-color: rgba(229, 231, 235, 0.3);
 }
 
+/* Force dropdown to yellow background with white text */
+.react-tel-input .country-list {
+  background-color: #facc15 !important; /* Tailwind yellow-400 */
+  color: white !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  overflow-y: auto;
+}
+
+.react-tel-input .country-list .country {
+  padding: 8px 12px;
+  color: white !important;
+}
+
+.react-tel-input .country-list .country:hover,
+.react-tel-input .country-list .highlight {
+  background-color: #fde68a !important; /* Tailwind yellow-300 */
+  color: #1f2937 !important; /* Tailwind gray-800 */
+}
+
+.react-tel-input .selected-flag {
+  background-color: #374151 !important; /* Tailwind gray-700 */
+  border-right: 1px solid #4b5563; /* Tailwind gray-600 */
+}
+
+.react-tel-input input {
+  background-color: #374151 !important;
+  color: white !important;
+  border: 1px solid #4b5563 !important;
+  padding-left: 48px !important;
+  border-radius: 0.5rem !important;
+}
+
 
 
 
