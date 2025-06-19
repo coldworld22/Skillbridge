@@ -18,6 +18,10 @@ import { FaCog } from "react-icons/fa";
 import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 
 export default function Header() {
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const userRole = user?.role?.toLowerCase();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dark, setDark] = useState(false);
@@ -26,9 +30,6 @@ export default function Header() {
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const userRole = user?.role?.toLowerCase();
 
   const profileLink =
     userRole === "superadmin" || userRole === "admin"
