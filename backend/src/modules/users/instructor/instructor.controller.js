@@ -255,3 +255,46 @@ exports.changePassword = async (req, res) => {
 
     res.json({ message: "Password changed successfully." });
 };
+
+/**
+ * @desc Get instructor availability
+ * @route GET /api/users/instructor/availability
+ * @access Instructor
+ */
+exports.getAvailability = async (req, res) => {
+    const userId = req.user.id;
+    const [profile] = await db('instructor_profiles')
+        .where({ user_id: userId })
+        .select('availability');
+
+    let availability = [];
+    if (profile && profile.availability) {
+        try {
+            availability = JSON.parse(profile.availability);
+        } catch (_) {
+            availability = [];
+        }
+    }
+
+    res.json({ availability });
+};
+
+/**
+ * @desc Update instructor availability
+ * @route PATCH /api/users/instructor/availability
+ * @access Instructor
+ */
+exports.updateAvailability = async (req, res) => {
+    const userId = req.user.id;
+    const { availability } = req.body;
+
+    if (!Array.isArray(availability)) {
+        return res.status(400).json({ message: 'Availability must be an array' });
+    }
+
+    await db('instructor_profiles')
+        .where({ user_id: userId })
+        .update({ availability: JSON.stringify(availability) });
+
+    res.json({ message: 'Availability updated successfully' });
+};
