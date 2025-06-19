@@ -217,6 +217,18 @@ export default function InstructorProfileEdit() {
         expertise: formData.expertise,
         social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
       });
+
+      // ✅ Update auth store to mark profile complete
+      const update = useAuthStore.getState().setUser;
+      update({
+        ...user,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        profile_complete: true,
+      });
+
       toast.success("Profile updated successfully!");
       router.push("/dashboard/instructor");
     } catch (err) {
