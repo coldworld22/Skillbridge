@@ -1,37 +1,67 @@
 import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BookingModal from '@/components/admin/bookings/BookingModal';
-
-const mockBookings = [
-  {
-    id: 1,
-    student: { name: 'Ali Hassan', avatar: 'https://randomuser.me/api/portraits/men/11.jpg' },
-    instructor: { name: 'You', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-    classTitle: 'Python Basics',
-    date: '2025-05-10',
-    time: '10:00 AM',
-    duration: '1 hour',
-    status: 'Scheduled'
-  },
-  {
-    id: 2,
-    student: { name: 'Sara Alami', avatar: 'https://randomuser.me/api/portraits/women/21.jpg' },
-    instructor: { name: 'You', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-    classTitle: 'Data Science 101',
-    date: '2025-05-08',
-    time: '2:00 PM',
-    duration: '2 hours',
-    status: 'Completed'
-  }
-];
+import {
+  fetchInstructorBookings,
+  updateInstructorBooking,
+} from '@/services/instructor/bookingService';
 
 export default function InstructorBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
   useEffect(() => {
-    setBookings(mockBookings);
+    const loadBookings = async () => {
+      try {
+        const data = await fetchInstructorBookings();
+        const formatted = (data || []).map((b) => ({
+          id: b.id,
+          student: {
+            name: b.student_name || b.student_id,
+            avatar:
+              b.student_avatar_url ||
+              'https://via.placeholder.com/40x40?text=S',
+          },
+          instructor: {
+            name: 'You',
+            avatar:
+              b.instructor_avatar_url ||
+              'https://via.placeholder.com/40x40?text=I',
+          },
+          classTitle: b.class_title || '—',
+          date: b.start_time
+            ? new Date(b.start_time).toISOString().split('T')[0]
+            : '',
+          time: b.start_time
+            ? new Date(b.start_time).toISOString().split('T')[1].slice(0, 5)
+            : '',
+          duration:
+            b.start_time && b.end_time
+              ? `${Math.round(
+                  (new Date(b.end_time) - new Date(b.start_time)) / 60000
+                )} mins`
+              : '',
+          status: b.status,
+          notes: b.notes,
+        }));
+        setBookings(formatted);
+      } catch (err) {
+        console.error('Failed to load bookings', err);
+      }
+    };
+    loadBookings();
   }, []);
+
+  const handleCancel = async (id, reason) => {
+    try {
+      await updateInstructorBooking(id, { status: 'cancelled', notes: reason });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: 'cancelled' } : b))
+      );
+    } catch (err) {
+      console.error('Cancel booking failed', err);
+    }
+  };
 
   return (
     <InstructorLayout>
@@ -78,6 +108,7 @@ export default function InstructorBookingsPage() {
           <BookingModal
             booking={selectedBooking}
             onClose={() => setSelectedBooking(null)}
+            onCancel={handleCancel}
           />
         )}
       </div>
