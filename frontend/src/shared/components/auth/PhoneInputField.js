@@ -12,6 +12,7 @@ export default function PhoneInputField({ label, value, onChange, ...rest }) {
         inputClass="!bg-gray-700 !text-white !w-full !py-2 !pl-12 !pr-3 !border !rounded-lg"
         buttonClass="!bg-gray-700 border-r !border-gray-600"
         containerClass="!w-full"
+        dropdownStyle={{ backgroundColor: "#374151", color: "#fff" }}
         {...rest}
       />
     </div>
