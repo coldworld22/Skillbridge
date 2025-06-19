@@ -134,7 +134,7 @@ export default function InstructorProfilePage() {
         {/* Booking Modal */}
         {showBooking && (
           <BookingRequestModal
-            instructorName={instructor.name}
+            instructor={instructor}
             onClose={() => setShowBooking(false)}
           />
         )}

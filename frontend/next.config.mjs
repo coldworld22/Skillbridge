@@ -14,6 +14,12 @@ const nextConfig = {
         port: '5000',
         pathname: '/api/uploads/**', // Allow images served via API
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5001',
+        pathname: '/api/uploads/**', // Development server
+      },
     ],
   },
   eslint: {
