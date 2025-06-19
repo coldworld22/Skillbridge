@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // ✅ Toast notifications
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
+import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";    
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
