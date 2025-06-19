@@ -5,12 +5,22 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { Dialog } from '@headlessui/react';
+import useAuthStore from '@/store/auth/authStore';
+import { toggleInstructorStatus } from '@/services/instructor/instructorService';
+import { toast } from 'react-toastify';
 
 export default function InstructorAvailabilityPage() {
   const [availability, setAvailability] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('Available');
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const [available, setAvailable] = useState(user?.is_online ?? false);
+
+  useEffect(() => {
+    setAvailable(user?.is_online ?? false);
+  }, [user]);
 
   const categoryColors = {
     'Office Hour': '#34d399',
@@ -72,6 +82,24 @@ export default function InstructorAvailabilityPage() {
     <InstructorLayout>
       <section className="py-10 px-4">
         <h1 className="text-2xl font-bold mb-6">Set Your Availability</h1>
+        <div className="mb-6">
+          <button
+            onClick={async () => {
+              const newStatus = !available;
+              try {
+                await toggleInstructorStatus(newStatus);
+                setAvailable(newStatus);
+                setUser({ ...user, is_online: newStatus });
+                toast.success(newStatus ? 'You are now available' : 'You are now unavailable');
+              } catch (err) {
+                toast.error('Failed to update availability');
+              }
+            }}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${available ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            {available ? 'Available' : 'Unavailable'}
+          </button>
+        </div>
 
         <div className="bg-white border rounded-xl shadow p-4">
           <FullCalendar
