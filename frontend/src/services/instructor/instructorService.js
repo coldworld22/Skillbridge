@@ -76,3 +76,14 @@ export const getInstructorStatus = async () => {
   const res = await api.get("/users/instructor/profile/status");
   return res.data;
 };
+
+// 🔹 Availability endpoints
+export const getInstructorAvailability = async () => {
+  const res = await api.get("/users/instructor/availability");
+  return res.data;
+};
+
+export const updateInstructorAvailability = async (availability) => {
+  const res = await api.patch("/users/instructor/availability", { availability });
+  return res.data;
+};

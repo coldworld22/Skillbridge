@@ -6,7 +6,11 @@ import interactionPlugin from '@fullcalendar/interaction';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { Dialog } from '@headlessui/react';
 import useAuthStore from '@/store/auth/authStore';
-import { toggleInstructorStatus } from '@/services/instructor/instructorService';
+import {
+  toggleInstructorStatus,
+  getInstructorAvailability,
+  updateInstructorAvailability,
+} from '@/services/instructor/instructorService';
 import { toast } from 'react-toastify';
 
 export default function InstructorAvailabilityPage() {
@@ -21,6 +25,20 @@ export default function InstructorAvailabilityPage() {
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
   }, [user]);
+
+  useEffect(() => {
+    async function fetchAvailability() {
+      try {
+        const res = await getInstructorAvailability();
+        if (Array.isArray(res.availability)) {
+          setAvailability(res.availability);
+        }
+      } catch (err) {
+        console.error('Failed to load availability', err);
+      }
+    }
+    fetchAvailability();
+  }, []);
 
   const categoryColors = {
     'Office Hour': '#34d399',
@@ -118,6 +136,21 @@ export default function InstructorAvailabilityPage() {
             slotMinTime="08:00:00"
             slotMaxTime="20:00:00"
           />
+        </div>
+        <div className="mt-4">
+          <button
+            onClick={async () => {
+              try {
+                await updateInstructorAvailability(availability);
+                toast.success('Availability saved');
+              } catch (err) {
+                toast.error('Failed to save availability');
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Save Availability
+          </button>
         </div>
 
         {/* Legend */}

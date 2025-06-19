@@ -101,6 +101,20 @@ router.delete("/:id/demo", verifyToken, isInstructor, controller.deleteDemoVideo
  */
 router.patch("/status", verifyToken, isInstructor, controller.toggleStatus);
 
+// Availability management
+router.get(
+  "/availability",
+  verifyToken,
+  isInstructor,
+  controller.getAvailability
+);
+router.patch(
+  "/availability",
+  verifyToken,
+  isInstructor,
+  controller.updateAvailability
+);
+
 
 /**
  * @desc Upload demo video
