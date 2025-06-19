@@ -38,6 +38,36 @@ exports.updateBooking = catchAsync(async (req, res) => {
   sendSuccess(res, booking, "Booking updated");
 });
 
+// Student: create a booking for themselves
+exports.createBookingAsStudent = catchAsync(async (req, res) => {
+  const { instructor_id, start_time, end_time, notes } = req.body;
+  if (!instructor_id || !start_time || !end_time) {
+    throw new AppError("Missing required fields", 400);
+  }
+  const booking = await service.create({
+    id: uuidv4(),
+    student_id: req.user.id,
+    instructor_id,
+    start_time,
+    end_time,
+    notes,
+    status: "pending",
+  });
+  sendSuccess(res, booking, "Booking created");
+});
+
+// Get bookings for logged in student
+exports.getStudentBookings = catchAsync(async (req, res) => {
+  const data = await service.getByStudent(req.user.id);
+  sendSuccess(res, data);
+});
+
+// Get bookings for logged in instructor
+exports.getInstructorBookings = catchAsync(async (req, res) => {
+  const data = await service.getByInstructor(req.user.id);
+  sendSuccess(res, data);
+});
+
 exports.deleteBooking = catchAsync(async (req, res) => {
   await service.delete(req.params.id);
   sendSuccess(res, null, "Booking deleted");

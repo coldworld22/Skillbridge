@@ -14,6 +14,8 @@ const userRoutes = require("./modules/users/user.routes");
 const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP routes
 const certificatePublicRoutes = require("./modules/users/tutorials/certificate/certificatePublic.routes");
 const adminBookingRoutes = require("./modules/bookings/bookings.routes");
+const studentBookingRoutes = require("./modules/bookings/student.routes");
+const instructorBookingRoutes = require("./modules/bookings/instructor.routes");
 const adminCommunityRoutes = require("./modules/community/admin/admin.routes");
 const roleRoutes = require("./modules/roles/roles.routes");
 const planRoutes = require("./modules/plans/plans.routes");
@@ -76,6 +78,8 @@ app.use("/api/users", userRoutes);     // 👤 Users: profile, avatar, demo vide
 app.use("/api/verify", verifyRoutes);  // ✅ OTP: send/confirm email/phone
 app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificate verification
 app.use("/api/bookings/admin", adminBookingRoutes); // 📅 Admin bookings management
+app.use("/api/bookings/student", studentBookingRoutes); // 🎒 Student bookings
+app.use("/api/bookings/instructor", instructorBookingRoutes); // 👩‍🏫 Instructor bookings
 app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
 app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
 app.use("/api/plans", planRoutes); // 💳 Subscription plans
