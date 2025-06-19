@@ -213,6 +213,17 @@ export default function StudentProfileEdit() {
         learning_goals: formData.learning_goals,
         social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
       });
+
+      // ✅ Update auth store so alerts disappear immediately
+      setUser({
+        ...user,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        profile_complete: true,
+      });
+
       toast.success("Profile updated successfully!");
       router.push("/dashboard/student");
     } catch (err) {
