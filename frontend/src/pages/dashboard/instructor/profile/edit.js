@@ -33,6 +33,7 @@ const instructorProfileSchema = z.object({
     message: "Invalid date format",
   }),
   experience: z.number().min(0, "Experience must be a positive number"),
+  availability: z.boolean().optional(),
   pricing_amount: z.number().min(0, "Amount must be positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
@@ -68,6 +69,7 @@ export default function InstructorProfileEdit() {
     gender: "male",
     date_of_birth: "",
     experience: 0,
+    availability: false,
     pricing_amount: "",
     pricing_currency: "USD",
     expertise: [],
@@ -111,6 +113,8 @@ export default function InstructorProfileEdit() {
           }
         }
 
+        const availability = instructor?.availability === "available";
+
         setFormData(prev => ({
           ...prev,
           full_name,
@@ -118,6 +122,7 @@ export default function InstructorProfileEdit() {
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           experience: instructor?.experience ? parseInt(instructor.experience) : 0,
+          availability,
           pricing_amount,
           pricing_currency,
           expertise: instructor?.expertise || [],
@@ -213,6 +218,7 @@ export default function InstructorProfileEdit() {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         experience: formData.experience,
+        availability: formData.availability ? "available" : "unavailable",
         pricing,
         expertise: formData.expertise,
         social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
@@ -468,12 +474,24 @@ export default function InstructorProfileEdit() {
               />
               {errors.experience && <p className="text-sm text-red-600 mt-1">{errors.experience}</p>}
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                <FaCalendarAlt className="text-gray-500" /> Availability
+              </label>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, availability: !prev.availability }))}
+                className={`px-4 py-2 rounded-md ${formData.availability ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+              >
+                {formData.availability ? 'Available' : 'Unavailable'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaDollarSign className="text-gray-500" /> Pricing
+                <FaDollarSign className="text-gray-500" /> Pricing (per hour)
               </label>
               <div className="flex gap-2">
                 <input
@@ -484,7 +502,7 @@ export default function InstructorProfileEdit() {
                   value={formData.pricing_amount}
                   onChange={(e) => setFormData({ ...formData, pricing_amount: parseFloat(e.target.value) || "" })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  placeholder="Amount"
+                  placeholder="Amount (e.g., 100)"
                 />
                 <select
                   name="pricing_currency"
@@ -497,6 +515,7 @@ export default function InstructorProfileEdit() {
                   ))}
                 </select>
               </div>
+              <p className="text-sm text-gray-500 mt-1">e.g. 100 USD per hour</p>
             </div>
           </div>
 
