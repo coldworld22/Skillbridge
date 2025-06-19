@@ -12,6 +12,12 @@ import {
 } from "react-icons/fa";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import {
+  sendEmailOtp,
+  sendPhoneOtp,
+  confirmEmailOtp,
+  confirmPhoneOtp,
+} from "@/services/verificationService";
 
 const Verification = ({ nextStep, prevStep }) => {
   const [emailVerified, setEmailVerified] = useState(false);
@@ -24,17 +30,23 @@ const Verification = ({ nextStep, prevStep }) => {
   const [identityPreview, setIdentityPreview] = useState(null);
   const [isPDF, setIsPDF] = useState(false);
 
-  const sendOtp = (type) => {
-    setOtpSent((prev) => ({ ...prev, [type]: true }));
+  const sendOtp = async (type) => {
+    try {
+      if (type === "email") await sendEmailOtp();
+      else await sendPhoneOtp();
+      setOtpSent((prev) => ({ ...prev, [type]: true }));
+    } catch (err) {
+      alert("Failed to send OTP");
+    }
   };
 
-  const verifyOtp = (type) => {
+  const verifyOtp = async (type) => {
     const enteredOTP = type === "email" ? emailOTP : phoneOTP;
-    const correctOTP = "123456";
-
-    if (enteredOTP === correctOTP) {
+    try {
+      if (type === "email") await confirmEmailOtp(enteredOTP);
+      else await confirmPhoneOtp(enteredOTP);
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
-    } else {
+    } catch (err) {
       alert("Invalid OTP. Please try again.");
     }
   };
