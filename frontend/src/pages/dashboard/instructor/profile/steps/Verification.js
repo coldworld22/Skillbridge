@@ -1,8 +1,24 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight, FaUpload, FaCheckCircle, FaEnvelope, FaPhone, FaCropAlt, FaTrash, FaFilePdf } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaUpload,
+  FaCheckCircle,
+  FaEnvelope,
+  FaPhone,
+  FaCropAlt,
+  FaTrash,
+  FaFilePdf,
+} from "react-icons/fa";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage"; // ✅ Import the cropping function
+import {
+  sendEmailOtp,
+  sendPhoneOtp,
+  confirmEmailOtp,
+  confirmPhoneOtp,
+} from "@/services/verificationService";
 
 const Verification = ({ onNext, onBack }) => {
   const [emailVerified, setEmailVerified] = useState(false);
@@ -22,22 +38,28 @@ const Verification = ({ onNext, onBack }) => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  // ✅ Mock function to simulate sending OTP (Replace with API call)
-  const sendOtp = (type) => {
-    setOtpSent((prev) => ({ ...prev, [type]: true }));
-    setShowOtpModal(type);
+  // ✅ Send OTP via API
+  const sendOtp = async (type) => {
+    try {
+      if (type === "email") await sendEmailOtp();
+      else await sendPhoneOtp();
+      setOtpSent((prev) => ({ ...prev, [type]: true }));
+      setShowOtpModal(type);
+    } catch (err) {
+      alert("Failed to send OTP");
+    }
   };
 
-  // ✅ Handle OTP verification
-  const verifyOtp = (type) => {
+  // ✅ Handle OTP verification via API
+  const verifyOtp = async (type) => {
     const enteredOTP = type === "email" ? emailOTP : phoneOTP;
-    const correctOTP = "123456"; // Mock OTP (replace with real validation)
-
-    if (enteredOTP === correctOTP) {
+    try {
+      if (type === "email") await confirmEmailOtp(enteredOTP);
+      else await confirmPhoneOtp(enteredOTP);
       if (type === "email") setEmailVerified(true);
       if (type === "phone") setPhoneVerified(true);
       setShowOtpModal(null);
-    } else {
+    } catch (err) {
       alert("Invalid OTP. Please try again.");
     }
   };
