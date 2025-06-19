@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
 import { fetchStudentBookings, updateStudentBooking } from '@/services/student/bookingService';
 import useAuthStore from '@/store/auth/authStore';
 
+
 export default function StudentBookingsPage() {
   const router = useRouter();
   const { accessToken, user, hasHydrated } = useAuthStore();
@@ -47,7 +48,6 @@ export default function StudentBookingsPage() {
       .finally(() => setLoading(false));
   }, [accessToken, hasHydrated, router, user]);
 
-
   const filtered = activeTab === 'All' ? bookings : bookings.filter(b => b.status === activeTab);
 
   const statusIcons = {
@@ -65,6 +65,7 @@ export default function StudentBookingsPage() {
     setShowCancelModal(false);
   };
 
+
   if (!hasHydrated) {
     return (
       <StudentLayout>
@@ -75,11 +76,11 @@ export default function StudentBookingsPage() {
     );
   }
 
-
   return (
     <StudentLayout>
       <section className="py-10 px-4 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">My Bookings</h1>
+
 
         <div className="flex gap-3 mb-6">
           {['All', 'pending', 'approved', 'completed', 'cancelled'].map(tab => (
@@ -123,6 +124,7 @@ export default function StudentBookingsPage() {
                           onClick={() => (window.location.href = `/website/pages/messages?userId=${booking.instructor_id}`)}
                         >
                           <FaComments className="inline mr-1" /> Chat
+
                         </button>
                         <button
                           className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500 text-sm"
@@ -130,7 +132,6 @@ export default function StudentBookingsPage() {
                         >
                           Reschedule
                         </button>
-
                       </>
                     )}
                     {booking.status === 'pending' && (
@@ -164,6 +165,7 @@ export default function StudentBookingsPage() {
                   <button onClick={() => setShowCancelModal(false)} className="px-4 py-2 text-sm border rounded hover:bg-gray-100">Back</button>
                   <button onClick={handleCancel} className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600">Confirm Cancel</button>
                 </div>
+
               </Dialog.Panel>
             </div>
           </Dialog>
