@@ -98,7 +98,7 @@ export default function InstructorBooking() {
 
   const handleRequest = async (instructor) => {
 
-    if (!user || user.role !== "student") {
+    if (!user || user.role?.toLowerCase() !== "student") {
       router.push("/auth/login");
       return;
     }
