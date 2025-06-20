@@ -75,7 +75,10 @@ export default function InstructorBooking() {
       (i) =>
         (!onlyAvailable || i.availableNow) &&
         (!showFavoritesOnly || favorites.includes(i.id)) &&
-        (selectedCategory === "All" || i.expertise === selectedCategory) &&
+        (selectedCategory === "All" ||
+          (Array.isArray(i.expertise)
+            ? i.expertise.includes(selectedCategory)
+            : i.expertise === selectedCategory)) &&
         i.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
@@ -181,8 +184,11 @@ export default function InstructorBooking() {
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {filtered.map((i) => (
-          <motion.div
+        {filtered.length === 0 ? (
+          <p className="col-span-full text-gray-400">No instructors found.</p>
+        ) : (
+          filtered.map((i) => (
+            <motion.div
             key={i.id}
             whileHover={{ scale: 1.05 }}
             className="p-6 bg-gray-800 rounded-lg shadow-lg text-center flex flex-col items-center relative"
@@ -236,8 +242,9 @@ export default function InstructorBooking() {
                 <FaHeart />
               </button>
             </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))
+        )}
       </div>
 
       {/* Request Modal */}

@@ -50,9 +50,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 // 🌐 Allow frontend to communicate with backend (CORS)
+// Allow overriding the allowed origin via FRONTEND_URL env var. This is useful
+// when the frontend runs on a different port (e.g. 3001 in Docker).
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 app.use(
   cors({
-    origin: "http://localhost:3000", // ✅ Replace with your frontend domain
+    origin: FRONTEND_URL,
     credentials: true,
   })
 );
