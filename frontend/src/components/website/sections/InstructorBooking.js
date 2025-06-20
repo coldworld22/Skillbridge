@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
+import { toast } from "react-toastify";
 import { fetchPublicInstructors } from "@/services/public/instructorService";
 import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
 
@@ -96,10 +97,8 @@ export default function InstructorBooking() {
   };
 
   const handleRequest = async (instructor) => {
-
-
     if (!user || user.role?.toLowerCase() !== "student") {
-      router.push("/auth/login");
+      toast.info("Please login as a student or create a student account to proceed.");
       return;
     }
     setBookingInstructor(instructor);
