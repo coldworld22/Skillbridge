@@ -25,6 +25,16 @@ export default function BookingRequestModal({ instructor, onClose }) {
       .catch(() => setAvailability([]));
   }, [instructor]);
 
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
   const isAvailable = (start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
@@ -68,7 +78,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
