@@ -21,7 +21,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
     setStartTime(start.toISOString().slice(0, 16));
     setEndTime(end.toISOString().slice(0, 16));
     fetchInstructorAvailability(instructor.id)
-      .then((slots) => setAvailability(slots))
+      .then(setAvailability)
       .catch(() => setAvailability([]));
   }, [instructor]);
 
@@ -56,46 +56,48 @@ export default function BookingRequestModal({ instructor, onClose }) {
     try {
       await createStudentBooking({
         instructor_id: instructor.id,
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
+        start_time: startIso,
+        end_time: endIso,
         notes: `${type} with ${instructor.name}`,
       });
       setSubmitted(true);
     } catch (err) {
       console.error("Booking request failed", err);
+      setError("Something went wrong. Please try again.");
     }
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-60 z-50">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white p-6 rounded-xl max-w-md w-full text-center"
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white w-full max-w-md mx-4 rounded-2xl shadow-lg p-6 md:p-8 relative"
       >
         {submitted ? (
-          <>
-            <h3 className="text-xl font-bold mb-3">Request Sent!</h3>
-            <p className="text-gray-700">
-              Lesson request sent to <strong>{instructor?.name}</strong>.
+          <div className="text-center">
+            <h3 className="text-2xl font-semibold text-green-600 mb-2">Request Sent!</h3>
+            <p className="text-gray-700 mb-4">
+              Your lesson request has been sent to <strong>{instructor?.name}</strong>.
             </p>
             <button
               onClick={onClose}
-              className="mt-4 bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 flex items-center gap-2"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg"
             >
               <FaCalendarCheck /> Close
             </button>
-          </>
+          </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="text-xl font-bold">Request Lesson</h3>
-            {error && (
-              <p className="text-red-600 text-sm" data-testid="error">{error}</p>
-            )}
-            <div className="text-left">
-              <label className="block mb-1 font-medium">Type</label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <h3 className="text-2xl font-bold text-gray-800 text-center">Request Lesson</h3>
+
+            {error && <p className="text-red-600 text-sm">{error}</p>}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
               <select
-                className="w-full border p-2 rounded"
+                className="w-full border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
@@ -103,37 +105,40 @@ export default function BookingRequestModal({ instructor, onClose }) {
                 <option>Online Class</option>
               </select>
             </div>
-            <div className="text-left">
-              <label className="block mb-1 font-medium">Start Time</label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
               <input
                 type="datetime-local"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border p-2 rounded"
                 required
+                className="w-full border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
-            <div className="text-left">
-              <label className="block mb-1 font-medium">End Time</label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
               <input
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full border p-2 rounded"
                 required
+                className="w-full border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div className="flex justify-between gap-2 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border rounded"
+                className="w-1/2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-yellow-500 text-black rounded hover:bg-yellow-600 flex items-center gap-2"
+                className="w-1/2 px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 flex items-center justify-center gap-2"
               >
                 <FaCalendarCheck /> Send Request
               </button>
