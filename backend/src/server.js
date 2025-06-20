@@ -24,6 +24,7 @@ const paymentMethodRoutes = require("./modules/paymentMethods/paymentMethods.rou
 const paymentConfigRoutes = require("./modules/paymentConfig/paymentConfig.routes");
 const payoutRoutes = require("./modules/payouts/payouts.routes");
 const adsRoutes = require("./modules/ads/ads.routes");
+const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -88,6 +89,7 @@ app.use("/api/payment-methods/admin", paymentMethodRoutes); // 💳 Payment meth
 app.use("/api/payments/config", paymentConfigRoutes); // ⚙️ Payment settings
 app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
 app.use("/api/ads", adsRoutes); // 📢 Advertisements
+app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {

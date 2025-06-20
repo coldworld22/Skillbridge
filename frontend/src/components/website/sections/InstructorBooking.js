@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { createStudentBooking } from "@/services/student/bookingService";
+import { fetchPublicInstructors } from "@/services/public/instructorService";
+
 import { motion } from "framer-motion";
 import {
   FaChalkboardTeacher,
@@ -15,48 +17,18 @@ import {
 } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 
-const instructors = [
-  {
-    id: 1,
-    name: "Dr. John Doe",
-    expertise: "Data Science",
-    experience: "10+ Years",
-    rating: 4.9,
-    avatar: "https://www.iwcf.org/wp-content/uploads/2018/12/Instructor-top-of-page-image-new.jpg",
-    tags: ["Beginner Friendly", "Python"],
-    availableNow: true,
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    expertise: "Web Development",
-    experience: "8 Years",
-    rating: 4.7,
-    avatar: "https://media.istockphoto.com/id/1468138682/photo/happy-elementary-teacher-in-front-of-his-students-in-the-classroom.jpg?s=612x612&w=0&k=20&c=E6m0JNBcrQBkPl0dr5CcTrYZiUm6fwMmgaiQfR8uW7s=",
-    tags: ["JavaScript", "React"],
-    availableNow: false,
-    verified: false,
-  },
-  {
-    id: 3,
-    name: "Ayman Osman",
-    expertise: "teacher ",
-    experience: "8 Years",
-    rating: 4.7,
-    avatar: "https://media.istockphoto.com/id/1328479378/photo/angry-math-teacher-showing-middle-finger.jpg?s=612x612&w=0&k=20&c=UPO13dXGZJ8lA9QKjwoZcGDR4Y-4OtvDJJlN-6IpKwM=",
-    tags: ["JavaScript", "React"],
-    availableNow: true,
-    verified: false,
-  },
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
-const categories = ["All", "Data Science", "Web Development"];
+const defaultCategories = ["All"];
 const sortOptions = ["Highest Rated", "Most Experienced"];
 
 export default function InstructorBooking() {
   const router = useRouter();
   const { user } = useAuthStore();
+
+  const [instructors, setInstructors] = useState([]);
+  const [categories, setCategories] = useState(defaultCategories);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [requestedInstructor, setRequestedInstructor] = useState(null);
@@ -65,6 +37,38 @@ export default function InstructorBooking() {
   const [sortBy, setSortBy] = useState("Highest Rated");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchPublicInstructors();
+        const mapped = data.map((ins) => ({
+          ...ins,
+          name: ins.full_name,
+          avatar: ins.avatar_url
+            ? `${API_BASE_URL}${ins.avatar_url}`
+            : "/images/profile/user.png",
+          rating: ins.rating || 5,
+          tags: Array.isArray(ins.expertise) ? ins.expertise : [],
+          availableNow: !!ins.is_online,
+          verified: ins.status === "active",
+        }));
+        setInstructors(mapped);
+        const cats = new Set(defaultCategories);
+        mapped.forEach((ins) => {
+          if (Array.isArray(ins.expertise)) {
+            ins.expertise.forEach((e) => cats.add(e));
+          } else if (ins.expertise) {
+            cats.add(ins.expertise);
+          }
+        });
+        setCategories(Array.from(cats));
+      } catch (err) {
+        console.error("Failed to load instructors", err);
+      }
+    };
+    load();
+  }, []);
 
   const filtered = instructors
     .filter(
@@ -90,7 +94,12 @@ export default function InstructorBooking() {
   };
 
   const handleRequest = async (instructor) => {
-    if (!user) return;
+
+    if (!user || user.role !== "student") {
+      router.push("/auth/login");
+      return;
+    }
+
     const start = new Date();
     const end = new Date(start.getTime() + 60 * 60 * 1000);
     try {
