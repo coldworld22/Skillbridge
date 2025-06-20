@@ -32,9 +32,18 @@ export default function InstructorBookingsPage() {
           date: b.start_time
             ? new Date(b.start_time).toISOString().split('T')[0]
             : '',
-          time: b.start_time
-            ? new Date(b.start_time).toISOString().split('T')[1].slice(0, 5)
-            : '',
+          time:
+            b.start_time && b.end_time
+              ? `${new Date(b.start_time)
+                  .toISOString()
+                  .split('T')[1]
+                  .slice(0, 5)} - ${new Date(b.end_time)
+                  .toISOString()
+                  .split('T')[1]
+                  .slice(0, 5)}`
+              : b.start_time
+              ? new Date(b.start_time).toISOString().split('T')[1].slice(0, 5)
+              : '',
           duration:
             b.start_time && b.end_time
               ? `${Math.round(

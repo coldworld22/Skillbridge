@@ -123,6 +123,12 @@ export default function StudentBookingsPage() {
                     </h3>
                     <p className="text-sm text-gray-500">
                       {new Date(booking.start_time).toLocaleString(undefined, { timeZoneName: 'short' })}
+                      {booking.end_time &&
+                        ` - ${new Date(booking.end_time).toLocaleTimeString(undefined, {
+                          timeZoneName: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}`}
                     </p>
                   </div>
                 </div>
