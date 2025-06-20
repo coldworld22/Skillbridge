@@ -45,7 +45,7 @@ export default function InstructorProfilePage() {
       toast.info(
         "Please login as a student or create a student account to proceed."
       );
-      router.push("/auth/login");
+
       return;
     }
     setShowBooking(true);

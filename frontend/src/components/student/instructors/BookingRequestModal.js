@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaCalendarCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { useRouter } from "next/router";
+
 import useAuthStore from "@/store/auth/authStore";
 
 import {
@@ -13,7 +13,7 @@ import {
 import { fetchInstructorAvailability } from "@/services/public/instructorService";
 
 export default function BookingRequestModal({ instructor, onClose }) {
-  const router = useRouter();
+
   const { user } = useAuthStore();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -23,7 +23,6 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const [error, setError] = useState("");
   const [hasPending, setHasPending] = useState(false);
 
-
   // Ensure only logged in students can book
   useEffect(() => {
     if (!user || user.role?.toLowerCase() !== "student") {
@@ -31,9 +30,11 @@ export default function BookingRequestModal({ instructor, onClose }) {
         "Please login as a student or create a student account to proceed."
       );
       onClose();
-      router.push("/auth/login");
+
     }
-  }, [user, router, onClose]);
+  }, [user, onClose]);
+
+    
 
   useEffect(() => {
     if (!instructor) return;
