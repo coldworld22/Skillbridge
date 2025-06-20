@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaCalendarCheck } from "react-icons/fa";
-import { createStudentBooking } from "@/services/student/bookingService";
+import { toast } from "react-toastify";
+import {
+  createStudentBooking,
+  fetchStudentBookings,
+} from "@/services/student/bookingService";
 import { fetchInstructorAvailability } from "@/services/public/instructorService";
 
 export default function BookingRequestModal({ instructor, onClose }) {
@@ -12,6 +16,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const [type, setType] = useState("Tutorial");
   const [availability, setAvailability] = useState([]);
   const [error, setError] = useState("");
+  const [hasPending, setHasPending] = useState(false);
 
   useEffect(() => {
     if (!instructor) return;
@@ -23,6 +28,19 @@ export default function BookingRequestModal({ instructor, onClose }) {
     fetchInstructorAvailability(instructor.id)
       .then(setAvailability)
       .catch(() => setAvailability([]));
+    fetchStudentBookings()
+      .then((bookings) => {
+        const pending = bookings.find(
+          (b) => b.instructor_id === instructor.id && b.status === "pending"
+        );
+        if (pending) {
+          setHasPending(true);
+          toast.info(
+            "You already have a pending request with this instructor."
+          );
+        }
+      })
+      .catch(() => {});
   }, [instructor]);
 
   useEffect(() => {
@@ -57,6 +75,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (hasPending) {
+      toast.info(
+        "You already have a pending request with this instructor."
+      );
+      return;
+    }
     const startIso = new Date(startTime).toISOString();
     const endIso = new Date(endTime).toISOString();
     if (!isAvailable(startIso, endIso)) {
@@ -106,6 +130,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <h3 className="text-2xl font-bold text-gray-800 text-center">Request Lesson</h3>
+
+            {hasPending && (
+              <p className="text-blue-600 text-sm text-center">
+                You already have a pending request with this instructor.
+              </p>
+            )}
 
             {error && <p className="text-red-600 text-sm">{error}</p>}
 
