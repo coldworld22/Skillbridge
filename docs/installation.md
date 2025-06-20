@@ -22,6 +22,7 @@ Follow these steps to run SkillBridge on your local machine.
    ```bash
    cp backend/.env.example backend/.env
    # edit backend/.env and set your secrets
+   # Optionally change FRONTEND_URL if your frontend runs on another port
    ```
 
 3. (Optional) Install dependencies for manual development:
