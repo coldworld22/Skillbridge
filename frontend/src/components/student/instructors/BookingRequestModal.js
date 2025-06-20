@@ -2,16 +2,36 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaCalendarCheck } from "react-icons/fa";
-import { createStudentBooking } from "@/services/student/bookingService";
+import { toast } from "react-toastify";
+import { useRouter } from "next/router";
+import useAuthStore from "@/store/auth/authStore";
+import {
+  createStudentBooking,
+  fetchStudentBookings,
+} from "@/services/student/bookingService";
 import { fetchInstructorAvailability } from "@/services/public/instructorService";
 
 export default function BookingRequestModal({ instructor, onClose }) {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [type, setType] = useState("Tutorial");
   const [availability, setAvailability] = useState([]);
   const [error, setError] = useState("");
+  const [hasPending, setHasPending] = useState(false);
+
+  // Ensure only logged in students can book
+  useEffect(() => {
+    if (!user || user.role?.toLowerCase() !== "student") {
+      toast.info(
+        "Please login as a student or create a student account to proceed."
+      );
+      onClose();
+      router.push("/auth/login");
+    }
+  }, [user, router, onClose]);
 
   useEffect(() => {
     if (!instructor) return;
@@ -23,14 +43,40 @@ export default function BookingRequestModal({ instructor, onClose }) {
     fetchInstructorAvailability(instructor.id)
       .then(setAvailability)
       .catch(() => setAvailability([]));
+    fetchStudentBookings()
+      .then((bookings) => {
+        const pending = bookings.find(
+          (b) => b.instructor_id === instructor.id && b.status === "pending"
+        );
+        if (pending) {
+          setHasPending(true);
+          toast.info(
+            "You already have a pending request with this instructor."
+          );
+        }
+      })
+      .catch(() => {});
   }, [instructor]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
 
   const isAvailable = (start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
+    if (startDate.toDateString() !== endDate.toDateString()) return false;
     return availability.some((slot) => {
       if (!slot.daysOfWeek) return false;
-      const dayMatch = slot.daysOfWeek.includes(startDate.getDay());
+      const dayMatch =
+        slot.daysOfWeek.includes(startDate.getDay()) &&
+        slot.daysOfWeek.includes(endDate.getDay());
       const startRecur = slot.startRecur ? new Date(slot.startRecur) : null;
       if (startRecur && startDate < startRecur) return false;
       if (!dayMatch) return false;
@@ -47,6 +93,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (hasPending) {
+      toast.info(
+        "You already have a pending request with this instructor."
+      );
+      return;
+    }
     const startIso = new Date(startTime).toISOString();
     const endIso = new Date(endTime).toISOString();
     if (!isAvailable(startIso, endIso)) {
@@ -68,7 +120,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -91,6 +148,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <h3 className="text-2xl font-bold text-gray-800 text-center">Request Lesson</h3>
+
+            {hasPending && (
+              <p className="text-blue-600 text-sm text-center">
+                You already have a pending request with this instructor.
+              </p>
+            )}
 
             {error && <p className="text-red-600 text-sm">{error}</p>}
 

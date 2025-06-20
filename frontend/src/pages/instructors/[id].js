@@ -1,5 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import useAuthStore from "@/store/auth/authStore";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   Star,
@@ -36,6 +38,18 @@ export default function InstructorProfilePage() {
   const { id } = router.query;
   const [instructor, setInstructor] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
+  const { user } = useAuthStore();
+
+  const openBooking = () => {
+    if (!user || user.role?.toLowerCase() !== "student") {
+      toast.info(
+        "Please login as a student or create a student account to proceed."
+      );
+      router.push("/auth/login");
+      return;
+    }
+    setShowBooking(true);
+  };
 
   useEffect(() => {
     if (id) {
@@ -118,7 +132,7 @@ export default function InstructorProfilePage() {
         {/* Actions */}
         <div className="mt-6 flex justify-center gap-4">
           <button
-            onClick={() => setShowBooking(true)}
+            onClick={openBooking}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded-lg flex items-center gap-2"
           >
             <FaUserCheck /> Book Lesson
