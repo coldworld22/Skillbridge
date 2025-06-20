@@ -4,9 +4,9 @@ import { FaComments, FaCheck, FaTimes } from "react-icons/fa";
 
 
 const statusColors = {
-  Pending: "bg-yellow-100 text-yellow-700",
-  Accepted: "bg-green-100 text-green-700",
-  Declined: "bg-red-100 text-red-700",
+  pending: "bg-yellow-100 text-yellow-700",
+  approved: "bg-green-100 text-green-700",
+  declined: "bg-red-100 text-red-700",
 };
 
 export default function RequestCard({ request, onAccept, onDecline, onChat }) {
@@ -38,7 +38,7 @@ export default function RequestCard({ request, onAccept, onDecline, onChat }) {
           <FaComments />
         </button>
 
-        {request.status === "Pending" && (
+        {request.status === "pending" && (
           <>
             <button
               onClick={onAccept}

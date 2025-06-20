@@ -14,7 +14,7 @@ const mockRequests = [
     },
     subject: "Intro to Python",
     date: "2025-05-12 10:00 AM",
-    status: "Pending",
+    status: "pending",
   },
   {
     id: 2,
@@ -25,7 +25,7 @@ const mockRequests = [
     },
     subject: "React Components",
     date: "2025-05-13 3:00 PM",
-    status: "Accepted",
+    status: "approved",
   },
   {
     id: 3,
@@ -36,11 +36,11 @@ const mockRequests = [
     },
     subject: "Machine Learning Basics",
     date: "2025-05-14 1:00 PM",
-    status: "Declined",
+    status: "declined",
   },
 ];
 
-const tabs = ["All", "Pending", "Accepted", "Declined"];
+const tabs = ["All", "pending", "approved", "declined"];
 
 export default function InstructorRequestsPage() {
   const [requests, setRequests] = useState(mockRequests);
@@ -89,8 +89,8 @@ export default function InstructorRequestsPage() {
               <RequestCard
                 key={req.id}
                 request={req}
-                onAccept={() => handleStatusChange(req.id, "Accepted")}
-                onDecline={() => handleStatusChange(req.id, "Declined")}
+                onAccept={() => handleStatusChange(req.id, "approved")}
+                onDecline={() => handleStatusChange(req.id, "declined")}
                 onChat={() =>
                   window.location.href = `/website/pages/messages?userId=${req.student.id}`
                 }

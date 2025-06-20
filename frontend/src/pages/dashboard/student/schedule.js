@@ -10,7 +10,7 @@ export default function StudentSchedule() {
 
   useEffect(() => {
     const myLessons = mockBookings
-      .filter((b) => b.status === "Accepted" && b.student.id === currentStudentId)
+      .filter((b) => b.status === "approved" && b.student.id === currentStudentId)
       .map((b) => ({
         id: b.id,
         title: `${b.subject} with ${b.instructor.name}`,
