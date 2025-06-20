@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaCalendarCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { useRouter } from "next/router";
+import useAuthStore from "@/store/auth/authStore";
+
 import {
   createStudentBooking,
   fetchStudentBookings,
@@ -10,6 +13,8 @@ import {
 import { fetchInstructorAvailability } from "@/services/public/instructorService";
 
 export default function BookingRequestModal({ instructor, onClose }) {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -17,6 +22,18 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const [availability, setAvailability] = useState([]);
   const [error, setError] = useState("");
   const [hasPending, setHasPending] = useState(false);
+
+
+  // Ensure only logged in students can book
+  useEffect(() => {
+    if (!user || user.role?.toLowerCase() !== "student") {
+      toast.info(
+        "Please login as a student or create a student account to proceed."
+      );
+      onClose();
+      router.push("/auth/login");
+    }
+  }, [user, router, onClose]);
 
   useEffect(() => {
     if (!instructor) return;
@@ -56,9 +73,12 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const isAvailable = (start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
+    if (startDate.toDateString() !== endDate.toDateString()) return false;
     return availability.some((slot) => {
       if (!slot.daysOfWeek) return false;
-      const dayMatch = slot.daysOfWeek.includes(startDate.getDay());
+      const dayMatch =
+        slot.daysOfWeek.includes(startDate.getDay()) &&
+        slot.daysOfWeek.includes(endDate.getDay());
       const startRecur = slot.startRecur ? new Date(slot.startRecur) : null;
       if (startRecur && startDate < startRecur) return false;
       if (!dayMatch) return false;
