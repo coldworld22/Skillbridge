@@ -13,3 +13,8 @@ exports.getById = async (req, res, next) => {
   }
   sendSuccess(res, instructor);
 };
+
+exports.getAvailability = async (req, res) => {
+  const availability = await service.getInstructorAvailability(req.params.id);
+  sendSuccess(res, availability);
+};

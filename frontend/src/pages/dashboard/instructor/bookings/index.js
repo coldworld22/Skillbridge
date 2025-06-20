@@ -109,6 +109,13 @@ export default function InstructorBookingsPage() {
                   </td>
                 </tr>
               ))}
+              {bookings.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center text-gray-400 py-8">
+                    No bookings found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

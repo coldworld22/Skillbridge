@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
-import { createStudentBooking } from "@/services/student/bookingService";
 import { fetchPublicInstructors } from "@/services/public/instructorService";
+import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
 
 import { motion } from "framer-motion";
 import {
@@ -11,7 +11,6 @@ import {
   FaStar,
   FaUserCheck,
   FaComments,
-  FaCalendarCheck,
   FaHeart,
   FaCircleCheck,
 } from "react-icons/fa6";
@@ -31,7 +30,7 @@ export default function InstructorBooking() {
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [requestedInstructor, setRequestedInstructor] = useState(null);
+  const [bookingInstructor, setBookingInstructor] = useState(null);
   const [chatWithInstructor, setChatWithInstructor] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [sortBy, setSortBy] = useState("Highest Rated");
@@ -96,27 +95,12 @@ export default function InstructorBooking() {
     );
   };
 
-  const handleRequest = async (instructor) => {
-
-    if (!user || user.role !== "student") {
+  const handleRequest = (instructor) => {
+    if (!user || user.role?.toLowerCase() !== "student") {
       router.push("/auth/login");
       return;
     }
-
-    const start = new Date();
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
-    try {
-      await createStudentBooking({
-        student_id: user.id,
-        instructor_id: instructor.id,
-        start_time: start.toISOString(),
-        end_time: end.toISOString(),
-        notes: `Website booking with ${instructor.name}`,
-      });
-      setRequestedInstructor(instructor.name);
-    } catch (err) {
-      console.error("Booking request failed", err);
-    }
+    setBookingInstructor(instructor);
   };
 
   return (
@@ -247,24 +231,12 @@ export default function InstructorBooking() {
         )}
       </div>
 
-      {/* Request Modal */}
-      {requestedInstructor && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-60 z-50">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-gray-900 p-6 rounded-xl max-w-md text-center"
-          >
-            <h3 className="text-xl font-bold mb-3">Request Sent!</h3>
-            <p className="text-gray-300">Lesson request sent to {requestedInstructor}.</p>
-            <button
-              onClick={() => setRequestedInstructor(null)}
-              className="mt-4 bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 flex items-center gap-2"
-            >
-              <FaCalendarCheck /> Close
-            </button>
-          </motion.div>
-        </div>
+      {/* Booking Modal */}
+      {bookingInstructor && (
+        <BookingRequestModal
+          instructor={bookingInstructor}
+          onClose={() => setBookingInstructor(null)}
+        />
       )}
 
       {/* Chat Modal */}
