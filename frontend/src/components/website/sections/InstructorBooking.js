@@ -99,6 +99,7 @@ export default function InstructorBooking() {
   const handleRequest = async (instructor) => {
     if (!user || user.role?.toLowerCase() !== "student") {
       toast.info("Please login as a student or create a student account to proceed.");
+
       return;
     }
     setBookingInstructor(instructor);

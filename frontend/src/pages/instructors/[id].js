@@ -45,6 +45,7 @@ export default function InstructorProfilePage() {
       toast.info(
         "Please login as a student or create a student account to proceed."
       );
+
       return;
     }
     setShowBooking(true);

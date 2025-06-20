@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaCalendarCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
+
 import useAuthStore from "@/store/auth/authStore";
+
 import {
   createStudentBooking,
   fetchStudentBookings,
@@ -11,6 +13,7 @@ import {
 import { fetchInstructorAvailability } from "@/services/public/instructorService";
 
 export default function BookingRequestModal({ instructor, onClose }) {
+
   const { user } = useAuthStore();
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -27,8 +30,11 @@ export default function BookingRequestModal({ instructor, onClose }) {
         "Please login as a student or create a student account to proceed."
       );
       onClose();
+
     }
   }, [user, onClose]);
+
+    
 
   useEffect(() => {
     if (!instructor) return;
