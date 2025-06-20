@@ -5,6 +5,7 @@ import { FaCalendarCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
+
 import {
   createStudentBooking,
   fetchStudentBookings,
@@ -21,6 +22,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
   const [availability, setAvailability] = useState([]);
   const [error, setError] = useState("");
   const [hasPending, setHasPending] = useState(false);
+
 
   // Ensure only logged in students can book
   useEffect(() => {
