@@ -22,9 +22,9 @@ export default function BookingFilters({ search, onSearchChange, statusFilter, o
           className="border px-3 py-2 rounded"
         >
           <option value="all">All</option>
-          <option value="Scheduled">Scheduled</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="approved">Approved</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
     </div>

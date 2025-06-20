@@ -12,7 +12,7 @@ const mockBookings = [
     },
     subject: "Intro to Python",
     date: "2025-05-15",
-    status: "Pending",
+    status: "pending",
   },
   {
     id: 102,
@@ -23,7 +23,7 @@ const mockBookings = [
     },
     subject: "React Components",
     date: "2025-05-10",
-    status: "Accepted",
+    status: "approved",
   },
   {
     id: 103,
@@ -34,7 +34,7 @@ const mockBookings = [
     },
     subject: "Data Visualization",
     date: "2025-04-25",
-    status: "Completed",
+    status: "completed",
   },
 ];
 

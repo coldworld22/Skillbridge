@@ -1,8 +1,8 @@
 export default function BookingStats({ bookings }) {
   const total = bookings.length;
-  const scheduled = bookings.filter((b) => b.status === 'Scheduled').length;
-  const completed = bookings.filter((b) => b.status === 'Completed').length;
-  const cancelled = bookings.filter((b) => b.status === 'Cancelled').length;
+  const scheduled = bookings.filter((b) => b.status === 'approved').length;
+  const completed = bookings.filter((b) => b.status === 'completed').length;
+  const cancelled = bookings.filter((b) => b.status === 'cancelled').length;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -11,7 +11,7 @@ export default function BookingStats({ bookings }) {
         <p className="text-2xl text-blue-600 font-bold">{total}</p>
       </div>
       <div className="bg-yellow-50 p-4 rounded shadow text-center">
-        <h4 className="text-lg font-semibold">Scheduled</h4>
+        <h4 className="text-lg font-semibold">Approved</h4>
         <p className="text-2xl text-yellow-600 font-bold">{scheduled}</p>
       </div>
       <div className="bg-green-50 p-4 rounded shadow text-center">

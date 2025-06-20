@@ -3,9 +3,9 @@ import { FaCalendarAlt, FaComments, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 const statusColors = {
-  Pending: "bg-yellow-100 text-yellow-700",
-  Accepted: "bg-green-100 text-green-700",
-  Completed: "bg-gray-200 text-gray-700",
+  pending: "bg-yellow-100 text-yellow-700",
+  approved: "bg-green-100 text-green-700",
+  completed: "bg-gray-200 text-gray-700",
 };
 
 export default function BookingCard({ booking, onCancel, onChat }) {
@@ -41,7 +41,7 @@ export default function BookingCard({ booking, onCancel, onChat }) {
           <FaComments /> Chat
         </button>
 
-        {booking.status === "Pending" && (
+        {booking.status === "pending" && (
           <button
             onClick={onCancel}
             className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"

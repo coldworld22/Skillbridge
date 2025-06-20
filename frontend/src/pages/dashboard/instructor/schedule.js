@@ -8,7 +8,7 @@ const mockBookings = [
     subject: "Python Basics",
     date: "2025-05-14",
     time: "10:00",
-    status: "Accepted",
+    status: "approved",
     student: {
       id: 101,
       name: "Alice Johnson",
@@ -25,7 +25,7 @@ const mockBookings = [
     subject: "React Fundamentals",
     date: "2025-05-15",
     time: "15:00",
-    status: "Accepted",
+    status: "approved",
     student: {
       id: 102,
       name: "Mark Lee",
@@ -42,7 +42,7 @@ const mockBookings = [
     subject: "Machine Learning",
     date: "2025-05-13",
     time: "13:00",
-    status: "Pending",
+    status: "pending",
     student: {
       id: 101,
       name: "Alice Johnson",
@@ -59,7 +59,7 @@ const mockBookings = [
     subject: "Advanced JavaScript",
     date: "2025-05-17",
     time: "17:30",
-    status: "Declined",
+    status: "declined",
     student: {
       id: 103,
       name: "Sara Kim",
@@ -76,7 +76,7 @@ const mockBookings = [
     subject: "Data Structures",
     date: "2025-05-18",
     time: "09:30",
-    status: "Accepted",
+    status: "approved",
     student: {
       id: 102,
       name: "Mark Lee",
@@ -96,7 +96,7 @@ export default function InstructorSchedule() {
 
   useEffect(() => {
     const confirmed = mockBookings
-      .filter((b) => b.status === "Accepted")
+      .filter((b) => b.status === "approved")
       .map((b) => ({
         id: b.id,
         title: `${b.subject} · ${b.student.name}`,
