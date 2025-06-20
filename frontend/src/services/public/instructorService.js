@@ -9,3 +9,8 @@ export const fetchPublicInstructorById = async (id) => {
   const { data } = await api.get(`/instructors/${id}`);
   return data?.data;
 };
+
+export const fetchInstructorAvailability = async (id) => {
+  const { data } = await api.get(`/instructors/${id}/availability`);
+  return data?.data ?? [];
+};

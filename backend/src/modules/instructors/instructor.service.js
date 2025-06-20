@@ -32,3 +32,19 @@ exports.getPublicInstructor = async (id) => {
       "instructor_profiles.demo_video_url"
     );
 };
+
+exports.getInstructorAvailability = async (id) => {
+  const [profile] = await db("instructor_profiles")
+    .where({ user_id: id })
+    .select("availability");
+
+  let availability = [];
+  if (profile && profile.availability) {
+    try {
+      availability = JSON.parse(profile.availability);
+    } catch (_) {
+      availability = [];
+    }
+  }
+  return availability;
+};
