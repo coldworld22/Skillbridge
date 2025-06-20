@@ -1,6 +1,8 @@
 // ✅ Enhanced Instructor Booking UI Component with All Features
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import useAuthStore from "@/store/auth/authStore";
+import { createStudentBooking } from "@/services/student/bookingService";
 import { motion } from "framer-motion";
 import {
   FaChalkboardTeacher,
@@ -54,6 +56,7 @@ const sortOptions = ["Highest Rated", "Most Experienced"];
 
 export default function InstructorBooking() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [requestedInstructor, setRequestedInstructor] = useState(null);
@@ -84,6 +87,24 @@ export default function InstructorBooking() {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
+  };
+
+  const handleRequest = async (instructor) => {
+    if (!user) return;
+    const start = new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    try {
+      await createStudentBooking({
+        student_id: user.id,
+        instructor_id: instructor.id,
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        notes: `Website booking with ${instructor.name}`,
+      });
+      setRequestedInstructor(instructor.name);
+    } catch (err) {
+      console.error("Booking request failed", err);
+    }
   };
 
   return (
@@ -187,7 +208,7 @@ export default function InstructorBooking() {
             </div>
             <div className="flex gap-3 mt-4">
               <button
-                onClick={() => setRequestedInstructor(i.name)}
+                onClick={() => handleRequest(i)}
                 className="bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600"
               >
                 <FaUserCheck /> Request Lesson
