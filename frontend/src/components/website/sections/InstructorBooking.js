@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { createStudentBooking } from "@/services/student/bookingService";
 import { fetchPublicInstructors } from "@/services/public/instructorService";
+
 import { motion } from "framer-motion";
 import {
   FaChalkboardTeacher,
@@ -24,8 +25,10 @@ const sortOptions = ["Highest Rated", "Most Experienced"];
 export default function InstructorBooking() {
   const router = useRouter();
   const { user } = useAuthStore();
+
   const [instructors, setInstructors] = useState([]);
   const [categories, setCategories] = useState(defaultCategories);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [requestedInstructor, setRequestedInstructor] = useState(null);
@@ -91,10 +94,12 @@ export default function InstructorBooking() {
   };
 
   const handleRequest = async (instructor) => {
+
     if (!user || user.role !== "student") {
       router.push("/auth/login");
       return;
     }
+
     const start = new Date();
     const end = new Date(start.getTime() + 60 * 60 * 1000);
     try {
