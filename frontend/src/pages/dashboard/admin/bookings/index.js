@@ -7,6 +7,7 @@ import BookingModal from '@/components/admin/bookings/BookingModal';
 import {
   fetchAllBookings,
   updateBooking,
+  deleteBooking,
 } from '@/services/admin/bookingService';
 import { API_BASE_URL } from '@/config/config';
 import { toast } from 'react-toastify';
@@ -27,6 +28,17 @@ export default function AdminBookingsPage() {
     } catch (err) {
       console.error('Cancel booking failed', err);
       toast.error('Failed to cancel booking');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteBooking(id);
+      setBookings((prev) => prev.filter((b) => b.id !== id));
+      toast.success('Booking deleted');
+    } catch (err) {
+      console.error('Delete booking failed', err);
+      toast.error('Failed to delete booking');
     }
   };
 
@@ -133,6 +145,7 @@ export default function AdminBookingsPage() {
             booking={selectedBooking}
             onClose={() => setSelectedBooking(null)}
             onCancel={handleCancel}
+            onDelete={handleDelete}
           />
         )}
       </div>
