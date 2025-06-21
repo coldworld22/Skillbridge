@@ -110,7 +110,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
             {error && <p className="text-red-600 text-sm">{error}</p>}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-yellow-700 mb-1">Type</label>
               <select
                 className="w-full border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 value={type}
@@ -122,7 +122,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <label className="block text-sm font-medium text-yellow-700 mb-1">Start Time</label>
               <input
                 type="datetime-local"
                 value={startTime}
@@ -133,13 +133,13 @@ export default function BookingRequestModal({ instructor, onClose }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <label className="block text-sm font-medium text-yellow-700 mb-1">End Time</label>
               <input
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
-                className="w-full border-gray-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="w-full border-black-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
             </div>
 
@@ -147,7 +147,7 @@ export default function BookingRequestModal({ instructor, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-1/2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                className="w-1/2 px-4 py-2 bg-blue-500 text-black font-semibold rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
               >
                 Cancel
               </button>

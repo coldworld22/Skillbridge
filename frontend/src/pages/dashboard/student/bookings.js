@@ -8,10 +8,12 @@ import {
   FaTimesCircle,
   FaComments,
   FaSpinner,
+  FaTrashAlt,
 } from 'react-icons/fa';
 import {
   fetchStudentBookings,
   updateStudentBooking,
+  deleteStudentBooking,
 } from '@/services/student/bookingService';
 
 export default function StudentBookingsPage() {
@@ -67,6 +69,13 @@ export default function StudentBookingsPage() {
       )
     );
     setShowCancelModal(false);
+  };
+
+   const handleDelete = async (id) => {
+    if (window.confirm('Delete this booking?')) {
+      await deleteStudentBooking(id);
+      setBookings((prev) => prev.filter((b) => b.id !== id));
+    }
   };
 
   if (loading) {
@@ -161,6 +170,14 @@ export default function StudentBookingsPage() {
                       }}
                     >
                       Cancel
+                    </button>
+                  )}
+                   {booking.status === 'pending' && (
+                    <button
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                      onClick={() => handleDelete(booking.id)}
+                    >
+                      <FaTrashAlt className="inline mr-1" /> Delete
                     </button>
                   )}
                 </div>
