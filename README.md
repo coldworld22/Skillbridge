@@ -35,6 +35,8 @@ The backend exposes role-based endpoints for managing instructor bookings:
 
 - `POST /api/bookings/student` – create a booking as the logged-in student
 - `GET /api/bookings/student` – list bookings for the current student
+- `PATCH /api/bookings/student/:id` – update a booking for the current student
+- `DELETE /api/bookings/student/:id` – delete one of the student's bookings
 - `GET /api/bookings/instructor` – list bookings for the logged-in instructor
 - `PATCH /api/bookings/instructor/:id` – update a booking (e.g. approve or decline)
 
