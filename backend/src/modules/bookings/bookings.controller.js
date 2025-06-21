@@ -68,6 +68,16 @@ exports.getInstructorBookings = catchAsync(async (req, res) => {
   sendSuccess(res, data);
 });
 
+// Delete a booking belonging to the logged in student
+exports.deleteStudentBooking = catchAsync(async (req, res) => {
+  const booking = await service.getById(req.params.id);
+  if (!booking || booking.student_id !== req.user.id) {
+    throw new AppError("Booking not found", 404);
+  }
+  await service.delete(req.params.id);
+  sendSuccess(res, null, "Booking deleted");
+});
+
 exports.deleteBooking = catchAsync(async (req, res) => {
   await service.delete(req.params.id);
   sendSuccess(res, null, "Booking deleted");

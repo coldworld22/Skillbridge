@@ -16,5 +16,6 @@ router.patch(
   validate({ body: updateBookingSchema }),
   controller.updateBooking
 );
+router.delete("/:id", controller.deleteStudentBooking);
 
 module.exports = router;
