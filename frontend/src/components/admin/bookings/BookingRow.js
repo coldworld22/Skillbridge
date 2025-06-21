@@ -20,10 +20,10 @@ export default function BookingRow({ booking, onView }) {
         <img src={booking.instructor.avatar} className="w-8 h-8 rounded-full" alt="instructor" />
         {booking.instructor.name}
       </td>
-      <td className="px-4 py-2">{booking.classTitle}</td>
-      <td className="px-4 py-2">{booking.date}</td>
-      <td className="px-4 py-2">{booking.time}</td>
-      <td className="px-4 py-2">{booking.duration}</td>
+      <td className="px-4 py-2">{booking.type}</td>
+      <td className="px-4 py-2 whitespace-nowrap">{booking.date}</td>
+      <td className="px-4 py-2 whitespace-nowrap">{booking.time}</td>
+      <td className="px-4 py-2 whitespace-nowrap">{booking.duration}</td>
       <td className="px-4 py-2">
         <span
           className={`text-xs px-2 py-1 rounded-full ${
@@ -33,6 +33,7 @@ export default function BookingRow({ booking, onView }) {
           {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
         </span>
       </td>
+      <td className="px-4 py-2 max-w-xs truncate">{booking.notes || '—'}</td>
     </tr>
   );
 }

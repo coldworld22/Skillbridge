@@ -74,9 +74,11 @@ exports.deleteStudentBooking = catchAsync(async (req, res) => {
   if (!booking || booking.student_id !== req.user.id) {
     throw new AppError("Booking not found", 404);
   }
-  if (booking.status !== "pending") {
-    throw new AppError("Only pending bookings can be deleted", 400);
-  }
+  await service.delete(req.params.id);
+  sendSuccess(res, null, "Booking deleted");
+});
+
+exports.deleteBooking = catchAsync(async (req, res) => {
   await service.delete(req.params.id);
   sendSuccess(res, null, "Booking deleted");
 });

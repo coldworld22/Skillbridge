@@ -6,25 +6,58 @@ exports.create = async (data) => {
 };
 
 exports.getAll = async () => {
-  return db("bookings").select("*").orderBy("requested_at", "desc");
+  return db("bookings")
+    .leftJoin("users as s", "bookings.student_id", "s.id")
+    .leftJoin("users as i", "bookings.instructor_id", "i.id")
+    .select(
+      "bookings.*",
+      "s.full_name as student_name",
+      "s.avatar_url as student_avatar_url",
+      "i.full_name as instructor_name",
+      "i.avatar_url as instructor_avatar_url"
+    )
+    .orderBy("bookings.requested_at", "desc");
 };
 
 // Get bookings for a specific student
 exports.getByStudent = async (studentId) => {
   return db("bookings")
+    .leftJoin("users as i", "bookings.instructor_id", "i.id")
     .where({ student_id: studentId })
-    .orderBy("requested_at", "desc");
+    .select(
+      "bookings.*",
+      "i.full_name as instructor_name",
+      "i.avatar_url as instructor_avatar_url"
+    )
+    .orderBy("bookings.requested_at", "desc");
 };
 
 // Get bookings for a specific instructor
 exports.getByInstructor = async (instructorId) => {
   return db("bookings")
+    .leftJoin("users as s", "bookings.student_id", "s.id")
     .where({ instructor_id: instructorId })
-    .orderBy("requested_at", "desc");
+    .select(
+      "bookings.*",
+      "s.full_name as student_name",
+      "s.avatar_url as student_avatar_url"
+    )
+    .orderBy("bookings.requested_at", "desc");
 };
 
 exports.getById = async (id) => {
-  return db("bookings").where({ id }).first();
+  return db("bookings")
+    .leftJoin("users as s", "bookings.student_id", "s.id")
+    .leftJoin("users as i", "bookings.instructor_id", "i.id")
+    .select(
+      "bookings.*",
+      "s.full_name as student_name",
+      "s.avatar_url as student_avatar_url",
+      "i.full_name as instructor_name",
+      "i.avatar_url as instructor_avatar_url"
+    )
+    .where("bookings.id", id)
+    .first();
 };
 
 exports.update = async (id, data) => {

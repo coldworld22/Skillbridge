@@ -71,7 +71,7 @@ export default function StudentBookingsPage() {
     setShowCancelModal(false);
   };
 
-   const handleDelete = async (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Delete this booking?')) {
       await deleteStudentBooking(id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
@@ -172,14 +172,12 @@ export default function StudentBookingsPage() {
                       Cancel
                     </button>
                   )}
-                   {booking.status === 'pending' && (
-                    <button
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                      onClick={() => handleDelete(booking.id)}
-                    >
-                      <FaTrashAlt className="inline mr-1" /> Delete
-                    </button>
-                  )}
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                    onClick={() => handleDelete(booking.id)}
+                  >
+                    <FaTrashAlt className="inline mr-1" /> Delete
+                  </button>
                 </div>
               </div>
             ))}
