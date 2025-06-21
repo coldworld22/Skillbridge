@@ -49,6 +49,11 @@ export default function BookingModal({ booking, onClose, onCancel }) {
           <div><strong>Time:</strong> {booking.time}</div>
           <div><strong>Duration:</strong> {booking.duration}</div>
           <div><strong>Status:</strong> <span className="capitalize">{booking.status}</span></div>
+          {booking.notes && (
+            <div className="whitespace-pre-wrap">
+              <strong>Notes:</strong> {booking.notes}
+            </div>
+          )}
         </div>
 
         {(booking.status?.toLowerCase() === 'pending' ||

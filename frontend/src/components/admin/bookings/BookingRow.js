@@ -33,6 +33,7 @@ export default function BookingRow({ booking, onView }) {
           {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
         </span>
       </td>
+      <td className="px-4 py-2 max-w-xs truncate">{booking.notes || '—'}</td>
     </tr>
   );
 }

@@ -105,6 +105,7 @@ export default function AdminBookingsPage() {
                 <th className="px-4 py-2">Time</th>
                 <th className="px-4 py-2">Duration</th>
                 <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -117,7 +118,7 @@ export default function AdminBookingsPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-8">
+                  <td colSpan={8} className="text-center text-gray-400 py-8">
                     No bookings found.
                   </td>
                 </tr>
