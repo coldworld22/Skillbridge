@@ -44,7 +44,7 @@ export default function BookingModal({ booking, onClose, onCancel }) {
             </div>
           </div>
 
-          <div><strong>Class:</strong> {booking.classTitle}</div>
+          <div><strong>Booking Type:</strong> {booking.type}</div>
           <div><strong>Date:</strong> {booking.date}</div>
           <div><strong>Time:</strong> {booking.time}</div>
           <div><strong>Duration:</strong> {booking.duration}</div>

@@ -8,6 +8,7 @@ import {
   fetchAllBookings,
   updateBooking,
 } from '@/services/admin/bookingService';
+import { API_BASE_URL } from '@/config/config';
 import { toast } from 'react-toastify';
 
 export default function AdminBookingsPage() {
@@ -37,17 +38,17 @@ export default function AdminBookingsPage() {
           id: b.id,
           student: {
             name: b.student_name || b.student_id,
-            avatar:
-              b.student_avatar_url ||
-              "https://via.placeholder.com/40x40?text=S",
+            avatar: b.student_avatar_url
+              ? `${API_BASE_URL}${b.student_avatar_url}`
+              : "https://via.placeholder.com/40x40?text=S",
           },
           instructor: {
             name: b.instructor_name || b.instructor_id,
-            avatar:
-              b.instructor_avatar_url ||
-              "https://via.placeholder.com/40x40?text=I",
+            avatar: b.instructor_avatar_url
+              ? `${API_BASE_URL}${b.instructor_avatar_url}`
+              : "https://via.placeholder.com/40x40?text=I",
           },
-          classTitle: b.class_title || "—",
+          type: b.class_title ? "Class" : "Tutorial",
           date: b.start_time
             ? new Date(b.start_time).toISOString().split("T")[0]
             : "",
@@ -77,7 +78,7 @@ export default function AdminBookingsPage() {
     const match =
       b.student.name.toLowerCase().includes(keyword) ||
       b.instructor.name.toLowerCase().includes(keyword) ||
-      b.classTitle.toLowerCase().includes(keyword);
+      b.type.toLowerCase().includes(keyword);
     return statusFilter === 'all' ? match : match && b.status === statusFilter;
   });
 
@@ -95,12 +96,12 @@ export default function AdminBookingsPage() {
         />
 
         <div className="overflow-x-auto bg-white rounded shadow">
-          <table className="w-full table-auto text-sm">
+          <table className="min-w-full table-auto text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="px-4 py-2">Student</th>
                 <th className="px-4 py-2">Instructor</th>
-                <th className="px-4 py-2">Class</th>
+                <th className="px-4 py-2">Booking Type</th>
                 <th className="px-4 py-2">Date</th>
                 <th className="px-4 py-2">Time</th>
                 <th className="px-4 py-2">Duration</th>
