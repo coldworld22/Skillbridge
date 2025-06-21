@@ -75,13 +75,20 @@ export default function BookingRequestModal({ instructor, onClose }) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     if (startDate.toDateString() !== endDate.toDateString()) return false;
+
+    if (availability.length === 0) {
+      return instructor?.availableNow || false;
+    }
+
     return availability.some((slot) => {
       if (!slot.daysOfWeek) return false;
       const dayMatch =
         slot.daysOfWeek.includes(startDate.getDay()) &&
         slot.daysOfWeek.includes(endDate.getDay());
       const startRecur = slot.startRecur ? new Date(slot.startRecur) : null;
+      const endRecur = slot.endRecur ? new Date(slot.endRecur) : null;
       if (startRecur && startDate < startRecur) return false;
+      if (endRecur && startDate > endRecur) return false;
       if (!dayMatch) return false;
       const [sh, sm] = slot.startTime.split(":");
       const [eh, em] = slot.endTime.split(":");

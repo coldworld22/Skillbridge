@@ -19,6 +19,7 @@ export default function InstructorAvailabilityPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('Available');
+  const [endDate, setEndDate] = useState('');
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const [available, setAvailable] = useState(user?.is_online ?? false);
@@ -60,6 +61,7 @@ export default function InstructorAvailabilityPage() {
 
   const handleSlotSelect = (selectionInfo) => {
     setSelectedSlot(selectionInfo);
+    setEndDate(selectionInfo.startStr.split('T')[0]);
     setIsModalOpen(true);
   };
 
@@ -68,15 +70,17 @@ export default function InstructorAvailabilityPage() {
     const color = categoryColors[title] || '#a78bfa';
 
     const startDate = new Date(selectedSlot.start);
-    const endDate = new Date(selectedSlot.end);
+    const slotEnd = new Date(selectedSlot.end);
+    const endDateString = endDate || selectedSlot.startStr.split('T')[0];
 
     const newSlot = {
       id: uuidv4(),
       title,
       startTime: startDate.toTimeString().split(' ')[0],
-      endTime: endDate.toTimeString().split(' ')[0],
+      endTime: slotEnd.toTimeString().split(' ')[0],
       daysOfWeek: [startDate.getDay()],
       startRecur: selectedSlot.startStr.split('T')[0],
+      endRecur: endDateString,
       backgroundColor: color,
       borderColor: color,
     };
@@ -183,6 +187,15 @@ export default function InstructorAvailabilityPage() {
                   <option key={label} value={label}>{label}</option>
                 ))}
               </select>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">End Date (optional)</label>
+                <input
+                  type="date"
+                  className="w-full p-2 border rounded"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
                 <button onClick={confirmAddSlot} className="px-4 py-2 bg-blue-600 text-white rounded">Confirm</button>

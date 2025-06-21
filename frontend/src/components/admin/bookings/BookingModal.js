@@ -1,8 +1,9 @@
 import { FaTimes } from 'react-icons/fa';
 import { useState } from 'react';
 
-export default function BookingModal({ booking, onClose, onCancel }) {
+export default function BookingModal({ booking, onClose, onCancel, onDelete }) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
   if (!booking) return null;
@@ -12,6 +13,14 @@ export default function BookingModal({ booking, onClose, onCancel }) {
       onCancel(booking.id, cancelReason);
     }
     setShowCancelConfirm(false);
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(booking.id);
+    }
+    setShowDeleteConfirm(false);
     onClose();
   };
 
@@ -68,6 +77,17 @@ export default function BookingModal({ booking, onClose, onCancel }) {
           </div>
         )}
 
+        {booking.status?.toLowerCase() === 'cancelled' && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Delete Booking
+            </button>
+          </div>
+        )}
+
         {showCancelConfirm && (
           <div className="mt-4 border-t pt-4">
             <h4 className="font-semibold text-sm mb-2">Cancel Reason (optional)</h4>
@@ -89,6 +109,26 @@ export default function BookingModal({ booking, onClose, onCancel }) {
                 className="px-4 py-1 text-sm bg-red-600 text-white rounded"
               >
                 Confirm Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className="mt-4 border-t pt-4">
+            <p className="mb-2 text-sm">Are you sure you want to delete this booking?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-1 text-sm border rounded"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-1 text-sm bg-red-600 text-white rounded"
+              >
+                Confirm Delete
               </button>
             </div>
           </div>
