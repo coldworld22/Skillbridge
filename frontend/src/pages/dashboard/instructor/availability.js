@@ -1,5 +1,6 @@
 // pages/dashboard/instructor/availability.js
 import { useEffect, useState, Fragment } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -70,7 +71,7 @@ export default function InstructorAvailabilityPage() {
     const endDate = new Date(selectedSlot.end);
 
     const newSlot = {
-      id: Date.now(),
+      id: uuidv4(),
       title,
       startTime: startDate.toTimeString().split(' ')[0],
       endTime: endDate.toTimeString().split(' ')[0],
@@ -92,7 +93,9 @@ export default function InstructorAvailabilityPage() {
 
   const handleSlotRemove = (clickInfo) => {
     if (confirm('Remove this availability slot?')) {
-      setAvailability((prev) => prev.filter((slot) => slot.id !== clickInfo.event.id));
+      setAvailability((prev) =>
+        prev.filter((slot) => String(slot.id) !== String(clickInfo.event.id))
+      );
     }
   };
 
