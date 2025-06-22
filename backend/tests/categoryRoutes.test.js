@@ -11,7 +11,7 @@ jest.mock('../src/modules/users/categories/category.service', () => ({
   delete: jest.fn(),
   exists: jest.fn(),
   findBySlug: jest.fn(),
-  countChildren: jest.fn(),
+
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -70,6 +70,7 @@ describe('PATCH /api/categories/:id/status', () => {
   });
 });
 
+
 describe('DELETE /api/categories/:id', () => {
   it('returns 400 when category has children', async () => {
     service.findById.mockResolvedValue({ id: '1', image_url: null });
@@ -88,4 +89,5 @@ describe('DELETE /api/categories/:id', () => {
     expect(service.delete).toHaveBeenCalledWith('1');
   });
 });
+
 
