@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
@@ -14,7 +15,7 @@ import {
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchChaptersByTutorial } from "@/services/admin/tutorialChapterService";
 
-export default function EditTutorialPage() {
+function EditTutorialPage() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -158,3 +159,5 @@ export default function EditTutorialPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(EditTutorialPage, ["admin", "superadmin"]);

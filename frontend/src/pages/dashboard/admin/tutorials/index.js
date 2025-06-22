@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
@@ -17,7 +18,7 @@ import {
 } from "@/services/admin/tutorialService";
 
 
-export default function AdminTutorialsPage() {
+function AdminTutorialsPage() {
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
 
@@ -462,3 +463,5 @@ export default function AdminTutorialsPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
