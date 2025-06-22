@@ -129,6 +129,7 @@ function CreateOnlineClass() {
     const name = user?.full_name || user?.name;
     if (name) {
       setFormData((prev) => ({ ...prev, instructor: name }));
+
     }
   }, [user]);
 
