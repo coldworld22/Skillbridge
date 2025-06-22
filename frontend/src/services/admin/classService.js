@@ -11,12 +11,16 @@ export const fetchAdminClassById = async (id) => {
 };
 
 export const createAdminClass = async (payload) => {
-  const { data } = await api.post("/users/classes/admin", payload);
+  const { data } = await api.post("/users/classes/admin", payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data?.data;
 };
 
 export const updateAdminClass = async (id, payload) => {
-  const { data } = await api.put(`/users/classes/admin/${id}`, payload);
+  const { data } = await api.put(`/users/classes/admin/${id}`, payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data?.data;
 };
 

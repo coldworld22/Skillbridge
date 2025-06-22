@@ -3,8 +3,14 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
 
+const fs = require("fs");
+const path = require("path");
+
 exports.createClass = catchAsync(async (req, res) => {
   const data = { ...req.body, id: uuidv4() };
+  if (req.file) {
+    data.cover_image = `/uploads/classes/${req.file.filename}`;
+  }
   const cls = await service.createClass(data);
   sendSuccess(res, cls, "Class created");
 });
@@ -20,7 +26,16 @@ exports.getClassById = catchAsync(async (req, res) => {
 });
 
 exports.updateClass = catchAsync(async (req, res) => {
-  const cls = await service.updateClass(req.params.id, req.body);
+  const existing = await service.getClassById(req.params.id);
+  let data = { ...req.body };
+  if (req.file) {
+    if (existing?.cover_image) {
+      const oldPath = path.join(__dirname, '../../../', existing.cover_image);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    data.cover_image = `/uploads/classes/${req.file.filename}`;
+  }
+  const cls = await service.updateClass(req.params.id, data);
   sendSuccess(res, cls);
 });
 
