@@ -6,6 +6,12 @@ jest.mock('../class.service', () => ({
   getAllClasses: jest.fn()
 }));
 const service = require('../class.service');
+// Mock auth middleware to bypass authentication
+jest.mock('../../../middleware/auth/authMiddleware', () => ({
+  verifyToken: (_req, _res, next) => next(),
+  isInstructorOrAdmin: (_req, _res, next) => next(),
+}));
+
 const routes = require('../class.routes');
 
 const app = express();
