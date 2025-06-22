@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -10,7 +11,7 @@ import {
   updateCategory,
 } from "@/services/admin/categoryService";
 
-export default function EditCategory() {
+function EditCategory() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -47,6 +48,12 @@ export default function EditCategory() {
         }
       } catch (err) {
         console.error("Failed to load category", err);
+        toast.error(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Failed to load category"
+        );
       }
     };
     loadData();
@@ -59,6 +66,7 @@ export default function EditCategory() {
       setPreview(URL.createObjectURL(file));
     } else {
       setError("Please upload a valid image (max 2MB). ");
+      toast.error("Please upload a valid image (max 2MB).");
     }
   };
 
@@ -66,6 +74,7 @@ export default function EditCategory() {
     e.preventDefault();
     if (!name.trim()) {
       setError("Category name is required.");
+      toast.error("Category name is required.");
       return;
     }
     setError("");
@@ -188,3 +197,5 @@ export default function EditCategory() {
 EditCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+export default withAuthProtection(EditCategory, ["admin", "superadmin"]);
