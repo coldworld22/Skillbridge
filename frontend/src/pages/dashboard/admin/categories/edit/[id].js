@@ -198,4 +198,13 @@ EditCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default withAuthProtection(EditCategory, ["admin", "superadmin"]);
+
+const ProtectedEditCategory = withAuthProtection(EditCategory, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedEditCategory.getLayout = EditCategory.getLayout;
+
+export default ProtectedEditCategory;
+

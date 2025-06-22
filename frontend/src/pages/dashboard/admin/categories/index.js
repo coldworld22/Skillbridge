@@ -236,4 +236,13 @@ AdminCategoryIndex.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default withAuthProtection(AdminCategoryIndex, ["admin", "superadmin"]);
+
+const ProtectedAdminCategoryIndex = withAuthProtection(AdminCategoryIndex, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedAdminCategoryIndex.getLayout = AdminCategoryIndex.getLayout;
+
+export default ProtectedAdminCategoryIndex;
+
