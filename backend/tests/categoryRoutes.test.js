@@ -11,6 +11,7 @@ jest.mock('../src/modules/users/categories/category.service', () => ({
   delete: jest.fn(),
   exists: jest.fn(),
   findBySlug: jest.fn(),
+
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -68,4 +69,25 @@ describe('PATCH /api/categories/:id/status', () => {
     expect(service.updateStatus).toHaveBeenCalledWith('1', 'inactive');
   });
 });
+
+
+describe('DELETE /api/categories/:id', () => {
+  it('returns 400 when category has children', async () => {
+    service.findById.mockResolvedValue({ id: '1', image_url: null });
+    service.countChildren.mockResolvedValue(2);
+    const res = await request(app).delete('/api/categories/1');
+    expect(res.status).toBe(400);
+    expect(service.countChildren).toHaveBeenCalledWith('1');
+  });
+
+  it('deletes category without children', async () => {
+    service.findById.mockResolvedValue({ id: '1', image_url: null });
+    service.countChildren.mockResolvedValue(0);
+    service.delete.mockResolvedValue(1);
+    const res = await request(app).delete('/api/categories/1');
+    expect(res.status).toBe(200);
+    expect(service.delete).toHaveBeenCalledWith('1');
+  });
+});
+
 
