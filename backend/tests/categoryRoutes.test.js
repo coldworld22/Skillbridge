@@ -11,6 +11,7 @@ jest.mock('../src/modules/users/categories/category.service', () => ({
   delete: jest.fn(),
   exists: jest.fn(),
   findBySlug: jest.fn(),
+  countChildren: jest.fn(),
 
 }));
 
