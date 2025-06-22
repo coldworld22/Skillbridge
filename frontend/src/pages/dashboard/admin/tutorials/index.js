@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 import {
   fetchAllTutorials,
   permanentlyDeleteTutorial,
@@ -27,6 +28,7 @@ function AdminTutorialsPage() {
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
+  const [categories, setCategories] = useState([]);
 
   // Modals and Selections
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,19 +37,23 @@ function AdminTutorialsPage() {
   const [tutorialToReject, setTutorialToReject] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
-  // Load tutorials from backend on mount
+  // Load tutorials and categories from backend on mount
   useEffect(() => {
-    const loadTutorials = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchAllTutorials();
-        setTutorials(data);
+        const [tuts, cats] = await Promise.all([
+          fetchAllTutorials(),
+          fetchAllCategories(),
+        ]);
+        setTutorials(tuts);
+        setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load tutorials");
       }
     };
 
-    loadTutorials();
+    loadData();
   }, []);
 
   // Pagination
@@ -60,7 +66,8 @@ function AdminTutorialsPage() {
       const matchesSearch =
         tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = filterCategory === "All" || tut.category === filterCategory;
+      const matchesCategory =
+        filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
       const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
       return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
@@ -284,10 +291,11 @@ function AdminTutorialsPage() {
             className="p-2 border rounded"
           >
             <option value="All">All Categories</option>
-            <option value="React">React</option>
-            <option value="Node.js">Node.js</option>
-            <option value="AI">AI</option>
-            <option value="Design">Design</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
           <select
             value={filterStatus}
