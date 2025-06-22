@@ -36,7 +36,7 @@ function FloatingInput({ label, name, value, onChange, type = "text", ...props }
   );
 }
 
-export default function CreateOnlineClass() {
+function CreateOnlineClass() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
