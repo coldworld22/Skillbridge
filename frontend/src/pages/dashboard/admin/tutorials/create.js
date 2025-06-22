@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
@@ -9,7 +10,7 @@ import ReviewStep from "@/components/tutorials/create/ReviewStep";
 import { createTutorial } from "@/services/admin/tutorialService";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
-export default function CreateTutorialPage() {
+function CreateTutorialPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
   const [tutorialData, setTutorialData] = useState({
@@ -106,7 +107,6 @@ export default function CreateTutorialPage() {
 
   return (
     <AdminLayout>
-      <Toaster position="top-center" />
       <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
 
@@ -191,3 +191,5 @@ export default function CreateTutorialPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(CreateTutorialPage, ["admin", "superadmin"]);
