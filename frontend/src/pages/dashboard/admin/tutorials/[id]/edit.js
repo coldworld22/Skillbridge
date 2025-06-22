@@ -1,7 +1,7 @@
 // EditTutorialPage.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
