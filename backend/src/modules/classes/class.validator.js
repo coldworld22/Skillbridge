@@ -9,6 +9,7 @@ exports.create = z.object({
     cover_image: z.string().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
+    category_id: z.string().uuid().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
 });
@@ -22,6 +23,7 @@ exports.update = z.object({
     cover_image: z.string().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
+    category_id: z.string().uuid().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
 });
