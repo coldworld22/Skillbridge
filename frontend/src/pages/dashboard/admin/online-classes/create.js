@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchAllCategories } from '@/services/admin/categoryService';
-import { createAdminClass } from '@/services/admin/classService';
+import { createAdminClass, fetchAdminClasses } from '@/services/admin/classService';
 import useAuthStore from '@/store/auth/authStore';
 import { useRouter } from 'next/router';
 
@@ -36,7 +36,7 @@ function FloatingInput({ label, name, value, onChange, type = "text", ...props }
   );
 }
 
-export default function CreateOnlineClass() {
+function CreateOnlineClass() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -59,6 +59,7 @@ export default function CreateOnlineClass() {
     assignments: [],
   });
   const [categories, setCategories] = useState([]);
+  const [existingTitles, setExistingTitles] = useState([]);
 
   const [titleError, setTitleError] = useState('');
   const [validFields, setValidFields] = useState({});
@@ -74,7 +75,16 @@ export default function CreateOnlineClass() {
         toast.error(msg);
       }
     };
+    const loadTitles = async () => {
+      try {
+        const list = await fetchAdminClasses();
+        setExistingTitles(list.map((c) => c.title?.toLowerCase()));
+      } catch (err) {
+        console.error('Failed to load classes', err);
+      }
+    };
     loadCategories();
+    loadTitles();
   }, []);
 
   const validateField = (name, value) => {
@@ -95,7 +105,15 @@ export default function CreateOnlineClass() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'title') {
-      setTitleError(value.trim() === '' ? 'Title is required' : '');
+      const duplicate = existingTitles.includes(value.trim().toLowerCase());
+      if (duplicate) toast.error('This title already exists');
+      setTitleError(
+        value.trim() === ''
+          ? 'Title is required'
+          : duplicate
+          ? 'This title already exists'
+          : ''
+      );
     }
     validateField(name, value);
     setFormData({
@@ -107,11 +125,21 @@ export default function CreateOnlineClass() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
+  useEffect(() => {
+    if (user?.name) {
+      setFormData((prev) => ({ ...prev, instructor: user.name }));
+    }
+  }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (step === 1) {
       if (!formData.title || !formData.startDate || titleError) {
         toast.error("Please fix errors and fill all required fields.");
+        return;
+      }
+      if (existingTitles.includes(formData.title.trim().toLowerCase())) {
+        toast.error('This title already exists');
         return;
       }
       setStep(2);
@@ -182,7 +210,7 @@ export default function CreateOnlineClass() {
                   <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
                   {titleError && <p className="text-red-500 text-xs mt-1">{titleError}</p>}
                 </div>
-                <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} />
+                <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Category</label>
                   <select name="category" value={formData.category} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
