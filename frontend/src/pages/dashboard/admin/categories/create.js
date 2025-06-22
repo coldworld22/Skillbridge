@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -9,7 +10,7 @@ import {
   createCategory,
 } from "@/services/admin/categoryService";
 
-export default function CreateCategory() {
+function CreateCategory() {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [status, setStatus] = useState("active");
@@ -176,3 +177,5 @@ export default function CreateCategory() {
 CreateCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+export default withAuthProtection(CreateCategory, ["admin", "superadmin"]);

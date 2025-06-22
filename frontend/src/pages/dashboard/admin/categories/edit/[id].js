@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -10,7 +11,7 @@ import {
   updateCategory,
 } from "@/services/admin/categoryService";
 
-export default function EditCategory() {
+function EditCategory() {
   const router = useRouter();
   const { id } = router.query;
 
@@ -188,3 +189,5 @@ export default function EditCategory() {
 EditCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+export default withAuthProtection(EditCategory, ["admin", "superadmin"]);
