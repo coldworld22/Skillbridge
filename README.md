@@ -41,3 +41,13 @@ The backend exposes role-based endpoints for managing instructor bookings:
 - `PATCH /api/bookings/instructor/:id` – update a booking (e.g. approve or decline)
 
 Admin routes remain available under `/api/bookings/admin`.
+
+## Online Classes API
+
+Endpoints for creating and managing live classes are served under `/api/users/classes`:
+
+- `GET /api/users/classes` – list published classes
+- `GET /api/users/classes/:id` – view a specific class
+- `POST /api/users/classes/admin` – create a class (requires instructor or admin token)
+- `PUT /api/users/classes/admin/:id` – update a class
+- `DELETE /api/users/classes/admin/:id` – delete a class
