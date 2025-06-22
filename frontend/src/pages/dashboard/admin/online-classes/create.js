@@ -126,8 +126,10 @@ function CreateOnlineClass() {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    if (user?.name) {
-      setFormData((prev) => ({ ...prev, instructor: user.name }));
+    const name = user?.full_name || user?.name;
+    if (name) {
+      setFormData((prev) => ({ ...prev, instructor: name }));
+
     }
   }, [user]);
 
