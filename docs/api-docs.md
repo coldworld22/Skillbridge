@@ -21,6 +21,11 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 - `/categories` – browse and manage categories
 - `/tutorials` – public tutorial browsing and admin management
 - `/classes` – published classes and enrollment
+  - `GET /api/users/classes` – list published classes
+  - `GET /api/users/classes/:id` – view details for a published class
+  - `POST /api/users/classes/admin` – create a class (instructor or admin)
+  - `PUT /api/users/classes/admin/:id` – update a class
+  - `DELETE /api/users/classes/admin/:id` – remove a class
 - `/admin` – administrator dashboard features
 - `/instructor` – instructor tools
 - `/student` – student account endpoints

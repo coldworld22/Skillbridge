@@ -1,5 +1,5 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FaCalendarAlt,
@@ -15,7 +15,7 @@ import {
   FaChevronRight
 } from "react-icons/fa";
 
-export default function AdminClassesTable({ classes = [] }) {
+export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [sortKey, setSortKey] = useState("date");
@@ -24,6 +24,10 @@ export default function AdminClassesTable({ classes = [] }) {
   const [modalType, setModalType] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  useEffect(() => {
+    setClassList(classes);
+  }, [classes]);
 
   const filteredClasses = classList
     .filter((cls) =>
@@ -68,6 +72,22 @@ export default function AdminClassesTable({ classes = [] }) {
 
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        Loading classes...
+      </div>
+    );
+  }
+
+  if (!classList.length) {
+    return (
+      <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100 text-center">
+        No classes found.
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
