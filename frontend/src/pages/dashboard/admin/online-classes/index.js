@@ -44,4 +44,14 @@ AdminOnlineClassesPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default withAuthProtection(AdminOnlineClassesPage, ["admin", "superadmin", "instructor"]);
+
+const ProtectedAdminOnlineClassesPage = withAuthProtection(
+  AdminOnlineClassesPage,
+  ["admin", "superadmin", "instructor"]
+);
+
+ProtectedAdminOnlineClassesPage.getLayout = AdminOnlineClassesPage.getLayout;
+
+export default ProtectedAdminOnlineClassesPage;
+
+
