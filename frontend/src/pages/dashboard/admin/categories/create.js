@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -9,7 +10,7 @@ import {
   createCategory,
 } from "@/services/admin/categoryService";
 
-export default function CreateCategory() {
+function CreateCategory() {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [status, setStatus] = useState("active");
@@ -34,6 +35,12 @@ export default function CreateCategory() {
         setParentCategories(formatCategories(tree));
       } catch (err) {
         console.error("Failed to load categories", err);
+        toast.error(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Failed to load categories"
+        );
       }
     };
     loadParents();
@@ -46,6 +53,7 @@ export default function CreateCategory() {
       setPreview(URL.createObjectURL(file));
     } else {
       setError("Please upload a valid image (max 2MB).");
+      toast.error("Please upload a valid image (max 2MB).");
     }
   };
 
@@ -53,6 +61,7 @@ export default function CreateCategory() {
     e.preventDefault();
     if (!name.trim()) {
       setError("Category name is required.");
+      toast.error("Category name is required.");
       return;
     }
     setError("");
@@ -176,3 +185,12 @@ export default function CreateCategory() {
 CreateCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedCreateCategory = withAuthProtection(CreateCategory, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedCreateCategory.getLayout = CreateCategory.getLayout;
+
+export default ProtectedCreateCategory;
