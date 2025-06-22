@@ -34,7 +34,7 @@ function AdminDashboardHome() {
       if (!user) {
         router.replace("/auth/login");
       } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-        router.replace("/403");
+        router.replace("/error/403");
       }
     }
   }, [user, hydrated]);
