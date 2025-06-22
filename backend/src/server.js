@@ -44,7 +44,8 @@ const path = require("path");
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 🧠 Parse incoming JSON bodies
-app.use(express.json());
+// Increase payload limit to handle image uploads or larger requests
+app.use(express.json({ limit: "10mb" }));
 
 // 🍪 Parse cookies from incoming requests
 app.use(cookieParser());

@@ -1,7 +1,7 @@
 // pages/dashboard/admin/online-classes/create.js
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { FaCheckCircle, FaTrash } from 'react-icons/fa';
+import { FaTrash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -56,7 +56,6 @@ function CreateOnlineClass() {
     allowInstallments: false,
     isApproved: false,
     lessons: [],
-    assignments: [],
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
@@ -150,12 +149,6 @@ function CreateOnlineClass() {
         toast.error("Please complete all lesson fields and add at least one lesson.");
         return;
       }
-      setStep(3);
-    } else {
-      if (formData.assignments.some(a => !a.title || !a.description || !a.dueDate)) {
-        toast.error("Please complete all assignment fields.");
-        return;
-      }
       try {
         const payload = {
           instructor_id: user?.id,
@@ -181,12 +174,12 @@ function CreateOnlineClass() {
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 bg-white rounded-xl shadow-xl mt-6 transition-all duration-500 ease-in-out">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
-        {step === 1 ? '📘 Create New Class' : step === 2 ? '📚 Add Lesson Plan' : '📝 Add Assignments'}
+        {step === 1 ? '📘 Create New Class' : '📚 Add Lesson Plan'}
       </h1>
 
       {/* Step Indicators */}
       <div className="flex justify-between items-center mb-6">
-        {[1, 2, 3].map((s) => (
+        {[1, 2].map((s) => (
           <div
             key={s}
             className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'
@@ -334,71 +327,6 @@ function CreateOnlineClass() {
               </div>
             )}
 
-            {step === 3 && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-700">Assignments</h2>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      assignments: [...prev.assignments, { title: '', description: '', dueDate: '' }]
-                    }))}
-                    className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition"
-                  >
-                    + Add Assignment
-                  </button>
-                </div>
-                {formData.assignments.map((assignment, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50">
-                    <input
-                      type="text"
-                      placeholder="Assignment Title"
-                      value={assignment.title}
-                      onChange={(e) => {
-                        const updated = [...formData.assignments];
-                        updated[index].title = e.target.value;
-                        setFormData(prev => ({ ...prev, assignments: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm"
-                    />
-                    <input
-                      type="date"
-                      value={assignment.dueDate}
-                      onChange={(e) => {
-                        const updated = [...formData.assignments];
-                        updated[index].dueDate = e.target.value;
-                        setFormData(prev => ({ ...prev, assignments: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm"
-                    />
-                    <textarea
-                      placeholder="Description"
-                      value={assignment.description}
-                      onChange={(e) => {
-                        const updated = [...formData.assignments];
-                        updated[index].description = e.target.value;
-                        setFormData(prev => ({ ...prev, assignments: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm col-span-full"
-                    ></textarea>
-                    <div className="col-span-full flex justify-end mt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...formData.assignments];
-                          updated.splice(index, 1);
-                          setFormData(prev => ({ ...prev, assignments: updated }));
-                        }}
-                        className="text-red-600 text-sm flex items-center gap-1 hover:underline"
-                      >
-                        <FaTrash /> Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </motion.div>
         </AnimatePresence>
 
@@ -407,7 +335,7 @@ function CreateOnlineClass() {
             <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
           )}
           <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95">
-            {step === 1 ? 'Continue to Lessons' : step === 2 ? 'Continue to Assignments' : 'Submit Class'}
+            {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
       </form>
