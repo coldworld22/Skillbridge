@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   fetchAllCategories,
   deleteCategory,
@@ -9,7 +10,7 @@ import {
 } from "@/services/admin/categoryService";
 import { toast } from "react-toastify";
 
-export default function AdminCategoryIndex() {
+function AdminCategoryIndex() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -29,6 +30,12 @@ export default function AdminCategoryIndex() {
     } catch (err) {
       console.error("Failed to fetch categories", err);
       setError("Failed to load categories.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to load categories"
+      );
     } finally {
       setLoading(false);
     }
@@ -228,3 +235,5 @@ export default function AdminCategoryIndex() {
 AdminCategoryIndex.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+export default withAuthProtection(AdminCategoryIndex, ["admin", "superadmin"]);
