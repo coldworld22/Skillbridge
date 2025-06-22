@@ -24,7 +24,7 @@ export default function PlansIndex() {
 
     const role = user.role?.toLowerCase() ?? "";
     if (role !== "admin" && role !== "superadmin") {
-      router.replace("/403");
+      router.replace("/error/403");
       return;
     }
 
