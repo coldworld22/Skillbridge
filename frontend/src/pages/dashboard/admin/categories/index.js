@@ -30,6 +30,12 @@ function AdminCategoryIndex() {
     } catch (err) {
       console.error("Failed to fetch categories", err);
       setError("Failed to load categories.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to load categories"
+      );
     } finally {
       setLoading(false);
     }

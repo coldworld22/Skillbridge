@@ -48,6 +48,12 @@ function EditCategory() {
         }
       } catch (err) {
         console.error("Failed to load category", err);
+        toast.error(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Failed to load category"
+        );
       }
     };
     loadData();
@@ -60,6 +66,7 @@ function EditCategory() {
       setPreview(URL.createObjectURL(file));
     } else {
       setError("Please upload a valid image (max 2MB). ");
+      toast.error("Please upload a valid image (max 2MB).");
     }
   };
 
@@ -67,6 +74,7 @@ function EditCategory() {
     e.preventDefault();
     if (!name.trim()) {
       setError("Category name is required.");
+      toast.error("Category name is required.");
       return;
     }
     setError("");
