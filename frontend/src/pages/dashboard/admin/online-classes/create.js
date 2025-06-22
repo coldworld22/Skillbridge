@@ -1,10 +1,15 @@
 // pages/dashboard/admin/online-classes/create.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaCheckCircle, FaTrash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import withAuthProtection from '@/hooks/withAuthProtection';
+import { fetchAllCategories } from '@/services/admin/categoryService';
+import { createAdminClass } from '@/services/admin/classService';
+import useAuthStore from '@/store/auth/authStore';
+import { useRouter } from 'next/router';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
@@ -53,10 +58,24 @@ export default function CreateOnlineClass() {
     lessons: [],
     assignments: [],
   });
+  const [categories, setCategories] = useState([]);
 
-  const [existingTitles] = useState(["React & Next.js Bootcamp", "Java Fundamentals"]);
   const [titleError, setTitleError] = useState('');
   const [validFields, setValidFields] = useState({});
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const result = await fetchAllCategories({ status: 'active', limit: 100 });
+        setCategories(result.data || []);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to load categories';
+        toast.error(msg);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const validateField = (name, value) => {
     setValidFields(prev => ({ ...prev, [name]: value.trim() !== '' }));
@@ -76,11 +95,7 @@ export default function CreateOnlineClass() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'title') {
-      if (existingTitles.includes(value)) {
-        setTitleError('This title already exists. Please choose a different one.');
-      } else {
-        setTitleError('');
-      }
+      setTitleError(value.trim() === '' ? 'Title is required' : '');
     }
     validateField(name, value);
     setFormData({
@@ -89,7 +104,10 @@ export default function CreateOnlineClass() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (step === 1) {
       if (!formData.title || !formData.startDate || titleError) {
@@ -108,8 +126,25 @@ export default function CreateOnlineClass() {
         toast.error("Please complete all assignment fields.");
         return;
       }
-      toast.success("✅ Class created successfully!");
-      console.log('Submitting class:', formData);
+      try {
+        const payload = {
+          instructor_id: user?.id,
+          title: formData.title,
+          description: formData.description,
+          level: formData.level,
+          cover_image: formData.imagePreview,
+          start_date: formData.startDate,
+          end_date: formData.endDate,
+          status: formData.isApproved ? 'published' : 'draft',
+          category_id: formData.category || null,
+        };
+        await createAdminClass(payload);
+        toast.success('Class created successfully');
+        router.push('/dashboard/admin/online-classes');
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create class';
+        toast.error(msg);
+      }
     }
   };
 
@@ -152,11 +187,9 @@ export default function CreateOnlineClass() {
                   <label className="block text-xs text-gray-600 mb-1">Category</label>
                   <select name="category" value={formData.category} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
                     <option value="">Select Category</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Design">Design</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Business">Business</option>
-                    <option value="Photography">Photography</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
                 <FloatingInput label="Tags (comma-separated)" name="tags" value={formData.tags} onChange={handleChange} />
@@ -355,3 +388,13 @@ export default function CreateOnlineClass() {
 CreateOnlineClass.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, [
+  'admin',
+  'superadmin',
+  'instructor',
+]);
+
+ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
+
+export default ProtectedCreateOnlineClass;
