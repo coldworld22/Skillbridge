@@ -236,6 +236,7 @@ AdminCategoryIndex.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
+
 const ProtectedAdminCategoryIndex = withAuthProtection(AdminCategoryIndex, [
   "admin",
   "superadmin",
@@ -244,3 +245,4 @@ const ProtectedAdminCategoryIndex = withAuthProtection(AdminCategoryIndex, [
 ProtectedAdminCategoryIndex.getLayout = AdminCategoryIndex.getLayout;
 
 export default ProtectedAdminCategoryIndex;
+

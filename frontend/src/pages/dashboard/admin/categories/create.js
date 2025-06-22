@@ -186,6 +186,7 @@ CreateCategory.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
+
 const ProtectedCreateCategory = withAuthProtection(CreateCategory, [
   "admin",
   "superadmin",
@@ -194,3 +195,4 @@ const ProtectedCreateCategory = withAuthProtection(CreateCategory, [
 ProtectedCreateCategory.getLayout = CreateCategory.getLayout;
 
 export default ProtectedCreateCategory;
+
