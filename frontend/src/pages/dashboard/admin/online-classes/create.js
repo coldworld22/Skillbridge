@@ -150,17 +150,16 @@ function CreateOnlineClass() {
         return;
       }
       try {
-        const payload = {
-          instructor_id: user?.id,
-          title: formData.title,
-          description: formData.description,
-          level: formData.level,
-          cover_image: formData.imagePreview,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          status: formData.isApproved ? 'published' : 'draft',
-          category_id: formData.category || null,
-        };
+        const payload = new FormData();
+        payload.append('instructor_id', user?.id);
+        payload.append('title', formData.title);
+        if (formData.description) payload.append('description', formData.description);
+        if (formData.level) payload.append('level', formData.level);
+        if (formData.image) payload.append('cover_image', formData.image);
+        if (formData.startDate) payload.append('start_date', formData.startDate);
+        if (formData.endDate) payload.append('end_date', formData.endDate);
+        payload.append('status', formData.isApproved ? 'published' : 'draft');
+        if (formData.category) payload.append('category_id', formData.category);
         await createAdminClass(payload);
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');

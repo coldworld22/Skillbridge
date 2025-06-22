@@ -3,6 +3,7 @@ const router = express.Router();
 const controller = require("./class.controller");
 const validate = require("../../middleware/validate");
 const validator = require("./class.validator");
+const upload = require("./classUploadMiddleware");
 const {
   verifyToken,
   isInstructorOrAdmin,
@@ -12,6 +13,7 @@ router.post(
   "/admin",
   verifyToken,
   isInstructorOrAdmin,
+  upload,
   validate(validator.create),
   controller.createClass
 );
@@ -26,6 +28,7 @@ router.put(
   "/admin/:id",
   verifyToken,
   isInstructorOrAdmin,
+  upload,
   validate(validator.update),
   controller.updateClass
 );
