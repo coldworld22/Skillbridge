@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 import {
   fetchAllTutorials,
   permanentlyDeleteTutorial,
@@ -17,7 +19,7 @@ import {
 } from "@/services/admin/tutorialService";
 
 
-export default function AdminTutorialsPage() {
+function AdminTutorialsPage() {
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
 
@@ -26,6 +28,7 @@ export default function AdminTutorialsPage() {
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
+  const [categories, setCategories] = useState([]);
 
   // Modals and Selections
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,19 +37,23 @@ export default function AdminTutorialsPage() {
   const [tutorialToReject, setTutorialToReject] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
-  // Load tutorials from backend on mount
+  // Load tutorials and categories from backend on mount
   useEffect(() => {
-    const loadTutorials = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchAllTutorials();
-        setTutorials(data);
+        const [tuts, cats] = await Promise.all([
+          fetchAllTutorials(),
+          fetchAllCategories(),
+        ]);
+        setTutorials(tuts);
+        setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load tutorials");
       }
     };
 
-    loadTutorials();
+    loadData();
   }, []);
 
   // Pagination
@@ -59,7 +66,8 @@ export default function AdminTutorialsPage() {
       const matchesSearch =
         tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = filterCategory === "All" || tut.category === filterCategory;
+      const matchesCategory =
+        filterCategory === "All" || tut.category === filterCategory;
       const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
       const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
       return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
@@ -216,7 +224,6 @@ export default function AdminTutorialsPage() {
 
   return (
     <AdminLayout>
-      <Toaster position="top-center" />
       <div className="p-6 bg-gray-100 min-h-screen space-y-8">
 
         {/* Header */}
@@ -284,10 +291,11 @@ export default function AdminTutorialsPage() {
             className="p-2 border rounded"
           >
             <option value="All">All Categories</option>
-            <option value="React">React</option>
-            <option value="Node.js">Node.js</option>
-            <option value="AI">AI</option>
-            <option value="Design">Design</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
           <select
             value={filterStatus}
@@ -462,3 +470,5 @@ export default function AdminTutorialsPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);

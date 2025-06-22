@@ -25,7 +25,7 @@ export default function withAuthProtection(Component, allowedRoles = []) {
           allowedRoles.length &&
           !allowedRoles.includes(user.role?.toLowerCase())
         ) {
-          router.replace("/403");
+          router.replace("/error/403");
         }
       }
     }, [hydrated, user, accessToken]);
