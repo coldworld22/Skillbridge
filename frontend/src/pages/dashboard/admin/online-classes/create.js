@@ -8,11 +8,19 @@ import { toast } from 'react-toastify';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import { createAdminClass, fetchAdminClasses } from '@/services/admin/classService';
+import { fetchTags, createTag } from '@/services/admin/communityService';
 import useAuthStore from '@/store/auth/authStore';
 import { useRouter } from 'next/router';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
+
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w ]+/g, '')
+    .replace(/ +/g, '-');
 
 function FloatingInput({ label, name, value, onChange, type = "text", ...props }) {
   return (
@@ -42,7 +50,6 @@ function CreateOnlineClass() {
     title: '',
     instructor: '',
     category: '',
-    tags: '',
     level: '',
     language: '',
     description: '',
@@ -61,11 +68,20 @@ function CreateOnlineClass() {
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
 
   const [titleError, setTitleError] = useState('');
   const [validFields, setValidFields] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredTagSuggestions = availableTags.filter(
+    (t) =>
+      t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+      !selectedTags.includes(t.name)
+  );
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -86,8 +102,17 @@ function CreateOnlineClass() {
         console.error('Failed to load classes', err);
       }
     };
+    const loadTags = async () => {
+      try {
+        const tags = await fetchTags();
+        setAvailableTags(tags);
+      } catch (err) {
+        console.error('Failed to load tags', err);
+      }
+    };
     loadCategories();
     loadTitles();
+    loadTags();
   }, []);
 
   const validateField = (name, value) => {
@@ -109,6 +134,21 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (file) {
       setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
+    }
+  };
+
+  const addTag = (name) => {
+    const tag = name.trim();
+    if (tag && !selectedTags.includes(tag)) {
+      setSelectedTags((prev) => [...prev, tag]);
+    }
+    setTagInput('');
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(tagInput);
     }
   };
 
@@ -172,6 +212,24 @@ function CreateOnlineClass() {
         if (formData.endDate) payload.append('end_date', formData.endDate);
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
+
+        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+
+        const newTags = selectedTags.filter(
+          (t) => !availableTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+        );
+        if (newTags.length) {
+          const created = await Promise.all(
+            newTags.map((t) =>
+              createTag({ name: t, slug: slugify(t) }).catch((err) => {
+                console.error('Failed to create tag', err);
+                return null;
+              })
+            )
+          );
+          setAvailableTags((prev) => [...prev, ...created.filter(Boolean)]);
+        }
+
         setIsSubmitting(true);
         setUploadProgress(0);
         await createAdminClass(payload, (e) => {
@@ -232,7 +290,7 @@ function CreateOnlineClass() {
                   {titleError && <p className="text-red-500 text-xs mt-1">{titleError}</p>}
                 </div>
                 <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">Category</label>
                   <select name="category" value={formData.category} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
                     <option value="">Select Category</option>
@@ -241,7 +299,39 @@ function CreateOnlineClass() {
                     ))}
                   </select>
                 </div>
-                <FloatingInput label="Tags (comma-separated)" name="tags" value={formData.tags} onChange={handleChange} />
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Tags</label>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder="Type and press Enter"
+                    className="border rounded px-3 py-2 w-full text-sm"
+                  />
+                  {filteredTagSuggestions.length > 0 && tagInput && (
+                    <ul className="border bg-white rounded mt-1 max-h-40 overflow-y-auto text-sm absolute z-10 w-full">
+                      {filteredTagSuggestions.map((t) => (
+                        <li
+                          key={t.id}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => addTag(t.name)}
+                        >
+                          {t.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedTags.map((tag) => (
+                        <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Level</label>
                   <select name="level" value={formData.level} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
