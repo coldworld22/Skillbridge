@@ -1,7 +1,9 @@
-// pages/dashboard/admin/online-classes/create.js
+// Full updated CreateOnlineClass page with responsive layout and upload progress
+// File: pages/dashboard/admin/online-classes/create.js
+
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaSpinner } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -83,6 +85,23 @@ function CreateOnlineClass() {
       !selectedTags.includes(t.name)
   );
 
+  const addTag = (tag) => {
+    const name = tag.trim();
+    if (name && !selectedTags.includes(name)) {
+      setSelectedTags((prev) => [...prev, name]);
+    }
+    setTagInput('');
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput) {
+      setSelectedTags((prev) => prev.slice(0, -1));
+    }
+  };
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -114,17 +133,34 @@ function CreateOnlineClass() {
     loadTitles();
     loadTags();
   }, []);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const validateField = (name, value) => {
-    setValidFields(prev => ({ ...prev, [name]: value.trim() !== '' }));
+    if (name === 'title') {
+      const duplicate = existingTitles.includes(value.trim().toLowerCase());
+      setTitleError(value.trim() === '' ? 'Title is required' : duplicate ? 'This title already exists' : '');
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    validateField(name, value);
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageUploading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, image: file, imagePreview: reader.result }));
+        setImageUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to load image preview.");
+        setImageUploading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -133,9 +169,12 @@ function CreateOnlineClass() {
   const handleVideoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setVideoUploading(true);
       setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
+      setTimeout(() => setVideoUploading(false), 500);
     }
   };
+
 
   const addTag = (name) => {
     const tag = name.trim();
@@ -166,14 +205,27 @@ function CreateOnlineClass() {
     });
   };
 
+
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    const name = user?.full_name || user?.name;
-    if (name) {
-      setFormData((prev) => ({ ...prev, instructor: name }));
+    const init = async () => {
+      try {
+        const res = await fetchAllCategories({ status: 'active', limit: 100 });
+        setCategories(res.data || []);
+        const list = await fetchAdminClasses();
+        setExistingTitles(list.map((c) => c.title?.toLowerCase()));
+      } catch (err) {
+        toast.error('Failed to load data');
+      }
+    };
+    init();
+  }, []);
 
+  useEffect(() => {
+    if (user?.full_name || user?.name) {
+      setFormData((prev) => ({ ...prev, instructor: user.full_name || user.name }));
     }
   }, [user]);
 
@@ -182,10 +234,6 @@ function CreateOnlineClass() {
     if (step === 1) {
       if (!formData.title || !formData.startDate || titleError) {
         toast.error("Please fix errors and fill all required fields.");
-        return;
-      }
-      if (existingTitles.includes(formData.title.trim().toLowerCase())) {
-        toast.error('This title already exists');
         return;
       }
       setStep(2);
@@ -230,6 +278,8 @@ function CreateOnlineClass() {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
+
+        await createAdminClass(payload);
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');
       } catch (err) {
@@ -242,7 +292,7 @@ function CreateOnlineClass() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 bg-white rounded-xl shadow-xl mt-6 transition-all duration-500 ease-in-out">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white rounded-xl shadow-xl mt-6">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
         {step === 1 ? '📘 Create New Class' : '📚 Add Lesson Plan'}
       </h1>
@@ -253,8 +303,7 @@ function CreateOnlineClass() {
           {[1, 2].map((s) => (
             <div
               key={s}
-              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'
-                }`}
+              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'}`}
             >
               Step {s}
             </div>
@@ -270,19 +319,10 @@ function CreateOnlineClass() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.3 }}
-          >
+          <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
             {step === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
-                  {titleError && <p className="text-red-500 text-xs mt-1">{titleError}</p>}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
                 <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
                 <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">Category</label>
@@ -308,12 +348,14 @@ function CreateOnlineClass() {
                       type="text"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
+
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ',') {
                           e.preventDefault();
                           addTag(tagInput);
                         }
                       }}
+
                       placeholder="Type and press Enter"
                       className="flex-grow min-w-[120px] focus:outline-none"
                     />
@@ -342,7 +384,7 @@ function CreateOnlineClass() {
                   </select>
                 </div>
                 <FloatingInput label="Language" name="language" value={formData.language} onChange={handleChange} />
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-xs text-gray-600 mb-1">Description</label>
                   <ReactQuill theme="snow" value={formData.description} onChange={(val) => setFormData(prev => ({ ...prev, description: val }))} className="bg-white" />
                 </div>
@@ -350,7 +392,7 @@ function CreateOnlineClass() {
                 <FloatingInput label="End Date" type="date" name="endDate" value={formData.endDate} onChange={handleChange} />
                 <FloatingInput label="Price" type="number" name="price" value={formData.price} onChange={handleChange} disabled={formData.isFree} />
                 <FloatingInput label="Max Students" type="number" name="maxStudents" value={formData.maxStudents} onChange={handleChange} />
-                <div className="flex items-center gap-3 sm:col-span-2">
+                <div className="flex items-center gap-3 md:col-span-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" name="isFree" checked={formData.isFree} onChange={handleChange} /> Free Class
                   </label>
@@ -361,95 +403,24 @@ function CreateOnlineClass() {
                     <input type="checkbox" name="isApproved" checked={formData.isApproved} onChange={handleChange} /> Approve Class
                   </label>
                 </div>
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block mb-1 text-sm text-gray-600">Upload Cover Image</label>
                   <input type="file" accept="image/*" onChange={handleImageUpload} />
-                  {formData.imagePreview && (
-                    <img src={formData.imagePreview} alt="Preview" className="mt-2 w-40 h-auto rounded shadow transition-transform duration-300 hover:scale-105" />
+                  {imageUploading && <div className="text-blue-500 text-sm flex items-center gap-2"><FaSpinner className="animate-spin" /> Uploading image preview...</div>}
+                  {formData.imagePreview && !imageUploading && (
+                    <img src={formData.imagePreview} alt="Preview" className="mt-2 w-full sm:w-40 h-auto rounded shadow" />
                   )}
                 </div>
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <label className="block mb-1 text-sm text-gray-600">Upload Demo Video</label>
                   <input type="file" accept="video/*" onChange={handleVideoUpload} />
-                  {formData.demoPreview && (
-                    <video src={formData.demoPreview} controls className="mt-2 w-full rounded" />
+                  {videoUploading && <div className="text-blue-500 text-sm flex items-center gap-2"><FaSpinner className="animate-spin" /> Loading video preview...</div>}
+                  {formData.demoPreview && !videoUploading && (
+                    <video src={formData.demoPreview} controls className="mt-2 w-full max-h-[300px] rounded" />
                   )}
                 </div>
               </div>
             )}
-
-
-            {step === 2 && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      lessons: [...prev.lessons, { title: '', duration: '', resource: null }]
-                    }))}
-                    className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-                  >
-                    + Add Lesson
-                  </button>
-                </div>
-
-                {formData.lessons.map((lesson, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Lesson Title"
-                      value={lesson.title}
-                      onChange={(e) => {
-                        const updated = [...formData.lessons];
-                        updated[index].title = e.target.value;
-                        setFormData(prev => ({ ...prev, lessons: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Duration (e.g., 30 min)"
-                      value={lesson.duration}
-                      onChange={(e) => {
-                        const updated = [...formData.lessons];
-                        updated[index].duration = e.target.value;
-                        setFormData(prev => ({ ...prev, lessons: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm"
-                    />
-                    <input
-                      type="file"
-                      accept=".pdf, .docx"
-                      onChange={(e) => {
-                        const updated = [...formData.lessons];
-                        updated[index].resource = e.target.files[0];
-                        setFormData(prev => ({ ...prev, lessons: updated }));
-                      }}
-                      className="border rounded px-3 py-2 w-full text-sm"
-                    />
-                    <div className="col-span-full flex justify-end mt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...formData.lessons];
-                          updated.splice(index, 1);
-                          setFormData(prev => ({ ...prev, lessons: updated }));
-                        }}
-                        className="text-red-600 text-sm flex items-center gap-1 hover:underline"
-                      >
-                        <FaTrash /> Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
           </motion.div>
         </AnimatePresence>
 
@@ -458,6 +429,8 @@ function CreateOnlineClass() {
             <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
           )}
           <button type="submit" disabled={isSubmitting} className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
+          {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>}
+          <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95">
             {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
@@ -478,12 +451,6 @@ CreateOnlineClass.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, [
-  'admin',
-  'superadmin',
-  'instructor',
-]);
-
+const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['admin', 'superadmin', 'instructor']);
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
-
 export default ProtectedCreateOnlineClass;
