@@ -1,48 +1,57 @@
 // pages/dashboard/admin/online-classes/[id]/analytics.js
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { useEffect, useState } from "react";
+import { fetchAdminClassAnalytics } from "@/services/admin/classService";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, Legend
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
-
-const mockAnalytics = {
-  totalStudents: 42,
-  totalRevenue: 2100,
-  totalAttendance: 30,
-  completed: 25,
-  revenueBreakdown: {
-    full: 30,
-    installments: 10,
-    free: 2
-  },
-  locations: [
-    { name: "Saudi Arabia", value: 20 },
-    { name: "Egypt", value: 10 },
-    { name: "UAE", value: 5 },
-    { name: "Other", value: 7 },
-  ],
-  devices: [
-    { name: "Desktop", value: 28 },
-    { name: "Mobile", value: 14 }
-  ],
-  registrationTrend: [
-    { date: "Apr 1", students: 5 },
-    { date: "Apr 5", students: 8 },
-    { date: "Apr 10", students: 12 },
-    { date: "Apr 15", students: 17 },
-  ],
-};
 
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#f87171"];
 
 export default function AnalyticsDashboard() {
   const router = useRouter();
   const { id } = router.query;
+  const [stats, setStats] = useState(null);
 
-  const avgRevenue = (mockAnalytics.totalRevenue / mockAnalytics.totalStudents).toFixed(2);
-  const attendanceRate = ((mockAnalytics.totalAttendance / mockAnalytics.totalStudents) * 100).toFixed(1);
-  const completionRate = ((mockAnalytics.completed / mockAnalytics.totalStudents) * 100).toFixed(1);
+  useEffect(() => {
+    if (!id) return;
+    fetchAdminClassAnalytics(id)
+      .then((data) => setStats(data))
+      .catch((err) => {
+        console.error("Failed to load analytics", err);
+        setStats(null);
+      });
+  }, [id]);
+
+  if (!stats) {
+    return (
+      <div className="p-6 text-center text-sm text-muted-foreground">Loading...</div>
+    );
+  }
+
+  const avgRevenue =
+    stats.totalStudents > 0
+      ? (stats.totalRevenue / stats.totalStudents).toFixed(2)
+      : "0";
+  const attendanceRate =
+    stats.totalStudents > 0
+      ? ((stats.totalAttendance / stats.totalStudents) * 100).toFixed(1)
+      : "0";
+  const completionRate =
+    stats.totalStudents > 0
+      ? ((stats.completed / stats.totalStudents) * 100).toFixed(1)
+      : "0";
 
   return (
     <div className="p-6 space-y-6">
@@ -51,20 +60,20 @@ export default function AnalyticsDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 Total Enrolled Students</h2>
-          <p className="text-3xl font-bold text-green-600">{mockAnalytics.totalStudents}</p>
+          <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 Total Revenue</h2>
-          <p className="text-3xl font-bold text-indigo-600">${mockAnalytics.totalRevenue}</p>
+          <p className="text-3xl font-bold text-indigo-600">${stats.totalRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 Revenue Breakdown</h2>
           <ul className="text-gray-700 space-y-1">
-            <li><strong>Full Payments:</strong> {mockAnalytics.revenueBreakdown.full}</li>
-            <li><strong>Installments:</strong> {mockAnalytics.revenueBreakdown.installments}</li>
-            <li><strong>Free Seats:</strong> {mockAnalytics.revenueBreakdown.free}</li>
+            <li><strong>Full Payments:</strong> {stats.revenueBreakdown.full}</li>
+            <li><strong>Installments:</strong> {stats.revenueBreakdown.installments}</li>
+            <li><strong>Free Seats:</strong> {stats.revenueBreakdown.free}</li>
           </ul>
         </div>
       </div>
@@ -91,8 +100,8 @@ export default function AnalyticsDashboard() {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">🌍 Top Countries</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={mockAnalytics.locations} dataKey="value" nameKey="name" outerRadius={100}>
-                {mockAnalytics.locations.map((entry, index) => (
+              <Pie data={stats.locations} dataKey="value" nameKey="name" outerRadius={100}>
+                {stats.locations.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -106,8 +115,8 @@ export default function AnalyticsDashboard() {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">📱 Devices Used</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={mockAnalytics.devices} dataKey="value" nameKey="name" outerRadius={100}>
-                {mockAnalytics.devices.map((entry, index) => (
+              <Pie data={stats.devices} dataKey="value" nameKey="name" outerRadius={100}>
+                {stats.devices.map((entry, index) => (
                   <Cell key={`cell-dev-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -121,7 +130,7 @@ export default function AnalyticsDashboard() {
       <div className="bg-white p-6 rounded-xl shadow border">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 Registration Trend</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={mockAnalytics.registrationTrend}>
+          <BarChart data={stats.registrationTrend}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />

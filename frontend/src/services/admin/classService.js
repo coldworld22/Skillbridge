@@ -28,3 +28,8 @@ export const deleteAdminClass = async (id) => {
   await api.delete(`/users/classes/admin/${id}`);
   return true;
 };
+
+export const fetchAdminClassAnalytics = async (id) => {
+  const { data } = await api.get(`/users/classes/admin/${id}/analytics`);
+  return data?.data ?? {};
+};
