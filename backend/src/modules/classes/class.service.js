@@ -55,3 +55,33 @@ exports.getPublicClassDetails = async (id) => {
     .where({ id, status: "published" })
     .first();
 };
+
+exports.getClassAnalytics = async (classId) => {
+  const [totalRow] = await db("class_enrollments")
+    .where({ class_id: classId })
+    .count();
+  const [completedRow] = await db("class_enrollments")
+    .where({ class_id: classId, status: "completed" })
+    .count();
+
+  const trendRows = await db("class_enrollments")
+    .where({ class_id: classId })
+    .select(db.raw("DATE(enrolled_at) as date"))
+    .count("* as students")
+    .groupByRaw("DATE(enrolled_at)")
+    .orderBy("date");
+
+  return {
+    totalStudents: parseInt(totalRow.count, 10) || 0,
+    totalRevenue: 0,
+    totalAttendance: 0,
+    completed: parseInt(completedRow.count, 10) || 0,
+    revenueBreakdown: { full: 0, installments: 0, free: 0 },
+    locations: [],
+    devices: [],
+    registrationTrend: trendRows.map((r) => ({
+      date: r.date instanceof Date ? r.date.toISOString().split("T")[0] : r.date,
+      students: parseInt(r.students, 10),
+    })),
+  };
+};

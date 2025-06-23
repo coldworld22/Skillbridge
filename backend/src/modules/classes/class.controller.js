@@ -69,3 +69,8 @@ exports.getPublicClassDetails = catchAsync(async (req, res) => {
   const cls = await service.getPublicClassDetails(req.params.id);
   sendSuccess(res, cls);
 });
+
+exports.getClassAnalytics = catchAsync(async (req, res) => {
+  const data = await service.getClassAnalytics(req.params.id);
+  sendSuccess(res, data);
+});
