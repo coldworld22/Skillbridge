@@ -1,5 +1,11 @@
 const { z } = require("zod");
 
+const toNumber = (val) => {
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string' && val.trim() !== '') return parseFloat(val);
+  return undefined;
+};
+
 exports.create = z.object({
   body: z.object({
     instructor_id: z.string().uuid(),
@@ -10,8 +16,8 @@ exports.create = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     category_id: z.string().uuid().optional(),
-    price: z.string().optional(),
-    max_students: z.string().optional(),
+    price: z.preprocess(toNumber, z.number().optional()),
+    max_students: z.preprocess(toNumber, z.number().int().optional()),
     language: z.string().optional(),
     demo_video_url: z.string().optional(),
     allow_installments: z.preprocess(
@@ -34,8 +40,8 @@ exports.update = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     category_id: z.string().uuid().optional(),
-    price: z.string().optional(),
-    max_students: z.string().optional(),
+    price: z.preprocess(toNumber, z.number().optional()),
+    max_students: z.preprocess(toNumber, z.number().int().optional()),
     language: z.string().optional(),
     demo_video_url: z.string().optional(),
     allow_installments: z.preprocess(
