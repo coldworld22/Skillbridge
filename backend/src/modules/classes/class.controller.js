@@ -21,8 +21,9 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
+  const { tags: rawTags, ...body } = req.body;
   const data = {
-    ...req.body,
+    ...body,
     id: uuidv4(),
     slug,
     status: "draft",
@@ -34,7 +35,7 @@ exports.createClass = catchAsync(async (req, res) => {
   if (req.files?.demo_video?.[0]) {
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
-  const tags = req.body.tags ? JSON.parse(req.body.tags) : [];
+  const tags = rawTags ? JSON.parse(rawTags) : [];
   const cls = await service.createClass(data);
   if (tags.length) {
     const tagIds = [];
@@ -66,7 +67,8 @@ exports.getClassById = catchAsync(async (req, res) => {
 
 exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
-  let data = { ...req.body };
+  const { tags: rawTags, ...body } = req.body;
+  let data = { ...body };
   if (data.title && data.title !== existing.title) {
     data.slug = await generateUniqueSlug(data.title);
   }
@@ -84,7 +86,7 @@ exports.updateClass = catchAsync(async (req, res) => {
     }
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
-  const tags = req.body.tags ? JSON.parse(req.body.tags) : null;
+  const tags = rawTags ? JSON.parse(rawTags) : null;
   const cls = await service.updateClass(req.params.id, data);
   if (tags) {
     // remove existing then add
