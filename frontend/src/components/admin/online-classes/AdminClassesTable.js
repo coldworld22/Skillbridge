@@ -82,6 +82,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   
   const handleStatusChange = async (id, action) => {
     try {
+
       if (action === "approve") {
         await approveAdminClass(id);
         setClassList((prev) =>
@@ -107,6 +108,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
         );
         toast.success("Status updated");
       }
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to update class");

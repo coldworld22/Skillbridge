@@ -8,6 +8,7 @@ const formatClass = (cls) => ({
   demo_video_url: cls.demo_video_url
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`
     : null,
+
   approvalStatus: cls.moderation_status || "Pending",
   scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
 });
@@ -21,6 +22,7 @@ const computeScheduleStatus = (start, end) => {
   if (e && now > e) return "Completed";
   return "Upcoming";
 };
+
 
 export const fetchAdminClasses = async () => {
   const { data } = await api.get("/users/classes/admin");
