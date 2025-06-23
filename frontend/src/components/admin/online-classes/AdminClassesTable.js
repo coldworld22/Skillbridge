@@ -18,7 +18,7 @@ import {
 export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [sortKey, setSortKey] = useState("date");
+  const [sortKey, setSortKey] = useState("start_date");
   const [classList, setClassList] = useState(classes);
   const [modalClass, setModalClass] = useState(null);
   const [modalType, setModalType] = useState(null);
@@ -44,9 +44,14 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   );
 
   const exportCSV = () => {
-    const headers = ["Title", "Instructor", "Date", "Category", "Price", "Status"];
+    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Status"];
     const rows = classList.map(cls => [
-      cls.title, cls.instructor, cls.date, cls.category, cls.price, cls.status
+      cls.title,
+      cls.instructor,
+      cls.start_date,
+      cls.end_date,
+      cls.category,
+      cls.status
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -118,7 +123,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
             className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
             onChange={(e) => setSortKey(e.target.value)}
           >
-            <option value="date">Sort by Date</option>
+            <option value="start_date">Sort by Start Date</option>
             <option value="title">Sort by Title</option>
             <option value="instructor">Sort by Instructor</option>
           </select>
@@ -149,9 +154,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
             <tr>
               <th className="px-6 py-3 text-left">Title</th>
               <th className="px-6 py-3 text-left">Instructor</th>
-              <th className="px-6 py-3 text-left">Date</th>
+              <th className="px-6 py-3 text-left">Start Date</th>
+              <th className="px-6 py-3 text-left">End Date</th>
               <th className="px-6 py-3 text-left">Category</th>
-              <th className="px-6 py-3 text-left">Price</th>
               <th className="px-6 py-3 text-left">Status</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
@@ -161,9 +166,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
               <tr key={cls.id} className="hover:bg-yellow-50">
                 <td className="px-6 py-4 font-semibold">{cls.title}</td>
                 <td className="px-6 py-4">{cls.instructor}</td>
-                <td className="px-6 py-4">{cls.date}</td>
-                <td className="px-6 py-4">{cls.category}</td>
-                <td className="px-6 py-4">${cls.price}</td>
+                <td className="px-6 py-4">{cls.start_date}</td>
+                <td className="px-6 py-4">{cls.end_date || '-'}</td>
+                <td className="px-6 py-4">{cls.category || '-'}</td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
                     Upcoming: 'bg-green-100 text-green-800',

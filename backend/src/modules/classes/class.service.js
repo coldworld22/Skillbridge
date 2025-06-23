@@ -6,11 +6,32 @@ exports.createClass = async (data) => {
 };
 
 exports.getAllClasses = async () => {
-  return db("online_classes").orderBy("created_at", "desc");
+  return db("online_classes as c")
+    .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .select(
+      "c.id",
+      "c.title",
+      "c.start_date",
+      "c.end_date",
+      "c.status",
+      "u.full_name as instructor",
+      "cat.name as category"
+    )
+    .orderBy("c.created_at", "desc");
 };
 
 exports.getClassById = async (id) => {
-  return db("online_classes").where({ id }).first();
+  return db("online_classes as c")
+    .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .select(
+      "c.*",
+      "u.full_name as instructor",
+      "cat.name as category"
+    )
+    .where("c.id", id)
+    .first();
 };
 
 exports.updateClass = async (id, data) => {
