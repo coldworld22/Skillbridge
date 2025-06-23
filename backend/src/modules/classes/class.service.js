@@ -16,6 +16,7 @@ exports.getAllClasses = async () => {
       "c.cover_image",
       "c.start_date",
       "c.end_date",
+      "c.price",
       "c.status",
       "c.moderation_status",
       "u.full_name as instructor",
