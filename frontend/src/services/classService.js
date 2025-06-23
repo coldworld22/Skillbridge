@@ -24,3 +24,13 @@ export const fetchMyEnrolledClasses = async () => {
   const { data } = await api.get("/users/classes/enroll/my");
   return data?.data ?? [];
 };
+
+export const fetchClassLessons = async (classId) => {
+  const { data } = await api.get(`/users/classes/lessons/class/${classId}`);
+  return data?.data ?? [];
+};
+
+export const fetchClassAssignments = async (classId) => {
+  const { data } = await api.get(`/users/classes/assignments/class/${classId}`);
+  return data?.data ?? [];
+};
