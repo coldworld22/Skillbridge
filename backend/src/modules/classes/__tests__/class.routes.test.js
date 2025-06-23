@@ -15,9 +15,17 @@ jest.mock('../class.service', () => ({
   getAllClasses: jest.fn()
 }));
 const service = require('../class.service');
+// Mock enrollment service to avoid DB calls when routes are loaded
+jest.mock('../enrollments/classEnrollment.service', () => ({
+  findEnrollment: jest.fn(),
+  createEnrollment: jest.fn(),
+  markCompleted: jest.fn(),
+  getByUser: jest.fn(),
+}));
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
+  isStudent: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
 }));

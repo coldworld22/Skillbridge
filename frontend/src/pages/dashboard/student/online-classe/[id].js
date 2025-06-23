@@ -3,28 +3,11 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
 import VideoCallScreen from "@/components/video-call/VideoCallScreen";
-
-const mockClasses = {
-  "react-bootcamp": {
-    title: "React & Next.js Bootcamp",
-    instructor: "Ayman Khalid",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    lessons: [
-      { title: "Intro to React", duration: "10 min" },
-      { title: "JSX & Components", duration: "15 min" },
-      { title: "Props & State", duration: "20 min" },
-    ],
-  },
-  "java-crash-course": {
-    title: "Java Crash Course",
-    instructor: "Sara Ali",
-    videoUrl: "https://www.w3schools.com/html/movie.mp4",
-    lessons: [
-      { title: "Intro to Java", duration: "12 min" },
-      { title: "Loops & Conditions", duration: "18 min" },
-    ],
-  },
-};
+import {
+  fetchClassDetails,
+  fetchClassLessons,
+  fetchClassAssignments,
+} from "@/services/classService";
 
 export default function StudentClassRoom() {
   const router = useRouter();
@@ -37,31 +20,19 @@ export default function StudentClassRoom() {
   const isLive = true;
 
   useEffect(() => {
-    if (id && mockClasses[id]) {
-      setClassData(mockClasses[id]);
-    } else if (id) {
-      setClassData(null);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (id) {
-      console.log("👀 Student joined class:", id);
-      setAssignments([
-        {
-          id: 'assign-1',
-          title: 'React Basics Assignment',
-          dueDate: '2025-05-28T23:59:00Z',
-          status: 'Pending',
-        },
-        {
-          id: 'assign-2',
-          title: 'Component Design Challenge',
-          dueDate: '2025-05-30T23:59:00Z',
-          status: 'Submitted',
-        },
-      ]);
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const details = await fetchClassDetails(id);
+        const lessons = await fetchClassLessons(id);
+        const assigns = await fetchClassAssignments(id);
+        setClassData({ ...details, lessons });
+        setAssignments(assigns);
+      } catch (err) {
+        console.error('Failed to load class', err);
+      }
+    };
+    load();
   }, [id]);
 
   const markComplete = (index) => {
@@ -76,7 +47,7 @@ export default function StudentClassRoom() {
   };
 
   const showCertificate =
-    classData && completedLessons.length === classData.lessons.length;
+    classData && classData.lessons && completedLessons.length === classData.lessons.length;
 
   if (!id) return <div className="text-white p-10">Loading class...</div>;
   if (!classData) return <div className="text-red-400 p-10">❌ Class not found</div>;
@@ -90,7 +61,7 @@ export default function StudentClassRoom() {
       <div className="w-full bg-gray-700 rounded-full h-4 mb-6">
         <div
           className="bg-yellow-500 h-4 rounded-full"
-          style={{ width: `${(completedLessons.length / classData.lessons.length) * 100}%` }}
+          style={{ width: `${classData.lessons ? (completedLessons.length / classData.lessons.length) * 100 : 0}%` }}
         />
       </div>
 
@@ -109,7 +80,7 @@ export default function StudentClassRoom() {
       <div className="bg-gray-800 rounded-lg p-6 shadow-md mb-6">
         <h2 className="text-xl font-semibold mb-4">📚 Lessons</h2>
         <ul className="space-y-3">
-          {classData.lessons.map((lesson, i) => (
+          {(classData.lessons || []).map((lesson, i) => (
             <li
               key={i}
               className="flex justify-between items-center bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition"

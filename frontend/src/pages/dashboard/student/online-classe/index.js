@@ -15,6 +15,7 @@ import {
   FaSortAmountDown
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
+import { fetchMyEnrolledClasses } from '@/services/classService';
 
 export default function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
@@ -24,42 +25,15 @@ export default function MyEnrolledClassesPage() {
   const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
-    const mockData = [
-      {
-        id: '1',
-        title: 'React & Next.js Bootcamp',
-        instructor: 'Ayman Khalid',
-        startDate: '2025-05-01T10:00:00',
-        status: 'Live',
-        tags: ['Frontend', 'React'],
-        progress: 75,
-        joined: true,
-        linkId: 'react-next-bootcamp'
-      },
-      {
-        id: '2',
-        title: 'Python for Beginners',
-        instructor: 'Sara Ahmed',
-        startDate: '2025-06-10T15:00:00',
-        status: 'Upcoming',
-        tags: ['Python', 'Beginner'],
-        progress: 0,
-        joined: false
-      },
-      {
-        id: '3',
-        title: 'UI/UX Design Masterclass',
-        instructor: 'Mohammed Zain',
-        startDate: '2025-04-15T08:30:00',
-        status: 'Completed',
-        tags: ['Design', 'UX'],
-        progress: 100,
-        joined: true
+    const load = async () => {
+      try {
+        const list = await fetchMyEnrolledClasses();
+        setClasses(list);
+      } catch (err) {
+        console.error('Failed to load classes', err);
       }
-    ];
-
-    localStorage.setItem('enrolledClasses', JSON.stringify(mockData));
-    setClasses(mockData);
+    };
+    load();
   }, []);
 
   const filteredClasses = classes
