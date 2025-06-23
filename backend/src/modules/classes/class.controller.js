@@ -2,12 +2,25 @@ const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
+const slugify = require("slugify");
+const db = require("../../config/database");
 
 const fs = require("fs");
 const path = require("path");
 
+const generateUniqueSlug = async (title) => {
+  const base = slugify(title, { lower: true, strict: true });
+  let slug = base;
+  let count = 1;
+  while (await db("online_classes").where({ slug }).first()) {
+    slug = `${base}-${count++}`;
+  }
+  return slug;
+};
+
 exports.createClass = catchAsync(async (req, res) => {
-  const data = { ...req.body, id: uuidv4() };
+  const slug = await generateUniqueSlug(req.body.title);
+  const data = { ...req.body, id: uuidv4(), slug };
   if (req.file) {
     data.cover_image = `/uploads/classes/${req.file.filename}`;
   }
@@ -28,6 +41,9 @@ exports.getClassById = catchAsync(async (req, res) => {
 exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
   let data = { ...req.body };
+  if (data.title && data.title !== existing.title) {
+    data.slug = await generateUniqueSlug(data.title);
+  }
   if (req.file) {
     if (existing?.cover_image) {
       const oldPath = path.join(__dirname, '../../../', existing.cover_image);

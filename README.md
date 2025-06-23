@@ -51,3 +51,4 @@ Endpoints for creating and managing live classes are served under `/api/users/cl
 - `POST /api/users/classes/admin` – create a class (requires instructor or admin token)
 - `PUT /api/users/classes/admin/:id` – update a class
 - `DELETE /api/users/classes/admin/:id` – delete a class
+- Fields for a class include `title`, `description`, `start_date`, `end_date`, `price`, `max_students`, `language` and a unique `slug` for public URLs.

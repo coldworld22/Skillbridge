@@ -10,6 +10,14 @@ exports.create = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     category_id: z.string().uuid().optional(),
+    price: z.string().optional(),
+    max_students: z.string().optional(),
+    language: z.string().optional(),
+    allow_installments: z.preprocess(
+      (v) => (typeof v === 'string' ? v === 'true' : v),
+      z.boolean().optional()
+    ),
+    slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
 });
@@ -24,6 +32,14 @@ exports.update = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     category_id: z.string().uuid().optional(),
+    price: z.string().optional(),
+    max_students: z.string().optional(),
+    language: z.string().optional(),
+    allow_installments: z.preprocess(
+      (v) => (typeof v === 'string' ? v === 'true' : v),
+      z.boolean().optional()
+    ),
+    slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
 });
