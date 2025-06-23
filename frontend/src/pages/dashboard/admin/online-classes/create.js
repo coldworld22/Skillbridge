@@ -257,6 +257,18 @@ function CreateOnlineClass() {
         if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
         if (formData.startDate) payload.append('start_date', formData.startDate);
         if (formData.endDate) payload.append('end_date', formData.endDate);
+        if (formData.price)
+          payload.append(
+            'price',
+            Number(formData.price).toFixed(2)
+          );
+        if (formData.maxStudents)
+          payload.append('max_students', formData.maxStudents);
+        if (formData.language) payload.append('language', formData.language);
+        payload.append(
+          'allow_installments',
+          formData.allowInstallments ? 'true' : 'false'
+        );
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
 
