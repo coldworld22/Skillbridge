@@ -49,6 +49,13 @@ export default function AdminClassDetailPage() {
             className="w-full h-64 object-cover rounded-lg"
           />
         )}
+        {details?.demo_video_url && (
+          <video
+            controls
+            className="w-full mt-4 rounded-lg"
+            src={details.demo_video_url}
+          />
+        )}
 
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold text-yellow-600">{details?.title}</h2>
