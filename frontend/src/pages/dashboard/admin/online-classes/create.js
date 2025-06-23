@@ -162,6 +162,37 @@ function CreateOnlineClass() {
     }
   };
 
+
+  const addTag = (name) => {
+    const tag = name.trim();
+    if (tag && !selectedTags.includes(tag)) {
+      setSelectedTags((prev) => [...prev, tag]);
+    }
+    setTagInput('');
+  };
+
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (name === 'title') {
+      const duplicate = existingTitles.includes(value.trim().toLowerCase());
+      if (duplicate) toast.error('This title already exists');
+      setTitleError(
+        value.trim() === ''
+          ? 'Title is required'
+          : duplicate
+          ? 'This title already exists'
+          : ''
+      );
+    }
+    validateField(name, value);
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
@@ -291,14 +322,31 @@ function CreateOnlineClass() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Tags</label>
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    placeholder="Type and press Enter"
-                    className="border rounded px-3 py-2 w-full text-sm"
-                  />
+                  <div className="flex flex-wrap items-center gap-2 border rounded px-3 py-2 w-full text-sm">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addTag(tagInput);
+                        }
+                      }}
+
+                      placeholder="Type and press Enter"
+                      className="flex-grow min-w-[120px] focus:outline-none"
+                    />
+                  </div>
                   {filteredTagSuggestions.length > 0 && tagInput && (
                     <ul className="border bg-white rounded mt-1 max-h-40 overflow-y-auto text-sm absolute z-10 w-full">
                       {filteredTagSuggestions.map((t) => (
