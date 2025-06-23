@@ -7,6 +7,44 @@ const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 require("dotenv").config(); // ✅ Load environment variables from .env file
+const db = require("./config/database");
+
+// Ensure new moderation columns exist even if migrations haven't been run
+(async () => {
+  try {
+    const hasStatus = await db.schema.hasColumn(
+      "online_classes",
+      "moderation_status"
+    );
+    const hasReason = await db.schema.hasColumn(
+      "online_classes",
+      "rejection_reason"
+    );
+    if (!hasStatus || !hasReason) {
+      await db.schema.alterTable("online_classes", (table) => {
+        if (!hasStatus) {
+          table
+            .enu("moderation_status", ["Pending", "Approved", "Rejected"])
+            .defaultTo("Pending");
+        }
+        if (!hasReason) {
+          table.text("rejection_reason");
+        }
+      });
+      await db.raw(
+        "ALTER TABLE online_classes DROP CONSTRAINT IF EXISTS online_classes_moderation_status_check"
+      );
+      await db.raw(
+        "ALTER TABLE online_classes ADD CONSTRAINT online_classes_moderation_status_check CHECK (moderation_status IS NULL OR moderation_status IN ('Pending','Approved','Rejected'))"
+      );
+      console.log(
+        "ℹ️ Ensured online_classes has moderation_status and rejection_reason columns"
+      );
+    }
+  } catch (err) {
+    console.error("Error ensuring moderation columns:", err);
+  }
+})();
 
 // ───── Import Route Modules ─────
 const authRoutes = require("./modules/auth/routes/auth.routes");
