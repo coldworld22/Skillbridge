@@ -76,6 +76,7 @@ function CreateOnlineClass() {
   const [validFields, setValidFields] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const filteredTagSuggestions = availableTags.filter(
     (t) =>
       t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
@@ -211,6 +212,7 @@ function CreateOnlineClass() {
         if (formData.endDate) payload.append('end_date', formData.endDate);
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
+
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
 
         const newTags = selectedTags.filter(
@@ -227,6 +229,7 @@ function CreateOnlineClass() {
           );
           setAvailableTags((prev) => [...prev, ...created.filter(Boolean)]);
         }
+
         setIsSubmitting(true);
         setUploadProgress(0);
         await createAdminClass(payload, (e) => {
