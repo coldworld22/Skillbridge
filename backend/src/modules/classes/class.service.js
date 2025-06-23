@@ -6,7 +6,7 @@ exports.createClass = async (data) => {
 };
 
 exports.getAllClasses = async () => {
-  return db("online_classes as c")
+  const classes = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .select(
@@ -22,10 +22,14 @@ exports.getAllClasses = async () => {
       "cat.name as category"
     )
     .orderBy("c.created_at", "desc");
+  for (const cls of classes) {
+    cls.tags = await exports.getClassTags(cls.id);
+  }
+  return classes;
 };
 
 exports.getClassById = async (id) => {
-  return db("online_classes as c")
+  const cls = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .select(
@@ -35,6 +39,10 @@ exports.getClassById = async (id) => {
     )
     .where("c.id", id)
     .first();
+  if (cls) {
+    cls.tags = await exports.getClassTags(id);
+  }
+  return cls;
 };
 
 exports.updateClass = async (id, data) => {
@@ -78,9 +86,13 @@ exports.getPublishedClasses = async () => {
 };
 
 exports.getPublicClassDetails = async (id) => {
-  return db("online_classes")
+  const cls = await db("online_classes")
     .where({ id, status: "published", moderation_status: "Approved" })
     .first();
+  if (cls) {
+    cls.tags = await exports.getClassTags(id);
+  }
+  return cls;
 };
 
 exports.getClassAnalytics = async (classId) => {
@@ -111,4 +123,17 @@ exports.getClassAnalytics = async (classId) => {
       students: parseInt(r.students, 10),
     })),
   };
+};
+
+exports.addClassTags = async (classId, tagIds) => {
+  if (!tagIds.length) return;
+  const rows = tagIds.map((tag_id) => ({ class_id: classId, tag_id }));
+  await db("class_tag_map").insert(rows);
+};
+
+exports.getClassTags = async (classId) => {
+  return db("class_tag_map as m")
+    .join("class_tags as t", "m.tag_id", "t.id")
+    .where("m.class_id", classId)
+    .select("t.id", "t.name", "t.slug");
 };

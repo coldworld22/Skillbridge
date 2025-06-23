@@ -10,11 +10,19 @@ import { toast } from 'react-toastify';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import { createAdminClass, fetchAdminClasses } from '@/services/admin/classService';
+import { fetchClassTags, createClassTag } from '@/services/admin/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import { useRouter } from 'next/router';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
+
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w ]+/g, '')
+    .replace(/ +/g, '-');
 
 function FloatingInput({ label, name, value, onChange, type = "text", ...props }) {
   return (
@@ -41,6 +49,24 @@ function FloatingInput({ label, name, value, onChange, type = "text", ...props }
 function CreateOnlineClass() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    title: '',
+    instructor: '',
+    category: '',
+    level: '',
+    language: '',
+    description: '',
+    image: '',
+    imagePreview: '',
+    demoVideo: null,
+    demoPreview: '',
+    startDate: '',
+    endDate: '',
+    price: '',
+    isFree: false,
+    maxStudents: '',
+    allowInstallments: false,
+    isApproved: false,
+    lessons: [],
     title: '', instructor: '', category: '', tags: '', level: '', language: '',
     description: '', image: '', imagePreview: '', demoVideo: null, demoPreview: '',
     startDate: '', endDate: '', price: '', isFree: false, maxStudents: '',
@@ -48,7 +74,52 @@ function CreateOnlineClass() {
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+
   const [titleError, setTitleError] = useState('');
+  const [validFields, setValidFields] = useState({});
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredTagSuggestions = availableTags.filter(
+    (t) =>
+      t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+      !selectedTags.includes(t.name)
+  );
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const result = await fetchAllCategories({ status: 'active', limit: 100 });
+        setCategories(result.data || []);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to load categories';
+        toast.error(msg);
+      }
+    };
+    const loadTitles = async () => {
+      try {
+        const list = await fetchAdminClasses();
+        setExistingTitles(list.map((c) => c.title?.toLowerCase()));
+      } catch (err) {
+        console.error('Failed to load classes', err);
+      }
+    };
+    const loadTags = async () => {
+      try {
+        const tags = await fetchClassTags();
+        setAvailableTags(tags);
+      } catch (err) {
+        console.error('Failed to load tags', err);
+      }
+    };
+    loadCategories();
+    loadTitles();
+    loadTags();
+  }, []);
   const [imageUploading, setImageUploading] = useState(false);
   const [videoUploading, setVideoUploading] = useState(false);
 
@@ -140,12 +211,38 @@ function CreateOnlineClass() {
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
 
+        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+
+        const newTags = selectedTags.filter(
+          (t) => !availableTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+        );
+        if (newTags.length) {
+          const created = await Promise.all(
+            newTags.map((t) =>
+              createClassTag({ name: t, slug: slugify(t) }).catch((err) => {
+                console.error('Failed to create tag', err);
+                return null;
+              })
+            )
+          );
+          setAvailableTags((prev) => [...prev, ...created.filter(Boolean)]);
+        }
+
+        setIsSubmitting(true);
+        setUploadProgress(0);
+        await createAdminClass(payload, (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setUploadProgress(percent);
+        });
+
         await createAdminClass(payload);
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');
       } catch (err) {
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create class';
         toast.error(msg);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -183,7 +280,7 @@ function CreateOnlineClass() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
                 <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">Category</label>
                   <select name="category" value={formData.category} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
                     <option value="">Select Category</option>
@@ -192,7 +289,39 @@ function CreateOnlineClass() {
                     ))}
                   </select>
                 </div>
-                <FloatingInput label="Tags (comma-separated)" name="tags" value={formData.tags} onChange={handleChange} />
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Tags</label>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder="Type and press Enter"
+                    className="border rounded px-3 py-2 w-full text-sm"
+                  />
+                  {filteredTagSuggestions.length > 0 && tagInput && (
+                    <ul className="border bg-white rounded mt-1 max-h-40 overflow-y-auto text-sm absolute z-10 w-full">
+                      {filteredTagSuggestions.map((t) => (
+                        <li
+                          key={t.id}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => addTag(t.name)}
+                        >
+                          {t.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedTags.map((tag) => (
+                        <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Level</label>
                   <select name="level" value={formData.level} onChange={handleChange} className="border rounded px-3 py-2 w-full text-sm">
@@ -244,11 +373,23 @@ function CreateOnlineClass() {
         </AnimatePresence>
 
         <div className="pt-4 flex justify-between items-center">
+          {step > 1 && (
+            <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
+          )}
+          <button type="submit" disabled={isSubmitting} className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
           {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>}
           <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95">
             {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
+        {isSubmitting && (
+          <div className="w-full bg-gray-200 h-2 rounded mt-4">
+            <div
+              className="bg-green-500 h-full rounded transition-all"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        )}
       </form>
     </div>
   );
