@@ -82,10 +82,11 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     toast.success("Classes exported");
   };
 
+  
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const backendStatus = STATUS_REVERSE[newStatus] || newStatus;
-      await updateAdminClass(id, { status: backendStatus });
+      await updateAdminClass(id, { status: newStatus });
+
       setClassList(prev =>
         prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
       );
