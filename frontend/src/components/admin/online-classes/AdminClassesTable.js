@@ -189,6 +189,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-700 text-sm uppercase">
             <tr>
+              <th className="px-6 py-3 text-left">Image</th>
               <th className="px-6 py-3 text-left">Title</th>
               <th className="px-6 py-3 text-left">Instructor</th>
               <th className="px-6 py-3 text-left">Start Date</th>
@@ -201,6 +202,15 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           <tbody className="divide-y divide-gray-100">
             {paginatedClasses.map((cls) => (
               <tr key={cls.id} className="hover:bg-yellow-50">
+                <td className="px-6 py-4">
+                  {cls.cover_image && (
+                    <img
+                      src={cls.cover_image}
+                      alt={cls.title}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  )}
+                </td>
                 <td className="px-6 py-4 font-semibold">{cls.title}</td>
                 <td className="px-6 py-4">{cls.instructor}</td>
                 <td className="px-6 py-4">{cls.start_date}</td>
