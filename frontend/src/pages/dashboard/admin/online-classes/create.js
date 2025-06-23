@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import { createAdminClass, fetchAdminClasses } from '@/services/admin/classService';
-import { fetchTags, createTag } from '@/services/admin/communityService';
+import { fetchClassTags, createClassTag } from '@/services/admin/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import { useRouter } from 'next/router';
 
@@ -104,7 +104,7 @@ function CreateOnlineClass() {
     };
     const loadTags = async () => {
       try {
-        const tags = await fetchTags();
+        const tags = await fetchClassTags();
         setAvailableTags(tags);
       } catch (err) {
         console.error('Failed to load tags', err);
@@ -221,7 +221,7 @@ function CreateOnlineClass() {
         if (newTags.length) {
           const created = await Promise.all(
             newTags.map((t) =>
-              createTag({ name: t, slug: slugify(t) }).catch((err) => {
+              createClassTag({ name: t, slug: slugify(t) }).catch((err) => {
                 console.error('Failed to create tag', err);
                 return null;
               })

@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
+const tagService = require("./classTag.service");
 const slugify = require("slugify");
 const db = require("../../config/database");
 
@@ -33,7 +34,23 @@ exports.createClass = catchAsync(async (req, res) => {
   if (req.files?.demo_video?.[0]) {
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
+  const tags = req.body.tags ? JSON.parse(req.body.tags) : [];
   const cls = await service.createClass(data);
+  if (tags.length) {
+    const tagIds = [];
+    for (const name of tags) {
+      const existing = await tagService.findByName(name);
+      const tag =
+        existing ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addClassTags(cls.id, tagIds);
+    cls.tags = await service.getClassTags(cls.id);
+  }
   sendSuccess(res, cls, "Class created");
 });
 
@@ -67,7 +84,25 @@ exports.updateClass = catchAsync(async (req, res) => {
     }
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
+  const tags = req.body.tags ? JSON.parse(req.body.tags) : null;
   const cls = await service.updateClass(req.params.id, data);
+  if (tags) {
+    // remove existing then add
+    await db('class_tag_map').where({ class_id: cls.id }).del();
+    const tagIds = [];
+    for (const name of tags) {
+      const existingTag = await tagService.findByName(name);
+      const tag =
+        existingTag ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addClassTags(cls.id, tagIds);
+    cls.tags = await service.getClassTags(cls.id);
+  }
   sendSuccess(res, cls);
 });
 

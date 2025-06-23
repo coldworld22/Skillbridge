@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./class.controller");
+const tagsController = require("./classTag.controller");
 const validate = require("../../middleware/validate");
 const validator = require("./class.validator");
 const upload = require("./classUploadMiddleware");
@@ -64,6 +65,10 @@ router.patch(
   validate(validator.reject),
   controller.rejectClass
 );
+
+// Tags
+router.get("/tags", verifyToken, isInstructorOrAdmin, tagsController.listTags);
+router.post("/tags", verifyToken, isInstructorOrAdmin, tagsController.createTag);
 
 router.get("/", controller.getPublishedClasses);
 router.get("/:id", controller.getPublicClassDetails);
