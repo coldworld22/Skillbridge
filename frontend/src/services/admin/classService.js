@@ -35,9 +35,10 @@ export const fetchAdminClassById = async (id) => {
   return data?.data ? formatClass(data.data) : null;
 };
 
-export const createAdminClass = async (payload) => {
+export const createAdminClass = async (payload, onUploadProgress) => {
   const { data } = await api.post("/users/classes/admin", payload, {
     headers: { "Content-Type": "multipart/form-data" },
+    ...(onUploadProgress ? { onUploadProgress } : {}),
   });
   return data?.data ? formatClass(data.data) : null;
 };
