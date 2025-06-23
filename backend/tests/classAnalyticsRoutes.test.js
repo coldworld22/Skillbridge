@@ -8,9 +8,16 @@ jest.mock('../src/config/database', () => ({
 jest.mock('../src/modules/classes/class.service', () => ({
   getClassAnalytics: jest.fn(),
 }));
+jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
+  findEnrollment: jest.fn(),
+  createEnrollment: jest.fn(),
+  markCompleted: jest.fn(),
+  getByUser: jest.fn(),
+}));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
+  isStudent: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
 }));

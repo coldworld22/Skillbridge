@@ -11,6 +11,9 @@ const {
   isAdmin,
 } = require("../../middleware/auth/authMiddleware");
 
+// Student enrollments
+router.use("/enroll", require("./enrollments/classEnrollment.routes"));
+
 router.post(
   "/admin",
   verifyToken,
