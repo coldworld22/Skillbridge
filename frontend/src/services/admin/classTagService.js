@@ -1,7 +1,9 @@
 import api from "@/services/api/api";
 
-export const fetchClassTags = async () => {
-  const { data } = await api.get("/users/classes/tags");
+export const fetchClassTags = async (search) => {
+  const { data } = await api.get("/users/classes/tags", {
+    params: search ? { search } : {},
+  });
   return data?.data ?? [];
 };
 

@@ -3,8 +3,11 @@ const { sendSuccess } = require("../../utils/response");
 const service = require("./classTag.service");
 const slugify = require("slugify");
 
-exports.listTags = catchAsync(async (_req, res) => {
-  const tags = await service.getAllTags();
+exports.listTags = catchAsync(async (req, res) => {
+  const { search = "" } = req.query;
+  const tags = search
+    ? await service.searchTags(search)
+    : await service.getAllTags();
   sendSuccess(res, tags);
 });
 
