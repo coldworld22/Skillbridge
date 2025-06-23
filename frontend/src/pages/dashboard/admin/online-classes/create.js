@@ -1,7 +1,7 @@
 // Full updated CreateOnlineClass page with responsive layout and upload progress
 // File: pages/dashboard/admin/online-classes/create.js
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaTrash, FaSpinner } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
@@ -70,7 +70,8 @@ function CreateOnlineClass() {
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
@@ -79,19 +80,17 @@ function CreateOnlineClass() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredTagSuggestions = availableTags.filter(
-    (t) =>
-      t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-      !selectedTags.includes(t.name)
+  const filteredTagSuggestions = tagSuggestions.filter(
+    (t) => !selectedTags.includes(t.name)
   );
 
-  const addTag = (tag) => {
+  const addTag = useCallback((tag) => {
     const name = tag.trim();
     if (name && !selectedTags.includes(name)) {
       setSelectedTags((prev) => [...prev, name]);
     }
     setTagInput('');
-  };
+  }, [selectedTags]);
 
   const handleTagKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -124,7 +123,7 @@ function CreateOnlineClass() {
     const loadTags = async () => {
       try {
         const tags = await fetchClassTags();
-        setAvailableTags(tags);
+        setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags', err);
       }
@@ -215,6 +214,22 @@ function CreateOnlineClass() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+    const handler = setTimeout(async () => {
+      try {
+        const suggestions = await fetchClassTags(tagInput);
+        setTagSuggestions(suggestions);
+      } catch (err) {
+        console.error('Failed to fetch tags', err);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [tagInput]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (step === 1) {
@@ -244,7 +259,7 @@ function CreateOnlineClass() {
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
 
         const newTags = selectedTags.filter(
-          (t) => !availableTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
         );
         if (newTags.length) {
           const created = await Promise.all(
@@ -255,7 +270,7 @@ function CreateOnlineClass() {
               })
             )
           );
-          setAvailableTags((prev) => [...prev, ...created.filter(Boolean)]);
+          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
         }
 
         setIsSubmitting(true);
@@ -403,6 +418,82 @@ function CreateOnlineClass() {
                     <video src={formData.demoPreview} controls className="mt-2 w-full max-h-[300px] rounded" />
                   )}
                 </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        lessons: [
+                          ...prev.lessons,
+                          { title: '', duration: '', resource: null },
+                        ],
+                      }))
+                    }
+                    className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+                  >
+                    + Add Lesson
+                  </button>
+                </div>
+
+                {formData.lessons.map((lesson, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Lesson Title"
+                      value={lesson.title}
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].title = e.target.value;
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Duration (e.g., 30 min)"
+                      value={lesson.duration}
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].duration = e.target.value;
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <input
+                      type="file"
+                      accept=".pdf, .docx"
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].resource = e.target.files[0];
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <div className="col-span-full flex justify-end mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...formData.lessons];
+                          updated.splice(index, 1);
+                          setFormData(prev => ({ ...prev, lessons: updated }));
+                        }}
+                        className="text-red-600 text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <FaTrash /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </motion.div>
