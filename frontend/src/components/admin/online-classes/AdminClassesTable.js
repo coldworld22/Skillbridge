@@ -223,6 +223,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
               <th className="px-6 py-3 text-left">Start Date</th>
               <th className="px-6 py-3 text-left">End Date</th>
               <th className="px-6 py-3 text-left">Category</th>
+              <th className="px-6 py-3 text-left">Price</th>
               <th className="px-6 py-3 text-left">Schedule</th>
               <th className="px-6 py-3 text-left">Publish</th>
               <th className="px-6 py-3 text-left">Approval</th>
@@ -246,6 +247,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                 <td className="px-6 py-4">{cls.start_date}</td>
                 <td className="px-6 py-4">{cls.end_date || '-'}</td>
                 <td className="px-6 py-4">{cls.category || '-'}</td>
+                <td className="px-6 py-4">${cls.price ?? '-'}</td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
                     Upcoming: 'bg-green-100 text-green-800',
