@@ -32,6 +32,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [classList, setClassList] = useState(classes);
   const [modalClass, setModalClass] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -80,7 +81,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   };
 
   
-  const handleStatusChange = async (id, action) => {
+  const handleStatusChange = async (id, action, reason = "") => {
     try {
 
       if (action === "approve") {
@@ -92,7 +93,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
         );
         toast.success("Class approved");
       } else if (action === "reject") {
-        await rejectAdminClass(id, "Rejected by admin");
+        await rejectAdminClass(id, reason);
         setClassList((prev) =>
           prev.map((c) =>
             c.id === id ? { ...c, approvalStatus: "Rejected" } : c
@@ -284,7 +285,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                     <FaCheck />
                   </button>
                   <button title="Reject Class"
-                    onClick={() => { setModalClass(cls); setModalType('reject'); }}
+                    onClick={() => { setModalClass(cls); setModalType('reject'); setRejectionReason(''); }}
                     className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
                     <FaTimes />
                   </button>
@@ -356,11 +357,19 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           <div className="bg-white rounded-lg p-6 shadow-xl text-center">
             <h2 className="text-xl font-bold mb-2">{modalType === 'reject' ? 'Confirm Rejection' : 'Confirm Deletion'}</h2>
             <p className="mb-4 text-gray-600">Are you sure you want to {modalType} <strong>{modalClass.title}</strong>?</p>
+            {modalType === 'reject' && (
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="w-full border border-gray-300 rounded-md p-2 mb-4"
+                placeholder="Enter rejection reason"
+              />
+            )}
             <div className="flex justify-center gap-4">
               <button onClick={() => setModalClass(null)} className="bg-gray-200 px-4 py-2 rounded">Cancel</button>
               <button
                 onClick={() => modalType === 'reject'
-                  ? handleStatusChange(modalClass.id, 'reject')
+                  ? handleStatusChange(modalClass.id, 'reject', rejectionReason)
                   : handleDeleteClass(modalClass.id)}
                 className={`px-4 py-2 rounded text-white ${modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'}`}
               >
