@@ -1,6 +1,15 @@
 const request = require('supertest');
 const express = require('express');
 
+// Mock database to avoid connection attempts
+jest.mock('../../../config/database', () => {
+  const db = jest.fn(() => db);
+  db.where = jest.fn(() => db);
+  db.first = jest.fn(() => Promise.resolve(null));
+  db.raw = jest.fn(() => Promise.resolve());
+  return db;
+});
+
 jest.mock('../class.service', () => ({
   createClass: jest.fn(),
   getAllClasses: jest.fn()
