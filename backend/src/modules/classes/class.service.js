@@ -12,6 +12,7 @@ exports.getAllClasses = async () => {
     .select(
       "c.id",
       "c.title",
+      "c.slug",
       "c.start_date",
       "c.end_date",
       "c.status",
