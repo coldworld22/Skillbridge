@@ -335,7 +335,6 @@ function CreateOnlineClass() {
                       type="text"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
-
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ',') {
                           e.preventDefault();
