@@ -140,11 +140,9 @@ export default function EditClassPage() {
           className="w-full border rounded px-4 py-2"
         >
           <option value="">Select Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Upcoming">Upcoming</option>
-          <option value="Ongoing">Ongoing</option>
-          <option value="Completed">Completed</option>
-          <option value="Rejected">Rejected</option>
+          <option value="draft">Pending</option>
+          <option value="published">Approved</option>
+          <option value="archived">Rejected</option>
         </select>
 
         <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow">

@@ -85,7 +85,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await updateAdminClass(id, { status: newStatus });
+      await updateAdminClass(id, { status: STATUS_REVERSE[newStatus] });
 
       setClassList(prev =>
         prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
