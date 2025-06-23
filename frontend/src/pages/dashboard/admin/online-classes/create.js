@@ -289,16 +289,26 @@ function CreateOnlineClass() {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-xs text-gray-600 mb-1">Tags</label>
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    placeholder="Type and press Enter"
-                    className="border rounded px-3 py-2 w-full text-sm"
-                  />
+                  <div className="flex flex-wrap items-center gap-2 border rounded px-3 py-2 w-full text-sm">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      placeholder="Type and press Enter"
+                      className="flex-grow min-w-[120px] focus:outline-none"
+                    />
+                  </div>
                   {filteredTagSuggestions.length > 0 && tagInput && (
                     <ul className="border bg-white rounded mt-1 max-h-40 overflow-y-auto text-sm absolute z-10 w-full">
                       {filteredTagSuggestions.map((t) => (
@@ -311,15 +321,6 @@ function CreateOnlineClass() {
                         </li>
                       ))}
                     </ul>
-                  )}
-                  {selectedTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedTags.map((tag) => (
-                        <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
                   )}
                 </div>
                 <div>
