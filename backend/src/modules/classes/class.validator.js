@@ -18,6 +18,7 @@ exports.create = z.object({
       (v) => (typeof v === 'string' ? v === 'true' : v),
       z.boolean().optional()
     ),
+    tags: z.string().optional(),
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
@@ -41,6 +42,7 @@ exports.update = z.object({
       (v) => (typeof v === 'string' ? v === 'true' : v),
       z.boolean().optional()
     ),
+    tags: z.string().optional(),
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
