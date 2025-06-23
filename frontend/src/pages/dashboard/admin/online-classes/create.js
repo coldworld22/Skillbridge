@@ -143,11 +143,6 @@ function CreateOnlineClass() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    validateField(name, value);
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
-  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -173,15 +168,6 @@ function CreateOnlineClass() {
       setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
       setTimeout(() => setVideoUploading(false), 500);
     }
-  };
-
-
-  const addTag = (name) => {
-    const tag = name.trim();
-    if (tag && !selectedTags.includes(tag)) {
-      setSelectedTags((prev) => [...prev, tag]);
-    }
-    setTagInput('');
   };
 
 
@@ -279,7 +265,6 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await createAdminClass(payload);
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');
       } catch (err) {
@@ -428,8 +413,6 @@ function CreateOnlineClass() {
             <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
           )}
           <button type="submit" disabled={isSubmitting} className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
-          {step > 1 && <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>}
-          <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95">
             {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
