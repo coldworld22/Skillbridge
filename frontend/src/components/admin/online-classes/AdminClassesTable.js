@@ -17,6 +17,18 @@ import {
   FaChevronRight
 } from "react-icons/fa";
 
+const STATUS_LABELS = {
+  draft: "Pending",
+  published: "Approved",
+  archived: "Rejected",
+};
+
+const STATUS_REVERSE = {
+  Pending: "draft",
+  Approved: "published",
+  Rejected: "archived",
+};
+
 export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -28,7 +40,11 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
-    setClassList(classes);
+    const mapped = classes.map(cls => ({
+      ...cls,
+      status: STATUS_LABELS[cls.status] || cls.status,
+    }));
+    setClassList(mapped);
   }, [classes]);
 
   const filteredClasses = classList
@@ -65,10 +81,12 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     document.body.removeChild(link);
     toast.success("Classes exported");
   };
+
   
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateAdminClass(id, { status: newStatus });
+
       setClassList(prev =>
         prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
       );
@@ -193,7 +211,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                     Upcoming: 'bg-green-100 text-green-800',
                     Ongoing: 'bg-blue-100 text-blue-800',
                     Completed: 'bg-gray-300 text-gray-800',
-                    Rejected: 'bg-red-100 text-red-700'
+                    Rejected: 'bg-red-100 text-red-700',
+                    Approved: 'bg-green-100 text-green-800',
+                    Pending: 'bg-yellow-100 text-yellow-700'
                   }[cls.status] || 'bg-yellow-100 text-yellow-700'}`}>
                     {cls.status}
                   </span>
