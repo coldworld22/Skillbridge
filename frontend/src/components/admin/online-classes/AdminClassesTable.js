@@ -1,6 +1,7 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -61,6 +62,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Classes exported");
   };
 
   const handleStatusChange = (id, newStatus) => {
@@ -68,11 +70,13 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
       prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
     );
     setModalClass(null);
+    toast.success(`Class ${newStatus.toLowerCase()}`);
   };
 
   const handleDeleteClass = (id) => {
     setClassList(prev => prev.filter(cls => cls.id !== id));
     setModalClass(null);
+    toast.success("Class deleted");
   };
 
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
