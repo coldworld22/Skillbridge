@@ -130,11 +130,6 @@ function CreateOnlineClass() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    validateField(name, value);
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
-  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -160,15 +155,6 @@ function CreateOnlineClass() {
       setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
       setTimeout(() => setVideoUploading(false), 500);
     }
-  };
-
-
-  const addTag = (name) => {
-    const tag = name.trim();
-    if (tag && !selectedTags.includes(tag)) {
-      setSelectedTags((prev) => [...prev, tag]);
-    }
-    setTagInput('');
   };
 
 
@@ -266,7 +252,6 @@ function CreateOnlineClass() {
           setUploadProgress(percent);
         });
 
-        await createAdminClass(payload);
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');
       } catch (err) {
