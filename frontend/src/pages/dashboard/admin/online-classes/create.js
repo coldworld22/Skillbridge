@@ -420,6 +420,82 @@ function CreateOnlineClass() {
                 </div>
               </div>
             )}
+
+            {step === 2 && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        lessons: [
+                          ...prev.lessons,
+                          { title: '', duration: '', resource: null },
+                        ],
+                      }))
+                    }
+                    className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+                  >
+                    + Add Lesson
+                  </button>
+                </div>
+
+                {formData.lessons.map((lesson, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Lesson Title"
+                      value={lesson.title}
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].title = e.target.value;
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Duration (e.g., 30 min)"
+                      value={lesson.duration}
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].duration = e.target.value;
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <input
+                      type="file"
+                      accept=".pdf, .docx"
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].resource = e.target.files[0];
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <div className="col-span-full flex justify-end mt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...formData.lessons];
+                          updated.splice(index, 1);
+                          setFormData(prev => ({ ...prev, lessons: updated }));
+                        }}
+                        className="text-red-600 text-sm flex items-center gap-1 hover:underline"
+                      >
+                        <FaTrash /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
