@@ -64,6 +64,8 @@ function CreateOnlineClass() {
 
   const [titleError, setTitleError] = useState('');
   const [validFields, setValidFields] = useState({});
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -170,12 +172,19 @@ function CreateOnlineClass() {
         if (formData.endDate) payload.append('end_date', formData.endDate);
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
-        await createAdminClass(payload);
+        setIsSubmitting(true);
+        setUploadProgress(0);
+        await createAdminClass(payload, (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setUploadProgress(percent);
+        });
         toast.success('Class created successfully');
         router.push('/dashboard/admin/online-classes');
       } catch (err) {
         const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create class';
         toast.error(msg);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -358,10 +367,18 @@ function CreateOnlineClass() {
           {step > 1 && (
             <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
           )}
-          <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95">
+          <button type="submit" disabled={isSubmitting} className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
             {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
+        {isSubmitting && (
+          <div className="w-full bg-gray-200 h-2 rounded mt-4">
+            <div
+              className="bg-green-500 h-full rounded transition-all"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        )}
       </form>
     </div>
   );
