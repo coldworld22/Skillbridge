@@ -65,7 +65,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     document.body.removeChild(link);
     toast.success("Classes exported");
   };
-
+  
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateAdminClass(id, { status: newStatus });
