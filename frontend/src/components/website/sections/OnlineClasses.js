@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   FaSearch,
@@ -7,30 +7,48 @@ import {
   FaVideo,
 } from "react-icons/fa";
 import { useRouter } from "next/router";
+import { fetchPublishedClasses } from "@/services/classService";
 
-// Sample classes
-const classes = [
-  { id: 1, title: "AI & Machine Learning", instructor: "Dr. Smith", date: "June 10, 2024", category: "Data Science", type: "Recorded", trending: true },
-  { id: 2, title: "Front-end Web Development", instructor: "Jane Doe", date: "June 15, 2024", category: "Programming", type: "Live", trending: false },
-  { id: 3, title: "Medical Ethics", instructor: "Dr. John", date: "June 12, 2024", category: "Medicine", type: "Recorded", trending: false },
-  { id: 4, title: "Cybersecurity Basics", instructor: "David Wilson", date: "June 18, 2024", category: "Cybersecurity", type: "Live", trending: true },
-  { id: 5, title: "Blockchain for Beginners", instructor: "Sarah Lee", date: "June 20, 2024", category: "Finance & Blockchain", type: "Recorded", trending: false },
-  { id: 6, title: "UX/UI Design Fundamentals", instructor: "Emily Clark", date: "July 1, 2024", category: "Design & Art", type: "Recorded", trending: true },
-  { id: 7, title: "Digital Marketing Basics", instructor: "Mike Johnson", date: "July 5, 2024", category: "Marketing & Business", type: "Live", trending: false },
-  { id: 8, title: "Full Stack Development", instructor: "Sophie Turner", date: "July 10, 2024", category: "Programming", type: "Recorded", trending: false },
-  { id: 9, title: "Advanced Data Science", instructor: "Alan Turing", date: "July 15, 2024", category: "Data Science", type: "Live", trending: true },
-  { id: 10, title: "Cloud Computing Essentials", instructor: "David Green", date: "July 20, 2024", category: "Cloud Computing", type: "Recorded", trending: false },
-];
+// Initial category options
+const initialCategories = ["All"];
 
-// Category options
-const categories = ["All", "Trending", "Programming", "Data Science", "Medicine", "Cybersecurity", "Finance & Blockchain", "Design & Art", "Marketing & Business", "Cloud Computing"];
+const computeStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return "Upcoming";
+  if (s && (!e || now <= e) && now >= s) return "Live";
+  if (e && now > e) return "Completed";
+  return "Upcoming";
+};
 
 const OnlineClasses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showLiveClasses, setShowLiveClasses] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [classes, setClasses] = useState([]);
+  const [categories, setCategories] = useState(initialCategories);
   const router = useRouter();
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetchPublishedClasses();
+        const list = res?.data ?? [];
+        const formatted = list.map((c) => ({
+          ...c,
+          status: computeStatus(c.start_date, c.end_date),
+        }));
+        setClasses(formatted);
+        const cats = Array.from(new Set(formatted.map((c) => c.category).filter(Boolean)));
+        setCategories(["All", ...cats]);
+      } catch (err) {
+        console.error("Failed to load classes", err);
+      }
+    };
+    load();
+  }, []);
 
   // Filter logic
   const filteredClasses = classes.filter(
@@ -38,8 +56,8 @@ const OnlineClasses = () => {
       (selectedCategory === "All" ||
         (selectedCategory === "Trending" && classItem.trending) ||
         classItem.category === selectedCategory) &&
-      (showLiveClasses ? classItem.type === "Live" : true) &&
-      classItem.title.toLowerCase().includes(searchQuery.toLowerCase())
+      (showLiveClasses ? classItem.status === "Live" : true) &&
+      classItem.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Load more
@@ -110,33 +128,38 @@ const OnlineClasses = () => {
                     🔥 Trending
                   </span>
                 )}
-                <span className={`absolute top-3 right-3 px-3 py-1 text-xs font-bold rounded-full ${
-                  classItem.type === "Live"
-                    ? "bg-red-500 text-white animate-pulse"
-                    : "bg-green-600 text-white"
-                }`}>
-                  {classItem.type}
+                <span
+                  className={`absolute top-3 right-3 px-3 py-1 text-xs font-bold rounded-full ${
+                    classItem.status === "Live"
+                      ? "bg-red-500 text-white animate-pulse"
+                      : classItem.status === "Completed"
+                      ? "bg-gray-600 text-white"
+                      : "bg-green-600 text-white"
+                  }`}
+                >
+                  {classItem.status}
                 </span>
 
                 {/* Icon */}
-                {classItem.type === "Live" ? (
+                {classItem.status === "Live" ? (
                   <FaVideo className="text-red-400 text-5xl mb-4 mx-auto" />
                 ) : (
                   <FaBookOpen className="text-yellow-400 text-5xl mb-4 mx-auto" />
                 )}
 
                 <h3 className="text-xl font-bold mb-1 text-white">{classItem.title}</h3>
-                <p className="text-sm text-gray-400">👨‍🏫 {classItem.instructor}</p>
+                <p className="text-sm text-gray-400">👨‍🏫 {classItem.instructor || ""}</p>
                 <p className="text-sm text-gray-400 mt-1 flex items-center justify-center gap-2">
-                  <FaCalendarAlt /> {classItem.date}
+                  <FaCalendarAlt />
+                  {classItem.start_date ? new Date(classItem.start_date).toLocaleDateString() : ""}
                 </p>
-                <p className="text-sm text-gray-500 italic mt-1">{classItem.category}</p>
+                <p className="text-sm text-gray-500 italic mt-1">{classItem.category || ""}</p>
 
                 <button
                   className="mt-4 bg-yellow-500 text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-yellow-600 transition w-full"
                   onClick={() => router.push(`/online-classes/${classItem.id}`)}
                 >
-                  {classItem.type === "Live" ? "🎥 Join Live" : "📘 View Class"}
+                  {classItem.status === "Live" ? "🎥 Join Live" : "📘 View Class"}
                 </button>
               </motion.div>
             ))}
