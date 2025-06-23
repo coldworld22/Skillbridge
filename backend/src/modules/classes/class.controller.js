@@ -20,7 +20,7 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const data = { ...req.body, id: uuidv4(), slug };
+  const data = { ...req.body, id: uuidv4(), slug, moderation_status: "Pending" };
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
   }
@@ -83,4 +83,19 @@ exports.getPublicClassDetails = catchAsync(async (req, res) => {
 exports.getClassAnalytics = catchAsync(async (req, res) => {
   const data = await service.getClassAnalytics(req.params.id);
   sendSuccess(res, data);
+});
+
+exports.toggleClassStatus = catchAsync(async (req, res) => {
+  const cls = await service.togglePublishStatus(req.params.id);
+  sendSuccess(res, cls);
+});
+
+exports.approveClass = catchAsync(async (req, res) => {
+  await service.updateModeration(req.params.id, "Approved");
+  sendSuccess(res, { message: "Class approved" });
+});
+
+exports.rejectClass = catchAsync(async (req, res) => {
+  await service.updateModeration(req.params.id, "Rejected", req.body.reason);
+  sendSuccess(res, { message: "Class rejected" });
 });

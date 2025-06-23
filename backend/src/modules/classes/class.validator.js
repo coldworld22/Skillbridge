@@ -45,3 +45,9 @@ exports.update = z.object({
     status: z.enum(["draft", "published", "archived"]).optional(),
   })
 });
+
+exports.reject = z.object({
+  body: z.object({
+    reason: z.string().min(3)
+  })
+});

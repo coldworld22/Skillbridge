@@ -2,7 +2,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import { updateAdminClass, deleteAdminClass } from "@/services/admin/classService";
+import {
+  updateAdminClass,
+  deleteAdminClass,
+  approveAdminClass,
+  rejectAdminClass,
+  toggleClassStatus,
+} from "@/services/admin/classService";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -17,21 +23,11 @@ import {
   FaChevronRight
 } from "react-icons/fa";
 
-const STATUS_LABELS = {
-  draft: "Pending",
-  published: "Approved",
-  archived: "Rejected",
-};
-
-const STATUS_REVERSE = {
-  Pending: "draft",
-  Approved: "published",
-  Rejected: "archived",
-};
 
 export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterApproval, setFilterApproval] = useState("All");
   const [sortKey, setSortKey] = useState("start_date");
   const [classList, setClassList] = useState(classes);
   const [modalClass, setModalClass] = useState(null);
@@ -40,11 +36,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
-    const mapped = classes.map(cls => ({
-      ...cls,
-      status: STATUS_LABELS[cls.status] || cls.status,
-    }));
-    setClassList(mapped);
+    setClassList(classes);
   }, [classes]);
 
   const filteredClasses = classList
@@ -52,7 +44,12 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
       cls.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cls.instructor.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter((cls) => (filterStatus ? cls.status === filterStatus : true))
+    .filter((cls) =>
+      filterStatus === "All" ? true : cls.scheduleStatus === filterStatus
+    )
+    .filter((cls) =>
+      filterApproval === "All" ? true : cls.approvalStatus === filterApproval
+    )
     .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
 
   const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
@@ -83,14 +80,35 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   };
 
   
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id, action) => {
     try {
-      await updateAdminClass(id, { status: STATUS_REVERSE[newStatus] });
 
-      setClassList(prev =>
-        prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
-      );
-      toast.success(`Class ${newStatus.toLowerCase()}`);
+      if (action === "approve") {
+        await approveAdminClass(id);
+        setClassList((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, approvalStatus: "Approved" } : c
+          )
+        );
+        toast.success("Class approved");
+      } else if (action === "reject") {
+        await rejectAdminClass(id, "Rejected by admin");
+        setClassList((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, approvalStatus: "Rejected" } : c
+          )
+        );
+        toast.success("Class rejected");
+      } else if (action === "toggle") {
+        const updated = await toggleClassStatus(id);
+        setClassList((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, status: updated.status } : c
+          )
+        );
+        toast.success("Status updated");
+      }
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to update class");
@@ -148,12 +166,21 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           <select
             className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
             onChange={(e) => setFilterStatus(e.target.value)}
+            value={filterStatus}
           >
-            <option value="">All Statuses</option>
-            <option value="Pending">Pending</option>
+            <option value="All">All Schedule</option>
             <option value="Upcoming">Upcoming</option>
             <option value="Ongoing">Ongoing</option>
             <option value="Completed">Completed</option>
+          </select>
+          <select
+            className="border border-gray-300 rounded-xl px-4 py-2 text-sm"
+            onChange={(e) => setFilterApproval(e.target.value)}
+            value={filterApproval}
+          >
+            <option value="All">All Approval</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
             <option value="Rejected">Rejected</option>
           </select>
           <select
@@ -195,7 +222,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
               <th className="px-6 py-3 text-left">Start Date</th>
               <th className="px-6 py-3 text-left">End Date</th>
               <th className="px-6 py-3 text-left">Category</th>
-              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-left">Schedule</th>
+              <th className="px-6 py-3 text-left">Publish</th>
+              <th className="px-6 py-3 text-left">Approval</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -220,17 +249,37 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
                     Upcoming: 'bg-green-100 text-green-800',
                     Ongoing: 'bg-blue-100 text-blue-800',
-                    Completed: 'bg-gray-300 text-gray-800',
-                    Rejected: 'bg-red-100 text-red-700',
+                    Completed: 'bg-gray-300 text-gray-800'
+                  }[cls.scheduleStatus] || 'bg-gray-200 text-gray-800'}`}
+                  >
+                    {cls.scheduleStatus}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    onClick={() => handleStatusChange(cls.id, 'toggle')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer ${
+                      cls.status === 'published'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {cls.status === 'published' ? 'Published' : 'Draft'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
                     Approved: 'bg-green-100 text-green-800',
-                    Pending: 'bg-yellow-100 text-yellow-700'
-                  }[cls.status] || 'bg-yellow-100 text-yellow-700'}`}>
-                    {cls.status}
+                    Pending: 'bg-yellow-100 text-yellow-700',
+                    Rejected: 'bg-red-100 text-red-700'
+                  }[cls.approvalStatus] || 'bg-gray-100 text-gray-700'}`}
+                  >
+                    {cls.approvalStatus}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right space-x-1 space-y-1">
                   <button title="Approve Class"
-                    onClick={() => handleStatusChange(cls.id, 'Approved')}
+                    onClick={() => handleStatusChange(cls.id, 'approve')}
                     className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
                     <FaCheck />
                   </button>
@@ -311,7 +360,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
               <button onClick={() => setModalClass(null)} className="bg-gray-200 px-4 py-2 rounded">Cancel</button>
               <button
                 onClick={() => modalType === 'reject'
-                  ? handleStatusChange(modalClass.id, 'Rejected')
+                  ? handleStatusChange(modalClass.id, 'reject')
                   : handleDeleteClass(modalClass.id)}
                 className={`px-4 py-2 rounded text-white ${modalType === 'reject' ? 'bg-red-600' : 'bg-gray-800'}`}
               >

@@ -17,6 +17,7 @@ exports.getAllClasses = async () => {
       "c.start_date",
       "c.end_date",
       "c.status",
+      "c.moderation_status",
       "u.full_name as instructor",
       "cat.name as category"
     )
@@ -45,15 +46,31 @@ exports.deleteClass = async (id) => {
   return db("online_classes").where({ id }).del();
 };
 
+exports.togglePublishStatus = async (id) => {
+  const cls = await db("online_classes").where({ id }).first();
+  const newStatus = cls.status === "published" ? "draft" : "published";
+  const [updated] = await db("online_classes")
+    .where({ id })
+    .update({ status: newStatus, moderation_status: newStatus === "published" ? "Pending" : cls.moderation_status })
+    .returning("*");
+  return updated;
+};
+
+exports.updateModeration = async (id, status, reason = null) => {
+  return db("online_classes")
+    .where({ id })
+    .update({ moderation_status: status, rejection_reason: reason });
+};
+
 exports.getPublishedClasses = async () => {
   return db("online_classes")
-    .where({ status: "published" })
+    .where({ status: "published", moderation_status: "Approved" })
     .orderBy("created_at", "desc");
 };
 
 exports.getPublicClassDetails = async (id) => {
   return db("online_classes")
-    .where({ id, status: "published" })
+    .where({ id, status: "published", moderation_status: "Approved" })
     .first();
 };
 
