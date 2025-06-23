@@ -7,6 +7,7 @@ const upload = require("./classUploadMiddleware");
 const {
   verifyToken,
   isInstructorOrAdmin,
+  isAdmin,
 } = require("../../middleware/auth/authMiddleware");
 
 router.post(
@@ -43,6 +44,25 @@ router.delete(
   verifyToken,
   isInstructorOrAdmin,
   controller.deleteClass
+);
+router.patch(
+  "/admin/:id/status",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.toggleClassStatus
+);
+router.patch(
+  "/admin/:id/approve",
+  verifyToken,
+  isAdmin,
+  controller.approveClass
+);
+router.patch(
+  "/admin/:id/reject",
+  verifyToken,
+  isAdmin,
+  validate(validator.reject),
+  controller.rejectClass
 );
 
 router.get("/", controller.getPublishedClasses);
