@@ -1,6 +1,8 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import { updateAdminClass, deleteAdminClass } from "@/services/admin/classService";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -15,6 +17,18 @@ import {
   FaChevronRight
 } from "react-icons/fa";
 
+const STATUS_LABELS = {
+  draft: "Pending",
+  published: "Approved",
+  archived: "Rejected",
+};
+
+const STATUS_REVERSE = {
+  Pending: "draft",
+  Approved: "published",
+  Rejected: "archived",
+};
+
 export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -26,7 +40,11 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
-    setClassList(classes);
+    const mapped = classes.map(cls => ({
+      ...cls,
+      status: STATUS_LABELS[cls.status] || cls.status,
+    }));
+    setClassList(mapped);
   }, [classes]);
 
   const filteredClasses = classList
@@ -61,18 +79,36 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Classes exported");
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setClassList(prev =>
-      prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
-    );
-    setModalClass(null);
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const backendStatus = STATUS_REVERSE[newStatus] || newStatus;
+      await updateAdminClass(id, { status: backendStatus });
+      setClassList(prev =>
+        prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
+      );
+      toast.success(`Class ${newStatus.toLowerCase()}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update class");
+    } finally {
+      setModalClass(null);
+    }
   };
 
-  const handleDeleteClass = (id) => {
-    setClassList(prev => prev.filter(cls => cls.id !== id));
-    setModalClass(null);
+  const handleDeleteClass = async (id) => {
+    try {
+      await deleteAdminClass(id);
+      setClassList(prev => prev.filter(cls => cls.id !== id));
+      toast.success("Class deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete class");
+    } finally {
+      setModalClass(null);
+    }
   };
 
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
@@ -174,7 +210,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                     Upcoming: 'bg-green-100 text-green-800',
                     Ongoing: 'bg-blue-100 text-blue-800',
                     Completed: 'bg-gray-300 text-gray-800',
-                    Rejected: 'bg-red-100 text-red-700'
+                    Rejected: 'bg-red-100 text-red-700',
+                    Approved: 'bg-green-100 text-green-800',
+                    Pending: 'bg-yellow-100 text-yellow-700'
                   }[cls.status] || 'bg-yellow-100 text-yellow-700'}`}>
                     {cls.status}
                   </span>
