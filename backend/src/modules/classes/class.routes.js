@@ -24,6 +24,12 @@ router.get(
   isInstructorOrAdmin,
   controller.getClassById
 );
+router.get(
+  "/admin/:id/analytics",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.getClassAnalytics
+);
 router.put(
   "/admin/:id",
   verifyToken,
