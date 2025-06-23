@@ -13,6 +13,7 @@ exports.getAllClasses = async () => {
       "c.id",
       "c.title",
       "c.slug",
+      "c.cover_image",
       "c.start_date",
       "c.end_date",
       "c.status",

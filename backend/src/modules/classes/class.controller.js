@@ -21,8 +21,11 @@ const generateUniqueSlug = async (title) => {
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
   const data = { ...req.body, id: uuidv4(), slug };
-  if (req.file) {
-    data.cover_image = `/uploads/classes/${req.file.filename}`;
+  if (req.files?.cover_image?.[0]) {
+    data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
+  }
+  if (req.files?.demo_video?.[0]) {
+    data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
   const cls = await service.createClass(data);
   sendSuccess(res, cls, "Class created");
@@ -44,12 +47,19 @@ exports.updateClass = catchAsync(async (req, res) => {
   if (data.title && data.title !== existing.title) {
     data.slug = await generateUniqueSlug(data.title);
   }
-  if (req.file) {
+  if (req.files?.cover_image?.[0]) {
     if (existing?.cover_image) {
       const oldPath = path.join(__dirname, '../../../', existing.cover_image);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
-    data.cover_image = `/uploads/classes/${req.file.filename}`;
+    data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
+  }
+  if (req.files?.demo_video?.[0]) {
+    if (existing?.demo_video_url) {
+      const oldPath = path.join(__dirname, '../../../', existing.demo_video_url);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
   const cls = await service.updateClass(req.params.id, data);
   sendSuccess(res, cls);

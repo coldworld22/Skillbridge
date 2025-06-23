@@ -16,9 +16,20 @@ const storage = multer.diskStorage({
   },
 });
 
-const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-const fileFilter = (req, file, cb) => {
-  cb(null, allowed.includes(file.mimetype));
+const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+const videoTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/webm'];
+
+const fileFilter = (_req, file, cb) => {
+  if (file.fieldname === 'cover_image') {
+    cb(null, imageTypes.includes(file.mimetype));
+  } else if (file.fieldname === 'demo_video') {
+    cb(null, videoTypes.includes(file.mimetype));
+  } else {
+    cb(null, false);
+  }
 };
 
-module.exports = multer({ storage, fileFilter, limits: { fileSize: 2 * 1024 * 1024 } }).single('cover_image');
+module.exports = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } }).fields([
+  { name: 'cover_image', maxCount: 1 },
+  { name: 'demo_video', maxCount: 1 },
+]);
