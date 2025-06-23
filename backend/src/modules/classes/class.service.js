@@ -57,9 +57,18 @@ exports.togglePublishStatus = async (id) => {
 };
 
 exports.updateModeration = async (id, status, reason = null) => {
-  return db("online_classes")
+  const updateData = { moderation_status: status, rejection_reason: reason };
+  if (status === "Approved") {
+    updateData.status = "published";
+  }
+  if (status === "Rejected") {
+    updateData.status = "draft";
+  }
+  const [updated] = await db("online_classes")
     .where({ id })
-    .update({ moderation_status: status, rejection_reason: reason });
+    .update(updateData)
+    .returning("*");
+  return updated;
 };
 
 exports.getPublishedClasses = async () => {

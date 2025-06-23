@@ -34,12 +34,14 @@ describe('Class routes', () => {
   });
 
   test('create class', async () => {
-    const data = { id: '1', instructor_id: '2', title: 'Test Class' };
+    const data = { id: '1', instructor_id: '2', title: 'Test Class', status: 'published' };
     service.createClass.mockResolvedValue(data);
     const res = await request(app).post('/classes/admin').send(data);
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(data);
-    expect(service.createClass).toHaveBeenCalled();
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'draft' })
+    );
   });
 
   test('get classes', async () => {
