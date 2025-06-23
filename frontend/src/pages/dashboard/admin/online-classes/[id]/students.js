@@ -1,29 +1,38 @@
 // pages/dashboard/admin/online-classes/[id]/students/[studentId].js
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 
 export default function ManageStudentInClassPage() {
   const { id, studentId } = useRouter().query;
 
-  // Replace with actual fetch
-  const student = {
-    id: studentId,
-    name: "Mohammed Al-Salem",
-    email: "m.salem@email.com",
-    status: "Confirmed",
-    lessons: [
-      { title: "Intro to React", completed: true, testScore: 85 },
-      { title: "JSX & Components", completed: true, testScore: 90 },
-      { title: "Props & State", completed: false, testScore: null },
-    ],
-    attendance: [
-      { lesson: "Intro to React", attended: true },
-      { lesson: "JSX & Components", attended: true },
-      { lesson: "Props & State", attended: false },
-    ],
-    notes: ["Very engaged", "Asked thoughtful questions"],
-    certificateIssued: false,
-  };
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id || !studentId) return;
+    async function fetchStudent() {
+      try {
+        const res = await fetch(`/api/classes/${id}/students/${studentId}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setStudent(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStudent();
+  }, [id, studentId]);
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (!student) {
+    return <div className="p-6">Student not found.</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
