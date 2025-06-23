@@ -48,6 +48,8 @@ function CreateOnlineClass() {
     description: '',
     image: '',
     imagePreview: '',
+    demoVideo: null,
+    demoPreview: '',
     startDate: '',
     endDate: '',
     price: '',
@@ -98,6 +100,13 @@ function CreateOnlineClass() {
         setFormData(prev => ({ ...prev, image: file, imagePreview: reader.result }));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
     }
   };
 
@@ -156,6 +165,7 @@ function CreateOnlineClass() {
         if (formData.description) payload.append('description', formData.description);
         if (formData.level) payload.append('level', formData.level);
         if (formData.image) payload.append('cover_image', formData.image);
+        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
         if (formData.startDate) payload.append('start_date', formData.startDate);
         if (formData.endDate) payload.append('end_date', formData.endDate);
         payload.append('status', formData.isApproved ? 'published' : 'draft');
@@ -177,16 +187,24 @@ function CreateOnlineClass() {
       </h1>
 
       {/* Step Indicators */}
-      <div className="flex justify-between items-center mb-6">
-        {[1, 2].map((s) => (
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          {[1, 2].map((s) => (
+            <div
+              key={s}
+              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'
+                }`}
+            >
+              Step {s}
+            </div>
+          ))}
+        </div>
+        <div className="w-full bg-gray-200 h-2 rounded">
           <div
-            key={s}
-            className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'
-              }`}
-          >
-            Step {s}
-          </div>
-        ))}
+            className="bg-yellow-500 h-2 rounded transition-all duration-300"
+            style={{ width: `${(step / 2) * 100}%` }}
+          />
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -249,6 +267,13 @@ function CreateOnlineClass() {
                   <input type="file" accept="image/*" onChange={handleImageUpload} />
                   {formData.imagePreview && (
                     <img src={formData.imagePreview} alt="Preview" className="mt-2 w-40 h-auto rounded shadow transition-transform duration-300 hover:scale-105" />
+                  )}
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block mb-1 text-sm text-gray-600">Upload Demo Video</label>
+                  <input type="file" accept="video/*" onChange={handleVideoUpload} />
+                  {formData.demoPreview && (
+                    <video src={formData.demoPreview} controls className="mt-2 w-full rounded" />
                   )}
                 </div>
               </div>

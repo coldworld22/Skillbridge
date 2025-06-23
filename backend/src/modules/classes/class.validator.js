@@ -13,6 +13,7 @@ exports.create = z.object({
     price: z.string().optional(),
     max_students: z.string().optional(),
     language: z.string().optional(),
+    demo_video_url: z.string().optional(),
     allow_installments: z.preprocess(
       (v) => (typeof v === 'string' ? v === 'true' : v),
       z.boolean().optional()
@@ -35,6 +36,7 @@ exports.update = z.object({
     price: z.string().optional(),
     max_students: z.string().optional(),
     language: z.string().optional(),
+    demo_video_url: z.string().optional(),
     allow_installments: z.preprocess(
       (v) => (typeof v === 'string' ? v === 'true' : v),
       z.boolean().optional()
