@@ -1,6 +1,8 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import { updateAdminClass, deleteAdminClass } from "@/services/admin/classService";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -61,18 +63,35 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Classes exported");
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setClassList(prev =>
-      prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
-    );
-    setModalClass(null);
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateAdminClass(id, { status: newStatus });
+      setClassList(prev =>
+        prev.map(cls => (cls.id === id ? { ...cls, status: newStatus } : cls))
+      );
+      toast.success(`Class ${newStatus.toLowerCase()}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update class");
+    } finally {
+      setModalClass(null);
+    }
   };
 
-  const handleDeleteClass = (id) => {
-    setClassList(prev => prev.filter(cls => cls.id !== id));
-    setModalClass(null);
+  const handleDeleteClass = async (id) => {
+    try {
+      await deleteAdminClass(id);
+      setClassList(prev => prev.filter(cls => cls.id !== id));
+      toast.success("Class deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete class");
+    } finally {
+      setModalClass(null);
+    }
   };
 
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
