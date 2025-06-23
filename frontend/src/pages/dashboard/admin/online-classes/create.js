@@ -67,10 +67,6 @@ function CreateOnlineClass() {
     allowInstallments: false,
     isApproved: false,
     lessons: [],
-    title: '', instructor: '', category: '', tags: '', level: '', language: '',
-    description: '', image: '', imagePreview: '', demoVideo: null, demoPreview: '',
-    startDate: '', endDate: '', price: '', isFree: false, maxStudents: '',
-    allowInstallments: false, isApproved: false, lessons: [],
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
@@ -88,6 +84,23 @@ function CreateOnlineClass() {
       t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
       !selectedTags.includes(t.name)
   );
+
+  const addTag = (tag) => {
+    const name = tag.trim();
+    if (name && !selectedTags.includes(name)) {
+      setSelectedTags((prev) => [...prev, name]);
+    }
+    setTagInput('');
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput) {
+      setSelectedTags((prev) => prev.slice(0, -1));
+    }
+  };
 
   useEffect(() => {
     const loadCategories = async () => {
