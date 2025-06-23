@@ -12,6 +12,7 @@ jest.mock('../src/modules/classes/class.service', () => ({
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
+  isAdmin: (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/classes/class.service');
