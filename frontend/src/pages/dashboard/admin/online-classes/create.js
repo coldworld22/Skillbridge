@@ -1,7 +1,7 @@
 // Full updated CreateOnlineClass page with responsive layout and upload progress
 // File: pages/dashboard/admin/online-classes/create.js
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaTrash, FaSpinner } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
@@ -74,7 +74,8 @@ function CreateOnlineClass() {
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
@@ -83,11 +84,26 @@ function CreateOnlineClass() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredTagSuggestions = availableTags.filter(
-    (t) =>
-      t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-      !selectedTags.includes(t.name)
+  const filteredTagSuggestions = tagSuggestions.filter(
+    (t) => !selectedTags.includes(t.name)
   );
+
+  const addTag = useCallback((tag) => {
+    const name = tag.trim();
+    if (name && !selectedTags.includes(name)) {
+      setSelectedTags((prev) => [...prev, name]);
+    }
+    setTagInput('');
+  }, [selectedTags]);
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === 'Backspace' && !tagInput) {
+      setSelectedTags((prev) => prev.slice(0, -1));
+    }
+  };
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -111,7 +127,7 @@ function CreateOnlineClass() {
     const loadTags = async () => {
       try {
         const tags = await fetchClassTags();
-        setAvailableTags(tags);
+        setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags', err);
       }
@@ -202,6 +218,22 @@ function CreateOnlineClass() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+    const handler = setTimeout(async () => {
+      try {
+        const suggestions = await fetchClassTags(tagInput);
+        setTagSuggestions(suggestions);
+      } catch (err) {
+        console.error('Failed to fetch tags', err);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [tagInput]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (step === 1) {
@@ -231,7 +263,7 @@ function CreateOnlineClass() {
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
 
         const newTags = selectedTags.filter(
-          (t) => !availableTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
         );
         if (newTags.length) {
           const created = await Promise.all(
@@ -242,7 +274,7 @@ function CreateOnlineClass() {
               })
             )
           );
-          setAvailableTags((prev) => [...prev, ...created.filter(Boolean)]);
+          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
         }
 
         setIsSubmitting(true);
