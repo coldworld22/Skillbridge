@@ -20,7 +20,13 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const data = { ...req.body, id: uuidv4(), slug, moderation_status: "Pending" };
+  const data = {
+    ...req.body,
+    id: uuidv4(),
+    slug,
+    status: "draft",
+    moderation_status: "Pending",
+  };
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
   }
