@@ -2,6 +2,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
 
 export default function EditClassPage() {
   const router = useRouter();
@@ -10,31 +11,38 @@ export default function EditClassPage() {
   const [formData, setFormData] = useState({
     title: '',
     instructor: '',
-    date: '',
-    endDate: '',
+    start_date: '',
+    end_date: '',
     category: '',
     price: '',
     status: '',
     description: '',
-    studentLimit: '',
+    max_students: '',
   });
 
   useEffect(() => {
-    if (id) {
-      // Simulate fetching data by ID
-      const fakeData = {
-        title: 'React & Next.js Bootcamp',
-        instructor: 'Ayman Khalid',
-        date: '2025-05-13',
-        endDate: '2025-06-13',
-        category: 'Web Development',
-        price: 49,
-        status: 'Upcoming',
-        description: 'A hands-on bootcamp for frontend development using React and Next.js.',
-        studentLimit: 50,
-      };
-      setFormData(fakeData);
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const data = await fetchAdminClassById(id);
+        if (data) {
+          setFormData({
+            title: data.title || '',
+            instructor: data.instructor || '',
+            start_date: data.start_date || '',
+            end_date: data.end_date || '',
+            category: data.category_id || '',
+            price: data.price || '',
+            status: data.status || '',
+            description: data.description || '',
+            max_students: data.max_students || '',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load class', err);
+      }
+    };
+    load();
   }, [id]);
 
   const handleChange = (e) => {
@@ -42,10 +50,23 @@ export default function EditClassPage() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Class '${formData.title}' updated!`);
-    router.push('/dashboard/admin/online-classes');
+    try {
+      await updateAdminClass(id, {
+        title: formData.title,
+        description: formData.description,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        category_id: formData.category,
+        price: formData.price,
+        max_students: formData.max_students,
+        status: formData.status,
+      });
+      router.push('/dashboard/admin/online-classes');
+    } catch (err) {
+      console.error('Failed to update class', err);
+    }
   };
 
   return (
@@ -68,16 +89,16 @@ export default function EditClassPage() {
         />
         <div className="flex gap-4">
           <input
-            name="date"
+            name="start_date"
             type="date"
-            value={formData.date}
+            value={formData.start_date}
             onChange={handleChange}
             className="w-full border rounded px-4 py-2"
           />
           <input
-            name="endDate"
+            name="end_date"
             type="date"
-            value={formData.endDate}
+            value={formData.end_date}
             onChange={handleChange}
             className="w-full border rounded px-4 py-2"
           />
@@ -98,9 +119,9 @@ export default function EditClassPage() {
           className="w-full border rounded px-4 py-2"
         />
         <input
-          name="studentLimit"
+          name="max_students"
           type="number"
-          value={formData.studentLimit}
+          value={formData.max_students}
           onChange={handleChange}
           placeholder="Max Students"
           className="w-full border rounded px-4 py-2"

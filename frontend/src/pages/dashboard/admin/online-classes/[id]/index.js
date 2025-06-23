@@ -1,25 +1,30 @@
 // pages/dashboard/admin/online-classes/[id]/index.js
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-
-const mockClassDetails = {
-  title: "React & Next.js Bootcamp",
-  instructor: "Ayman Khalid",
-  date: "2025-05-13",
-  endDate: "2025-06-13",
-  duration: "1 month",
-  category: "Web Development",
-  price: 49,
-  status: "Upcoming",
-  description: "This intensive bootcamp covers the essentials of React and Next.js, focusing on building modern web apps with real-world use cases.",
-  studentsEnrolled: 42,
-  maxCapacity: 50,
-  image: "https://bs-uploads.toptal.io/blackfish-uploads/components/blog_post_page/5912616/cover_image/retina_1708x683/1015_Next.js_vs._React-_A_Comparative_Tutorial_Illustration_Brief_Blog-e14319490440a98149fbda"
-};
+import { fetchAdminClassById } from "@/services/admin/classService";
 
 export default function AdminClassDetailPage() {
   const { id } = useRouter().query;
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchAdminClassById(id);
+        setDetails(data);
+      } catch (err) {
+        console.error("Failed to load class", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
 
   return (
     <div className="p-6 space-y-6">
@@ -33,40 +38,43 @@ export default function AdminClassDetailPage() {
         </Link>
       </div>
 
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-100 text-center">Loading...</div>
+      ) : (
       <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-100 space-y-6">
-        <img
-          src={mockClassDetails.image}
-          alt="Class Cover"
-          className="w-full h-64 object-cover rounded-lg"
-        />
+        {details?.cover_image && (
+          <img
+            src={details.cover_image}
+            alt="Class Cover"
+            className="w-full h-64 object-cover rounded-lg"
+          />
+        )}
 
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold text-yellow-600">{mockClassDetails.title}</h2>
-          <p className="text-gray-500 text-sm">Instructor: {mockClassDetails.instructor}</p>
+          <h2 className="text-2xl font-semibold text-yellow-600">{details?.title}</h2>
+          <p className="text-gray-500 text-sm">Instructor: {details?.instructor}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 pt-4 text-sm">
           <div className="space-y-1">
-            <p><strong>🗓️ Start Date:</strong> {mockClassDetails.date}</p>
-            <p><strong>🗖 End Date:</strong> {mockClassDetails.endDate}</p>
-            <p><strong>⏳ Duration:</strong> {mockClassDetails.duration}</p>
-            <p><strong>🏷️ Category:</strong> {mockClassDetails.category}</p>
+            <p><strong>🗓️ Start Date:</strong> {details?.start_date}</p>
+            <p><strong>🗖 End Date:</strong> {details?.end_date || '-'}</p>
+            <p><strong>🏷️ Category:</strong> {details?.category || '-'}</p>
           </div>
           <div className="space-y-1">
             <p>
               <strong>📌 Status:</strong>{" "}
               <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                {mockClassDetails.status}
+                {details?.status}
               </span>
             </p>
-            <p><strong>💵 Price:</strong> ${mockClassDetails.price}</p>
-            <p><strong>👥 Enrolled:</strong> {mockClassDetails.studentsEnrolled} / {mockClassDetails.maxCapacity}</p>
+            {details?.price && <p><strong>💵 Price:</strong> ${details.price}</p>}
           </div>
         </div>
 
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">📘 Description</h3>
-          <p className="text-gray-600 leading-relaxed">{mockClassDetails.description}</p>
+          <p className="text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{__html: details?.description}} />
         </div>
 
         <div className="pt-4 flex flex-wrap gap-4">
@@ -90,6 +98,7 @@ export default function AdminClassDetailPage() {
           </Link>
         </div>
       </div>
+      )}
     </div>
   );
 }
