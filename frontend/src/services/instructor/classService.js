@@ -88,3 +88,21 @@ export const fetchClassManagementData = async (id) => {
     assignments: data.data.assignments || [],
   };
 };
+
+export const createClassLesson = async (classId, payload) => {
+  const { data } = await api.post(`/users/classes/lessons/class/${classId}`, payload);
+  return data?.data;
+};
+
+export const deleteClassLesson = async (lessonId) => {
+  await api.delete(`/users/classes/lessons/${lessonId}`);
+};
+
+export const createClassAssignment = async (classId, payload) => {
+  const { data } = await api.post(`/users/classes/assignments/class/${classId}`, payload);
+  return data?.data;
+};
+
+export const deleteClassAssignment = async (assignmentId) => {
+  await api.delete(`/users/classes/assignments/${assignmentId}`);
+};

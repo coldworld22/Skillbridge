@@ -1,19 +1,31 @@
 // components/instructor/LessonManager.js
 import { useState } from "react";
+import { createClassLesson, deleteClassLesson } from "@/services/instructor/classService";
 export default function LessonManager({ classId, initialLessons = [] }) {
   const [lessons, setLessons] = useState(initialLessons);
   const [newTitle, setNewTitle] = useState("");
   const [newDuration, setNewDuration] = useState("");
 
-  const addLesson = () => {
-    if (!newTitle || !newDuration) return;
-    setLessons([...lessons, { title: newTitle, duration: newDuration }]);
-    setNewTitle("");
-    setNewDuration("");
+  const addLesson = async () => {
+    if (!newTitle) return;
+    try {
+      const lesson = await createClassLesson(classId, { title: newTitle });
+      setLessons([...lessons, lesson]);
+      setNewTitle("");
+      setNewDuration("");
+    } catch (err) {
+      console.error("Failed to create lesson", err);
+    }
   };
 
-  const removeLesson = (index) => {
-    setLessons(lessons.filter((_, i) => i !== index));
+  const removeLesson = async (index) => {
+    const lesson = lessons[index];
+    try {
+      await deleteClassLesson(lesson.id);
+      setLessons(lessons.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error("Failed to delete lesson", err);
+    }
   };
 
   return (
