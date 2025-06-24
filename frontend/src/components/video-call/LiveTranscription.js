@@ -1,10 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 
-const LiveTranscription = ({ isEnabled, language = "en-US", onTranscription }) => {
+const defaultLanguage =
+  typeof window !== "undefined"
+    ? navigator.language ||
+      (navigator.languages && navigator.languages[0]) ||
+      "en-US"
+    : "en-US";
+
+const languages = [
+  { code: "en-US", label: "English" },
+  { code: "es-ES", label: "Spanish" },
+  { code: "fr-FR", label: "French" },
+  { code: "de-DE", label: "German" },
+  { code: "zh-CN", label: "Chinese" },
+  { code: "ar-SA", label: "Arabic" },
+  { code: "hi-IN", label: "Hindi" },
+];
+
+const LiveTranscription = ({ isEnabled = true, language = defaultLanguage, onTranscription }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  let recognition = null;
+  const [lang, setLang] = useState(language);
+  const recognitionRef = useRef(null);
 
   // ✅ Initialize Speech Recognition
   useEffect(() => {
@@ -13,8 +31,9 @@ const LiveTranscription = ({ isEnabled, language = "en-US", onTranscription }) =
       return;
     }
 
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = language;
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognitionRef.current = recognition;
+    recognition.lang = lang;
     recognition.continuous = true;
     recognition.interimResults = true;
 
@@ -31,10 +50,19 @@ const LiveTranscription = ({ isEnabled, language = "en-US", onTranscription }) =
     };
 
     return () => recognition.stop();
-  }, [language]);
+  }, []);
+
+  // Update recognition language when changed
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = lang;
+    }
+  }, [lang]);
 
   // ✅ Start / Stop Transcription
   const toggleListening = () => {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
     if (isListening) {
       recognition.stop();
     } else {
@@ -52,6 +80,18 @@ const LiveTranscription = ({ isEnabled, language = "en-US", onTranscription }) =
       >
         {isListening ? <FaMicrophoneSlash size={18} /> : <FaMicrophone size={18} />}
       </button>
+
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value)}
+        className="mt-2 bg-gray-700 text-white text-sm p-1 rounded"
+      >
+        {languages.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.label}
+          </option>
+        ))}
+      </select>
 
       {/* ✅ Display Live Captions */}
       {transcript && (

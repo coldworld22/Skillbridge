@@ -1,6 +1,13 @@
 // components/video-call/TranscriptionManager.js
 import { useEffect, useRef, useState } from "react";
 
+const defaultLanguage =
+  typeof window !== "undefined"
+    ? navigator.language ||
+      (navigator.languages && navigator.languages[0]) ||
+      "en-US"
+    : "en-US";
+
 const TranscriptionManager = ({ currentSpeaker = "Unknown" }) => {
   const [transcripts, setTranscripts] = useState([]);
   const recognitionRef = useRef(null);
@@ -18,7 +25,7 @@ const TranscriptionManager = ({ currentSpeaker = "Unknown" }) => {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = defaultLanguage;
 
     recognition.onresult = (event) => {
       let finalTranscript = "";
