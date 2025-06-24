@@ -474,7 +474,9 @@ CreateOnlineClass.getLayout = function getLayout(page) {
   return <InstructorLayout>{page}</InstructorLayout>;
 };
 
+
 const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['instructor']);
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
+
