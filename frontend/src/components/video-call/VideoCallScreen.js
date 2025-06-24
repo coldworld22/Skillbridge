@@ -15,6 +15,7 @@ import EmojiReactions from "./EmojiReactions";
 import LiveTranscription from "./LiveTranscription";
 import ScreenSharing from "./ScreenSharing";
 import CallControls from "./CallControls";
+import AudioDeviceSelector from "./AudioDeviceSelector";
 import TranscriptionManager from "./TranscriptionManager";
 import RaiseHandManager from "./RaiseHandManager";
 import useRecordingManager from "./RecordingManager";
@@ -33,6 +34,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [isCallActive, setIsCallActive] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const userName = "Ayman";
 
   const {
@@ -40,6 +42,12 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
     peers,
     toggleAudio,
     toggleVideo,
+    changeAudioInput,
+    changeAudioOutput,
+    audioInputDevices,
+    audioOutputDevices,
+    selectedAudioInput,
+    selectedAudioOutput,
     isMuted: hookMuted,
     isVideoOff,
   } = useVideoCall(chatId, userName, userRole);
@@ -118,21 +126,35 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
 
           {/* Call Controls */}
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-            <CallControls
-              isMuted={hookMuted}
-              isVideoOff={isVideoOff}
-              isChatOpen={isChatOpen}
-              isParticipantsOpen={isParticipantsOpen}
-              onMuteToggle={toggleAudio}
-              onVideoToggle={toggleVideo}
-              onChatToggle={() => setIsChatOpen(!isChatOpen)}
-              onParticipantsToggle={() =>
-                setIsParticipantsOpen(!isParticipantsOpen)
-              }
-              onEndCall={() => setIsCallActive(false)}
-              userRole={userRole}
-            />
+          <CallControls
+            isMuted={hookMuted}
+            isVideoOff={isVideoOff}
+            isChatOpen={isChatOpen}
+            isParticipantsOpen={isParticipantsOpen}
+            onMuteToggle={toggleAudio}
+            onVideoToggle={toggleVideo}
+            onChatToggle={() => setIsChatOpen(!isChatOpen)}
+            onParticipantsToggle={() =>
+              setIsParticipantsOpen(!isParticipantsOpen)
+            }
+            onEndCall={() => setIsCallActive(false)}
+            onSettingsToggle={() => setIsSettingsOpen(!isSettingsOpen)}
+            userRole={userRole}
+          />
           </div>
+
+          {isSettingsOpen && (
+            <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-800 p-4 rounded-lg shadow text-white z-50 w-72">
+              <AudioDeviceSelector
+                audioInputDevices={audioInputDevices}
+                audioOutputDevices={audioOutputDevices}
+                selectedAudioInput={selectedAudioInput}
+                selectedAudioOutput={selectedAudioOutput}
+                onSelectInput={changeAudioInput}
+                onSelectOutput={changeAudioOutput}
+              />
+            </div>
+          )}
 
           {/* Floating Controls */}
           {isHost && (

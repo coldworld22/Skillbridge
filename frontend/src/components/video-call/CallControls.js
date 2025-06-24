@@ -9,6 +9,7 @@ import {
   FaRecordVinyl,
   FaStopCircle,
   FaDownload,
+  FaCog,
 } from "react-icons/fa";
 
 const CallControls = ({
@@ -17,6 +18,7 @@ const CallControls = ({
   onEndCall,
   onMuteToggle,
   onVideoToggle,
+  onSettingsToggle,
   userRole,
   isRecording,
   startRecording,
@@ -50,6 +52,12 @@ const CallControls = ({
         onClick={onChatToggle}
       >
         <FaCommentDots size={18} />
+      </button>
+      <button
+        className="p-3 bg-gray-700 rounded-full hover:bg-yellow-500 transition"
+        onClick={onSettingsToggle}
+      >
+        <FaCog size={18} />
       </button>
       <button
         className="p-3 bg-red-500 rounded-full hover:scale-110 transition"
