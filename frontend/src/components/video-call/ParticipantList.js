@@ -1,15 +1,15 @@
 // ParticipantList.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaMicrophoneSlash, FaUserShield, FaTimes } from "react-icons/fa";
-
-const participantsMock = [
-  { id: 1, name: "Ayman", role: "host", isMuted: false },
-  { id: 2, name: "Sara", role: "participant", isMuted: false },
-  { id: 3, name: "Omar", role: "participant", isMuted: true },
-];
+import { fetchParticipants } from "@/services/videoCallService";
 
 export default function ParticipantList({ chatId, userRole = "participant" }) {
-  const [participants, setParticipants] = useState(participantsMock);
+  const [participants, setParticipants] = useState([]);
+
+  useEffect(() => {
+    if (!chatId) return;
+    fetchParticipants(chatId).then((data) => setParticipants(data));
+  }, [chatId]);
 
   const handleMute = (id) => {
     setParticipants((prev) =>
