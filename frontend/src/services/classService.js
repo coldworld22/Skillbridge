@@ -1,8 +1,13 @@
 import api from "@/services/api/api";
 
 export const fetchPublishedClasses = async () => {
-  const res = await api.get("/users/classes");
-  return res.data;
+  const { data } = await api.get("/users/classes");
+  const list = data?.data ?? [];
+  const formatted = list.map((cls) => ({
+    ...cls,
+    trending: Boolean(cls.trending),
+  }));
+  return { ...data, data: formatted };
 };
 
 export const fetchClassDetails = async (id) => {
