@@ -62,6 +62,7 @@ export default function ClassDetailsPage() {
             <p className="text-sm text-gray-400">
               <span className="font-semibold text-white">Instructor:</span> {classInfo.instructor}
             </p>
+
             {(classInfo.instructorBio || classInfo.instructor_bio) && (
               <p className="italic mt-2 text-gray-400">
                 {classInfo.instructorBio || classInfo.instructor_bio}
@@ -74,18 +75,23 @@ export default function ClassDetailsPage() {
               alt={classInfo.instructor}
               className="w-full h-full object-cover"
             />
+
           </div>
         </div>
 
         {classInfo.demo_video_url ? (
           <video
+
             src={resolveUrl(classInfo.demo_video_url)}
+
             controls
             className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
           />
         ) : (
           <img
+
             src={resolveUrl(classInfo.cover_image)}
+
             alt={classInfo.title}
             className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
           />
