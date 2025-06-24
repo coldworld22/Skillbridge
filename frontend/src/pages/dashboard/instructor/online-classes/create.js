@@ -1,7 +1,7 @@
 // File: pages/dashboard/instructor/online-classes/create.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -21,7 +21,13 @@ import FloatingInput from '@/components/shared/FloatingInput';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
-const slugify = (text) => text.toLowerCase().trim().replace(/[^"]+/g, '').replace(/ +/g, '-');
+// Generate a URL friendly slug from a string
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w ]+/g, '')
+    .replace(/ +/g, '-');
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -55,6 +61,18 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+
+  // Filter tag suggestions based on user input and exclude already selected tags
+  const filteredTagSuggestions = useMemo(
+    () =>
+      allTags.filter(
+        (t) =>
+          tagInput &&
+          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+          !selectedTags.includes(t.name)
+      ),
+    [allTags, tagInput, selectedTags]
+  );
 
   useEffect(() => {
     fetchAllCategories().then(setCategories);
