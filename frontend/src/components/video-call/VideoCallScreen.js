@@ -19,6 +19,7 @@ import TranscriptionManager from "./TranscriptionManager";
 import RaiseHandManager from "./RaiseHandManager";
 import useRecordingManager from "./RecordingManager";
 import useBreakoutRoomManager from "./BreakoutRoomManager";
+import useVideoCall from "@/hooks/useVideoCall";
 
 const roles = {
   HOST: "host",
@@ -32,15 +33,42 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [isCallActive, setIsCallActive] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
 
-  const { raiseHand, lowerHand, hasRaised, HandQueueDisplay } = RaiseHandManager({ userName: "Ayman", userRole });
-  const { isRecording, elapsedTime, startRecording, stopRecording, downloadRecording } = useRecordingManager();
-  const { rooms, createRoom, assignToRoom, joinRoom, leaveRoom, currentRoom, assignedRoom, inRoom, isHost } = useBreakoutRoomManager("Ayman", userRole);
+  const {
+    localStream,
+    peers,
+    toggleAudio,
+    toggleVideo,
+    isMuted: hookMuted,
+    isVideoOff,
+  } = useVideoCall(chatId);
+
+  const { raiseHand, lowerHand, hasRaised, HandQueueDisplay } =
+    RaiseHandManager({ userName: "Ayman", userRole });
+  const {
+    isRecording,
+    elapsedTime,
+    startRecording,
+    stopRecording,
+    downloadRecording,
+  } = useRecordingManager();
+  const {
+    rooms,
+    createRoom,
+    assignToRoom,
+    joinRoom,
+    leaveRoom,
+    currentRoom,
+    assignedRoom,
+    inRoom,
+    isHost,
+  } = useBreakoutRoomManager("Ayman", userRole);
 
   useEffect(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => console.warn("Fullscreen not supported"));
+      document.documentElement
+        .requestFullscreen()
+        .catch(() => console.warn("Fullscreen not supported"));
     }
   }, []);
 
@@ -55,13 +83,18 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
   };
 
   return (
-    <motion.div className="relative flex flex-col h-screen w-screen bg-gray-900 text-white" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+    <motion.div
+      className="relative flex flex-col h-screen w-screen bg-gray-900 text-white"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {isCallActive ? (
         <>
           {/* Video Area + Side Panel */}
           <div className="flex flex-1 flex-col md:flex-row w-full h-full overflow-hidden p-4 gap-6">
             <div className="flex-1 relative border-4 border-yellow-500 rounded-lg p-2 overflow-hidden">
-              <VideoGrid chatId={`${chatId}-${currentRoom}`} />
+              <VideoGrid localStream={localStream} peers={peers} />
               <TranscriptionManager currentSpeaker="Ayman" />
               <EmojiReactions />
               <LiveTranscription />
@@ -72,8 +105,12 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
             </div>
             {(isChatOpen || isParticipantsOpen) && (
               <div className="fixed top-0 right-0 h-full w-[90%] md:static md:w-[300px] bg-gray-800 p-4 rounded-lg shadow border-2 border-yellow-500 z-40 overflow-y-auto">
-                {isParticipantsOpen && <ParticipantList chatId={chatId} userRole={userRole} />}
-                {isChatOpen && <ChatDuringCall chatId={`${chatId}-${currentRoom}`} />}
+                {isParticipantsOpen && (
+                  <ParticipantList chatId={chatId} userRole={userRole} />
+                )}
+                {isChatOpen && (
+                  <ChatDuringCall chatId={`${chatId}-${currentRoom}`} />
+                )}
               </div>
             )}
           </div>
@@ -81,12 +118,16 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
           {/* Call Controls */}
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
             <CallControls
-              isMuted={isMuted}
+              isMuted={hookMuted}
+              isVideoOff={isVideoOff}
               isChatOpen={isChatOpen}
               isParticipantsOpen={isParticipantsOpen}
-              onMuteToggle={() => setIsMuted(!isMuted)}
+              onMuteToggle={toggleAudio}
+              onVideoToggle={toggleVideo}
               onChatToggle={() => setIsChatOpen(!isChatOpen)}
-              onParticipantsToggle={() => setIsParticipantsOpen(!isParticipantsOpen)}
+              onParticipantsToggle={() =>
+                setIsParticipantsOpen(!isParticipantsOpen)
+              }
               onEndCall={() => setIsCallActive(false)}
               userRole={userRole}
             />
@@ -95,7 +136,9 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
           {/* Floating Controls */}
           {isHost && (
             <div className="fixed bottom-24 left-4 bg-gray-800 p-4 rounded-lg shadow-xl text-sm text-white space-y-2 z-40 w-64">
-              <h3 className="text-yellow-400 font-bold mb-2">🧩 Breakout Rooms</h3>
+              <h3 className="text-yellow-400 font-bold mb-2">
+                🧩 Breakout Rooms
+              </h3>
               <input
                 type="text"
                 placeholder="New room name"
@@ -109,7 +152,10 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
               />
               <div className="space-y-1 max-h-40 overflow-y-auto">
                 {rooms.map((room) => (
-                  <div key={room.name} className="flex justify-between items-center">
+                  <div
+                    key={room.name}
+                    className="flex justify-between items-center"
+                  >
                     <span>{room.name}</span>
                     <button
                       className="text-xs bg-yellow-500 px-2 py-1 rounded"
@@ -126,11 +172,17 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
           {assignedRoom && (
             <div className="fixed bottom-24 right-4 bg-gray-800 text-white px-4 py-3 rounded shadow z-40 space-x-2 flex items-center">
               {!inRoom ? (
-                <button onClick={joinRoom} className="bg-green-500 px-3 py-1 rounded">
+                <button
+                  onClick={joinRoom}
+                  className="bg-green-500 px-3 py-1 rounded"
+                >
                   Join <strong>{assignedRoom}</strong>
                 </button>
               ) : (
-                <button onClick={leaveRoom} className="bg-red-500 px-3 py-1 rounded">
+                <button
+                  onClick={leaveRoom}
+                  className="bg-red-500 px-3 py-1 rounded"
+                >
                   Leave <strong>{currentRoom}</strong>
                 </button>
               )}
@@ -139,7 +191,8 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
 
           {isRecording && (
             <div className="fixed top-4 left-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse font-semibold">
-              🔴 Recording... {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, "0")}
+              🔴 Recording... {Math.floor(elapsedTime / 60)}:
+              {(elapsedTime % 60).toString().padStart(2, "0")}
             </div>
           )}
 
@@ -151,7 +204,10 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
 
           {/* Top-Right Buttons */}
           <div className="fixed top-4 right-4 flex flex-col gap-2 z-50 items-end">
-            <button className="p-3 bg-gray-700 rounded-full hover:bg-yellow-500" onClick={toggleFullScreen}>
+            <button
+              className="p-3 bg-gray-700 rounded-full hover:bg-yellow-500"
+              onClick={toggleFullScreen}
+            >
               {isFullScreen ? <FaCompress size={18} /> : <FaExpand size={18} />}
             </button>
             {userRole === roles.HOST && (
