@@ -46,7 +46,7 @@ function FloatingInput({ label, name, value, onChange, type = "text", ...props }
   );
 }
 
-function CreateOnlineClass() {
+export function CreateOnlineClass() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -539,3 +539,4 @@ CreateOnlineClass.getLayout = function getLayout(page) {
 const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['admin', 'superadmin', 'instructor']);
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
+export { CreateOnlineClass };
