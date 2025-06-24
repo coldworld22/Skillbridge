@@ -57,6 +57,7 @@ exports.getClassesByInstructor = async (instructorId) => {
       "c.start_date",
       "c.end_date",
       "c.price",
+      "c.max_students",
       "c.status",
       "c.moderation_status",
       "cat.name as category"
