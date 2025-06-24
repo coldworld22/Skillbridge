@@ -9,6 +9,8 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 require("dotenv").config(); // ✅ Load environment variables from .env file
+// Allow overriding the allowed origin via FRONTEND_URL env var.
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 const db = require("./config/database");
 
 // Ensure new moderation columns exist even if migrations haven't been run
@@ -95,9 +97,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
 // 🌐 Allow frontend to communicate with backend (CORS)
-// Allow overriding the allowed origin via FRONTEND_URL env var. This is useful
-// when the frontend runs on a different port (e.g. 3001 in Docker).
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 app.use(
   cors({
     origin: FRONTEND_URL,
