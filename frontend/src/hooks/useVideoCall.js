@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
 
-export default function useVideoCall(roomId) {
+export default function useVideoCall(roomId, userName = "User", role = "participant") {
   const [peers, setPeers] = useState([]);
   const [stream, setStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -18,7 +18,11 @@ export default function useVideoCall(roomId) {
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         setStream(stream);
-        socketRef.current.emit("join-room", roomId);
+        socketRef.current.emit("join-room", {
+          roomId,
+          name: userName,
+          role,
+        });
         socketRef.current.on("all-users", (users) => {
           const peers = [];
           users.forEach((userID) => {

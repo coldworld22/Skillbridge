@@ -141,6 +141,12 @@ app.get("/", (req, res) => {
   res.send("🚀 SkillBridge API is live.");
 });
 
+// Endpoint to retrieve participants in a room
+app.get("/api/video-calls/:roomId/participants", (req, res) => {
+  const { roomId } = req.params;
+  res.json(participants[roomId] || []);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ Global Error Handler
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,13 +170,28 @@ app.use(errorHandler); // ✅ After all routes
 // ─────────────────────────────────────────────────────────────────────────────
 
 const rooms = {};
+// Track participants with additional info
+const participants = {};
 
 io.on("connection", (socket) => {
-  socket.on("join-room", (roomId) => {
+  socket.on("join-room", ({ roomId, name, role }) => {
     if (rooms[roomId]) {
       rooms[roomId].push(socket.id);
     } else {
       rooms[roomId] = [socket.id];
+    }
+
+    if (participants[roomId]) {
+      participants[roomId].push({
+        id: socket.id,
+        name,
+        role: role || "participant",
+        isMuted: false,
+      });
+    } else {
+      participants[roomId] = [
+        { id: socket.id, name, role: role || "participant", isMuted: false },
+      ];
     }
 
     const otherUsers = rooms[roomId].filter((id) => id !== socket.id);
@@ -193,6 +214,11 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
+      if (participants[roomId]) {
+        participants[roomId] = participants[roomId].filter(
+          (p) => p.id !== socket.id,
+        );
+      }
       socket.to(roomId).emit("user-disconnected", socket.id);
     });
   });
