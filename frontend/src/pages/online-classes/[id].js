@@ -83,9 +83,11 @@ export default function ClassDetailsPage() {
           <p className="text-xs text-gray-500 mt-2">
             Note: Classes on SkillBridge may be created by instructors or administrators.
           </p>
+
           {classInfo.instructor && (
             <p className="text-xs text-gray-500">Created by: {classInfo.instructor}</p>
           )}
+
         </div>
 
         {classInfo.demo_video_url ? (

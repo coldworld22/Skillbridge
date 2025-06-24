@@ -62,9 +62,11 @@ export default function InstructorProfilePage() {
   if (loading) return <p className="p-6">Loading instructor details...</p>;
   if (!instructor) return <p className="p-6">Instructor not found.</p>;
 
+
   const joinDate = instructor.created_at
     ? new Date(instructor.created_at).toLocaleDateString()
     : null;
+
 
   return (
     <StudentLayout>
@@ -93,6 +95,7 @@ export default function InstructorProfilePage() {
           {instructor.pricing && (
             <p className="text-gray-700 mt-2">Pricing: {instructor.pricing}</p>
           )}
+
           {joinDate && (
             <p className="text-gray-700 mt-2">Joined: {joinDate}</p>
           )}
@@ -102,6 +105,7 @@ export default function InstructorProfilePage() {
           {instructor.phone && (
             <p className="text-gray-700 mt-2">Phone: {instructor.phone}</p>
           )}
+
         </div>
 
         {/* Actions */}
