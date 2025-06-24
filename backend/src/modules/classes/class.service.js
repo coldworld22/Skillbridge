@@ -81,9 +81,26 @@ exports.updateModeration = async (id, status, reason = null) => {
 };
 
 exports.getPublishedClasses = async () => {
-  return db("online_classes")
-    .where({ status: "published", moderation_status: "Approved" })
-    .orderBy("created_at", "desc");
+  const subquery = db("class_enrollments")
+    .whereRaw("enrolled_at >= NOW() - interval '7 days'")
+    .groupBy("class_id")
+    .select("class_id")
+    .count("* as recent_enrollments");
+
+  const classes = await db("online_classes as c")
+    .leftJoin(subquery.as("e"), "e.class_id", "c.id")
+    .where({ "c.status": "published", "c.moderation_status": "Approved" })
+    .select(
+      "c.*",
+      db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments")
+    )
+    .orderBy("c.created_at", "desc");
+
+  return classes.map((cls) => ({
+    ...cls,
+    recent_enrollments: parseInt(cls.recent_enrollments, 10) || 0,
+    trending: (parseInt(cls.recent_enrollments, 10) || 0) >= 5,
+  }));
 };
 
 exports.getPublicClassDetails = async (id) => {
