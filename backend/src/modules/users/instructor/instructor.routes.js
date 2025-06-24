@@ -140,4 +140,12 @@ router.patch(
  */
 router.patch("/change-password", verifyToken, isInstructor, controller.changePassword);
 
+// Dashboard statistics
+router.get(
+  "/dashboard-stats",
+  verifyToken,
+  isInstructor,
+  controller.getDashboardStats
+);
+
 module.exports = router;
