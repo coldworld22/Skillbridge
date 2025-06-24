@@ -43,22 +43,43 @@ export default function ClassDetailsPage() {
       <Navbar />
 
       <main className="max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-start gap-8 mb-10">
-          <div className="flex-1">
-            <h1 className="text-yellow-400 text-xl font-semibold uppercase tracking-wide mb-2">Featured Class</h1>
-            <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-yellow-400 mb-4">
-              {classInfo.title}
-            </h2>
-            <p className="text-sm text-gray-400">
-              <span className="font-semibold text-white">Instructor:</span> {classInfo.instructor}
-            </p>
-            {classInfo.instructorBio && (
-              <p className="italic mt-2 text-gray-400">{classInfo.instructorBio}</p>
-            )}
+        <div className="mb-10">
+          <div className="flex items-center gap-4 mb-6">
+            <img
+              src={classInfo.cover_image}
+              alt={classInfo.title}
+              className="w-20 h-20 rounded-full object-cover border-2 border-yellow-400"
+            />
+            <div>
+              <h1 className="text-yellow-400 text-xl font-semibold uppercase tracking-wide">
+                Featured Class
+              </h1>
+              <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-yellow-400">
+                {classInfo.title}
+              </h2>
+            </div>
           </div>
-          <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-yellow-400 shadow-md">
-            <img src={classInfo.instructor_image} alt={classInfo.instructor} className="w-full h-full object-cover" />
+          <div className="flex items-center gap-4">
+            <img
+              src={classInfo.instructor_image}
+              alt={classInfo.instructor}
+              className="w-16 h-16 rounded-full object-cover border-2 border-yellow-400"
+            />
+            <div>
+              <p className="text-sm text-gray-400">
+                <span className="font-semibold text-white">Instructor:</span>{" "}
+                <a href={`/instructors/${classInfo.instructor_id}`} className="hover:underline">
+                  {classInfo.instructor}
+                </a>
+              </p>
+              {classInfo.instructorBio && (
+                <p className="italic mt-1 text-gray-400">{classInfo.instructorBio}</p>
+              )}
+            </div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Note: Classes on SkillBridge may be created by instructors or administrators.
+          </p>
         </div>
 
         {classInfo.demo_video_url ? (
