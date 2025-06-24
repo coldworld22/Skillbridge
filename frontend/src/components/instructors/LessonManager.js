@@ -1,8 +1,7 @@
 // components/instructor/LessonManager.js
 import { useState } from "react";
-
-export default function LessonManager({ classId }) {
-  const [lessons, setLessons] = useState([]);
+export default function LessonManager({ classId, initialLessons = [] }) {
+  const [lessons, setLessons] = useState(initialLessons);
   const [newTitle, setNewTitle] = useState("");
   const [newDuration, setNewDuration] = useState("");
 

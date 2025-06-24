@@ -39,6 +39,12 @@ router.get(
   controller.getClassById
 );
 router.get(
+  "/admin/:id/manage",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.getManagementData
+);
+router.get(
   "/admin/:id/analytics",
   verifyToken,
   isInstructorOrAdmin,

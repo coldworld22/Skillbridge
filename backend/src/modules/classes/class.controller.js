@@ -147,3 +147,15 @@ exports.rejectClass = catchAsync(async (req, res) => {
   await service.updateModeration(req.params.id, "Rejected", req.body.reason);
   sendSuccess(res, { message: "Class rejected" });
 });
+
+exports.getManagementData = catchAsync(async (req, res) => {
+  const classId = req.params.id;
+  const cls = await service.getClassById(classId);
+  const lessons = await require("./lessons/classLesson.service").getByClass(
+    classId
+  );
+  const assignments = await require("./assignments/classAssignment.service").getByClass(
+    classId
+  );
+  sendSuccess(res, { class: cls, lessons, assignments });
+});
