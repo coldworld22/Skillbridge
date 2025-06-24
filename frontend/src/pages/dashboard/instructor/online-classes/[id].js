@@ -87,7 +87,9 @@ export default function InstructorClassRoom() {
         {/* Assignment Manager ✅ */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">📋 Manage Assignments</h2>
+
           <AssignmentManager classId={id} assignments={assignments} />
+
         </div>
       </div>
     </div>
