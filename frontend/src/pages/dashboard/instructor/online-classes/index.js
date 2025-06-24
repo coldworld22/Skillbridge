@@ -119,6 +119,12 @@ export default function MyClasses() {
               <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
                 <FaClock /> Schedule: {cls.scheduleStatus}
               </p>
+              {typeof cls.price !== "undefined" && (
+                <p className="text-sm text-gray-600 mb-1">💵 Price: ${cls.price ?? 0}</p>
+              )}
+              {typeof cls.max_students !== "undefined" && (
+                <p className="text-sm text-gray-600 mb-1">👥 Max Students: {cls.max_students}</p>
+              )}
               <div className="flex gap-2 mb-4 mt-2">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -146,6 +152,12 @@ export default function MyClasses() {
                 className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
               >
                 Manage Class
+              </Link>
+              <Link
+                href={`/dashboard/instructor/online-classes/${cls.id}/details`}
+                className="block bg-blue-500 text-white text-center py-2 px-4 rounded hover:bg-blue-600 font-semibold mt-2"
+              >
+                View Details
               </Link>
             </div>
           ))}
