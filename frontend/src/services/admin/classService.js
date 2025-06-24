@@ -9,6 +9,7 @@ const formatClass = (cls) => ({
   demo_video_url: cls.demo_video_url
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`
     : null,
+  trending: Boolean(cls.trending),
 
   start_date: cls.start_date ? toDateInput(cls.start_date) : "",
   end_date: cls.end_date ? toDateInput(cls.end_date) : "",
