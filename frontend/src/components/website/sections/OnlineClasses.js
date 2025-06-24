@@ -9,8 +9,8 @@ import {
 import { useRouter } from "next/router";
 import { fetchPublishedClasses } from "@/services/classService";
 
-// Initial category options
-const initialCategories = ["All"];
+// Initial category options include the special "Trending" filter
+const initialCategories = ["All", "Trending"];
 
 const computeStatus = (start, end) => {
   const now = new Date();
@@ -41,8 +41,14 @@ const OnlineClasses = () => {
           status: computeStatus(c.start_date, c.end_date),
         }));
         setClasses(formatted);
-        const cats = Array.from(new Set(formatted.map((c) => c.category).filter(Boolean)));
-        setCategories(["All", ...cats]);
+        const cats = Array.from(
+          new Set(
+            formatted
+              .map((c) => c.category)
+              .filter((cat) => cat && cat !== "All" && cat !== "Trending")
+          )
+        );
+        setCategories(["All", "Trending", ...cats]);
       } catch (err) {
         console.error("Failed to load classes", err);
       }
