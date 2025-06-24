@@ -104,11 +104,29 @@ exports.getPublishedClasses = async () => {
 };
 
 exports.getPublicClassDetails = async (id) => {
-  const cls = await db("online_classes")
-    .where({ id, status: "published", moderation_status: "Approved" })
+  const cls = await db("online_classes as c")
+    .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .select(
+      "c.*",
+      "u.full_name as instructor",
+      "u.avatar_url as instructor_image",
+      "cat.name as category",
+      db.raw(
+        "(SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = c.id) as enrolled_count"
+      )
+    )
+    .where({ "c.id": id, "c.status": "published", "c.moderation_status": "Approved" })
     .first();
+
   if (cls) {
     cls.tags = await exports.getClassTags(id);
+    const enrolled = parseInt(cls.enrolled_count, 10) || 0;
+    cls.enrolled_count = enrolled;
+    cls.spots_left =
+      typeof cls.max_students === "number" && cls.max_students !== null
+        ? Math.max(0, cls.max_students - enrolled)
+        : null;
   }
   return cls;
 };
