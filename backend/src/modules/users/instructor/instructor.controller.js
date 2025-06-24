@@ -298,3 +298,14 @@ exports.updateAvailability = async (req, res) => {
 
     res.json({ message: 'Availability updated successfully' });
 };
+
+/**
+ * @desc Get dashboard statistics for instructor
+ * @route GET /api/users/instructor/dashboard-stats
+ * @access Instructor
+ */
+exports.getDashboardStats = async (req, res) => {
+    const userId = req.user.id;
+    const data = await require('./instructor.service').getDashboardStats(userId);
+    res.json({ data });
+};

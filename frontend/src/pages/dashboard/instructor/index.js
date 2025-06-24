@@ -23,6 +23,7 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "tailwindcss/tailwind.css";
+import { fetchInstructorDashboardStats } from "@/services/instructor/instructorService";
 
 const localizer = momentLocalizer(moment);
 
@@ -87,10 +88,16 @@ export default function InstructorDashboard() {
   const [counts, setCounts] = useState({});
 
   useEffect(() => {
-    setTimeout(() => {
+    async function loadStats() {
+      try {
+        const data = await fetchInstructorDashboardStats();
+        if (data) setCounts(data);
+      } catch (err) {
+        console.error('Failed to load dashboard stats', err);
+      }
       setChartData(mockChartData);
-      setCounts(mockDashboardCounts);
-    }, 500);
+    }
+    loadStats();
   }, []);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";

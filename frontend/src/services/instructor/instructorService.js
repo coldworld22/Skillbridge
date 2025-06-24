@@ -87,3 +87,8 @@ export const updateInstructorAvailability = async (availability) => {
   const res = await api.patch("/users/instructor/availability", { availability });
   return res.data;
 };
+
+export const fetchInstructorDashboardStats = async () => {
+  const res = await api.get("/users/instructor/dashboard-stats");
+  return res.data?.data;
+};

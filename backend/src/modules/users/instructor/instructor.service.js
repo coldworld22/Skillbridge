@@ -88,7 +88,33 @@ const updateInstructorProfile = async (userId, userData, instructorData, socialL
   });
 };
 
+// 📊 Dashboard stats for instructor dashboard
+const getDashboardStats = async (userId) => {
+  const [tutorialRow] = await db('tutorials')
+    .where({ instructor_id: userId })
+    .count();
+  const [classRow] = await db('online_classes')
+    .where({ instructor_id: userId })
+    .count();
+  const [studentRow] = await db('class_enrollments as ce')
+    .join('online_classes as c', 'ce.class_id', 'c.id')
+    .where('c.instructor_id', userId)
+    .countDistinct('ce.user_id');
+  const [upcomingRow] = await db('online_classes')
+    .where({ instructor_id: userId })
+    .where('start_date', '>', db.fn.now())
+    .count();
+
+  return {
+    totalTutorials: parseInt(tutorialRow.count, 10) || 0,
+    totalClasses: parseInt(classRow.count, 10) || 0,
+    totalStudents: parseInt(studentRow.count, 10) || 0,
+    upcomingSessions: parseInt(upcomingRow.count, 10) || 0,
+  };
+};
+
 module.exports = {
   getInstructorProfile,
   updateInstructorProfile,
+  getDashboardStats,
 };
