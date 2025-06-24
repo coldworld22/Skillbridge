@@ -1,4 +1,5 @@
 // File: pages/dashboard/instructor/online-classes/create.js
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
