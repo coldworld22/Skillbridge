@@ -1,7 +1,7 @@
 // File: pages/dashboard/instructor/online-classes/create.js
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -12,26 +12,62 @@ import InstructorLayout from '@/components/layouts/InstructorLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
 
 import { fetchAllCategories } from '@/services/instructor/categoryService';
-import { createInstructorClass, fetchInstructorClasses } from '@/services/instructor/classService';
+import { createInstructorClass } from '@/services/instructor/classService';
 import { fetchClassTags, createClassTag } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
+import FloatingInput from '@/components/shared/FloatingInput';
+
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
-const loaderStyle = "mt-2 text-sm text-blue-600 flex items-center gap-2 animate-pulse";
-const slugify = (text) => text.toLowerCase().trim().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+const slugify = (text) => text.toLowerCase().trim().replace(/[^"]+/g, '').replace(/ +/g, '-');
 
 function CreateOnlineClass() {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    image: '', imagePreview: '',
-    demoVideo: null, demoPreview: ''
+    title: '',
+    instructor: user?.full_name || '',
+    category: '',
+    level: '',
+    language: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    price: '',
+    maxStudents: '',
+    isFree: false,
+    allowInstallments: false,
+    isApproved: false,
+    image: '',
+    imagePreview: '',
+    demoVideo: null,
+    demoPreview: '',
+    lessons: []
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
   const [videoUploading, setVideoUploading] = useState(false);
-  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+
+  useEffect(() => {
+    fetchAllCategories().then(setCategories);
+    fetchClassTags().then(setAllTags);
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -46,12 +82,12 @@ function CreateOnlineClass() {
         }
       };
       reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: file, imagePreview: reader.result }));
+        setFormData((prev) => ({ ...prev, image: file, imagePreview: reader.result }));
         setImageUploading(false);
         setUploadProgress(100);
       };
       reader.onerror = () => {
-        toast.error("Failed to load image preview.");
+        toast.error('Failed to load image preview.');
         setImageUploading(false);
       };
       reader.readAsDataURL(file);
@@ -62,25 +98,33 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (file) {
       setVideoUploading(true);
-      setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
       setTimeout(() => setVideoUploading(false), 500);
+    }
+  };
+
+  const addTag = (tag) => {
+    if (tag && !selectedTags.includes(tag)) {
+      setSelectedTags((prev) => [...prev, tag]);
+      setTagInput('');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      if (!formData.title || !formData.startDate || titleError) {
-        toast.error("Please fix errors and fill all required fields.");
+      if (!formData.title || !formData.startDate) {
+        toast.error('Please fill in required fields.');
         return;
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (formData.lessons.length === 0 || formData.lessons.some(l => !l.title || !l.duration)) {
-        toast.error("Please complete all lesson fields and add at least one lesson.");
+        toast.error('Please complete all lessons.');
         return;
       }
       try {
+        setIsSubmitting(true);
         const payload = new FormData();
         payload.append('instructor_id', user?.id);
         payload.append('title', formData.title);
@@ -96,41 +140,31 @@ function CreateOnlineClass() {
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
         payload.append('status', formData.isApproved ? 'published' : 'draft');
         if (formData.category) payload.append('category_id', formData.category);
-
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
 
-        const newTags = selectedTags.filter(
-          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
-        );
+        const newTags = selectedTags.filter(t => !allTags.some(a => a.name.toLowerCase() === t.toLowerCase()));
         if (newTags.length) {
           const created = await Promise.all(
-            newTags.map((t) =>
-              createClassTag({ name: t, slug: slugify(t) }).catch(() => null)
-            )
+            newTags.map(t => createClassTag({ name: t, slug: slugify(t) }).catch(() => null))
           );
           setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
         }
 
-        setIsSubmitting(true);
-        setUploadProgress(0);
         await createInstructorClass(payload, (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
-        }
-      };
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
-        setVideoUploading(false);
-        setUploadProgress(100);
-      };
-      reader.onerror = () => {
-        toast.error("Failed to load video preview.");
-        setVideoUploading(false);
-      };
-      reader.readAsDataURL(file);
+        });
+
+        toast.success('Class created successfully!');
+        router.push('/dashboard/instructor/online-classes');
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to create class.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white rounded-xl shadow-xl mt-6">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
