@@ -5,6 +5,7 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 import { fetchClassDetails } from '@/services/classService';
+import { API_BASE_URL } from '@/config/config';
 
 
 export default function ClassDetailsPage() {
@@ -13,6 +14,12 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const resolveUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http') || path.startsWith('blob:')) return path;
+    return `${API_BASE_URL}${path}`.replace(/(?<!:)\/\/+/, '/');
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -37,6 +44,9 @@ export default function ClassDetailsPage() {
   if (!classInfo) return <div className="text-red-400 text-center mt-32">Class not found</div>;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const description = classInfo.description
+    ? classInfo.description.replace(/<[^>]+>/g, '')
+    : '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
@@ -52,28 +62,50 @@ export default function ClassDetailsPage() {
             <p className="text-sm text-gray-400">
               <span className="font-semibold text-white">Instructor:</span> {classInfo.instructor}
             </p>
-            <p className="italic mt-2 text-gray-400">{classInfo.instructorBio}</p>
+            {(classInfo.instructorBio || classInfo.instructor_bio) && (
+              <p className="italic mt-2 text-gray-400">
+                {classInfo.instructorBio || classInfo.instructor_bio}
+              </p>
+            )}
           </div>
           <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-yellow-400 shadow-md">
-            <img src={classInfo.instructorImage} alt={classInfo.instructor} className="w-full h-full object-cover" />
+            <img
+              src={resolveUrl(classInfo.instructor_image) || '/images/profile/user.png'}
+              alt={classInfo.instructor}
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 
-        <img
-          src={classInfo.image}
-          alt={classInfo.title}
-          className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
-        />
+        {classInfo.demo_video_url ? (
+          <video
+            src={resolveUrl(classInfo.demo_video_url)}
+            controls
+            className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
+          />
+        ) : (
+          <img
+            src={resolveUrl(classInfo.cover_image)}
+            alt={classInfo.title}
+            className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
+          />
+        )}
 
         <p className="mb-8 text-lg leading-relaxed text-gray-300 text-justify">
-          {classInfo.description}
+          {description}
         </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 text-sm text-gray-300">
-          <p><strong>Date:</strong> {classInfo.date}</p>
-          <p><strong>Duration:</strong> {classInfo.duration}</p>
+          {classInfo.start_date && (
+            <p><strong>Date:</strong> {new Date(classInfo.start_date).toLocaleDateString()}</p>
+          )}
+          {classInfo.duration && (
+            <p><strong>Duration:</strong> {classInfo.duration}</p>
+          )}
           <p><strong>Category:</strong> {classInfo.category}</p>
-          <p><strong>Available Spots:</strong> {classInfo.spotsLeft}</p>
+          {typeof classInfo.spots_left === 'number' && (
+            <p><strong>Available Spots:</strong> {classInfo.spots_left}</p>
+          )}
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
@@ -100,9 +132,18 @@ export default function ClassDetailsPage() {
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
             onClick={() => router.push(`/payments/checkout?classId=${id}`)}
-            className="w-full sm:w-auto px-8 py-3 bg-yellow-500 text-gray-900 font-semibold rounded-full hover:bg-yellow-600 transition duration-300 shadow-lg"
+            disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
+            className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
+              typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
+            }`}
           >
-            {classInfo.price === 0 ? 'Enroll for Free' : 'Proceed to Payment'}
+            {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+              ? 'Class Full'
+              : classInfo.price === 0
+              ? 'Enroll for Free'
+              : 'Proceed to Payment'}
           </button>
         </section>
 
