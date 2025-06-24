@@ -33,6 +33,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [isCallActive, setIsCallActive] = useState(true);
+  const userName = "Ayman";
 
   const {
     localStream,
@@ -41,10 +42,10 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
     toggleVideo,
     isMuted: hookMuted,
     isVideoOff,
-  } = useVideoCall(chatId);
+  } = useVideoCall(chatId, userName, userRole);
 
   const { raiseHand, lowerHand, hasRaised, HandQueueDisplay } =
-    RaiseHandManager({ userName: "Ayman", userRole });
+    RaiseHandManager({ userName, userRole });
   const {
     isRecording,
     elapsedTime,
