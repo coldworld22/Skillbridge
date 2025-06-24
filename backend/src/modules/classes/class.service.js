@@ -46,6 +46,29 @@ exports.getClassById = async (id) => {
   return cls;
 };
 
+exports.getClassesByInstructor = async (instructorId) => {
+  const classes = await db("online_classes as c")
+    .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .select(
+      "c.id",
+      "c.title",
+      "c.slug",
+      "c.cover_image",
+      "c.start_date",
+      "c.end_date",
+      "c.price",
+      "c.status",
+      "c.moderation_status",
+      "cat.name as category"
+    )
+    .where("c.instructor_id", instructorId)
+    .orderBy("c.created_at", "desc");
+  for (const cls of classes) {
+    cls.tags = await exports.getClassTags(cls.id);
+  }
+  return classes;
+};
+
 exports.updateClass = async (id, data) => {
   const [updated] = await db("online_classes").where({ id }).update(data).returning("*");
   return updated;
