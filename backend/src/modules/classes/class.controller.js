@@ -65,6 +65,11 @@ exports.getClassById = catchAsync(async (req, res) => {
   sendSuccess(res, cls);
 });
 
+exports.getMyClasses = catchAsync(async (req, res) => {
+  const classes = await service.getClassesByInstructor(req.user.id);
+  sendSuccess(res, classes);
+});
+
 exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
   const { tags: rawTags, ...body } = req.body;

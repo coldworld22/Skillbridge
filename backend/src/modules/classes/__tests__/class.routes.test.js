@@ -12,7 +12,8 @@ jest.mock('../../../config/database', () => {
 
 jest.mock('../class.service', () => ({
   createClass: jest.fn(),
-  getAllClasses: jest.fn()
+  getAllClasses: jest.fn(),
+  getClassesByInstructor: jest.fn()
 }));
 const service = require('../class.service');
 // Mock enrollment service to avoid DB calls when routes are loaded
@@ -24,7 +25,10 @@ jest.mock('../enrollments/classEnrollment.service', () => ({
 }));
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
-  verifyToken: (_req, _res, next) => next(),
+  verifyToken: (req, _res, next) => {
+    req.user = { id: 'test-user' };
+    next();
+  },
   isStudent: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
@@ -59,5 +63,14 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(list);
     expect(service.getAllClasses).toHaveBeenCalled();
+  });
+
+  test('get my classes', async () => {
+    const list = [{ id: '1', instructor_id: 'test-user', title: 'Mine' }];
+    service.getClassesByInstructor.mockResolvedValue(list);
+    const res = await request(app).get('/classes/admin/my');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(list);
+    expect(service.getClassesByInstructor).toHaveBeenCalled();
   });
 });

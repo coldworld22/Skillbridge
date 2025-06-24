@@ -26,6 +26,7 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
   - `POST /api/users/classes/admin` – create a class (instructor or admin)
   - `PUT /api/users/classes/admin/:id` – update a class
   - `DELETE /api/users/classes/admin/:id` – remove a class
+  - `GET /api/users/classes/admin/my` – list classes for the logged in instructor
 - `/admin` – administrator dashboard features
 - `/instructor` – instructor tools
 - `/student` – student account endpoints
