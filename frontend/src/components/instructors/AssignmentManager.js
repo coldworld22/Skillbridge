@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { FaPlus, FaClipboardList } from 'react-icons/fa';
 
-export default function AssignmentManager({ classId }) {
+export default function AssignmentManager({ classId, assignments = [] }) {
   return (
     <div className="space-y-4">
       <Link
@@ -17,6 +17,16 @@ export default function AssignmentManager({ classId }) {
       >
         <FaClipboardList /> View My Assignments
       </Link>
+
+      {assignments.length > 0 && (
+        <ul className="mt-2 space-y-2 text-sm">
+          {assignments.map((a) => (
+            <li key={a.id} className="bg-gray-700 p-2 rounded">
+              {a.title}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
