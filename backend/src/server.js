@@ -147,6 +147,36 @@ app.get("/api/video-calls/:roomId/participants", (req, res) => {
   res.json(participants[roomId] || []);
 });
 
+// Simple in-memory store for call messages
+const callMessages = {};
+
+// Retrieve all messages for a room
+app.get("/api/video-calls/:roomId/messages", (req, res) => {
+  const { roomId } = req.params;
+  res.json(callMessages[roomId] || []);
+});
+
+// Post a new message to a room
+app.post("/api/video-calls/:roomId/messages", (req, res) => {
+  const { roomId } = req.params;
+  const { sender, text } = req.body || {};
+  if (!text || !text.trim()) {
+    return res.status(400).json({ message: "Message text required" });
+  }
+  const message = {
+    id: Date.now(),
+    sender: sender || "Anonymous",
+    text: text.trim(),
+    timestamp: new Date().toISOString(),
+  };
+  if (callMessages[roomId]) {
+    callMessages[roomId].push(message);
+  } else {
+    callMessages[roomId] = [message];
+  }
+  res.status(201).json(message);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ Global Error Handler
 // ─────────────────────────────────────────────────────────────────────────────
