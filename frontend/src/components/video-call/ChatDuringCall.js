@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaPaperPlane } from "react-icons/fa";
+import { fetchCallMessages, sendCallMessage } from "@/services/videoCallService";
 
-const ChatDuringCall = () => {
+const ChatDuringCall = ({ chatId }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
-    setMessages([...messages, { sender: "You", text: newMessage }]);
+  useEffect(() => {
+    if (!chatId) return;
+    fetchCallMessages(chatId)
+      .then(setMessages)
+      .catch(() => setMessages([]));
+  }, [chatId]);
+
+  const sendMessage = async () => {
+    const text = newMessage.trim();
+    if (!text) return;
+    try {
+      const saved = await sendCallMessage(chatId, { sender: "You", text });
+      setMessages((prev) => [...prev, saved]);
+    } catch {
+      // fail silently for this demo
+    }
     setNewMessage("");
   };
 
