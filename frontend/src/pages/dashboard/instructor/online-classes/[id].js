@@ -7,25 +7,31 @@ import ResourceUploadSection from "@/components/instructors/ResourceUploadSectio
 import BreakoutRoomControl from "@/components/instructors/BreakoutRoomControl";
 import CertificateIssuancePanel from "@/components/instructors/CertificateIssuancePanel";
 import AssignmentManager from "@/components/instructors/AssignmentManager"; // ✅ Assignment Manager added
+import { fetchClassManagementData } from "@/services/instructor/classService";
 
 export default function InstructorClassRoom() {
   const router = useRouter();
   const { id } = router.query;
 
   const [classData, setClassData] = useState(null);
-
-  // Mock class data
-  const mockClass = {
-    title: "React & Next.js Bootcamp",
-    instructor: "Ayman Khalid",
-    startTime: "2025-05-01T10:00:00",
-    description: "A comprehensive bootcamp on modern React development.",
-  };
+  const [lessons, setLessons] = useState([]);
+  const [assignments, setAssignments] = useState([]);
 
   useEffect(() => {
-    if (id) {
-      setClassData(mockClass); // Replace with real API call later
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const data = await fetchClassManagementData(id);
+        if (data) {
+          setClassData(data.class);
+          setLessons(data.lessons);
+          setAssignments(data.assignments);
+        }
+      } catch (err) {
+        console.error("Failed to load class data", err);
+      }
+    };
+    load();
   }, [id]);
 
   if (!id || !classData) return <div className="text-white p-10">Loading class data...</div>;
@@ -36,7 +42,9 @@ export default function InstructorClassRoom() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-yellow-400">{classData.title}</h1>
         <p className="text-sm text-gray-400">Instructor: {classData.instructor}</p>
-        <p className="text-xs text-gray-500">Start Time: {new Date(classData.startTime).toLocaleString()}</p>
+        {classData.start_date && (
+          <p className="text-xs text-gray-500">Start Time: {new Date(classData.start_date).toLocaleString()}</p>
+        )}
       </div>
 
       {/* Live Video Panel */}
@@ -49,7 +57,7 @@ export default function InstructorClassRoom() {
         {/* Manage Lessons */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">📚 Manage Lessons</h2>
-          <LessonManager classId={id} />
+          <LessonManager classId={id} initialLessons={lessons} />
         </div>
 
         {/* Upload Materials */}
@@ -80,6 +88,15 @@ export default function InstructorClassRoom() {
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">📋 Manage Assignments</h2>
           <AssignmentManager classId={id} />
+          {assignments.length > 0 && (
+            <ul className="mt-4 space-y-2 text-sm">
+              {assignments.map((a) => (
+                <li key={a.id} className="bg-gray-700 p-2 rounded">
+                  {a.title}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
