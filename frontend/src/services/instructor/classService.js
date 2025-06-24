@@ -78,3 +78,13 @@ export const rejectInstructorClass = async (id, reason) => {
   const { data } = await api.patch(`/users/classes/admin/${id}/reject`, { reason });
   return data?.data;
 };
+
+export const fetchClassManagementData = async (id) => {
+  const { data } = await api.get(`/users/classes/admin/${id}/manage`);
+  if (!data?.data) return null;
+  return {
+    class: data.data.class ? formatClass(data.data.class) : null,
+    lessons: data.data.lessons || [],
+    assignments: data.data.assignments || [],
+  };
+};
