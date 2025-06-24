@@ -23,6 +23,7 @@ const loaderStyle = "mt-2 text-sm text-blue-600 flex items-center gap-2 animate-
 const slugify = (text) => text.toLowerCase().trim().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
 
 function CreateOnlineClass() {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     image: '', imagePreview: '',
     demoVideo: null, demoPreview: ''
@@ -61,11 +62,59 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (file) {
       setVideoUploading(true);
-      setUploadProgress(0);
-      const reader = new FileReader();
-      reader.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
+      setFormData(prev => ({ ...prev, demoVideo: file, demoPreview: URL.createObjectURL(file) }));
+      setTimeout(() => setVideoUploading(false), 500);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (currentStep === 1) {
+      if (!formData.title || !formData.startDate || titleError) {
+        toast.error("Please fix errors and fill all required fields.");
+        return;
+      }
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      if (formData.lessons.length === 0 || formData.lessons.some(l => !l.title || !l.duration)) {
+        toast.error("Please complete all lesson fields and add at least one lesson.");
+        return;
+      }
+      try {
+        const payload = new FormData();
+        payload.append('instructor_id', user?.id);
+        payload.append('title', formData.title);
+        if (formData.description) payload.append('description', formData.description);
+        if (formData.level) payload.append('level', formData.level);
+        if (formData.image) payload.append('cover_image', formData.image);
+        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+        if (formData.startDate) payload.append('start_date', formData.startDate);
+        if (formData.endDate) payload.append('end_date', formData.endDate);
+        if (formData.price) payload.append('price', Number(formData.price).toFixed(2));
+        if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
+        if (formData.language) payload.append('language', formData.language);
+        payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
+        payload.append('status', formData.isApproved ? 'published' : 'draft');
+        if (formData.category) payload.append('category_id', formData.category);
+
+        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+
+        const newTags = selectedTags.filter(
+          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+        );
+        if (newTags.length) {
+          const created = await Promise.all(
+            newTags.map((t) =>
+              createClassTag({ name: t, slug: slugify(t) }).catch(() => null)
+            )
+          );
+          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
+        }
+
+        setIsSubmitting(true);
+        setUploadProgress(0);
+        await createInstructorClass(payload, (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         }
       };
@@ -85,7 +134,7 @@ function CreateOnlineClass() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white rounded-xl shadow-xl mt-6">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
-        {step === 1 ? '🎓 Create New Class' : '📚 Add Lesson Plan'}
+        {currentStep === 1 ? '🎓 Create New Class' : '📚 Add Lesson Plan'}
       </h1>
 
       {/* Step Indicators */}
@@ -94,7 +143,7 @@ function CreateOnlineClass() {
           {[1, 2].map((s) => (
             <div
               key={s}
-              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${step === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'}`}
+              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${currentStep === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'}`}
             >
               Step {s}
             </div>
@@ -103,15 +152,15 @@ function CreateOnlineClass() {
         <div className="w-full bg-gray-200 h-2 rounded">
           <div
             className="bg-yellow-500 h-2 rounded transition-all duration-300"
-            style={{ width: `${(step / 2) * 100}%` }}
+            style={{ width: `${(currentStep / 2) * 100}%` }}
           />
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <AnimatePresence mode="wait">
-          <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
-            {step === 1 && (
+          <motion.div key={currentStep} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
+            {currentStep === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FloatingInput label="Class Title" name="title" value={formData.title} onChange={handleChange} />
                 <FloatingInput label="Instructor Name" name="instructor" value={formData.instructor} onChange={handleChange} disabled />
@@ -224,7 +273,7 @@ function CreateOnlineClass() {
               </div>
             )}
 
-            {step === 2 && (
+            {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
@@ -303,11 +352,11 @@ function CreateOnlineClass() {
         </AnimatePresence>
 
         <div className="pt-4 flex justify-between items-center">
-          {step > 1 && (
-            <button type="button" onClick={() => setStep(step - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
+          {currentStep > 1 && (
+            <button type="button" onClick={() => setCurrentStep(currentStep - 1)} className="text-sm text-gray-600 hover:underline">← Back</button>
           )}
           <button type="submit" disabled={isSubmitting} className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
-            {step === 1 ? 'Continue to Lessons' : 'Submit Class'}
+            {currentStep === 1 ? 'Continue to Lessons' : 'Submit Class'}
           </button>
         </div>
         {isSubmitting && (
