@@ -4,45 +4,37 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { fetchClassDetails } from '@/services/classService';
 
-const mockClassList = [
-  {
-    id: '2',
-    title: 'React & Next.js Bootcamp',
-    instructor: 'Ayman Khalid',
-    date: '2025-05-13',
-    price: 49,
-    spotsLeft: 4,
-    duration: '1 Month',
-    category: 'Web Development',
-    image: 'https://bs-uploads.toptal.io/blackfish-uploads/components/blog_post_page/5912616/cover_image/retina_1708x683/1015_Next.js_vs._React-_A_Comparative_Tutorial_Illustration_Brief_Blog-e14319490440a98149fbda4e651f8526.png',
-    description: "This intensive bootcamp covers React fundamentals, advanced hooks, and dives deep into building fullstack apps with Next.js — perfect for frontend developers looking to scale up.",
-    syllabus: [
-      "Introduction to React",
-      "JSX and State Management",
-      "React Router and Hooks",
-      "Next.js Basics and Routing",
-      "Server-Side Rendering",
-      "Deploying Next.js Apps"
-    ],
-    instructorBio: "Ayman Khalid is a full-stack engineer with 10+ years of experience building web apps, teaching over 1,200 students.",
-    instructorImage: 'https://randomuser.me/api/portraits/men/32.jpg'
-  }
-];
 
 export default function ClassDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
   const [classInfo, setClassInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      const found = mockClassList.find((cls) => cls.id === id);
-      setClassInfo(found);
-    }
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const details = await fetchClassDetails(id);
+        setClassInfo(details?.data ?? details);
+      } catch (err) {
+        console.error('Failed to load class', err);
+        setError('Failed to load class');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
+  if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
+  if (error) return <div className="text-red-400 text-center mt-32">{error}</div>;
+  if (!classInfo) return <div className="text-red-400 text-center mt-32">Class not found</div>;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 

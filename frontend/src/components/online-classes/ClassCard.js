@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 function ClassCard({ classData, index }) {
   const {
+    id,
     title,
     instructor,
     date,
@@ -13,7 +14,7 @@ function ClassCard({ classData, index }) {
   } = classData;
 
   return (
-    <Link href={`/online-classes/${index}`}>
+    <Link href={`/online-classes/${id}`}>
       <div className="cursor-pointer bg-gray-900 rounded-lg shadow-lg p-5 flex flex-col hover:shadow-xl hover:ring-2 hover:ring-yellow-500 transition">
         {/* Image */}
         <div className="h-40 mb-4 overflow-hidden rounded-md">
