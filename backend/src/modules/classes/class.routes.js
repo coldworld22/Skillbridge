@@ -27,6 +27,12 @@ router.post(
 );
 router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllClasses);
 router.get(
+  "/admin/my",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.getMyClasses
+);
+router.get(
   "/admin/:id",
   verifyToken,
   isInstructorOrAdmin,
