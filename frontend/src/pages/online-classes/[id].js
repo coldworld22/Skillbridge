@@ -37,6 +37,9 @@ export default function ClassDetailsPage() {
   if (!classInfo) return <div className="text-red-400 text-center mt-32">Class not found</div>;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const plainDescription = classInfo.description
+    ? classInfo.description.replace(/<[^>]*>/g, '')
+    : '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
@@ -80,6 +83,11 @@ export default function ClassDetailsPage() {
           <p className="text-xs text-gray-500 mt-2">
             Note: Classes on SkillBridge may be created by instructors or administrators.
           </p>
+
+          {classInfo.instructor && (
+            <p className="text-xs text-gray-500">Created by: {classInfo.instructor}</p>
+          )}
+
         </div>
 
         {classInfo.demo_video_url ? (
@@ -97,7 +105,7 @@ export default function ClassDetailsPage() {
         )}
 
         <p className="mb-8 text-lg leading-relaxed text-gray-300 text-justify">
-          {classInfo.description}
+          {plainDescription}
         </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 text-sm text-gray-300">
