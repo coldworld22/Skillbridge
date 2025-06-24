@@ -1,139 +1,154 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaUsers, FaCalendarAlt, FaChalkboardTeacher, FaLink, FaClock } from "react-icons/fa";
-import InstructorLayout from '@/components/layouts/InstructorLayout';
-
-const mockClasses = [
-  {
-    id: "react-bootcamp",
-    title: "React & Next.js Bootcamp",
-    startDate: "2025-05-13T10:00:00",
-    endDate: "2025-06-10T10:00:00",
-    duration: "4 weeks",
-    students: 45,
-    status: "Live",
-    registrationLimit: 50,
-    classLinkSent: true,
-  },
-  {
-    id: "ui-design",
-    title: "UI Design Fundamentals",
-    startDate: "2025-06-01T14:00:00",
-    endDate: "2025-07-01T14:00:00",
-    duration: "1 month",
-    students: 30,
-    status: "Full",
-    registrationLimit: 30,
-    classLinkSent: false,
-  },
-  {
-    id: "html-css",
-    title: "HTML & CSS Basics",
-    startDate: "2025-04-01T10:00:00",
-    endDate: "2025-04-29T10:00:00",
-    duration: "4 weeks",
-    students: 60,
-    status: "Completed",
-    registrationLimit: 60,
-    classLinkSent: true,
-  },
-];
+import {
+  FaCalendarAlt,
+  FaChalkboardTeacher,
+  FaClock,
+} from "react-icons/fa";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import { fetchInstructorClasses } from "@/services/instructor/classService";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function MyClasses() {
   const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterSchedule, setFilterSchedule] = useState("All");
+  const [filterApproval, setFilterApproval] = useState("All");
+
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    setClasses(mockClasses);
+    const load = async () => {
+      try {
+        const data = await fetchInstructorClasses();
+        setClasses(data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load classes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
-  const filteredClasses = classes.filter((cls) =>
-    cls.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const myClasses = classes.filter((cls) => {
+    if (cls.instructor_id && user?.id) return cls.instructor_id === user.id;
+    if (cls.instructor && (user?.full_name || user?.name)) {
+      const name = user.full_name || user.name;
+      return cls.instructor === name;
+    }
+    return true;
+  });
 
-  const handleSendClassLink = (id) => {
-    alert(`✅ Class link sent for: ${id}`);
-    setClasses((prev) =>
-      prev.map((cls) =>
-        cls.id === id ? { ...cls, classLinkSent: true } : cls
-      )
+  const filteredClasses = myClasses
+    .filter((cls) =>
+      cls.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((cls) =>
+      filterSchedule === "All" ? true : cls.scheduleStatus === filterSchedule
+    )
+    .filter((cls) =>
+      filterApproval === "All" ? true : cls.approvalStatus === filterApproval
     );
-  };
+
+  if (loading) {
+    return (
+      <InstructorLayout>
+        <div className="p-6">Loading classes...</div>
+      </InstructorLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <InstructorLayout>
+        <div className="p-6 text-red-500">{error}</div>
+      </InstructorLayout>
+    );
+  }
 
   return (
     <InstructorLayout>
       <div className="bg-white min-h-screen px-6 py-10 text-gray-900">
         <h1 className="text-2xl font-bold text-yellow-500 mb-6">📚 My Classes</h1>
 
-        <input
-          type="text"
-          placeholder="Search classes..."
-          className="mb-6 p-3 border border-gray-300 rounded w-full max-w-md"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="Search classes..."
+            className="p-3 border border-gray-300 rounded w-full sm:max-w-xs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <select
+            className="p-3 border border-gray-300 rounded w-full sm:w-auto"
+            value={filterSchedule}
+            onChange={(e) => setFilterSchedule(e.target.value)}
+          >
+            <option value="All">All Schedule</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <select
+            className="p-3 border border-gray-300 rounded w-full sm:w-auto"
+            value={filterApproval}
+            onChange={(e) => setFilterApproval(e.target.value)}
+          >
+            <option value="All">All Approval</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClasses.map((cls) => {
-            const registrationStatus =
-              cls.students >= cls.registrationLimit ? "Full" : "Open";
-
-            return (
-              <div key={cls.id} className="bg-gray-100 p-5 rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <FaChalkboardTeacher className="text-yellow-500" /> {cls.title}
-                </h2>
-                <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
-                  <FaCalendarAlt /> {new Date(cls.startDate).toLocaleString()} - {new Date(cls.endDate).toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
-                  <FaUsers /> {cls.students}/{cls.registrationLimit} students
-                </p>
-                <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
-                  <FaClock /> Duration: {cls.duration}
-                </p>
-                <p className="text-xs text-gray-500 italic mb-1">
-                  Registration: {registrationStatus}
-                </p>
+          {filteredClasses.map((cls) => (
+            <div key={cls.id} className="bg-gray-100 p-5 rounded-lg shadow-md">
+              <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                <FaChalkboardTeacher className="text-yellow-500" /> {cls.title}
+              </h2>
+              <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
+                <FaCalendarAlt />
+                {cls.start_date || "-"}
+                {cls.end_date ? ` - ${cls.end_date}` : ""}
+              </p>
+              <p className="text-sm text-gray-600 flex items-center gap-2 mb-1">
+                <FaClock /> Schedule: {cls.scheduleStatus}
+              </p>
+              <div className="flex gap-2 mb-4 mt-2">
                 <span
-                  className={`inline-block px-3 py-1 text-sm rounded-full font-medium mb-4 ${
-                    cls.status === "Live"
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    cls.status === "published"
                       ? "bg-green-100 text-green-800"
-                      : cls.status === "Upcoming"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : cls.status === "Completed"
-                      ? "bg-gray-200 text-gray-600"
-                      : cls.status === "Full"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-200 text-gray-600"
+                      : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {cls.status}
+                  {cls.status === "published" ? "Published" : "Draft"}
                 </span>
-                <Link
-                  href={`/dashboard/instructor/online-classe/${cls.id}`}
-                  className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold mb-2"
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    cls.approvalStatus === "Approved"
+                      ? "bg-green-100 text-green-800"
+                      : cls.approvalStatus === "Rejected"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
                 >
-                  Go to Class
-                </Link>
-
-                {cls.students >= cls.registrationLimit && !cls.classLinkSent && (
-                  <button
-                    onClick={() => handleSendClassLink(cls.id)}
-                    className="bg-blue-500 text-white w-full py-2 px-4 rounded hover:bg-blue-600 text-sm flex items-center justify-center gap-2"
-                  >
-                    <FaLink /> Send Class Link
-                  </button>
-                )}
-
-                {cls.classLinkSent && (
-                  <div className="text-green-600 text-sm font-medium mt-2 text-center">
-                    ✅ Class link sent to students
-                  </div>
-                )}
+                  {cls.approvalStatus}
+                </span>
               </div>
-            );
-          })}
+              <Link
+                href={`/dashboard/instructor/online-classe/${cls.id}`}
+                className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
+              >
+                Manage Class
+              </Link>
+            </div>
+          ))}
         </div>
 
         {filteredClasses.length === 0 && (
