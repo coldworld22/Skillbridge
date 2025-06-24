@@ -75,8 +75,12 @@ function CreateOnlineClass() {
   );
 
   useEffect(() => {
-    fetchAllCategories().then(setCategories);
-    fetchClassTags().then(setAllTags);
+    fetchAllCategories({ status: 'active', limit: 100 })
+      .then((res) => setCategories(res?.data || []))
+      .catch(() => setCategories([]));
+    fetchClassTags()
+      .then(setAllTags)
+      .catch(() => setAllTags([]));
   }, []);
 
   const handleChange = (e) => {
