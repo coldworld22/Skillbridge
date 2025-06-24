@@ -142,7 +142,7 @@ export default function MyClasses() {
                 </span>
               </div>
               <Link
-                href={`/dashboard/instructor/online-classe/${cls.id}`}
+                href={`/dashboard/instructor/online-classes/${cls.id}`}
                 className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
               >
                 Manage Class
