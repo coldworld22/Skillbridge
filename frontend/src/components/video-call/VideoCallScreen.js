@@ -104,7 +104,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
               </div>
             </div>
             {(isChatOpen || isParticipantsOpen) && (
-              <div className="fixed top-0 right-0 h-full w-[90%] md:static md:w-[300px] bg-gray-800 p-4 rounded-lg shadow border-2 border-yellow-500 z-40 overflow-y-auto">
+              <div className="fixed top-0 right-0 h-full w-full max-w-xs md:static md:w-[300px] bg-gray-800 p-4 rounded-lg shadow border-2 border-yellow-500 z-40 overflow-y-auto">
                 {isParticipantsOpen && (
                   <ParticipantList chatId={chatId} userRole={userRole} />
                 )}
