@@ -46,7 +46,7 @@ function FloatingInput({ label, name, value, onChange, type = "text", ...props }
   );
 }
 
-export function CreateOnlineClass() {
+function CreateOnlineClass() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -67,10 +67,7 @@ export function CreateOnlineClass() {
     allowInstallments: false,
     isApproved: false,
     lessons: [],
-    title: '', instructor: '', category: '', tags: '', level: '', language: '',
-    description: '', image: '', imagePreview: '', demoVideo: null, demoPreview: '',
-    startDate: '', endDate: '', price: '', isFree: false, maxStudents: '',
-    allowInstallments: false, isApproved: false, lessons: [],
+    tags: '',
   });
   const [categories, setCategories] = useState([]);
   const [existingTitles, setExistingTitles] = useState([]);
