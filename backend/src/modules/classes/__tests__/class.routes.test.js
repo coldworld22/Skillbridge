@@ -52,7 +52,7 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(data);
     expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'draft' })
+      expect.objectContaining({ status: 'published' })
     );
   });
 

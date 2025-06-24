@@ -21,12 +21,12 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const { tags: rawTags, ...body } = req.body;
+  const { tags: rawTags, status, ...body } = req.body;
   const data = {
     ...body,
     id: uuidv4(),
     slug,
-    status: "draft",
+    status: status || "draft",
     moderation_status: "Pending",
   };
   if (req.files?.cover_image?.[0]) {
