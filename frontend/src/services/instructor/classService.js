@@ -94,6 +94,11 @@ export const createClassLesson = async (classId, payload) => {
   return data?.data;
 };
 
+export const updateClassLesson = async (lessonId, payload) => {
+  const { data } = await api.put(`/users/classes/lessons/${lessonId}`, payload);
+  return data?.data;
+};
+
 export const deleteClassLesson = async (lessonId) => {
   await api.delete(`/users/classes/lessons/${lessonId}`);
 };
