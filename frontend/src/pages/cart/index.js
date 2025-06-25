@@ -86,7 +86,7 @@ const CartPage = () => {
             {/* Cart Items with Animation */}
             <ul className="space-y-6">
               <AnimatePresence>
-                {cartItems.map((item) => (
+                {cartItems.map((item, index) => (
                   <motion.li
                     key={item.id}
                     initial={{ opacity: 0, y: -10 }}
@@ -98,7 +98,9 @@ const CartPage = () => {
                     <div className="flex items-center space-x-4">
                       <FaGift className="text-yellow-500 text-4xl" />
                       <div>
-                        <h3 className="text-lg font-semibold">{item.name}</h3>
+                        <h3 className="text-lg font-semibold">
+                          {index + 1}. {item.name}
+                        </h3>
                         <p className="text-gray-400">${item.price} per item</p>
                       </div>
                     </div>
