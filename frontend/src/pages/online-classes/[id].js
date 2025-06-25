@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-
-import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+import { fetchClassDetails } from '@/services/classService';
+import { addToCart } from '@/services/cartService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
