@@ -1,10 +1,6 @@
-import React, { useState } from 'react';
-
-function ClassFilters() {
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState('');
-  const [priceRange, setPriceRange] = useState('');
+import React from 'react';
+function ClassFilters({ filters, onChange }) {
+  const { search, category, date, priceRange } = filters;
 
   return (
     <div className="bg-gray-900 p-6 rounded-xl shadow-md">
@@ -17,13 +13,13 @@ function ClassFilters() {
           placeholder="Search by title or instructor"
           className="px-4 py-2 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => onChange({ ...filters, search: e.target.value })}
         />
 
         {/* Category */}
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => onChange({ ...filters, category: e.target.value })}
           className="px-4 py-2 rounded-lg bg-gray-800 text-white focus:outline-none"
         >
           <option value="">All Categories</option>
@@ -36,14 +32,14 @@ function ClassFilters() {
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => onChange({ ...filters, date: e.target.value })}
           className="px-4 py-2 rounded-lg bg-gray-800 text-white focus:outline-none"
         />
 
         {/* Price */}
         <select
           value={priceRange}
-          onChange={(e) => setPriceRange(e.target.value)}
+          onChange={(e) => onChange({ ...filters, priceRange: e.target.value })}
           className="px-4 py-2 rounded-lg bg-gray-800 text-white focus:outline-none"
         >
           <option value="">All Prices</option>

@@ -13,6 +13,7 @@ export default function OnlineClassesPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
 
   useEffect(() => {
     const load = async () => {
@@ -28,8 +29,36 @@ export default function OnlineClassesPage() {
     load();
   }, []);
 
-  const visibleClasses = allClasses.slice(0, visibleCount);
-  const hasMore = visibleCount < allClasses.length;
+  useEffect(() => {
+    setVisibleCount(6);
+  }, [filters]);
+
+  const applyFilters = (cls) => {
+    if (filters.search) {
+      const term = filters.search.toLowerCase();
+      if (
+        !cls.title.toLowerCase().includes(term) &&
+        !cls.instructor.toLowerCase().includes(term)
+      )
+        return false;
+    }
+    if (filters.category && cls.category !== filters.category) return false;
+    if (filters.date && cls.start_date) {
+      const d = new Date(cls.start_date).toISOString().slice(0, 10);
+      if (d !== filters.date) return false;
+    }
+    if (filters.priceRange) {
+      if (filters.priceRange === 'free' && cls.price !== 0) return false;
+      if (filters.priceRange === 'under50' && cls.price >= 50) return false;
+      if (filters.priceRange === 'over50' && cls.price < 50) return false;
+    }
+    return true;
+  };
+
+  const filtered = allClasses.filter(applyFilters);
+
+  const visibleClasses = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   const handleLoadMore = () => {
     setLoadingMore(true);
@@ -47,7 +76,7 @@ export default function OnlineClassesPage() {
         <OnlineClassesHero />
 
         <section className="mt-10 space-y-10">
-          <ClassFilters />
+          <ClassFilters filters={filters} onChange={setFilters} />
           {loading ? (
             <p className="text-center text-gray-400">Loading...</p>
           ) : (
