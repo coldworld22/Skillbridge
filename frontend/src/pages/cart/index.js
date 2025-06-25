@@ -1,41 +1,41 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
-import { getCartItems } from "@/services/cartService"; // ✅ Import mock API
+import useCartStore from "@/store/cart/cartStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTrash, FaPlus, FaMinus, FaTag, FaGift } from "react-icons/fa";
 import Link from "next/link";
 import { toast } from "react-toastify";
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    items: cartItems,
+    isLoading,
+    fetchCart,
+    updateItem: updateCartItemAction,
+    removeItem: removeCartItemAction,
+  } = useCartStore();
+  const loading = isLoading;
   const [discountCode, setDiscountCode] = useState(""); // ✅ State for Discount Code
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const validDiscounts = { SAVE10: 10, "قسيمة10": 10, "DISCOUNT20": 20 }; // ✅ Support Arabic Discount Code
 
   useEffect(() => {
-    getCartItems().then((data) => {
-      setCartItems(data);
-      setLoading(false);
-    });
-  }, []);
+    fetchCart();
+  }, [fetchCart]);
 
   // Update quantity
   const updateQuantity = (id, type) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id
-          ? { ...item, quantity: type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1) }
-          : item
-      )
-    );
+    const item = cartItems.find((c) => c.id === id);
+    if (!item) return;
+    const qty = type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+    updateCartItemAction(id, qty);
     toast.success("Cart updated");
   };
 
   // Remove item
   const removeItem = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    removeCartItemAction(id);
     toast.info("Item removed");
   };
 
