@@ -5,6 +5,7 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 import { fetchClassDetails } from '@/services/classService';
+import { addToCart } from '@/services/cartService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 
@@ -17,7 +18,7 @@ export default function ClassDetailsPage() {
   const [error, setError] = useState(null);
   const { user, isAuthenticated } = useAuthStore();
 
-  const handleProceed = () => {
+  const handleAddToCart = async () => {
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
       router.push('/auth/login');
@@ -28,7 +29,14 @@ export default function ClassDetailsPage() {
       router.push('/auth/login');
       return;
     }
-    router.push(`/payments/checkout?classId=${id}`);
+    try {
+      await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
+      toast.success('Added to cart');
+      router.push('/cart');
+    } catch (err) {
+      console.error('Failed to add to cart', err);
+      toast.error('Failed to add to cart');
+    }
   };
 
   useEffect(() => {
@@ -161,7 +169,7 @@ export default function ClassDetailsPage() {
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
-            onClick={handleProceed}
+            onClick={handleAddToCart}
             disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
             className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
               typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
@@ -173,7 +181,7 @@ export default function ClassDetailsPage() {
               ? 'Class Full'
               : classInfo.price === 0
               ? 'Enroll for Free'
-              : 'Proceed to Payment'}
+              : 'Add to Cart'}
           </button>
         </section>
 
