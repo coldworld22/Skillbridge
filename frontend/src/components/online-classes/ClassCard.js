@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaThumbsUp } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 function ClassCard({ classData, index }) {
@@ -15,6 +15,13 @@ function ClassCard({ classData, index }) {
     image,
   } = classData;
 
+  const [liked, setLiked] = useState(false);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('likedClasses')) || [];
+    setLiked(stored.some((c) => c.id === id));
+  }, [id]);
+
   const addToWishlist = (e) => {
     e.preventDefault();
     const stored = JSON.parse(localStorage.getItem('wishlist')) || [];
@@ -25,6 +32,19 @@ function ClassCard({ classData, index }) {
     stored.push({ id, title, image, instructor, price });
     localStorage.setItem('wishlist', JSON.stringify(stored));
     toast.success('Added to wishlist');
+  };
+
+  const likeClass = (e) => {
+    e.preventDefault();
+    const stored = JSON.parse(localStorage.getItem('likedClasses')) || [];
+    if (stored.find((c) => c.id === id)) {
+      toast.info('Already liked');
+      return;
+    }
+    stored.push({ id, title, image, instructor, price });
+    localStorage.setItem('likedClasses', JSON.stringify(stored));
+    setLiked(true);
+    toast.success('Class liked');
   };
 
   return (
@@ -42,6 +62,12 @@ function ClassCard({ classData, index }) {
             className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 hover:bg-opacity-100 p-2 rounded-full"
           >
             <FaHeart className="text-yellow-400" />
+          </button>
+          <button
+            onClick={likeClass}
+            className="absolute top-2 left-2 bg-gray-800 bg-opacity-70 hover:bg-opacity-100 p-2 rounded-full"
+          >
+            <FaThumbsUp className={liked ? 'text-yellow-400' : 'text-gray-400'} />
           </button>
         </div>
 
