@@ -7,11 +7,16 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const sanitizeName = (name) =>
+  name
+    .replace(/\s+/g, '-') // replace spaces with dashes
+    .replace(/[^a-zA-Z0-9+_.-]/g, ''); // remove characters like '#'
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext).replace(/\s+/g, '-');
+    const base = sanitizeName(path.basename(file.originalname, ext));
     cb(null, `${Date.now()}-${base}${ext}`);
   },
 });
