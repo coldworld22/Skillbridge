@@ -5,7 +5,8 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   FaBell, FaEnvelope, FaGlobe, FaShoppingCart, FaUserCircle, FaCog,
-  FaLock, FaSignOutAlt, FaLanguage, FaSignInAlt, FaUserPlus
+  FaLock, FaSignOutAlt, FaLanguage, FaSignInAlt, FaUserPlus,
+  FaHeart, FaThumbsUp
 } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
@@ -210,6 +211,12 @@ const Navbar = () => {
                     <Link href="/profile/change-password" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md">
                       <FaLock className="text-gray-500" />
                       <span>Change Password</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/dashboard/student/wishlist" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md">
+                      <FaHeart className="text-gray-500" />
+                      <span>Wishlist</span>
                     </Link>
                   </li>
                   {userRole === "superadmin" && profile?.job_title && (

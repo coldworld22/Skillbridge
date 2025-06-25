@@ -58,6 +58,7 @@ router.use("/reviews", require("./reviews/tutorialReview.routes"));
 router.use("/comments", require("./comments/tutorialComment.routes"));
 
 router.use("/enroll", require("./enrollments/tutorialEnrollment.routes"));
+router.use("/wishlist", require("./wishlist/tutorialWishlist.routes"));
 
 router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
