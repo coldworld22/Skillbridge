@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+import { enrollInClass, fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
 import { addToCart as apiAddToCart } from '@/services/cartService';
 
 import useAuthStore from '@/store/auth/authStore';
@@ -37,20 +37,50 @@ export default function ClassDetailsPage() {
       return;
     }
 
-    if (enrolled) {
+    if (isEnrolled) {
       toast.info('You are already enrolled in this class');
       return;
     }
 
-    addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price })
+    apiAddToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price })
       .then(() => {
         toast.success('Added to cart');
         router.push('/cart');
       })
       .catch((err) => {
         console.error('Failed to add to cart', err);
-        toast.error('Failed to add to cart');
+      toast.error('Failed to add to cart');
       });
+  };
+
+  const handleProceed = async () => {
+    if (!isAuthenticated()) {
+      toast.info('Please login or create an account to proceed');
+      router.push('/auth/login');
+      return;
+    }
+    if (user.role?.toLowerCase() !== 'student') {
+      toast.error('You must use a student account to enroll');
+      router.push('/auth/login');
+      return;
+    }
+    if (isEnrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+
+    if (classInfo.price === 0) {
+      try {
+        await enrollInClass(classInfo.id);
+        toast.success('Enrolled successfully');
+        router.push(`/payments/success?classId=${classInfo.id}`);
+      } catch (err) {
+        console.error('Failed to enroll', err);
+        toast.error('Failed to enroll');
+      }
+    } else {
+      router.push(`/payments/checkout?classId=${classInfo.id}`);
+    }
   };
 
   useEffect(() => {
