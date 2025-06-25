@@ -31,20 +31,28 @@ export default function ClassDetailsPage() {
   const [inWishlist, setInWishlist] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
+  const isGuest = !isAuthenticated();
+  const isStudent = user?.role?.toLowerCase() === 'student';
+
+  const handleGuestRedirect = () => {
+    toast.info('Please log in or register to enroll.');
+    router.push('/auth/login');
+  };
+
+  const handleRoleBlocked = () => {
+    toast.error('Only students can enroll in classes.');
+  };
+
 
   const handleAddToCart = () => {
-
-    if (!isAuthenticated()) {
-      toast.info('Please login or create an account to proceed');
-      router.push('/auth/login');
+    if (isGuest) {
+      handleGuestRedirect();
       return;
     }
-    if (user.role?.toLowerCase() !== 'student') {
-      toast.error('You must use a student account to enroll');
-      router.push('/auth/login');
+    if (!isStudent) {
+      handleRoleBlocked();
       return;
     }
-
     if (isEnrolled) {
       toast.info('You are already enrolled in this class');
       return;
@@ -57,19 +65,17 @@ export default function ClassDetailsPage() {
       })
       .catch((err) => {
         console.error('Failed to add to cart', err);
-      toast.error('Failed to add to cart');
+        toast.error('Failed to add to cart');
       });
   };
 
   const handleProceed = async () => {
-    if (!isAuthenticated()) {
-      toast.info('Please login or create an account to proceed');
-      router.push('/auth/login');
+    if (isGuest) {
+      handleGuestRedirect();
       return;
     }
-    if (user.role?.toLowerCase() !== 'student') {
-      toast.error('You must use a student account to enroll');
-      router.push('/auth/login');
+    if (!isStudent) {
+      handleRoleBlocked();
       return;
     }
     if (isEnrolled) {
@@ -92,14 +98,12 @@ export default function ClassDetailsPage() {
   };
 
   const handleToggleWishlist = async () => {
-    if (!isAuthenticated()) {
-      toast.info('Please login or create an account to proceed');
-      router.push('/auth/login');
+    if (isGuest) {
+      handleGuestRedirect();
       return;
     }
-    if (user.role?.toLowerCase() !== 'student') {
-      toast.error('You must use a student account');
-      router.push('/auth/login');
+    if (!isStudent) {
+      handleRoleBlocked();
       return;
     }
 
@@ -151,6 +155,8 @@ export default function ClassDetailsPage() {
   const plainDescription = classInfo.description
     ? classInfo.description.replace(/<[^>]*>/g, '')
     : '';
+  const classFull =
+    typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
@@ -238,35 +244,59 @@ export default function ClassDetailsPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {isEnrolled ? (
-              <button
-                onClick={() => router.push(`/dashboard/student/online-classe/${classInfo.id}`)}
-                className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-500 text-gray-900 hover:bg-yellow-600"
-              >
-                Go to Class
-              </button>
+              <>
+                <p className="text-green-400 font-semibold mb-2">You are already enrolled</p>
+                <button
+                  onClick={() => router.push(`/dashboard/student/online-classe/${classInfo.id}`)}
+                  className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-500 text-gray-900 hover:bg-yellow-600"
+                >
+                  Go to Class Dashboard
+                </button>
+              </>
             ) : (
               <>
-                <button
-                  onClick={handleAddToCart}
-                  className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
-                >
-                  Add to Cart
-                </button>
-                <button
-                  onClick={handleProceed}
-                  disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
-                  className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
-                    typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
-                  }`}
-                >
-                  {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                    ? 'Class Full'
-                    : classInfo.price === 0
-                    ? 'Enroll for Free'
-                    : 'Proceed to Payment'}
-                </button>
+                {isGuest || !isStudent ? (
+                  <>
+                    <button
+                      onClick={isGuest ? handleGuestRedirect : handleRoleBlocked}
+                      disabled
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-600 text-gray-400 cursor-not-allowed"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={isGuest ? handleGuestRedirect : handleRoleBlocked}
+                      disabled
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-600 text-gray-400 cursor-not-allowed"
+                    >
+                      {classInfo.price === 0 ? 'Enroll for Free' : 'Proceed to Payment'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleAddToCart}
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={handleProceed}
+                      disabled={classFull}
+                      className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
+                        classFull
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
+                      }`}
+                    >
+                      {classFull
+                        ? 'Class Full'
+                        : classInfo.price === 0
+                        ? 'Enroll for Free'
+                        : 'Proceed to Payment'}
+                    </button>
+                  </>
+                )}
               </>
             )}
             <button
