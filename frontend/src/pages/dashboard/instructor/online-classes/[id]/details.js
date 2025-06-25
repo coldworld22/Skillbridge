@@ -43,7 +43,7 @@ export default function InstructorClassDetailPage() {
           )}
           {details?.demo_video_url && (
             <video controls className="w-full mt-4 rounded-lg">
-              <source src={details.demo_video_url} />
+              <source src={encodeURI(details.demo_video_url)} />
             </video>
           )}
 

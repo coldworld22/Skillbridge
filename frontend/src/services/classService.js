@@ -7,7 +7,9 @@ const formatClass = (cls) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
     : null,
   demo_video_url: cls.demo_video_url
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.demo_video_url}`
+    ? encodeURI(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.demo_video_url}`,
+      )
     : null,
   instructor_image: cls.instructor_image
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.instructor_image}`

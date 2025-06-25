@@ -203,7 +203,7 @@ export default function ClassDetailsPage() {
 
         {classInfo.demo_video_url ? (
           <video
-            src={classInfo.demo_video_url}
+            src={encodeURI(classInfo.demo_video_url)}
             controls
             className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
           />
