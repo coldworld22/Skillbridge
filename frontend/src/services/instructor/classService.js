@@ -9,6 +9,9 @@ const formatClass = (cls) => ({
   demo_video_url: cls.demo_video_url
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`
     : null,
+  instructor_image: cls.instructor_image
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
+    : null,
   trending: Boolean(cls.trending),
 
   start_date: cls.start_date ? toDateInput(cls.start_date) : "",
@@ -16,6 +19,7 @@ const formatClass = (cls) => ({
 
   approvalStatus: cls.moderation_status || "Pending",
   scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+  views: cls.views || 0,
 });
 
 const computeScheduleStatus = (start, end) => {
