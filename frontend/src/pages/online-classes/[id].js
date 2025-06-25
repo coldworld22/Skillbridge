@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-
 import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
-import { addToCart } from '@/services/cartService';
+import { addToCart as apiAddToCart } from '@/services/cartService';
 
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
@@ -20,11 +19,36 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [enrolled, setEnrolled] = useState(false);
 
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
   const handleAddToCart = async () => {
+    if (!classInfo) return;
+    const item = {
+      id: classInfo.id,
+      name: classInfo.title,
+      price: classInfo.price,
+      quantity: 1,
+      image: classInfo.cover_image,
+    };
+    try {
+      await apiAddToCart(item);
+    } catch (err) {
+      console.error('API add to cart failed', err);
+    }
+    const stored = JSON.parse(localStorage.getItem('cart')) || [];
+    if (stored.find((c) => c.id === item.id)) {
+      toast.info('Already in cart');
+      return;
+    }
+    stored.push(item);
+    localStorage.setItem('cart', JSON.stringify(stored));
+    toast.success('Item added successfully');
+  };
+
+  const handleProceed = () => {
+
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
       router.push('/auth/login');
@@ -58,17 +82,10 @@ export default function ClassDetailsPage() {
       setError(null);
       try {
         const details = await fetchClassDetails(id);
-        const info = details?.data ?? details;
-        setClassInfo(info);
+        setClassInfo(details?.data ?? details);
         if (isAuthenticated()) {
-          try {
-            const my = await fetchMyEnrolledClasses();
-            setEnrolled(my.some((c) => c.id === info.id));
-          } catch (e) {
-            console.error('Failed to check enrollment', e);
-          }
-        } else {
-          setEnrolled(false);
+          const enrolled = await fetchMyEnrolledClasses();
+          setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
 
         }
       } catch (err) {
@@ -166,35 +183,38 @@ export default function ClassDetailsPage() {
         </div>
 
 
-        <ClassReviews classId={id} canReview={enrolled} />
-        <ClassComments classId={id} canComment={enrolled} />
+        <ClassReviews classId={id} canReview={isEnrolled} />
+        <ClassComments classId={id} canComment={isEnrolled} />
 
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
-          <button
-            onClick={handleAddToCart}
 
-            disabled={
-              enrolled ||
-              (typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0)
-            }
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={handleAddToCart}
+              className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
+            >
+              Add to Cart
+            </button>
+            <button
+              onClick={handleProceed}
+              disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
+              className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
+                typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
+              }`}
+            >
+              {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+                ? 'Class Full'
+                : classInfo.price === 0
+                ? 'Enroll for Free'
+                : 'Proceed to Payment'}
+            </button>
+          </div>
 
-            className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
-              typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
-            }`}
-          >
-            {enrolled
-              ? 'Already Enrolled'
-              : typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-              ? 'Class Full'
-              : classInfo.price === 0
-              ? 'Enroll for Free'
-              : 'Add to Cart'}
-          </button>
         </section>
 
         <div className="flex flex-wrap items-center gap-4 text-gray-300">
