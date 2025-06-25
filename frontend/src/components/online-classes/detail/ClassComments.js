@@ -78,11 +78,14 @@ const ClassComments = ({ classId, canComment }) => {
           {comments.map((comment) => (
             <motion.div
               key={comment.id}
+
               className="bg-gray-700 p-4 rounded shadow-sm"
+
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
+
               <div className="flex items-start gap-2 mb-1">
                 <img
                   src={comment.avatar_url}
@@ -92,6 +95,7 @@ const ClassComments = ({ classId, canComment }) => {
                 <p className="text-yellow-300 font-semibold">{comment.full_name}</p>
               </div>
               <p className="text-gray-200 text-sm ml-10">{comment.message}</p>
+
             </motion.div>
           ))}
         </div>
