@@ -24,7 +24,7 @@ export default function ClassDetailsPage() {
 
   const { user, isAuthenticated } = useAuthStore();
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = () => {
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
       router.push('/auth/login');
@@ -41,14 +41,15 @@ export default function ClassDetailsPage() {
       return;
     }
 
-    try {
-      await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
-      toast.success('Added to cart');
-      router.push('/cart');
-    } catch (err) {
-      console.error('Failed to add to cart', err);
-      toast.error('Failed to add to cart');
-    }
+    addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price })
+      .then(() => {
+        toast.success('Added to cart');
+        router.push('/cart');
+      })
+      .catch((err) => {
+        console.error('Failed to add to cart', err);
+        toast.error('Failed to add to cart');
+      });
   };
 
   useEffect(() => {

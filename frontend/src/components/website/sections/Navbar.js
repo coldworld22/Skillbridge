@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import useAdminStore from "@/store/admin/adminStore";
 import { API_BASE_URL } from '@/config/config';
+import { getCartItems } from '@/services/cartService';
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -35,10 +36,7 @@ const Navbar = () => {
   const router = useRouter();
   const userRole = user?.role?.toLowerCase();
 
-  const cartItems = [
-    { id: 1, name: "Premium Course", price: "$50", link: "/cart" },
-    { id: 2, name: "E-Book", price: "$20", link: "/cart" }
-  ];
+  const [cartItems, setCartItems] = useState([]);
 
   const unreadMessages = [
     { id: 1, text: "New message from Instructor", link: "/messages" },
@@ -82,6 +80,12 @@ const Navbar = () => {
     }, 100);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    getCartItems()
+      .then((items) => setCartItems(items))
+      .catch(() => setCartItems([]));
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event) {
