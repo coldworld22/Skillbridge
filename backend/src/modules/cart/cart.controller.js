@@ -12,13 +12,15 @@ exports.getItems = (_req, res) => {
 };
 
 exports.updateItem = (req, res) => {
-  const item = service.update(parseInt(req.params.id, 10), req.body.quantity);
+  // Accept string IDs without parsing to integer
+  const item = service.update(req.params.id, req.body.quantity);
   if (!item) return res.status(404).json({ message: 'Item not found' });
   sendSuccess(res, item, 'Cart updated');
 };
 
 exports.removeItem = (req, res) => {
-  const item = service.remove(parseInt(req.params.id, 10));
+  // Accept string IDs without parsing to integer
+  const item = service.remove(req.params.id);
   if (!item) return res.status(404).json({ message: 'Item not found' });
   sendSuccess(res, null, 'Item removed');
 };
