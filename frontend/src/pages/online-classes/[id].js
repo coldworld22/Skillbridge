@@ -6,6 +6,7 @@ import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 
 import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+import { addToCart } from '@/services/cartService';
 
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
@@ -19,7 +20,8 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+
   const { user, isAuthenticated } = useAuthStore();
 
   const handleAddToCart = async () => {
@@ -33,6 +35,12 @@ export default function ClassDetailsPage() {
       router.push('/auth/login');
       return;
     }
+
+    if (enrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+
     try {
       await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
       toast.success('Added to cart');
@@ -50,10 +58,18 @@ export default function ClassDetailsPage() {
       setError(null);
       try {
         const details = await fetchClassDetails(id);
-        setClassInfo(details?.data ?? details);
+        const info = details?.data ?? details;
+        setClassInfo(info);
         if (isAuthenticated()) {
-          const enrolled = await fetchMyEnrolledClasses();
-          setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
+          try {
+            const my = await fetchMyEnrolledClasses();
+            setEnrolled(my.some((c) => c.id === info.id));
+          } catch (e) {
+            console.error('Failed to check enrollment', e);
+          }
+        } else {
+          setEnrolled(false);
+
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -159,14 +175,21 @@ export default function ClassDetailsPage() {
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
             onClick={handleAddToCart}
-            disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
+
+            disabled={
+              enrolled ||
+              (typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0)
+            }
+
             className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
               typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
             }`}
           >
-            {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+            {enrolled
+              ? 'Already Enrolled'
+              : typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
               ? 'Class Full'
               : classInfo.price === 0
               ? 'Enroll for Free'

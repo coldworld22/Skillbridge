@@ -4,6 +4,7 @@ import { getCartItems } from "@/services/cartService"; // ✅ Import mock API
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTrash, FaPlus, FaMinus, FaTag, FaGift } from "react-icons/fa";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -29,11 +30,13 @@ const CartPage = () => {
           : item
       )
     );
+    toast.success("Cart updated");
   };
 
   // Remove item
   const removeItem = (id) => {
     setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    toast.info("Item removed");
   };
 
   // Apply Discount Code
@@ -41,9 +44,11 @@ const CartPage = () => {
     if (validDiscounts[discountCode]) {
       setDiscountAmount(validDiscounts[discountCode]);
       setDiscountApplied(true);
+      toast.success("Discount applied");
     } else {
       setDiscountAmount(0);
       setDiscountApplied(false);
+      if (discountCode) toast.error("Invalid code");
     }
   };
 
