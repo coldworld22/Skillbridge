@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { getMyClassWishlist, removeClassFromWishlist, enrollInClass } from '@/services/classService';
 import { getMyTutorialWishlist, removeTutorialFromWishlist } from '@/services/tutorialService';
-import { addToCart } from '@/services/cartService';
+import useCartStore from '@/store/cart/cartStore';
 import { FaSearch, FaSortAmountDown, FaShareAlt, FaBell } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -12,6 +12,7 @@ export default function WishlistPage() {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
   const [tags, setTags] = useState({});
+  const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     const load = async () => {
@@ -42,7 +43,7 @@ export default function WishlistPage() {
 
   const handleAddToCart = async(item) => {
     try {
-      await addToCart({ id: item.id, name: item.title, price: item.price || 0 });
+      await addItem({ id: item.id, name: item.title, price: item.price || 0 });
       toast.success('Added to cart');
     } catch(err) {
       console.error(err);

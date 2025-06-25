@@ -12,7 +12,7 @@ import {
   removeClassFromWishlist,
   getMyClassWishlist,
 } from '@/services/classService';
-import { addToCart as apiAddToCart } from '@/services/cartService';
+import useCartStore from '@/store/cart/cartStore';
 
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
@@ -30,6 +30,7 @@ export default function ClassDetailsPage() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+  const addItem = useCartStore((state) => state.addItem);
 
   const isGuest = !isAuthenticated();
   const isStudent = user?.role?.toLowerCase() === 'student';
@@ -44,7 +45,7 @@ export default function ClassDetailsPage() {
   };
 
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (isGuest) {
       handleGuestRedirect();
       return;
@@ -58,15 +59,14 @@ export default function ClassDetailsPage() {
       return;
     }
 
-    apiAddToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price })
-      .then(() => {
-        toast.success('Added to cart');
-        router.push('/cart');
-      })
-      .catch((err) => {
-        console.error('Failed to add to cart', err);
-        toast.error('Failed to add to cart');
-      });
+    try {
+      await addItem({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
+      toast.success('Added to cart');
+      router.push('/cart');
+    } catch (err) {
+      console.error('Failed to add to cart', err);
+      toast.error('Failed to add to cart');
+    }
   };
 
   const handleProceed = async () => {
