@@ -69,3 +69,23 @@ export const getMyLikedClasses = async () => {
   const { data } = await api.get('/users/classes/likes/my');
   return data?.data ?? [];
 };
+
+export const fetchClassReviews = async (classId) => {
+  const { data } = await api.get(`/users/classes/reviews/${classId}`);
+  return data?.data ?? [];
+};
+
+export const submitClassReview = async (classId, payload) => {
+  const { data } = await api.post(`/users/classes/reviews/${classId}`, payload);
+  return data;
+};
+
+export const fetchClassComments = async (classId) => {
+  const { data } = await api.get(`/users/classes/comments/${classId}`);
+  return data?.data ?? [];
+};
+
+export const postClassComment = async (classId, payload) => {
+  const { data } = await api.post(`/users/classes/comments/${classId}`, payload);
+  return data;
+};

@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+
 import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
 import { addToCart } from '@/services/cartService';
+
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
+import ClassReviews from '@/components/online-classes/detail/ClassReviews';
+import ClassComments from '@/components/online-classes/detail/ClassComments';
 
 
 export default function ClassDetailsPage() {
@@ -17,6 +21,7 @@ export default function ClassDetailsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [enrolled, setEnrolled] = useState(false);
+
   const { user, isAuthenticated } = useAuthStore();
 
   const handleAddToCart = async () => {
@@ -30,10 +35,12 @@ export default function ClassDetailsPage() {
       router.push('/auth/login');
       return;
     }
+
     if (enrolled) {
       toast.info('You are already enrolled in this class');
       return;
     }
+
     try {
       await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
       toast.success('Added to cart');
@@ -62,6 +69,7 @@ export default function ClassDetailsPage() {
           }
         } else {
           setEnrolled(false);
+
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -111,7 +119,7 @@ export default function ClassDetailsPage() {
             />
             <div>
               <p className="text-sm text-gray-400">
-                <span className="font-semibold text-white">Instructor:</span>{" "}
+                <span className="font-semibold text-white">Created by:</span>{" "}
                 <a href={`/instructors/${classInfo.instructor_id}`} className="hover:underline">
                   {classInfo.instructor}
                 </a>
@@ -121,13 +129,7 @@ export default function ClassDetailsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Note: Classes on SkillBridge may be created by instructors or administrators.
-          </p>
 
-          {classInfo.instructor && (
-            <p className="text-xs text-gray-500">Created by: {classInfo.instructor}</p>
-          )}
 
         </div>
 
@@ -163,33 +165,22 @@ export default function ClassDetailsPage() {
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">What you'll learn</h2>
-          <ul className="list-disc pl-6 space-y-2 text-gray-300">
-            {classInfo.syllabus?.map((topic, index) => (
-              <li key={index}>{topic}</li>
-            ))}
-          </ul>
-        </section>
 
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-4 text-white">Student Reviews</h2>
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg space-y-3">
-            <p className="text-yellow-400 font-bold text-lg">⭐⭐⭐⭐☆</p>
-            <p className="text-sm text-gray-300">“Great content and well-paced lessons!” – Sarah M.</p>
-            <p className="text-sm text-gray-300">“The live sessions helped a lot.” – Ahmed F.</p>
-          </div>
-        </section>
+        <ClassReviews classId={id} canReview={isEnrolled} />
+        <ClassComments classId={id} canComment={isEnrolled} />
+
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
             onClick={handleAddToCart}
+
             disabled={
               enrolled ||
               (typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0)
             }
+
             className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
               typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
