@@ -1,5 +1,5 @@
-const catchAsync = require('../../../utils/catchAsync');
-const { sendSuccess } = require('../../../utils/response');
+const catchAsync = require('../../../../utils/catchAsync');
+const { sendSuccess } = require('../../../../utils/response');
 const service = require('./tutorialWishlist.service');
 
 exports.add = catchAsync(async (req, res) => {
