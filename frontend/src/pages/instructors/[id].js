@@ -86,11 +86,15 @@ export default function InstructorProfilePage() {
       <section className="py-10 px-6 max-w-3xl mx-auto bg-white rounded-xl shadow">
         {/* Profile Header */}
         <div className="flex flex-col items-center text-center relative">
-          {instructor.is_online && (
-            <span className="absolute top-2 right-2 bg-green-500 text-xs px-2 py-1 rounded-full">
-              Online
-            </span>
-          )}
+
+          <span
+            className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full ${
+              instructor.is_online ? "bg-green-500 text-white" : "bg-gray-400 text-white"
+            }`}
+          >
+            {instructor.is_online ? "Online" : "Offline"}
+          </span>
+
           <img
             src={instructor.avatar_url}
             className="w-32 h-32 rounded-full border-4 border-yellow-400 mb-4"
