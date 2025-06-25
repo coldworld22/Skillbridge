@@ -66,6 +66,7 @@ exports.findById = (id) => {
       "full_name",
       "role",
       "avatar_url",
+      "is_online",
       "status",
       "profile_complete",
       "is_email_verified",
