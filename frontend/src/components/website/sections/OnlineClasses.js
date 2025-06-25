@@ -71,7 +71,7 @@ const OnlineClasses = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role?.toLowerCase() !== 'student') return;
     const load = async () => {
       try {
         const w = await getMyClassWishlist();

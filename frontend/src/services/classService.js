@@ -69,8 +69,15 @@ export const removeClassFromWishlist = async (id) => {
 };
 
 export const getMyClassWishlist = async () => {
-  const { data } = await api.get('/users/classes/wishlist/my');
-  return data?.data ?? [];
+  try {
+    const { data } = await api.get('/users/classes/wishlist/my');
+    return data?.data ?? [];
+  } catch (err) {
+    if (err.response && [401, 403].includes(err.response.status)) {
+      return [];
+    }
+    throw err;
+  }
 };
 
 export const likeClass = async (id) => {
@@ -84,8 +91,15 @@ export const unlikeClass = async (id) => {
 };
 
 export const getMyLikedClasses = async () => {
-  const { data } = await api.get('/users/classes/likes/my');
-  return data?.data ?? [];
+  try {
+    const { data } = await api.get('/users/classes/likes/my');
+    return data?.data ?? [];
+  } catch (err) {
+    if (err.response && [401, 403].includes(err.response.status)) {
+      return [];
+    }
+    throw err;
+  }
 };
 
 export const fetchClassReviews = async (classId) => {
