@@ -68,7 +68,13 @@ export default function AdminPaymentsPage() {
           fetchPayouts(),
         ]);
         setTransactions(txns);
-        setMethods(mths);
+        setMethods(
+          mths.map((m) => ({
+            ...m,
+            configurable: true,
+            configPath: `/dashboard/admin/payments/methods/configure/${m.id}`,
+          }))
+        );
         setPayouts(pouts);
 
         if (cfg) {

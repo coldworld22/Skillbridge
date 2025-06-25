@@ -20,6 +20,16 @@ import { toast } from 'react-toastify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
 
+const computeScheduleStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return 'Upcoming';
+  if (s && e && now >= s && now <= e) return 'Ongoing';
+  if (e && now > e) return 'Completed';
+  return 'Upcoming';
+};
+
 
 export default function ClassDetailsPage() {
   const router = useRouter();
@@ -29,6 +39,7 @@ export default function ClassDetailsPage() {
   const [error, setError] = useState(null);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
@@ -134,7 +145,14 @@ export default function ClassDetailsPage() {
         setClassInfo(details?.data ?? details);
         if (isAuthenticated()) {
           const enrolled = await fetchMyEnrolledClasses();
-          setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
+          const record = enrolled.find((c) => String(c.id) === String(id));
+          if (record) {
+            setIsEnrolled(true);
+            setEnrollmentStatus(record.status);
+          } else {
+            setIsEnrolled(false);
+            setEnrollmentStatus(null);
+          }
           const wishlist = await getMyClassWishlist();
           setInWishlist(wishlist.some((c) => String(c.id) === String(id)));
         }
@@ -158,6 +176,10 @@ export default function ClassDetailsPage() {
     : '';
   const classFull =
     typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0;
+  const scheduleStatus = computeScheduleStatus(
+    classInfo.start_date,
+    classInfo.end_date,
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
@@ -228,6 +250,7 @@ export default function ClassDetailsPage() {
             <p><strong>Duration:</strong> {classInfo.duration}</p>
           )}
           <p><strong>Category:</strong> {classInfo.category}</p>
+          <p><strong>Status:</strong> {scheduleStatus}</p>
           {typeof classInfo.spots_left === 'number' && (
             <p><strong>Available Spots:</strong> {classInfo.spots_left}</p>
           )}
@@ -241,7 +264,13 @@ export default function ClassDetailsPage() {
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
-          <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
+          <p className="text-sm text-gray-400 mb-2">Click below to secure your seat and start learning!</p>
+          {isAuthenticated() && isStudent && (
+            <p className="text-sm text-gray-400 mb-5">
+              <strong>Your Enrollment:</strong>{' '}
+              {enrollmentStatus || 'Not Enrolled'}
+            </p>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {isEnrolled ? (

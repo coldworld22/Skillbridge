@@ -14,6 +14,13 @@ exports.getAll = () => {
   return db("payment_methods_config").select("*").orderBy("id");
 };
 
+exports.getActive = () => {
+  return db("payment_methods_config")
+    .where({ active: true })
+    .select("*")
+    .orderBy("id");
+};
+
 exports.getById = (id) => {
   return db("payment_methods_config").where({ id }).first();
 };
