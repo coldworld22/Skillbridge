@@ -24,7 +24,11 @@ export default function OnlineClassesPage() {
         setAllClasses(data || []);
       } catch (err) {
         console.error('Failed to load classes', err);
-        setError('Failed to load classes');
+
+        setError(
+          err?.response?.data?.message || err.message || 'Failed to load classes'
+        );
+
       } finally {
         setLoading(false);
       }
