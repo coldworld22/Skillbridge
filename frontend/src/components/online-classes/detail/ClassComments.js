@@ -1,28 +1,42 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Trash } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { fetchClassComments, postClassComment } from '@/services/classService';
 
-const ClassComments = ({ canComment }) => {
-  const [comments, setComments] = useState([
-    { id: 1, user: 'Ayman Dev', text: 'Amazing class! Very clear.' },
-    { id: 2, user: 'Sarah UX', text: 'Loved the live sessions.' },
-  ]);
+const ClassComments = ({ classId, canComment }) => {
+  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const containerRef = useRef(null);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const list = await fetchClassComments(classId);
+        setComments(list);
+      } catch (err) {
+        console.error('Failed to load comments', err);
+      }
+    };
+    load();
+  }, [classId]);
+
+  const handleSubmit = async () => {
     if (!newComment.trim()) return;
-    const newEntry = { id: Date.now(), user: 'You', text: newComment };
-    setComments([newEntry, ...comments]);
-    setNewComment('');
-    setTimeout(() => {
-      containerRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    try {
+      await postClassComment(classId, { message: newComment });
+      const list = await fetchClassComments(classId);
+      setComments(list);
+      setNewComment('');
+      setTimeout(() => {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (err) {
+      console.error('Failed to post comment', err);
+    }
   };
 
-  const handleDelete = (id) => {
-    setComments((prev) => prev.filter((c) => c.id !== id));
-  };
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleSubmit();
@@ -64,23 +78,24 @@ const ClassComments = ({ canComment }) => {
           {comments.map((comment) => (
             <motion.div
               key={comment.id}
-              className="bg-gray-700 p-4 rounded shadow-sm relative"
+
+              className="bg-gray-700 p-4 rounded shadow-sm"
+
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="flex justify-between items-start mb-1">
-                <p className="text-yellow-300 font-semibold">{comment.user}</p>
-                {comment.user === 'You' && (
-                  <button
-                    onClick={() => handleDelete(comment.id)}
-                    className="text-gray-400 hover:text-red-400 transition"
-                  >
-                    <Trash className="w-4 h-4" />
-                  </button>
-                )}
+
+              <div className="flex items-start gap-2 mb-1">
+                <img
+                  src={comment.avatar_url}
+                  alt={comment.full_name}
+                  className="w-8 h-8 rounded-full object-cover border"
+                />
+                <p className="text-yellow-300 font-semibold">{comment.full_name}</p>
               </div>
-              <p className="text-gray-200 text-sm">{comment.text}</p>
+              <p className="text-gray-200 text-sm ml-10">{comment.message}</p>
+
             </motion.div>
           ))}
         </div>

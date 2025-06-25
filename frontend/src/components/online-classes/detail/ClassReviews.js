@@ -1,39 +1,38 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { fetchClassReviews, submitClassReview } from '@/services/classService';
 
-const initialReviews = [
-  {
-    id: 1,
-    name: 'Jane Doe',
-    rating: 5,
-    comment: 'Excellent class! Learned a lot.',
-    date: '2024-05-01',
-  },
-  {
-    id: 2,
-    name: 'John Smith',
-    rating: 4,
-    comment: 'Good pace and clear instructions.',
-    date: '2024-04-20',
-  },
-];
+const ClassReviews = ({ classId, canReview }) => {
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState({ comment: '', rating: 0 });
 
-const ClassReviews = ({ canReview }) => {
-  const [reviews, setReviews] = useState(initialReviews);
-  const [newReview, setNewReview] = useState({ name: '', comment: '', rating: 0 });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!newReview.name || !newReview.comment || newReview.rating === 0) return;
-
-    const review = {
-      id: Date.now(),
-      ...newReview,
-      date: new Date().toISOString().split('T')[0],
+  useEffect(() => {
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const list = await fetchClassReviews(classId);
+        setReviews(list);
+      } catch (err) {
+        console.error('Failed to load reviews', err);
+      }
     };
-    setReviews([review, ...reviews]);
-    setNewReview({ name: '', comment: '', rating: 0 });
+    load();
+  }, [classId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newReview.comment || newReview.rating === 0) return;
+
+    try {
+      await submitClassReview(classId, newReview);
+      const list = await fetchClassReviews(classId);
+      setReviews(list);
+      setNewReview({ comment: '', rating: 0 });
+    } catch (err) {
+      console.error('Failed to submit review', err);
+    }
   };
 
   return (
@@ -43,8 +42,10 @@ const ClassReviews = ({ canReview }) => {
       {reviews.map((r) => (
         <div key={r.id} className="border-b border-gray-700 py-4">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-white font-semibold">{r.name}</span>
-            <span className="text-xs text-gray-400">{r.date}</span>
+
+            <span className="text-white font-semibold">{r.full_name}</span>
+            <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
+
           </div>
           <div className="flex items-center text-yellow-400 mb-1">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -58,13 +59,7 @@ const ClassReviews = ({ canReview }) => {
       {canReview && (
         <form onSubmit={handleSubmit} className="mt-6">
           <h4 className="text-lg font-semibold text-white mb-2">Leave a Review</h4>
-          <input
-            type="text"
-            placeholder="Your Name"
-            value={newReview.name}
-            onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
-            className="w-full p-2 mb-3 rounded bg-gray-700 text-white placeholder-gray-400"
-          />
+
           <textarea
             rows="3"
             placeholder="Your Review"

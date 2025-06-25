@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { fetchClassDetails } from '@/services/classService';
-import { addToCart } from '@/services/cartService';
+
+import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
@@ -102,7 +103,7 @@ export default function ClassDetailsPage() {
             />
             <div>
               <p className="text-sm text-gray-400">
-                <span className="font-semibold text-white">Instructor:</span>{" "}
+                <span className="font-semibold text-white">Created by:</span>{" "}
                 <a href={`/instructors/${classInfo.instructor_id}`} className="hover:underline">
                   {classInfo.instructor}
                 </a>
@@ -148,8 +149,10 @@ export default function ClassDetailsPage() {
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
-        <ClassReviews canReview={isEnrolled} />
-        <ClassComments canComment={isEnrolled} />
+
+        <ClassReviews classId={id} canReview={isEnrolled} />
+        <ClassComments classId={id} canComment={isEnrolled} />
+
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>

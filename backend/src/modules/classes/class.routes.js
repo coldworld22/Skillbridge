@@ -20,6 +20,9 @@ router.use("/wishlist", require("./wishlist/classWishlist.routes"));
 router.use("/likes", require("./likes/classLike.routes"));
 // Attendance tracking
 router.use("/attendance", require("./attendance/classAttendance.routes"));
+// Reviews and comments
+router.use("/reviews", require("./reviews/classReview.routes"));
+router.use("/comments", require("./comments/classComment.routes"));
 
 router.post(
   "/admin",
