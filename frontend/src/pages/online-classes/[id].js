@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { fetchClassDetails } from '@/services/classService';
+import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
+import ClassReviews from '@/components/online-classes/detail/ClassReviews';
+import ClassComments from '@/components/online-classes/detail/ClassComments';
 
 
 export default function ClassDetailsPage() {
@@ -15,6 +17,7 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
   const handleProceed = () => {
@@ -39,6 +42,10 @@ export default function ClassDetailsPage() {
       try {
         const details = await fetchClassDetails(id);
         setClassInfo(details?.data ?? details);
+        if (isAuthenticated()) {
+          const enrolled = await fetchMyEnrolledClasses();
+          setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
+        }
       } catch (err) {
         console.error('Failed to load class', err);
         setError('Failed to load class');
@@ -47,7 +54,7 @@ export default function ClassDetailsPage() {
       }
     };
     load();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
   if (error) return <div className="text-red-400 text-center mt-32">{error}</div>;
@@ -97,13 +104,7 @@ export default function ClassDetailsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Note: Classes on SkillBridge may be created by instructors or administrators.
-          </p>
 
-          {classInfo.instructor && (
-            <p className="text-xs text-gray-500">Created by: {classInfo.instructor}</p>
-          )}
 
         </div>
 
@@ -139,23 +140,8 @@ export default function ClassDetailsPage() {
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">What you'll learn</h2>
-          <ul className="list-disc pl-6 space-y-2 text-gray-300">
-            {classInfo.syllabus?.map((topic, index) => (
-              <li key={index}>{topic}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-4 text-white">Student Reviews</h2>
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg space-y-3">
-            <p className="text-yellow-400 font-bold text-lg">⭐⭐⭐⭐☆</p>
-            <p className="text-sm text-gray-300">“Great content and well-paced lessons!” – Sarah M.</p>
-            <p className="text-sm text-gray-300">“The live sessions helped a lot.” – Ahmed F.</p>
-          </div>
-        </section>
+        <ClassReviews canReview={isEnrolled} />
+        <ClassComments canComment={isEnrolled} />
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
