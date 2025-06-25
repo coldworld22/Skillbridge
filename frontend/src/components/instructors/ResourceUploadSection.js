@@ -28,10 +28,14 @@ export default function ResourceUploadSection({ classId, isLive = false }) {
 
   return (
     <div className="text-sm text-white space-y-4">
-      {!isLive && (
+
+      {!isLive ? (
         <p className="text-yellow-300">
           Resource uploading is only available during live sessions.
         </p>
+      ) : (
+        <p className="text-green-400">Live session active. Upload resources below.</p>
+
       )}
 
       {isLive && (
