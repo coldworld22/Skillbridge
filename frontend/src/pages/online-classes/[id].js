@@ -5,6 +5,8 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 import { fetchClassDetails } from '@/services/classService';
+import useAuthStore from '@/store/auth/authStore';
+import { toast } from 'react-toastify';
 
 
 export default function ClassDetailsPage() {
@@ -13,6 +15,21 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user, isAuthenticated } = useAuthStore();
+
+  const handleProceed = () => {
+    if (!isAuthenticated()) {
+      toast.info('Please login or create an account to proceed');
+      router.push('/auth/login');
+      return;
+    }
+    if (user.role?.toLowerCase() !== 'student') {
+      toast.error('You must use a student account to enroll');
+      router.push('/auth/login');
+      return;
+    }
+    router.push(`/payments/checkout?classId=${id}`);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -144,7 +161,7 @@ export default function ClassDetailsPage() {
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
-            onClick={() => router.push(`/payments/checkout?classId=${id}`)}
+            onClick={handleProceed}
             disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
             className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
               typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
