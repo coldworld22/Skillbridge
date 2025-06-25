@@ -6,6 +6,7 @@ import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
 import { addToCart as apiAddToCart } from '@/services/cartService';
+
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
@@ -18,6 +19,7 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
   const [isEnrolled, setIsEnrolled] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
@@ -46,6 +48,7 @@ export default function ClassDetailsPage() {
   };
 
   const handleProceed = () => {
+
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
       router.push('/auth/login');
@@ -56,7 +59,20 @@ export default function ClassDetailsPage() {
       router.push('/auth/login');
       return;
     }
-    router.push(`/payments/checkout?classId=${id}`);
+
+    if (enrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+
+    try {
+      await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
+      toast.success('Added to cart');
+      router.push('/cart');
+    } catch (err) {
+      console.error('Failed to add to cart', err);
+      toast.error('Failed to add to cart');
+    }
   };
 
   useEffect(() => {
@@ -70,6 +86,7 @@ export default function ClassDetailsPage() {
         if (isAuthenticated()) {
           const enrolled = await fetchMyEnrolledClasses();
           setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
+
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -165,12 +182,15 @@ export default function ClassDetailsPage() {
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
+
         <ClassReviews classId={id} canReview={isEnrolled} />
         <ClassComments classId={id} canComment={isEnrolled} />
+
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleAddToCart}
@@ -194,6 +214,7 @@ export default function ClassDetailsPage() {
                 : 'Proceed to Payment'}
             </button>
           </div>
+
         </section>
 
         <div className="flex flex-wrap items-center gap-4 text-gray-300">

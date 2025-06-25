@@ -41,8 +41,10 @@ const ClassReviews = ({ classId, canReview }) => {
       {reviews.map((r) => (
         <div key={r.id} className="border-b border-gray-700 py-4">
           <div className="flex items-center justify-between mb-1">
+
             <span className="text-white font-semibold">{r.full_name}</span>
             <span className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
+
           </div>
           <div className="flex items-center text-yellow-400 mb-1">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -56,6 +58,7 @@ const ClassReviews = ({ classId, canReview }) => {
       {canReview && (
         <form onSubmit={handleSubmit} className="mt-6">
           <h4 className="text-lg font-semibold text-white mb-2">Leave a Review</h4>
+
           <textarea
             rows="3"
             placeholder="Your Review"
