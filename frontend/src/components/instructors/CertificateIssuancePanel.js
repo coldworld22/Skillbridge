@@ -28,14 +28,13 @@ export default function CertificateIssuancePanel({ classId }) {
   return (
     <div>
       {canIssue ? (
-        <button
-          onClick={handleIssueCertificate}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg"
-        >
-          🎓 Issue Certificate
-        </button>
+        <p className="text-sm text-green-400">
+          🎉 Certificate is now ready! You can issue it from your dashboard.
+        </p>
       ) : (
-        <p className="text-sm text-gray-400">Student must complete all lessons and assignments to issue a certificate.</p>
+        <p className="text-sm text-gray-400">
+          Student must complete all lessons and assignments to issue a certificate.
+        </p>
       )}
     </div>
   );
