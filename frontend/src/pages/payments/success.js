@@ -5,19 +5,31 @@ import Link from 'next/link';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaCheckCircle, FaArrowRight, FaCalendarAlt, FaChalkboardTeacher, FaDownload, FaRegFilePdf } from 'react-icons/fa';
+import { enrollInClass, fetchClassDetails } from '@/services/classService';
+import { toast } from 'react-toastify';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
-  const { linkId } = router.query;
+  const { classId } = router.query;
   const [classInfo, setClassInfo] = useState(null);
 
   useEffect(() => {
-    const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
-    const matched = enrolled.find(cls => cls.linkId === linkId);
-    if (matched) {
-      setClassInfo(matched);
-    }
-  }, [linkId]);
+    if (!classId) return;
+    const enroll = async () => {
+      try {
+        await enrollInClass(classId);
+      } catch (_) {
+        toast.error('Failed to register for class');
+      }
+      try {
+        const details = await fetchClassDetails(classId);
+        setClassInfo(details?.data ?? details);
+      } catch (_) {
+        setClassInfo(null);
+      }
+    };
+    enroll();
+  }, [classId]);
 
   if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
 

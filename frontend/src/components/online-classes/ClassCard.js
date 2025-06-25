@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { FaHeart } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 function ClassCard({ classData, index }) {
   const {
@@ -13,16 +15,34 @@ function ClassCard({ classData, index }) {
     image,
   } = classData;
 
+  const addToWishlist = (e) => {
+    e.preventDefault();
+    const stored = JSON.parse(localStorage.getItem('wishlist')) || [];
+    if (stored.find((c) => c.id === id)) {
+      toast.info('Already in wishlist');
+      return;
+    }
+    stored.push({ id, title, image, instructor, price });
+    localStorage.setItem('wishlist', JSON.stringify(stored));
+    toast.success('Added to wishlist');
+  };
+
   return (
     <Link href={`/online-classes/${id}`}>
-      <div className="cursor-pointer bg-gray-900 rounded-lg shadow-lg p-5 flex flex-col hover:shadow-xl hover:ring-2 hover:ring-yellow-500 transition">
+      <div className="cursor-pointer bg-gray-900 rounded-lg shadow-lg p-5 flex flex-col hover:shadow-xl hover:ring-2 hover:ring-yellow-500 transition relative">
         {/* Image */}
-        <div className="h-40 mb-4 overflow-hidden rounded-md">
+        <div className="h-40 mb-4 overflow-hidden rounded-md relative">
           <img
             src={image || '/default-class.jpg'}
             alt={title}
             className="w-full h-full object-cover"
           />
+          <button
+            onClick={addToWishlist}
+            className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 hover:bg-opacity-100 p-2 rounded-full"
+          >
+            <FaHeart className="text-yellow-400" />
+          </button>
         </div>
 
         {/* Title & Instructor */}
