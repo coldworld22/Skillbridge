@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import {
@@ -19,21 +20,11 @@ const iconMap = {
   coinbase: <FaEthereum />,
 };
 
-export const allMethods = [
-  { id: 1, name: "stripe", label: "Stripe", icon: "stripe", type: "Gateway", active: true },
-  { id: 2, name: "paypal", label: "PayPal", icon: "paypal", type: "Gateway", active: true },
-  { id: 3, name: "moyasar", label: "Moyasar", icon: "moyasar", type: "Gateway", active: true },
-  { id: 4, name: "paystack", label: "Paystack", icon: "paystack", type: "Gateway", active: true },
-  { id: 5, name: "bank", label: "Bank Transfer", icon: "bank", type: "Manual", active: true },
-  { id: 6, name: "usdt", label: "USDT (Tether)", icon: "usdt", type: "Crypto", active: true },
-  { id: 7, name: "binance", label: "Binance Pay", icon: "binance", type: "Crypto", active: true },
-  { id: 8, name: "coinbase", label: "Coinbase", icon: "coinbase", type: "Crypto", active: true },
-];
-
 export default function CheckoutPage() {
   const router = useRouter();
   const { classId } = router.query;
   const [classInfo, setClassInfo] = useState(null);
+  const [methods, setMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState('stripe');
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -58,6 +49,16 @@ export default function CheckoutPage() {
       const found = mockClasses.find((cls) => cls.id === classId);
       setClassInfo(found);
     }
+    const loadMethods = async () => {
+      try {
+        const data = await fetchPaymentMethods();
+        setMethods(data);
+        if (data.length > 0) setSelectedMethod(data[0].name);
+      } catch (err) {
+        console.error('Failed to load payment methods', err);
+      }
+    };
+    loadMethods();
   }, [classId]);
 
   const handleApplyPromo = () => {
@@ -94,7 +95,7 @@ export default function CheckoutPage() {
 
   if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
   const finalPrice = classInfo.price - discount;
-  const availableMethods = allMethods.filter(m => m.active).slice(0, 4);
+  const availableMethods = methods.filter((m) => m.active);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
