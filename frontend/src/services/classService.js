@@ -1,15 +1,16 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
 
 const formatClass = (cls) => ({
   ...cls,
   cover_image: cls.cover_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
     : null,
   demo_video_url: cls.demo_video_url
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.demo_video_url}`
     : null,
   instructor_image: cls.instructor_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.instructor_image}`
     : null,
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
