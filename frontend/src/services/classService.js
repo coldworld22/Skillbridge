@@ -39,3 +39,33 @@ export const fetchClassAssignments = async (classId) => {
   const { data } = await api.get(`/users/classes/assignments/class/${classId}`);
   return data?.data ?? [];
 };
+
+export const addClassToWishlist = async (id) => {
+  const { data } = await api.post(`/users/classes/wishlist/${id}`);
+  return data;
+};
+
+export const removeClassFromWishlist = async (id) => {
+  const { data } = await api.delete(`/users/classes/wishlist/${id}`);
+  return data;
+};
+
+export const getMyClassWishlist = async () => {
+  const { data } = await api.get('/users/classes/wishlist/my');
+  return data?.data ?? [];
+};
+
+export const likeClass = async (id) => {
+  const { data } = await api.post(`/users/classes/likes/${id}`);
+  return data;
+};
+
+export const unlikeClass = async (id) => {
+  const { data } = await api.delete(`/users/classes/likes/${id}`);
+  return data;
+};
+
+export const getMyLikedClasses = async () => {
+  const { data } = await api.get('/users/classes/likes/my');
+  return data?.data ?? [];
+};

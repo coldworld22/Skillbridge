@@ -15,3 +15,18 @@ export const fetchTutorialDetails = async (id) => {
   return res.data;
 };
 
+export const addTutorialToWishlist = async (id) => {
+  const { data } = await api.post(`/users/tutorials/wishlist/${id}`);
+  return data;
+};
+
+export const removeTutorialFromWishlist = async (id) => {
+  const { data } = await api.delete(`/users/tutorials/wishlist/${id}`);
+  return data;
+};
+
+export const getMyTutorialWishlist = async () => {
+  const { data } = await api.get('/users/tutorials/wishlist/my');
+  return data?.data ?? [];
+};
+

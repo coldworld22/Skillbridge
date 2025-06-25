@@ -16,6 +16,8 @@ router.use("/enroll", require("./enrollments/classEnrollment.routes"));
 // Class lessons and assignments
 router.use("/lessons", require("./lessons/classLesson.routes"));
 router.use("/assignments", require("./assignments/classAssignment.routes"));
+router.use("/wishlist", require("./wishlist/classWishlist.routes"));
+router.use("/likes", require("./likes/classLike.routes"));
 // Attendance tracking
 router.use("/attendance", require("./attendance/classAttendance.routes"));
 
