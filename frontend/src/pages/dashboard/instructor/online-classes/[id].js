@@ -9,6 +9,13 @@ import CertificateIssuancePanel from "@/components/instructors/CertificateIssuan
 import AssignmentManager from "@/components/instructors/AssignmentManager"; // ✅ Assignment Manager added
 import { fetchClassManagementData } from "@/services/instructor/classService";
 
+const isClassLive = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  return s && now >= s && (!e || now <= e);
+};
+
 export default function InstructorClassRoom() {
   const router = useRouter();
   const { id } = router.query;
@@ -63,7 +70,7 @@ export default function InstructorClassRoom() {
         {/* Upload Materials */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">📤 Upload Materials</h2>
-          <ResourceUploadSection classId={id} />
+          <ResourceUploadSection classId={id} isLive={isClassLive(classData.start_date, classData.end_date)} />
         </div>
 
         {/* Breakout Room Control */}
