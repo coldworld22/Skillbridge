@@ -18,6 +18,7 @@ export default function CreateAssignmentPage() {
   const [starterCode, setStarterCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [dueDate, setDueDate] = useState('');
+  const [timeToFinish, setTimeToFinish] = useState('');
   const [allowLate, setAllowLate] = useState(false);
   const [resourceFile, setResourceFile] = useState(null);
   const [gradingRubric, setGradingRubric] = useState('');
@@ -61,6 +62,7 @@ export default function CreateAssignmentPage() {
       title,
       description,
       due_date: dueDate,
+      time_to_finish: timeToFinish || null,
     };
 
     try {
@@ -204,6 +206,15 @@ export default function CreateAssignmentPage() {
             />
             <label className="text-sm">Allow Late Submission</label>
           </div>
+
+          {/* Estimated Time to Finish */}
+          <input
+            type="text"
+            placeholder="Estimated time to finish (e.g. 2h, 3 days)"
+            value={timeToFinish}
+            onChange={(e) => setTimeToFinish(e.target.value)}
+            className="w-full p-3 bg-gray-100 rounded-md"
+          />
 
           {/* Due Date */}
           <input

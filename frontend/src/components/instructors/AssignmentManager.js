@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { createClassAssignment, deleteClassAssignment } from "@/services/instructor/classService";
+import { deleteClassAssignment } from "@/services/instructor/classService";
 import { fetchClassAssignments } from "@/services/classService";
 import { toDateInput } from "@/utils/date";
 
+const computeStatus = (due) => {
+  if (!due) return "Ongoing";
+  const now = new Date();
+  const d = new Date(due);
+  return now > d ? "Past Due" : "Ongoing";
+};
+
 export default function AssignmentManager({ classId, initialAssignments = [] }) {
   const [assignments, setAssignments] = useState(initialAssignments);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
 
   // Sync when parent provides new assignments
   useEffect(() => {
@@ -28,23 +32,6 @@ export default function AssignmentManager({ classId, initialAssignments = [] }) 
     load();
   }, [classId]);
 
-  const addAssignment = async () => {
-    if (!title) return;
-    try {
-      const payload = {
-        title,
-        description,
-        due_date: dueDate || null,
-      };
-      const assignment = await createClassAssignment(classId, payload);
-      setAssignments([...assignments, assignment]);
-      setTitle("");
-      setDescription("");
-      setDueDate("");
-    } catch (err) {
-      console.error("Failed to create assignment", err);
-    }
-  };
 
   const removeAssignment = async (index) => {
     const assignment = assignments[index];
@@ -58,34 +45,6 @@ export default function AssignmentManager({ classId, initialAssignments = [] }) 
 
   return (
     <div className="text-sm text-white">
-      <div className="mb-4 space-y-2">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Assignment title"
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-        />
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-        />
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="w-full px-3 py-2 rounded bg-gray-700 text-white"
-        />
-        <button
-          onClick={addAssignment}
-          className="w-full bg-yellow-500 text-black py-2 rounded hover:bg-yellow-600 font-semibold"
-        >
-          Add Assignment
-        </button>
-      </div>
-
       <ul className="space-y-3">
         {assignments.map((a, i) => (
           <li
@@ -99,6 +58,7 @@ export default function AssignmentManager({ classId, initialAssignments = [] }) 
                   Due: {toDateInput(a.due_date)}
                 </p>
               )}
+              <p className="text-gray-400 text-xs">Status: {computeStatus(a.due_date)}</p>
             </div>
             <button
               onClick={() => removeAssignment(i)}
