@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchInstructorClasses, createClassAssignment } from '@/services/instructor/classService';
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -22,14 +23,20 @@ export default function CreateAssignmentPage() {
   const [gradingRubric, setGradingRubric] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
 
-  const classes = [
-    { id: 'react-bootcamp', title: 'React & Next.js Bootcamp' },
-    { id: 'ui-design', title: 'UI/UX Design Basics' }
-  ];
+  const [classes, setClasses] = useState([]);
 
   useEffect(() => {
     setMounted(true);
     if (routerClassId) setClassId(routerClassId);
+    const load = async () => {
+      try {
+        const data = await fetchInstructorClasses();
+        setClasses(data || []);
+      } catch (err) {
+        console.error('Failed to load classes', err);
+      }
+    };
+    load();
   }, [routerClassId]);
 
   const handleAddQuestion = () => {
@@ -44,27 +51,25 @@ export default function CreateAssignmentPage() {
     setQuestions(prev => prev.map(q => q.id === id ? { ...q, options: q.options.map((opt, i) => i === idx ? value : opt) } : q));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !description || !classId || !dueDate) {
       alert('⚠️ Please fill all fields.');
       return;
     }
 
-    const newAssignment = {
+    const payload = {
       title,
       description,
-      classId,
-      type,
-      dueDate,
-      allowLate,
-      questions: type === 'mcq' ? questions : [],
-      codeSetup: type === 'code' ? { language, starterCode } : null,
-      gradingRubric: type !== 'mcq' ? gradingRubric : null,
+      due_date: dueDate,
     };
 
-    console.log('✅ Saving Assignment:', newAssignment);
-    alert('Assignment created successfully (mock)');
-    router.push(`/dashboard/instructor/assignments/${classId}`);
+    try {
+      await createClassAssignment(classId, payload);
+      router.push(`/dashboard/instructor/assignments/${classId}`);
+    } catch (err) {
+      console.error('Failed to create assignment', err);
+      alert('Failed to create assignment');
+    }
   };
 
   if (!mounted) return null;
