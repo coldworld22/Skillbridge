@@ -1,15 +1,23 @@
 // components/instructor/LessonManager.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClassLesson, deleteClassLesson } from "@/services/instructor/classService";
 export default function LessonManager({ classId, initialLessons = [] }) {
   const [lessons, setLessons] = useState(initialLessons);
   const [newTitle, setNewTitle] = useState("");
   const [newDuration, setNewDuration] = useState("");
 
+  // Sync lessons when parent provides new list from backend
+  useEffect(() => {
+    setLessons(initialLessons);
+  }, [initialLessons]);
+
   const addLesson = async () => {
     if (!newTitle) return;
     try {
-      const lesson = await createClassLesson(classId, { title: newTitle });
+      const lesson = await createClassLesson(classId, {
+        title: newTitle,
+        order: lessons.length + 1,
+      });
       setLessons([...lessons, lesson]);
       setNewTitle("");
       setNewDuration("");
