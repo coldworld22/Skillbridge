@@ -102,8 +102,18 @@ exports.updateUserProfile = async (id, data) => {
  * Change user role
  */
 exports.changeUserRole = async (id, role) => {
+  // Ensure target user exists
+  const user = await db("users").where({ id }).first();
+  if (!user) throw new AppError("User not found", 404);
+
+  // Disallow changing SuperAdmin role
+  if (user.role && user.role.toLowerCase() === "superadmin") {
+    throw new AppError("Cannot change role for SuperAdmin user", 403);
+  }
+
   const roleRow = await db("roles").where({ name: role }).first();
   if (!roleRow) throw new AppError("Role not found", 404);
+
   await db("users").where({ id }).update({ role }); // keep legacy column updated
   await db("user_roles").where({ user_id: id }).del();
   await db("user_roles").insert({ user_id: id, role_id: roleRow.id });

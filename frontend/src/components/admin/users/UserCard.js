@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect }) {
   const [enabled, setEnabled] = useState(user.status?.toLowerCase() === "active");
   const [role, setRole] = useState(user.role);
+  const isSuperAdmin = user.role?.toLowerCase() === "superadmin";
 
   const roleColors = {
     admin: "bg-yellow-100 text-yellow-700",
@@ -50,6 +51,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
   };
 
   const handleRoleChange = async (e) => {
+    if (isSuperAdmin) return;
     const newRole = e.target.value;
     try {
       await updateUserRole(user.id, newRole);
@@ -113,6 +115,7 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
         <select
           value={role}
           onChange={handleRoleChange}
+          disabled={isSuperAdmin}
           className="mt-2 w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
         >
           <option value="admin">Admin</option>

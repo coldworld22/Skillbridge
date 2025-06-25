@@ -102,6 +102,12 @@ exports.changeUserRole = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Invalid role" });
   }
 
+  // Disallow changing role of SuperAdmin
+  const target = await service.getUserById(req.params.id);
+  if (target && target.role && target.role.toLowerCase() === "superadmin") {
+    throw new AppError("Cannot change role for SuperAdmin user", 403);
+  }
+
   const updatedUser = await service.changeUserRole(req.params.id, formattedRole);
   res.json({ success: true, message: "User role updated", data: updatedUser });
 });
