@@ -62,6 +62,10 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
   };
 
   const handleDelete = async () => {
+    if (role?.toLowerCase() === "superadmin") {
+      toast.error("Cannot delete SuperAdmin user");
+      return;
+    }
     if (!confirm(`Are you sure you want to delete ${user.name}?`)) return;
     try {
       await deleteUser(user.id);
@@ -78,12 +82,14 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
 
   return (
     <div className="relative bg-white rounded-xl shadow-md border p-5 flex flex-col justify-between">
-      <input
-        type="checkbox"
-        className="absolute top-3 right-3 w-4 h-4 accent-blue-500"
-        checked={isSelected}
-        onChange={() => onSelect(user.id)}
-      />
+      {role?.toLowerCase() !== "superadmin" && (
+        <input
+          type="checkbox"
+          className="absolute top-3 right-3 w-4 h-4 accent-blue-500"
+          checked={isSelected}
+          onChange={() => onSelect(user.id)}
+        />
+      )}
 
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300 bg-white shadow mr-4">
@@ -154,12 +160,14 @@ export default function UserCard({ user, onEdit, onDelete, isSelected, onSelect 
         >
           <Edit className="w-4 h-4 mr-1" /> Edit
         </button>
-        <button
-          onClick={handleDelete}
-          className="flex items-center text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition"
-        >
-          <Trash2 className="w-4 h-4 mr-1" /> Delete
-        </button>
+        {role?.toLowerCase() !== "superadmin" && (
+          <button
+            onClick={handleDelete}
+            className="flex items-center text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition"
+          >
+            <Trash2 className="w-4 h-4 mr-1" /> Delete
+          </button>
+        )}
       </div>
     </div>
   );
