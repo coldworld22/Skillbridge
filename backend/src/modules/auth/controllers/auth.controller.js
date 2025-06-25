@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service");
+const userModel = require("../../users/user.model");
 const catchAsync = require("../../../utils/catchAsync");
 
 // 🔧 Cookie options used in login and logout
@@ -75,10 +76,22 @@ exports.refreshToken = catchAsync(async (req, res) => {
  * @desc Logout user by clearing refresh token
  * @access Public
  */
-exports.logout = (req, res) => {
+exports.logout = catchAsync(async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (token) {
+    try {
+      const decoded = authService.verifyRefreshToken(token);
+      const user = await userModel.findById(decoded.id);
+      if (user && user.role && user.role.toLowerCase() === "instructor") {
+        await userModel.updateUser(user.id, { is_online: false });
+      }
+    } catch (err) {
+      console.error("Failed to update online status on logout:", err.message);
+    }
+  }
   res.clearCookie("refreshToken", refreshCookieOptions);
   res.json({ message: "Logged out successfully" });
-};
+});
 
 /**
  * @desc Send OTP to user's email for password reset

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import * as authService from "@/services/auth/authService";
+import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 
 const useAuthStore = create(
   persist(
@@ -16,6 +17,14 @@ const useAuthStore = create(
       isAuthenticated: () => !!get().accessToken && !!get().user,
 
       login: async (credentials) => {
+        const current = get().user;
+        if (current && current.role?.toLowerCase() === "instructor") {
+          try {
+            await toggleInstructorStatus(false);
+            await authService.logoutUser();
+          } catch (_) {}
+        }
+
         const { accessToken, user } = await authService.loginUser(credentials);
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;
@@ -35,6 +44,12 @@ const useAuthStore = create(
 
       logout: async () => {
         try {
+          const current = get().user;
+          if (current && current.role?.toLowerCase() === "instructor") {
+            try {
+              await toggleInstructorStatus(false);
+            } catch (_) {}
+          }
           await authService.logoutUser();
         } catch (_) {}
         localStorage.removeItem("auth");
