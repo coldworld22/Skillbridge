@@ -1,6 +1,8 @@
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+
+
 const videos = [
   { src: "/videos/tutorials/default-preview.mp4", title: "Preview Video 1" },
   { src: "/videos/tutorials/default-preview.mp4", title: "Preview Video 2" },
