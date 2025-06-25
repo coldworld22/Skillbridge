@@ -4,6 +4,7 @@ import { getMyClassWishlist, removeClassFromWishlist, enrollInClass } from '@/se
 import { getMyTutorialWishlist, removeTutorialFromWishlist } from '@/services/tutorialService';
 import { addToCart } from '@/services/cartService';
 import { FaSearch, FaSortAmountDown, FaShareAlt, FaBell } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 export default function WishlistPage() {
   const [classes, setClasses] = useState([]);
@@ -40,7 +41,13 @@ export default function WishlistPage() {
   };
 
   const handleAddToCart = async(item) => {
-    try { await addToCart({ id: item.id, name: item.title, price: item.price || 0 }); } catch(err) { console.error(err); }
+    try {
+      await addToCart({ id: item.id, name: item.title, price: item.price || 0 });
+      toast.success('Added to cart');
+    } catch(err) {
+      console.error(err);
+      toast.error('Failed to add to cart');
+    }
   };
 
   const updateTag = (id, value) => {

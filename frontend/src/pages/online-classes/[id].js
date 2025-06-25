@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { fetchClassDetails } from '@/services/classService';
+import { fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+import { addToCart } from '@/services/cartService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 
@@ -15,9 +16,10 @@ export default function ClassDetailsPage() {
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [enrolled, setEnrolled] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
-  const handleProceed = () => {
+  const handleAddToCart = async () => {
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
       router.push('/auth/login');
@@ -28,7 +30,18 @@ export default function ClassDetailsPage() {
       router.push('/auth/login');
       return;
     }
-    router.push(`/payments/checkout?classId=${id}`);
+    if (enrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+    try {
+      await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
+      toast.success('Added to cart');
+      router.push('/cart');
+    } catch (err) {
+      console.error('Failed to add to cart', err);
+      toast.error('Failed to add to cart');
+    }
   };
 
   useEffect(() => {
@@ -38,7 +51,18 @@ export default function ClassDetailsPage() {
       setError(null);
       try {
         const details = await fetchClassDetails(id);
-        setClassInfo(details?.data ?? details);
+        const info = details?.data ?? details;
+        setClassInfo(info);
+        if (isAuthenticated()) {
+          try {
+            const my = await fetchMyEnrolledClasses();
+            setEnrolled(my.some((c) => c.id === info.id));
+          } catch (e) {
+            console.error('Failed to check enrollment', e);
+          }
+        } else {
+          setEnrolled(false);
+        }
       } catch (err) {
         console.error('Failed to load class', err);
         setError('Failed to load class');
@@ -47,7 +71,7 @@ export default function ClassDetailsPage() {
       }
     };
     load();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
   if (error) return <div className="text-red-400 text-center mt-32">{error}</div>;
@@ -161,19 +185,24 @@ export default function ClassDetailsPage() {
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
           <button
-            onClick={handleProceed}
-            disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
+            onClick={handleAddToCart}
+            disabled={
+              enrolled ||
+              (typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0)
+            }
             className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
               typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
             }`}
           >
-            {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+            {enrolled
+              ? 'Already Enrolled'
+              : typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
               ? 'Class Full'
               : classInfo.price === 0
               ? 'Enroll for Free'
-              : 'Proceed to Payment'}
+              : 'Add to Cart'}
           </button>
         </section>
 
