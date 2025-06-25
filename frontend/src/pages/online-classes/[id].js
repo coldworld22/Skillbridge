@@ -166,8 +166,8 @@ export default function ClassDetailsPage() {
         </div>
 
 
-        <ClassReviews classId={id} canReview={isEnrolled} />
-        <ClassComments classId={id} canComment={isEnrolled} />
+        <ClassReviews classId={id} canReview={enrolled} />
+        <ClassComments classId={id} canComment={enrolled} />
 
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
