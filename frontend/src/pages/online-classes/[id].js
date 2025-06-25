@@ -3,8 +3,15 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
-import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { enrollInClass, fetchClassDetails, fetchMyEnrolledClasses } from '@/services/classService';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart } from 'react-icons/fa';
+import {
+  enrollInClass,
+  fetchClassDetails,
+  fetchMyEnrolledClasses,
+  addClassToWishlist,
+  removeClassFromWishlist,
+  getMyClassWishlist,
+} from '@/services/classService';
 import { addToCart as apiAddToCart } from '@/services/cartService';
 
 import useAuthStore from '@/store/auth/authStore';
@@ -21,6 +28,7 @@ export default function ClassDetailsPage() {
   const [error, setError] = useState(null);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
 
@@ -83,6 +91,34 @@ export default function ClassDetailsPage() {
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated()) {
+      toast.info('Please login or create an account to proceed');
+      router.push('/auth/login');
+      return;
+    }
+    if (user.role?.toLowerCase() !== 'student') {
+      toast.error('You must use a student account');
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      if (inWishlist) {
+        await removeClassFromWishlist(classInfo.id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addClassToWishlist(classInfo.id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (err) {
+      console.error('Wishlist update failed', err);
+      toast.error('Failed to update wishlist');
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
     const load = async () => {
@@ -94,7 +130,8 @@ export default function ClassDetailsPage() {
         if (isAuthenticated()) {
           const enrolled = await fetchMyEnrolledClasses();
           setIsEnrolled(enrolled.some((c) => String(c.id) === String(id)));
-
+          const wishlist = await getMyClassWishlist();
+          setInWishlist(wishlist.some((c) => String(c.id) === String(id)));
         }
       } catch (err) {
         console.error('Failed to load class', err);
@@ -199,27 +236,45 @@ export default function ClassDetailsPage() {
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
           <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {isEnrolled ? (
+              <button
+                onClick={() => router.push(`/dashboard/student/online-classe/${classInfo.id}`)}
+                className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-500 text-gray-900 hover:bg-yellow-600"
+              >
+                Go to Class
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleAddToCart}
+                  className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={handleProceed}
+                  disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
+                  className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
+                    typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
+                  }`}
+                >
+                  {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
+                    ? 'Class Full'
+                    : classInfo.price === 0
+                    ? 'Enroll for Free'
+                    : 'Proceed to Payment'}
+                </button>
+              </>
+            )}
             <button
-              onClick={handleAddToCart}
-              className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
+              onClick={handleToggleWishlist}
+              className="flex items-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-700 text-white hover:bg-gray-600"
             >
-              Add to Cart
-            </button>
-            <button
-              onClick={handleProceed}
-              disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
-              className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
-                typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
-              }`}
-            >
-              {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                ? 'Class Full'
-                : classInfo.price === 0
-                ? 'Enroll for Free'
-                : 'Proceed to Payment'}
+              <FaHeart className={inWishlist ? 'text-yellow-400' : 'text-white'} />
+              {inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </button>
           </div>
 
