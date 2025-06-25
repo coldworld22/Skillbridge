@@ -23,31 +23,8 @@ export default function ClassDetailsPage() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
-  const handleAddToCart = async () => {
-    if (!classInfo) return;
-    const item = {
-      id: classInfo.id,
-      name: classInfo.title,
-      price: classInfo.price,
-      quantity: 1,
-      image: classInfo.cover_image,
-    };
-    try {
-      await apiAddToCart(item);
-    } catch (err) {
-      console.error('API add to cart failed', err);
-    }
-    const stored = JSON.parse(localStorage.getItem('cart')) || [];
-    if (stored.find((c) => c.id === item.id)) {
-      toast.info('Already in cart');
-      return;
-    }
-    stored.push(item);
-    localStorage.setItem('cart', JSON.stringify(stored));
-    toast.success('Item added successfully');
-  };
 
-  const handleProceed = () => {
+  const handleAddToCart = () => {
 
     if (!isAuthenticated()) {
       toast.info('Please login or create an account to proceed');
@@ -65,14 +42,15 @@ export default function ClassDetailsPage() {
       return;
     }
 
-    try {
-      await addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
-      toast.success('Added to cart');
-      router.push('/cart');
-    } catch (err) {
-      console.error('Failed to add to cart', err);
-      toast.error('Failed to add to cart');
-    }
+    addToCart({ id: classInfo.id, name: classInfo.title, price: classInfo.price })
+      .then(() => {
+        toast.success('Added to cart');
+        router.push('/cart');
+      })
+      .catch((err) => {
+        console.error('Failed to add to cart', err);
+        toast.error('Failed to add to cart');
+      });
   };
 
   useEffect(() => {
