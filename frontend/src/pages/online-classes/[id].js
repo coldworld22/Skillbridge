@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
+import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
 import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart } from 'react-icons/fa';
 import {
   enrollInClass,
@@ -202,11 +203,11 @@ export default function ClassDetailsPage() {
         </div>
 
         {classInfo.demo_video_url ? (
-          <video
-            src={encodeURI(classInfo.demo_video_url)}
-            controls
-            className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
-          />
+          <div className="mb-10">
+            <CustomVideoPlayer
+              videos={[{ src: encodeURI(classInfo.demo_video_url) }]}
+            />
+          </div>
         ) : (
           <img
             src={classInfo.cover_image}
