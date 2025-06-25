@@ -132,11 +132,13 @@ exports.getPublishedClasses = async () => {
 exports.getPublicClassDetails = async (id) => {
   const cls = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("instructor_profiles as p", "u.id", "p.user_id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .select(
       "c.*",
       "u.full_name as instructor",
       "u.avatar_url as instructor_image",
+      "p.experience as instructor_bio",
       "cat.name as category",
       db.raw(
         "(SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = c.id) as enrolled_count"
