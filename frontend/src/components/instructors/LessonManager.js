@@ -1,6 +1,7 @@
 // components/instructor/LessonManager.js
 import { useState, useEffect } from "react";
 import { createClassLesson, deleteClassLesson } from "@/services/instructor/classService";
+import { fetchClassLessons } from "@/services/classService";
 export default function LessonManager({ classId, initialLessons = [] }) {
   const [lessons, setLessons] = useState(initialLessons);
   const [newTitle, setNewTitle] = useState("");
@@ -10,6 +11,20 @@ export default function LessonManager({ classId, initialLessons = [] }) {
   useEffect(() => {
     setLessons(initialLessons);
   }, [initialLessons]);
+
+  // Load lessons from API when classId changes
+  useEffect(() => {
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const list = await fetchClassLessons(classId);
+        setLessons(list);
+      } catch (err) {
+        console.error("Failed to load lessons", err);
+      }
+    };
+    load();
+  }, [classId]);
 
   const addLesson = async () => {
     if (!newTitle) return;
