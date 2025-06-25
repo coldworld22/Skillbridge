@@ -12,7 +12,7 @@ import InstructorLayout from '@/components/layouts/InstructorLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
 
 import { fetchAllCategories } from '@/services/instructor/categoryService';
-import { createInstructorClass } from '@/services/instructor/classService';
+import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
 import { fetchClassTags, createClassTag } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import FloatingInput from '@/components/shared/FloatingInput';
@@ -172,10 +172,23 @@ function CreateOnlineClass() {
           setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
         }
 
-        await createInstructorClass(payload, (e) => {
+        const created = await createInstructorClass(payload, (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
         });
+
+        if (created) {
+          for (const [idx, l] of formData.lessons.entries()) {
+            try {
+              await createClassLesson(created.id, {
+                title: l.title,
+                order: idx + 1
+              });
+            } catch (err) {
+              console.error('Failed to create lesson', err);
+            }
+          }
+        }
 
         toast.success('Class created successfully!');
         router.push('/dashboard/instructor/online-classes');
