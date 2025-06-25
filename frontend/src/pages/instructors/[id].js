@@ -8,6 +8,7 @@ import BookingRequestModal from "@/components/student/instructors/BookingRequest
 import { fetchPublicInstructorById } from "@/services/public/instructorService";
 import { fetchPublishedClasses } from "@/services/classService";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 
 export default function InstructorProfilePage() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function InstructorProfilePage() {
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const { user } = useAuthStore();
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
   const openBooking = () => {
     if (!user || user.role?.toLowerCase() !== "student") {
@@ -35,7 +39,16 @@ export default function InstructorProfilePage() {
       try {
         setLoading(true);
         const data = await fetchPublicInstructorById(id);
-        setInstructor(data);
+        const formatted = {
+          ...data,
+          avatar_url: data?.avatar_url
+            ? `${API_BASE_URL}${data.avatar_url}`
+            : "/images/profile/user.png",
+          demo_video_url: data?.demo_video_url
+            ? `${API_BASE_URL}${data.demo_video_url}`
+            : null,
+        };
+        setInstructor(formatted);
 
         const classRes = await fetchPublishedClasses();
         const classList = classRes?.data ?? classRes ?? [];
@@ -72,7 +85,12 @@ export default function InstructorProfilePage() {
     <StudentLayout>
       <section className="py-10 px-6 max-w-3xl mx-auto bg-white rounded-xl shadow">
         {/* Profile Header */}
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-center text-center relative">
+          {instructor.is_online && (
+            <span className="absolute top-2 right-2 bg-green-500 text-xs px-2 py-1 rounded-full">
+              Online
+            </span>
+          )}
           <img
             src={instructor.avatar_url}
             className="w-32 h-32 rounded-full border-4 border-yellow-400 mb-4"
@@ -107,6 +125,12 @@ export default function InstructorProfilePage() {
           )}
 
         </div>
+
+        {instructor.demo_video_url && (
+          <div className="my-6">
+            <CustomVideoPlayer videos={[{ src: encodeURI(instructor.demo_video_url) }]} />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="mt-6 flex justify-center gap-4">
