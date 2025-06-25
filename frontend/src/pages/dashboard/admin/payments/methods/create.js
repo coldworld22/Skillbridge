@@ -12,17 +12,37 @@ export default function CreatePaymentMethodPage() {
     icon: "",
     active: true,
     is_default: false,
+    settings: {},
+    settingsText: "{}",
   });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    if (name === "settings") {
+      setForm((prev) => ({ ...prev, settingsText: value }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createMethod(form);
+      let settings = {};
+      try {
+        settings = form.settingsText ? JSON.parse(form.settingsText) : {};
+      } catch (err) {
+        alert("Invalid JSON in settings");
+        return;
+      }
+      await createMethod({
+        name: form.name,
+        type: form.type,
+        icon: form.icon,
+        active: form.active,
+        is_default: form.is_default,
+        settings,
+      });
       router.push("/dashboard/admin/payments");
     } catch (err) {
       console.error("Failed to create method", err);
@@ -76,6 +96,16 @@ export default function CreatePaymentMethodPage() {
               value={form.icon}
               onChange={handleChange}
               className="w-full border p-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block font-semibold mb-1">Settings (JSON)</label>
+            <textarea
+              name="settings"
+              rows={5}
+              value={form.settingsText}
+              onChange={handleChange}
+              className="w-full border p-2 rounded font-mono text-sm"
             />
           </div>
           <label className="flex items-center gap-2">
