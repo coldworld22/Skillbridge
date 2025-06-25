@@ -12,16 +12,19 @@ export default function OnlineClassesPage() {
   const [allClasses, setAllClasses] = useState([]);
   const [visibleCount, setVisibleCount] = useState(6);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
 
   useEffect(() => {
     const load = async () => {
+      setError(null);
       try {
         const { data } = await fetchPublishedClasses();
         setAllClasses(data || []);
       } catch (err) {
         console.error('Failed to load classes', err);
+        setError('Failed to load classes');
       } finally {
         setLoading(false);
       }
@@ -79,6 +82,8 @@ export default function OnlineClassesPage() {
           <ClassFilters filters={filters} onChange={setFilters} />
           {loading ? (
             <p className="text-center text-gray-400">Loading...</p>
+          ) : error ? (
+            <p className="text-center text-red-400">{error}</p>
           ) : (
             <>
               <ClassesGrid classes={visibleClasses} />
