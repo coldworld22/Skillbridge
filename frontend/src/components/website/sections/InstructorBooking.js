@@ -179,18 +179,33 @@ export default function InstructorBooking() {
             whileHover={{ scale: 1.05 }}
             className="p-6 bg-gray-800 rounded-lg shadow-lg text-center flex flex-col items-center relative"
           >
-            {i.availableNow && (
-              <span className="absolute top-2 right-2 bg-green-500 text-xs px-2 py-1 rounded-full">Online</span>
-            )}
+            <span
+              className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full ${
+                i.availableNow ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+            >
+              {i.availableNow ? 'Online' : 'Offline'}
+            </span>
             {i.verified && (
               <span className="absolute top-2 left-2 text-green-400 text-sm flex items-center gap-1">
                 <FaCircleCheck /> Verified
               </span>
             )}
             <img src={i.avatar} className="w-20 h-20 rounded-full border-2 border-yellow-500 mb-3" alt={i.name} />
-            <h3 className="text-xl font-semibold cursor-pointer hover:underline" onClick={() => router.push(`/instructors/${i.id}`)}>{i.name}</h3>
-            <p className="text-gray-300 text-sm">{i.expertise}</p>
-            <p className="text-gray-400 text-sm">{i.experience}</p>
+            <h3
+              className="text-xl font-semibold cursor-pointer hover:underline"
+              onClick={() => router.push(`/instructors/${i.id}`)}
+            >
+              {i.name}
+            </h3>
+            <div className="flex flex-wrap justify-center gap-2 mt-2 text-sm text-gray-300">
+              {(Array.isArray(i.expertise) ? i.expertise : [i.expertise]).map((exp, idx) => (
+                <span key={idx} className="bg-gray-700 px-2 py-1 rounded">
+                  {exp}
+                </span>
+              ))}
+            </div>
+            <p className="text-gray-400 text-sm mt-1">{i.experience}</p>
             <div className="flex items-center justify-center gap-1 mt-2">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <FaStar
@@ -199,13 +214,6 @@ export default function InstructorBooking() {
                 />
               ))}
               <span className="text-sm text-gray-300">({i.rating})</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {i.tags.map((tag, idx) => (
-                <span key={idx} className="bg-yellow-700 text-xs px-2 py-1 rounded-full text-white">
-                  {tag}
-                </span>
-              ))}
             </div>
             <div className="flex gap-3 mt-4">
               <button

@@ -114,6 +114,9 @@ export default function InstructorProfilePage() {
           <p className="text-gray-700">
             {instructor.expertise} {instructor.experience ? `· ${instructor.experience}` : ""}
           </p>
+          {instructor.bio && (
+            <p className="text-gray-700 mt-2 whitespace-pre-line">{instructor.bio}</p>
+          )}
           {instructor.pricing && (
             <p className="text-gray-700 mt-2">Pricing: {instructor.pricing}</p>
           )}

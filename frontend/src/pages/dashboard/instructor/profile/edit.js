@@ -40,6 +40,12 @@ const instructorProfileSchema = z.object({
   pricing_amount: z.number().min(0, "Amount must be positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
+  bio: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.split(/\s+/).filter(Boolean).length <= 150, {
+      message: "Bio must be 150 words or fewer",
+    }),
   socialLinks: z
     .record(z.union([z.literal(""), z.string().url("Must be a valid URL")]))
     .optional(),
@@ -79,6 +85,7 @@ export default function InstructorProfileEdit() {
     pricing_amount: undefined,
     pricing_currency: "USD",
     expertise: [],
+    bio: "",
     socialLinks: {},
     certificates: [],
     avatarPreview: null,
@@ -140,6 +147,7 @@ export default function InstructorProfileEdit() {
           pricing_amount,
           pricing_currency,
           expertise: instructor?.expertise || [],
+          bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
           avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
@@ -283,6 +291,7 @@ export default function InstructorProfileEdit() {
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
         experience: formData.experience,
+        bio: formData.bio,
         availability: formData.availability ? "available" : "unavailable",
         pricing,
         expertise: formData.expertise,
@@ -308,6 +317,7 @@ export default function InstructorProfileEdit() {
         ...prev,
         expertise: fresh.instructor?.expertise || [],
         experience: fresh.instructor?.experience || 0,
+        bio: fresh.instructor?.bio || "",
         availability: fresh.instructor?.availability === "available",
         pricing_amount: fresh.instructor?.pricing
           ? (() => {
@@ -520,13 +530,25 @@ export default function InstructorProfileEdit() {
                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                 className={`w-full px-4 py-2 border ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-yellow-500 focus:border-yellow-500`}
               />
-              {errors.date_of_birth && <p className="text-sm text-red-600 mt-1">{errors.date_of_birth}</p>}
-            </div>
-          </div>
+          {errors.date_of_birth && <p className="text-sm text-red-600 mt-1">{errors.date_of_birth}</p>}
+        </div>
+      </div>
 
-          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mt-8">
-            Professional Information
-          </h2>
+      <div className="mt-6">
+        <label className="block text-sm font-medium mb-1">Bio (max 150 words)</label>
+        <textarea
+          name="bio"
+          value={formData.bio}
+          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+        />
+        {errors.bio && <p className="text-sm text-red-600 mt-1">{errors.bio}</p>}
+      </div>
+
+      <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mt-8">
+        Professional Information
+      </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
