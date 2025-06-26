@@ -66,7 +66,7 @@ export default function Register() {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
       <BackgroundAnimation />
 
       <motion.div
@@ -74,7 +74,7 @@ export default function Register() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.03 }}
         transition={{ duration: 0.4 }}
-        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
+        className="relative bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg">
           <Image src={logo} alt="SkillBridge Logo" width={80} height={80} className="rounded-full" priority />
