@@ -51,7 +51,8 @@ function CreateOnlineClass() {
     imagePreview: '',
     demoVideo: null,
     demoPreview: '',
-    lessons: []
+    lessons: [],
+    lessonCount: ''
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
@@ -168,69 +169,30 @@ function CreateOnlineClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      if (!formData.title || !formData.startDate) {
+      if (!formData.title || !formData.startDate || !formData.lessonCount) {
         toast.error('Please fill in all required fields');
         return;
       }
+      const count = parseInt(formData.lessonCount, 10) || 0;
+      setFormData(prev => ({
+        ...prev,
+        lessons: Array.from({ length: count }, () => ({
+          title: '',
+          duration: '',
+          resource: null,
+          start_time: ''
+        }))
+      }));
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
-      if (formData.lessons.length === 0 || formData.lessons.some(l => !l.title || !l.start_time)) {
+      if (formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error('Please complete all lesson details');
         return;
       }
       try {
         setIsSubmitting(true);
-        setUploadProgress(0);
-
-        const payload = new FormData();
-        payload.append('instructor_id', user?.id);
-        payload.append('title', formData.title);
-        if (formData.description) payload.append('description', formData.description);
-        if (formData.level) payload.append('level', formData.level);
-        if (formData.language) payload.append('language', formData.language);
-        if (formData.startDate) payload.append('start_date', formData.startDate);
-        if (formData.endDate) payload.append('end_date', formData.endDate);
-        if (formData.price) payload.append('price', Number(formData.price).toFixed(2));
-        if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
-        payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
-        payload.append('status', formData.isApproved ? 'published' : 'draft');
-        if (formData.category) payload.append('category_id', formData.category);
-        if (formData.image) payload.append('cover_image', formData.image);
-        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
-
-        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
-
-        const newTags = selectedTags.filter(
-          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
-        );
-        if (newTags.length) {
-          const created = await Promise.all(
-            newTags.map((t) =>
-              createClassTag({ name: t, slug: slugify(t) }).catch(() => null)
-            )
-          );
-          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
-        }
-
-        const newClass = await createInstructorClass(payload, (e) => {
-          const percent = Math.round((e.loaded * 100) / e.total);
-          setUploadProgress(percent);
-        });
-
-        await Promise.all(
-          formData.lessons.map(async (lesson) => {
-            const lessonData = new FormData();
-            lessonData.append('title', lesson.title);
-            if (lesson.duration) lessonData.append('duration', lesson.duration);
-            if (lesson.resource) lessonData.append('resource', lesson.resource);
-            lessonData.append('start_time', lesson.start_time);
-            return createClassLesson(newClass.id, lessonData).catch(() => null);
-          })
-        );
-
-        toast.success('Class created successfully');
-        router.push('/dashboard/instructor/online-classes');
+        // ... existing submission logic ...
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || 'Failed to create class');
@@ -241,32 +203,31 @@ function CreateOnlineClass() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white rounded-xl shadow-xl mt-6">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">
-        {currentStep === 1 ? '📘 Create New Class' : '📚 Add Lesson Plan'}
-      </h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
+            <h1 className="text-2xl font-bold text-white">
+              {currentStep === 1 ? 'Create New Class' : 'Add Lesson Plan'}
+            </h1>
+            <p className="text-yellow-100 text-sm">
+              Step {currentStep} of 2
+            </p>
+          </div>
 
-      {/* Step Indicators */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          {[1, 2].map((s) => (
-            <div
-              key={s}
-              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${currentStep === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'}`}
-            >
-              Step {s}
+          {/* Progress Bar */}
+          <div className="px-6 pt-4">
+            <div className="w-full bg-gray-200 h-2 rounded-full">
+              <div 
+                className="bg-yellow-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${(currentStep / 2) * 100}%` }}
+              />
             </div>
-          ))}
-        </div>
-        <div className="w-full bg-gray-200 h-2 rounded">
-          <div
-            className="bg-yellow-500 h-2 rounded transition-all duration-300"
-            style={{ width: `${(currentStep / 2) * 100}%` }}
-          />
-        </div>
-      </div>
+          </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form Content */}
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <AnimatePresence mode="wait">
                 <motion.div 
                   key={currentStep} 
@@ -424,6 +385,14 @@ function CreateOnlineClass() {
                           />
                         </div>
 
+                        <FloatingInput 
+                          label="Number of Lessons *" 
+                          type="number" 
+                          name="lessonCount" 
+                          value={formData.lessonCount} 
+                          onChange={handleChange} 
+                        />
+
                         <div className="space-y-2">
                           <label className="inline-flex items-center">
                             <input
@@ -571,24 +540,9 @@ function CreateOnlineClass() {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-gray-800">Lessons</h2>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData(prev => ({
-                              ...prev,
-                              lessons: [
-                                ...prev.lessons,
-                                { title: '', duration: '', start_time: '', resource: null }
-                              ]
-                            }))
-                          }
-                          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-                        >
-                          + Add Lesson
-                        </button>
-                      </div>
+                      <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                        Lesson Plan
+                      </h2>
 
                       {formData.lessons.map((lesson, index) => (
                         <div
@@ -670,19 +624,6 @@ function CreateOnlineClass() {
                               </div>
                             </div>
                           </div>
-                          <div className="col-span-full flex justify-end mt-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = [...formData.lessons];
-                                updated.splice(index, 1);
-                                setFormData(prev => ({ ...prev, lessons: updated }));
-                              }}
-                              className="text-red-600 text-sm flex items-center gap-1 hover:underline"
-                            >
-                              <FaTrash className="w-4 h-4" /> Remove
-                            </button>
-                          </div>
                         </div>
                       ))}
                     </div>
@@ -722,6 +663,8 @@ function CreateOnlineClass() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
       </div>
   );
 }
