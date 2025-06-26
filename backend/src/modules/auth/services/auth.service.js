@@ -55,10 +55,16 @@ exports.registerUser = async (data) => {
   const accessToken = generateAccessToken({ id: newUser.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: newUser.id });
 
+  const welcomeMessage =
+    newUser.role && newUser.role.toLowerCase() === "instructor"
+      ?
+        "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
+      : "Welcome to SkillBridge!";
+
   await notificationService.createNotification({
     user_id: newUser.id,
     type: "welcome",
-    message: "Welcome to SkillBridge!",
+    message: welcomeMessage,
   });
 
   const admins = await userModel.findAdmins();
@@ -67,7 +73,7 @@ exports.registerUser = async (data) => {
       notificationService.createNotification({
         user_id: admin.id,
         type: "new_user",
-        message: `${newUser.full_name} joined as ${newUser.role}`,
+        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
       })
     )
   );
@@ -191,4 +197,10 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  await notificationService.createNotification({
+    user_id: user.id,
+    type: "security",
+    message: "Your password was changed successfully",
+  });
 };
