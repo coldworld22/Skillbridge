@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClassById } from "@/services/instructor/classService";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 
 export default function InstructorClassDetailPage() {
   const { id } = useRouter().query;
@@ -42,9 +43,9 @@ export default function InstructorClassDetailPage() {
             <img src={details.cover_image} alt="Class Cover" className="w-full h-64 object-cover rounded-lg" />
           )}
           {details?.demo_video_url && (
-            <video controls className="w-full mt-4 rounded-lg">
-              <source src={encodeURI(details.demo_video_url)} />
-            </video>
+            <div className="mt-4">
+              <CustomVideoPlayer videos={[{ src: encodeURI(details.demo_video_url) }]} />
+            </div>
           )}
 
           <div className="space-y-1 flex items-center gap-4">
