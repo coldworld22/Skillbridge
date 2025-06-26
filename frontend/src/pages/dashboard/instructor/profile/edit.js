@@ -40,7 +40,9 @@ const instructorProfileSchema = z.object({
   pricing_amount: z.number().min(0, "Amount must be positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
-  socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
+  socialLinks: z
+    .record(z.union([z.literal(""), z.string().url("Must be a valid URL")]))
+    .optional(),
 });
 
 const socialPlatforms = [
@@ -153,9 +155,12 @@ export default function InstructorProfileEdit() {
 
   const validateForm = () => {
     try {
+      const sanitizedLinks = Object.fromEntries(
+        Object.entries(formData.socialLinks).filter(([, url]) => url.trim() !== "")
+      );
       instructorProfileSchema.parse({
         ...formData,
-        socialLinks: formData.socialLinks
+        socialLinks: sanitizedLinks,
       });
       setErrors({});
       return true;
@@ -266,6 +271,10 @@ export default function InstructorProfileEdit() {
         ? `${formData.pricing_amount} ${formData.pricing_currency}`
         : "";
 
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
+
       await updateInstructorProfile({
         full_name: formData.full_name,
         phone: formData.phone,
@@ -275,7 +284,7 @@ export default function InstructorProfileEdit() {
         availability: formData.availability ? "available" : "unavailable",
         pricing,
         expertise: formData.expertise,
-        social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
+        social_links,
       });
       // Fetch the latest profile to ensure data persisted
       const fresh = await getInstructorProfile();
