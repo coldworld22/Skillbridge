@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
-<<<<<<< codex/fix-404-error-on-notifications-page
+
 import useNotificationStore from '@/store/notifications/notificationStore';
 
 export default function InstructorNotificationsPage() {
@@ -30,31 +30,7 @@ export default function InstructorNotificationsPage() {
     // No backend endpoint for deletion; remove locally
     // Deleted notifications will automatically be cleaned up after an hour
     markRead(id);
-=======
 
-const mockNotifications = [
-  {
-    id: 1,
-    type: 'class',
-    message: 'Your "React & Next.js Bootcamp" class goes live tomorrow at 10:00 AM.',
-    date: '2025-04-30T10:00:00',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'assignment',
-    message: 'New assignment uploaded for "Python for Beginners".',
-    date: '2025-04-29T08:30:00',
-    read: true,
-  },
-  {
-    id: 3,
-    type: 'announcement',
-    message: 'SkillBridge will be undergoing maintenance this weekend.',
-    date: '2025-04-27T12:00:00',
-    read: false,
-  },
-];
 
 export default function InstructorNotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -76,7 +52,7 @@ export default function InstructorNotificationsPage() {
 
   const handleDelete = (id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
->>>>>>> master
+
   };
 
   const filtered = notifications.filter((n) =>
