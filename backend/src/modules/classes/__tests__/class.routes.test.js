@@ -16,6 +16,9 @@ jest.mock('../class.service', () => ({
   getClassesByInstructor: jest.fn()
 }));
 const service = require('../class.service');
+jest.mock('../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
 // Mock enrollment service to avoid DB calls when routes are loaded
 jest.mock('../enrollments/classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
@@ -52,7 +55,7 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(data);
     expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'draft' })
+      expect.objectContaining({ status: 'published' })
     );
   });
 
