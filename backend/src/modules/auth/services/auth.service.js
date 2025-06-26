@@ -83,6 +83,7 @@ exports.registerUser = async (data) => {
         user_id: admin.id,
         type: "new_user",
         message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+
       })
     )
   );
@@ -92,6 +93,7 @@ exports.registerUser = async (data) => {
         sender_id: newUser.id,
         receiver_id: admin.id,
         message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+
       })
     )
   );
@@ -222,9 +224,11 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     message: "Your password was changed successfully",
   });
 
+
   await messageService.createMessage({
     sender_id: user.id,
     receiver_id: user.id,
     message: "Your password was changed successfully",
   });
+
 };
