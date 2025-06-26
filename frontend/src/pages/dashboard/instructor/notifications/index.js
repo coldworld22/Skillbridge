@@ -1,6 +1,36 @@
 import { useState, useEffect } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
+<<<<<<< codex/fix-404-error-on-notifications-page
+import useNotificationStore from '@/store/notifications/notificationStore';
+
+export default function InstructorNotificationsPage() {
+  const [filter, setFilter] = useState('all');
+  const notifications = useNotificationStore((state) => state.items);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const startPolling = useNotificationStore((state) => state.startPolling);
+  const markRead = useNotificationStore((state) => state.markRead);
+
+  useEffect(() => {
+    fetchNotifications();
+    startPolling();
+  }, [fetchNotifications, startPolling]);
+
+  const handleMarkRead = (id) => {
+    markRead(id);
+  };
+
+  const handleMarkAllRead = () => {
+    notifications.forEach((n) => {
+      if (!n.read) markRead(n.id);
+    });
+  };
+
+  const handleDelete = (id) => {
+    // No backend endpoint for deletion; remove locally
+    // Deleted notifications will automatically be cleaned up after an hour
+    markRead(id);
+=======
 
 const mockNotifications = [
   {
@@ -46,6 +76,7 @@ export default function InstructorNotificationsPage() {
 
   const handleDelete = (id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+>>>>>>> master
   };
 
   const filtered = notifications.filter((n) =>
