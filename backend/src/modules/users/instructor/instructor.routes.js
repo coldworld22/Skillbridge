@@ -126,11 +126,21 @@ router.patch(
   isInstructor,
   demoUpload.single("demo"),
   async (req, res) => {
-    const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
-    await db("instructor_profiles")
-      .where({ user_id: req.params.id })
-      .update({ demo_video_url: demoVideoUrl });
-    res.json({ demo_video_url: demoVideoUrl });
+    try {
+      const { id } = req.params;
+      if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+        return res.status(400).json({ error: "Invalid user id" });
+      }
+
+      const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+      await db("instructor_profiles")
+        .where({ user_id: id })
+        .update({ demo_video_url: demoVideoUrl });
+      res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+      console.error("Demo video upload error:", err);
+      res.status(500).json({ error: "Failed to upload demo video" });
+    }
   }
 );
 
