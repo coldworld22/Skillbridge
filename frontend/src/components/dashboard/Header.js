@@ -32,7 +32,9 @@ export default function Header() {
   const notifRef = useRef(null);
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+
   const startPolling = useNotificationStore((state) => state.startPolling);
+
   const markRead = useNotificationStore((state) => state.markRead);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const router = useRouter();
@@ -93,11 +95,13 @@ export default function Header() {
   }, [user]);
 
   useEffect(() => {
+
     if (user) {
       fetchNotifications();
       startPolling();
     }
   }, [user, fetchNotifications, startPolling]);
+
 
 
   return (
@@ -178,7 +182,7 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
-                  {notifications.slice(0, 10).map((n) => (
+ {notifications.slice(0, 10).map((n) => (
                     <li
                       key={n.id}
                       onClick={() => markRead(n.id)}
