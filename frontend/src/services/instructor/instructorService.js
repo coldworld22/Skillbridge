@@ -55,7 +55,7 @@ export const uploadCertificateFile = async (formData) => {
 
 // 🔹 Delete certificate by ID
 export const deleteCertificateFile = async (certificateId) => {
-  const res = await api.delete(`/instructor/certificates/${certificateId}`);
+  const res = await api.delete(`/users/instructor/certificates/${certificateId}`);
   return res.data;
 };
 

@@ -65,7 +65,7 @@ exports.toggleStatus = async (req, res) => {
 
 /**
  * @desc Upload a certificate file
- * @route POST /api/instructor/certificates
+ * @route POST /api/users/instructor/certificates
  * @access Instructor
  */
 exports.uploadCertificate = async (req, res) => {
@@ -87,7 +87,7 @@ exports.uploadCertificate = async (req, res) => {
 
 /**
  * @desc Delete a certificate file
- * @route DELETE /api/instructor/certificates/:id
+ * @route DELETE /api/users/instructor/certificates/:id
  * @access Instructor
  */
 exports.deleteCertificate = async (req, res) => {
