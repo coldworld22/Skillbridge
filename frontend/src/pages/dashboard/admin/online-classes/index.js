@@ -4,6 +4,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import AdminClassesTable from "@/components/admin/online-classes/AdminClassesTable";
 import { fetchAdminClasses } from "@/services/admin/classService";
+import { FaChalkboardTeacher, FaPlus } from "react-icons/fa";
 
 function AdminOnlineClassesPage() {
   const [classes, setClasses] = useState([]);
@@ -28,10 +29,15 @@ function AdminOnlineClassesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">📚 Manage Online Classes</h1>
-        <Link href="/dashboard/admin/online-classes/create" className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200">
-          ➕ Create New Class
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap">
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <FaChalkboardTeacher className="w-6 h-6" /> Manage Online Classes
+        </h1>
+        <Link
+          href="/dashboard/admin/online-classes/create"
+          className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2"
+        >
+          <FaPlus className="w-4 h-4" /> Create New Class
         </Link>
       </div>
       {error && <p className="text-red-600">{error}</p>}

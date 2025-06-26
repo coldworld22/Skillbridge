@@ -85,10 +85,12 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     try {
 
       if (action === "approve") {
-        await approveAdminClass(id);
+        const updated = await approveAdminClass(id);
         setClassList((prev) =>
           prev.map((c) =>
-            c.id === id ? { ...c, approvalStatus: "Approved" } : c
+            c.id === id
+              ? { ...c, approvalStatus: "Approved", status: updated?.status }
+              : c
           )
         );
         toast.success("Class approved");

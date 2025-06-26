@@ -210,7 +210,7 @@ exports.approveClass = catchAsync(async (req, res) => {
     type: "class_approved",
     message: `Class "${cls.title}" approved. You can now start teaching`,
   });
-  sendSuccess(res, { message: "Class approved" });
+  sendSuccess(res, cls, "Class approved");
 });
 
 exports.rejectClass = catchAsync(async (req, res) => {
