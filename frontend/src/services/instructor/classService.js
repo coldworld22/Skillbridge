@@ -117,3 +117,46 @@ export const createClassAssignment = async (classId, payload) => {
 export const deleteClassAssignment = async (assignmentId) => {
   await api.delete(`/users/classes/assignments/${assignmentId}`);
 };
+
+// Fetch upcoming schedule events for the current instructor
+// Combines class start dates and lesson times
+export const fetchInstructorScheduleEvents = async () => {
+  const classes = await fetchInstructorClasses();
+  const now = new Date();
+  const events = [];
+
+  for (const cls of classes) {
+    if (!cls.start_date) continue;
+
+    // Skip completed classes
+    if (cls.scheduleStatus === "Completed") continue;
+
+    const classStart = new Date(cls.start_date);
+    if (classStart >= now) {
+      events.push({
+        id: `class-${cls.id}`,
+        title: `Class: ${cls.title}`,
+        start: cls.start_date,
+      });
+    }
+
+    try {
+      const management = await fetchClassManagementData(cls.id);
+      management?.lessons?.forEach((lesson) => {
+        if (!lesson.start_time) return;
+        const lessonStart = new Date(lesson.start_time);
+        if (lessonStart >= now) {
+          events.push({
+            id: `lesson-${lesson.id}`,
+            title: `Lesson: ${lesson.title}`,
+            start: lesson.start_time,
+          });
+        }
+      });
+    } catch {
+      // ignore individual class errors
+    }
+  }
+
+  return events;
+};
