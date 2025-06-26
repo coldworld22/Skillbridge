@@ -13,7 +13,7 @@ exports.sendOtp = async (userId, type) => {
     type,
     code,
     expires_at: expires,
-    used: false,
+    verified: false,
     created_at: new Date(),
   });
 
@@ -22,13 +22,13 @@ exports.sendOtp = async (userId, type) => {
 
 exports.verifyOtp = async (userId, type, code) => {
   const record = await db("verifications")
-    .where({ user_id: userId, type, code, used: false })
+    .where({ user_id: userId, type, code, verified: false })
     .andWhere("expires_at", ">", new Date())
     .first();
 
   if (!record) throw new Error("Invalid or expired OTP");
 
-  await db("verifications").where({ id: record.id }).update({ used: true });
+  await db("verifications").where({ id: record.id }).update({ verified: true });
 
   const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
 
