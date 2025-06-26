@@ -192,7 +192,56 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
-        // ... existing submission logic ...
+        setUploadProgress(0);
+
+        const payload = new FormData();
+        payload.append('instructor_id', user?.id);
+        payload.append('title', formData.title);
+        if (formData.description) payload.append('description', formData.description);
+        if (formData.level) payload.append('level', formData.level);
+        if (formData.language) payload.append('language', formData.language);
+        if (formData.startDate) payload.append('start_date', formData.startDate);
+        if (formData.endDate) payload.append('end_date', formData.endDate);
+        if (formData.price) payload.append('price', Number(formData.price).toFixed(2));
+        if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
+        payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
+        payload.append('status', formData.isApproved ? 'published' : 'draft');
+        if (formData.category) payload.append('category_id', formData.category);
+        if (formData.image) payload.append('cover_image', formData.image);
+        if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
+
+        if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
+
+        const newTags = selectedTags.filter(
+          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
+        );
+        if (newTags.length) {
+          const created = await Promise.all(
+            newTags.map((t) =>
+              createClassTag({ name: t, slug: slugify(t) }).catch(() => null)
+            )
+          );
+          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
+        }
+
+        const newClass = await createInstructorClass(payload, (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setUploadProgress(percent);
+        });
+
+        await Promise.all(
+          formData.lessons.map(async (lesson) => {
+            const lessonData = new FormData();
+            lessonData.append('title', lesson.title);
+            if (lesson.duration) lessonData.append('duration', lesson.duration);
+            if (lesson.resource) lessonData.append('resource', lesson.resource);
+            lessonData.append('start_time', lesson.start_time);
+            return createClassLesson(newClass.id, lessonData).catch(() => null);
+          })
+        );
+
+        toast.success('Class created successfully');
+        router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
         toast.error(error.response?.data?.message || 'Failed to create class');
