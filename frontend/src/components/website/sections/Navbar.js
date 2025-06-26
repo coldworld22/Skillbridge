@@ -41,6 +41,9 @@ const Navbar = () => {
 
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+
+  const startPolling = useNotificationStore((state) => state.startPolling);
+
   const markRead = useNotificationStore((state) => state.markRead);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -87,8 +90,13 @@ const Navbar = () => {
   }, [user, fetchCart]);
 
   useEffect(() => {
-    if (user) fetchNotifications();
-  }, [user, fetchNotifications]);
+
+    if (user) {
+      fetchNotifications();
+      startPolling();
+    }
+  }, [user, fetchNotifications, startPolling]);
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -172,7 +180,13 @@ const Navbar = () => {
                       <li
                         key={note.id}
                         onClick={() => markRead(note.id)}
-                        className={`flex justify-between items-center hover:bg-gray-50 p-2 rounded-md cursor-pointer ${note.read ? 'text-gray-400' : ''}`}
+
+                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
+                          note.read
+                            ? 'text-gray-400 bg-gray-50'
+                            : 'bg-yellow-50'
+                        }`}
+
                       >
                         <span>{note.message}</span>
                         {!note.read && (
@@ -318,7 +332,6 @@ const Navbar = () => {
                 </ul>
               </div>
             )}
-
 
 
 
