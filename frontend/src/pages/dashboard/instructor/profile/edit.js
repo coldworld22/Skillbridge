@@ -76,7 +76,7 @@ export default function InstructorProfileEdit() {
     date_of_birth: "",
     experience: 0,
     availability: false,
-    pricing_amount: "",
+    pricing_amount: undefined,
     pricing_currency: "USD",
     expertise: [],
     socialLinks: {},
@@ -116,12 +116,13 @@ export default function InstructorProfileEdit() {
         });
 
         // Split pricing if it exists in format "100 USD"
-        let pricing_amount = "";
+        let pricing_amount;
         let pricing_currency = "USD";
         if (instructor?.pricing) {
           const pricingParts = instructor.pricing.split(" ");
           if (pricingParts.length === 2) {
-            pricing_amount = parseFloat(pricingParts[0]) || "";
+            const amount = parseFloat(pricingParts[0]);
+            pricing_amount = isNaN(amount) ? undefined : amount;
             pricing_currency = pricingParts[1] || "USD";
           }
         }
@@ -267,9 +268,10 @@ export default function InstructorProfileEdit() {
       setIsSubmitting(true);
 
       // Combine pricing amount and currency
-      const pricing = formData.pricing_amount
-        ? `${formData.pricing_amount} ${formData.pricing_currency}`
-        : "";
+      const pricing =
+        typeof formData.pricing_amount === "number"
+          ? `${formData.pricing_amount} ${formData.pricing_currency}`
+          : "";
 
       const social_links = Object.entries(formData.socialLinks || {})
         .filter(([, url]) => url.trim() !== "")
@@ -308,8 +310,11 @@ export default function InstructorProfileEdit() {
         experience: fresh.instructor?.experience || 0,
         availability: fresh.instructor?.availability === "available",
         pricing_amount: fresh.instructor?.pricing
-          ? parseFloat(fresh.instructor.pricing.split(" ")[0])
-          : "",
+          ? (() => {
+              const amt = parseFloat(fresh.instructor.pricing.split(" ")[0]);
+              return isNaN(amt) ? undefined : amt;
+            })()
+          : undefined,
         pricing_currency: fresh.instructor?.pricing
           ? fresh.instructor.pricing.split(" ")[1]
           : "USD",
@@ -563,8 +568,14 @@ export default function InstructorProfileEdit() {
                   min="0"
                   step="0.01"
                   name="pricing_amount"
-                  value={formData.pricing_amount}
-                  onChange={(e) => setFormData({ ...formData, pricing_amount: parseFloat(e.target.value) || "" })}
+                  value={formData.pricing_amount ?? ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pricing_amount:
+                        e.target.value === "" ? undefined : parseFloat(e.target.value),
+                    })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="Amount (e.g., 100)"
                 />
