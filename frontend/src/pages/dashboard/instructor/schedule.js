@@ -5,7 +5,8 @@ import { fetchInstructorScheduleEvents } from "@/services/instructor/classServic
 import useScheduleStore from "@/store/schedule/scheduleStore";
 
 export default function InstructorSchedule() {
-  const { events, clear, addEvents } = useScheduleStore();
+  const { events, clear, addEvents, prunePastEvents } = useScheduleStore();
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -15,6 +16,7 @@ export default function InstructorSchedule() {
         const data = await fetchInstructorScheduleEvents();
         clear();
         addEvents(data);
+        prunePastEvents();
       } catch (err) {
         console.error("Failed to load schedule", err);
       } finally {
@@ -22,7 +24,8 @@ export default function InstructorSchedule() {
       }
     };
     load();
-  }, [clear, addEvents]);
+  }, [clear, addEvents, prunePastEvents]);
+
 
 
   return (
