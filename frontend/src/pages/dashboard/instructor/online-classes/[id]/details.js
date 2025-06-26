@@ -92,6 +92,12 @@ export default function InstructorClassDetailPage() {
             >
               🚀 Manage Class
             </Link>
+            <Link
+              href={`/dashboard/instructor/online-classes/${id}/edit`}
+              className="bg-gray-700 text-white px-4 py-2 rounded shadow hover:bg-gray-800 text-sm"
+            >
+              ✏️ Edit Class
+            </Link>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import CalendarView from "@/components/shared/CalendarView";
+import useScheduleStore from "@/store/schedule/scheduleStore";
 
 const mockBookings = [
   {
@@ -92,6 +93,7 @@ const mockBookings = [
 
 
 export default function InstructorSchedule() {
+  const scheduleEvents = useScheduleStore((state) => state.events);
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
@@ -107,8 +109,8 @@ export default function InstructorSchedule() {
         }
       }));
 
-    setEvents(confirmed);
-  }, []);
+    setEvents([...confirmed, ...scheduleEvents]);
+  }, [scheduleEvents]);
 
   return (
     <InstructorLayout>
@@ -116,7 +118,13 @@ export default function InstructorSchedule() {
         title="My Teaching Schedule"
         events={events}
         onEventClick={(info) => {
-          alert(`📚 ${info.event.extendedProps.subject}\n👤 Student: ${info.event.extendedProps.student}`);
+          const sub = info.event.extendedProps?.subject;
+          const student = info.event.extendedProps?.student;
+          if (sub && student) {
+            alert(`📚 ${sub}\n👤 Student: ${student}`);
+          } else {
+            alert(info.event.title);
+          }
         }}
       />
     </InstructorLayout>
