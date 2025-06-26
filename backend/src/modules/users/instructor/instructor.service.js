@@ -35,6 +35,7 @@ const getInstructorProfile = async (userId) => {
     .select(
       "expertise",
       "experience",
+      "bio",
       "certifications",
       "availability",
       "pricing",
