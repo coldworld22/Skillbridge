@@ -189,6 +189,7 @@ export default function Header() {
                 transition={{ duration: 0.2 }}
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
+                <h4 className="text-base font-semibold mb-2 border-b pb-1 px-4">Messages</h4>
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
                   {messages.slice(0, 10).map((m) => (
                     <li
