@@ -6,6 +6,7 @@ const db = require("../../../config/database");
 const fs = require("fs");
 const path = require("path");
 const instructorService = require("./instructor.service");
+const notificationService = require("../../notifications/notifications.service");
 
 
 /**
@@ -150,6 +151,11 @@ exports.updateProfile = async (req, res) => {
     );
 
     const updated = await instructorService.getInstructorProfile(userId);
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "profile_update",
+      message: "Your profile was updated successfully",
+    });
     res.json(updated);
   } catch (err) {
     console.error("Profile update error:", err);

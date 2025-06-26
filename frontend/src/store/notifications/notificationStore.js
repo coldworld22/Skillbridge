@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { toast } from "react-toastify";
 import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
 
 const useNotificationStore = create((set, get) => ({
   items: [],
@@ -14,7 +14,7 @@ const useNotificationStore = create((set, get) => ({
     try {
       const data = await getNotifications();
       const filtered = data.filter(
-        (n) => !(n.read && n.read_at && new Date() - new Date(n.read_at) > DAY_MS)
+        (n) => !(n.read && n.read_at && new Date() - new Date(n.read_at) > HOUR_MS)
       );
       const prevUnread = get().items.filter((n) => !n.read).length;
       const unread = filtered.filter((n) => !n.read).length;
@@ -48,11 +48,11 @@ const useNotificationStore = create((set, get) => ({
               n.id === id &&
               n.read &&
               n.read_at &&
-              new Date() - new Date(n.read_at) >= DAY_MS
+              new Date() - new Date(n.read_at) >= HOUR_MS
             )
         ),
       }));
-    }, DAY_MS);
+    }, HOUR_MS);
   },
 
   startPolling: () => {
