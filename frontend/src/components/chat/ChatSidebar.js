@@ -20,7 +20,7 @@ const ChatSidebar = ({
   const [sortedUsers, setSortedUsers] = useState([]);
   const [sortedGroups, setSortedGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchFilter, setSearchFilter] = useState("name");
+  const [searchFilter, setSearchFilter] = useState("all");
   const [pinnedChats, setPinnedChats] = useState([]);
 
   // ✅ Sort users by online status & last active
@@ -40,7 +40,13 @@ const ChatSidebar = ({
   const filteredUsers = sortedUsers.filter((user) => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
-    return user.name?.toLowerCase().includes(term);
+
+    const fields = [];
+    if (searchFilter === "name" || searchFilter === "all") fields.push(user.name);
+    if (searchFilter === "email" || searchFilter === "all") fields.push(user.email);
+    if (searchFilter === "phone" || searchFilter === "all") fields.push(user.phone);
+
+    return fields.some((f) => f && f.toLowerCase().includes(term));
   });
 
   // ✅ Function to Pin/Unpin Chats
@@ -62,12 +68,22 @@ const ChatSidebar = ({
           <FaSearch className="text-gray-400 absolute left-3" />
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search by name, email or phone"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-3 py-2 bg-gray-700 text-white w-full rounded-md focus:outline-none"
           />
         </div>
+        <select
+          className="bg-gray-700 text-white p-2 rounded-md focus:outline-none"
+          value={searchFilter}
+          onChange={(e) => setSearchFilter(e.target.value)}
+        >
+          <option value="all">All</option>
+          <option value="name">Name</option>
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
+        </select>
       </div>
 
       {/* 📌 Pinned Chats */}
@@ -141,6 +157,9 @@ const ChatSidebar = ({
             </button>
           </div>
         ))}
+        {filteredUsers.length === 0 && (
+          <p className="text-gray-400 text-center">No chats found.</p>
+        )}
       </div>
 
       {/* 🟢 Suggested Users */}
