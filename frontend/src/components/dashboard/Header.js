@@ -174,7 +174,11 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
+<<<<<<< 33j1vt-codex/handle-notification-read-status-in-navbar
+                  {notifications.slice(0, 10).map((n) => (
+=======
                   {notifications.map((n) => (
+>>>>>>> master
                     <li
                       key={n.id}
                       onClick={() => markRead(n.id)}
@@ -187,6 +191,20 @@ export default function Header() {
                     <li className="px-4 py-2 text-center text-sm text-gray-500">No notifications</li>
                   )}
                 </ul>
+                {notifications.length > 10 && (
+                  <div className="mt-2 text-center">
+                    <Link
+                      href={
+                        userRole
+                          ? `/dashboard/${userRole}/notifications`
+                          : '/notifications'
+                      }
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      View All
+                    </Link>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
