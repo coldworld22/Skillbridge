@@ -178,8 +178,6 @@ export default function Login() {
           </motion.button>
         </form>
 
-        <div className="mt-4 text-center text-gray-500 text-sm">or continue with</div>
-
         <SocialLogin />
 
         <p className="text-center mt-6 text-gray-400 text-sm">
