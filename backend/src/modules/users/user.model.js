@@ -88,6 +88,13 @@ exports.findByPhone = async (phone) => {
   return db("users").where({ phone }).first();
 };
 
+// Fetch Admin and SuperAdmin users
+exports.findAdmins = () => {
+  return db("users")
+    .select("id")
+    .whereIn("role", ["Admin", "SuperAdmin"]);
+};
+
 
 /**
  * ➕ Insert a new user

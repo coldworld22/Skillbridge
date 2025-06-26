@@ -61,6 +61,17 @@ exports.registerUser = async (data) => {
     message: "Welcome to SkillBridge!",
   });
 
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_user",
+        message: `${newUser.full_name} joined as ${newUser.role}`,
+      })
+    )
+  );
+
   return { accessToken, refreshToken, user: { ...newUser, roles } };
 };
 

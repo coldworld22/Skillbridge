@@ -199,20 +199,18 @@ export default function Header() {
                     <li className="px-4 py-2 text-center text-sm text-gray-500">No notifications</li>
                   )}
                 </ul>
-                {notifications.length > 10 && (
-                  <div className="mt-2 text-center">
-                    <Link
-                      href={
-                        userRole
-                          ? `/dashboard/${userRole}/notifications`
-                          : '/notifications'
-                      }
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View All
-                    </Link>
-                  </div>
-                )}
+                <div className="mt-2 text-center">
+                  <Link
+                    href={
+                      userRole
+                        ? `/dashboard/${userRole}/notifications`
+                        : '/notifications'
+                    }
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    View All
+                  </Link>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
