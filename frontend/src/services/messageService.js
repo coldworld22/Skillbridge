@@ -1,4 +1,6 @@
+
 import api from "@/services/api/api";
+
 
 export const getUsers = async () => {
   const res = await api.get("/chat/users");
@@ -18,4 +20,5 @@ export const getMessages = async () => {
 export const markMessageAsRead = async (id) => {
   const res = await api.patch(`/messages/${id}/read`);
   return res.data.data || res.data;
+
 };

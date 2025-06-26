@@ -274,11 +274,13 @@ exports.changePassword = async (req, res) => {
         message: "Your password was changed successfully",
     });
 
+
     await messageService.createMessage({
         sender_id: userId,
         receiver_id: userId,
         message: "Your password was changed successfully",
     });
+
 
     res.json({ message: "Password changed successfully." });
 };

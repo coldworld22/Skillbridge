@@ -26,6 +26,7 @@ const useMessageStore = create((set, get) => ({
         );
       }
       set({ items: filtered, loading: false });
+
     } catch (err) {
       set({ loading: false });
     }
@@ -57,7 +58,9 @@ const useMessageStore = create((set, get) => ({
 
   startPolling: () => {
     if (get().poller) return;
+
     const interval = setInterval(() => get().fetch(true), 60000);
+
     set({ poller: interval });
   },
 
