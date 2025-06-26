@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const instructorService = require("./instructor.service");
 const notificationService = require("../../notifications/notifications.service");
+const messageService = require("../../messages/messages.service");
 
 
 /**
@@ -272,6 +273,14 @@ exports.changePassword = async (req, res) => {
         type: "security",
         message: "Your password was changed successfully",
     });
+
+
+    await messageService.createMessage({
+        sender_id: userId,
+        receiver_id: userId,
+        message: "Your password was changed successfully",
+    });
+
 
     res.json({ message: "Password changed successfully." });
 };

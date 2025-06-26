@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "react-toastify";
 import { getMessages, markMessageAsRead } from "@/services/messageService";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -8,11 +9,25 @@ const useMessageStore = create((set, get) => ({
   loading: false,
   poller: null,
 
-  fetch: async () => {
+
+  fetch: async (showAlert = false) => {
     set({ loading: true });
     try {
       const data = await getMessages();
-      set({ items: data, loading: false });
+      const filtered = data.filter(
+        (m) => !(m.read && m.read_at && new Date() - new Date(m.read_at) > HOUR_MS)
+      );
+      const prevUnread = get().items.filter((m) => !m.read).length;
+      const unread = filtered.filter((m) => !m.read).length;
+      if (showAlert && unread > prevUnread) {
+        toast.info(
+          `You have ${unread - prevUnread} new message${
+            unread - prevUnread > 1 ? "s" : ""
+          }`
+        );
+      }
+      set({ items: filtered, loading: false });
+
     } catch (err) {
       set({ loading: false });
     }
@@ -44,7 +59,9 @@ const useMessageStore = create((set, get) => ({
 
   startPolling: () => {
     if (get().poller) return;
-    const interval = setInterval(() => get().fetch(), 60000);
+
+    const interval = setInterval(() => get().fetch(true), 60000);
+
     set({ poller: interval });
   },
 
