@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { FaUserCheck, FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
 import { IoMdTime } from "react-icons/io";
 import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
@@ -89,8 +91,16 @@ export default function InstructorProfilePage() {
     ? new Date(instructor.created_at).toLocaleDateString()
     : null;
 
+  const role = user?.role?.toLowerCase();
+  let Layout = StudentLayout;
+  if (role === "instructor") {
+    Layout = InstructorLayout;
+  } else if (role === "admin" || role === "superadmin") {
+    Layout = AdminLayout;
+  }
+
   return (
-    <StudentLayout>
+    <Layout>
       <section className="py-8 px-4 sm:px-6 max-w-4xl mx-auto">
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -214,6 +224,6 @@ export default function InstructorProfilePage() {
           />
         )}
       </section>
-    </StudentLayout>
+    </Layout>
   );
 }
