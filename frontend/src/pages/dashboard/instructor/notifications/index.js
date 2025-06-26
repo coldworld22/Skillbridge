@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
-
 import useNotificationStore from '@/store/notifications/notificationStore';
 
 export default function InstructorNotificationsPage() {
@@ -30,29 +29,6 @@ export default function InstructorNotificationsPage() {
     // No backend endpoint for deletion; remove locally
     // Deleted notifications will automatically be cleaned up after an hour
     markRead(id);
-
-
-export default function InstructorNotificationsPage() {
-  const [notifications, setNotifications] = useState([]);
-  const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    setNotifications(mockNotifications);
-  }, []);
-
-  const handleMarkRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const handleDelete = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-
   };
 
   const filtered = notifications.filter((n) =>
