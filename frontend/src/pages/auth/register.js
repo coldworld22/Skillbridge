@@ -114,7 +114,8 @@ export default function Register() {
             value={watch("phone")}
             onChange={(val) => setValue("phone", val)}
             defaultCountry="SA"
-            className="!w-full !px-3 !py-2 !bg-gray-700 !text-white !border !border-gray-600 !rounded-md focus:!outline-none focus:!ring-2 focus:!ring-yellow-500"
+            placeholder="Enter phone number"
+            className="!w-full !px-3 !py-2 !bg-gray-700 !text-white !border !border-gray-600 !rounded-md !placeholder-gray-400 focus:!outline-none focus:!ring-2 focus:!ring-yellow-500"
           />
           {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
         </div>
@@ -125,7 +126,7 @@ export default function Register() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white"
+              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
               placeholder="Create a password"
               {...register("password")}
             />
@@ -142,7 +143,7 @@ export default function Register() {
           <div className="relative">
             <input
               type={showConfirmPassword ? "text" : "password"}
-              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white"
+              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
               placeholder="Confirm password"
               {...register("confirmPassword")}
             />
