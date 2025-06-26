@@ -30,7 +30,7 @@ exports.getProfile = async (req, res) => {
     .where({ user_id: userId })
     .select(
       "expertise", "experience", "certifications",
-      "availability", "pricing", "demo_video_url"
+      "availability", "pricing", "demo_video_url", "bio"
     );
 
   const socialLinks = await db("user_social_links")
@@ -128,6 +128,7 @@ exports.updateProfile = async (req, res) => {
     date_of_birth,
     expertise,
     experience,
+    bio,
     certifications,
     availability,
     pricing,
@@ -142,6 +143,7 @@ exports.updateProfile = async (req, res) => {
       {
         expertise,
         experience,
+        bio,
         certifications,
         availability,
         pricing,
