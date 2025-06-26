@@ -12,6 +12,7 @@ import withAuthProtection from '@/hooks/withAuthProtection';
 
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import { createAdminClass } from '@/services/admin/classService';
+import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
