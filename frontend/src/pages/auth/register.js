@@ -15,11 +15,13 @@ import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 
 export default function Register() {
   const router = useRouter();
   const { register: registerUser, user, hasHydrated } = useAuthStore();
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const {
     register,
@@ -52,6 +54,7 @@ export default function Register() {
       const { full_name, email, phone, password, role } = data;
       await registerUser({ full_name, email, phone, password, role });
       toast.success("Registration successful");
+      fetchNotifications();
       router.push("/auth/login");
     } catch (err) {
       const msg =

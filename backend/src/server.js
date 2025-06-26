@@ -69,6 +69,7 @@ const payoutRoutes = require("./modules/payouts/payouts.routes");
 const adsRoutes = require("./modules/ads/ads.routes");
 const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
 const cartRoutes = require("./modules/cart/cart.routes");
+const notificationRoutes = require("./modules/notifications/notifications.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -139,6 +140,7 @@ app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
 app.use("/api/ads", adsRoutes); // 📢 Advertisements
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
 app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
+app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
