@@ -9,7 +9,6 @@ const useMessageStore = create((set, get) => ({
   loading: false,
   poller: null,
 
-
   fetch: async (showAlert = false) => {
     set({ loading: true });
     try {
