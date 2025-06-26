@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import StudentLayout from '@/components/layouts/StudentLayout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
 import useNotificationStore from '@/store/notifications/notificationStore';
 
-export default function StudentNotificationsPage() {
+export default function AdminNotificationsPage() {
   const [filter, setFilter] = useState('all');
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
@@ -36,7 +36,7 @@ export default function StudentNotificationsPage() {
   );
 
   return (
-    <StudentLayout>
+    <AdminLayout>
       <div className="min-h-screen p-6 bg-white text-gray-900">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-yellow-500">🔔 Notifications</h1>
@@ -108,6 +108,6 @@ export default function StudentNotificationsPage() {
           )}
         </div>
       </div>
-    </StudentLayout>
+    </AdminLayout>
   );
 }
