@@ -201,7 +201,7 @@ export default function Header() {
                           : "bg-yellow-50 dark:bg-gray-600"
                       }`}
                     >
-                      {m.text}
+                      {m.message}
                     </li>
                   ))}
                   {messages.length === 0 && (

@@ -198,7 +198,7 @@ const Navbar = () => {
                           msg.read ? "text-gray-400 bg-gray-50" : "bg-yellow-50"
                         }`}
                       >
-                        <span>{msg.text}</span>
+                        <span>{msg.message}</span>
                         {!msg.read && (
                           <span className="ml-2 text-xs text-red-500">new</span>
                         )}
