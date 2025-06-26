@@ -1,35 +1,24 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Smooth animations
 import { FaCheckCircle, FaTimesCircle, FaClock, FaBell, FaTrash } from "react-icons/fa";
+import useNotificationStore from "@/store/notifications/notificationStore";
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const notifications = useNotificationStore((state) => state.items);
+  const loading = useNotificationStore((state) => state.loading);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const startPolling = useNotificationStore((state) => state.startPolling);
+  const markRead = useNotificationStore((state) => state.markRead);
 
   useEffect(() => {
-    // ✅ Mock notifications (Replace with API call later)
-    setTimeout(() => {
-      setNotifications([
-        { id: 1, message: "New course available!", type: "info", read: false, time: "5 min ago" },
-        { id: 2, message: "Your assignment is due tomorrow.", type: "warning", read: false, time: "1 hour ago" },
-        { id: 3, message: "Payment received successfully.", type: "success", read: true, time: "Yesterday" },
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    fetchNotifications();
+    startPolling();
+  }, [fetchNotifications, startPolling]);
 
-  // ✅ Mark as Read
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
-    );
-  };
-
-  // ✅ Clear All Notifications with Confirmation
   const clearAllNotifications = () => {
     if (window.confirm("Are you sure you want to delete all notifications? 🚀")) {
-      setNotifications([]);
+      notifications.forEach((n) => !n.read && markRead(n.id));
     }
   };
 
@@ -96,7 +85,7 @@ const NotificationsPage = () => {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => markAsRead(notif.id)}
+                        onClick={() => markRead(notif.id)}
                         className="px-3 py-1 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-bold"
                       >
                         Mark as Read
