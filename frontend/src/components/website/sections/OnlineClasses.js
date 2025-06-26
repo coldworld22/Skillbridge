@@ -19,6 +19,7 @@ import {
   getMyLikedClasses,
 } from "@/services/classService";
 import useAuthStore from "@/store/auth/authStore";
+import { toast } from "react-toastify";
 
 // Initial category options include the special "Trending" filter
 const initialCategories = ["All", "Trending"];
@@ -43,6 +44,7 @@ const OnlineClasses = () => {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [likedIds, setLikedIds] = useState([]);
   const user = useAuthStore((state) => state.user);
+  const isStudent = user?.role?.toLowerCase() === 'student';
   const router = useRouter();
 
   useEffect(() => {
@@ -71,7 +73,7 @@ const OnlineClasses = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== 'student') return;
+    if (!user || !isStudent) return;
     const load = async () => {
       try {
         const w = await getMyClassWishlist();
@@ -162,6 +164,10 @@ const OnlineClasses = () => {
                   <button
                     onClick={async () => {
                       if (!user) return router.push('/auth/login');
+                      if (!isStudent) {
+                        toast.error('Only students can like classes.');
+                        return;
+                      }
                       if (likedIds.includes(classItem.id)) {
                         await unlikeClass(classItem.id);
                         setLikedIds(likedIds.filter((i) => i !== classItem.id));
@@ -177,6 +183,10 @@ const OnlineClasses = () => {
                   <button
                     onClick={async () => {
                       if (!user) return router.push('/auth/login');
+                      if (!isStudent) {
+                        toast.error('Only students can save classes.');
+                        return;
+                      }
                       if (wishlistIds.includes(classItem.id)) {
                         await removeClassFromWishlist(classItem.id);
                         setWishlistIds(wishlistIds.filter((i) => i !== classItem.id));
