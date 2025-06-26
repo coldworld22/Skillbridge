@@ -7,8 +7,15 @@ exports.createNotification = async ({ user_id, type, message }) => {
   return row;
 };
 
-exports.getUserNotifications = (userId) => {
-  return db("notifications").where({ user_id: userId }).orderBy("created_at", "desc");
+exports.getUserNotifications = async (userId) => {
+  const threshold = new Date(Date.now() - 60 * 60 * 1000);
+  await db("notifications")
+    .where({ read: true })
+    .andWhere("read_at", "<", threshold)
+    .del();
+  return db("notifications")
+    .where({ user_id: userId })
+    .orderBy("created_at", "desc");
 };
 
 exports.markAsRead = async (id, userId) => {

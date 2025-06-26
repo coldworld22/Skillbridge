@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { z } from "zod";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
 import {
   getInstructorProfile,
   updateInstructorProfile,
@@ -62,6 +63,7 @@ const currencyOptions = [
 export default function InstructorProfileEdit() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -263,6 +265,7 @@ export default function InstructorProfileEdit() {
       }));
 
       toast.success("Profile updated successfully!");
+      await fetchNotifications();
       router.push("/dashboard/instructor");
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
