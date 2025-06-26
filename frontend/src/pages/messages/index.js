@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -15,6 +15,7 @@ const MessagesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
+  const searchInputRef = useRef(null);
 
   const messages = useMessageStore((state) => state.items);
   const fetchMessages = useMessageStore((state) => state.fetch);
@@ -73,6 +74,7 @@ const MessagesPage = () => {
         <div className="flex items-center bg-gray-700 p-3 rounded-lg mb-6">
           <FaSearch className="text-gray-400 mr-2" />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search users, groups..."
             value={searchTerm}
@@ -99,6 +101,19 @@ const MessagesPage = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+          {messages.length === 0 && !selectedChat && (
+            <div className="text-center">
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                onClick={() => {
+                  setSearchTerm("");
+                  searchInputRef.current?.focus();
+                }}
+              >
+                Start New Message
+              </button>
             </div>
           )}
         </div>
