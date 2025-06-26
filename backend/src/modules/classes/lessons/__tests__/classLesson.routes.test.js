@@ -60,6 +60,17 @@ describe('Class lesson routes', () => {
     expect(service.createLesson).toHaveBeenCalled();
   });
 
+  test('create lesson with resource file', async () => {
+    service.createLesson.mockResolvedValue({ id: '1' });
+    const res = await request(app)
+      .post('/classes/lessons/class/abc')
+      .field('title', 'File Lesson')
+      .field('start_time', '2024-01-10T10:00:00Z')
+      .attach('resource', Buffer.from('test'), 'test.pdf');
+    expect(res.statusCode).toBe(200);
+    expect(service.createLesson).toHaveBeenCalled();
+  });
+
   test('update lesson', async () => {
     service.updateLesson.mockResolvedValue({ id: '1' });
     service.getById.mockResolvedValue({ id: '1', class_id: 'abc' });
