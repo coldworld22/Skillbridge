@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
-import ChatSidebar from "@/components/chat/ChatSidebar"; 
+import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatNotifications from "@/components/chat/ChatNotifications";
 import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots } from "react-icons/fa";
+import useMessageStore from "@/store/messages/messageStore";
 
 const MessagesPage = () => {
   const [users, setUsers] = useState([]);
@@ -15,11 +16,18 @@ const MessagesPage = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
 
+  const messages = useMessageStore((state) => state.items);
+  const fetchMessages = useMessageStore((state) => state.fetch);
+  const startPolling = useMessageStore((state) => state.startPolling);
+  const markMessageRead = useMessageStore((state) => state.markRead);
+
   const router = useRouter();
 
   useEffect(() => {
     getUsers().then(setUsers).catch(() => setUsers([]));
     getGroups().then(setGroups).catch(() => setGroups([]));
+    fetchMessages();
+    startPolling();
   }, []);
 
   useEffect(() => {
@@ -71,6 +79,28 @@ const MessagesPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 bg-gray-600 text-white rounded-md focus:outline-none"
           />
+        </div>
+
+        <div className="mb-8 space-y-3">
+          {messages.length > 0 && (
+            <div>
+              <h3 className="text-lg text-yellow-400 mb-2">System Messages</h3>
+              <ul className="space-y-2">
+                {messages.map((msg) => (
+                  <li
+                    key={msg.id}
+                    onClick={() => !msg.read && markMessageRead(msg.id)}
+                    className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between ${msg.read ? "opacity-70" : ""}`}
+                  >
+                    <span>{msg.message}</span>
+                    {!msg.read && (
+                      <span className="text-xs text-red-400 ml-2">new</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {!selectedChat ? (
