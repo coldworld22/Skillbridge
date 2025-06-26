@@ -136,6 +136,17 @@ exports.updateClass = catchAsync(async (req, res) => {
     await service.addClassTags(cls.id, tagIds);
     cls.tags = await service.getClassTags(cls.id);
   }
+  if (
+    req.user.role !== "instructor" &&
+    existing.instructor_id &&
+    existing.instructor_id !== req.user.id
+  ) {
+    await notificationService.createNotification({
+      user_id: existing.instructor_id,
+      type: "class_updated",
+      message: `Your class "${cls.title}" was updated by an admin`,
+    });
+  }
   sendSuccess(res, cls);
 });
 
@@ -178,6 +189,17 @@ exports.getClassAnalytics = catchAsync(async (req, res) => {
 
 exports.toggleClassStatus = catchAsync(async (req, res) => {
   const cls = await service.togglePublishStatus(req.params.id);
+  if (
+    req.user.role !== "instructor" &&
+    cls.instructor_id &&
+    cls.instructor_id !== req.user.id
+  ) {
+    await notificationService.createNotification({
+      user_id: cls.instructor_id,
+      type: "class_status_changed",
+      message: `An admin changed the status of your class "${cls.title}" to ${cls.status}`,
+    });
+  }
   sendSuccess(res, cls);
 });
 
@@ -192,7 +214,24 @@ exports.approveClass = catchAsync(async (req, res) => {
 });
 
 exports.rejectClass = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "Rejected", req.body.reason);
+  const cls = await service.updateModeration(
+    req.params.id,
+    "Rejected",
+    req.body.reason
+  );
+  if (
+    req.user.role !== "instructor" &&
+    cls.instructor_id &&
+    cls.instructor_id !== req.user.id
+  ) {
+    await notificationService.createNotification({
+      user_id: cls.instructor_id,
+      type: "class_rejected",
+      message: `Your class "${cls.title}" was rejected${
+        req.body.reason ? `: ${req.body.reason}` : ""
+      }`,
+    });
+  }
   sendSuccess(res, { message: "Class rejected" });
 });
 

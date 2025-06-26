@@ -511,7 +511,7 @@ function CreateOnlineClass() {
                         }}
                         className="text-red-600 text-sm flex items-center gap-1 hover:underline"
                       >
-                        <FaTrash /> Remove
+                        <FaTrash className="w-4 h-4" /> Remove
                       </button>
                     </div>
                   </div>
