@@ -4,6 +4,9 @@ const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
 const tagService = require("./classTag.service");
 const notificationService = require("../notifications/notifications.service");
+
+const userModel = require("../users/user.model");
+
 const slugify = require("slugify");
 const db = require("../../config/database");
 
@@ -59,6 +62,19 @@ exports.createClass = catchAsync(async (req, res) => {
     message:
       "New class added successfully. It's under review and will be available after we approve it",
   });
+
+  const instructor = await userModel.findById(cls.instructor_id);
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_class",
+        message: `Instructor ${instructor.full_name} added new class \"${cls.title}\" waiting for review`,
+      })
+    )
+  );
+
   sendSuccess(res, cls, "Class created");
 });
 

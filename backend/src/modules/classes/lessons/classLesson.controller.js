@@ -4,6 +4,9 @@ const { sendSuccess } = require("../../../utils/response");
 const service = require("./classLesson.service");
 const classService = require("../class.service");
 const AppError = require("../../../utils/AppError");
+const fs = require("fs");
+const path = require("path");
+
 
 exports.getLessonsByClass = catchAsync(async (req, res) => {
   const lessons = await service.getByClass(req.params.classId);
@@ -26,13 +29,18 @@ exports.createLesson = catchAsync(async (req, res) => {
     id: uuidv4(),
     class_id: req.params.classId,
   };
+  if (req.file) {
+    data.topic_file_url = `/uploads/lessons/${req.file.filename}`;
+  }
   const lesson = await service.createLesson(data);
   sendSuccess(res, lesson, "Lesson created");
 });
 
 exports.updateLesson = catchAsync(async (req, res) => {
+
+  const existing = await service.getById(req.params.lessonId);
   if (req.body.start_time) {
-    const existing = await service.getById(req.params.lessonId);
+
     const cls = await classService.getClassById(existing.class_id);
     const start = new Date(req.body.start_time);
     if (
@@ -42,7 +50,15 @@ exports.updateLesson = catchAsync(async (req, res) => {
       throw new AppError("Lesson start_time must be within class date range", 400);
     }
   }
-  const lesson = await service.updateLesson(req.params.lessonId, req.body);
+  const update = { ...req.body };
+  if (req.file) {
+    if (existing?.topic_file_url) {
+      const oldPath = path.join(__dirname, '../../../', existing.topic_file_url);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    update.topic_file_url = `/uploads/lessons/${req.file.filename}`;
+  }
+  const lesson = await service.updateLesson(req.params.lessonId, update);
   sendSuccess(res, lesson, "Lesson updated");
 });
 
