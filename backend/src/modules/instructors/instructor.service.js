@@ -12,6 +12,7 @@ exports.getPublicInstructors = async () => {
       "users.is_online",
       "instructor_profiles.expertise",
       "instructor_profiles.experience",
+      "instructor_profiles.bio",
       "instructor_profiles.pricing",
       "instructor_profiles.demo_video_url"
     )
@@ -33,6 +34,7 @@ exports.getPublicInstructor = async (id) => {
       "users.created_at",
       "instructor_profiles.expertise",
       "instructor_profiles.experience",
+      "instructor_profiles.bio",
       "instructor_profiles.pricing",
       "instructor_profiles.demo_video_url"
     );
