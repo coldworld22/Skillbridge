@@ -79,6 +79,11 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   ref={chatRef}
   className="flex-1 overflow-y-auto px-3 py-2 space-y-3 bg-gray-700 rounded-md"
 >
+  {messages.length === 0 && (
+    <p className="text-center text-gray-300 mt-4">
+      No messages yet. Type below to start the conversation.
+    </p>
+  )}
   {messages.map((msg, index) => {
     const isYou = msg.sender === "You";
     return (
