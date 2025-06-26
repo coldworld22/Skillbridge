@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import formatRelativeTime from "@/utils/relativeTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import { FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
@@ -36,7 +37,10 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
       setReplyingTo(null);
     }
 
-    setMessages((prev) => [...prev, { ...newMessage, timestamp: new Date().toLocaleTimeString() }]);
+    setMessages((prev) => [
+      ...prev,
+      { ...newMessage, timestamp: new Date().toISOString() },
+    ]);
     setTyping(false);
     toast.success("Message sent!");
   };
@@ -122,7 +126,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
 
           {/* Meta info + actions */}
           <div className="flex justify-between items-center text-[10px] text-gray-300 mt-1">
-            <span className="whitespace-nowrap">{msg.timestamp}</span>
+            <span className="whitespace-nowrap">{formatRelativeTime(msg.timestamp)}</span>
             <div className="flex items-center gap-2 ml-2">
               <FaCheckDouble
                 className={`${

@@ -1,6 +1,7 @@
 import Navbar from "@/components/website/sections/Navbar";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import formatRelativeTime from "@/utils/relativeTime";
 import { FaUsers, FaPlus, FaComments, FaPaperPlane } from "react-icons/fa";
 
 const GroupChat = () => {
@@ -50,7 +51,7 @@ const GroupChat = () => {
                 >
                   <p className="text-yellow-400 font-semibold">{msg.sender}</p>
                   <p>{msg.text}</p>
-                  <p className="text-sm text-gray-400">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                  <p className="text-sm text-gray-400">{formatRelativeTime(msg.timestamp)}</p>
                 </motion.div>
               ))
             )}
