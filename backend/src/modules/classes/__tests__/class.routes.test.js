@@ -19,6 +19,7 @@ const service = require('../class.service');
 jest.mock('../../notifications/notifications.service', () => ({
   createNotification: jest.fn(),
 }));
+
 const notifications = require('../../notifications/notifications.service');
 jest.mock('../../users/user.model', () => ({
   findAdmins: jest.fn(() => [{ id: 'admin1' }]),

@@ -7,6 +7,7 @@ const AppError = require("../../../utils/AppError");
 const fs = require("fs");
 const path = require("path");
 
+
 exports.getLessonsByClass = catchAsync(async (req, res) => {
   const lessons = await service.getByClass(req.params.classId);
   sendSuccess(res, lessons);
@@ -36,8 +37,10 @@ exports.createLesson = catchAsync(async (req, res) => {
 });
 
 exports.updateLesson = catchAsync(async (req, res) => {
+
   const existing = await service.getById(req.params.lessonId);
   if (req.body.start_time) {
+
     const cls = await classService.getClassById(existing.class_id);
     const start = new Date(req.body.start_time);
     if (
