@@ -172,7 +172,7 @@ const Navbar = () => {
               {notificationOpen && (
                 <div
                   ref={dropdownRef}
-                  className="absolute right-0 mt-2 top-full bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+                  className="absolute right-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">Notifications</h4>
                   <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
@@ -198,20 +198,18 @@ const Navbar = () => {
                       <li className="text-center text-sm text-gray-500 py-2">No notifications</li>
                     )}
                   </ul>
-                  {notifications.length > 10 && (
-                    <div className="mt-2 text-center">
-                      <Link
-                        href={
-                          userRole
-                            ? `/dashboard/${userRole}/notifications`
-                            : "/notifications"
-                        }
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        View All
-                      </Link>
-                    </div>
-                  )}
+                  <div className="mt-2 text-center">
+                    <Link
+                      href={
+                        userRole
+                          ? `/dashboard/${userRole}/notifications`
+                          : "/notifications"
+                      }
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      View All
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
