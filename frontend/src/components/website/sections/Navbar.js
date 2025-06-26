@@ -15,6 +15,7 @@ import useAuthStore from "@/store/auth/authStore";
 import useAdminStore from "@/store/admin/adminStore";
 import { API_BASE_URL } from '@/config/config';
 import useCartStore from '@/store/cart/cartStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -38,14 +39,15 @@ const Navbar = () => {
 
   const { items: cartItems, fetchCart } = useCartStore();
 
+  const notifications = useNotificationStore((state) => state.items);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const startPolling = useNotificationStore((state) => state.startPolling);
+  const markRead = useNotificationStore((state) => state.markRead);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   const unreadMessages = [
     { id: 1, text: "New message from Instructor", link: "/messages" },
     { id: 2, text: "Course reminder", link: "/messages" }
-  ];
-
-  const unreadNotifications = [
-    { id: 1, text: "Assignment due soon", link: "/notifications" },
-    { id: 2, text: "Live class starts in 30 min", link: "/notifications" }
   ];
 
   useEffect(() => {
@@ -84,6 +86,13 @@ const Navbar = () => {
   useEffect(() => {
     fetchCart();
   }, [user, fetchCart]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      startPolling();
+    }
+  }, [user, fetchNotifications, startPolling]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -142,14 +151,62 @@ const Navbar = () => {
               )}
             </motion.button>
 
-            <motion.button whileHover={{ scale: 1.1 }} onClick={() => setNotificationOpen(!notificationOpen)} className="relative text-2xl">
-              <FaBell />
-              {unreadNotifications.length > 0 && (
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className="relative text-2xl"
+              >
+                <FaBell />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
-                  {unreadNotifications.length}
+                  {unreadCount}
                 </span>
+              </motion.button>
+
+              {notificationOpen && (
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 top-full bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+                >
+                  <h4 className="text-base font-semibold mb-2 border-b pb-1">Notifications</h4>
+                  <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
+                    {notifications.slice(0, 10).map((note) => (
+                      <li
+                        key={note.id}
+                        onClick={() => markRead(note.id)}
+                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
+                          note.read
+                            ? 'text-gray-400 bg-gray-50'
+                            : 'bg-yellow-50'
+                        }`}
+                      >
+                        <span>{note.message}</span>
+                        {!note.read && (
+                          <span className="ml-2 text-xs text-red-500">new</span>
+                        )}
+                      </li>
+                    ))}
+                    {notifications.length === 0 && (
+                      <li className="text-center text-sm text-gray-500 py-2">No notifications</li>
+                    )}
+                  </ul>
+                  {notifications.length > 10 && (
+                    <div className="mt-2 text-center">
+                      <Link
+                        href={
+                          userRole
+                            ? `/dashboard/${userRole}/notifications`
+                            : "/notifications"
+                        }
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        View All
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )}
-            </motion.button>
+            </div>
 
             <span className="text-sm font-semibold hidden md:inline">
               Welcome, {user.full_name?.split(" ")[0]}
@@ -267,6 +324,7 @@ const Navbar = () => {
                 </ul>
               </div>
             )}
+
 
             {cartOpen && (
               <div className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50">

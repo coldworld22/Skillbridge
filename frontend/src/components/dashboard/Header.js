@@ -16,6 +16,7 @@ import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 import { FaCog } from "react-icons/fa";
 import { toggleInstructorStatus } from "@/services/instructor/instructorService";
+import useNotificationStore from "@/store/notifications/notificationStore";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -29,6 +30,11 @@ export default function Header() {
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
+  const notifications = useNotificationStore((state) => state.items);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const startPolling = useNotificationStore((state) => state.startPolling);
+  const markRead = useNotificationStore((state) => state.markRead);
+  const unreadCount = notifications.filter((n) => !n.read).length;
   const router = useRouter();
 
   const profileLink =
@@ -86,11 +92,13 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [user]);
 
-  const notifications = [
-    "🔔 New user registered",
-    "💬 You have 2 new messages",
-    "⚙️ Settings updated",
-  ];
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      startPolling();
+    }
+  }, [user, fetchNotifications, startPolling]);
+
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
@@ -157,7 +165,7 @@ export default function Header() {
             aria-label="Toggle notifications"
           />
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-            {notifications.length}
+            {unreadCount}
           </span>
 
           <AnimatePresence>
@@ -170,12 +178,37 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
-                  {notifications.map((n, idx) => (
-                    <li key={idx} className="px-4 py-2">
-                      {n}
+                  {notifications.slice(0, 10).map((n) => (
+                    <li
+                      key={n.id}
+                      onClick={() => markRead(n.id)}
+                      className={`px-4 py-2 cursor-pointer transition ${
+                        n.read
+                          ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
+                          : "bg-yellow-50 dark:bg-gray-600"
+                      }`}
+                    >
+                      {n.message}
                     </li>
                   ))}
+                  {notifications.length === 0 && (
+                    <li className="px-4 py-2 text-center text-sm text-gray-500">No notifications</li>
+                  )}
                 </ul>
+                {notifications.length > 10 && (
+                  <div className="mt-2 text-center">
+                    <Link
+                      href={
+                        userRole
+                          ? `/dashboard/${userRole}/notifications`
+                          : '/notifications'
+                      }
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      View All
+                    </Link>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
