@@ -146,11 +146,17 @@ export default function InstructorProfileEdit() {
         ...formData,
         socialLinks: formData.socialLinks
       });
+      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
       err.errors.forEach(e => { errs[e.path[0]] = e.message });
       setErrors(errs);
+      if (err.errors?.length) {
+        toast.error(err.errors[0].message);
+      } else {
+        toast.error("Please fix the errors in the form");
+      }
       return false;
     }
   };
