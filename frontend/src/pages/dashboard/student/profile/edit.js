@@ -56,15 +56,6 @@ export default function StudentProfileEdit() {
     identityPreview: null,
   });
   const [errors, setErrors] = useState({});
-  useEffect(() => {
-  const interval = setInterval(() => {
-    console.log("🧪 Zustand hydration debug:");
-    console.log("hasHydrated:", useAuthStore.getState().hasHydrated);
-    console.log("user:", useAuthStore.getState().user);
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, []);
 
 
   useEffect(() => {
@@ -144,7 +135,7 @@ export default function StudentProfileEdit() {
       setFormData(prev => ({
         ...prev,
         avatar_url,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
       toast.success("Avatar uploaded successfully!");
     } catch (err) {
@@ -214,13 +205,15 @@ export default function StudentProfileEdit() {
         social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
       });
 
-      // ✅ Update auth store so alerts disappear immediately
+      const fresh = await getStudentProfile();
+
       setUser({
         ...user,
-        full_name: formData.full_name,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender,
+        date_of_birth: fresh.date_of_birth,
+        avatar_url: fresh.avatar_url,
         profile_complete: true,
       });
 
