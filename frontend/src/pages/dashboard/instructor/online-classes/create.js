@@ -51,8 +51,7 @@ function CreateOnlineClass() {
     imagePreview: '',
     demoVideo: null,
     demoPreview: '',
-    lessons: [],
-    lessonCount: ''
+    lessons: []
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
@@ -169,24 +168,14 @@ function CreateOnlineClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      if (!formData.title || !formData.startDate || !formData.lessonCount) {
+      if (!formData.title || !formData.startDate) {
         toast.error('Please fill in all required fields');
         return;
       }
-      const count = parseInt(formData.lessonCount, 10) || 0;
-      setFormData(prev => ({
-        ...prev,
-        lessons: Array.from({ length: count }, () => ({
-          title: '',
-          duration: '',
-          resource: null,
-          start_time: ''
-        }))
-      }));
       setCurrentStep(2);
     } else {
       // Step 2 validation and submission
-      if (formData.lessons.some(l => !l.title || !l.start_time)) {
+      if (formData.lessons.length === 0 || formData.lessons.some(l => !l.title || !l.start_time)) {
         toast.error('Please complete all lesson details');
         return;
       }
@@ -252,31 +241,32 @@ function CreateOnlineClass() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
-            <h1 className="text-2xl font-bold text-white">
-              {currentStep === 1 ? 'Create New Class' : 'Add Lesson Plan'}
-            </h1>
-            <p className="text-yellow-100 text-sm">
-              Step {currentStep} of 2
-            </p>
-          </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white rounded-xl shadow-xl mt-6">
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+        {currentStep === 1 ? '📘 Create New Class' : '📚 Add Lesson Plan'}
+      </h1>
 
-          {/* Progress Bar */}
-          <div className="px-6 pt-4">
-            <div className="w-full bg-gray-200 h-2 rounded-full">
-              <div 
-                className="bg-yellow-500 h-full rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / 2) * 100}%` }}
-              />
+      {/* Step Indicators */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          {[1, 2].map((s) => (
+            <div
+              key={s}
+              className={`flex-1 text-center text-xs sm:text-sm py-2 rounded-full mx-1 transition-all duration-300 ${currentStep === s ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-200 text-gray-600'}`}
+            >
+              Step {s}
             </div>
-          </div>
+          ))}
+        </div>
+        <div className="w-full bg-gray-200 h-2 rounded">
+          <div
+            className="bg-yellow-500 h-2 rounded transition-all duration-300"
+            style={{ width: `${(currentStep / 2) * 100}%` }}
+          />
+        </div>
+      </div>
 
-          {/* Form Content */}
-          <div className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
               <AnimatePresence mode="wait">
                 <motion.div 
                   key={currentStep} 
@@ -434,14 +424,6 @@ function CreateOnlineClass() {
                           />
                         </div>
 
-                        <FloatingInput 
-                          label="Number of Lessons *" 
-                          type="number" 
-                          name="lessonCount" 
-                          value={formData.lessonCount} 
-                          onChange={handleChange} 
-                        />
-
                         <div className="space-y-2">
                           <label className="inline-flex items-center">
                             <input
@@ -589,9 +571,24 @@ function CreateOnlineClass() {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                        Lesson Plan
-                      </h2>
+                      <div className="flex justify-between items-center">
+                        <h2 className="text-lg font-semibold text-gray-800">Lessons</h2>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData(prev => ({
+                              ...prev,
+                              lessons: [
+                                ...prev.lessons,
+                                { title: '', duration: '', start_time: '', resource: null }
+                              ]
+                            }))
+                          }
+                          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+                        >
+                          + Add Lesson
+                        </button>
+                      </div>
 
                       {formData.lessons.map((lesson, index) => (
                         <div
@@ -673,6 +670,19 @@ function CreateOnlineClass() {
                               </div>
                             </div>
                           </div>
+                          <div className="col-span-full flex justify-end mt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...formData.lessons];
+                                updated.splice(index, 1);
+                                setFormData(prev => ({ ...prev, lessons: updated }));
+                              }}
+                              className="text-red-600 text-sm flex items-center gap-1 hover:underline"
+                            >
+                              <FaTrash className="w-4 h-4" /> Remove
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -712,8 +722,6 @@ function CreateOnlineClass() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
       </div>
   );
 }
