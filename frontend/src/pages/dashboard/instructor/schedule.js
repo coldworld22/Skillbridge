@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import CalendarView from "@/components/shared/CalendarView";
-import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
-
+import useScheduleStore from "@/store/schedule/scheduleStore";
 import useScheduleStore from "@/store/schedule/scheduleStore";
 
 export default function InstructorSchedule() {
-  const { events, clear, addEvents } = useScheduleStore();
-  const [loading, setLoading] = useState(false);
+  const scheduleEvents = useScheduleStore((state) => state.events);
+  const [events, setEvents] = useState([]);
 
 
   useEffect(() => {
@@ -26,6 +25,10 @@ export default function InstructorSchedule() {
     };
     load();
   }, [clear, addEvents]);
+
+
+    setEvents([...confirmed, ...scheduleEvents]);
+  }, [scheduleEvents]);
 
 
   return (
