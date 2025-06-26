@@ -14,6 +14,7 @@ import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
 import { fetchClassTags } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
+import useScheduleStore from '@/store/schedule/scheduleStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -25,6 +26,7 @@ import 'react-quill/dist/quill.snow.css';
 function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const addEvents = useScheduleStore((state) => state.addEvents);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -234,6 +236,20 @@ function CreateOnlineClass() {
             return createClassLesson(newClass.id, lessonData).catch(() => null);
           })
         );
+
+        const events = [
+          {
+            id: `class-${newClass.id}`,
+            title: `Class: ${newClass.title}`,
+            start: formData.startDate || newClass.start_date,
+          },
+          ...formData.lessons.map((l, idx) => ({
+            id: `lesson-${newClass.id}-${idx}`,
+            title: `Lesson: ${l.title}`,
+            start: l.start_time,
+          })),
+        ];
+        addEvents(events);
 
         toast.success('Class created successfully');
         router.push('/dashboard/instructor/online-classes');

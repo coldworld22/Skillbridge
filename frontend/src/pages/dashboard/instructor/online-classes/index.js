@@ -4,6 +4,7 @@ import {
   FaCalendarAlt,
   FaChalkboardTeacher,
   FaClock,
+  FaVideo,
 } from "react-icons/fa";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClasses } from "@/services/instructor/classService";
@@ -149,9 +150,15 @@ export default function MyClasses() {
               </div>
               <Link
                 href={`/dashboard/instructor/online-classes/${cls.id}`}
-                className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
+                className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold flex items-center justify-center gap-2"
               >
-                Manage Class
+                {cls.scheduleStatus === 'Ongoing' ? (
+                  <>
+                    <FaVideo /> Go To Class
+                  </>
+                ) : (
+                  'Manage Class'
+                )}
               </Link>
               <Link
                 href={`/dashboard/instructor/online-classes/${cls.id}/details`}
