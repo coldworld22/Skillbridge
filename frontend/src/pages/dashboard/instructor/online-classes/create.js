@@ -12,7 +12,7 @@ import withAuthProtection from '@/hooks/withAuthProtection';
 
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
-import { fetchClassTags, createClassTag } from '@/services/instructor/classTagService';
+import { fetchClassTags } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 
@@ -21,13 +21,6 @@ const ReactQuill = dynamic(() => import('react-quill'), {
   loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded"></div>
 });
 import 'react-quill/dist/quill.snow.css';
-
-const slugify = (text) =>
-  text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -82,6 +75,12 @@ function CreateOnlineClass() {
       .then(setAllTags)
       .catch(() => setAllTags([]));
   }, []);
+
+  useEffect(() => {
+    if (user?.full_name) {
+      setFormData((prev) => ({ ...prev, instructor: user.full_name }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -169,11 +168,11 @@ function CreateOnlineClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      if (!formData.title || !formData.startDate || !formData.lessonCount) {
+      const count = parseInt(formData.lessonCount, 10);
+      if (!formData.title || !formData.startDate || !count || count <= 0) {
         toast.error('Please fill in all required fields');
         return;
       }
-      const count = parseInt(formData.lessonCount, 10) || 0;
       setFormData(prev => ({
         ...prev,
         lessons: Array.from({ length: count }, () => ({
@@ -190,9 +189,12 @@ function CreateOnlineClass() {
         toast.error('Please complete all lesson details');
         return;
       }
+      if (!user?.id) {
+        toast.error('User information unavailable');
+        return;
+      }
       try {
         setIsSubmitting(true);
-        // ... existing submission logic ...
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -203,7 +205,12 @@ function CreateOnlineClass() {
         if (formData.language) payload.append('language', formData.language);
         if (formData.startDate) payload.append('start_date', formData.startDate);
         if (formData.endDate) payload.append('end_date', formData.endDate);
-        if (formData.price) payload.append('price', Number(formData.price).toFixed(2));
+
+        if (formData.isFree) {
+          payload.append('price', '0');
+        } else if (formData.price || formData.price === 0) {
+          payload.append('price', Number(formData.price).toFixed(2));
+        }
         if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
         payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
         payload.append('status', formData.isApproved ? 'published' : 'draft');
@@ -212,19 +219,6 @@ function CreateOnlineClass() {
         if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
 
         if (selectedTags.length) payload.append('tags', JSON.stringify(selectedTags));
-
-        const newTags = selectedTags.filter(
-          (t) => !allTags.some((a) => a.name.toLowerCase() === t.toLowerCase())
-        );
-        if (newTags.length) {
-          const created = await Promise.all(
-            newTags.map((t) =>
-              createClassTag({ name: t, slug: slugify(t) }).catch(() => null)
-            )
-          );
-          setAllTags((prev) => [...prev, ...created.filter(Boolean)]);
-        }
-
         const newClass = await createInstructorClass(payload, (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setUploadProgress(percent);
