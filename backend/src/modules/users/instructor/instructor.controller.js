@@ -131,12 +131,16 @@ exports.updateProfile = async (req, res) => {
         .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
 
     const exists = await db("instructor_profiles").where({ user_id: userId }).first();
+    const profileData = { expertise, experience, certifications, availability, pricing };
+    if (typeof demo_video_url !== 'undefined') {
+        profileData.demo_video_url = demo_video_url;
+    }
     if (exists) {
         await db("instructor_profiles")
             .where({ user_id: userId })
-            .update({ expertise, experience, certifications, availability, pricing, demo_video_url });
+            .update(profileData);
     } else {
-        await db("instructor_profiles").insert({ user_id: userId, expertise, experience, certifications, availability, pricing, demo_video_url });
+        await db("instructor_profiles").insert({ user_id: userId, ...profileData });
     }
 
     await db("user_social_links").where({ user_id: userId }).del();
