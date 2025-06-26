@@ -3,6 +3,7 @@
  */
 const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
+const notificationService = require("../../notifications/notifications.service");
 
 /**
  * @desc Get student profile
@@ -118,6 +119,12 @@ exports.changePassword = async (req, res) => {
   await db("users").where({ id: userId }).update({
     password_hash: newHash,
     updated_at: new Date(),
+  });
+
+  await notificationService.createNotification({
+    user_id: userId,
+    type: "security",
+    message: "Your password was changed successfully",
   });
 
   res.json({ message: "Password changed successfully." });

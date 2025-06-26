@@ -267,6 +267,12 @@ exports.changePassword = async (req, res) => {
         updated_at: new Date(),
     });
 
+    await notificationService.createNotification({
+        user_id: userId,
+        type: "security",
+        message: "Your password was changed successfully",
+    });
+
     res.json({ message: "Password changed successfully." });
 };
 
