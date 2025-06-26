@@ -78,7 +78,7 @@ export const toggleClassStatus = async (id) => {
 
 export const approveAdminClass = async (id) => {
   const { data } = await api.patch(`/users/classes/admin/${id}/approve`);
-  return data?.data;
+  return data?.data ? formatClass(data.data) : null;
 };
 
 export const rejectAdminClass = async (id, reason) => {

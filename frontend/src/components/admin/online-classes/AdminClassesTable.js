@@ -85,10 +85,12 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     try {
 
       if (action === "approve") {
-        await approveAdminClass(id);
+        const updated = await approveAdminClass(id);
         setClassList((prev) =>
           prev.map((c) =>
-            c.id === id ? { ...c, approvalStatus: "Approved" } : c
+            c.id === id
+              ? { ...c, approvalStatus: "Approved", status: updated?.status }
+              : c
           )
         );
         toast.success("Class approved");
@@ -284,31 +286,31 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   <button title="Approve Class"
                     onClick={() => handleStatusChange(cls.id, 'approve')}
                     className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaCheck />
+                    <FaCheck className="w-4 h-4" />
                   </button>
                   <button title="Reject Class"
                     onClick={() => { setModalClass(cls); setModalType('reject'); setRejectionReason(''); }}
                     className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaTimes />
+                    <FaTimes className="w-4 h-4" />
                   </button>
                   <Link href={`/dashboard/admin/online-classes/edit/${cls.id}`} title="Manage Class">
                     <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
-                      <FaEdit />
+                      <FaEdit className="w-4 h-4" />
                     </button>
                   </Link>
                   <button title="Delete Class"
                     onClick={() => { setModalClass(cls); setModalType('delete'); }}
                     className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">
-                    <FaTrash />
+                    <FaTrash className="w-4 h-4" />
                   </button>
                   <Link href={`/dashboard/admin/online-classes/${cls.id}/students`} title="View Enrolled Students">
                     <button className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow">
-                      <FaUserGraduate />
+                      <FaUserGraduate className="w-4 h-4" />
                     </button>
                   </Link>
                   <Link href={`/dashboard/admin/online-classes/${cls.id}`} title="View Class Details">
                     <button className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow">
-                      <FaCalendarAlt />
+                      <FaCalendarAlt className="w-4 h-4" />
                     </button>
                   </Link>
                   <Link href={`/dashboard/admin/online-classes/${cls.id}/analytics`}>
@@ -316,7 +318,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                       title="View Analytics"
                       className="bg-purple-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded shadow"
                     >
-                      <FaChartBar /> Analytics
+                      <FaChartBar className="w-4 h-4" /> Analytics
                     </button>
                   </Link>
 

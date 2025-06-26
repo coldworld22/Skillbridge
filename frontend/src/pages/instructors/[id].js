@@ -79,7 +79,7 @@ export default function InstructorProfilePage() {
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
     </div>
   );
-  
+
   if (!instructor) return (
     <div className="text-center py-10">
       <h2 className="text-xl font-semibold text-gray-700">Instructor not found</h2>
@@ -114,9 +114,8 @@ export default function InstructorProfilePage() {
                   alt={instructor.full_name}
                 />
                 <span
-                  className={`absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white ${
-                    instructor.is_online ? "bg-green-500" : "bg-gray-400"
-                  }`}
+                  className={`absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white ${instructor.is_online ? "bg-green-500" : "bg-gray-400"
+                    }`}
                 ></span>
               </div>
             </div>
@@ -126,10 +125,24 @@ export default function InstructorProfilePage() {
           <div className="pt-20 pb-6 px-6">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-800">{instructor.full_name}</h1>
-              <p className="text-yellow-600 font-medium">
-                {instructor.expertise} {instructor.experience ? `· ${instructor.experience}` : ""}
-              </p>
-              
+              <div className="mt-2">
+                <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  {instructor.expertise?.map((item, index) => (
+                    <span
+                      key={index}
+                      className="inline-block bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                {instructor.experience && (
+                  <p className="mt-2 text-sm text-gray-600">Experience: {instructor.experience}{'Years'}</p>
+                )}
+              </div>
+
+
               {/* Stats */}
               <div className="flex justify-center gap-6 mt-4">
                 <div className="flex items-center text-gray-600">
@@ -172,14 +185,14 @@ export default function InstructorProfilePage() {
                   <p className="text-gray-800">{instructor.email}</p>
                 </div>
               )}
-              
+
               {instructor.phone && (
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
                   <p className="text-gray-800">{instructor.phone}</p>
                 </div>
               )}
-              
+
               {instructor.pricing && (
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Pricing</h3>
