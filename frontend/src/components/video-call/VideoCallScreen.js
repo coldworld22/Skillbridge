@@ -21,6 +21,7 @@ import RaiseHandManager from "./RaiseHandManager";
 import useRecordingManager from "./RecordingManager";
 import useBreakoutRoomManager from "./BreakoutRoomManager";
 import useVideoCall from "@/hooks/useVideoCall";
+import useAuthStore from "@/store/auth/authStore";
 
 const roles = {
   HOST: "host",
@@ -35,7 +36,8 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
   const [isFullScreen, setIsFullScreen] = useState(true);
   const [isCallActive, setIsCallActive] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const userName = "Ayman";
+  const user = useAuthStore((state) => state.user);
+  const userName = user?.full_name || user?.name || "User";
 
   const {
     localStream,
@@ -71,7 +73,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
     assignedRoom,
     inRoom,
     isHost,
-  } = useBreakoutRoomManager("Ayman", userRole);
+  } = useBreakoutRoomManager(userName, userRole);
 
   useEffect(() => {
     if (!document.fullscreenElement) {
@@ -104,7 +106,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
           <div className="flex flex-1 flex-col md:flex-row w-full h-full overflow-hidden p-4 gap-6">
             <div className="flex-1 relative border-4 border-yellow-500 rounded-lg p-2 overflow-hidden">
               <VideoGrid localStream={localStream} peers={peers} />
-              <TranscriptionManager currentSpeaker="Ayman" />
+              <TranscriptionManager currentSpeaker={userName} />
               <EmojiReactions />
               <LiveTranscription />
               <ScreenSharing />
@@ -182,7 +184,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
                     <span>{room.name}</span>
                     <button
                       className="text-xs bg-yellow-500 px-2 py-1 rounded"
-                      onClick={() => assignToRoom("Ayman", room.name)}
+                      onClick={() => assignToRoom(userName, room.name)}
                     >
                       Assign Me
                     </button>

@@ -8,6 +8,7 @@ import BreakoutRoomControl from "@/components/instructors/BreakoutRoomControl";
 import CertificateIssuancePanel from "@/components/instructors/CertificateIssuancePanel";
 import AssignmentManager from "@/components/instructors/AssignmentManager"; // ✅ Assignment Manager added
 import { fetchClassManagementData } from "@/services/instructor/classService";
+import useAuthStore from "@/store/auth/authStore";
 
 
 const isClassLive = (classData) => {
@@ -18,6 +19,7 @@ const isClassLive = (classData) => {
 export default function InstructorClassRoom() {
   const router = useRouter();
   const { id } = router.query;
+  const user = useAuthStore((state) => state.user);
 
   const [classData, setClassData] = useState(null);
   const [lessons, setLessons] = useState([]);
@@ -85,7 +87,11 @@ export default function InstructorClassRoom() {
         {/* Breakout Room Control */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">🔀 Breakout Rooms</h2>
-          <BreakoutRoomControl classId={id} userName="Ayman" userRole="host" />
+          <BreakoutRoomControl
+            classId={id}
+            userName={user?.full_name || user?.name || "Instructor"}
+            userRole="host"
+          />
         </div>
 
         {/* Attendance Panel */}
