@@ -203,7 +203,9 @@ export default function Header() {
                   <Link
                     href={
                       userRole
-                        ? `/dashboard/${userRole}/notifications`
+                        ? userRole === 'superadmin'
+                          ? '/dashboard/admin/notifications'
+                          : `/dashboard/${userRole}/notifications`
                         : '/notifications'
                     }
                     className="text-blue-600 hover:underline text-sm"
