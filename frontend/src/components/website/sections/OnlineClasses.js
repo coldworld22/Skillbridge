@@ -5,9 +5,20 @@ import {
   FaCalendarAlt,
   FaBookOpen,
   FaVideo,
+  FaHeart,
+  FaThumbsUp,
 } from "react-icons/fa";
 import { useRouter } from "next/router";
-import { fetchPublishedClasses } from "@/services/classService";
+import {
+  fetchPublishedClasses,
+  addClassToWishlist,
+  removeClassFromWishlist,
+  likeClass,
+  unlikeClass,
+  getMyClassWishlist,
+  getMyLikedClasses,
+} from "@/services/classService";
+import useAuthStore from "@/store/auth/authStore";
 
 // Initial category options include the special "Trending" filter
 const initialCategories = ["All", "Trending"];
@@ -29,6 +40,9 @@ const OnlineClasses = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [classes, setClasses] = useState([]);
   const [categories, setCategories] = useState(initialCategories);
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [likedIds, setLikedIds] = useState([]);
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +69,21 @@ const OnlineClasses = () => {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (!user || user.role?.toLowerCase() !== 'student') return;
+    const load = async () => {
+      try {
+        const w = await getMyClassWishlist();
+        setWishlistIds(w.map((c) => c.id));
+        const l = await getMyLikedClasses();
+        setLikedIds(l.map((c) => c.id));
+      } catch (err) {
+        console.error('Failed to load wishlist/likes', err);
+      }
+    };
+    load();
+  }, [user]);
 
   // Filter logic
   const filteredClasses = classes.filter(
@@ -129,6 +158,38 @@ const OnlineClasses = () => {
                 whileHover={{ scale: 1.03 }}
                 className="bg-gray-800 p-6 rounded-2xl shadow-xl relative group hover:ring-2 hover:ring-yellow-400 transition-all"
               >
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                  <button
+                    onClick={async () => {
+                      if (!user) return router.push('/auth/login');
+                      if (likedIds.includes(classItem.id)) {
+                        await unlikeClass(classItem.id);
+                        setLikedIds(likedIds.filter((i) => i !== classItem.id));
+                      } else {
+                        await likeClass(classItem.id);
+                        setLikedIds([...likedIds, classItem.id]);
+                      }
+                    }}
+                    className="bg-gray-700 bg-opacity-70 hover:bg-opacity-100 p-2 rounded-full"
+                  >
+                    <FaThumbsUp className={likedIds.includes(classItem.id) ? 'text-yellow-400' : 'text-gray-300'} />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!user) return router.push('/auth/login');
+                      if (wishlistIds.includes(classItem.id)) {
+                        await removeClassFromWishlist(classItem.id);
+                        setWishlistIds(wishlistIds.filter((i) => i !== classItem.id));
+                      } else {
+                        await addClassToWishlist(classItem.id);
+                        setWishlistIds([...wishlistIds, classItem.id]);
+                      }
+                    }}
+                    className="bg-gray-700 bg-opacity-70 hover:bg-opacity-100 p-2 rounded-full"
+                  >
+                    <FaHeart className={wishlistIds.includes(classItem.id) ? 'text-yellow-400' : 'text-gray-300'} />
+                  </button>
+                </div>
                 {classItem.trending && (
                   <span className="absolute top-3 left-3 bg-yellow-500 text-gray-900 px-3 py-1 text-xs font-bold rounded-full shadow-sm">
                     🔥 Trending

@@ -123,40 +123,77 @@ input:-webkit-autofill:focus {
   background-color: rgba(229, 231, 235, 0.3);
 }
 
-/* Force dropdown to yellow background with white text */
-.react-tel-input .country-list {
-  background-color: #facc15 !important; /* Tailwind yellow-400 */
+/* Add this to your global CSS file */
+.phone-input-wrapper {
+  --PhoneInput-color--focus: #f59e0b; /* yellow-500 */
+  --PhoneInputCountrySelectArrow-color: #9ca3af; /* gray-400 */
+  --PhoneInputCountrySelectArrow-opacity: 0.8;
+}
+
+.phone-input-wrapper .PhoneInputInput {
+  background-color: #374151 !important; /* gray-700 */
   color: white !important;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  overflow-y: auto;
+  border-color: #4b5563 !important; /* gray-600 */
+  border-radius: 0.375rem !important; /* rounded-md */
+  padding: 0.5rem 0.75rem !important; /* px-3 py-2 */
 }
 
-.react-tel-input .country-list .country {
-  padding: 8px 12px;
-  color: white !important;
+.phone-input-wrapper .PhoneInputInput:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5) !important; /* focus:ring-yellow-500 */
+  border-color: #f59e0b !important; /* yellow-500 */
 }
 
-.react-tel-input .country-list .country:hover,
-.react-tel-input .country-list .highlight {
-  background-color: #fde68a !important; /* Tailwind yellow-300 */
-  color: #1f2937 !important; /* Tailwind gray-800 */
+.phone-input-wrapper .PhoneInputCountrySelect {
+  background-color: #374151 !important; /* gray-700 */
+  border-radius: 0.375rem 0 0 0.375rem !important;
 }
 
-.react-tel-input .selected-flag {
-  background-color: #374151 !important; /* Tailwind gray-700 */
-  border-right: 1px solid #4b5563; /* Tailwind gray-600 */
+.phone-input-wrapper .PhoneInputCountryIconImg {
+  filter: invert(1) brightness(0.8);
 }
 
-.react-tel-input input {
+/* Phone Input Styling */
+.phone-input-container .PhoneInput {
+  --PhoneInputCountryFlag-height: 1.5em;
+  --PhoneInputCountryFlag-borderColor: rgba(0, 0, 0, 0.5);
+  --PhoneInputCountrySelectArrow-color: #9ca3af;
+  --PhoneInputCountrySelectArrow-opacity: 0.8;
+  --PhoneInput-color--focus: #f59e0b;
+  --PhoneInputCountrySelect-marginRight: 0.5em;
+}
+
+.phone-input-container .PhoneInputInput {
   background-color: #374151 !important;
   color: white !important;
-  border: 1px solid #4b5563 !important;
-  padding-left: 48px !important;
-  border-radius: 0.5rem !important;
+  border: none !important;
+  padding: 0.5rem 0.75rem !important;
+  width: 100% !important;
+  outline: none !important;
 }
 
+.phone-input-container .PhoneInputCountry {
+  background-color: #374151;
+  padding: 0 0.5rem;
+}
 
+.phone-input-container .PhoneInputCountrySelect {
+  background-color: transparent;
+  color: white;
+}
 
+.phone-input-container .PhoneInputCountryIconImg {
+  filter: brightness(0.8);
+}
 
-  
+.phone-input-container .PhoneInputCountrySelect:focus-within {
+  outline: none;
+}
+
+.phone-input-container .PhoneInputCountrySelectArrow {
+  color: #9ca3af;
+}
+
+.phone-input-container .PhoneInput:focus-within {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
+}

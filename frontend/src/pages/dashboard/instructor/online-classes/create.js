@@ -51,7 +51,8 @@ function CreateOnlineClass() {
     imagePreview: '',
     demoVideo: null,
     demoPreview: '',
-    lessons: []
+    lessons: [],
+    lessonCount: ''
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUploading, setImageUploading] = useState(false);
@@ -135,13 +136,26 @@ function CreateOnlineClass() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
-      if (!formData.title || !formData.startDate) {
+      if (!formData.title || !formData.startDate || !formData.lessonCount) {
         toast.error('Please fill in required fields.');
         return;
       }
+      const count = parseInt(formData.lessonCount, 10) || 0;
+      setFormData(prev => ({
+        ...prev,
+        lessons: Array.from({ length: count }, () => ({
+          title: '',
+          duration: '',
+          resource: null,
+          start_time: ''
+        }))
+      }));
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (formData.lessons.length === 0 || formData.lessons.some(l => !l.title || !l.duration)) {
+      if (
+        formData.lessons.length === 0 ||
+        formData.lessons.some(l => !l.title || !l.start_time)
+      ) {
         toast.error('Please complete all lessons.');
         return;
       }
@@ -182,7 +196,12 @@ function CreateOnlineClass() {
             try {
               await createClassLesson(created.id, {
                 title: l.title,
+<<<<<<< codex/add-lesson-management-to-class-page
                 order: idx + 1
+=======
+                order: idx + 1,
+                start_time: l.start_time
+>>>>>>> master
               });
             } catch (err) {
               console.error('Failed to create lesson', err);
@@ -309,6 +328,7 @@ function CreateOnlineClass() {
                 <FloatingInput label="End Date" type="date" name="endDate" value={formData.endDate} onChange={handleChange} />
                 <FloatingInput label="Price" type="number" name="price" value={formData.price} onChange={handleChange} disabled={formData.isFree} />
                 <FloatingInput label="Max Students" type="number" name="maxStudents" value={formData.maxStudents} onChange={handleChange} />
+                <FloatingInput label="Number of Lessons" type="number" name="lessonCount" value={formData.lessonCount} onChange={handleChange} />
                 <div className="flex items-center gap-3 md:col-span-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" name="isFree" checked={formData.isFree} onChange={handleChange} />
@@ -344,29 +364,12 @@ function CreateOnlineClass() {
 
             {currentStep === 2 && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData(prev => ({
-                        ...prev,
-                        lessons: [
-                          ...prev.lessons,
-                          { title: '', duration: '', resource: null },
-                        ],
-                      }))
-                    }
-                    className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-                  >
-                    + Add Lesson
-                  </button>
-                </div>
+                <h2 className="text-lg font-semibold text-gray-700">Lessons</h2>
 
                 {formData.lessons.map((lesson, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50"
+                    className="grid grid-cols-1 sm:grid-cols-4 gap-4 border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50"
                   >
                     <input
                       type="text"
@@ -391,6 +394,16 @@ function CreateOnlineClass() {
                       className="border rounded px-3 py-2 w-full text-sm"
                     />
                     <input
+                      type="datetime-local"
+                      value={lesson.start_time}
+                      onChange={(e) => {
+                        const updated = [...formData.lessons];
+                        updated[index].start_time = e.target.value;
+                        setFormData(prev => ({ ...prev, lessons: updated }));
+                      }}
+                      className="border rounded px-3 py-2 w-full text-sm"
+                    />
+                    <input
                       type="file"
                       accept=".pdf, .docx"
                       onChange={(e) => {
@@ -400,19 +413,6 @@ function CreateOnlineClass() {
                       }}
                       className="border rounded px-3 py-2 w-full text-sm"
                     />
-                    <div className="col-span-full flex justify-end mt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = [...formData.lessons];
-                          updated.splice(index, 1);
-                          setFormData(prev => ({ ...prev, lessons: updated }));
-                        }}
-                        className="text-red-600 text-sm flex items-center gap-1 hover:underline"
-                      >
-                        <FaTrash /> Remove
-                      </button>
-                    </div>
                   </div>
                 ))}
               </div>

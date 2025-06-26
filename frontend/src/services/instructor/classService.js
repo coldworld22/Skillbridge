@@ -7,7 +7,12 @@ const formatClass = (cls) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
     : null,
   demo_video_url: cls.demo_video_url
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`
+    ? encodeURI(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
+      )
+    : null,
+  instructor_image: cls.instructor_image
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
     : null,
   trending: Boolean(cls.trending),
 
@@ -16,6 +21,7 @@ const formatClass = (cls) => ({
 
   approvalStatus: cls.moderation_status || "Pending",
   scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+  views: cls.views || 0,
 });
 
 const computeScheduleStatus = (start, end) => {
@@ -91,6 +97,11 @@ export const fetchClassManagementData = async (id) => {
 
 export const createClassLesson = async (classId, payload) => {
   const { data } = await api.post(`/users/classes/lessons/class/${classId}`, payload);
+  return data?.data;
+};
+
+export const updateClassLesson = async (lessonId, payload) => {
+  const { data } = await api.put(`/users/classes/lessons/${lessonId}`, payload);
   return data?.data;
 };
 

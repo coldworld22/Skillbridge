@@ -15,6 +15,11 @@ exports.getMethods = catchAsync(async (_req, res) => {
   sendSuccess(res, data);
 });
 
+exports.getActiveMethods = catchAsync(async (_req, res) => {
+  const data = await service.getActive();
+  sendSuccess(res, data);
+});
+
 exports.getMethod = catchAsync(async (req, res) => {
   const method = await service.getById(req.params.id);
   if (!method) throw new AppError("Payment method not found", 404);

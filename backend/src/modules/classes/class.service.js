@@ -36,12 +36,14 @@ exports.getClassById = async (id) => {
     .select(
       "c.*",
       "u.full_name as instructor",
+      "u.avatar_url as instructor_image",
       "cat.name as category"
     )
     .where("c.id", id)
     .first();
   if (cls) {
     cls.tags = await exports.getClassTags(id);
+    cls.views = await exports.getClassViewCount(id);
   }
   return cls;
 };
@@ -130,11 +132,13 @@ exports.getPublishedClasses = async () => {
 exports.getPublicClassDetails = async (id) => {
   const cls = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
+    .leftJoin("instructor_profiles as p", "u.id", "p.user_id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .select(
       "c.*",
       "u.full_name as instructor",
       "u.avatar_url as instructor_image",
+      "p.experience as instructor_bio",
       "cat.name as category",
       db.raw(
         "(SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = c.id) as enrolled_count"
@@ -145,6 +149,7 @@ exports.getPublicClassDetails = async (id) => {
 
   if (cls) {
     cls.tags = await exports.getClassTags(id);
+    cls.views = await exports.getClassViewCount(id);
     const enrolled = parseInt(cls.enrolled_count, 10) || 0;
     cls.enrolled_count = enrolled;
     cls.spots_left =
@@ -196,4 +201,18 @@ exports.getClassTags = async (classId) => {
     .join("class_tags as t", "m.tag_id", "t.id")
     .where("m.class_id", classId)
     .select("t.id", "t.name", "t.slug");
+};
+
+exports.recordClassView = async (classId, viewerId, ip, userAgent) => {
+  return db('class_views').insert({
+    class_id: classId,
+    viewer_id: viewerId || null,
+    ip_address: ip,
+    user_agent: userAgent,
+  });
+};
+
+exports.getClassViewCount = async (classId) => {
+  const [row] = await db('class_views').where({ class_id: classId }).count();
+  return parseInt(row.count, 10) || 0;
 };

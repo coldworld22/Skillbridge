@@ -62,6 +62,9 @@ exports.getAllClasses = catchAsync(async (_req, res) => {
 
 exports.getClassById = catchAsync(async (req, res) => {
   const cls = await service.getClassById(req.params.id);
+  if (cls) {
+    cls.views = await service.getClassViewCount(req.params.id);
+  }
   sendSuccess(res, cls);
 });
 
@@ -125,6 +128,15 @@ exports.getPublishedClasses = catchAsync(async (_req, res) => {
 
 exports.getPublicClassDetails = catchAsync(async (req, res) => {
   const cls = await service.getPublicClassDetails(req.params.id);
+  if (cls) {
+    await service.recordClassView(
+      req.params.id,
+      req.user?.id,
+      req.ip,
+      req.headers["user-agent"]
+    );
+    cls.views = await service.getClassViewCount(req.params.id);
+  }
   sendSuccess(res, cls);
 });
 

@@ -20,7 +20,7 @@ export default function SocialRegister() {
         <motion.button
           key={name}
           whileHover={{ scale: 1.1 }}
-          className="w-14 h-14 flex items-center justify-center bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
+          className="w-14 h-14 flex items-center justify-center bg-yellow-500 text-white rounded-full hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
           onClick={() => handleSocialClick(name)}
         >
           <Icon size={28} />

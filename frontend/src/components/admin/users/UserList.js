@@ -134,7 +134,9 @@ export default function UserList({ users, setUsers }) {
                 currentUsers.every((u) => selectedIds.includes(u.id))
               }
               onChange={(e) => {
-                const visibleIds = currentUsers.map((u) => u.id);
+                const visibleIds = currentUsers
+                  .filter((u) => u.role?.toLowerCase() !== "superadmin")
+                  .map((u) => u.id);
                 if (e.target.checked) {
                   const combined = Array.from(new Set([...selectedIds, ...visibleIds]));
                   setSelectedIds(combined);

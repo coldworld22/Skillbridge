@@ -1,12 +1,13 @@
 // ✅ Enhanced Instructor Profile Edit Page
 // File: pages/dashboard/instructor/profile/edit.js
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
 import {
   getInstructorProfile,
   updateInstructorProfile,
@@ -15,12 +16,14 @@ import {
   uploadCertificateFile,
   deleteCertificateFile,
 } from "@/services/instructor/instructorService";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 import {
   FaUpload, FaTrash, FaSpinner, FaUserCircle, FaVideo,
   FaLinkedin, FaGithub, FaGlobe, FaTwitter, FaYoutube,
   FaFacebook, FaInstagram, FaDollarSign, FaCertificate,
   FaBriefcase, FaCalendarAlt, FaPhone, FaVenusMars, FaUser,
-  FaPlus, FaFilePdf, FaFileImage
+  FaPlus, FaFilePdf, FaFileImage, FaCheck
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -37,7 +40,9 @@ const instructorProfileSchema = z.object({
   pricing_amount: z.number().min(0, "Amount must be positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
-  socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
+  socialLinks: z
+    .record(z.union([z.literal(""), z.string().url("Must be a valid URL")]))
+    .optional(),
 });
 
 const socialPlatforms = [
@@ -62,6 +67,7 @@ const currencyOptions = [
 export default function InstructorProfileEdit() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -70,7 +76,7 @@ export default function InstructorProfileEdit() {
     date_of_birth: "",
     experience: 0,
     availability: false,
-    pricing_amount: "",
+    pricing_amount: undefined,
     pricing_currency: "USD",
     expertise: [],
     socialLinks: {},
@@ -89,6 +95,13 @@ export default function InstructorProfileEdit() {
   });
   const [certificateUploading, setCertificateUploading] = useState(false);
 
+  const [showCropper, setShowCropper] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [tempAvatar, setTempAvatar] = useState(null);
+  const [tempFileName, setTempFileName] = useState("");
+
   useEffect(() => {
     if (!user || user.role?.toLowerCase() !== "instructor") return;
 
@@ -103,12 +116,13 @@ export default function InstructorProfileEdit() {
         });
 
         // Split pricing if it exists in format "100 USD"
-        let pricing_amount = "";
+        let pricing_amount;
         let pricing_currency = "USD";
         if (instructor?.pricing) {
           const pricingParts = instructor.pricing.split(" ");
           if (pricingParts.length === 2) {
-            pricing_amount = parseFloat(pricingParts[0]) || "";
+            const amount = parseFloat(pricingParts[0]);
+            pricing_amount = isNaN(amount) ? undefined : amount;
             pricing_currency = pricingParts[1] || "USD";
           }
         }
@@ -142,15 +156,24 @@ export default function InstructorProfileEdit() {
 
   const validateForm = () => {
     try {
+      const sanitizedLinks = Object.fromEntries(
+        Object.entries(formData.socialLinks).filter(([, url]) => url.trim() !== "")
+      );
       instructorProfileSchema.parse({
         ...formData,
-        socialLinks: formData.socialLinks
+        socialLinks: sanitizedLinks,
       });
+      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
       err.errors.forEach(e => { errs[e.path[0]] = e.message });
       setErrors(errs);
+      if (err.errors?.length) {
+        toast.error(err.errors[0].message);
+      } else {
+        toast.error("Please fix the errors in the form");
+      }
       return false;
     }
   };
@@ -202,15 +225,57 @@ export default function InstructorProfileEdit() {
     }
   };
 
+  const onCropComplete = useCallback((_, area) => {
+    setCroppedAreaPixels(area);
+  }, []);
+
+  const handleAvatarSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return toast.error("Max size 2MB");
+    setTempFileName(file.name);
+    setTempAvatar(URL.createObjectURL(file));
+    setShowCropper(true);
+  };
+
+  const handleCropUpload = async () => {
+    if (!tempAvatar || !croppedAreaPixels) return;
+    setIsSubmitting(true);
+    try {
+      const croppedUrl = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      const blob = await fetch(croppedUrl).then((r) => r.blob());
+      const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
+      const res = await uploadInstructorAvatar(user.id, file);
+      const setUser = useAuthStore.getState().setUser;
+      setUser((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+      setFormData((prev) => ({
+        ...prev,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+      }));
+      setShowCropper(false);
+      URL.revokeObjectURL(tempAvatar);
+      setTempAvatar(null);
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
 
       // Combine pricing amount and currency
-      const pricing = formData.pricing_amount
-        ? `${formData.pricing_amount} ${formData.pricing_currency}`
-        : "";
+      const pricing =
+        typeof formData.pricing_amount === "number"
+          ? `${formData.pricing_amount} ${formData.pricing_currency}`
+          : "";
+
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
 
       await updateInstructorProfile({
         full_name: formData.full_name,
@@ -221,21 +286,46 @@ export default function InstructorProfileEdit() {
         availability: formData.availability ? "available" : "unavailable",
         pricing,
         expertise: formData.expertise,
-        social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
+        social_links,
       });
+      // Fetch the latest profile to ensure data persisted
+      const fresh = await getInstructorProfile();
 
-      // ✅ Update auth store to mark profile complete
+      // Update the auth store with the returned user data
       const update = useAuthStore.getState().setUser;
       update({
         ...user,
-        full_name: formData.full_name,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender,
+        date_of_birth: fresh.date_of_birth,
+        avatar_url: fresh.avatar_url,
         profile_complete: true,
       });
 
+      // Reflect updates locally
+      setFormData((prev) => ({
+        ...prev,
+        expertise: fresh.instructor?.expertise || [],
+        experience: fresh.instructor?.experience || 0,
+        availability: fresh.instructor?.availability === "available",
+        pricing_amount: fresh.instructor?.pricing
+          ? (() => {
+              const amt = parseFloat(fresh.instructor.pricing.split(" ")[0]);
+              return isNaN(amt) ? undefined : amt;
+            })()
+          : undefined,
+        pricing_currency: fresh.instructor?.pricing
+          ? fresh.instructor.pricing.split(" ")[1]
+          : "USD",
+        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
+          acc[cur.platform] = cur.url;
+          return acc;
+        }, {}),
+      }));
+
       toast.success("Profile updated successfully!");
+      await fetchNotifications();
       router.push("/dashboard/instructor");
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
@@ -290,28 +380,7 @@ export default function InstructorProfileEdit() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (file.size > 2 * 1024 * 1024) return toast.error("Max size 2MB");
-                    setIsSubmitting(true);
-                    try {
-                      const res = await uploadInstructorAvatar(user.id, file);
-
-                      // ✅ Fix: properly trigger store update and preview refresh
-                      const setUser = useAuthStore.getState().setUser;
-                      setUser(prev => ({ ...prev, avatar_url: res.avatar_url }));
-
-                      setFormData(prev => ({
-                        ...prev,
-                        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`
-                      }));
-                    } catch (error) {
-                      toast.error("Failed to upload avatar");
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
+                  onChange={handleAvatarSelect}
                   className="hidden"
                 />
 
@@ -499,8 +568,14 @@ export default function InstructorProfileEdit() {
                   min="0"
                   step="0.01"
                   name="pricing_amount"
-                  value={formData.pricing_amount}
-                  onChange={(e) => setFormData({ ...formData, pricing_amount: parseFloat(e.target.value) || "" })}
+                  value={formData.pricing_amount ?? ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pricing_amount:
+                        e.target.value === "" ? undefined : parseFloat(e.target.value),
+                    })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   placeholder="Amount (e.g., 100)"
                 />
@@ -735,6 +810,42 @@ export default function InstructorProfileEdit() {
           </div>
         </div>
       </div>
+      {showCropper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
+            <div className="relative w-full h-64">
+              <Cropper
+                image={tempAvatar}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowCropper(false);
+                  if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+                  setTempAvatar(null);
+                }}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropUpload}
+                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
+              >
+                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </InstructorLayout>
   );
 }

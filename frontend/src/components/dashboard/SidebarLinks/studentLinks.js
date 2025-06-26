@@ -16,7 +16,8 @@ import {
   ClipboardList,
   Users,
   Users2,
-  Home
+  Home,
+  Heart
 } from 'lucide-react';
 
 export const studentNavLinks = [
@@ -32,6 +33,7 @@ export const studentNavLinks = [
     items: [
       { label: 'My Classes', href: '/dashboard/student/online-classe', icon: BookOpen },
       { label: 'My Tutorials', href: '/dashboard/student/tutorials', icon: Brain },
+      { label: 'Wishlist', href: '/dashboard/student/wishlist', icon: Heart },
       { label: 'Assignments', href: '/dashboard/student/assignments', icon: FileText },
       { label: 'Certificates', href: '/dashboard/student/certificates', icon: GraduationCap },
     ]

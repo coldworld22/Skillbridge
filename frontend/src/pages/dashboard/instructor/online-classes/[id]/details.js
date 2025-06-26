@@ -42,12 +42,23 @@ export default function InstructorClassDetailPage() {
             <img src={details.cover_image} alt="Class Cover" className="w-full h-64 object-cover rounded-lg" />
           )}
           {details?.demo_video_url && (
-            <video controls className="w-full mt-4 rounded-lg" src={details.demo_video_url} />
+            <video controls className="w-full mt-4 rounded-lg">
+              <source src={encodeURI(details.demo_video_url)} />
+            </video>
           )}
 
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold text-yellow-600">{details?.title}</h2>
-            <p className="text-gray-500 text-sm">Instructor: {details?.instructor}</p>
+          <div className="space-y-1 flex items-center gap-4">
+            {details?.instructor_image && (
+              <img
+                src={details.instructor_image}
+                alt={details.instructor}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            )}
+            <div>
+              <h2 className="text-2xl font-semibold text-yellow-600">{details?.title}</h2>
+              <p className="text-gray-500 text-sm">Instructor: {details?.instructor}</p>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 pt-4 text-sm">
@@ -64,6 +75,7 @@ export default function InstructorClassDetailPage() {
                 </span>
               </p>
               {details?.price && <p><strong>💵 Price:</strong> ${details.price}</p>}
+              <p><strong>👁️ Views:</strong> {details?.views ?? 0}</p>
             </div>
           </div>
 

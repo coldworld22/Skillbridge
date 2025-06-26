@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchInstructorClasses, createClassAssignment } from '@/services/instructor/classService';
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -17,19 +18,26 @@ export default function CreateAssignmentPage() {
   const [starterCode, setStarterCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [dueDate, setDueDate] = useState('');
+  const [timeToFinish, setTimeToFinish] = useState('');
   const [allowLate, setAllowLate] = useState(false);
   const [resourceFile, setResourceFile] = useState(null);
   const [gradingRubric, setGradingRubric] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
 
-  const classes = [
-    { id: 'react-bootcamp', title: 'React & Next.js Bootcamp' },
-    { id: 'ui-design', title: 'UI/UX Design Basics' }
-  ];
+  const [classes, setClasses] = useState([]);
 
   useEffect(() => {
     setMounted(true);
     if (routerClassId) setClassId(routerClassId);
+    const load = async () => {
+      try {
+        const data = await fetchInstructorClasses();
+        setClasses(data || []);
+      } catch (err) {
+        console.error('Failed to load classes', err);
+      }
+    };
+    load();
   }, [routerClassId]);
 
   const handleAddQuestion = () => {
@@ -44,27 +52,26 @@ export default function CreateAssignmentPage() {
     setQuestions(prev => prev.map(q => q.id === id ? { ...q, options: q.options.map((opt, i) => i === idx ? value : opt) } : q));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !description || !classId || !dueDate) {
       alert('⚠️ Please fill all fields.');
       return;
     }
 
-    const newAssignment = {
+    const payload = {
       title,
       description,
-      classId,
-      type,
-      dueDate,
-      allowLate,
-      questions: type === 'mcq' ? questions : [],
-      codeSetup: type === 'code' ? { language, starterCode } : null,
-      gradingRubric: type !== 'mcq' ? gradingRubric : null,
+      due_date: dueDate,
+      time_to_finish: timeToFinish || null,
     };
 
-    console.log('✅ Saving Assignment:', newAssignment);
-    alert('Assignment created successfully (mock)');
-    router.push(`/dashboard/instructor/assignments/${classId}`);
+    try {
+      await createClassAssignment(classId, payload);
+      router.push(`/dashboard/instructor/assignments/${classId}`);
+    } catch (err) {
+      console.error('Failed to create assignment', err);
+      alert('Failed to create assignment');
+    }
   };
 
   if (!mounted) return null;
@@ -199,6 +206,15 @@ export default function CreateAssignmentPage() {
             />
             <label className="text-sm">Allow Late Submission</label>
           </div>
+
+          {/* Estimated Time to Finish */}
+          <input
+            type="text"
+            placeholder="Estimated time to finish (e.g. 2h, 3 days)"
+            value={timeToFinish}
+            onChange={(e) => setTimeToFinish(e.target.value)}
+            className="w-full p-3 bg-gray-100 rounded-md"
+          />
 
           {/* Due Date */}
           <input

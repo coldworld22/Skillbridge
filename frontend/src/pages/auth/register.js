@@ -15,11 +15,13 @@ import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 
 export default function Register() {
   const router = useRouter();
   const { register: registerUser, user, hasHydrated } = useAuthStore();
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const {
     register,
@@ -52,6 +54,7 @@ export default function Register() {
       const { full_name, email, phone, password, role } = data;
       await registerUser({ full_name, email, phone, password, role });
       toast.success("Registration successful");
+      fetchNotifications();
       router.push("/auth/login");
     } catch (err) {
       const msg =
@@ -63,7 +66,7 @@ export default function Register() {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700">
       <BackgroundAnimation />
 
       <motion.div
@@ -71,7 +74,7 @@ export default function Register() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.03 }}
         transition={{ duration: 0.4 }}
-        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
+        className="relative bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg">
           <Image src={logo} alt="SkillBridge Logo" width={80} height={80} className="rounded-full" priority />
@@ -87,11 +90,10 @@ export default function Register() {
               key={type}
               onClick={() => setValue("role", type)}
               whileHover={{ scale: 1.05 }}
-              className={`w-1/2 px-3 py-2 text-sm rounded-md font-semibold transition ${
-                watch("role") === type
-                  ? "bg-yellow-500 text-gray-900"
-                  : "text-gray-400 hover:bg-gray-600"
-              }`}
+              className={`w-1/2 px-3 py-2 text-sm rounded-md font-semibold transition ${watch("role") === type
+                ? "bg-yellow-500 text-gray-900"
+                : "text-gray-400 hover:bg-gray-600"
+                }`}
             >
               {type}
             </motion.button>
@@ -105,14 +107,19 @@ export default function Register() {
         {errors.email && <p className="text-xs text-left w-full text-red-400">{errors.email.message}</p>}
 
         {/* ✅ Styled Phone Input */}
+
         <div className="w-full mb-3">
           <label className="block text-sm text-gray-400 mb-1">Phone</label>
-          <PhoneInput
-            value={watch("phone")}
-            onChange={(val) => setValue("phone", val)}
-            defaultCountry="SA"
-            className="!w-full !px-3 !py-2 !bg-gray-700 !text-white !border !border-gray-600 !rounded-md focus:!outline-none focus:!ring-2 focus:!ring-yellow-500"
-          />
+          <div className="phone-input-container border border-gray-600 rounded-md bg-gray-700 overflow-hidden">
+            <PhoneInput
+              international
+              value={watch("phone")}
+              onChange={(value) => setValue("phone", value)}
+              defaultCountry="SA"
+              placeholder="Enter phone number"
+              className="w-full"
+            />
+          </div>
           {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
         </div>
 
@@ -122,7 +129,7 @@ export default function Register() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white"
+              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
               placeholder="Create a password"
               {...register("password")}
             />
@@ -139,7 +146,7 @@ export default function Register() {
           <div className="relative">
             <input
               type={showConfirmPassword ? "text" : "password"}
-              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white"
+              className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
               placeholder="Confirm password"
               {...register("confirmPassword")}
             />
@@ -155,11 +162,10 @@ export default function Register() {
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
           disabled={isSubmitting}
-          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
-            isSubmitting
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
-          }`}
+          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${isSubmitting
+            ? "bg-gray-500 cursor-not-allowed"
+            : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+            }`}
         >
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>

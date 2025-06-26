@@ -17,7 +17,9 @@ const InputField = forwardRef(({ label, type, placeholder, ...rest }, ref) => {
           type={inputType}
           placeholder={placeholder}
           {...rest}
-          className="w-full px-3 py-2 border rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+
+          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
+
         />
         {isPassword && (
           <span

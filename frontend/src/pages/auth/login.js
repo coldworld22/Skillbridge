@@ -15,6 +15,7 @@ import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
 
 // ─────────────────────
 // 🔐 Validation schema
@@ -30,6 +31,7 @@ export default function Login() {
   const user = useAuthStore((state) => state.user);
   const login = useAuthStore((state) => state.login);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   // ─────────────────────
   // 📝 Form setup
@@ -72,6 +74,7 @@ export default function Login() {
   try {
     const loggedInUser = await login(data);
     toast.success("Login successful");
+    fetchNotifications();
 
     const profilePaths = {
       admin: "/dashboard/admin/profile/edit",

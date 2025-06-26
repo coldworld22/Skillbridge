@@ -1,32 +1,74 @@
-import Link from 'next/link';
-import { FaPlus, FaClipboardList } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { deleteClassAssignment } from "@/services/instructor/classService";
+import { fetchClassAssignments } from "@/services/classService";
+import { toDateInput } from "@/utils/date";
 
-export default function AssignmentManager({ classId, assignments = [] }) {
+const computeStatus = (due) => {
+  if (!due) return "Ongoing";
+  const now = new Date();
+  const d = new Date(due);
+  return now > d ? "Past Due" : "Ongoing";
+};
+
+export default function AssignmentManager({ classId, initialAssignments = [] }) {
+  const [assignments, setAssignments] = useState(initialAssignments);
+
+  // Sync when parent provides new assignments
+  useEffect(() => {
+    setAssignments(initialAssignments);
+  }, [initialAssignments]);
+
+  // Load assignments when class changes
+  useEffect(() => {
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const list = await fetchClassAssignments(classId);
+        setAssignments(list);
+      } catch (err) {
+        console.error("Failed to load assignments", err);
+      }
+    };
+    load();
+  }, [classId]);
+
+
+  const removeAssignment = async (index) => {
+    const assignment = assignments[index];
+    try {
+      await deleteClassAssignment(assignment.id);
+      setAssignments(assignments.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error("Failed to delete assignment", err);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <Link
-        href={`/dashboard/instructor/assignments/create?classId=${classId}`}
-        className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-3 rounded-full justify-center"
-      >
-        <FaPlus /> Create New Assignment
-      </Link>
-
-      <Link
-        href={`/dashboard/instructor/assignments/list?classId=${classId}`}
-        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-bold px-4 py-3 rounded-full justify-center"
-      >
-        <FaClipboardList /> View My Assignments
-      </Link>
-
-      {assignments.length > 0 && (
-        <ul className="mt-2 space-y-2 text-sm">
-          {assignments.map((a) => (
-            <li key={a.id} className="bg-gray-700 p-2 rounded">
-              {a.title}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="text-sm text-white">
+      <ul className="space-y-3">
+        {assignments.map((a, i) => (
+          <li
+            key={a.id}
+            className="bg-gray-700 p-3 rounded flex justify-between items-center"
+          >
+            <div>
+              <p className="font-medium">{a.title}</p>
+              {a.due_date && (
+                <p className="text-gray-400 text-xs">
+                  Due: {toDateInput(a.due_date)}
+                </p>
+              )}
+              <p className="text-gray-400 text-xs">Status: {computeStatus(a.due_date)}</p>
+            </div>
+            <button
+              onClick={() => removeAssignment(i)}
+              className="text-red-400 hover:underline text-xs"
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -72,6 +72,16 @@ exports.updateUserStatus = catchAsync(async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
+  const user = await db("users").where({ id }).first();
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const role = (user.role || "").toLowerCase();
+  if (role === "superadmin") {
+    return res.status(403).json({ message: "Cannot delete SuperAdmin user" });
+  }
+
   await db("users").where({ id }).del();
   res.json({ message: "User deleted" });
 };
@@ -100,6 +110,12 @@ exports.changeUserRole = catchAsync(async (req, res) => {
 
   if (!allowedRoles.includes(formattedRole)) {
     return res.status(400).json({ message: "Invalid role" });
+  }
+
+  // Disallow changing role of SuperAdmin
+  const target = await service.getUserById(req.params.id);
+  if (target && target.role && target.role.toLowerCase() === "superadmin") {
+    throw new AppError("Cannot change role for SuperAdmin user", 403);
   }
 
   const updatedUser = await service.changeUserRole(req.params.id, formattedRole);
@@ -160,6 +176,13 @@ exports.bulkDeleteUsers = catchAsync(async (req, res) => {
   if (!Array.isArray(ids) || !ids.length) {
     throw new AppError("Invalid user IDs for bulk delete", 400);
   }
+  const superAdmins = await db("users")
+    .whereIn("id", ids)
+    .whereRaw("LOWER(role) = ?", ["superadmin"]);
+  if (superAdmins.length) {
+    throw new AppError("Cannot delete SuperAdmin user(s)", 403);
+  }
+
   await service.bulkDeleteUsers(ids);
   sendSuccess(res, null, "Selected users deleted");
 });

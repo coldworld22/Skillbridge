@@ -1,39 +1,42 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
-import { getCartItems } from "@/services/cartService"; // ✅ Import mock API
+import useCartStore from "@/store/cart/cartStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTrash, FaPlus, FaMinus, FaTag, FaGift } from "react-icons/fa";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    items: cartItems,
+    isLoading,
+    fetchCart,
+    updateItem: updateCartItemAction,
+    removeItem: removeCartItemAction,
+  } = useCartStore();
+  const loading = isLoading;
   const [discountCode, setDiscountCode] = useState(""); // ✅ State for Discount Code
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const validDiscounts = { SAVE10: 10, "قسيمة10": 10, "DISCOUNT20": 20 }; // ✅ Support Arabic Discount Code
 
   useEffect(() => {
-    getCartItems().then((data) => {
-      setCartItems(data);
-      setLoading(false);
-    });
-  }, []);
+    fetchCart();
+  }, [fetchCart]);
 
   // Update quantity
   const updateQuantity = (id, type) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id
-          ? { ...item, quantity: type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1) }
-          : item
-      )
-    );
+    const item = cartItems.find((c) => c.id === id);
+    if (!item) return;
+    const qty = type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+    updateCartItemAction(id, qty);
+    toast.success("Cart updated");
   };
 
   // Remove item
   const removeItem = (id) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    removeCartItemAction(id);
+    toast.info("Item removed");
   };
 
   // Apply Discount Code
@@ -41,9 +44,11 @@ const CartPage = () => {
     if (validDiscounts[discountCode]) {
       setDiscountAmount(validDiscounts[discountCode]);
       setDiscountApplied(true);
+      toast.success("Discount applied");
     } else {
       setDiscountAmount(0);
       setDiscountApplied(false);
+      if (discountCode) toast.error("Invalid code");
     }
   };
 
@@ -81,7 +86,7 @@ const CartPage = () => {
             {/* Cart Items with Animation */}
             <ul className="space-y-6">
               <AnimatePresence>
-                {cartItems.map((item) => (
+                {cartItems.map((item, index) => (
                   <motion.li
                     key={item.id}
                     initial={{ opacity: 0, y: -10 }}
@@ -93,7 +98,9 @@ const CartPage = () => {
                     <div className="flex items-center space-x-4">
                       <FaGift className="text-yellow-500 text-4xl" />
                       <div>
-                        <h3 className="text-lg font-semibold">{item.name}</h3>
+                        <h3 className="text-lg font-semibold">
+                          {index + 1}. {item.name}
+                        </h3>
                         <p className="text-gray-400">${item.price} per item</p>
                       </div>
                     </div>

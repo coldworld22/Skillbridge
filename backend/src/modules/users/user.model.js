@@ -66,6 +66,7 @@ exports.findById = (id) => {
       "full_name",
       "role",
       "avatar_url",
+      "is_online",
       "status",
       "profile_complete",
       "is_email_verified",
@@ -85,6 +86,13 @@ exports.findByEmail = (email) => {
 
 exports.findByPhone = async (phone) => {
   return db("users").where({ phone }).first();
+};
+
+// Fetch Admin and SuperAdmin users
+exports.findAdmins = () => {
+  return db("users")
+    .select("id")
+    .whereIn("role", ["Admin", "SuperAdmin"]);
 };
 
 

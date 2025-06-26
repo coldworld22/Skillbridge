@@ -63,10 +63,13 @@ const roleRoutes = require("./modules/roles/roles.routes");
 const planRoutes = require("./modules/plans/plans.routes");
 const paymentRoutes = require("./modules/payments/payments.routes");
 const paymentMethodRoutes = require("./modules/paymentMethods/paymentMethods.routes");
+const paymentMethodsPublicRoutes = require("./modules/paymentMethods/paymentMethods.public.routes");
 const paymentConfigRoutes = require("./modules/paymentConfig/paymentConfig.routes");
 const payoutRoutes = require("./modules/payouts/payouts.routes");
 const adsRoutes = require("./modules/ads/ads.routes");
 const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
+const cartRoutes = require("./modules/cart/cart.routes");
+const notificationRoutes = require("./modules/notifications/notifications.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -129,12 +132,15 @@ app.use("/api/bookings/instructor", instructorBookingRoutes); // 👩‍🏫 Ins
 app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
 app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
 app.use("/api/plans", planRoutes); // 💳 Subscription plans
+app.use("/api/payment-methods", paymentMethodsPublicRoutes); // 💳 Public payment methods
 app.use("/api/payments/admin", paymentRoutes); // 💵 Payments management
 app.use("/api/payment-methods/admin", paymentMethodRoutes); // 💳 Payment methods
 app.use("/api/payments/config", paymentConfigRoutes); // ⚙️ Payment settings
 app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
 app.use("/api/ads", adsRoutes); // 📢 Advertisements
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
+app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
+app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {

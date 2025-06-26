@@ -3,8 +3,32 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
-import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
-import { fetchClassDetails } from '@/services/classService';
+import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart } from 'react-icons/fa';
+import {
+  enrollInClass,
+  fetchClassDetails,
+  fetchMyEnrolledClasses,
+  addClassToWishlist,
+  removeClassFromWishlist,
+  getMyClassWishlist,
+} from '@/services/classService';
+import useCartStore from '@/store/cart/cartStore';
+
+import useAuthStore from '@/store/auth/authStore';
+import { toast } from 'react-toastify';
+import ClassReviews from '@/components/online-classes/detail/ClassReviews';
+import ClassComments from '@/components/online-classes/detail/ClassComments';
+
+const computeScheduleStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return 'Upcoming';
+  if (s && e && now >= s && now <= e) return 'Ongoing';
+  if (e && now > e) return 'Completed';
+  return 'Upcoming';
+};
 
 
 export default function ClassDetailsPage() {
@@ -14,6 +38,103 @@ export default function ClassDetailsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null);
+  const [inWishlist, setInWishlist] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+  const addItem = useCartStore((state) => state.addItem);
+
+  const isGuest = !isAuthenticated();
+  const isStudent = user?.role?.toLowerCase() === 'student';
+
+  const handleGuestRedirect = () => {
+    toast.info('Please log in or register to enroll.');
+    router.push('/auth/login');
+  };
+
+  const handleRoleBlocked = () => {
+    toast.error('Only students can enroll in classes.');
+  };
+
+
+  const handleAddToCart = async () => {
+    if (isGuest) {
+      handleGuestRedirect();
+      return;
+    }
+    if (!isStudent) {
+      handleRoleBlocked();
+      return;
+    }
+    if (isEnrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+
+    try {
+      await addItem({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
+      toast.success('Added to cart');
+      router.push('/cart');
+    } catch (err) {
+      console.error('Failed to add to cart', err);
+      toast.error('Failed to add to cart');
+    }
+  };
+
+  const handleProceed = async () => {
+    if (isGuest) {
+      handleGuestRedirect();
+      return;
+    }
+    if (!isStudent) {
+      handleRoleBlocked();
+      return;
+    }
+    if (isEnrolled) {
+      toast.info('You are already enrolled in this class');
+      return;
+    }
+
+    if (classInfo.price === 0) {
+      try {
+        await enrollInClass(classInfo.id);
+        toast.success('Enrolled successfully');
+        router.push(`/payments/success?classId=${classInfo.id}`);
+      } catch (err) {
+        console.error('Failed to enroll', err);
+        toast.error('Failed to enroll');
+      }
+    } else {
+      router.push(`/payments/checkout?classId=${classInfo.id}`);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (isGuest) {
+      handleGuestRedirect();
+      return;
+    }
+    if (!isStudent) {
+      handleRoleBlocked();
+      return;
+    }
+
+    try {
+      if (inWishlist) {
+        await removeClassFromWishlist(classInfo.id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addClassToWishlist(classInfo.id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (err) {
+      console.error('Wishlist update failed', err);
+      toast.error('Failed to update wishlist');
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
     const load = async () => {
@@ -22,6 +143,19 @@ export default function ClassDetailsPage() {
       try {
         const details = await fetchClassDetails(id);
         setClassInfo(details?.data ?? details);
+        if (isAuthenticated()) {
+          const enrolled = await fetchMyEnrolledClasses();
+          const record = enrolled.find((c) => String(c.id) === String(id));
+          if (record) {
+            setIsEnrolled(true);
+            setEnrollmentStatus(record.status);
+          } else {
+            setIsEnrolled(false);
+            setEnrollmentStatus(null);
+          }
+          const wishlist = await getMyClassWishlist();
+          setInWishlist(wishlist.some((c) => String(c.id) === String(id)));
+        }
       } catch (err) {
         console.error('Failed to load class', err);
         setError('Failed to load class');
@@ -30,7 +164,7 @@ export default function ClassDetailsPage() {
       }
     };
     load();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
   if (error) return <div className="text-red-400 text-center mt-32">{error}</div>;
@@ -40,6 +174,12 @@ export default function ClassDetailsPage() {
   const plainDescription = classInfo.description
     ? classInfo.description.replace(/<[^>]*>/g, '')
     : '';
+  const classFull =
+    typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0;
+  const scheduleStatus = computeScheduleStatus(
+    classInfo.start_date,
+    classInfo.end_date,
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
@@ -70,7 +210,7 @@ export default function ClassDetailsPage() {
             />
             <div>
               <p className="text-sm text-gray-400">
-                <span className="font-semibold text-white">Instructor:</span>{" "}
+                <span className="font-semibold text-white">Created by:</span>{" "}
                 <a href={`/instructors/${classInfo.instructor_id}`} className="hover:underline">
                   {classInfo.instructor}
                 </a>
@@ -80,22 +220,16 @@ export default function ClassDetailsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Note: Classes on SkillBridge may be created by instructors or administrators.
-          </p>
 
-          {classInfo.instructor && (
-            <p className="text-xs text-gray-500">Created by: {classInfo.instructor}</p>
-          )}
 
         </div>
 
         {classInfo.demo_video_url ? (
-          <video
-            src={classInfo.demo_video_url}
-            controls
-            className="w-full rounded-xl shadow-2xl mb-10 max-h-[500px] object-cover border border-gray-800"
-          />
+          <div className="mb-10">
+            <CustomVideoPlayer
+              videos={[{ src: encodeURI(classInfo.demo_video_url) }]}
+            />
+          </div>
         ) : (
           <img
             src={classInfo.cover_image}
@@ -116,48 +250,94 @@ export default function ClassDetailsPage() {
             <p><strong>Duration:</strong> {classInfo.duration}</p>
           )}
           <p><strong>Category:</strong> {classInfo.category}</p>
+          <p><strong>Status:</strong> {scheduleStatus}</p>
           {typeof classInfo.spots_left === 'number' && (
             <p><strong>Available Spots:</strong> {classInfo.spots_left}</p>
           )}
           <p><strong>Price:</strong> {classInfo.price === 0 ? 'Free' : `$${classInfo.price}`}</p>
         </div>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4 border-b border-gray-700 pb-2">What you'll learn</h2>
-          <ul className="list-disc pl-6 space-y-2 text-gray-300">
-            {classInfo.syllabus?.map((topic, index) => (
-              <li key={index}>{topic}</li>
-            ))}
-          </ul>
-        </section>
 
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-4 text-white">Student Reviews</h2>
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg space-y-3">
-            <p className="text-yellow-400 font-bold text-lg">⭐⭐⭐⭐☆</p>
-            <p className="text-sm text-gray-300">“Great content and well-paced lessons!” – Sarah M.</p>
-            <p className="text-sm text-gray-300">“The live sessions helped a lot.” – Ahmed F.</p>
-          </div>
-        </section>
+        <ClassReviews classId={id} canReview={isEnrolled} />
+        <ClassComments classId={id} canComment={isEnrolled} />
+
 
         <section className="mb-10 bg-gray-800 p-6 rounded-xl text-center sm:text-left shadow-2xl">
           <p className="text-xl font-semibold mb-2">Ready to join <strong>{classInfo.title}</strong>?</p>
-          <p className="text-sm text-gray-400 mb-5">Click below to secure your seat and start learning!</p>
-          <button
-            onClick={() => router.push(`/payments/checkout?classId=${id}`)}
-            disabled={typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0}
-            className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
-              typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
-            }`}
-          >
-            {typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0
-              ? 'Class Full'
-              : classInfo.price === 0
-              ? 'Enroll for Free'
-              : 'Proceed to Payment'}
-          </button>
+          <p className="text-sm text-gray-400 mb-2">Click below to secure your seat and start learning!</p>
+          {isAuthenticated() && isStudent && (
+            <p className="text-sm text-gray-400 mb-5">
+              <strong>Your Enrollment:</strong>{' '}
+              {enrollmentStatus || 'Not Enrolled'}
+            </p>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {isEnrolled ? (
+              <>
+                <p className="text-green-400 font-semibold mb-2">You are already enrolled</p>
+                <button
+                  onClick={() => router.push(`/dashboard/student/online-classe/${classInfo.id}`)}
+                  className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-500 text-gray-900 hover:bg-yellow-600"
+                >
+                  Go to Class Dashboard
+                </button>
+              </>
+            ) : (
+              <>
+                {isGuest || !isStudent ? (
+                  <>
+                    <button
+                      onClick={isGuest ? handleGuestRedirect : handleRoleBlocked}
+                      disabled
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-600 text-gray-400 cursor-not-allowed"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={isGuest ? handleGuestRedirect : handleRoleBlocked}
+                      disabled
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-600 text-gray-400 cursor-not-allowed"
+                    >
+                      {classInfo.price === 0 ? 'Enroll for Free' : 'Proceed to Payment'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleAddToCart}
+                      className="w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-yellow-600 text-gray-900 hover:bg-yellow-700"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={handleProceed}
+                      disabled={classFull}
+                      className={`w-full sm:w-auto px-8 py-3 font-semibold rounded-full transition duration-300 shadow-lg ${
+                        classFull
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
+                      }`}
+                    >
+                      {classFull
+                        ? 'Class Full'
+                        : classInfo.price === 0
+                        ? 'Enroll for Free'
+                        : 'Proceed to Payment'}
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+            <button
+              onClick={handleToggleWishlist}
+              className="flex items-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-full transition duration-300 shadow-lg bg-gray-700 text-white hover:bg-gray-600"
+            >
+              <FaHeart className={inWishlist ? 'text-yellow-400' : 'text-white'} />
+              {inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            </button>
+          </div>
+
         </section>
 
         <div className="flex flex-wrap items-center gap-4 text-gray-300">
