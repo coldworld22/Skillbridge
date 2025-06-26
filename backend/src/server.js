@@ -71,6 +71,7 @@ const publicInstructorRoutes = require("./modules/instructors/instructor.routes"
 const cartRoutes = require("./modules/cart/cart.routes");
 const notificationRoutes = require("./modules/notifications/notifications.routes");
 const messageRoutes = require("./modules/messages/messages.routes");
+const socialLoginConfigRoutes = require("./modules/socialLoginConfig/socialLoginConfig.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -137,6 +138,7 @@ app.use("/api/payment-methods", paymentMethodsPublicRoutes); // 💳 Public paym
 app.use("/api/payments/admin", paymentRoutes); // 💵 Payments management
 app.use("/api/payment-methods/admin", paymentMethodRoutes); // 💳 Payment methods
 app.use("/api/payments/config", paymentConfigRoutes); // ⚙️ Payment settings
+app.use("/api/social-login/config", socialLoginConfigRoutes); // 🔑 Social login settings
 app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
 app.use("/api/ads", adsRoutes); // 📢 Advertisements
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing

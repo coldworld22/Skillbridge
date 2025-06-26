@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { toast } from "react-toastify";
 import { FaToggleOn, FaToggleOff, FaGoogle, FaFacebookF, FaGithub, FaLinkedin, FaApple } from "react-icons/fa";
+import { fetchSocialLoginConfig, updateSocialLoginConfig } from "@/services/admin/socialLoginConfigService";
 
 const availableIcons = {
   google: <FaGoogle />,
@@ -66,6 +68,37 @@ export default function SocialLoginSettingsPage() {
   const [recaptchaSecretKey, setRecaptchaSecretKey] = useState("");
   const [customIcons, setCustomIcons] = useState({});
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cfg = await fetchSocialLoginConfig();
+        if (!cfg) return;
+        setGlobalActive(!!cfg.enabled);
+        if (cfg.providers) {
+          setProviders((prev) =>
+            prev.map((p) => {
+              const saved = cfg.providers[p.key] || {};
+              return {
+                ...p,
+                active: saved.active ?? p.active,
+                clientId: saved.clientId || "",
+                clientSecret: saved.clientSecret || "",
+                label: saved.label || p.label,
+                icon: saved.icon || p.icon,
+              };
+            })
+          );
+        }
+        setRecaptchaActive(!!cfg.recaptcha?.active);
+        setRecaptchaSiteKey(cfg.recaptcha?.siteKey || "");
+        setRecaptchaSecretKey(cfg.recaptcha?.secretKey || "");
+      } catch (err) {
+        console.error("Failed to load social login config", err);
+      }
+    };
+    load();
+  }, []);
+
   const toggleGlobal = () => setGlobalActive(!globalActive);
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
@@ -89,6 +122,33 @@ export default function SocialLoginSettingsPage() {
         setCustomIcons((prev) => ({ ...prev, [key]: reader.result }));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    const payload = {
+      enabled: globalActive,
+      providers: providers.reduce((acc, p) => {
+        acc[p.key] = {
+          active: p.active,
+          clientId: p.clientId,
+          clientSecret: p.clientSecret,
+          label: p.label,
+          icon: p.icon,
+        };
+        return acc;
+      }, {}),
+      recaptcha: {
+        active: recaptchaActive,
+        siteKey: recaptchaSiteKey,
+        secretKey: recaptchaSecretKey,
+      },
+    };
+    try {
+      await updateSocialLoginConfig(payload);
+      toast.success("Settings saved");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save settings");
     }
   };
 
@@ -223,7 +283,7 @@ export default function SocialLoginSettingsPage() {
         <div className="mt-8">
           <button
             className="bg-yellow-500 text-gray-900 px-6 py-2 rounded shadow hover:bg-yellow-600 transition"
-            onClick={() => console.log({ globalActive, providers, recaptchaActive, recaptchaSiteKey, recaptchaSecretKey })}
+            onClick={handleSave}
           >
             Save Changes
           </button>

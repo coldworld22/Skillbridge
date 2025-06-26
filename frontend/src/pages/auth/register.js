@@ -171,7 +171,6 @@ export default function Register() {
         </motion.button>
 
         {/* ✅ Social Login + Footer */}
-        <div className="mt-6 text-center text-gray-400 text-sm">or continue with</div>
         <SocialRegister />
 
         <p className="text-center mt-6 text-gray-400 text-sm">
