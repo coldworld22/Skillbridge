@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { toast } from "react-toastify";
-import { FaToggleOn, FaToggleOff, FaGoogle, FaFacebookF, FaGithub, FaLinkedin, FaApple } from "react-icons/fa";
+import { FaToggleOn, FaToggleOff, FaGoogle, FaFacebookF, FaApple } from "react-icons/fa";
 import { fetchSocialLoginConfig, updateSocialLoginConfig } from "@/services/admin/socialLoginConfigService";
 
 const availableIcons = {
   google: <FaGoogle />,
   facebook: <FaFacebookF />,
-  github: <FaGithub />,
-  linkedin: <FaLinkedin />,
   apple: <FaApple />,
 };
 
@@ -30,24 +28,6 @@ const initialProviders = [
     clientSecret: "",
     label: "Sign in with Facebook",
     icon: "facebook"
-  },
-  {
-    name: "GitHub",
-    key: "github",
-    active: false,
-    clientId: "",
-    clientSecret: "",
-    label: "Sign in with GitHub",
-    icon: "github"
-  },
-  {
-    name: "LinkedIn",
-    key: "linkedin",
-    active: false,
-    clientId: "",
-    clientSecret: "",
-    label: "Sign in with LinkedIn",
-    icon: "linkedin"
   },
   {
     name: "Apple",
