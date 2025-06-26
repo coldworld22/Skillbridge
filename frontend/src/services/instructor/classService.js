@@ -131,14 +131,13 @@ export const fetchInstructorScheduleEvents = async () => {
     // Skip completed classes
     if (cls.scheduleStatus === "Completed") continue;
 
-    const classStart = new Date(cls.start_date);
-    if (classStart >= now) {
-      events.push({
-        id: `class-${cls.id}`,
-        title: `Class: ${cls.title}`,
-        start: cls.start_date,
-      });
-    }
+    // Show ongoing and upcoming classes
+    events.push({
+      id: `class-${cls.id}`,
+      title: `Class: ${cls.title}`,
+      start: cls.start_date,
+      ...(cls.end_date ? { end: cls.end_date } : {}),
+    });
 
     try {
       const management = await fetchClassManagementData(cls.id);
@@ -150,6 +149,7 @@ export const fetchInstructorScheduleEvents = async () => {
             id: `lesson-${lesson.id}`,
             title: `Lesson: ${lesson.title}`,
             start: lesson.start_time,
+            ...(lesson.end_time ? { end: lesson.end_time } : {}),
           });
         }
       });
