@@ -1,7 +1,7 @@
 // ✅ Enhanced Instructor Profile Edit Page
 // File: pages/dashboard/instructor/profile/edit.js
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -16,12 +16,14 @@ import {
   uploadCertificateFile,
   deleteCertificateFile,
 } from "@/services/instructor/instructorService";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 import {
   FaUpload, FaTrash, FaSpinner, FaUserCircle, FaVideo,
   FaLinkedin, FaGithub, FaGlobe, FaTwitter, FaYoutube,
   FaFacebook, FaInstagram, FaDollarSign, FaCertificate,
   FaBriefcase, FaCalendarAlt, FaPhone, FaVenusMars, FaUser,
-  FaPlus, FaFilePdf, FaFileImage
+  FaPlus, FaFilePdf, FaFileImage, FaCheck
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -90,6 +92,13 @@ export default function InstructorProfileEdit() {
     preview: null,
   });
   const [certificateUploading, setCertificateUploading] = useState(false);
+
+  const [showCropper, setShowCropper] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [tempAvatar, setTempAvatar] = useState(null);
+  const [tempFileName, setTempFileName] = useState("");
 
   useEffect(() => {
     if (!user || user.role?.toLowerCase() !== "instructor") return;
@@ -210,6 +219,43 @@ export default function InstructorProfileEdit() {
     }
   };
 
+  const onCropComplete = useCallback((_, area) => {
+    setCroppedAreaPixels(area);
+  }, []);
+
+  const handleAvatarSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return toast.error("Max size 2MB");
+    setTempFileName(file.name);
+    setTempAvatar(URL.createObjectURL(file));
+    setShowCropper(true);
+  };
+
+  const handleCropUpload = async () => {
+    if (!tempAvatar || !croppedAreaPixels) return;
+    setIsSubmitting(true);
+    try {
+      const croppedUrl = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      const blob = await fetch(croppedUrl).then((r) => r.blob());
+      const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
+      const res = await uploadInstructorAvatar(user.id, file);
+      const setUser = useAuthStore.getState().setUser;
+      setUser((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+      setFormData((prev) => ({
+        ...prev,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+      }));
+      setShowCropper(false);
+      URL.revokeObjectURL(tempAvatar);
+      setTempAvatar(null);
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     try {
@@ -320,28 +366,7 @@ export default function InstructorProfileEdit() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (file.size > 2 * 1024 * 1024) return toast.error("Max size 2MB");
-                    setIsSubmitting(true);
-                    try {
-                      const res = await uploadInstructorAvatar(user.id, file);
-
-                      // ✅ Fix: properly trigger store update and preview refresh
-                      const setUser = useAuthStore.getState().setUser;
-                      setUser(prev => ({ ...prev, avatar_url: res.avatar_url }));
-
-                      setFormData(prev => ({
-                        ...prev,
-                        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`
-                      }));
-                    } catch (error) {
-                      toast.error("Failed to upload avatar");
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
+                  onChange={handleAvatarSelect}
                   className="hidden"
                 />
 
@@ -765,6 +790,42 @@ export default function InstructorProfileEdit() {
           </div>
         </div>
       </div>
+      {showCropper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
+            <div className="relative w-full h-64">
+              <Cropper
+                image={tempAvatar}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowCropper(false);
+                  if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+                  setTempAvatar(null);
+                }}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropUpload}
+                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
+              >
+                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </InstructorLayout>
   );
 }
