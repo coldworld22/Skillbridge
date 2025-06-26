@@ -223,17 +223,38 @@ export default function InstructorProfileEdit() {
         expertise: formData.expertise,
         social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
       });
+      // Fetch the latest profile to ensure data persisted
+      const fresh = await getInstructorProfile();
 
-      // ✅ Update auth store to mark profile complete
+      // Update the auth store with the returned user data
       const update = useAuthStore.getState().setUser;
       update({
         ...user,
-        full_name: formData.full_name,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender,
+        date_of_birth: fresh.date_of_birth,
+        avatar_url: fresh.avatar_url,
         profile_complete: true,
       });
+
+      // Reflect updates locally
+      setFormData((prev) => ({
+        ...prev,
+        expertise: fresh.instructor?.expertise || [],
+        experience: fresh.instructor?.experience || 0,
+        availability: fresh.instructor?.availability === "available",
+        pricing_amount: fresh.instructor?.pricing
+          ? parseFloat(fresh.instructor.pricing.split(" ")[0])
+          : "",
+        pricing_currency: fresh.instructor?.pricing
+          ? fresh.instructor.pricing.split(" ")[1]
+          : "USD",
+        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
+          acc[cur.platform] = cur.url;
+          return acc;
+        }, {}),
+      }));
 
       toast.success("Profile updated successfully!");
       router.push("/dashboard/instructor");
