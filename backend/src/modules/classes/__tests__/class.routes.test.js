@@ -16,6 +16,15 @@ jest.mock('../class.service', () => ({
   getClassesByInstructor: jest.fn()
 }));
 const service = require('../class.service');
+jest.mock('../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+const notifications = require('../../notifications/notifications.service');
+jest.mock('../../users/user.model', () => ({
+  findAdmins: jest.fn(() => [{ id: 'admin1' }]),
+  findById: jest.fn(() => ({ id: '2', full_name: 'Test Instructor' })),
+}));
+const userModel = require('../../users/user.model');
 // Mock enrollment service to avoid DB calls when routes are loaded
 jest.mock('../enrollments/classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
@@ -52,8 +61,9 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(data);
     expect(service.createClass).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'draft' })
+      expect.objectContaining({ status: 'published' })
     );
+    expect(notifications.createNotification).toHaveBeenCalledTimes(2);
   });
 
   test('get classes', async () => {

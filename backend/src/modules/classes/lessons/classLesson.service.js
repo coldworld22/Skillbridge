@@ -9,6 +9,10 @@ exports.createLesson = async (data) => {
   return row;
 };
 
+exports.getById = async (id) => {
+  return db("class_lessons").where({ id }).first();
+};
+
 exports.updateLesson = async (id, data) => {
   const [row] = await db("class_lessons").where({ id }).update(data).returning("*");
   return row;

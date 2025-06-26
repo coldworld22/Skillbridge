@@ -16,8 +16,13 @@ jest.mock('../classLesson.service', () => ({
   createLesson: jest.fn(),
   updateLesson: jest.fn(),
   deleteLesson: jest.fn(),
+  getById: jest.fn(),
 }));
 const service = require('../classLesson.service');
+jest.mock('../../class.service', () => ({
+  getClassById: jest.fn(() => ({ start_date: '2024-01-01', end_date: '2024-01-31' }))
+}));
+const classService = require('../../class.service');
 
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -50,16 +55,17 @@ describe('Class lesson routes', () => {
     service.createLesson.mockResolvedValue({ id: '1' });
     const res = await request(app)
       .post('/classes/lessons/class/abc')
-      .send({ title: 'New Lesson' });
+      .send({ title: 'New Lesson', start_time: '2024-01-10T10:00:00Z' });
     expect(res.statusCode).toBe(200);
     expect(service.createLesson).toHaveBeenCalled();
   });
 
   test('update lesson', async () => {
     service.updateLesson.mockResolvedValue({ id: '1' });
+    service.getById.mockResolvedValue({ id: '1', class_id: 'abc' });
     const res = await request(app)
       .put('/classes/lessons/1')
-      .send({ title: 'Edit' });
+      .send({ title: 'Edit', start_time: '2024-01-20T10:00:00Z' });
     expect(res.statusCode).toBe(200);
     expect(service.updateLesson).toHaveBeenCalled();
   });

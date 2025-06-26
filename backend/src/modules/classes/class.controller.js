@@ -3,6 +3,8 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
 const tagService = require("./classTag.service");
+const notificationService = require("../notifications/notifications.service");
+const userModel = require("../users/user.model");
 const slugify = require("slugify");
 const db = require("../../config/database");
 
@@ -21,12 +23,12 @@ const generateUniqueSlug = async (title) => {
 
 exports.createClass = catchAsync(async (req, res) => {
   const slug = await generateUniqueSlug(req.body.title);
-  const { tags: rawTags, ...body } = req.body;
+  const { tags: rawTags, status, ...body } = req.body;
   const data = {
     ...body,
     id: uuidv4(),
     slug,
-    status: "draft",
+    status: status === "published" ? "published" : "draft",
     moderation_status: "Pending",
   };
   if (req.files?.cover_image?.[0]) {
@@ -52,6 +54,23 @@ exports.createClass = catchAsync(async (req, res) => {
     await service.addClassTags(cls.id, tagIds);
     cls.tags = await service.getClassTags(cls.id);
   }
+  await notificationService.createNotification({
+    user_id: cls.instructor_id,
+    type: "class_created",
+    message:
+      "New class added successfully. It's under review and will be available after we approve it",
+  });
+  const instructor = await userModel.findById(cls.instructor_id);
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_class",
+        message: `Instructor ${instructor.full_name} added new class \"${cls.title}\" waiting for review`,
+      })
+    )
+  );
   sendSuccess(res, cls, "Class created");
 });
 
@@ -117,7 +136,15 @@ exports.updateClass = catchAsync(async (req, res) => {
 });
 
 exports.deleteClass = catchAsync(async (req, res) => {
+  const cls = await service.getClassById(req.params.id);
   await service.deleteClass(req.params.id);
+  if (cls) {
+    await notificationService.createNotification({
+      user_id: cls.instructor_id,
+      type: "class_deleted",
+      message: `Class "${cls.title}" deleted`,
+    });
+  }
   sendSuccess(res, null, "Class deleted");
 });
 
@@ -151,7 +178,12 @@ exports.toggleClassStatus = catchAsync(async (req, res) => {
 });
 
 exports.approveClass = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "Approved");
+  const cls = await service.updateModeration(req.params.id, "Approved");
+  await notificationService.createNotification({
+    user_id: cls.instructor_id,
+    type: "class_approved",
+    message: `Class "${cls.title}" approved. You can now start teaching`,
+  });
   sendSuccess(res, { message: "Class approved" });
 });
 
