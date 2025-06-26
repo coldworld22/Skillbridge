@@ -16,4 +16,19 @@ const storage = multer.diskStorage({
   },
 });
 
-module.exports = multer({ storage }).single('lesson_topic');
+const uploader = multer({ storage }).fields([
+  { name: 'lesson_topic', maxCount: 1 },
+  { name: 'resource', maxCount: 1 },
+]);
+
+module.exports = (req, res, next) => {
+  uploader(req, res, (err) => {
+    if (err) return next(err);
+    if (req.files?.lesson_topic?.[0]) {
+      req.file = req.files.lesson_topic[0];
+    } else if (req.files?.resource?.[0]) {
+      req.file = req.files.resource[0];
+    }
+    next();
+  });
+};
