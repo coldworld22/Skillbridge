@@ -17,6 +17,13 @@ const updateInstructorProfileSchema = z.object({
     .transform((val) => Number(val))
     .optional()
     .nullable(),
+  bio: z
+    .string()
+    .trim()
+    .optional()
+    .refine((val) => !val || val.split(/\s+/).filter(Boolean).length <= 150, {
+      message: "Bio must be 150 words or fewer",
+    }),
 
   certifications: z.string().trim().optional().nullable(),
   availability: z.string().trim().optional().nullable(),
