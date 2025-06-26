@@ -203,8 +203,7 @@ function CreateOnlineClass() {
   };
 
   return (
-    <InstructorLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
@@ -667,7 +666,6 @@ function CreateOnlineClass() {
           </div>
         </div>
       </div>
-    </InstructorLayout>
   );
 }
 
