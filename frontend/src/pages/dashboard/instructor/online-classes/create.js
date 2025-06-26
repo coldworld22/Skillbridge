@@ -196,12 +196,8 @@ function CreateOnlineClass() {
             try {
               await createClassLesson(created.id, {
                 title: l.title,
-<<<<<<< codex/add-lesson-management-to-class-page
-                order: idx + 1
-=======
                 order: idx + 1,
                 start_time: l.start_time
->>>>>>> master
               });
             } catch (err) {
               console.error('Failed to create lesson', err);
