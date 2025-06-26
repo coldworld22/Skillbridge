@@ -3,20 +3,30 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import CalendarView from "@/components/shared/CalendarView";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 
+import useScheduleStore from "@/store/schedule/scheduleStore";
+
 export default function InstructorSchedule() {
-  const [events, setEvents] = useState([]);
+  const { events, clear, addEvents } = useScheduleStore();
+  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
     const load = async () => {
       try {
+
+        setLoading(true);
         const data = await fetchInstructorScheduleEvents();
-        setEvents(data);
+        clear();
+        addEvents(data);
       } catch (err) {
         console.error("Failed to load schedule", err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [clear, addEvents]);
+
 
   return (
     <InstructorLayout>
@@ -33,6 +43,12 @@ export default function InstructorSchedule() {
           }
         }}
       />
+      {loading && (
+        <p className="text-center text-gray-500 mt-4">Loading...</p>
+      )}
+      {!loading && events.length === 0 && (
+        <p className="text-center text-gray-500 mt-4">No upcoming events</p>
+      )}
     </InstructorLayout>
   );
 }
