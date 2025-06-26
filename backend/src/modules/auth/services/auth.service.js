@@ -5,6 +5,7 @@ const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 const { sendOtpEmail } = require("../../../utils/email");
 const AppError = require("../../../utils/AppError");
+const notificationService = require("../../notifications/notifications.service");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -54,6 +55,12 @@ exports.registerUser = async (data) => {
   const accessToken = generateAccessToken({ id: newUser.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: newUser.id });
 
+  await notificationService.createNotification({
+    user_id: newUser.id,
+    type: "welcome",
+    message: "Welcome to SkillBridge!",
+  });
+
   return { accessToken, refreshToken, user: { ...newUser, roles } };
 };
 
@@ -77,6 +84,12 @@ exports.loginUser = async ({ email, password }) => {
   const tokenRoles = roles.length ? roles : [user.role];
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: user.id });
+
+  await notificationService.createNotification({
+    user_id: user.id,
+    type: "login",
+    message: "You have logged in successfully",
+  });
 
   return { accessToken, refreshToken, user: { ...user, roles } };
 };
