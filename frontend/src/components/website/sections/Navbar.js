@@ -4,18 +4,29 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  FaBell, FaEnvelope, FaGlobe, FaShoppingCart, FaUserCircle, FaCog,
-  FaLock, FaSignOutAlt, FaLanguage, FaSignInAlt, FaUserPlus,
-  FaHeart, FaThumbsUp
+  FaBell,
+  FaEnvelope,
+  FaGlobe,
+  FaShoppingCart,
+  FaUserCircle,
+  FaCog,
+  FaLock,
+  FaSignOutAlt,
+  FaLanguage,
+  FaSignInAlt,
+  FaUserPlus,
+  FaHeart,
+  FaThumbsUp,
 } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 
 import useAuthStore from "@/store/auth/authStore";
 import useAdminStore from "@/store/admin/adminStore";
-import { API_BASE_URL } from '@/config/config';
-import useCartStore from '@/store/cart/cartStore';
-import useNotificationStore from '@/store/notifications/notificationStore';
+import { API_BASE_URL } from "@/config/config";
+import useCartStore from "@/store/cart/cartStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -47,10 +58,11 @@ const Navbar = () => {
   const markRead = useNotificationStore((state) => state.markRead);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const unreadMessages = [
-    { id: 1, text: "New message from Instructor", link: "/messages" },
-    { id: 2, text: "Course reminder", link: "/messages" }
-  ];
+  const messages = useMessageStore((state) => state.items);
+  const fetchMessages = useMessageStore((state) => state.fetch);
+  const startMessagePolling = useMessageStore((state) => state.startPolling);
+  const markMessageRead = useMessageStore((state) => state.markRead);
+  const unreadMessages = messages.filter((m) => !m.read);
 
   useEffect(() => {
     if (user?.role === "SuperAdmin" && !profile) fetchProfile();
@@ -90,13 +102,19 @@ const Navbar = () => {
   }, [user, fetchCart]);
 
   useEffect(() => {
-
     if (user) {
       fetchNotifications();
       startPolling();
+      fetchMessages();
+      startMessagePolling();
     }
-  }, [user, fetchNotifications, startPolling]);
-
+  }, [
+    user,
+    fetchNotifications,
+    startPolling,
+    fetchMessages,
+    startMessagePolling,
+  ]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -123,9 +141,6 @@ const Navbar = () => {
     return `${API_BASE_URL}${avatar}`; // avatar starts with "/uploads/..."
   };
 
-
-
-
   return (
     <nav className="fixed top-0 w-full px-6 py-3 flex justify-between items-center shadow-lg z-50 bg-yellow-500 text-gray-900">
       {loading && (
@@ -140,21 +155,72 @@ const Navbar = () => {
       <div className="flex items-center space-x-6">
         <Link href="/">
           <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer">
-            <Image src={logo} alt="SkillBridge Logo" width={45} height={45} className="rounded-full" />
+            <Image
+              src={logo}
+              alt="SkillBridge Logo"
+              width={45}
+              height={45}
+              className="rounded-full"
+            />
           </div>
         </Link>
 
         {user && (
           <>
-            <motion.button whileHover={{ scale: 1.1 }} onClick={() => setMessageOpen(!messageOpen)} className="relative text-2xl">
-              <FaEnvelope />
-              {unreadMessages.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
-                  {unreadMessages.length}
-                </span>
-              )}
-            </motion.button>
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                onClick={() => setMessageOpen(!messageOpen)}
+                className="relative text-2xl"
+              >
+                <FaEnvelope />
+                {unreadMessages.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
+                    {unreadMessages.length}
+                  </span>
+                )}
+              </motion.button>
 
+              {messageOpen && (
+                <div
+                  ref={dropdownRef}
+                  className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+                >
+                  <h4 className="text-base font-semibold mb-2 border-b pb-1">
+                    Messages
+                  </h4>
+                  <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
+                    {messages.slice(0, 10).map((msg) => (
+                      <li
+                        key={msg.id}
+                        onClick={() => markMessageRead(msg.id)}
+                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
+                          msg.read ? "text-gray-400 bg-gray-50" : "bg-yellow-50"
+                        }`}
+                      >
+                        <span>{msg.text}</span>
+                        {!msg.read && (
+                          <span className="ml-2 text-xs text-red-500">new</span>
+                        )}
+                      </li>
+                    ))}
+                    {messages.length === 0 && (
+                      <li className="text-center text-sm text-gray-500 py-2">
+                        No messages
+                      </li>
+                    )}
+                  </ul>
+                  <div className="mt-2 text-center">
+                    <Link
+                      href="/messages"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      View All
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="relative">
               <motion.button
@@ -174,19 +240,19 @@ const Navbar = () => {
                   ref={dropdownRef}
                   className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
-                  <h4 className="text-base font-semibold mb-2 border-b pb-1">Notifications</h4>
+                  <h4 className="text-base font-semibold mb-2 border-b pb-1">
+                    Notifications
+                  </h4>
                   <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
                     {notifications.slice(0, 10).map((note) => (
                       <li
                         key={note.id}
                         onClick={() => markRead(note.id)}
-
                         className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
                           note.read
-                            ? 'text-gray-400 bg-gray-50'
-                            : 'bg-yellow-50'
+                            ? "text-gray-400 bg-gray-50"
+                            : "bg-yellow-50"
                         }`}
-
                       >
                         <span>{note.message}</span>
                         {!note.read && (
@@ -195,7 +261,9 @@ const Navbar = () => {
                       </li>
                     ))}
                     {notifications.length === 0 && (
-                      <li className="text-center text-sm text-gray-500 py-2">No notifications</li>
+                      <li className="text-center text-sm text-gray-500 py-2">
+                        No notifications
+                      </li>
                     )}
                   </ul>
                   <div className="mt-2 text-center">
@@ -222,13 +290,21 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-6">
-        <motion.button whileHover={{ scale: 1.1 }} onClick={() => setLanguageOpen(!languageOpen)} className="text-2xl">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          onClick={() => setLanguageOpen(!languageOpen)}
+          className="text-2xl"
+        >
           <FaLanguage />
         </motion.button>
 
         {user ? (
           <>
-            <motion.button whileHover={{ scale: 1.1 }} onClick={() => setCartOpen(!cartOpen)} className="relative text-2xl">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setCartOpen(!cartOpen)}
+              className="relative text-2xl"
+            >
               <FaShoppingCart />
               {cartItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
@@ -255,13 +331,11 @@ const Navbar = () => {
               />
             </motion.button>
 
-
-
-
-
-
             {dropdownOpen && (
-              <div ref={dropdownRef} className="absolute right-6 top-20 bg-white text-gray-800 w-60 rounded-2xl shadow-xl p-4 z-50 border border-gray-200">
+              <div
+                ref={dropdownRef}
+                className="absolute right-6 top-20 bg-white text-gray-800 w-60 rounded-2xl shadow-xl p-4 z-50 border border-gray-200"
+              >
                 <ul className="space-y-2 text-sm">
                   <li>
                     <Link
@@ -273,13 +347,19 @@ const Navbar = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/profile/change-password" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md">
+                    <Link
+                      href="/profile/change-password"
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
+                    >
                       <FaLock className="text-gray-500" />
                       <span>Change Password</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/dashboard/student/wishlist" className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md">
+                    <Link
+                      href="/dashboard/student/wishlist"
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
+                    >
                       <FaHeart className="text-gray-500" />
                       <span>Wishlist</span>
                     </Link>
@@ -311,7 +391,6 @@ const Navbar = () => {
                       <span>Logout</span>
                     </button>
                   </li>
-
                 </ul>
               </div>
             )}
@@ -320,32 +399,50 @@ const Navbar = () => {
               <div className="absolute top-20 right-24 bg-white text-gray-800 w-40 rounded-xl shadow-xl border border-gray-200 p-3 z-50">
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md">
-                    <Image src={usFlag} alt="EN" width={20} height={20} className="rounded-full" />
+                    <Image
+                      src={usFlag}
+                      alt="EN"
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
                     English
                   </li>
                   <li className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md">
-                    <Image src={saudiFlag} alt="AR" width={20} height={20} className="rounded-full" />
+                    <Image
+                      src={saudiFlag}
+                      alt="AR"
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
                     Arabic
                   </li>
                 </ul>
               </div>
             )}
 
-
-
             {cartOpen && (
               <div className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50">
-                <h4 className="text-base font-semibold mb-2 border-b pb-1">Your Cart</h4>
+                <h4 className="text-base font-semibold mb-2 border-b pb-1">
+                  Your Cart
+                </h4>
                 <ul className="space-y-3 text-sm">
                   {cartItems.map((item) => (
-                    <li key={item.id} className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md">
+                    <li
+                      key={item.id}
+                      className="flex justify-between items-center hover:bg-gray-50 p-2 rounded-md"
+                    >
                       <span>{item.name}</span>
                       <span className="font-semibold">{item.price}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="mt-4 text-center">
-                  <Link href="/cart" className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded-md transition">
+                  <Link
+                    href="/cart"
+                    className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded-md transition"
+                  >
                     View Cart
                   </Link>
                 </div>
@@ -354,10 +451,16 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <Link href="/auth/login" className="flex items-center gap-2 font-semibold hover:underline">
+            <Link
+              href="/auth/login"
+              className="flex items-center gap-2 font-semibold hover:underline"
+            >
               <FaSignInAlt /> Login
             </Link>
-            <Link href="/auth/register" className="flex items-center gap-2 font-semibold hover:underline">
+            <Link
+              href="/auth/register"
+              className="flex items-center gap-2 font-semibold hover:underline"
+            >
               <FaUserPlus /> Register
             </Link>
           </>
