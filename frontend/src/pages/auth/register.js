@@ -90,11 +90,10 @@ export default function Register() {
               key={type}
               onClick={() => setValue("role", type)}
               whileHover={{ scale: 1.05 }}
-              className={`w-1/2 px-3 py-2 text-sm rounded-md font-semibold transition ${
-                watch("role") === type
-                  ? "bg-yellow-500 text-gray-900"
-                  : "text-gray-400 hover:bg-gray-600"
-              }`}
+              className={`w-1/2 px-3 py-2 text-sm rounded-md font-semibold transition ${watch("role") === type
+                ? "bg-yellow-500 text-gray-900"
+                : "text-gray-400 hover:bg-gray-600"
+                }`}
             >
               {type}
             </motion.button>
@@ -108,15 +107,19 @@ export default function Register() {
         {errors.email && <p className="text-xs text-left w-full text-red-400">{errors.email.message}</p>}
 
         {/* ✅ Styled Phone Input */}
+
         <div className="w-full mb-3">
           <label className="block text-sm text-gray-400 mb-1">Phone</label>
-          <PhoneInput
-            value={watch("phone")}
-            onChange={(val) => setValue("phone", val)}
-            defaultCountry="SA"
-            placeholder="Enter phone number"
-            className="!w-full !px-3 !py-2 !bg-gray-700 !text-white !border !border-gray-600 !rounded-md !placeholder-gray-400 focus:!outline-none focus:!ring-2 focus:!ring-yellow-500"
-          />
+          <div className="phone-input-container border border-gray-600 rounded-md bg-gray-700 overflow-hidden">
+            <PhoneInput
+              international
+              value={watch("phone")}
+              onChange={(value) => setValue("phone", value)}
+              defaultCountry="SA"
+              placeholder="Enter phone number"
+              className="w-full"
+            />
+          </div>
           {errors.phone && <p className="text-xs text-left w-full text-red-400">{errors.phone.message}</p>}
         </div>
 
@@ -159,11 +162,10 @@ export default function Register() {
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
           disabled={isSubmitting}
-          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
-            isSubmitting
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
-          }`}
+          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${isSubmitting
+            ? "bg-gray-500 cursor-not-allowed"
+            : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+            }`}
         >
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>
