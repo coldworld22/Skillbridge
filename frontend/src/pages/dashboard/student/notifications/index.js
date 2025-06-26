@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import formatRelativeTime from '@/utils/relativeTime';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
 import useNotificationStore from '@/store/notifications/notificationStore';
@@ -82,7 +83,7 @@ export default function StudentNotificationsPage() {
                   <div>
                     <p className="text-sm mb-1 leading-relaxed font-medium">{note.message}</p>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <FaCalendarAlt /> {new Date(note.date).toLocaleString()}
+                      <FaCalendarAlt /> {formatRelativeTime(note.date)}
                     </p>
                   </div>
                 </div>
