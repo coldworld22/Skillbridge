@@ -174,7 +174,11 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
+<<<<<<< 33j1vt-codex/handle-notification-read-status-in-navbar
                   {notifications.slice(0, 10).map((n) => (
+=======
+                  {notifications.map((n) => (
+>>>>>>> master
                     <li
                       key={n.id}
                       onClick={() => markRead(n.id)}

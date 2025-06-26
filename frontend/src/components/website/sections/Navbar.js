@@ -147,6 +147,7 @@ const Navbar = () => {
               )}
             </motion.button>
 
+
             <div className="relative">
               <motion.button
                 whileHover={{ scale: 1.1 }}
@@ -154,6 +155,7 @@ const Navbar = () => {
                 className="relative text-2xl"
               >
                 <FaBell />
+
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
                   {unreadCount}
                 </span>
@@ -316,6 +318,8 @@ const Navbar = () => {
                 </ul>
               </div>
             )}
+
+
 
 
             {cartOpen && (
