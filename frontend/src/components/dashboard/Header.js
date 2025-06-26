@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import { FaCog } from "react-icons/fa";
 import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -25,11 +26,13 @@ export default function Header() {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
+  const msgRef = useRef(null);
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
@@ -37,6 +40,11 @@ export default function Header() {
 
   const markRead = useNotificationStore((state) => state.markRead);
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const messages = useMessageStore((state) => state.items);
+  const fetchMessages = useMessageStore((state) => state.fetch);
+  const startMessagePolling = useMessageStore((state) => state.startPolling);
+  const markMessageRead = useMessageStore((state) => state.markRead);
+  const unreadMessageCount = messages.filter((m) => !m.read).length;
   const router = useRouter();
 
   const profileLink =
@@ -57,7 +65,6 @@ export default function Header() {
       toast.error("Logout failed. Please try again.");
     }
   };
-
 
   const toggleDarkMode = () => {
     const newDark = !dark;
@@ -88,6 +95,9 @@ export default function Header() {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setNotifOpen(false);
       }
+      if (msgRef.current && !msgRef.current.contains(event.target)) {
+        setMsgOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -95,14 +105,19 @@ export default function Header() {
   }, [user]);
 
   useEffect(() => {
-
     if (user) {
       fetchNotifications();
       startPolling();
+      fetchMessages();
+      startMessagePolling();
     }
-  }, [user, fetchNotifications, startPolling]);
-
-
+  }, [
+    user,
+    fetchNotifications,
+    startPolling,
+    fetchMessages,
+    startMessagePolling,
+  ]);
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
@@ -110,7 +125,6 @@ export default function Header() {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
           {getPageTitle()}
         </h1>
-
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6 relative">
@@ -143,7 +157,9 @@ export default function Header() {
                 const setUser = useAuthStore.getState().setUser;
                 setUser({ ...user, is_online: newStatus });
                 toast.success(
-                  newStatus ? "You are now available" : "You are now unavailable"
+                  newStatus
+                    ? "You are now available"
+                    : "You are now unavailable",
                 );
               } catch (err) {
                 toast.error("Failed to update availability");
@@ -155,11 +171,55 @@ export default function Header() {
           </button>
         )}
 
-        <div className="relative group cursor-pointer">
-          <Mail className="w-6 h-6 text-gray-500 dark:text-gray-300 hover:text-yellow-500 transition duration-200" />
+        <div className="relative group cursor-pointer" ref={msgRef}>
+          <Mail
+            className="w-6 h-6 text-gray-500 dark:text-gray-300 hover:text-yellow-500 transition duration-200"
+            onClick={() => setNotifOpen(false) || setMsgOpen(!msgOpen)}
+          />
           <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-            5
+            {unreadMessageCount}
           </span>
+
+          <AnimatePresence>
+            {msgOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
+              >
+                <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
+                  {messages.slice(0, 10).map((m) => (
+                    <li
+                      key={m.id}
+                      onClick={() => markMessageRead(m.id)}
+                      className={`px-4 py-2 cursor-pointer transition ${
+                        m.read
+                          ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
+                          : "bg-yellow-50 dark:bg-gray-600"
+                      }`}
+                    >
+                      {m.text}
+                    </li>
+                  ))}
+                  {messages.length === 0 && (
+                    <li className="px-4 py-2 text-center text-sm text-gray-500">
+                      No messages
+                    </li>
+                  )}
+                </ul>
+                <div className="mt-2 text-center">
+                  <Link
+                    href="/messages"
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    View All
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="relative group cursor-pointer" ref={notifRef}>
@@ -182,7 +242,7 @@ export default function Header() {
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
- {notifications.slice(0, 10).map((n) => (
+                  {notifications.slice(0, 10).map((n) => (
                     <li
                       key={n.id}
                       onClick={() => markRead(n.id)}
@@ -196,17 +256,19 @@ export default function Header() {
                     </li>
                   ))}
                   {notifications.length === 0 && (
-                    <li className="px-4 py-2 text-center text-sm text-gray-500">No notifications</li>
+                    <li className="px-4 py-2 text-center text-sm text-gray-500">
+                      No notifications
+                    </li>
                   )}
                 </ul>
                 <div className="mt-2 text-center">
                   <Link
                     href={
                       userRole
-                        ? userRole === 'superadmin'
-                          ? '/dashboard/admin/notifications'
+                        ? userRole === "superadmin"
+                          ? "/dashboard/admin/notifications"
                           : `/dashboard/${userRole}/notifications`
-                        : '/notifications'
+                        : "/notifications"
                     }
                     className="text-blue-600 hover:underline text-sm"
                   >
@@ -228,7 +290,8 @@ export default function Header() {
             <img
               src={
                 user?.avatar_url
-                  ? user.avatar_url.startsWith("http") || user.avatar_url.startsWith("blob:")
+                  ? user.avatar_url.startsWith("http") ||
+                    user.avatar_url.startsWith("blob:")
                     ? user.avatar_url
                     : `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
                   : "/images/default-avatar.png"
@@ -282,7 +345,6 @@ export default function Header() {
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
                   </li>
-
                 </ul>
               </motion.div>
             )}

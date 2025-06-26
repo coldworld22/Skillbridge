@@ -70,6 +70,7 @@ const adsRoutes = require("./modules/ads/ads.routes");
 const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
 const cartRoutes = require("./modules/cart/cart.routes");
 const notificationRoutes = require("./modules/notifications/notifications.routes");
+const messageRoutes = require("./modules/messages/messages.routes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -141,6 +142,7 @@ app.use("/api/ads", adsRoutes); // 📢 Advertisements
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
 app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
 app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
+app.use("/api/messages", messageRoutes); // 💬 User messages
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {

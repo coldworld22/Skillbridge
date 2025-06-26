@@ -6,6 +6,7 @@ const db = require("../../../config/database");
 const { sendOtpEmail } = require("../../../utils/email");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
+const messageService = require("../../messages/messages.service");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -55,19 +56,42 @@ exports.registerUser = async (data) => {
   const accessToken = generateAccessToken({ id: newUser.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = generateRefreshToken({ id: newUser.id });
 
+  const welcomeMessage =
+    newUser.role && newUser.role.toLowerCase() === "instructor"
+      ?
+        "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
+      : "Welcome to SkillBridge!";
+
   await notificationService.createNotification({
     user_id: newUser.id,
     type: "welcome",
-    message: "Welcome to SkillBridge!",
+    message: welcomeMessage,
   });
 
   const admins = await userModel.findAdmins();
+  const firstAdmin = admins[0];
+  if (firstAdmin) {
+    await messageService.createMessage({
+      sender_id: firstAdmin.id,
+      receiver_id: newUser.id,
+      message: welcomeMessage,
+    });
+  }
   await Promise.all(
     admins.map((admin) =>
       notificationService.createNotification({
         user_id: admin.id,
         type: "new_user",
-        message: `${newUser.full_name} joined as ${newUser.role}`,
+        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+      })
+    )
+  );
+  await Promise.all(
+    admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: newUser.id,
+        receiver_id: admin.id,
+        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
       })
     )
   );
@@ -191,4 +215,16 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  await notificationService.createNotification({
+    user_id: user.id,
+    type: "security",
+    message: "Your password was changed successfully",
+  });
+
+  await messageService.createMessage({
+    sender_id: user.id,
+    receiver_id: user.id,
+    message: "Your password was changed successfully",
+  });
 };
