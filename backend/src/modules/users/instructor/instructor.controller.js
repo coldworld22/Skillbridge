@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
 const fs = require("fs");
 const path = require("path");
+const instructorService = require("./instructor.service");
 
 
 /**
@@ -118,41 +119,42 @@ exports.deleteCertificate = async (req, res) => {
  * @access Instructor
  */
 exports.updateProfile = async (req, res) => {
-    const userId = req.user.id;
-    const {
-        full_name, phone, gender, date_of_birth,
-        expertise, experience, certifications,
-        availability, pricing, demo_video_url,
-        social_links
-    } = req.body;
+  const userId = req.user.id;
+  const {
+    full_name,
+    phone,
+    gender,
+    date_of_birth,
+    expertise,
+    experience,
+    certifications,
+    availability,
+    pricing,
+    demo_video_url,
+    social_links,
+  } = req.body;
 
-    await db("users")
-        .where({ id: userId })
-        .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
+  try {
+    await instructorService.updateInstructorProfile(
+      userId,
+      { full_name, phone, gender, date_of_birth },
+      {
+        expertise,
+        experience,
+        certifications,
+        availability,
+        pricing,
+        demo_video_url,
+      },
+      Array.isArray(social_links) ? social_links : []
+    );
 
-    const exists = await db("instructor_profiles").where({ user_id: userId }).first();
-    const profileData = { expertise, experience, certifications, availability, pricing };
-    if (typeof demo_video_url !== 'undefined') {
-        profileData.demo_video_url = demo_video_url;
-    }
-    if (exists) {
-        await db("instructor_profiles")
-            .where({ user_id: userId })
-            .update(profileData);
-    } else {
-        await db("instructor_profiles").insert({ user_id: userId, ...profileData });
-    }
-
-    await db("user_social_links").where({ user_id: userId }).del();
-    if (Array.isArray(social_links)) {
-        for (const link of social_links) {
-            if (link.url) {
-                await db("user_social_links").insert({ user_id: userId, platform: link.platform, url: link.url });
-            }
-        }
-    }
-
-    res.json({ message: "Profile updated successfully" });
+    const updated = await instructorService.getInstructorProfile(userId);
+    res.json(updated);
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
 };
 
 /**
