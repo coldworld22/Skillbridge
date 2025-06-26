@@ -6,6 +6,7 @@ import useScheduleStore from "@/store/schedule/scheduleStore";
 
 export default function InstructorSchedule() {
   const { events, clear, addEvents, prunePastEvents } = useScheduleStore();
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function InstructorSchedule() {
     };
     load();
   }, [clear, addEvents, prunePastEvents]);
+
 
 
   return (
