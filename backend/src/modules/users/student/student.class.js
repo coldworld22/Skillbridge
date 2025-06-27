@@ -3,6 +3,7 @@ const wishlistService = require("../../classes/wishlist/classWishlist.service");
 const cartService = require("../../cart/cart.service");
 const enrollmentService = require("../../classes/enrollments/classEnrollment.service");
 const paymentsService = require("../../payments/payments.service");
+const { v4: uuidv4 } = require("uuid");
 
 class Student {
   constructor(userId) {
@@ -51,8 +52,8 @@ class Student {
     for (const item of cartItems) {
       const cls = await classService.getClassById(item.id);
       if (!cls) continue;
-      await enrollmentService.createEnrollment({
-        id: undefined,
+      const enrollment = await enrollmentService.createEnrollment({
+        id: uuidv4(),
         user_id: this.userId,
         class_id: item.id,
         status: "enrolled",
@@ -67,7 +68,7 @@ class Student {
         paid_at: new Date(),
       });
       cartService.remove(item.id);
-      results.push({ enrollment: item.id, payment });
+      results.push({ enrollment, payment });
     }
     return results;
   }
