@@ -79,7 +79,9 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
       {/* Reply Preview */}
       {replyTo && (
         <div className="mb-2 px-3 py-2 bg-gray-700 border-l-4 border-yellow-400 rounded flex justify-between items-start text-sm text-yellow-300 shadow-sm">
-          <span className="italic truncate">Replying to: “{replyTo.text}”</span>
+          <span className="italic truncate">
+            Replying to: “{replyTo.message || replyTo.file_url?.split('/').pop() || 'audio'}”
+          </span>
           <button onClick={onCancelReply} className="ml-2 text-red-400 hover:text-red-600">
             <FaTimes size={12} />
           </button>
