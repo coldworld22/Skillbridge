@@ -1,8 +1,15 @@
 import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import { API_BASE_URL } from "@/config/config";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
+
+  const getAvatarUrl = (url) => {
+    if (!url) return "/images/default-avatar.png";
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
 
   if (!selectedChat) {
     return <div className="text-gray-400 text-center p-4">No chat selected</div>;
@@ -35,6 +42,11 @@ const ChatHeader = ({ selectedChat }) => {
     <div className="flex justify-between items-center mb-4 border-b pb-2 border-gray-700">
       {/* Chat Name */}
       <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
+        <img
+          src={getAvatarUrl(selectedChat.profileImage)}
+          alt="avatar"
+          className="w-8 h-8 rounded-full border border-gray-500"
+        />
         {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
       </h3>
 

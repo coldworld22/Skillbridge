@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
-import { FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
+import { FaCheck, FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
@@ -130,9 +130,11 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           <div className="flex justify-between items-center text-[10px] text-gray-300 mt-1">
             <span className="whitespace-nowrap">{formatRelativeTime(msg.sent_at)}</span>
             <div className="flex items-center gap-2 ml-2">
-              <FaCheckDouble
-                className={`${msg.read ? "text-blue-300" : "text-gray-400"}`}
-              />
+              {msg.read ? (
+                <FaCheckDouble className="text-blue-300" />
+              ) : (
+                <FaCheck className="text-gray-400" />
+              )}
               <button
                 onClick={() => togglePinMessage(msg)}
                 title="Pin"
