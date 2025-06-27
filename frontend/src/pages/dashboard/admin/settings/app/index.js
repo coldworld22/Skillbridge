@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchAppConfig, updateAppConfig, uploadAppLogo } from "@/services/admin/appConfigService";
+import { fetchAppConfig, updateAppConfig, uploadAppLogo, uploadAppFavicon } from "@/services/admin/appConfigService";
 import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-const defaultConfig = { appName: "", siteTitle: "", logo_url: "" };
-
+const defaultConfig = { appName: "", siteTitle: "", logo_url: "", favicon_url: "" };
 export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
   const [logoFile, setLogoFile] = useState(null);
-
+  const [faviconFile, setFaviconFile] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -89,7 +88,35 @@ export default function AppSettingsPage() {
               </button>
             )}
           </div>
-
+          <div>
+            <label className="block font-semibold mb-1">Favicon</label>
+            {config.favicon_url && (
+              <img src={config.favicon_url} alt="favicon" className="h-10 w-10 mb-2" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFaviconFile(e.target.files[0])}
+            />
+            {faviconFile && (
+              <button
+                type="button"
+                className="ml-2 text-sm text-blue-600"
+                onClick={async () => {
+                  try {
+                    const data = await uploadAppFavicon(faviconFile);
+                    setConfig((prev) => ({ ...prev, ...data }));
+                    setFaviconFile(null);
+                    toast.success("Favicon uploaded");
+                  } catch (err) {
+                    toast.error("Upload failed");
+                  }
+                }}
+              >
+                Upload
+              </button>
+            )}
+          </div>
           <div className="text-right">
             <button
               onClick={handleSave}

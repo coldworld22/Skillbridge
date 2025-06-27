@@ -3,7 +3,6 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const fs = require("fs");
 const path = require("path");
-
 const service = require("./appConfig.service");
 
 exports.getSettings = catchAsync(async (_req, res) => {
@@ -26,5 +25,16 @@ exports.uploadLogo = catchAsync(async (req, res) => {
   const logoUrl = `/uploads/app/${req.file.filename}`;
   const updated = await service.updateSettings({ ...existing, logo_url: logoUrl });
   sendSuccess(res, updated, "Logo updated");
+});
+exports.uploadFavicon = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError("No file uploaded", 400);
+  const existing = await service.getSettings();
+  if (existing.favicon_url) {
+    const oldPath = path.join(__dirname, "../../../", existing.favicon_url);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+  const iconUrl = `/uploads/app/${req.file.filename}`;
+  const updated = await service.updateSettings({ ...existing, favicon_url: iconUrl });
+  sendSuccess(res, updated, "Favicon updated");
 });
 

@@ -19,3 +19,13 @@ export const uploadAppLogo = async (file) => {
   return data?.data;
 };
 
+
+export const uploadAppFavicon = async (file) => {
+  const formData = new FormData();
+  formData.append("favicon", file);
+  const { data } = await api.patch("/app-config/favicon", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
+};
+

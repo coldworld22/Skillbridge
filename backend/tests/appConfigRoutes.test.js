@@ -58,3 +58,19 @@ describe('PATCH /api/app-config/logo', () => {
   });
 });
 
+describe('PATCH /api/app-config/favicon', () => {
+  it('uploads favicon and updates settings', async () => {
+    const updated = { favicon_url: '/uploads/app/favicon.ico' };
+    service.getSettings.mockResolvedValue({});
+    service.updateSettings.mockResolvedValue(updated);
+
+    const res = await request(app)
+      .patch('/api/app-config/favicon')
+      .attach('favicon', Buffer.from('test'), 'favicon.ico');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(updated);
+    expect(service.updateSettings).toHaveBeenCalled();
+  });
+});
+
