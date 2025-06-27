@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useEffect, useState } from "react";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import { fetchAdById, fetchAdAnalytics } from "@/services/admin/adService";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -37,9 +37,7 @@ export default function AdAnalyticsPage() {
 
   return (
     <AdminLayout>
-      <Head>
-        <title>Ad Analytics - {ad.title}</title>
-      </Head>
+      <PageHead title={`Ad Analytics - ${ad.title}`} />
   
       <div className="p-4 sm:p-6 space-y-8 max-w-screen-xl mx-auto">
         {/* Header */}

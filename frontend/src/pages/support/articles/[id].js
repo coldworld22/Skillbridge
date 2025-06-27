@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -28,9 +28,7 @@ export default function ArticlePage() {
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <Head>
-        <title>{article ? `${article.title} - Support` : 'Loading...'} | SkillBridge</title>
-      </Head>
+      <PageHead title={article ? `${article.title} - Support` : 'Loading...'} />
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-24">
         {article ? (

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { useState } from "react";
@@ -39,9 +39,7 @@ export default function TicketDetailPage() {
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <Head>
-        <title>Ticket {id} - Support | SkillBridge</title>
-      </Head>
+      <PageHead title={`Ticket ${id} - Support`} />
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-20">
         <h1 className="text-2xl font-bold text-yellow-500 mb-4">{mockThread.subject}</h1>

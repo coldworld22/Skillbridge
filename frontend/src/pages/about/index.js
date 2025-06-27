@@ -1,13 +1,11 @@
-import Head from 'next/head';
+import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 
 export default function AboutUsPage() {
   return (
     <>
-      <Head>
-        <title>About Us – SkillBridge</title>
-      </Head>
+      <PageHead title="About Us" />
       <Navbar />
       <section className="bg-black text-white text-center py-24">
         <h1 className="text-4xl font-bold mb-4">Empowering Global Learning</h1>

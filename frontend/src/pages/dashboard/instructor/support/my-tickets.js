@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
 
@@ -22,9 +22,7 @@ const mockTickets = [
 export default function MyTicketsPage() {
   return (
     <StudentLayout>
-      <Head>
-        <title>My Tickets - Dashboard | SkillBridge</title>
-      </Head>
+      <PageHead title="My Tickets - Dashboard" />
       <div className="px-6 py-10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">My Support Tickets</h1>

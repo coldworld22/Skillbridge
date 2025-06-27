@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
+import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
 import Link from "next/link";
 
@@ -66,8 +67,8 @@ export default function PromotionPage() {
 
   return (
     <>
+      <PageHead title={`${promotion.title} - Offer`} />
       <Head>
-        <title>{promotion.title} - Offer</title>
         <meta name="description" content={promotion.description} />
         <meta property="og:image" content={promotion.image} />
       </Head>

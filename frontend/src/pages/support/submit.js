@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
@@ -25,9 +25,7 @@ export default function SubmitTicketPage() {
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <Head>
-        <title>Submit a Support Ticket - SkillBridge</title>
-      </Head>
+      <PageHead title="Submit a Support Ticket" />
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-20">
         <h1 className="text-3xl font-bold text-yellow-500 mb-6">Submit a Support Ticket</h1>

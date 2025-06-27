@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Head from 'next/head';
+import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
@@ -28,9 +28,7 @@ export default function FaqPage() {
 
   return (
     <>
-      <Head>
-        <title>FAQs – SkillBridge</title>
-      </Head>
+      <PageHead title="FAQs" />
 
       <div className="bg-gray-900 min-h-screen text-white">
         <Navbar />

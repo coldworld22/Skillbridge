@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import Link from "next/link";
+import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -133,8 +134,8 @@ const OfferDetailsPage = () => {
 
   return (
     <div className="bg-gray-950 text-white min-h-screen">
+      <PageHead title={`${offer.title} – Offer`} />
       <Head>
-        <title>{offer.title} – SkillBridge Offer</title>
         <meta name="description" content={`Offer details: ${offer.description}`} />
       </Head>
       <Navbar />

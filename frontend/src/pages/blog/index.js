@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import Link from 'next/link';
@@ -25,9 +25,7 @@ const mockPosts = [
 export default function BlogPage() {
   return (
     <>
-      <Head>
-        <title>Blog – SkillBridge</title>
-      </Head>
+      <PageHead title="Blog" />
 
       <div className="bg-gray-900 text-white min-h-screen">
         <Navbar />

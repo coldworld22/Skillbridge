@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import { fetchAdById } from "@/services/admin/adService";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -61,9 +61,7 @@ export default function InstructorAdAnalyticsPage() {
 
   return (
     <InstructorLayout>
-      <Head>
-        <title>Ad Analytics - {ad.title}</title>
-      </Head>
+      <PageHead title={`Ad Analytics - ${ad.title}`} />
 
       <div className="p-4 sm:p-6 space-y-8 max-w-screen-xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
