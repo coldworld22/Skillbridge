@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { FaVideo, FaMicrophone, FaPhoneSlash } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const VideoChat = () => {
   const [isCallActive, setIsCallActive] = useState(false);
 
   const startCall = () => {
     setIsCallActive(true);
-    console.log("Starting Video Call...");
+    toast.info("Starting Video Call...");
   };
 
   const endCall = () => {
     setIsCallActive(false);
-    console.log("Ending Video Call...");
+    toast.info("Ending Video Call...");
   };
 
   return (

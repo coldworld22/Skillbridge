@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { filterMessage } from './MessageFilter';
+import { toast } from 'react-toastify';
 
 function ChatInput() {
   const [message, setMessage] = useState('');
@@ -14,7 +15,7 @@ function ChatInput() {
     }
 
     // send message
-    console.log('Message sent:', message);
+    toast.success('Message sent');
     setMessage('');
   };
 
