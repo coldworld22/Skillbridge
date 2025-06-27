@@ -41,3 +41,20 @@ describe('PUT /api/app-config', () => {
     expect(service.updateSettings).toHaveBeenCalledWith(payload);
   });
 });
+
+describe('PATCH /api/app-config/logo', () => {
+  it('uploads logo and updates settings', async () => {
+    const updated = { logo_url: '/uploads/app/logo.png' };
+    service.getSettings.mockResolvedValue({});
+    service.updateSettings.mockResolvedValue(updated);
+
+    const res = await request(app)
+      .patch('/api/app-config/logo')
+      .attach('logo', Buffer.from('test'), 'logo.png');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(updated);
+    expect(service.updateSettings).toHaveBeenCalled();
+  });
+});
+

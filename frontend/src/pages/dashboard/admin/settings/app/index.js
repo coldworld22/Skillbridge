@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchAppConfig, updateAppConfig } from "@/services/admin/appConfigService";
+import { fetchAppConfig, updateAppConfig, uploadAppLogo } from "@/services/admin/appConfigService";
 import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-const defaultConfig = { appName: "", siteTitle: "" };
+const defaultConfig = { appName: "", siteTitle: "", logo_url: "" };
 
 export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
+  const [logoFile, setLogoFile] = useState(null);
+
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +60,36 @@ export default function AppSettingsPage() {
               onChange={(e) => handleChange("siteTitle", e.target.value)}
             />
           </div>
+          <div>
+            <label className="block font-semibold mb-1">App Logo</label>
+            {config.logo_url && (
+              <img src={config.logo_url} alt="logo" className="h-20 mb-2" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogoFile(e.target.files[0])}
+            />
+            {logoFile && (
+              <button
+                type="button"
+                className="ml-2 text-sm text-blue-600"
+                onClick={async () => {
+                  try {
+                    const data = await uploadAppLogo(logoFile);
+                    setConfig((prev) => ({ ...prev, ...data }));
+                    setLogoFile(null);
+                    toast.success("Logo uploaded");
+                  } catch (err) {
+                    toast.error("Upload failed");
+                  }
+                }}
+              >
+                Upload
+              </button>
+            )}
+          </div>
+
           <div className="text-right">
             <button
               onClick={handleSave}
