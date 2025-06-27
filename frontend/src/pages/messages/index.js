@@ -24,10 +24,31 @@ const MessagesPage = () => {
 
   const router = useRouter();
 
-  const fetchUsersList = useCallback(
-    () => getUsers().then(setUsers).catch(() => setUsers([])),
-    []
+  const adjustCounts = useCallback(
+    (list) => {
+      const systemMap = {};
+      messages.forEach((m) => {
+        if (!m.read) {
+          systemMap[m.sender_id] = (systemMap[m.sender_id] || 0) + 1;
+        }
+      });
+
+      return list.map((u) => ({
+        ...u,
+        unreadMessages: Math.max(
+          0,
+          (u.unreadMessages || 0) - (systemMap[u.id] || 0)
+        ),
+      }));
+    },
+    [messages]
   );
+
+  const fetchUsersList = useCallback(() => {
+    return getUsers()
+      .then((data) => setUsers(adjustCounts(data)))
+      .catch(() => setUsers([]));
+  }, [adjustCounts]);
 
   useEffect(() => {
     fetchUsersList();
@@ -38,6 +59,10 @@ const MessagesPage = () => {
     const interval = setInterval(fetchUsersList, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    setUsers((prev) => adjustCounts(prev));
+  }, [messages, adjustCounts]);
 
   useEffect(() => {
     const lowerSearch = searchTerm.toLowerCase().trim();
