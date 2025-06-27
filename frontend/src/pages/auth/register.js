@@ -11,6 +11,8 @@ import PhoneInput from "react-phone-number-input";
 import 'react-phone-number-input/style.css';
 
 import logo from "@/shared/assets/images/login/logo.png";
+import { API_BASE_URL } from "@/config/config";
+import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialRegister from "@/shared/components/auth/SocialRegister";
@@ -22,6 +24,8 @@ export default function Register() {
   const router = useRouter();
   const { register: registerUser, user, hasHydrated } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const settings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   const {
     register,
@@ -48,6 +52,10 @@ export default function Register() {
     if (!hasHydrated) return;
     if (user) router.replace("/website");
   }, [user, hasHydrated]);
+
+  useEffect(() => {
+    fetchAppConfig();
+  }, [fetchAppConfig]);
 
   const onSubmit = async (data) => {
     try {
@@ -76,12 +84,19 @@ export default function Register() {
         transition={{ duration: 0.4 }}
         className="relative bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
       >
-        <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg">
-          <Image src={logo} alt="SkillBridge Logo" width={80} height={80} className="rounded-full" priority />
+        <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+          <Image
+            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo}
+            alt={(settings.appName || 'SkillBridge') + ' Logo'}
+            width={80}
+            height={80}
+            className="rounded-full object-contain"
+            priority
+          />
         </div>
 
         <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          Create an Account 🎓
+          Create an Account at {settings.appName || 'SkillBridge'} 🎓
         </h2>
 
         <div className="flex justify-between bg-gray-700 rounded-lg p-2 mb-4 w-full">

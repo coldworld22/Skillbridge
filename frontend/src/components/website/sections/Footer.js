@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import GoogleAd from "@/components/shared/GoogleAd";
+import { API_BASE_URL } from "@/config/config";
+import useAppConfigStore from "@/store/appConfigStore";
 import { 
   FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube, 
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaCcVisa, FaCcMastercard, 
@@ -11,6 +13,12 @@ import {
 const Footer = () => {
   const [showScroll, setShowScroll] = useState(false);
   const [email, setEmail] = useState("");
+  const settings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+
+  useEffect(() => {
+    fetchAppConfig();
+  }, [fetchAppConfig]);
 
   useEffect(() => {
     const checkScrollTop = () => {
@@ -39,9 +47,9 @@ const Footer = () => {
             
             {/* About Section */}
             <div>
-              <h3 className="text-lg font-bold mb-4 text-yellow-400">About SkillBridge</h3>
+              <h3 className="text-lg font-bold mb-4 text-yellow-400">About {settings.appName || 'SkillBridge'}</h3>
               <p className="text-sm leading-relaxed">
-                SkillBridge connects learners with expert instructors worldwide.
+                {settings.metaDescription || 'SkillBridge connects learners with expert instructors worldwide.'}
               </p>
               <div className="flex space-x-4 mt-4">
                 {[{ href: "https://facebook.com", icon: <FaFacebook /> },
@@ -162,7 +170,7 @@ const Footer = () => {
 
         {/* Copyright Section */}
         <div className="text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} SkillBridge. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}. All rights reserved.</p>
           <div className="flex justify-center space-x-6 mt-2">
             <Link href="/privacy-policy" className="hover:text-yellow-300 transition">Privacy Policy</Link>
             <span>|</span>

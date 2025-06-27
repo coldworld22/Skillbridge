@@ -7,6 +7,8 @@ import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";    
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
+import useAppConfigStore from "@/store/appConfigStore";
+import Head from "next/head";
 import "@/styles/globals.css"; // or whatever your path is
 
 
@@ -22,7 +24,11 @@ function MyApp({ Component, pageProps, router }) {
   // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
 
-    useEffect(() => {
+  const fetchConfig = useAppConfigStore((state) => state.fetch);
+  const configLoaded = useAppConfigStore((state) => state.loaded);
+  const settings = useAppConfigStore((state) => state.settings);
+
+  useEffect(() => {
     const local = localStorage.getItem("auth");
     if (local) {
       const parsed = JSON.parse(local)?.state;
@@ -36,6 +42,10 @@ function MyApp({ Component, pageProps, router }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (!configLoaded) fetchConfig();
+  }, [configLoaded, fetchConfig]);
+
   return (
     <AnimatePresence mode="wait">
       {/* Motion wrapper for route transition */}
@@ -46,6 +56,18 @@ function MyApp({ Component, pageProps, router }) {
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3 }}
       >
+        <Head>
+          <title>{settings.siteTitle || 'SkillBridge'}</title>
+          {settings.metaDescription && (
+            <meta name="description" content={settings.metaDescription} />
+          )}
+          {settings.favicon_url && (
+            <link
+              rel="icon"
+              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${settings.favicon_url}`}
+            />
+          )}
+        </Head>
         {/* Render page with layout */}
         {getLayout(<Component {...pageProps} />)}
 
