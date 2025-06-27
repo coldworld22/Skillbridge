@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import ChatImage from "../shared/ChatImage";
 import {
   FaPlay,
   FaUserCircle,
@@ -39,10 +40,12 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
         {/* 📷 Image */}
         {message.image && (
-          <img
+          <ChatImage
             src={message.image}
             alt="Sent image"
             className="rounded-md mt-2 max-w-full object-cover"
+            width={300}
+            height={200}
           />
         )}
 

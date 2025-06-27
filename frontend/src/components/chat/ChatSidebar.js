@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ChatImage from "../shared/ChatImage";
 import { API_BASE_URL } from "@/config/config";
 import {
   FaPlus,
@@ -128,10 +129,12 @@ const ChatSidebar = ({
           >
             {/* Profile Picture */}
             <div className="relative">
-              <img
+              <ChatImage
                 src={getAvatarUrl(user.profileImage)}
                 alt={user.name}
                 className="w-10 h-10 rounded-full border-2 border-yellow-500"
+                width={40}
+                height={40}
               />
               <span
                 className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border border-gray-800 ${
@@ -181,10 +184,12 @@ const ChatSidebar = ({
               className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition"
               onClick={() => setSelectedChat(user)}
             >
-              <img
+              <ChatImage
                 src={getAvatarUrl(user.profileImage)}
                 alt={user.name}
                 className="w-10 h-10 rounded-full border-2 border-gray-500"
+                width={40}
+                height={40}
               />
               <p className="text-white font-semibold">{user.name}</p>
             </div>

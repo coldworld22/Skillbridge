@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
+import ChatImage from "../shared/ChatImage";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
@@ -41,10 +42,12 @@ const ChatHeader = ({ selectedChat }) => {
     <div className="flex justify-between items-center mb-4 border-b pb-2 border-gray-700">
       {/* Chat Name */}
       <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
-        <img
+        <ChatImage
           src={getAvatarUrl(selectedChat.profileImage)}
           alt="avatar"
           className="w-8 h-8 rounded-full border border-gray-500"
+          width={32}
+          height={32}
         />
         {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
       </h3>

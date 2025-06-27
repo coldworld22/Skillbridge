@@ -6,6 +6,7 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import ChatNotifications from "@/components/chat/ChatNotifications";
 import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots } from "react-icons/fa";
+import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 
 const MessagesPage = () => {
@@ -167,10 +168,12 @@ const MessagesPage = () => {
                           className="flex items-center justify-between gap-3 p-3 hover:bg-gray-700 rounded-lg cursor-pointer transition"
                         >
                           <div className="flex items-center gap-3">
-                            <img
+                            <ChatImage
                               src={user.profileImage || "/images/default-avatar.png"}
                               alt={user.name || "User"}
                               className="w-10 h-10 rounded-full border border-yellow-500"
+                              width={40}
+                              height={40}
                             />
                             <div>
                               <p className="text-white font-semibold">{user.name || "Unknown User"}</p>

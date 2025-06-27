@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ChatImage from '../shared/ChatImage';
 
 const initialMembers = [
   {
@@ -45,10 +46,12 @@ export default function GroupMembersManager() {
           className="flex items-center justify-between p-3 border rounded shadow-sm bg-white"
         >
           <div className="flex items-center gap-3">
-            <img
+            <ChatImage
               src={member.avatar}
               alt={member.name}
               className="w-10 h-10 rounded-full border"
+              width={40}
+              height={40}
             />
             <div>
               <p className="font-medium">{member.name}</p>

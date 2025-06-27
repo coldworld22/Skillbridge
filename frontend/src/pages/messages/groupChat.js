@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import { getGroups, sendGroupMessage } from "@/services/groupService";
 import { motion } from "framer-motion";
+import ChatImage from "@/components/shared/ChatImage";
 import formatRelativeTime from "@/utils/relativeTime";
 import EmojiPicker from "emoji-picker-react";
 import MessageInput from "./MessageInput";
@@ -107,7 +108,15 @@ const GroupChatPage = () => {
                     <div>
                       <strong>{msg.sender}</strong>
                       <p>{msg.text}</p>
-                      {msg.file && <img src={msg.file} alt="Attachment" className="w-16 h-16 mt-2 rounded-lg" />}
+                      {msg.file && (
+                        <ChatImage
+                          src={msg.file}
+                          alt="Attachment"
+                          className="w-16 h-16 mt-2 rounded-lg"
+                          width={64}
+                          height={64}
+                        />
+                      )}
                       <p className="text-xs text-gray-400">{formatRelativeTime(msg.timestamp)}</p>
                     </div>
                   </motion.div>
