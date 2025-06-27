@@ -3,6 +3,7 @@ import formatRelativeTime from "@/utils/relativeTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import { FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
+import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import { getConversation, sendChatMessage } from "@/services/messageService";
@@ -15,6 +16,20 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const chatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  const getAvatarUrl = (url) => {
+    if (!url) return "/default-avatar.png";
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
+  useEffect(() => {
+    if (selectedChat) {
+      getConversation(selectedChat.id)
+        .then(setMessages)
+        .catch(() => setMessages([]));
+    }
+  }, [selectedChat]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -65,7 +80,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
       {/* Header */}
       <div className="border-b border-gray-700">
         <ChatHeader selectedChat={selectedChat} onStartVideoCall={onStartVideoCall} />
@@ -101,7 +116,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
       >
         {!isYou && (
           <img
-            src={selectedChat.profileImage || "/default-avatar.png"}
+
+            src={getAvatarUrl(selectedChat.profileImage)}
+
             className="w-7 h-7 rounded-full border border-gray-500"
             alt="avatar"
           />

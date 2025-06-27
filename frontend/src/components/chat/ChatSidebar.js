@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/config/config";
 import {
   FaPlus,
   FaClock,
@@ -22,6 +23,12 @@ const ChatSidebar = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFilter, setSearchFilter] = useState("all");
   const [pinnedChats, setPinnedChats] = useState([]);
+
+  const getAvatarUrl = (url) => {
+    if (!url) return "/default-avatar.png";
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
 
   // ✅ Sort users by online status & last active
   useEffect(() => {
@@ -122,7 +129,7 @@ const ChatSidebar = ({
             {/* Profile Picture */}
             <div className="relative">
               <img
-                src={user.profileImage || "/default-avatar.png"}
+                src={getAvatarUrl(user.profileImage)}
                 alt={user.name}
                 className="w-10 h-10 rounded-full border-2 border-yellow-500"
               />
@@ -175,7 +182,7 @@ const ChatSidebar = ({
               onClick={() => setSelectedChat(user)}
             >
               <img
-                src={user.profileImage || "/default-avatar.png"}
+                src={getAvatarUrl(user.profileImage)}
                 alt={user.name}
                 className="w-10 h-10 rounded-full border-2 border-gray-500"
               />
