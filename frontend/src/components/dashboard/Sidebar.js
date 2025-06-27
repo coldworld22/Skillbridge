@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import useAppConfigStore from '@/store/appConfigStore';
+import { API_BASE_URL } from '@/config/config';
+import logo from '@/shared/assets/images/login/logo.png';
 
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
@@ -18,10 +21,16 @@ export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const settings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    fetchAppConfig();
+  }, [fetchAppConfig]);
 
   const navLinks = navMap[role] || [];
 
@@ -32,7 +41,16 @@ export default function Sidebar({ role = 'admin' }) {
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 shadow-lg p-6 flex flex-col justify-between">
       <div>
-        <h2 className="text-2xl font-extrabold text-yellow-500 mb-8">SkillBridge</h2>
+        <div className="flex items-center gap-3 mb-8">
+          <img
+            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo.src || logo}
+            alt={`${settings.appName || 'SkillBridge'} Logo`}
+            className="w-12 h-12 rounded-full object-contain shadow"
+          />
+          <h2 className="text-2xl font-extrabold text-yellow-500">
+            {settings.appName || 'SkillBridge'}
+          </h2>
+        </div>
 
         <nav className="space-y-2">
           {navLinks.map(({ title, items }) => (
@@ -99,7 +117,7 @@ export default function Sidebar({ role = 'admin' }) {
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
-        &copy; {new Date().getFullYear()} SkillBridge
+        &copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}
       </div>
     </aside>
   );

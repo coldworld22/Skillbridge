@@ -118,9 +118,6 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [user]);
 
-  useEffect(() => {
-    fetchAppConfig();
-  }, [fetchAppConfig]);
 
   // Stop polling when component unmounts
   useEffect(() => {
