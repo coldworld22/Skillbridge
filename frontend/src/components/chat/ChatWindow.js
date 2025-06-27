@@ -32,6 +32,14 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   }, [selectedChat]);
 
   useEffect(() => {
+    if (selectedChat) {
+      getConversation(selectedChat.id)
+        .then(setMessages)
+        .catch(() => setMessages([]));
+    }
+  }, [selectedChat]);
+
+  useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
@@ -108,7 +116,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
       >
         {!isYou && (
           <img
+
             src={getAvatarUrl(selectedChat.profileImage)}
+
             className="w-7 h-7 rounded-full border border-gray-500"
             alt="avatar"
           />
