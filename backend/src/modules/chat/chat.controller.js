@@ -5,7 +5,7 @@ const service = require("./chat.service");
 
 exports.searchUsers = catchAsync(async (req, res) => {
   const term = req.query.q || "";
-  const users = await service.searchUsers(term);
+  const users = await service.searchUsers(req.user.id, term);
   sendSuccess(res, users);
 });
 

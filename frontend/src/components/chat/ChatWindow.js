@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import { getConversation, sendChatMessage } from "@/services/messageService";
 
-const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
+const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   const currentUser = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
@@ -26,16 +26,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
   useEffect(() => {
     if (selectedChat) {
       getConversation(selectedChat.id)
-        .then(setMessages)
+        .then((msgs) => setMessages(msgs))
         .catch(() => setMessages([]));
-    }
-  }, [selectedChat]);
-
-  useEffect(() => {
-    if (selectedChat) {
-      getConversation(selectedChat.id)
-        .then(setMessages)
-        .catch(() => setMessages([]));
+      if (refreshUsers) refreshUsers();
     }
   }, [selectedChat]);
 
@@ -114,26 +107,22 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
         key={index}
         className={`flex items-end gap-2 ${isYou ? "justify-end" : "justify-start"}`}
       >
-        {!isYou && (
-          <img
-
-            src={getAvatarUrl(selectedChat.profileImage)}
-
-            className="w-7 h-7 rounded-full border border-gray-500"
-            alt="avatar"
-          />
-        )}
+        <img
+          src={getAvatarUrl(
+            isYou ? currentUser?.avatar_url : selectedChat.profileImage
+          )}
+          className="w-7 h-7 rounded-full border border-gray-500"
+          alt="avatar"
+        />
 
         <div
           className={`px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
             isYou ? "bg-blue-600 text-white" : "bg-gray-600 text-white"
           }`}
         >
-          {!isYou && (
-            <div className="text-[11px] font-semibold text-gray-300 mb-1">
-              {selectedChat.name}
-            </div>
-          )}
+          <div className="text-[11px] font-semibold text-gray-300 mb-1">
+            {isYou ? currentUser?.full_name || "You" : selectedChat.name}
+          </div>
 
           <p className="text-[13px] leading-snug break-words">{msg.message}</p>
 
