@@ -37,12 +37,14 @@ export default function Header() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const startPolling = useNotificationStore((state) => state.startPolling);
+  const stopPolling = useNotificationStore((state) => state.stopPolling);
 
   const markRead = useNotificationStore((state) => state.markRead);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const messages = useMessageStore((state) => state.items);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const startMessagePolling = useMessageStore((state) => state.startPolling);
+  const stopMessagePolling = useMessageStore((state) => state.stopPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
   const unreadMessageCount = messages.filter((m) => !m.read).length;
   const router = useRouter();
@@ -55,6 +57,13 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await logout();
+      stopPolling();
+      stopMessagePolling();
+      console.log(
+        'Polling after logout:',
+        useNotificationStore.getState().poller,
+        useMessageStore.getState().poller
+      );
       toast.success("You’ve been logged out. See you soon!");
 
       // ⏳ Delay before redirecting to login
@@ -103,6 +112,19 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [user]);
+
+  // Stop polling when component unmounts
+  useEffect(() => {
+    return () => {
+      stopPolling();
+      stopMessagePolling();
+      console.log(
+        'Polling after unmount:',
+        useNotificationStore.getState().poller,
+        useMessageStore.getState().poller
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
