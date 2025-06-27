@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
+import { fetchClassDetails } from '@/services/classService';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import {
@@ -33,23 +34,15 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
 
-  const mockClasses = [
-    {
-      id: '2',
-      title: 'React & Next.js Bootcamp',
-      instructor: 'Ayman Khalid',
-      price: 49,
-      linkId: 'react-bootcamp',
-      image: 'https://bs-uploads.toptal.io/.../nextjs.png'
-    }
-  ];
-
   useEffect(() => {
-    if (classId) {
-      const found = mockClasses.find((cls) => cls.id === classId);
-      setClassInfo(found);
-    }
-    const loadMethods = async () => {
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const details = await fetchClassDetails(classId);
+        setClassInfo(details?.data ?? details);
+      } catch (err) {
+        console.error('Failed to load class', err);
+      }
       try {
         const data = await fetchPaymentMethods();
         setMethods(data);
@@ -58,7 +51,7 @@ export default function CheckoutPage() {
         console.error('Failed to load payment methods', err);
       }
     };
-    loadMethods();
+    load();
   }, [classId]);
 
   const handleApplyPromo = () => {
@@ -82,11 +75,10 @@ export default function CheckoutPage() {
         startDate: new Date().toISOString(),
         status: "Live",
         joined: true,
-        linkId: classInfo.linkId
       };
       localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
       setPaymentStatus('success');
-      setTimeout(() => router.push(`/payments/success?linkId=${classInfo.linkId}`), 1500);
+      setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
     }, 1500);
   };
 
@@ -104,7 +96,7 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-bold mb-6 text-yellow-400">Checkout</h1>
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
-          <img src={classInfo.image} alt={classInfo.title} className="w-32 h-32 object-cover rounded-lg" />
+          <img src={classInfo.cover_image} alt={classInfo.title} className="w-32 h-32 object-cover rounded-lg" />
           <div>
             <h2 className="text-xl font-semibold">{classInfo.title}</h2>
             <p className="text-sm text-gray-400">Instructor: {classInfo.instructor}</p>
@@ -180,7 +172,7 @@ export default function CheckoutPage() {
               </button>
               <button
                 className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-                onClick={() => router.push(`/payments/success?linkId=${classInfo.linkId}`)}
+                onClick={() => router.push(`/payments/success?classId=${classInfo.id}`)}
               >Done</button>
             </div>
           ) : (
