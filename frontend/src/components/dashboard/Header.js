@@ -18,6 +18,9 @@ import { FaCog } from "react-icons/fa";
 import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useAppConfigStore from "@/store/appConfigStore";
+import { API_BASE_URL } from "@/config/config";
+import logo from "@/shared/assets/images/login/logo.png";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -47,6 +50,8 @@ export default function Header() {
   const stopMessagePolling = useMessageStore((state) => state.stopPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
   const unreadMessageCount = messages.filter((m) => !m.read).length;
+  const appSettings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
 
   const profileLink =
@@ -112,6 +117,7 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [user]);
+
   // Stop polling when component unmounts
   useEffect(() => {
     return () => {
@@ -143,6 +149,16 @@ export default function Header() {
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-30">
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <img
+            src={appSettings.logo_url ? `${API_BASE_URL}${appSettings.logo_url}` : logo.src || logo}
+            alt={`${appSettings.appName || 'SkillBridge'} Logo`}
+            className="w-10 h-10 rounded-full object-contain shadow"
+          />
+          <span className="hidden sm:block text-xl font-extrabold text-yellow-500">
+            {appSettings.appName || 'SkillBridge'}
+          </span>
+        </div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
           {getPageTitle()}
         </h1>
