@@ -18,13 +18,23 @@ exports.getConversation = catchAsync(async (req, res) => {
 exports.sendMessage = catchAsync(async (req, res) => {
   const otherId = req.params.userId;
   const { message } = req.body || {};
-  if (!message || !message.trim()) {
-    throw new AppError("Message required", 400);
+
+  const file = req.files?.file?.[0];
+  const audio = req.files?.audio?.[0];
+
+  if (!message && !file && !audio) {
+    throw new AppError("Message or attachment required", 400);
   }
+
+  const fileUrl = file ? `/uploads/chat/${file.filename}` : null;
+  const audioUrl = audio ? `/uploads/chat/${audio.filename}` : null;
+
   const msg = await service.sendMessage({
     sender_id: req.user.id,
     receiver_id: otherId,
-    message: message.trim(),
+    message: message ? message.trim() : "",
+    file_url: fileUrl,
+    audio_url: audioUrl,
   });
   sendSuccess(res, msg, "Message sent");
 });
