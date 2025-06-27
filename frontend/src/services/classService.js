@@ -44,8 +44,15 @@ export const markClassCompleted = async (id) => {
 };
 
 export const fetchMyEnrolledClasses = async () => {
-  const { data } = await api.get("/users/classes/enroll/my");
-  return data?.data ?? [];
+  try {
+    const { data } = await api.get("/users/classes/enroll/my");
+    return data?.data ?? [];
+  } catch (err) {
+    if (err.response && [401, 403].includes(err.response.status)) {
+      return [];
+    }
+    throw err;
+  }
 };
 
 export const fetchClassLessons = async (classId) => {
