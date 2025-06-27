@@ -17,7 +17,7 @@ exports.getConversation = catchAsync(async (req, res) => {
 
 exports.sendMessage = catchAsync(async (req, res) => {
   const otherId = req.params.userId;
-  const { message } = req.body || {};
+  const { message, replyTo } = req.body || {};
 
   const file = req.files?.file?.[0];
   const audio = req.files?.audio?.[0];
@@ -35,6 +35,19 @@ exports.sendMessage = catchAsync(async (req, res) => {
     message: message ? message.trim() : "",
     file_url: fileUrl,
     audio_url: audioUrl,
+    reply_to_id: replyTo || null,
   });
   sendSuccess(res, msg, "Message sent");
+});
+
+exports.deleteMessage = catchAsync(async (req, res) => {
+  const msg = await service.deleteMessage(req.user.id, req.params.id);
+  if (!msg) throw new AppError("Message not found", 404);
+  sendSuccess(res, msg, "Message deleted");
+});
+
+exports.togglePin = catchAsync(async (req, res) => {
+  const msg = await service.togglePin(req.user.id, req.params.id);
+  if (!msg) throw new AppError("Message not found", 404);
+  sendSuccess(res, msg, msg.pinned ? "Pinned" : "Unpinned");
 });

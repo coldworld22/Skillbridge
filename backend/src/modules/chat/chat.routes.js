@@ -9,5 +9,7 @@ router.use(verifyToken);
 router.get("/users", controller.searchUsers);
 router.get("/:userId", controller.getConversation);
 router.post("/:userId", upload, controller.sendMessage);
+router.delete("/messages/:id", controller.deleteMessage);
+router.patch("/messages/:id/pin", controller.togglePin);
 
 module.exports = router;

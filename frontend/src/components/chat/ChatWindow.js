@@ -6,7 +6,12 @@ import { FaCheck, FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-ico
 import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
-import { getConversation, sendChatMessage } from "@/services/messageService";
+import {
+  getConversation,
+  sendChatMessage,
+  deleteChatMessage as apiDeleteChatMessage,
+  togglePinMessage as apiTogglePinMessage,
+} from "@/services/messageService";
 
 const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   const currentUser = useAuthStore((state) => state.user);
@@ -57,6 +62,10 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   }, [messages]);
 
   useEffect(() => {
+    setPinnedMessages(messages.filter((m) => m.pinned));
+  }, [messages]);
+
+  useEffect(() => {
     if (typing) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => setTyping(false), 2000);
@@ -71,12 +80,11 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
 
     try {
 
-      const sent = await sendChatMessage(selectedChat.id, newMessage.text);
-      const finalMsg = { ...sent };
-      if (newMessage.replyTo) {
-        finalMsg.replyTo = newMessage.replyTo.text || newMessage.replyTo.message;
-      }
-      setMessages((prev) => [...prev, finalMsg]);
+      const sent = await sendChatMessage(selectedChat.id, {
+        ...newMessage,
+        replyId: replyingTo?.id,
+      });
+      setMessages((prev) => [...prev, sent]);
 
       setTyping(false);
       setReplyingTo(null);
@@ -87,15 +95,28 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     }
   };
 
-  const togglePinMessage = (id) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, pinned: !m.pinned } : m))
-    );
+
+  const togglePinMessageHandler = async (msg) => {
+    try {
+      const updated = await apiTogglePinMessage(msg.id);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === updated.id ? updated : m))
+      );
+      toast.info(updated.pinned ? "Message pinned" : "Message unpinned");
+    } catch (_) {
+      toast.error("Failed to pin message");
+    }
   };
 
-  const deleteMessage = (id) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-    toast.info("Message deleted.");
+  const deleteMessageHandler = async (msgId) => {
+    try {
+      await apiDeleteChatMessage(msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      toast.info("Message deleted.");
+    } catch (_) {
+      toast.error("Failed to delete message");
+    }
+
   };
 
   const pinnedMessages = messages.filter((m) => m.pinned);
@@ -164,13 +185,39 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           </div>
 
 
-          {msg.replyTo && (
-            <div className="text-[11px] italic text-yellow-200 mb-1 border-l-2 border-yellow-400 pl-2">
-              Replying to: {msg.replyTo}
+          {msg.reply_message && (
+            <div className="text-xs mb-1 border-l-2 border-yellow-400 pl-2 text-gray-200">
+              <span className="italic">{msg.reply_message}</span>
+            </div>
+          )}
+          {msg.reply_file_url && isImage(msg.reply_file_url) && (
+            <div className="mb-1 border-l-2 border-yellow-400 pl-2">
+              <img
+                src={getMediaUrl(msg.reply_file_url)}
+                alt="reply"
+                className="max-w-xs rounded-md"
+              />
+            </div>
+          )}
+          {msg.reply_file_url && !isImage(msg.reply_file_url) && (
+            <div className="text-xs mb-1 border-l-2 border-yellow-400 pl-2">
+              <a
+                href={getMediaUrl(msg.reply_file_url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                {msg.reply_file_url.split('/').pop()}
+              </a>
+            </div>
+          )}
+          {msg.reply_audio_url && (
+            <div className="mb-1 border-l-2 border-yellow-400 pl-2">
+              <audio controls src={getMediaUrl(msg.reply_audio_url)} className="w-48" />
             </div>
           )}
 
-          {isImageMessage(msg.message) ? (
+          {msg.file_url && isImage(msg.file_url) && (
 
             <img
               src={getMediaUrl(msg.file_url)}
@@ -205,7 +252,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaCheck className="text-gray-400" />
               )}
               <button
-                onClick={() => togglePinMessage(msg.id)}
+
+                onClick={() => togglePinMessageHandler(msg)}
+
                 title="Pin"
                 className="hover:text-yellow-400"
               >
@@ -219,7 +268,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaReply className="text-xs" />
               </button>
               <button
-                onClick={() => deleteMessage(msg.id)}
+
+                onClick={() => deleteMessageHandler(msg.id)}
+
                 title="Delete"
                 className="hover:text-red-400"
               >
