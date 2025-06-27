@@ -22,8 +22,11 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
   const handleSend = () => {
     if (!message.trim() && !file && !audioBlob) return;
 
-
-    const newMessage = { text: message, replyTo };
+    const newMessage = {
+      text: message.trim(),
+      file,
+      audio: audioBlob,
+    };
 
     sendMessage(newMessage);
     setMessage("");
