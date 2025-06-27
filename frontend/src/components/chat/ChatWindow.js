@@ -12,7 +12,6 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   const currentUser = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
-  const [pinnedMessages, setPinnedMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const chatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -72,8 +71,13 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
 
     try {
       const sent = await sendChatMessage(selectedChat.id, newMessage.text);
-      setMessages((prev) => [...prev, sent]);
+      const finalMsg = { ...sent };
+      if (newMessage.replyTo) {
+        finalMsg.replyTo = newMessage.replyTo.text || newMessage.replyTo.message;
+      }
+      setMessages((prev) => [...prev, finalMsg]);
       setTyping(false);
+      setReplyingTo(null);
       toast.success("Message sent!");
       if (refreshUsers) refreshUsers();
     } catch (_) {
@@ -81,16 +85,18 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     }
   };
 
-  const togglePinMessage = (msg) => {
-    setPinnedMessages((prev) =>
-      prev.includes(msg) ? prev.filter((m) => m !== msg) : [...prev, msg]
+  const togglePinMessage = (id) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, pinned: !m.pinned } : m))
     );
   };
 
-  const deleteMessage = (index) => {
-    setMessages((prev) => prev.filter((_, i) => i !== index));
+  const deleteMessage = (id) => {
+    setMessages((prev) => prev.filter((m) => m.id !== id));
     toast.info("Message deleted.");
   };
+
+  const pinnedMessages = messages.filter((m) => m.pinned);
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
@@ -144,13 +150,22 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
         />
 
         <div
-          className={`px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
+          className={`relative px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
             isYou ? "bg-blue-600 text-white" : "bg-gray-600 text-white"
           }`}
         >
+          {msg.pinned && (
+            <FaThumbtack className="absolute -left-2 -top-2 text-yellow-300 text-xs" />
+          )}
           <div className="text-[11px] font-semibold text-gray-300 mb-1">
             {isYou ? currentUser?.full_name || "You" : selectedChat.name}
           </div>
+
+          {msg.replyTo && (
+            <div className="text-[11px] italic text-yellow-200 mb-1 border-l-2 border-yellow-400 pl-2">
+              Replying to: {msg.replyTo}
+            </div>
+          )}
 
           {isImageMessage(msg.message) ? (
             <img
@@ -172,7 +187,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaCheck className="text-gray-400" />
               )}
               <button
-                onClick={() => togglePinMessage(msg)}
+                onClick={() => togglePinMessage(msg.id)}
                 title="Pin"
                 className="hover:text-yellow-400"
               >
@@ -186,7 +201,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaReply className="text-xs" />
               </button>
               <button
-                onClick={() => deleteMessage(index)}
+                onClick={() => deleteMessage(msg.id)}
                 title="Delete"
                 className="hover:text-red-400"
               >
@@ -216,7 +231,11 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
 
       {/* Input */}
       <div className="border-t border-gray-700 bg-gray-800 p-3">
-        <MessageInput sendMessage={sendMessage} setTyping={setTyping} />
+        <MessageInput
+          sendMessage={sendMessage}
+          replyTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+        />
       </div>
     </div>
   );
