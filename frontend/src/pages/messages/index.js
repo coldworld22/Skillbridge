@@ -24,8 +24,11 @@ const MessagesPage = () => {
 
   const router = useRouter();
 
-  useEffect(() => {
+  const fetchUsersList = () =>
     getUsers().then(setUsers).catch(() => setUsers([]));
+
+  useEffect(() => {
+    fetchUsersList();
     getGroups().then(setGroups).catch(() => setGroups([]));
     fetchMessages();
     startPolling();
@@ -204,7 +207,7 @@ const MessagesPage = () => {
               setSelectedChat={setSelectedChat}
               selectedChat={selectedChat}
             />
-            <ChatWindow selectedChat={selectedChat} />
+            <ChatWindow selectedChat={selectedChat} refreshUsers={fetchUsersList} />
           </main>
         )}
       </div>
