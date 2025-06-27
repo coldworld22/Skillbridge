@@ -28,6 +28,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 4. Visit `http://localhost:3001` to access the frontend. The API is available at `http://localhost:5000`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
+New users can follow the [Student Registration Guide](docs/student-registration-guide.md) to learn how to sign up and enroll in classes.
 
 ## Booking API
 
