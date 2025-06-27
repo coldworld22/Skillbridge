@@ -15,7 +15,6 @@ const ChatHeader = ({ selectedChat }) => {
     return <div className="text-gray-400 text-center p-4">No chat selected</div>;
   }
 
-  console.log("Selected Chat Data:", selectedChat); // ✅ Debugging Log
  
   const handleVideoCall = () => {
     router.push(`/video-call?chatId=${selectedChat.id}`);

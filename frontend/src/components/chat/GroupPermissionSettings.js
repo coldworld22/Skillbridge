@@ -8,6 +8,7 @@ import GroupMembersManager from './GroupMembersManager';
 import GroupSettingsForm from './GroupSettingsForm';
 import RolePermissionMatrix from './RolePermissionMatrix';
 import DangerZone from './DangerZone';
+import { toast } from 'react-toastify';
 
 const GroupPermissionSettings = ({ userRole, onPermissionChange }) => {
   return (
@@ -50,15 +51,15 @@ const GroupPermissionSettings = ({ userRole, onPermissionChange }) => {
             tags: ['React', 'Tailwind'],
             isPublic: true,
           }}
-          onSave={(data) => console.log('Updated group settings:', data)}
+          onSave={(data) => toast.success('Group settings updated')}
         />
       </div>
 
       {/* Join Requests */}
       <div className="bg-white p-4 rounded shadow">
         <PendingJoinRequests
-          onApprove={(id) => console.log('Approved:', id)}
-          onReject={(id) => console.log('Rejected:', id)}
+          onApprove={(id) => toast.success(`Approved: ${id}`)}
+          onReject={(id) => toast.info(`Rejected: ${id}`)}
         />
       </div>
 
@@ -70,15 +71,15 @@ const GroupPermissionSettings = ({ userRole, onPermissionChange }) => {
       {/* Role Permission Matrix */}
       <div className="bg-white p-4 rounded shadow">
         <RolePermissionMatrix
-          onChange={(newMatrix) => console.log('Updated permissions:', newMatrix)}
+          onChange={(newMatrix) => toast.success('Updated permissions')}
         />
       </div>
 
       {/* Danger Zone */}
       <div className="bg-white p-4 rounded shadow">
         <DangerZone
-          onDelete={() => console.log('Group deleted')}
-          onTransfer={() => console.log('Ownership transferred')}
+          onDelete={() => toast.error('Group deleted')}
+          onTransfer={() => toast.info('Ownership transferred')}
         />
       </div>
     </div>
