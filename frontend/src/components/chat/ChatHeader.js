@@ -24,7 +24,13 @@ const ChatHeader = ({ selectedChat }) => {
   const handleWhatsAppChat = () => {
     if (selectedChat.phone) {
       const phoneNumber = selectedChat.phone.replace(/\D/g, ""); // ✅ Remove non-numeric characters
-      window.open(`https://wa.me/${phoneNumber}`, "_blank");
+
+      // Prompt the user for a message to send via WhatsApp
+      const text = prompt("Enter a message to send via WhatsApp:", "Hello!");
+      if (text === null) return; // User cancelled
+
+      const encodedText = encodeURIComponent(text);
+      window.open(`https://wa.me/${phoneNumber}?text=${encodedText}`, "_blank");
     } else {
       alert("Phone number is missing!");
     }
