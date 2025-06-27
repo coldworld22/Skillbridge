@@ -18,9 +18,17 @@ const MessagesPage = () => {
   const searchInputRef = useRef(null);
 
   const messages = useMessageStore((state) => state.items);
-  const fetchMessages = useMessageStore((state) => state.fetch);
-  const startPolling = useMessageStore((state) => state.startPolling);
+  const fetchMessagesStore = useMessageStore((state) => state.fetch);
+  const startPollingStore = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
+
+  const fetchMessages = useCallback(() => {
+    fetchMessagesStore();
+  }, [fetchMessagesStore]);
+
+  const startPolling = useCallback(() => {
+    startPollingStore();
+  }, [startPollingStore]);
 
   const router = useRouter();
 
@@ -41,7 +49,7 @@ const MessagesPage = () => {
 
     const interval = setInterval(fetchUsersList, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchUsersList, fetchMessages, startPolling]);
 
   useEffect(() => {
     setUsers((prev) => adjustCounts(prev));
