@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const removeItem = useCartStore((state) => state.removeItem);
 
+
   useEffect(() => {
     if (!classId) return;
     const load = async () => {
