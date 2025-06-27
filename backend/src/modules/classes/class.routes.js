@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./class.controller");
 const tagsController = require("./classTag.controller");
+const enrollmentCtrl = require("./enrollments/classEnrollment.controller");
 const validate = require("../../middleware/validate");
 const validator = require("./class.validator");
 const upload = require("./classUploadMiddleware");
@@ -56,6 +57,18 @@ router.get(
   verifyToken,
   isInstructorOrAdmin,
   controller.getClassAnalytics
+);
+router.get(
+  "/admin/:id/students",
+  verifyToken,
+  isInstructorOrAdmin,
+  enrollmentCtrl.getStudentsByClass
+);
+router.get(
+  "/admin/:classId/students/:studentId",
+  verifyToken,
+  isInstructorOrAdmin,
+  enrollmentCtrl.getStudent
 );
 router.put(
   "/admin/:id",

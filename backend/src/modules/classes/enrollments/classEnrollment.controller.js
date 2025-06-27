@@ -24,3 +24,14 @@ exports.getMyEnrollments = catchAsync(async (req, res) => {
   const data = await service.getByUser(req.user.id);
   sendSuccess(res, data);
 });
+
+exports.getStudentsByClass = catchAsync(async (req, res) => {
+  const data = await service.getByClass(req.params.id);
+  sendSuccess(res, data);
+});
+
+exports.getStudent = catchAsync(async (req, res) => {
+  const { classId, studentId } = req.params;
+  const data = await service.getStudent(classId, studentId);
+  sendSuccess(res, data);
+});
