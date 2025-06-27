@@ -32,6 +32,9 @@ const MessagesPage = () => {
     getGroups().then(setGroups).catch(() => setGroups([]));
     fetchMessages();
     startPolling();
+
+    const interval = setInterval(fetchUsersList, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

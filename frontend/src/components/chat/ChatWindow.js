@@ -24,13 +24,21 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   };
 
   useEffect(() => {
-    if (selectedChat) {
+    let interval;
+    const fetchConvo = () => {
+      if (!selectedChat) return;
       getConversation(selectedChat.id)
         .then((msgs) => setMessages(msgs))
         .catch(() => setMessages([]));
       if (refreshUsers) refreshUsers();
+    };
+
+    fetchConvo();
+    if (selectedChat) {
+      interval = setInterval(fetchConvo, 10000);
     }
-  }, [selectedChat]);
+    return () => clearInterval(interval);
+  }, [selectedChat, refreshUsers]);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -56,6 +64,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
       setMessages((prev) => [...prev, sent]);
       setTyping(false);
       toast.success("Message sent!");
+      if (refreshUsers) refreshUsers();
     } catch (_) {
       toast.error("Failed to send message");
     }
