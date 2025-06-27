@@ -73,3 +73,4 @@ describe('PATCH /api/app-config/favicon', () => {
     expect(service.updateSettings).toHaveBeenCalled();
   });
 });
+

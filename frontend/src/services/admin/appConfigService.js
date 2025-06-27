@@ -19,6 +19,7 @@ export const uploadAppLogo = async (file) => {
   return data?.data;
 };
 
+
 export const uploadAppFavicon = async (file) => {
   const formData = new FormData();
   formData.append("favicon", file);
@@ -27,3 +28,4 @@ export const uploadAppFavicon = async (file) => {
   });
   return data?.data;
 };
+

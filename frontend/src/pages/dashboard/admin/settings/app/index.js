@@ -5,7 +5,6 @@ import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const defaultConfig = { appName: "", siteTitle: "", logo_url: "", favicon_url: "" };
-
 export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
   const [logoFile, setLogoFile] = useState(null);

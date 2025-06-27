@@ -26,7 +26,6 @@ exports.uploadLogo = catchAsync(async (req, res) => {
   const updated = await service.updateSettings({ ...existing, logo_url: logoUrl });
   sendSuccess(res, updated, "Logo updated");
 });
-
 exports.uploadFavicon = catchAsync(async (req, res) => {
   if (!req.file) throw new AppError("No file uploaded", 400);
   const existing = await service.getSettings();
@@ -38,3 +37,4 @@ exports.uploadFavicon = catchAsync(async (req, res) => {
   const updated = await service.updateSettings({ ...existing, favicon_url: iconUrl });
   sendSuccess(res, updated, "Favicon updated");
 });
+

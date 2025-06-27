@@ -17,6 +17,7 @@ import {
   FaUserPlus,
   FaHeart,
   FaThumbsUp,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
@@ -299,6 +300,19 @@ const Navbar = () => {
         >
           <FaLanguage />
         </motion.button>
+
+        {user && (
+          <Link
+            href={
+              userRole === "superadmin" || userRole === "admin"
+                ? "/dashboard/admin"
+                : `/dashboard/${userRole}`
+            }
+            className="flex items-center gap-2 font-semibold hover:underline"
+          >
+            <FaTachometerAlt /> Dashboard
+          </Link>
+        )}
 
         {user ? (
           <>
