@@ -66,6 +66,15 @@ const ChatSidebar = ({
     );
   };
 
+  const handleSendEmail = (email, e) => {
+    e?.stopPropagation();
+    if (email) {
+      window.location.href = `mailto:${email}?subject=Let's Chat&body=Hello!`;
+    } else {
+      alert("Email is missing!");
+    }
+  };
+
   return (
     <aside className="bg-gray-800 p-4 rounded-lg shadow-lg col-span-1">
       <h2 className="text-lg font-bold text-yellow-400 mb-4">💬 Chats</h2>
@@ -104,10 +113,21 @@ const ChatSidebar = ({
               className="flex items-center gap-3 p-3 rounded-lg cursor-pointer bg-gray-700 transition"
               onClick={() => setSelectedChat(chat)}
             >
-              <p className="text-white font-semibold">{chat.name}</p>
+              <p className="text-white font-semibold flex-1">{chat.name}</p>
+              {chat.email && (
+                <button
+                  className="text-gray-400 hover:text-yellow-500"
+                  onClick={(e) => handleSendEmail(chat.email, e)}
+                >
+                  <FaEnvelope />
+                </button>
+              )}
               <button
                 className="text-gray-400 hover:text-yellow-500"
-                onClick={() => togglePinChat(chat)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePinChat(chat);
+                }}
               >
                 <FaThumbtack />
               </button>
@@ -158,10 +178,22 @@ const ChatSidebar = ({
               </div>
             )}
 
+            {user.email && (
+              <button
+                className="text-gray-400 hover:text-yellow-500"
+                onClick={(e) => handleSendEmail(user.email, e)}
+              >
+                <FaEnvelope />
+              </button>
+            )}
+
             {/* ⭐ Pin Chat */}
             <button
               className="text-gray-400 hover:text-yellow-500"
-              onClick={() => togglePinChat(user)}
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePinChat(user);
+              }}
             >
               <FaStar />
             </button>
@@ -191,7 +223,15 @@ const ChatSidebar = ({
                 width={40}
                 height={40}
               />
-              <p className="text-white font-semibold">{user.name}</p>
+              <p className="text-white font-semibold flex-1">{user.name}</p>
+              {user.email && (
+                <button
+                  className="text-gray-400 hover:text-yellow-500"
+                  onClick={(e) => handleSendEmail(user.email, e)}
+                >
+                  <FaEnvelope />
+                </button>
+              )}
             </div>
           ))}
       </div>
