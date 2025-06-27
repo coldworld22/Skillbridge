@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ChatImage from '../shared/ChatImage';
 
 const mockPendingRequests = [
   {
@@ -40,10 +41,12 @@ export default function PendingJoinRequests({ onApprove, onReject }) {
             className="flex items-center justify-between p-3 border rounded shadow-sm bg-white"
           >
             <div className="flex items-center gap-3">
-              <img
+              <ChatImage
                 src={user.avatar}
                 alt={user.name}
                 className="w-10 h-10 rounded-full border"
+                width={40}
+                height={40}
               />
               <div>
                 <p className="font-medium">{user.name}</p>

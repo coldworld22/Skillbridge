@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ChatImage from "../shared/ChatImage";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -131,10 +132,12 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           {pinnedMessages.map((msg, i) => (
             <div key={i} className="text-xs mt-1 border-l-4 border-yellow-400 pl-2">
               {isImage(msg.file_url || msg.message) ? (
-                <img
+                <ChatImage
                   src={getMediaUrl(msg.file_url || msg.message)}
                   alt="Pinned image"
                   className="max-w-xs rounded-md mt-1"
+                  width={200}
+                  height={200}
                 />
               ) : (
                 msg.message || msg.file_url?.split('/').pop()
@@ -160,12 +163,14 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
         key={index}
         className={`flex items-end gap-2 ${isYou ? "justify-end" : "justify-start"}`}
       >
-        <img
+        <ChatImage
           src={getAvatarUrl(
             isYou ? currentUser?.avatar_url : selectedChat.profileImage
           )}
           className="w-7 h-7 rounded-full border border-gray-500"
           alt="avatar"
+          width={28}
+          height={28}
         />
 
         <div
@@ -188,10 +193,12 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           )}
           {msg.reply_file_url && isImage(msg.reply_file_url) && (
             <div className="mb-1 border-l-2 border-yellow-400 pl-2">
-              <img
+              <ChatImage
                 src={getMediaUrl(msg.reply_file_url)}
                 alt="reply"
                 className="max-w-xs rounded-md"
+                width={200}
+                height={200}
               />
             </div>
           )}
@@ -215,10 +222,12 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
 
           {msg.file_url && isImage(msg.file_url) && (
 
-            <img
+            <ChatImage
               src={getMediaUrl(msg.file_url)}
               alt="Sent image"
               className="max-w-xs rounded-md mt-1"
+              width={200}
+              height={200}
             />
           )}
           {msg.file_url && !isImage(msg.file_url) && (
