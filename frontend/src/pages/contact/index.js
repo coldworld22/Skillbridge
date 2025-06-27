@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
@@ -29,9 +29,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <Head>
-        <title>Contact Us - SkillBridge</title>
-      </Head>
+      <PageHead title="Contact Us" />
 
       <div className="bg-gray-900 min-h-screen text-white">
         <Navbar />

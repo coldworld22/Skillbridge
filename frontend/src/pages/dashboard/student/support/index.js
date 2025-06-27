@@ -1,13 +1,11 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
 
 export default function StudentSupportHome() {
   return (
     <StudentLayout>
-      <Head>
-        <title>Support - Dashboard | SkillBridge</title>
-      </Head>
+      <PageHead title="Support - Dashboard" />
       <div className="px-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Support Center</h1>
 

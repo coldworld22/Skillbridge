@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 
@@ -26,9 +26,7 @@ const mockTickets = [
 export default function AdminSupportTicketsPage() {
     return (
         <AdminLayout>
-            <Head>
-                <title>Support Tickets - Admin | SkillBridge</title>
-            </Head>
+            <PageHead title="Support Tickets - Admin" />
             <div className="px-6 py-10">
                 <h1 className="text-2xl font-bold text-gray-900 mb-6">All Support Tickets</h1>
 

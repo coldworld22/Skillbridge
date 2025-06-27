@@ -46,6 +46,16 @@ function MyApp({ Component, pageProps, router }) {
     if (!configLoaded) fetchConfig();
   }, [configLoaded, fetchConfig]);
 
+  const getPageTitle = () => {
+    const slug = router.pathname.split('/').pop();
+    if (!slug || slug === 'index') return 'Home';
+    if (slug.startsWith('[')) return slug.slice(1, -1);
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  const appName = settings.appName || 'SkillBridge';
+  const defaultTitle = `${appName} | ${getPageTitle()}`;
+
   return (
     <AnimatePresence mode="wait">
       {/* Motion wrapper for route transition */}
@@ -57,7 +67,7 @@ function MyApp({ Component, pageProps, router }) {
         transition={{ duration: 0.3 }}
       >
         <Head>
-          <title>{settings.siteTitle || 'SkillBridge'}</title>
+          <title>{defaultTitle}</title>
           {settings.metaDescription && (
             <meta name="description" content={settings.metaDescription} />
           )}

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import Link from "next/link";
+import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
 
 const mockPromotions = {
@@ -72,8 +73,8 @@ const PromotionsPage = () => {
 
   return (
     <>
+      <PageHead title={`${promotion.title} - Special Offer`} />
       <Head>
-        <title>{promotion.title} - Special Offer</title>
         <meta name="description" content={promotion.description} />
         {/* SEO & Social Media Metadata */}
         <meta property="og:title" content={promotion.title} />

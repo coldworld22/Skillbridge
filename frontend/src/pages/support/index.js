@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -6,9 +6,7 @@ import Footer from "@/components/website/sections/Footer";
 export default function WebsiteSupportHome() {
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <Head>
-        <title>Support - SkillBridge</title>
-      </Head>
+      <PageHead title="Support" />
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-20 text-center">
         <h1 className="text-4xl font-bold text-yellow-500 mb-6">Welcome to the Support Center</h1>

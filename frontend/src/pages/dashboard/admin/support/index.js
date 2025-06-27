@@ -1,13 +1,11 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 
 export default function AdminSupportHome() {
   return (
     <AdminLayout>
-      <Head>
-        <title>Support - Admin Dashboard | SkillBridge</title>
-      </Head>
+      <PageHead title="Support - Admin Dashboard" />
       <div className="px-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Support Dashboard</h1>
 

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 
@@ -57,9 +57,7 @@ export default function AdminTicketDetail() {
 
   return (
     <AdminLayout>
-      <Head>
-        <title>Ticket {id} - Admin | SkillBridge</title>
-      </Head>
+      <PageHead title={`Ticket ${id} - Admin`} />
       <div className="px-6 py-10">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-gray-900">{mockThread.subject}</h1>

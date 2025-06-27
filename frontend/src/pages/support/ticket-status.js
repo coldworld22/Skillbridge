@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
@@ -23,9 +23,7 @@ const mockTickets = [
 export default function TicketStatusPage() {
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <Head>
-        <title>My Support Tickets - SkillBridge</title>
-      </Head>
+      <PageHead title="My Support Tickets" />
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-20">
         <h1 className="text-3xl font-bold text-yellow-500 mb-8 text-center">My Support Tickets</h1>
