@@ -11,6 +11,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 import logo from "@/shared/assets/images/login/logo.png";
+import { API_BASE_URL } from "@/config/config";
+import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
@@ -32,6 +34,8 @@ export default function Login() {
   const login = useAuthStore((state) => state.login);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const settings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   // ─────────────────────
   // 📝 Form setup
@@ -66,6 +70,10 @@ export default function Login() {
       router.replace("/website");
     }
   }, [hasHydrated, user]);
+
+  useEffect(() => {
+    fetchAppConfig();
+  }, [fetchAppConfig]);
 
   // ─────────────────────────────
   // 🔑 Handle form submission
@@ -123,11 +131,19 @@ export default function Login() {
         transition={{ duration: 0.3 }}
         className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
       >
-        <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg">
-          <Image src={logo} alt="SkillBridge Logo" width={80} height={80} priority className="rounded-full" />
+        <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+          <Image
+            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo}
+            alt={(settings.appName || 'SkillBridge') + ' Logo'}
+            width={80}
+            height={80}
+            priority
+            className="rounded-full object-contain"
+          />
         </div>
-
-        <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">Welcome to SkillBridge 🎓</h2>
+        <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
+          Welcome to {settings.appName || 'SkillBridge'} 🎓
+        </h2>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="w-full">

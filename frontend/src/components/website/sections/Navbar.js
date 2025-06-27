@@ -28,6 +28,7 @@ import { API_BASE_URL } from "@/config/config";
 import useCartStore from "@/store/cart/cartStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useAppConfigStore from "@/store/appConfigStore";
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -44,6 +45,8 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const appSettings = useAppConfigStore((state) => state.settings);
+  const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
   const { profile, fetchProfile, clearAdmin } = useAdminStore();
   const router = useRouter();
@@ -64,6 +67,10 @@ const Navbar = () => {
   const startMessagePolling = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
   const unreadMessages = messages.filter((m) => !m.read);
+
+  useEffect(() => {
+    fetchAppConfig();
+  }, [fetchAppConfig]);
 
   useEffect(() => {
     if (user?.role === "SuperAdmin" && !profile) fetchProfile();
@@ -155,13 +162,13 @@ const Navbar = () => {
 
       <div className="flex items-center space-x-6">
         <Link href="/">
-          <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer">
-            <Image
-              src={logo}
-              alt="SkillBridge Logo"
+          <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer overflow-hidden">
+            <img
+              src={appSettings.logo_url ? `${API_BASE_URL}${appSettings.logo_url}` : logo.src || logo}
+              alt={`${appSettings.appName || 'SkillBridge'} Logo`}
               width={45}
               height={45}
-              className="rounded-full"
+              className="rounded-full object-contain"
             />
           </div>
         </Link>
