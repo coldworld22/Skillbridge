@@ -24,25 +24,8 @@ const MessagesPage = () => {
 
   const router = useRouter();
 
-  const adjustCounts = useCallback(
-    (list) => {
-      const systemMap = {};
-      messages.forEach((m) => {
-        if (!m.read) {
-          systemMap[m.sender_id] = (systemMap[m.sender_id] || 0) + 1;
-        }
-      });
-
-      return list.map((u) => ({
-        ...u,
-        unreadMessages: Math.max(
-          0,
-          (u.unreadMessages || 0) - (systemMap[u.id] || 0)
-        ),
-      }));
-    },
-    [messages]
-  );
+  // Keep unread counts from the backend so new chats show up in the sidebar
+  const adjustCounts = useCallback((list) => list, []);
 
   const fetchUsersList = useCallback(() => {
     return getUsers()
