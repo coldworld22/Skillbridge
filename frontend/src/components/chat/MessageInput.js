@@ -22,7 +22,11 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
   const handleSend = () => {
     if (!message.trim() && !file && !audioBlob) return;
 
-    const newMessage = { text: message };
+    const newMessage = {
+      text: message.trim(),
+      file,
+      audio: audioBlob ? new File([audioBlob], `record-${Date.now()}.webm`) : null,
+    };
     sendMessage(newMessage);
     setMessage("");
     setFile(null);

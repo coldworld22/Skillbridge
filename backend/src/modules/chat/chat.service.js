@@ -44,9 +44,9 @@ exports.getConversation = async (userId, otherId) => {
     .orderBy("sent_at");
 };
 
-exports.sendMessage = async ({ sender_id, receiver_id, message }) => {
+exports.sendMessage = async ({ sender_id, receiver_id, message, file_url, audio_url }) => {
   const [row] = await db("messages")
-    .insert({ sender_id, receiver_id, message })
+    .insert({ sender_id, receiver_id, message, file_url, audio_url })
     .returning("*");
   return row;
 };

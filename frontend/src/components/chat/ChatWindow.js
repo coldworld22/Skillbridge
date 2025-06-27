@@ -29,9 +29,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     return `${API_BASE_URL}${url}`;
   };
 
-  const isImageMessage = (text) => {
-    if (!text) return false;
-    return /\.(png|jpe?g|gif|webp|svg)$/i.test(text) || text.startsWith("data:image/");
+  const isImage = (path) => {
+    if (!path) return false;
+    return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
   };
 
   useEffect(() => {
@@ -65,13 +65,13 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   }, [typing]);
 
   const sendMessage = async (newMessage) => {
-    if (!newMessage.text) {
+    if (!newMessage.text && !newMessage.file && !newMessage.audio) {
       toast.error("Message is empty!");
       return;
     }
 
     try {
-      const sent = await sendChatMessage(selectedChat.id, newMessage.text);
+      const sent = await sendChatMessage(selectedChat.id, newMessage);
       setMessages((prev) => [...prev, sent]);
       setTyping(false);
       toast.success("Message sent!");
@@ -105,14 +105,14 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           📌 Pinned:
           {pinnedMessages.map((msg, i) => (
             <div key={i} className="text-xs mt-1 border-l-4 border-yellow-400 pl-2">
-              {isImageMessage(msg.message) ? (
+              {isImage(msg.file_url || msg.message) ? (
                 <img
-                  src={getMediaUrl(msg.message)}
+                  src={getMediaUrl(msg.file_url || msg.message)}
                   alt="Pinned image"
                   className="max-w-xs rounded-md mt-1"
                 />
               ) : (
-                msg.message
+                msg.message || msg.file_url?.split('/').pop()
               )}
             </div>
           ))}
@@ -152,14 +152,28 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
             {isYou ? currentUser?.full_name || "You" : selectedChat.name}
           </div>
 
-          {isImageMessage(msg.message) ? (
+          {msg.file_url && isImage(msg.file_url) && (
             <img
-              src={getMediaUrl(msg.message)}
+              src={getMediaUrl(msg.file_url)}
               alt="Sent image"
               className="max-w-xs rounded-md mt-1"
             />
-          ) : (
-            <p className="text-[13px] leading-snug break-words">{msg.message}</p>
+          )}
+          {msg.file_url && !isImage(msg.file_url) && (
+            <a
+              href={getMediaUrl(msg.file_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-blue-200 text-sm break-all"
+            >
+              {msg.file_url.split('/').pop()}
+            </a>
+          )}
+          {msg.audio_url && (
+            <audio controls src={getMediaUrl(msg.audio_url)} className="mt-1 w-48" />
+          )}
+          {msg.message && (
+            <p className="text-[13px] leading-snug break-words mt-1">{msg.message}</p>
           )}
 
           {/* Meta info + actions */}
