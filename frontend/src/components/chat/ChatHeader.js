@@ -22,7 +22,9 @@ const ChatHeader = ({ selectedChat }) => {
   };
 
   const handleWhatsAppChat = () => {
+
     if (!selectedChat.phone) {
+
       alert("Phone number is missing!");
       return;
     }
