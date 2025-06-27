@@ -217,7 +217,8 @@ export default function ClassDetailsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-20">
+      <main className="max-w-6xl mx-auto pt-[88px] pb-8 px-4 sm:px-6 lg:px-20">
+
         {/* Class Header Section */}
         <div className="mb-10 bg-gray-800/50 rounded-xl p-6 shadow-lg border border-gray-700">
           <div className="flex flex-col md:flex-row gap-6 mb-6">
