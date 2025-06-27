@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -24,8 +24,10 @@ const MessagesPage = () => {
 
   const router = useRouter();
 
-  const fetchUsersList = () =>
-    getUsers().then(setUsers).catch(() => setUsers([]));
+  const fetchUsersList = useCallback(
+    () => getUsers().then(setUsers).catch(() => setUsers([])),
+    []
+  );
 
   useEffect(() => {
     fetchUsersList();
