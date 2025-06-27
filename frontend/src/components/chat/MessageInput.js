@@ -22,16 +22,7 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
   const handleSend = () => {
     if (!message.trim() && !file && !audioBlob) return;
 
-    const newMessage = {
-      text: message,
-      sender: "You",
-      timestamp: new Date().toLocaleTimeString(),
-      status: "sent",
-      image: file ? URL.createObjectURL(file) : null,
-      audio: audioBlob ? URL.createObjectURL(audioBlob) : null,
-      replyTo: replyTo?.text || null,
-    };
-
+    const newMessage = { text: message };
     sendMessage(newMessage);
     setMessage("");
     setFile(null);

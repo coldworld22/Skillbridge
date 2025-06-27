@@ -4,14 +4,25 @@ import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import { FaCheckDouble, FaThumbtack, FaReply, FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
+import useAuthStore from "@/store/auth/authStore";
+import { getConversation, sendChatMessage } from "@/services/messageService";
 
 const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
-  const [messages, setMessages] = useState(selectedChat?.messages || []);
+  const currentUser = useAuthStore((state) => state.user);
+  const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const chatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (selectedChat) {
+      getConversation(selectedChat.id)
+        .then(setMessages)
+        .catch(() => setMessages([]));
+    }
+  }, [selectedChat]);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -26,23 +37,20 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
     }
   }, [typing]);
 
-  const sendMessage = (newMessage) => {
-    if (!newMessage.text && !newMessage.image && !newMessage.audio) {
+  const sendMessage = async (newMessage) => {
+    if (!newMessage.text) {
       toast.error("Message is empty!");
       return;
     }
 
-    if (replyingTo) {
-      newMessage.replyTo = replyingTo;
-      setReplyingTo(null);
+    try {
+      const sent = await sendChatMessage(selectedChat.id, newMessage.text);
+      setMessages((prev) => [...prev, sent]);
+      setTyping(false);
+      toast.success("Message sent!");
+    } catch (_) {
+      toast.error("Failed to send message");
     }
-
-    setMessages((prev) => [
-      ...prev,
-      { ...newMessage, timestamp: new Date().toISOString() },
-    ]);
-    setTyping(false);
-    toast.success("Message sent!");
   };
 
   const togglePinMessage = (msg) => {
@@ -69,7 +77,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
           📌 Pinned:
           {pinnedMessages.map((msg, i) => (
             <div key={i} className="text-xs mt-1 border-l-4 border-yellow-400 pl-2">
-              {msg.text}
+              {msg.message}
             </div>
           ))}
         </div>
@@ -85,7 +93,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
     </p>
   )}
   {messages.map((msg, index) => {
-    const isYou = msg.sender === "You";
+    const isYou = msg.sender_id === currentUser?.id;
     return (
       <div
         key={index}
@@ -93,7 +101,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
       >
         {!isYou && (
           <img
-            src={msg.profileImage || "/default-avatar.png"}
+            src={selectedChat.profileImage || "/default-avatar.png"}
             className="w-7 h-7 rounded-full border border-gray-500"
             alt="avatar"
           />
@@ -104,39 +112,20 @@ const ChatWindow = ({ selectedChat, onStartVideoCall }) => {
             isYou ? "bg-blue-600 text-white" : "bg-gray-600 text-white"
           }`}
         >
-          {msg.replyTo && (
-            <div className="text-xs italic text-yellow-300 mb-1 line-clamp-1">
-              ↪ {msg.replyTo.text}
-            </div>
-          )}
-
           {!isYou && (
             <div className="text-[11px] font-semibold text-gray-300 mb-1">
-              {msg.sender}
+              {selectedChat.name}
             </div>
           )}
 
-          {msg.image && (
-            <img
-              src={msg.image}
-              className="w-full max-w-[160px] rounded-md mb-1"
-              alt="media"
-            />
-          )}
-          {msg.audio && (
-            <audio controls src={msg.audio} className="w-40 mb-1" />
-          )}
-
-          <p className="text-[13px] leading-snug break-words">{msg.text}</p>
+          <p className="text-[13px] leading-snug break-words">{msg.message}</p>
 
           {/* Meta info + actions */}
           <div className="flex justify-between items-center text-[10px] text-gray-300 mt-1">
-            <span className="whitespace-nowrap">{formatRelativeTime(msg.timestamp)}</span>
+            <span className="whitespace-nowrap">{formatRelativeTime(msg.sent_at)}</span>
             <div className="flex items-center gap-2 ml-2">
               <FaCheckDouble
-                className={`${
-                  msg.status === "read" ? "text-blue-300" : "text-gray-400"
-                }`}
+                className={`${msg.read ? "text-blue-300" : "text-gray-400"}`}
               />
               <button
                 onClick={() => togglePinMessage(msg)}

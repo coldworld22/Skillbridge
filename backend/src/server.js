@@ -71,6 +71,7 @@ const publicInstructorRoutes = require("./modules/instructors/instructor.routes"
 const cartRoutes = require("./modules/cart/cart.routes");
 const notificationRoutes = require("./modules/notifications/notifications.routes");
 const messageRoutes = require("./modules/messages/messages.routes");
+const chatRoutes = require("./modules/chat/chat.routes");
 const socialLoginConfigRoutes = require("./modules/socialLoginConfig/socialLoginConfig.routes");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -145,6 +146,7 @@ app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor l
 app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
 app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
 app.use("/api/messages", messageRoutes); // 💬 User messages
+app.use("/api/chat", chatRoutes); // 💬 Direct chat
 
 // 🩺 Health check (for CI/CD or uptime monitoring)
 app.get("/", (req, res) => {
