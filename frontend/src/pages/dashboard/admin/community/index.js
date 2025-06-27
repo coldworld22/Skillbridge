@@ -105,7 +105,7 @@ export default function AdminCommunityDashboard() {
           <h3 className="text-lg font-semibold mb-3">🏆 Top Contributor</h3>
           <div className="flex items-center gap-4">
             <img
-              src={stats.topContributor.avatar || "/default-avatar.png"}
+              src={stats.topContributor.avatar || "/images/default-avatar.png"}
               alt={stats.topContributor.name}
               className="w-12 h-12 rounded-full border"
             />

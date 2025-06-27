@@ -25,7 +25,7 @@ const ChatSidebar = ({
   const [pinnedChats, setPinnedChats] = useState([]);
 
   const getAvatarUrl = (url) => {
-    if (!url) return "/default-avatar.png";
+    if (!url) return "/images/default-avatar.png";
     if (url.startsWith("http") || url.startsWith("blob:")) return url;
     return `${API_BASE_URL}${url}`;
   };

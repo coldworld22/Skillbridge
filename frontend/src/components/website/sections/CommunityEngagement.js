@@ -117,7 +117,7 @@ const CommunityLandingPage = () => {
                   whileHover={{ scale: 1.03 }}
                 >
                   <div className="flex items-center gap-3">
-                    <img src={contributor.avatar || "/default-avatar.png"} className="w-10 h-10 rounded-full border border-gray-500" />
+                    <img src={contributor.avatar || "/images/default-avatar.png"} className="w-10 h-10 rounded-full border border-gray-500" />
                     <div>
                       <h4 className="text-lg font-semibold">{contributor.name} {getBadge(contributor.contributions)}</h4>
                       <p className="text-gray-400 text-sm">{contributor.contributions} Contributions • {contributor.reputation} Reputation</p>

@@ -136,7 +136,7 @@ const MessagesPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <img
-                              src={user.profileImage || "/default-avatar.png"}
+                              src={user.profileImage || "/images/default-avatar.png"}
                               alt={user.name || "User"}
                               className="w-10 h-10 rounded-full border border-yellow-500"
                             />

@@ -68,7 +68,7 @@ export default function AdminContributorsPage() {
             filtered.map((user, index) => (
               <div key={index} className="bg-white p-4 rounded shadow-sm flex items-center gap-4">
                 <img
-                  src={user.avatar || "/default-avatar.png"}
+                  src={user.avatar || "/images/default-avatar.png"}
                   className="w-12 h-12 rounded-full border"
                   alt={user.name}
                 />
