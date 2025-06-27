@@ -9,6 +9,16 @@ import {
   fetchClassAssignments,
 } from "@/services/classService";
 
+const computeScheduleStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return "Upcoming";
+  if (s && e && now >= s && now <= e) return "Ongoing";
+  if (e && now > e) return "Completed";
+  return "Upcoming";
+};
+
 export default function StudentClassRoom() {
   const router = useRouter();
   const { id } = router.query;
@@ -17,7 +27,8 @@ export default function StudentClassRoom() {
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [assignments, setAssignments] = useState([]);
-  const isLive = true;
+  const [scheduleStatus, setScheduleStatus] = useState(null);
+  const isLive = scheduleStatus === 'Ongoing';
 
   useEffect(() => {
     if (!id) return;
@@ -26,7 +37,9 @@ export default function StudentClassRoom() {
         const details = await fetchClassDetails(id);
         const lessons = await fetchClassLessons(id);
         const assigns = await fetchClassAssignments(id);
-        setClassData({ ...details, lessons });
+        const status = computeScheduleStatus(details.start_date, details.end_date);
+        setClassData({ ...details, lessons, scheduleStatus: status });
+        setScheduleStatus(status);
         setAssignments(assigns);
       } catch (err) {
         console.error('Failed to load class', err);
@@ -55,7 +68,10 @@ export default function StudentClassRoom() {
   return (
     <div className="bg-gray-900 min-h-screen text-white px-4 py-8">
       <h1 className="text-2xl font-bold text-yellow-400 mb-4">🎓 {classData.title}</h1>
-      <p className="text-sm text-gray-400 mb-4">Instructor: {classData.instructor}</p>
+      <p className="text-sm text-gray-400 mb-2">Instructor: {classData.instructor}</p>
+      {scheduleStatus && (
+        <p className="text-xs text-gray-400 mb-4">Status: {scheduleStatus}</p>
+      )}
 
       {/* Progress Bar */}
       <div className="w-full bg-gray-700 rounded-full h-4 mb-6">

@@ -57,3 +57,4 @@ describe('PATCH /api/app-config/logo', () => {
     expect(service.updateSettings).toHaveBeenCalled();
   });
 });
+

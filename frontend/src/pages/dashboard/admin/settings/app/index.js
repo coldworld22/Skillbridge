@@ -10,6 +10,7 @@ export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
   const [logoFile, setLogoFile] = useState(null);
 
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -88,6 +89,7 @@ export default function AppSettingsPage() {
               </button>
             )}
           </div>
+
           <div className="text-right">
             <button
               onClick={handleSave}

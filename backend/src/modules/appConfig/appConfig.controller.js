@@ -3,6 +3,7 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const fs = require("fs");
 const path = require("path");
+
 const service = require("./appConfig.service");
 
 exports.getSettings = catchAsync(async (_req, res) => {
@@ -26,3 +27,4 @@ exports.uploadLogo = catchAsync(async (req, res) => {
   const updated = await service.updateSettings({ ...existing, logo_url: logoUrl });
   sendSuccess(res, updated, "Logo updated");
 });
+

@@ -18,3 +18,4 @@ export const uploadAppLogo = async (file) => {
   });
   return data?.data;
 };
+
