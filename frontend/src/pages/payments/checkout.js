@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
+import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import {
@@ -33,6 +34,8 @@ export default function CheckoutPage() {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
+  const removeItem = useCartStore((state) => state.removeItem);
+
 
   useEffect(() => {
     if (!classId) return;
@@ -66,7 +69,7 @@ export default function CheckoutPage() {
 
   const handlePayment = () => {
     setPaymentStatus('processing');
-    setTimeout(() => {
+    setTimeout(async () => {
       const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
       const newClass = {
         id: classInfo.id,
@@ -77,6 +80,11 @@ export default function CheckoutPage() {
         joined: true,
       };
       localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
+      try {
+        await removeItem(classInfo.id);
+      } catch (err) {
+        console.error('Failed to remove from cart', err);
+      }
       setPaymentStatus('success');
       setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
     }, 1500);

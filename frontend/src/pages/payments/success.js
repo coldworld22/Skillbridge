@@ -6,18 +6,21 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaCheckCircle, FaArrowRight, FaCalendarAlt, FaChalkboardTeacher, FaDownload, FaRegFilePdf } from 'react-icons/fa';
 import { enrollInClass, fetchClassDetails } from '@/services/classService';
+import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const { classId } = router.query;
   const [classInfo, setClassInfo] = useState(null);
+  const removeItem = useCartStore((state) => state.removeItem);
 
   useEffect(() => {
     if (!classId) return;
     const enroll = async () => {
       try {
         await enrollInClass(classId);
+        await removeItem(classId);
       } catch (_) {
         toast.error('Failed to register for class');
       }
