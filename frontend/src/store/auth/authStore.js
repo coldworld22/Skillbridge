@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import * as authService from "@/services/auth/authService";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 const useAuthStore = create(
   persist(
@@ -37,6 +39,16 @@ const useAuthStore = create(
         try {
           await authService.logoutUser();
         } catch (_) {}
+        // Stop polling intervals when logging out
+        const notifStop = useNotificationStore.getState().stopPolling;
+        const msgStop = useMessageStore.getState().stopPolling;
+        notifStop?.();
+        msgStop?.();
+        console.log(
+          'Polling after logout:',
+          useNotificationStore.getState().poller,
+          useMessageStore.getState().poller
+        );
         localStorage.removeItem("auth");
         set({ accessToken: null, user: null });
       },
