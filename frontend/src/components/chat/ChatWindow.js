@@ -23,6 +23,17 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     return `${API_BASE_URL}${url}`;
   };
 
+  const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
+  const isImageMessage = (text) => {
+    if (!text) return false;
+    return /\.(png|jpe?g|gif|webp|svg)$/i.test(text) || text.startsWith("data:image/");
+  };
+
   useEffect(() => {
     let interval;
     const fetchConvo = () => {
@@ -94,7 +105,15 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           📌 Pinned:
           {pinnedMessages.map((msg, i) => (
             <div key={i} className="text-xs mt-1 border-l-4 border-yellow-400 pl-2">
-              {msg.message}
+              {isImageMessage(msg.message) ? (
+                <img
+                  src={getMediaUrl(msg.message)}
+                  alt="Pinned image"
+                  className="max-w-xs rounded-md mt-1"
+                />
+              ) : (
+                msg.message
+              )}
             </div>
           ))}
         </div>
@@ -133,7 +152,15 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
             {isYou ? currentUser?.full_name || "You" : selectedChat.name}
           </div>
 
-          <p className="text-[13px] leading-snug break-words">{msg.message}</p>
+          {isImageMessage(msg.message) ? (
+            <img
+              src={getMediaUrl(msg.message)}
+              alt="Sent image"
+              className="max-w-xs rounded-md mt-1"
+            />
+          ) : (
+            <p className="text-[13px] leading-snug break-words">{msg.message}</p>
+          )}
 
           {/* Meta info + actions */}
           <div className="flex justify-between items-center text-[10px] text-gray-300 mt-1">
