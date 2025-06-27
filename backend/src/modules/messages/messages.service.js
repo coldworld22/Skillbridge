@@ -15,6 +15,8 @@ exports.getUserMessages = async (userId) => {
     .del();
 
   return db("messages")
+    .select("messages.*", "users.full_name as sender_name")
+    .leftJoin("users", "messages.sender_id", "users.id")
     .where({ receiver_id: userId })
     .orderBy("sent_at", "desc");
 };

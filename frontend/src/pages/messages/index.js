@@ -107,10 +107,21 @@ const MessagesPage = () => {
                 {messages.map((msg) => (
                   <li
                     key={msg.id}
-                    onClick={() => !msg.read && markMessageRead(msg.id)}
+                    onClick={() => {
+                      if (!msg.read) markMessageRead(msg.id);
+                      const user = users.find((u) => u.id === msg.sender_id);
+                      setSelectedChat(
+                        user || { id: msg.sender_id, name: msg.sender_name }
+                      );
+                    }}
                     className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between ${msg.read ? "opacity-70" : ""}`}
                   >
-                    <span>{msg.message}</span>
+                    <span>
+                      <span className="font-semibold mr-1">
+                        {msg.sender_name || "System"}:
+                      </span>
+                      {msg.message}
+                    </span>
                     {!msg.read && (
                       <span className="text-xs text-red-400 ml-2">new</span>
                     )}
