@@ -52,3 +52,5 @@ Endpoints for creating and managing live classes are served under `/api/users/cl
 - `PUT /api/users/classes/admin/:id` – update a class
 - `DELETE /api/users/classes/admin/:id` – delete a class
 - Fields for a class include `title`, `description`, `start_date`, `end_date`, `price`, `max_students`, `language` and a unique `slug` for public URLs.
+
+For an overview of the student purchase and enrollment process see [docs/student-enrollment-workflow.md](docs/student-enrollment-workflow.md).
