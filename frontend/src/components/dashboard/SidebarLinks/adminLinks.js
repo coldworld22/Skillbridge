@@ -66,7 +66,7 @@ export const adminNavLinks = [
           { label: 'Contact Info', href: '/dashboard/admin/settings/contact', icon: Contact },
           { label: 'Blogs', href: '/dashboard/admin/settings/blog', icon: BookMarked },
           { label: 'FAQs', href: '/dashboard/admin/settings/faqs', icon: HelpCircle },
-
+          { label: 'App Settings', href: '/dashboard/admin/settings/app', icon: Settings },
 
           { label: 'Footer Settings', href: '/dashboard/admin/settings/footer', icon: FileSignature },
 
