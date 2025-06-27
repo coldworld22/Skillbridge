@@ -17,7 +17,6 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   const currentUser = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
-  const [pinnedMessages, setPinnedMessages] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const chatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -80,11 +79,13 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     }
 
     try {
+
       const sent = await sendChatMessage(selectedChat.id, {
         ...newMessage,
         replyId: replyingTo?.id,
       });
       setMessages((prev) => [...prev, sent]);
+
       setTyping(false);
       setReplyingTo(null);
       toast.success("Message sent!");
@@ -93,6 +94,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
       toast.error("Failed to send message");
     }
   };
+
 
   const togglePinMessageHandler = async (msg) => {
     try {
@@ -114,7 +116,10 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     } catch (_) {
       toast.error("Failed to delete message");
     }
+
   };
+
+  const pinnedMessages = messages.filter((m) => m.pinned);
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
@@ -168,13 +173,17 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
         />
 
         <div
-          className={`px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
+          className={`relative px-3 py-2 rounded-lg shadow-sm max-w-sm text-sm ${
             isYou ? "bg-blue-600 text-white" : "bg-gray-600 text-white"
           }`}
         >
+          {msg.pinned && (
+            <FaThumbtack className="absolute -left-2 -top-2 text-yellow-300 text-xs" />
+          )}
           <div className="text-[11px] font-semibold text-gray-300 mb-1">
             {isYou ? currentUser?.full_name || "You" : selectedChat.name}
           </div>
+
 
           {msg.reply_message && (
             <div className="text-xs mb-1 border-l-2 border-yellow-400 pl-2 text-gray-200">
@@ -209,6 +218,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
           )}
 
           {msg.file_url && isImage(msg.file_url) && (
+
             <img
               src={getMediaUrl(msg.file_url)}
               alt="Sent image"
@@ -242,7 +252,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaCheck className="text-gray-400" />
               )}
               <button
+
                 onClick={() => togglePinMessageHandler(msg)}
+
                 title="Pin"
                 className="hover:text-yellow-400"
               >
@@ -256,7 +268,9 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
                 <FaReply className="text-xs" />
               </button>
               <button
+
                 onClick={() => deleteMessageHandler(msg.id)}
+
                 title="Delete"
                 className="hover:text-red-400"
               >
