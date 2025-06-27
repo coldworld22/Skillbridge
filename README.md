@@ -54,3 +54,13 @@ Endpoints for creating and managing live classes are served under `/api/users/cl
 - Fields for a class include `title`, `description`, `start_date`, `end_date`, `price`, `max_students`, `language` and a unique `slug` for public URLs.
 
 For an overview of the student purchase and enrollment process see [docs/student-enrollment-workflow.md](docs/student-enrollment-workflow.md).
+
+## Student helper class
+
+The backend contains a small utility class `Student` located at
+`backend/src/modules/users/student/student.class.js`. It can be used in tests or
+scripts to simulate common student actions such as discovering classes, adding
+items to the cart and completing checkout. The `checkout` method now generates a
+unique enrollment ID for each class and returns both the created enrollment and
+payment record.
+

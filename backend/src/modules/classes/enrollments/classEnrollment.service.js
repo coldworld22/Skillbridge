@@ -5,8 +5,8 @@ exports.findEnrollment = async (user_id, class_id) => {
 };
 
 exports.createEnrollment = async (data) => {
-  await db("class_enrollments").insert(data);
-  return data;
+  const [row] = await db("class_enrollments").insert(data).returning("*");
+  return row;
 };
 
 exports.markCompleted = async (user_id, class_id) => {
