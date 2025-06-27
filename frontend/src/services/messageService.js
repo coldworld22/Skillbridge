@@ -22,3 +22,13 @@ export const markMessageAsRead = async (id) => {
   return res.data.data || res.data;
 
 };
+
+export const getConversation = async (userId) => {
+  const res = await api.get(`/chat/${userId}`);
+  return res.data.data || res.data;
+};
+
+export const sendChatMessage = async (userId, message) => {
+  const res = await api.post(`/chat/${userId}`, { message });
+  return res.data.data || res.data;
+};
