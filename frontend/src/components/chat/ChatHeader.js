@@ -22,12 +22,15 @@ const ChatHeader = ({ selectedChat }) => {
   };
 
   const handleWhatsAppChat = () => {
-    if (selectedChat.phone) {
-      const phoneNumber = selectedChat.phone.replace(/\D/g, ""); // ✅ Remove non-numeric characters
-      window.open(`https://wa.me/${phoneNumber}`, "_blank");
-    } else {
+    if (!selectedChat.phone) {
       alert("Phone number is missing!");
+      return;
     }
+
+    const phoneNumber = selectedChat.phone.replace(/\D/g, ""); // Remove non-numeric characters
+
+    // Direct the user to WhatsApp with the selected phone number
+    window.open(`https://wa.me/${phoneNumber}`, "_blank");
   };
 
   const handleSendEmail = () => {
