@@ -62,10 +62,6 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
   }, [messages]);
 
   useEffect(() => {
-    setPinnedMessages(messages.filter((m) => m.pinned));
-  }, [messages]);
-
-  useEffect(() => {
     if (typing) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => setTyping(false), 2000);
