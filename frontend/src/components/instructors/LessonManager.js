@@ -42,9 +42,9 @@ export default function LessonManager({ classId, initialLessons = [] }) {
 
   return (
     <div className="text-sm text-white space-y-3">
-      {lessons
-        .filter((l) => ["Ongoing", "Completed", "Cancelled"].includes(computeStatus(l)))
-        .map((lesson, i) => (
+      {lessons.map((lesson, i) => {
+        const status = computeStatus(lesson);
+        return (
           <div key={i} className="bg-gray-700 p-3 rounded">
             <p className="font-medium">
               {i + 1}. {lesson.title}
@@ -54,9 +54,10 @@ export default function LessonManager({ classId, initialLessons = [] }) {
                 {new Date(lesson.start_time).toLocaleString()}
               </p>
             )}
-            <p className="text-xs">Status: {computeStatus(lesson)}</p>
+            <p className="text-xs">Status: {status}</p>
           </div>
-        ))}
+        );
+      })}
     </div>
   );
 }
