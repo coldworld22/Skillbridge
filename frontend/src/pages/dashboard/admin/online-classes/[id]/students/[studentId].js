@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { fetchClassStudent } from "@/services/admin/classService";
 
 export default function ManageStudentInClassPage() {
   const { id, studentId } = useRouter().query;
@@ -11,11 +12,9 @@ export default function ManageStudentInClassPage() {
 
   useEffect(() => {
     if (!id || !studentId) return;
-    async function fetchStudent() {
+    async function load() {
       try {
-        const res = await fetch(`/api/classes/${id}/students/${studentId}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
+        const data = await fetchClassStudent(id, studentId);
         setStudent(data);
       } catch (err) {
         console.error(err);
@@ -23,7 +22,7 @@ export default function ManageStudentInClassPage() {
         setLoading(false);
       }
     }
-    fetchStudent();
+    load();
   }, [id, studentId]);
 
   if (loading) {
