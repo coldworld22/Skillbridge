@@ -57,6 +57,8 @@ function EditTutorialPage() {
           chapters: mappedChapters,
           thumbnail: tutorial.thumbnail,
           preview: tutorial.preview,
+          startDate: tutorial.startDate || "",
+          endDate: tutorial.endDate || "",
           price: tutorial.price || "",
           isFree: tutorial.isFree,
         });
@@ -120,6 +122,12 @@ function EditTutorialPage() {
               formData.append("category_id", tutorialData.category);
               formData.append("level", tutorialData.level);
               formData.append("is_paid", (!tutorialData.isFree).toString());
+              if (tutorialData.startDate) {
+                formData.append("start_date", tutorialData.startDate);
+              }
+              if (tutorialData.endDate) {
+                formData.append("end_date", tutorialData.endDate);
+              }
               if (!tutorialData.isFree) {
                 formData.append("price", tutorialData.price);
               }

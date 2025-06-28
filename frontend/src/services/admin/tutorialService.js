@@ -33,6 +33,8 @@ export const fetchAllTutorials = async () => {
       : null,
     createdAt: t.created_at,
     updatedAt: t.updated_at,
+    startDate: t.start_date,
+    endDate: t.end_date,
     instructor: t.instructor_name,
     category: t.category_name,
     status: t.status === "published" ? "Published" : "Draft",
@@ -80,6 +82,7 @@ export const fetchTutorialById = async (id) => {
     category: t.category_id,
     categoryName: t.category_name,
     level: t.level,
+    language: t.language,
     tags: t.tags || [],
     thumbnail: t.thumbnail_url
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
@@ -89,6 +92,8 @@ export const fetchTutorialById = async (id) => {
       : null,
     price: t.price,
     isFree: !t.is_paid,
+    startDate: t.start_date,
+    endDate: t.end_date,
   };
 };
 
