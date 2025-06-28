@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import {
@@ -12,87 +11,8 @@ import {
   FaCubes,
 } from "react-icons/fa";
 
-// 👇 You can fetch real progress from backend or localStorage in future
-const mockProgress = {
-  1: 75,
-  2: 40,
-  3: 100,
-  4: 20,
-  5: 0,
-  6: 60,
-};
-
-const tutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    instructor: "John Doe",
-    duration: "30 min",
-    level: "Beginner",
-    rating: 4.8,
-    thumbnail: "https://codemanbd.com/wp-content/uploads/2024/03/Mastering-React-JS.jpg",
-    tags: ["Beginner Friendly", "Hands-on"],
-    trending: true,
-    preview: "https://www.w3schools.com/html/mov_bbb.mp4",
-    category: "Frontend"
-  },
-  {
-    id: 2,
-    title: "Node.js Full Stack",
-    instructor: "Jane Smith",
-    duration: "45 min",
-    level: "Intermediate",
-    rating: 4.2,
-    thumbnail: "https://i.ytimg.com/vi/YYmzj5DK_5s/hq720.jpg",
-    tags: ["Full Stack"],
-    category: "Backend"
-  },
-  {
-    id: 3,
-    title: "Deep Learning Basics",
-    instructor: "Alan Turing",
-    duration: "1h 10m",
-    level: "Advanced",
-    rating: 5.0,
-    thumbnail: "https://i.ytimg.com/vi/bpFjQGCa7Xg/maxresdefault.jpg",
-    tags: ["Top Rated"],
-    trending: true,
-    category: "AI"
-  },
-  {
-    id: 4,
-    title: "Responsive Web Design",
-    instructor: "Laura Bennett",
-    duration: "45 min",
-    level: "Beginner",
-    rating: 4.5,
-    thumbnail: "https://i.ytimg.com/vi/srvUrASNj0s/maxresdefault.jpg",
-    tags: ["HTML", "CSS"],
-    category: "Design"
-  },
-  {
-    id: 5,
-    title: "Docker Essentials",
-    instructor: "Mohamed Ali",
-    duration: "50 min",
-    level: "Intermediate",
-    rating: 4.4,
-    thumbnail: "https://i.ytimg.com/vi/Gjnup-PuquQ/maxresdefault.jpg",
-    tags: ["Containers"],
-    category: "DevOps"
-  },
-  {
-    id: 6,
-    title: "Git & GitHub Essentials",
-    instructor: "Emily Davis",
-    duration: "30 min",
-    level: "Beginner",
-    rating: 4.7,
-    thumbnail: "https://i.ytimg.com/vi/apGV9Kg7ics/maxresdefault.jpg",
-    tags: ["Git", "Version Control"],
-    category: "Tools"
-  }
-];
+import { fetchFeaturedTutorials } from "@/services/tutorialService";
+const PROGRESS_KEY = "tutorialProgress";
 
 const categoryTabs = [
   { label: "All", value: "All", icon: null },
@@ -116,7 +36,27 @@ const getStars = (rating) => {
 
 const LandingTutorialsSection = () => {
   const [activeTab, setActiveTab] = useState("All");
+  const [tutorials, setTutorials] = useState([]);
+  const [progress, setProgress] = useState({});
   const router = useRouter();
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchFeaturedTutorials();
+        setTutorials(data || []);
+      } catch (err) {
+        console.error("Failed to load tutorials", err);
+      }
+      try {
+        const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+        setProgress(stored);
+      } catch {
+        setProgress({});
+      }
+    };
+    load();
+  }, []);
 
   const filteredTutorials =
     activeTab === "All"
@@ -235,11 +175,11 @@ const LandingTutorialsSection = () => {
                 <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400"
-                    style={{ width: `${mockProgress[tut.id] || 0}%` }}
+                    style={{ width: `${progress[tut.id] || 0}%` }}
                   />
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  Watched: {mockProgress[tut.id] || 0}%
+                  Watched: {progress[tut.id] || 0}%
                 </div>
               </div>
             </div>
