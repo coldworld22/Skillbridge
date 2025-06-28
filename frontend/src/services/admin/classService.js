@@ -85,3 +85,15 @@ export const rejectAdminClass = async (id, reason) => {
   const { data } = await api.patch(`/users/classes/admin/${id}/reject`, { reason });
   return data?.data;
 };
+
+export const fetchClassStudents = async (id) => {
+  const { data } = await api.get(`/users/classes/admin/${id}/students`);
+  return data?.data ?? [];
+};
+
+export const fetchClassStudent = async (classId, studentId) => {
+  const { data } = await api.get(
+    `/users/classes/admin/${classId}/students/${studentId}`
+  );
+  return data?.data ?? null;
+};

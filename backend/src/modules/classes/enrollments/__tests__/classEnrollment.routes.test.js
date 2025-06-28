@@ -17,7 +17,9 @@ jest.mock('../classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
   createEnrollment: jest.fn(),
   markCompleted: jest.fn(),
-  getByUser: jest.fn()
+  getByUser: jest.fn(),
+  getByClass: jest.fn(),
+  getStudent: jest.fn()
 }));
 const service = require('../classEnrollment.service');
 
@@ -56,5 +58,23 @@ describe('Class enrollment routes', () => {
     const res = await request(app).get('/classes/enroll/my');
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(list);
+  });
+
+  test('list students in class', async () => {
+    const list = [{ id: 'stu' }];
+    service.getByClass.mockResolvedValue(list);
+    const res = await request(app).get('/classes/admin/abc/students');
+    expect(res.statusCode).toBe(200);
+    expect(service.getByClass).toHaveBeenCalledWith('abc');
+    expect(res.body.data).toEqual(list);
+  });
+
+  test('get student details', async () => {
+    const student = { id: 'stu' };
+    service.getStudent.mockResolvedValue(student);
+    const res = await request(app).get('/classes/admin/abc/students/def');
+    expect(res.statusCode).toBe(200);
+    expect(service.getStudent).toHaveBeenCalledWith('abc', 'def');
+    expect(res.body.data).toEqual(student);
   });
 });
