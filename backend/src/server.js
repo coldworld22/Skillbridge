@@ -72,6 +72,7 @@ const cartRoutes = require("./modules/cart/cart.routes");
 const notificationRoutes = require("./modules/notifications/notifications.routes");
 const messageRoutes = require("./modules/messages/messages.routes");
 const chatRoutes = require("./modules/chat/chat.routes");
+const offersRoutes = require("./modules/offers/offers.routes");
 const socialLoginConfigRoutes = require("./modules/socialLoginConfig/socialLoginConfig.routes");
 const appConfigRoutes = require("./modules/appConfig/appConfig.routes");
 const errorHandler = require("./middleware/errorHandler");
@@ -144,6 +145,7 @@ app.use("/api/social-login/config", socialLoginConfigRoutes); // 🔑 Social log
 app.use("/api/app-config", appConfigRoutes); // 🛠️ Application settings
 app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
 app.use("/api/ads", adsRoutes); // 📢 Advertisements
+app.use("/api/offers", offersRoutes); // 📚 Learning marketplace offers
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
 app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
 app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
