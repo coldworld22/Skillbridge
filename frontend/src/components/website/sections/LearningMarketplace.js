@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   FaUserGraduate,
@@ -9,15 +9,7 @@ import {
   FaPlus,
 } from "react-icons/fa";
 
-const mockOffers = Array.from({ length: 20 }, (_, i) => ({
-  id: i + 1,
-  type: i % 2 === 0 ? "student" : "instructor",
-  title: i % 2 === 0 ? "Need Chemistry Help" : "English Tutoring Available",
-  price: `$${100 + i * 5}`,
-  duration: `${1 + (i % 6)} months`,
-  tags: ["Flexible", "Urgent"].slice(0, (i % 2) + 1),
-  date: `${i + 1} days ago`,
-}));
+import { fetchOffers } from "@/services/offerService";
 
 const OfferBadge = ({ type }) => (
   <span
@@ -30,14 +22,34 @@ const OfferBadge = ({ type }) => (
 );
 
 const OffersIndex = () => {
+  const [offers, setOffers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(6);
   const [showModal, setShowModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(""); // "post" | "dashboard" | "detail"
   const [selectedOfferId, setSelectedOfferId] = useState(null);
   const router = useRouter();
 
-  const offersToShow = mockOffers.slice(0, visibleCount);
-  const allVisible = visibleCount >= mockOffers.length;
+  useEffect(() => {
+    fetchOffers()
+      .then((data) => {
+        const mapped = data.map((o) => ({
+          id: o.id,
+          type: "student",
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: [],
+          date: o.created_at
+            ? new Date(o.created_at).toLocaleDateString()
+            : "",
+        }));
+        setOffers(mapped);
+      })
+      .catch(() => setOffers([]));
+  }, []);
+
+  const offersToShow = offers.slice(0, visibleCount);
+  const allVisible = visibleCount >= offers.length;
 
   const handleRoleSelection = (role) => {
     setShowModal(false);

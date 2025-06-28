@@ -5,6 +5,7 @@ import Footer from "@/components/website/sections/Footer";
 import { FaTag } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { createOffer } from "@/services/offerService";
 
 const availableTags = ["Urgent", "LiveClass", "Discount", "Flexible", "OneOnOne"];
 
@@ -17,22 +18,20 @@ const CreateOffer = () => {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newOffer = {
-      id: Date.now(),
-      offerType,
-      title,
-      duration,
-      price,
-      description,
-      tags,
-      date: new Date().toLocaleDateString()
-    };
-
-    console.log("Offer Created:", newOffer);
-    toast.success("🎉 Offer posted successfully!", { theme: "dark" });
-    setTimeout(() => router.push("/offers"), 1800);
+    try {
+      await createOffer({
+        title,
+        description,
+        budget: price,
+        timeframe: duration,
+      });
+      toast.success("🎉 Offer posted successfully!", { theme: "dark" });
+      setTimeout(() => router.push("/offers"), 1800);
+    } catch (err) {
+      toast.error("Failed to post offer", { theme: "dark" });
+    }
   };
 
   const toggleTag = (tag) => {
