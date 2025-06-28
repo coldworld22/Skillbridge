@@ -15,6 +15,8 @@ import { createInstructorClass, createClassLesson } from '@/services/instructor/
 import { fetchClassTags } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import { toDateTimeISO } from '@/utils/date';
 import FloatingInput from '@/components/shared/FloatingInput';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -27,6 +29,7 @@ function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
   const addEvents = useScheduleStore((state) => state.addEvents);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -205,8 +208,10 @@ function CreateOnlineClass() {
         if (formData.description) payload.append('description', formData.description);
         if (formData.level) payload.append('level', formData.level);
         if (formData.language) payload.append('language', formData.language);
-        if (formData.startDate) payload.append('start_date', formData.startDate);
-        if (formData.endDate) payload.append('end_date', formData.endDate);
+        if (formData.startDate)
+          payload.append('start_date', toDateTimeISO(formData.startDate));
+        if (formData.endDate)
+          payload.append('end_date', toDateTimeISO(formData.endDate));
 
         if (formData.isFree) {
           payload.append('price', '0');
@@ -232,7 +237,7 @@ function CreateOnlineClass() {
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
-            lessonData.append('start_time', lesson.start_time);
+            lessonData.append('start_time', toDateTimeISO(lesson.start_time));
             return createClassLesson(newClass.id, lessonData).catch(() => null);
           })
         );
@@ -241,17 +246,18 @@ function CreateOnlineClass() {
           {
             id: `class-${newClass.id}`,
             title: `Class: ${newClass.title}`,
-            start: formData.startDate || newClass.start_date,
+            start: toDateTimeISO(formData.startDate || newClass.start_date),
           },
           ...formData.lessons.map((l, idx) => ({
             id: `lesson-${newClass.id}-${idx}`,
             title: `Lesson: ${l.title}`,
-            start: l.start_time,
+            start: toDateTimeISO(l.start_time),
           })),
         ];
         addEvents(events);
 
         toast.success('Class created successfully');
+        await fetchNotifications(true);
         router.push('/dashboard/instructor/online-classes');
       } catch (error) {
         console.error(error);
