@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchClassStudents } from "@/services/admin/classService";
 
@@ -38,28 +37,27 @@ export default function ClassStudentsPage() {
         <p>No students enrolled.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
+
+          <table className="min-w-full table-auto border-collapse border border-gray-200 rounded-md shadow-sm">
+            <thead className="bg-gray-50">
+
               <tr>
                 <th className="border p-2 text-left">Name</th>
                 <th className="border p-2 text-left">Email</th>
                 <th className="border p-2">Status</th>
-                <th className="border p-2">Actions</th>
+                <th className="border p-2">Date Joined</th>
               </tr>
             </thead>
             <tbody>
               {students.map((stu) => (
-                <tr key={stu.id} className="bg-white">
+                <tr key={stu.id} className="odd:bg-white even:bg-gray-50">
+
                   <td className="border p-2">{stu.full_name}</td>
                   <td className="border p-2">{stu.email}</td>
                   <td className="border p-2 text-center">{stu.status}</td>
                   <td className="border p-2 text-center">
-                    <Link
-                      href={`/dashboard/admin/online-classes/${id}/students/${stu.id}`}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View
-                    </Link>
+                    {new Date(stu.enrolled_at).toLocaleDateString()}
+
                   </td>
                 </tr>
               ))}
