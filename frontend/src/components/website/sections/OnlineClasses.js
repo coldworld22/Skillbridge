@@ -200,22 +200,25 @@ const OnlineClasses = () => {
                     <FaHeart className={wishlistIds.includes(classItem.id) ? 'text-yellow-400' : 'text-gray-300'} />
                   </button>
                 </div>
-                {classItem.trending && (
-                  <span className="absolute top-3 left-3 bg-yellow-500 text-gray-900 px-3 py-1 text-xs font-bold rounded-full shadow-sm">
-                    🔥 Trending
+                {/* Status and trending badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1">
+                  {classItem.trending && (
+                    <span className="bg-yellow-500 text-gray-900 px-3 py-1 text-xs font-bold rounded-full shadow-sm">
+                      🔥 Trending
+                    </span>
+                  )}
+                  <span
+                    className={`px-3 py-1 text-xs font-bold rounded-full ${
+                      classItem.status === "Live"
+                        ? "bg-red-500 text-white animate-pulse"
+                        : classItem.status === "Completed"
+                        ? "bg-gray-600 text-white"
+                        : "bg-green-600 text-white"
+                    }`}
+                  >
+                    {classItem.status}
                   </span>
-                )}
-                <span
-                  className={`absolute top-3 right-3 px-3 py-1 text-xs font-bold rounded-full ${
-                    classItem.status === "Live"
-                      ? "bg-red-500 text-white animate-pulse"
-                      : classItem.status === "Completed"
-                      ? "bg-gray-600 text-white"
-                      : "bg-green-600 text-white"
-                  }`}
-                >
-                  {classItem.status}
-                </span>
+                </div>
 
                 {/* Icon */}
                 {classItem.status === "Live" ? (
