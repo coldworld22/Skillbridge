@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 
 export default function AdminClassDetailPage() {
   const { id } = useRouter().query;
@@ -73,14 +74,9 @@ export default function AdminClassDetailPage() {
                   </svg>
                   <h3 className="text-sm font-medium text-gray-700">Class Demo Video</h3>
                 </div>
-                <video 
-                  controls 
-                  className="w-full aspect-video bg-black"
-                  poster={details.cover_image}
-                >
-                  <source src={encodeURI(details.demo_video_url)} />
-                  Your browser does not support the video tag.
-                </video>
+                <CustomVideoPlayer
+                  videos={[{ src: encodeURI(details.demo_video_url) }]}
+                />
               </div>
             )}
           </div>
