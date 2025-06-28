@@ -35,10 +35,6 @@ export default function ReviewStep({
             {tutorialData.categoryName || tutorialData.category}
           </p>
           <p><strong>Level:</strong> {tutorialData.level}</p>
-          <p><strong>Start:</strong> {tutorialData.startDate}</p>
-          {tutorialData.endDate && (
-            <p><strong>End:</strong> {tutorialData.endDate}</p>
-          )}
           {tutorialData.tags.length > 0 && (
             <p><strong>Tags:</strong> {tutorialData.tags.join(", ")}</p>
           )}
