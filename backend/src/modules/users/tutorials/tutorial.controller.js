@@ -40,6 +40,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
     level,
     duration,
     price,
+    start_date,
+    end_date,
     status = "draft",
     chapters = [],
   } = req.body;
@@ -83,6 +85,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
     level,
     duration: duration ? parseInt(duration) : null,
     price,
+    start_date: start_date ? new Date(start_date) : null,
+    end_date: end_date ? new Date(end_date) : null,
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
@@ -130,6 +134,12 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   const data = req.body;
   if (data.duration) {
     data.duration = parseInt(data.duration);
+  }
+  if (data.start_date) {
+    data.start_date = new Date(data.start_date);
+  }
+  if (data.end_date) {
+    data.end_date = new Date(data.end_date);
   }
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {

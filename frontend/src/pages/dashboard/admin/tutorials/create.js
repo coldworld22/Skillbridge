@@ -24,6 +24,8 @@ function CreateTutorialPage() {
     thumbnail: null,
     preview: null,
     language: "",
+    startDate: "",
+    endDate: "",
     price: "",
     isFree: false,
   });
@@ -64,6 +66,12 @@ function CreateTutorialPage() {
     formData.append("level", tutorialData.level);
     formData.append("status", status);
     formData.append("is_paid", (!tutorialData.isFree).toString());
+    if (tutorialData.startDate) {
+      formData.append("start_date", tutorialData.startDate);
+    }
+    if (tutorialData.endDate) {
+      formData.append("end_date", tutorialData.endDate);
+    }
     if (!tutorialData.isFree) {
       formData.append("price", tutorialData.price);
     }

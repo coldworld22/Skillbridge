@@ -16,6 +16,7 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
     if (!tutorialData.level) newErrors.level = "Level is required.";
     if (!tutorialData.language) newErrors.language = "Tutorial language is required.";
     if (!tutorialData.isFree && (!tutorialData.price || isNaN(tutorialData.price))) newErrors.price = "Valid price is required.";
+    if (!tutorialData.startDate) newErrors.startDate = "Start date is required.";
 
     setErrors(newErrors);
 
@@ -63,6 +64,31 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
           placeholder="e.g., English, Arabic, French..."
         />
         {errors.language && <p className="text-red-500 text-sm mt-1">{errors.language}</p>}
+      </div>
+
+      {/* Start Date */}
+      <div>
+        <label className="font-semibold">Start Date *</label>
+        <input
+          type="date"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.startDate}
+          onChange={(e) => handleChange("startDate", e.target.value)}
+        />
+        {errors.startDate && (
+          <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
+        )}
+      </div>
+
+      {/* End Date */}
+      <div>
+        <label className="font-semibold">End Date</label>
+        <input
+          type="date"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.endDate}
+          onChange={(e) => handleChange("endDate", e.target.value)}
+        />
       </div>
 
       {/* Category */}

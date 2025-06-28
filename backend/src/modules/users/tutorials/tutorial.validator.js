@@ -45,6 +45,8 @@ exports.create = z.object({
       ),
     cover_image: z.string().url().optional(),
     preview_video: z.string().url().optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
   }),
 });
 
