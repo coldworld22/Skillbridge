@@ -175,14 +175,46 @@ exports.getClassAnalytics = async (classId) => {
     .groupByRaw("DATE(enrolled_at)")
     .orderBy("date");
 
+  const [revenueRow] = await db("payments")
+    .where({ item_type: "class", item_id: classId, status: "paid" })
+    .sum({ revenue: "amount" });
+
+  const [paidStudentsRow] = await db("payments")
+    .where({ item_type: "class", item_id: classId, status: "paid" })
+    .countDistinct({ count: "user_id" });
+
+  const [attendanceRow] = await db("class_attendance")
+    .where({ lesson_id: classId, attended: true })
+    .countDistinct({ count: "user_id" });
+
+  const viewAgents = await db("class_views")
+    .where({ class_id: classId })
+    .pluck("user_agent");
+
+  const deviceCounts = {};
+  for (const ua of viewAgents) {
+    const agent = ua || "";
+    let type = "Desktop";
+    if (/mobile/i.test(agent)) type = "Mobile";
+    else if (/tablet|ipad/i.test(agent)) type = "Tablet";
+    deviceCounts[type] = (deviceCounts[type] || 0) + 1;
+  }
+
+  const totalStudents = parseInt(totalRow.count, 10) || 0;
+  const paidStudents = parseInt(paidStudentsRow.count, 10) || 0;
+
   return {
-    totalStudents: parseInt(totalRow.count, 10) || 0,
-    totalRevenue: 0,
-    totalAttendance: 0,
+    totalStudents,
+    totalRevenue: parseFloat(revenueRow.revenue) || 0,
+    totalAttendance: parseInt(attendanceRow.count, 10) || 0,
     completed: parseInt(completedRow.count, 10) || 0,
-    revenueBreakdown: { full: 0, installments: 0, free: 0 },
+    revenueBreakdown: {
+      full: paidStudents,
+      installments: 0,
+      free: Math.max(0, totalStudents - paidStudents),
+    },
     locations: [],
-    devices: [],
+    devices: Object.entries(deviceCounts).map(([name, value]) => ({ name, value })),
     registrationTrend: trendRows.map((r) => ({
       date: r.date instanceof Date ? r.date.toISOString().split("T")[0] : r.date,
       students: parseInt(r.students, 10),
