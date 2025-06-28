@@ -28,9 +28,10 @@ export default function CertificateIssuancePanel({ classId }) {
   return (
     <div>
       {canIssue ? (
-        <p className="text-sm text-green-400">
-          🎉 Certificate is now ready! You can issue it from your dashboard.
-        </p>
+        <div className="bg-green-700 text-white p-3 rounded text-sm flex items-center justify-between">
+          <span>🎉 Certificate is now ready!</span>
+          <button onClick={handleIssueCertificate} className="underline font-semibold">Download</button>
+        </div>
       ) : (
         <p className="text-sm text-gray-400">
           Student must complete all lessons and assignments to issue a certificate.

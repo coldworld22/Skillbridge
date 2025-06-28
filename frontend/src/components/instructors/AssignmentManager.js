@@ -45,6 +45,11 @@ export default function AssignmentManager({ classId, initialAssignments = [] }) 
 
   return (
     <div className="text-sm text-white">
+      {assignments.length > 0 && (
+        <div className="bg-yellow-500 text-black p-2 rounded mb-3 text-center text-xs font-semibold">
+          📋 {assignments.length} assignment{assignments.length > 1 ? 's' : ''} posted
+        </div>
+      )}
       <ul className="space-y-3">
         {assignments.map((a, i) => (
           <li
