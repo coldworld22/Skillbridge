@@ -1,18 +1,35 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
+
+const formatTutorial = (tut) => ({
+  ...tut,
+  thumbnail: tut.thumbnail_url
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.thumbnail_url}`
+    : null,
+  preview: tut.preview_video
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
+    : null,
+  instructor: tut.instructor_name || tut.instructor,
+  tags: tut.tags || [],
+  trending: Boolean(tut.trending),
+});
 
 export const fetchFeaturedTutorials = async () => {
   const res = await api.get("/users/tutorials/featured");
-  return res.data;
+  const list = res.data?.data ?? res.data ?? [];
+  return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
 export const fetchPublishedTutorials = async () => {
   const res = await api.get("/users/tutorials");
-  return res.data;
+  const list = res.data?.data ?? res.data ?? [];
+  return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
 export const fetchTutorialDetails = async (id) => {
   const res = await api.get(`/users/tutorials/${id}`);
-  return res.data;
+  const tut = res.data?.data ?? res.data;
+  return tut ? formatTutorial(tut) : tut;
 };
 
 export const addTutorialToWishlist = async (id) => {
