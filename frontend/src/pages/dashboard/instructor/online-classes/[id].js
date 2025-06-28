@@ -48,6 +48,12 @@ export default function InstructorClassRoom() {
     <div className="bg-gray-900 min-h-screen text-white px-6 py-8">
       {/* Header */}
       <div className="mb-6">
+        <button
+          onClick={() => router.back()}
+          className="text-sm text-blue-400 hover:underline mb-2"
+        >
+          &larr; Back
+        </button>
         <h1 className="text-2xl font-bold text-yellow-400">{classData.title}</h1>
         <p className="text-sm text-gray-400">Instructor: {classData.instructor}</p>
         {classData.start_date && (
