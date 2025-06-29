@@ -268,7 +268,7 @@ const OfferDetailsPage = () => {
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Contact Instructor</h4>
         <div className="flex flex-wrap gap-4 items-center">
           <button
-            onClick={() => router.push(`/website/pages/messages?to=${offer.userId}`)}
+            onClick={() => router.push(`/messages?to=${offer.userId}`)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition"
           >
             <FaComments /> Message

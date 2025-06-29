@@ -220,7 +220,7 @@ export default function InstructorProfilePage() {
                 <FaCalendarAlt /> Book Lesson
               </button>
               <button
-                onClick={() => router.push(`/website/pages/messages?userId=${instructor.id}`)}
+                onClick={() => router.push(`/messages?userId=${instructor.id}`)}
                 className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
               >
                 <FaComments /> Chat Now
