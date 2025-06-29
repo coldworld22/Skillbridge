@@ -21,3 +21,16 @@ exports.updateOffer = async (id, data) => {
 exports.deleteOffer = (id) => {
   return db("offers").where({ id }).del();
 };
+
+exports.addOfferTags = async (offerId, tagIds) => {
+  if (!tagIds.length) return;
+  const rows = tagIds.map((tag_id) => ({ offer_id: offerId, tag_id }));
+  await db("offer_tag_map").insert(rows);
+};
+
+exports.getOfferTags = async (offerId) => {
+  return db("offer_tag_map as m")
+    .join("offer_tags as t", "m.tag_id", "t.id")
+    .where("m.offer_id", offerId)
+    .select("t.id", "t.name", "t.slug");
+};

@@ -6,6 +6,7 @@ exports.create = z.object({
     description: z.string().optional(),
     budget: z.string().optional(),
     timeframe: z.string().optional(),
+    tags: z.string().optional(),
   }),
 });
 
@@ -15,6 +16,7 @@ exports.update = z.object({
     description: z.string().optional(),
     budget: z.string().optional(),
     timeframe: z.string().optional(),
+    tags: z.string().optional(),
     status: z.enum(["open", "closed", "cancelled"]).optional(),
   }),
 });
