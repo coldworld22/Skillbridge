@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import { fetchOfferTags } from "@/services/offerTagService";
 
 const NewOfferPage = () => {
   const router = useRouter();
@@ -11,10 +12,28 @@ const NewOfferPage = () => {
     tags: "",
     description: "",
   });
+  const [suggestedTags, setSuggestedTags] = useState([]);
+
+  useEffect(() => {
+    const search = form.tags.split(',').pop().trim();
+    if (!search) return setSuggestedTags([]);
+    fetchOfferTags(search).then(setSuggestedTags).catch(() => {});
+  }, [form.tags]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTagClick = (name) => {
+    const current = form.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (!current.includes(name)) {
+      const newTags = [...current, name].join(', ');
+      setForm((prev) => ({ ...prev, tags: newTags }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -76,6 +95,20 @@ const NewOfferPage = () => {
             placeholder="Urgent, Online"
             className="w-full border border-gray-300 rounded px-4 py-2"
           />
+          {suggestedTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {suggestedTags.map((tag) => (
+                <button
+                  type="button"
+                  key={tag.id}
+                  onClick={() => handleTagClick(tag.name)}
+                  className="bg-gray-200 hover:bg-gray-300 text-xs px-2 py-1 rounded-full"
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
