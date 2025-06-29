@@ -88,12 +88,19 @@ const OfferDetailsPage = () => {
     if (!offer) return;
     fetchResponses(offer.id)
       .then((resps) => {
-        if (!resps.length) return;
+        if (!resps.length) {
+          setResponse(null);
+          setMessages([]);
+          return;
+        }
         const resp = resps[0];
         setResponse(resp);
         return fetchResponseMessages(offer.id, resp.id).then(setMessages);
       })
-      .catch(() => setMessages([]));
+      .catch(() => {
+        setResponse(null);
+        setMessages([]);
+      });
   }, [offer]);
 
   const handleSendMessage = async ({ text, file, audio }) => {
@@ -105,7 +112,6 @@ const OfferDetailsPage = () => {
     try {
       const sent = await sendResponseMessage(offer.id, response.id, text.trim());
       setMessages((prev) => [...prev, sent]);
-      setReplyTo(null);
       toast.success("Message sent!");
     } catch (_) {
       toast.error("Failed to send message");
