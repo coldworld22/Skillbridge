@@ -17,6 +17,31 @@ import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
 import { getConversation, sendChatMessage } from "@/services/messageService";
 import formatRelativeTime from "@/utils/relativeTime";
+import { API_BASE_URL } from "@/config/config";
+import ChatImage from "@/components/shared/ChatImage";
+
+const getAvatarUrl = (url) => {
+  if (!url) return "/images/default-avatar.png";
+  if (url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url}`;
+};
+
+const getMediaUrl = (url) => {
+  if (!url) return null;
+  if (
+    url.startsWith("http") ||
+    url.startsWith("blob:") ||
+    url.startsWith("data:")
+  )
+    return url;
+  return `${API_BASE_URL}${url}`;
+};
+
+const isImage = (path) => {
+  if (!path) return false;
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
+};
+
 
 const OfferDetailsPage = () => {
   const router = useRouter();
@@ -142,21 +167,87 @@ const OfferDetailsPage = () => {
             return (
               <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
-                  <img
-                    src={offer.avatar || "/images/default-avatar.png"}
+
+                  <ChatImage
+                    src={getAvatarUrl(offer.avatar)}
                     alt={offer.name}
                     className="w-8 h-8 rounded-full mr-2 mt-1"
+                    width={32}
+                    height={32}
                   />
                 )}
                 <div className="flex flex-col max-w-[75%]">
-                  <div className={`p-3 rounded-lg text-sm ${isCurrentUser ? "bg-blue-100 text-blue-800 self-end" : "bg-gray-100 text-gray-700 self-start"}`}>
-                    <p className="font-medium">{isCurrentUser ? "You" : offer.name}</p>
+                  <div
+                    className={`p-3 rounded-lg text-sm ${
+                      isCurrentUser
+                        ? "bg-blue-100 text-blue-800 self-end"
+                        : "bg-gray-100 text-gray-700 self-start"
+                    }`}
+                  >
+                    <p className="font-medium">
+                      {isCurrentUser ? "You" : offer.name}
+                    </p>
+
                     {msg.reply_message && (
                       <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
                         {msg.reply_message}
                       </div>
                     )}
-                    <p>{msg.message}</p>
+
+                    {msg.reply_file_url && isImage(msg.reply_file_url) && (
+                      <ChatImage
+                        src={getMediaUrl(msg.reply_file_url)}
+                        alt="reply file"
+                        className="max-w-xs rounded-md mb-1"
+                        width={200}
+                        height={200}
+                      />
+                    )}
+                    {msg.reply_file_url && !isImage(msg.reply_file_url) && (
+                      <a
+                        href={getMediaUrl(msg.reply_file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-xs mb-1"
+                      >
+                        {msg.reply_file_url.split("/").pop()}
+                      </a>
+                    )}
+                    {msg.reply_audio_url && (
+                      <audio
+                        controls
+                        src={getMediaUrl(msg.reply_audio_url)}
+                        className="w-48 mb-1"
+                      />
+                    )}
+                    {msg.message && <p>{msg.message}</p>}
+                    {msg.file_url && isImage(msg.file_url) && (
+                      <ChatImage
+                        src={getMediaUrl(msg.file_url)}
+                        alt="attachment"
+                        className="max-w-xs rounded-md mt-1"
+                        width={200}
+                        height={200}
+                      />
+                    )}
+                    {msg.file_url && !isImage(msg.file_url) && (
+                      <a
+                        href={getMediaUrl(msg.file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-blue-600 text-sm mt-1"
+                      >
+                        {msg.file_url.split("/").pop()}
+                      </a>
+                    )}
+                    {msg.audio_url && (
+                      <audio
+                        controls
+                        src={getMediaUrl(msg.audio_url)}
+                        className="mt-1 w-48"
+                      />
+                    )}
+
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
@@ -166,10 +257,14 @@ const OfferDetailsPage = () => {
                   </div>
                 </div>
                 {isCurrentUser && (
-                  <img
-                    src={user?.avatar_url || "/images/default-avatar.png"}
+
+                  <ChatImage
+                    src={getAvatarUrl(user?.avatar_url)}
                     alt="You"
                     className="w-8 h-8 rounded-full ml-2 mt-1"
+                    width={32}
+                    height={32}
+
                   />
                 )}
               </div>
@@ -178,9 +273,38 @@ const OfferDetailsPage = () => {
         </div>
 
         {replyTo && (
-          <div className="text-xs text-gray-600 mb-2">
-            Replying to: <span className="italic">{replyTo.message}</span>
-            <button onClick={() => setReplyTo(null)} className="ml-2 text-red-500">✖</button>
+
+          <div className="text-xs text-gray-600 mb-2 flex items-center gap-2">
+            <span>Replying to:</span>
+            {replyTo.message && <span className="italic">{replyTo.message}</span>}
+            {replyTo.file_url && isImage(replyTo.file_url) && (
+              <ChatImage
+                src={getMediaUrl(replyTo.file_url)}
+                alt="reply"
+                className="w-6 h-6 rounded"
+                width={24}
+                height={24}
+              />
+            )}
+            {replyTo.file_url && !isImage(replyTo.file_url) && (
+              <a
+                href={getMediaUrl(replyTo.file_url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                {replyTo.file_url.split("/").pop()}
+              </a>
+            )}
+            {replyTo.audio_url && (
+              <audio
+                controls
+                src={getMediaUrl(replyTo.audio_url)}
+                className="w-24"
+              />
+            )}
+            <button onClick={() => setReplyTo(null)} className="text-red-500">✖</button>
+
           </div>
         )}
 
