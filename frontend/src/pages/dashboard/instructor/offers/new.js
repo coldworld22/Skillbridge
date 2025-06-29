@@ -16,7 +16,6 @@ const NewOfferPage = () => {
   });
   const [tagInput, setTagInput] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
-  const [newTags, setNewTags] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
 
   useEffect(() => {
@@ -37,7 +36,6 @@ const NewOfferPage = () => {
     if (!exists) {
       try {
         await createOfferTag({ name: tag });
-        setNewTags((prev) => [...prev, tag]);
       } catch (_) {}
     }
     setSelectedTags((prev) => [...prev, tag]);
@@ -46,7 +44,6 @@ const NewOfferPage = () => {
 
   const removeTag = (tag) => {
     setSelectedTags((prev) => prev.filter((t) => t !== tag));
-    setNewTags((prev) => prev.filter((t) => t !== tag));
   };
 
   const handleSubmit = async (e) => {
@@ -126,7 +123,8 @@ const NewOfferPage = () => {
             {selectedTags.map((tag) => (
               <span
                 key={tag}
-                className={`px-2 py-1 text-xs rounded-full flex items-center ${newTags.includes(tag) ? "bg-yellow-200" : "bg-gray-200"}`}
+                className="px-2 py-1 text-xs rounded-full flex items-center bg-yellow-200"
+
               >
                 {tag}
                 <button type="button" onClick={() => removeTag(tag)} className="ml-1 text-gray-600 hover:text-gray-900">
