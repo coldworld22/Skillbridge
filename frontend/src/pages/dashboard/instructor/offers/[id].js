@@ -13,11 +13,14 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import useAuthStore from "@/store/auth/authStore";
+import { fetchOfferById } from "@/services/offerService";
 
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const currentUserId = "instructor1";
+  const { user } = useAuthStore();
+  const currentUserId = user?.id;
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -26,27 +29,28 @@ const OfferDetailsPage = () => {
   useEffect(() => {
     if (!id) return;
 
-    const allOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: `${i + 1}`,
-      userId: i % 2 === 0 ? "student1" : "instructor1",
-      type: i % 2 === 0 ? "student" : "instructor",
-      title: i % 2 === 0
-        ? `Need Help with Subject ${i + 1}`
-        : `Offering Course ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1),
-      date: `${i + 1} days ago`,
-      description: i % 2 === 0
-        ? `I am looking for help with physics and would prefer weekly sessions.`
-        : `I am offering structured math classes online every weekend.`,
-      status: "Active",
-      email: `user${i}@example.com`,
-      phone: `+96650000000${i}`,
-    }));
-
-    const found = allOffers.find((o) => o.id === id);
-    setOffer(found);
+    fetchOfferById(id)
+      .then((o) => {
+        if (!o) return setOffer(null);
+        setOffer({
+          id: o.id,
+          userId: o.student_id,
+          type:
+            o.student_role?.toLowerCase() === "instructor"
+              ? "instructor"
+              : "student",
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: [],
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+          description: o.description || "",
+          status: o.status || "open",
+          email: o.email || "",
+          phone: o.phone || "",
+        });
+      })
+      .catch(() => setOffer(null));
 
     setMessages([
       {
