@@ -18,10 +18,10 @@ import { fetchOfferById } from "@/services/offerService";
 import { updateOffer } from "@/services/admin/offerService";
 import { toast } from "react-toastify";
 import {
-  getConversation,
-  sendChatMessage,
-  deleteChatMessage,
-} from "@/services/messageService";
+  fetchResponses,
+  fetchMessages as fetchResponseMessages,
+  sendMessage as sendResponseMessage,
+} from "@/services/offerResponseService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
@@ -55,8 +55,8 @@ const OfferDetailsPage = () => {
   const currentUserId = user?.id;
 
   const [offer, setOffer] = useState(null);
+  const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [replyTo, setReplyTo] = useState(null);
 
   const toggleStatus = async () => {
     if (!offer) return;
@@ -105,37 +105,25 @@ const OfferDetailsPage = () => {
 
   useEffect(() => {
     if (!offer) return;
-    const fetchMessages = () => {
-      getConversation(offer.userId)
-        .then(setMessages)
-        .catch(() => setMessages([]));
-    };
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 10000);
-    return () => clearInterval(interval);
+    fetchResponses(offer.id)
+      .then((resps) => {
+        if (!resps.length) return;
+        const resp = resps[0];
+        setResponse(resp);
+        return fetchResponseMessages(offer.id, resp.id).then(setMessages);
+      })
+      .catch(() => setMessages([]));
   }, [offer]);
   const handleSendMessage = async ({ text, file, audio }) => {
-    if (!text && !file && !audio) return;
+    if (!text?.trim() || !response) return;
+    if (file || audio) {
+      toast.error("Attachments not supported for offer messages", { theme: "colored" });
+    }
     try {
-      const sent = await sendChatMessage(offer.userId, {
-        text,
-        file,
-        audio,
-        replyId: replyTo?.id,
-      });
+      const sent = await sendResponseMessage(offer.id, response.id, text.trim());
       setMessages((prev) => [...prev, sent]);
-
-      setReplyTo(null);
-    } catch (_) {}
-  };
-
-  const deleteMessage = async (msgId) => {
-    try {
-      await deleteChatMessage(msgId);
-      setMessages((prev) => prev.filter((m) => m.id !== msgId));
-      toast.info("Message deleted", { theme: "colored" });
     } catch (_) {
-      toast.error("Failed to delete message", { theme: "colored" });
+      toast.error("Failed to send message", { theme: "colored" });
     }
   };
 
@@ -281,11 +269,8 @@ const OfferDetailsPage = () => {
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
-                    <button onClick={() => setReplyTo(msg)} className="ml-2 underline">
+                    <button disabled className="ml-2 text-gray-400 cursor-not-allowed">
                       Reply
-                    </button>
-                    <button onClick={() => deleteMessage(msg.id)} className="ml-2 underline text-red-500">
-                      Delete
                     </button>
                   </div>
                 </div>
@@ -303,46 +288,8 @@ const OfferDetailsPage = () => {
           })}
         </div>
 
-        {replyTo && (
-          <div className="text-xs text-gray-600 mb-2 flex items-center gap-2">
-            <span>Replying to:</span>
-            {replyTo.message && <span className="italic">{replyTo.message}</span>}
-            {replyTo.file_url && isImage(replyTo.file_url) && (
-              <ChatImage
-                src={getMediaUrl(replyTo.file_url)}
-                alt="reply"
-                className="w-6 h-6 rounded"
-                width={24}
-                height={24}
-              />
-            )}
-            {replyTo.file_url && !isImage(replyTo.file_url) && (
-              <a
-                href={getMediaUrl(replyTo.file_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                {replyTo.file_url.split("/").pop()}
-              </a>
-            )}
-            {replyTo.audio_url && (
-              <audio
-                controls
-                src={getMediaUrl(replyTo.audio_url)}
-                className="w-24"
-              />
-            )}
-            <button onClick={() => setReplyTo(null)} className="text-red-500">✖</button>
-          </div>
-        )}
-
         <div className="mt-4">
-          <MessageInput
-            sendMessage={handleSendMessage}
-            replyTo={replyTo}
-            onCancelReply={() => setReplyTo(null)}
-          />
+          <MessageInput sendMessage={handleSendMessage} />
         </div>
       </div>
 
