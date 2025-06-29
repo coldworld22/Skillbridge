@@ -1,6 +1,9 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import StudentLayout from "@/components/layouts/StudentLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import { toast } from "react-toastify";
+import { fetchOfferById } from "@/services/offerService";
+import { updateOffer } from "@/services/admin/offerService";
 
 const EditOfferPage = () => {
   const router = useRouter();
@@ -13,32 +16,26 @@ const EditOfferPage = () => {
     tags: "",
     description: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load existing data (mock)
+  // Load existing data from API
   useEffect(() => {
     if (!id) return;
 
-    const mockOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: `${i + 1}`,
-      userId: "student1",
-      type: "student",
-      title: `Need Help with Subject ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1).join(", "),
-      description: `Looking for help with subject ${i + 1}.`,
-    }));
-
-    const found = mockOffers.find((o) => o.id === id);
-    if (found) {
-      setForm({
-        title: found.title,
-        price: found.price,
-        duration: found.duration,
-        tags: found.tags,
-        description: found.description,
+    fetchOfferById(id)
+      .then((offer) => {
+        if (!offer) return;
+        setForm({
+          title: offer.title || "",
+          price: offer.budget || "",
+          duration: offer.timeframe || "",
+          tags: offer.tags ? offer.tags.map((t) => t.name).join(", ") : "",
+          description: offer.description || "",
+        });
+      })
+      .catch(() => {
+        toast.error("Failed to load offer details.");
       });
-    }
   }, [id]);
 
   const handleChange = (e) => {
@@ -46,11 +43,31 @@ const EditOfferPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate save
-    alert("Offer updated successfully!");
-    router.push("/dashboard/student/offers");
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description,
+        budget: form.price,
+        timeframe: form.duration,
+        tags: JSON.stringify(
+          form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        ),
+      };
+      await updateOffer(id, payload);
+      toast.success("Offer updated successfully!");
+      router.push("/dashboard/instructor/offers");
+    } catch (error) {
+      toast.error("Failed to update offer. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -115,14 +132,16 @@ const EditOfferPage = () => {
         <div className="flex gap-4 mt-6">
           <button
             type="submit"
-            className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded font-semibold"
+            disabled={isSubmitting}
+            className={`bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded font-semibold ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            Save Changes
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
             className="text-gray-600 underline"
+            disabled={isSubmitting}
           >
             Cancel
           </button>
@@ -132,6 +151,8 @@ const EditOfferPage = () => {
   );
 };
 
-EditOfferPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
+EditOfferPage.getLayout = (page) => (
+  <InstructorLayout>{page}</InstructorLayout>
+);
 
 export default EditOfferPage;
