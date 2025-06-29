@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { fetchOfferTags } from "@/services/offerTagService";
@@ -38,20 +39,20 @@ const NewOfferPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       // Simulate API call with delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Submitting new offer:", form);
-      alert("Your request has been posted successfully!");
+      toast.success("Your request has been posted successfully!");
       router.push("/dashboard/student/offers");
     } catch (error) {
       console.error("Submission error:", error);
-      alert("There was an error submitting your request. Please try again.");
+      toast.error("There was an error submitting your request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
