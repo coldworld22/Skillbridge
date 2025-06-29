@@ -5,6 +5,13 @@ import Footer from "@/components/website/sections/Footer";
 import Link from "next/link";
 import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
+import useAuthStore from "@/store/auth/authStore";
+import { fetchOfferById } from "@/services/offerService";
+import {
+  fetchResponses,
+  fetchMessages as fetchResponseMessages,
+  sendMessage as sendResponseMessage,
+} from "@/services/offerResponseService";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {
@@ -20,61 +27,41 @@ import {
 
 dayjs.extend(relativeTime);
 
-const offers = [
-  {
-    id: 1,
-    title: "Need Physics Tutor",
-    type: "student",
-    price: "$200",
-    duration: "3 months",
-    tags: ["OneOnOne", "Urgent"],
-    description: "Looking for a physics tutor who can help with high school curriculum.",
-    date: "2025-04-01T10:00:00Z",
-  },
-  {
-    id: 2,
-    title: "Math Tutoring Available",
-    type: "instructor",
-    price: "$100/month",
-    duration: "8 months",
-    tags: ["Discount", "LiveClass"],
-    description: "Offering math tutoring for all levels. Weekly sessions + assignments.",
-    date: "2025-04-05T14:00:00Z",
-  },
-];
 
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
+  const { user } = useAuthStore();
   const [offer, setOffer] = useState(null);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "Student",
-      text: "Looking for help with physics...",
-      time: dayjs().subtract(2, "day").toISOString(),
-    },
-    {
-      id: 2,
-      sender: "Instructor",
-      text: "I can help for $180.",
-      time: dayjs().subtract(1, "day").toISOString(),
-    },
-    {
-      id: 3,
-      sender: "Student",
-      text: "Can we do $150?",
-      time: dayjs().subtract(20, "hour").toISOString(),
-    },
-  ]);
+  const [response, setResponse] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatRef = useRef(null);
 
   useEffect(() => {
-    if (id) {
-      const found = offers.find((item) => item.id === parseInt(id));
-      setOffer(found);
-    }
+    if (!id) return;
+    fetchOfferById(id)
+      .then((o) => setOffer(o || null))
+      .catch(() => setOffer(null));
+    fetchResponses(id)
+      .then((resps) => {
+        if (resps.length) {
+          const r = resps[0];
+          setResponse(r);
+          return fetchResponseMessages(id, r.id).then((msgs) =>
+            setMessages(
+              msgs.map((m) => ({
+                id: m.id,
+                sender: m.sender_name,
+                text: m.message,
+                time: m.sent_at,
+              }))
+            )
+          );
+        }
+        setMessages([]);
+      })
+      .catch(() => setMessages([]));
   }, [id]);
 
   useEffect(() => {
@@ -83,16 +70,19 @@ const OfferDetailsPage = () => {
     }
   }, [messages]);
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      sender: "You",
-      text: newMessage,
-      time: new Date().toISOString(),
-    };
-    setMessages([...messages, newMsg]);
-    setNewMessage("");
+  const handleSend = async () => {
+    if (!newMessage.trim() || !response) return;
+    try {
+      const sent = await sendResponseMessage(id, response.id, newMessage.trim());
+      const msg = {
+        id: sent.id,
+        sender: user?.full_name || "You",
+        text: sent.message,
+        time: sent.sent_at,
+      };
+      setMessages((prev) => [...prev, msg]);
+      setNewMessage("");
+    } catch (_) {}
   };
 
   const handleKeyPress = (e) => {
