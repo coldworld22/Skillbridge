@@ -7,6 +7,7 @@ const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const slugify = require("slugify");
+const db = require("../../config/database");
 
 exports.createOffer = catchAsync(async (req, res) => {
   const { tags: rawTags, title, description, budget, timeframe, offer_type } = req.body;
@@ -82,7 +83,34 @@ exports.getOfferById = catchAsync(async (req, res) => {
 
 exports.updateOffer = catchAsync(async (req, res) => {
   const existing = await service.getOfferById(req.params.id);
-  const offer = await service.updateOffer(req.params.id, req.body);
+  const { tags: rawTags, ...data } = req.body;
+  const offer = await service.updateOffer(req.params.id, data);
+
+  const tags = rawTags
+    ? typeof rawTags === "string"
+      ? JSON.parse(rawTags)
+      : rawTags
+    : null;
+  if (tags) {
+    await db("offer_tag_map").where({ offer_id: offer.id }).del();
+    if (tags.length) {
+      const tagIds = [];
+      for (const name of tags) {
+        const existingTag = await tagService.findByName(name);
+        const tag =
+          existingTag ||
+          (await tagService.createTag({
+            name,
+            slug: slugify(name, { lower: true, strict: true }),
+          }));
+        tagIds.push(tag.id);
+      }
+      await service.addOfferTags(offer.id, tagIds);
+      offer.tags = await service.getOfferTags(offer.id);
+    } else {
+      offer.tags = [];
+    }
+  }
 
   const instructors = await userModel.findInstructors();
   const students = await userModel.findStudents();
