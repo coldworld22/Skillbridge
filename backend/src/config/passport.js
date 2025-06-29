@@ -5,6 +5,7 @@ const passport = require('passport');
 // const FacebookStrategy = require('passport-facebook').Strategy;
 // Apple login is disabled until production deployment
 // const AppleStrategy = require('passport-apple').Strategy;
+
 const socialAuthService = require('../modules/auth/services/socialAuth.service');
 const socialLoginConfigService = require('../modules/socialLoginConfig/socialLoginConfig.service');
 

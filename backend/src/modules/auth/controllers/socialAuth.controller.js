@@ -1,6 +1,7 @@
 // Import the configured passport instance
 const { passport } = require('../../../config/passport');
 
+
 // Google OAuth is disabled until the project is hosted
 // exports.googleAuth = passport.authenticate('google', {
 //   scope: ['profile', 'email'],
