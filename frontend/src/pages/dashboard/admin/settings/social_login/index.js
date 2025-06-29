@@ -34,7 +34,9 @@ const initialProviders = [
     key: "apple",
     active: false,
     clientId: "",
-    clientSecret: "",
+    teamId: "",
+    keyId: "",
+    privateKey: "",
     label: "Sign in with Apple",
     icon: "apple"
   }
@@ -63,6 +65,9 @@ export default function SocialLoginSettingsPage() {
                 active: saved.active ?? p.active,
                 clientId: saved.clientId || "",
                 clientSecret: saved.clientSecret || "",
+                teamId: saved.teamId || "",
+                keyId: saved.keyId || "",
+                privateKey: saved.privateKey || "",
                 label: saved.label || p.label,
                 icon: saved.icon || p.icon,
               };
@@ -117,6 +122,9 @@ export default function SocialLoginSettingsPage() {
           active: p.active,
           clientId: p.clientId,
           clientSecret: p.clientSecret,
+          teamId: p.teamId,
+          keyId: p.keyId,
+          privateKey: p.privateKey,
           label: p.label,
           icon: p.icon,
         };
@@ -201,30 +209,81 @@ export default function SocialLoginSettingsPage() {
                     disabled={!provider.active}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium">Client ID</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded p-2"
-                    value={provider.clientId}
-                    onChange={(e) => handleChange(index, "clientId", e.target.value)}
-                    disabled={!provider.active}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">Client Secret</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded p-2"
-                    value={provider.clientSecret}
-                    onChange={(e) => handleChange(index, "clientSecret", e.target.value)}
-                    disabled={!provider.active}
-                  />
-                </div>
+                {provider.key === "apple" ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium">Client ID</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded p-2"
+                        value={provider.clientId}
+                        onChange={(e) => handleChange(index, "clientId", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Team ID</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded p-2"
+                        value={provider.teamId}
+                        onChange={(e) => handleChange(index, "teamId", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Key ID</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded p-2"
+                        value={provider.keyId}
+                        onChange={(e) => handleChange(index, "keyId", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Private Key</label>
+                      <textarea
+                        rows={4}
+                        className="w-full border rounded p-2"
+                        value={provider.privateKey}
+                        onChange={(e) => handleChange(index, "privateKey", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium">Client ID</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded p-2"
+                        value={provider.clientId}
+                        onChange={(e) => handleChange(index, "clientId", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Client Secret</label>
+                      <input
+                        type="text"
+                        className="w-full border rounded p-2"
+                        value={provider.clientSecret}
+                        onChange={(e) => handleChange(index, "clientSecret", e.target.value)}
+                        disabled={!provider.active}
+                      />
+                    </div>
+                  </>
+                )}
                 <p className="text-xs text-gray-500 mt-1">Redirect URL: <code>{getRedirectUrl(provider.key)}</code></p>
               </div>
 
-              {provider.active && (!provider.clientId || !provider.clientSecret) && (
+              {provider.active && (
+                (provider.key === "apple"
+                  ? !provider.clientId || !provider.teamId || !provider.keyId || !provider.privateKey
+                  : !provider.clientId || !provider.clientSecret)
+              ) && (
                 <p className="mt-2 text-sm text-red-500">⚠️ Missing credentials</p>
               )}
             </div>
