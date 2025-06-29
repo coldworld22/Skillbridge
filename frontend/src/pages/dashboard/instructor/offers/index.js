@@ -38,6 +38,7 @@ const InstructorOfferDashboard = () => {
           title: o.title,
           price: o.budget || "",
           duration: o.timeframe || "",
+          status: o.status || "open",
           tags: [],
           date: o.created_at
             ? new Date(o.created_at).toLocaleDateString()
@@ -89,15 +90,26 @@ const InstructorOfferDashboard = () => {
               <FaChalkboardTeacher className="text-green-500" />
             )}
           </div>
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
-              offer.type === "student"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-green-100 text-green-700"
-            }`}
-          >
-            {offer.type === "student" ? "Student Request" : "My Offer"}
-          </span>
+          <div className="flex gap-1">
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
+                offer.type === "student"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              {offer.type === "student" ? "Student Request" : "My Offer"}
+            </span>
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
+                offer.status === "open"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {offer.status}
+            </span>
+          </div>
         </div>
 
         <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
