@@ -9,6 +9,11 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
+import {
+  fetchOffers,
+  updateOffer,
+  deleteOffer,
+} from "@/services/admin/offerService";
 
 const AdminOfferDashboard = () => {
   const [offers, setOffers] = useState([]);
@@ -19,28 +24,46 @@ const AdminOfferDashboard = () => {
   const perPage = 5;
 
   useEffect(() => {
-    const mock = Array.from({ length: 20 }, (_, i) => ({
-      id: i + 1,
-      title: i % 2 === 0 ? `Offering Course ${i + 1}` : `Need Help with Subject ${i + 1}`,
-      user: {
-        id: i % 2 === 0 ? "instructor1" : "student1",
-        name: i % 2 === 0 ? "Mr. Khaled" : "Ahmed",
-        role: i % 2 === 0 ? "Instructor" : "Student",
-        avatar: `/avatars/${i % 2 === 0 ? "khaled" : "ahmed"}.jpg`,
-      },
-      type: i % 2 === 0 ? "instructor" : "student",
-      status: i % 3 === 0 ? "Pending" : "Active",
-      date: `${i + 1} days ago`,
-    }));
-    setOffers(mock);
+    fetchOffers()
+      .then((data) => {
+        const mapped = data.map((o) => ({
+          id: o.id,
+          title: o.title,
+          user: {
+            id: o.student_id,
+            name: o.student_name,
+            role: o.student_role,
+            avatar: o.student_avatar
+              ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${o.student_avatar}`
+              : "/avatars/default.jpg",
+          },
+          type: o.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
+          status: o.status || "open",
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+        }));
+        setOffers(mapped);
+      })
+      .catch(() => setOffers([]));
   }, []);
 
-  const handleToggleStatus = (id) => {
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this offer?")) return;
+    setOffers((prev) => prev.filter((o) => o.id !== id));
+    try {
+      await deleteOffer(id);
+    } catch (_) {}
+  };
+
+  const handleToggleStatus = async (id) => {
+    const offer = offers.find((o) => o.id === id);
+    if (!offer) return;
+    const newStatus = offer.status === "open" ? "closed" : "open";
     setOffers((prev) =>
-      prev.map((offer) =>
-        offer.id === id ? { ...offer, status: offer.status === "Active" ? "Inactive" : "Active" } : offer
-      )
+      prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
+    try {
+      await updateOffer(id, { status: newStatus });
+    } catch (_) {}
   };
 
   const filtered = offers
@@ -128,12 +151,12 @@ const AdminOfferDashboard = () => {
                   <div
                     onClick={() => handleToggleStatus(offer.id)}
                     className={`cursor-pointer inline-block w-14 h-7 flex items-center bg-gray-200 rounded-full p-1 transition duration-300 ${
-                      offer.status === "Active" ? "bg-green-400" : "bg-red-400"
+                      offer.status === "open" ? "bg-green-400" : "bg-red-400"
                     }`}
                   >
                     <div
                       className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-                        offer.status === "Active" ? "translate-x-7" : "translate-x-0"
+                        offer.status === "open" ? "translate-x-7" : "translate-x-0"
                       }`}
                     ></div>
                   </div>
@@ -145,7 +168,11 @@ const AdminOfferDashboard = () => {
                       <FaEye />
                     </button>
                   </Link>
-                  <button className="text-red-500 hover:text-red-700" title="Delete Offer">
+                  <button
+                    onClick={() => handleDelete(offer.id)}
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete Offer"
+                  >
                     <FaTrashAlt />
                   </button>
                   <button className="text-yellow-600 hover:text-yellow-800" title="Flag User">
