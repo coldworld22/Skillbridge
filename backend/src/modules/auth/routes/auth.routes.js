@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const authController = require("../controllers/auth.controller");
+const socialAuthController = require("../controllers/socialAuth.controller");
 const validate = require("../../../middleware/validate");
 const authValidation = require("../validators/auth.validator");
 const { limitAuthRequests } = require("../../../middleware/rateLimiter");
@@ -55,5 +56,12 @@ router.post("/verify-otp", validate(authValidation.otpVerifySchema), authControl
  * @access  Public
  */
 router.post("/reset-password", validate(authValidation.resetPasswordSchema), authController.resetPassword);
+
+// ─────────────────────────────────────────────────────────────
+// Social login routes
+// ─────────────────────────────────────────────────────────────
+
+router.get("/google", socialAuthController.googleAuth);
+router.get("/google/callback", socialAuthController.googleCallback);
 
 module.exports = router;

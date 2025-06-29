@@ -23,9 +23,13 @@ export default function SocialLogin() {
       <div className="mt-2 flex space-x-4 justify-center">
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
+          const handleClick = () => {
+            window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/${key}`;
+          };
           return (
             <motion.button
               key={key}
+              onClick={handleClick}
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
               className="w-14 h-14 flex items-center justify-center bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
