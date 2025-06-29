@@ -173,11 +173,13 @@ const OfferDetailsPage = () => {
       {/* Offer Discussion Section */}
       <div className="border-t pt-6 mb-10">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
-        <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-          {messages.map((msg) => {
-            const isCurrentUser = msg.sender_id === currentUserId;
-            return (
-              <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+        {response ? (
+          <>
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
+              {messages.map((msg) => {
+                const isCurrentUser = msg.sender_id === currentUserId;
+                return (
+                  <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
@@ -249,12 +251,16 @@ const OfferDetailsPage = () => {
                 )}
               </div>
             );
-          })}
-        </div>
+              })}
+            </div>
 
-        <div className="mt-4">
-          <MessageInput sendMessage={handleSendMessage} />
-        </div>
+            <div className="mt-4">
+              <MessageInput sendMessage={handleSendMessage} />
+            </div>
+          </>
+        ) : (
+          <p className="text-gray-500">No responses yet. Messaging will be available once an instructor responds.</p>
+        )}
       </div>
 
       {/* Contact / Copy Link */}

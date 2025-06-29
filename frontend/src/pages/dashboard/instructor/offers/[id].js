@@ -112,7 +112,10 @@ const OfferDetailsPage = () => {
           setMessages([]);
           return;
         }
-        const resp = resps[0];
+        const myResp = resps.find(
+          (r) => r.instructor_id === currentUserId
+        );
+        const resp = myResp || resps[0];
         setResponse(resp);
         return fetchResponseMessages(offer.id, resp.id).then(setMessages);
       })
