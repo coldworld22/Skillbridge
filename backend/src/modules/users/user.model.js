@@ -158,3 +158,23 @@ exports.setUserRoles = async (userId, roleIds) => {
   }
   return exports.getUserRoles(userId);
 };
+
+// ─────────────────────────────────────────────────────────────
+// Social Accounts Helpers
+// ─────────────────────────────────────────────────────────────
+
+exports.findBySocialAccount = (provider, providerId) => {
+  return db("social_accounts")
+    .where({ provider, provider_id: providerId })
+    .first();
+};
+
+exports.addSocialAccount = (userId, provider, providerId, email) => {
+  return db("social_accounts").insert({
+    user_id: userId,
+    provider,
+    provider_id: providerId,
+    email,
+    created_at: new Date(),
+  });
+};
