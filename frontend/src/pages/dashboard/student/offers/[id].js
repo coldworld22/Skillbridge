@@ -7,77 +7,113 @@ import {
   FaEnvelope,
   FaWhatsapp,
   FaComments,
-  FaEdit,
-  FaTrashAlt,
   FaLink,
 } from "react-icons/fa";
 import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import useAuthStore from "@/store/auth/authStore";
+import { fetchOfferById } from "@/services/offerService";
+import {
+  getConversation,
+  sendChatMessage,
+  deleteChatMessage,
+} from "@/services/messageService";
+import MessageInput from "@/components/chat/MessageInput";
+import formatRelativeTime from "@/utils/relativeTime";
+import { API_BASE_URL } from "@/config/config";
+import ChatImage from "@/components/shared/ChatImage";
+
+const getAvatarUrl = (url) => {
+  if (!url) return "/images/default-avatar.png";
+  if (url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url}`;
+};
+
+const getMediaUrl = (url) => {
+  if (!url) return null;
+  if (
+    url.startsWith("http") ||
+    url.startsWith("blob:") ||
+    url.startsWith("data:")
+  )
+    return url;
+  return `${API_BASE_URL}${url}`;
+};
+
+const isImage = (path) => {
+  if (!path) return false;
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
+};
 
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const currentUserId = "student1";
+  const { user } = useAuthStore();
+  const currentUserId = user?.id;
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
     if (!id) return;
 
-    const allOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: `${i + 1}`,
-      userId: i % 2 === 0 ? "student1" : "instructor1",
-      type: i % 2 === 0 ? "student" : "instructor",
-      title: i % 2 === 0 ? `Need Help with Subject ${i + 1}` : `Offering Course ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1),
-      date: `${i + 1} days ago`,
-      description: i % 2 === 0
-        ? `I am looking for help with physics and would prefer weekly sessions.`
-        : `I am offering structured math classes online every weekend.`,
-      status: "Active",
-      email: `user${i}@example.com`,
-      phone: `+96650000000${i}`,
-    }));
-
-    const found = allOffers.find((o) => o.id === id);
-    setOffer(found);
-
-    setMessages([
-      {
-        sender: "student1",
-        name: "Ahmed",
-        avatar: "/avatars/ahmed.jpg",
-        text: "Can you extend the course to 2 months?",
-        timeAgo: "2 days ago",
-      },
-      {
-        sender: "instructor1",
-        name: "Ms. Aisha",
-        avatar: "/avatars/aisha.jpg",
-        text: "Yes, I can adjust the schedule accordingly.",
-        timeAgo: "1 day ago",
-      },
-    ]);
+    fetchOfferById(id)
+      .then((o) => {
+        if (!o) return setOffer(null);
+        setOffer({
+          id: o.id,
+          userId: o.student_id,
+          name: o.student_name,
+          avatar: o.student_avatar,
+          type:
+            o.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
+          offerType: o.offer_type,
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: [],
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+          description: o.description || "",
+          status: o.status || "open",
+          email: o.email || "",
+          phone: o.phone || "",
+        });
+      })
+      .catch(() => setOffer(null));
   }, [id]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: currentUserId,
-          name: "You",
-          avatar: "/avatars/ahmed.jpg",
-          text: newMessage.trim(),
-          timeAgo: "just now",
-        },
-      ]);
-      setNewMessage("");
-    }
+  useEffect(() => {
+    if (!offer) return;
+    const fetchMessages = () => {
+      getConversation(offer.userId)
+        .then(setMessages)
+        .catch(() => setMessages([]));
+    };
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 10000);
+    return () => clearInterval(interval);
+  }, [offer]);
+
+  const handleSendMessage = async ({ text, file, audio }) => {
+    if (!text && !file && !audio) return;
+    try {
+      const sent = await sendChatMessage(offer.userId, {
+        text,
+        file,
+        audio,
+        replyId: replyTo?.id,
+      });
+      setMessages((prev) => [...prev, sent]);
+      setReplyTo(null);
+    } catch (_) {}
+  };
+
+  const deleteMessage = async (msgId) => {
+    try {
+      await deleteChatMessage(msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (_) {}
   };
 
   if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
@@ -85,95 +121,159 @@ const OfferDetailsPage = () => {
   const isMyRequest = offer.userId === currentUserId && offer.type === "student";
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-lg mt-10 mb-10">
+    <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-lg mt-10 mb-12">
       <Link href="/dashboard/student/offers">
-        <button className="text-gray-600 hover:text-gray-800 underline text-sm mb-4">
+        <button className="text-gray-600 hover:text-gray-800 underline text-sm mb-6 block">
           ← Back to My Offers
         </button>
       </Link>
 
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold text-gray-800">{offer.title}</h1>
-        <span
-          className={`text-xs px-2 py-1 rounded-full font-semibold shadow ${
-            isMyRequest ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-          }`}
-        >
+        <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow ${isMyRequest ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
           {isMyRequest ? "Student Request" : "Instructor Offer"}
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+      <div className="flex flex-wrap justify-between text-sm text-gray-500 mb-6 gap-2">
         <p>Posted: {offer.date}</p>
+        <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
+          Type: {offer.offerType}
+        </span>
         <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
           Status: {offer.status}
         </span>
       </div>
 
-      <div className="flex items-center gap-3 text-gray-700 mb-2">
-        <FaClock className="text-yellow-500" /> <span>{offer.duration}</span>
+      <div className="space-y-3 mb-6">
+        <div className="flex gap-2 items-center text-gray-700">
+          <FaClock className="text-yellow-500" /> {offer.duration}
+        </div>
+        <div className="flex gap-2 items-center text-gray-700">
+          <FaDollarSign className="text-yellow-500" /> {offer.price}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {offer.tags.map((tag, i) => (
+            <span key={i} className="bg-yellow-100 text-yellow-800 px-3 py-1 text-xs rounded-full flex items-center gap-1">
+              <FaTag className="text-xs" /> {tag}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 text-gray-700 mb-4">
-        <FaDollarSign className="text-yellow-500" /> <span>{offer.price}</span>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {offer.tags.map((tag, i) => (
-          <span key={i} className="bg-yellow-100 text-yellow-800 px-3 py-1 text-xs rounded-full flex items-center gap-1">
-            <FaTag className="text-xs" /> {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="mb-6">
+      <div className="mb-10">
         <h3 className="text-md font-semibold text-gray-700 mb-2">Description</h3>
-        <p className="text-gray-700 leading-relaxed">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
           {offer.description || "No description provided."}
         </p>
       </div>
 
-      {/* Offer Discussion */}
+      {/* Offer Discussion Section */}
       <div className="border-t pt-6 mb-10">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
         <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-          {messages.map((msg, index) => {
-            const isCurrentUser = msg.sender === currentUserId;
+          {messages.map((msg) => {
+            const isCurrentUser = msg.sender_id === currentUserId;
             return (
-              <div key={index} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+              <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
-                  <img src={msg.avatar} alt={msg.name} className="w-8 h-8 rounded-full mr-2 mt-1" />
+                  <ChatImage
+                    src={getAvatarUrl(offer.avatar)}
+                    alt={offer.name}
+                    className="w-8 h-8 rounded-full mr-2 mt-1"
+                    width={32}
+                    height={32}
+                  />
                 )}
                 <div className="flex flex-col max-w-[75%]">
                   <div className={`p-3 rounded-lg text-sm ${isCurrentUser ? "bg-blue-100 text-blue-800 self-end" : "bg-gray-100 text-gray-700 self-start"}`}>
-                    <p className="font-medium">{isCurrentUser ? "You" : msg.name}</p>
-                    <p>{msg.text}</p>
+                    <p className="font-medium">{isCurrentUser ? "You" : offer.name}</p>
+                    {msg.reply_message && (
+                      <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
+                        {msg.reply_message}
+                      </div>
+                    )}
+                    {msg.reply_file_url && isImage(msg.reply_file_url) && (
+                      <ChatImage
+                        src={getMediaUrl(msg.reply_file_url)}
+                        alt="reply file"
+                        className="max-w-xs rounded-md mb-1"
+                        width={200}
+                        height={200}
+                      />
+                    )}
+                    {msg.reply_file_url && !isImage(msg.reply_file_url) && (
+                      <a href={getMediaUrl(msg.reply_file_url)} target="_blank" rel="noopener noreferrer" className="underline text-xs mb-1">
+                        {msg.reply_file_url.split("/").pop()}
+                      </a>
+                    )}
+                    {msg.reply_audio_url && (
+                      <audio controls src={getMediaUrl(msg.reply_audio_url)} className="w-48 mb-1" />
+                    )}
+                    {msg.message && <p>{msg.message}</p>}
+                    {msg.file_url && isImage(msg.file_url) && (
+                      <ChatImage
+                        src={getMediaUrl(msg.file_url)}
+                        alt="attachment"
+                        className="max-w-xs rounded-md mt-1"
+                        width={200}
+                        height={200}
+                      />
+                    )}
+                    {msg.file_url && !isImage(msg.file_url) && (
+                      <a href={getMediaUrl(msg.file_url)} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 text-sm mt-1">
+                        {msg.file_url.split("/").pop()}
+                      </a>
+                    )}
+                    {msg.audio_url && (
+                      <audio controls src={getMediaUrl(msg.audio_url)} className="mt-1 w-48" />
+                    )}
                   </div>
-                  <span className={`text-xs text-gray-400 mt-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                    {msg.timeAgo || "just now"}
-                  </span>
+                  <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                    <span>{formatRelativeTime(msg.sent_at)}</span>
+                    <button onClick={() => setReplyTo(msg)} className="ml-2 underline">
+                      Reply
+                    </button>
+                    <button onClick={() => deleteMessage(msg.id)} className="ml-2 underline text-red-500">
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 {isCurrentUser && (
-                  <img src="/avatars/ahmed.jpg" alt="You" className="w-8 h-8 rounded-full ml-2 mt-1" />
+                  <ChatImage
+                    src={getAvatarUrl(user?.avatar_url)}
+                    alt="You"
+                    className="w-8 h-8 rounded-full ml-2 mt-1"
+                    width={32}
+                    height={32}
+                  />
                 )}
               </div>
             );
           })}
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Write your message..."
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
-          <button
-            onClick={handleSendMessage}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm"
-          >
-            Send
-          </button>
+        {replyTo && (
+          <div className="text-xs text-gray-600 mb-2 flex items-center gap-2">
+            <span>Replying to:</span>
+            {replyTo.message && <span className="italic">{replyTo.message}</span>}
+            {replyTo.file_url && isImage(replyTo.file_url) && (
+              <ChatImage src={getMediaUrl(replyTo.file_url)} alt="reply" className="w-6 h-6 rounded" width={24} height={24} />
+            )}
+            {replyTo.file_url && !isImage(replyTo.file_url) && (
+              <a href={getMediaUrl(replyTo.file_url)} target="_blank" rel="noopener noreferrer" className="underline">
+                {replyTo.file_url.split("/").pop()}
+              </a>
+            )}
+            {replyTo.audio_url && (
+              <audio controls src={getMediaUrl(replyTo.audio_url)} className="w-24" />
+            )}
+            <button onClick={() => setReplyTo(null)} className="text-red-500">✖</button>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <MessageInput sendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} />
         </div>
       </div>
 
