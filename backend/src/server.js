@@ -9,7 +9,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const session = require("express-session");
-const passport = require("./config/passport");
+const { passport, initStrategies } = require("./config/passport");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 // Allow overriding the allowed origin via FRONTEND_URL env var.
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -115,6 +115,13 @@ app.use(
     saveUninitialized: false,
   })
 );
+(async () => {
+  try {
+    await initStrategies();
+  } catch (err) {
+    console.error("Failed to init social login strategies", err);
+  }
+})();
 app.use(passport.initialize());
 
 // 🌐 Allow frontend to communicate with backend (CORS)
