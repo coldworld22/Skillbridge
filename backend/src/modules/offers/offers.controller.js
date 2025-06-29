@@ -84,27 +84,35 @@ exports.updateOffer = catchAsync(async (req, res) => {
   const existing = await service.getOfferById(req.params.id);
   const offer = await service.updateOffer(req.params.id, req.body);
 
-  if (
-    existing &&
-    req.body.status &&
-    req.body.status !== existing.status &&
-    existing.student_id !== req.user.id
-  ) {
-    const statusMsg = req.body.status === "open" ? "reopened" : "closed";
-    const message = `Your offer "${existing.title}" was ${statusMsg}.`;
-    await Promise.all([
+  const instructors = await userModel.findInstructors();
+  const students = await userModel.findStudents();
+  const admins = await userModel.findAdmins();
+  const message = `Offer updated by ${req.user.full_name} (${req.user.role})`;
+
+  let recipients = [];
+  if (req.user.role && req.user.role.toLowerCase() === "instructor") {
+    recipients = [...students, ...admins];
+  } else {
+    recipients = [...instructors, ...admins];
+  }
+
+  await Promise.all([
+    ...recipients.map((u) =>
       notificationService.createNotification({
-        user_id: existing.student_id,
-        type: "offer_status_changed",
+        user_id: u.id,
+        type: "offer_updated",
         message,
-      }),
+      })
+    ),
+    ...recipients.map((u) =>
       messageService.createMessage({
         sender_id: req.user.id,
-        receiver_id: existing.student_id,
+        receiver_id: u.id,
         message,
-      }),
-    ]);
-  }
+      })
+    ),
+  ]);
+
 
   sendSuccess(res, offer, "Offer updated");
 });
