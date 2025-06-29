@@ -103,6 +103,14 @@ exports.findInstructors = () => {
     .andWhere({ status: "active" });
 };
 
+// Fetch Student users
+exports.findStudents = () => {
+  return db("users")
+    .select("id")
+    .whereRaw("LOWER(role) = ?", ["student"])
+    .andWhere({ status: "active" });
+};
+
 
 /**
  * ➕ Insert a new user
