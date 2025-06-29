@@ -124,6 +124,7 @@ const NewOfferPage = () => {
               <span
                 key={tag}
                 className="px-2 py-1 text-xs rounded-full flex items-center bg-yellow-200"
+
               >
                 {tag}
                 <button type="button" onClick={() => removeTag(tag)} className="ml-1 text-gray-600 hover:text-gray-900">
