@@ -16,6 +16,7 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
 import { getConversation, sendChatMessage } from "@/services/messageService";
+import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
 import ChatImage from "@/components/shared/ChatImage";
@@ -41,8 +42,6 @@ const isImage = (path) => {
   if (!path) return false;
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
 };
-
-
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -51,7 +50,6 @@ const OfferDetailsPage = () => {
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
   const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
@@ -94,16 +92,17 @@ const OfferDetailsPage = () => {
     const interval = setInterval(fetchMessages, 10000);
     return () => clearInterval(interval);
   }, [offer]);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const handleSendMessage = async ({ text, file, audio }) => {
+    if (!text && !file && !audio) return;
     try {
       const sent = await sendChatMessage(offer.userId, {
-        text: newMessage.trim(),
+        text,
+        file,
+        audio,
         replyId: replyTo?.id,
       });
       setMessages((prev) => [...prev, sent]);
-      setNewMessage("");
+
       setReplyTo(null);
     } catch (_) {}
   };
@@ -167,7 +166,6 @@ const OfferDetailsPage = () => {
             return (
               <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
-
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
                     alt={offer.name}
@@ -187,13 +185,11 @@ const OfferDetailsPage = () => {
                     <p className="font-medium">
                       {isCurrentUser ? "You" : offer.name}
                     </p>
-
                     {msg.reply_message && (
                       <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
                         {msg.reply_message}
                       </div>
                     )}
-
                     {msg.reply_file_url && isImage(msg.reply_file_url) && (
                       <ChatImage
                         src={getMediaUrl(msg.reply_file_url)}
@@ -247,7 +243,6 @@ const OfferDetailsPage = () => {
                         className="mt-1 w-48"
                       />
                     )}
-
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
@@ -257,14 +252,12 @@ const OfferDetailsPage = () => {
                   </div>
                 </div>
                 {isCurrentUser && (
-
                   <ChatImage
                     src={getAvatarUrl(user?.avatar_url)}
                     alt="You"
                     className="w-8 h-8 rounded-full ml-2 mt-1"
                     width={32}
                     height={32}
-
                   />
                 )}
               </div>
@@ -273,7 +266,6 @@ const OfferDetailsPage = () => {
         </div>
 
         {replyTo && (
-
           <div className="text-xs text-gray-600 mb-2 flex items-center gap-2">
             <span>Replying to:</span>
             {replyTo.message && <span className="italic">{replyTo.message}</span>}
@@ -304,23 +296,15 @@ const OfferDetailsPage = () => {
               />
             )}
             <button onClick={() => setReplyTo(null)} className="text-red-500">✖</button>
-
           </div>
         )}
 
-        <div className="mt-4 flex gap-2">
-          <input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Write your message..."
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+        <div className="mt-4">
+          <MessageInput
+            sendMessage={handleSendMessage}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
           />
-          <button
-            onClick={handleSendMessage}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm"
-          >
-            Send
-          </button>
         </div>
       </div>
 
