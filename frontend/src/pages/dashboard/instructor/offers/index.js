@@ -31,6 +31,7 @@ const InstructorOfferDashboard = () => {
             o.student_role?.toLowerCase() === "instructor"
               ? "instructor"
               : "student",
+          offerType: o.offer_type,
           title: o.title,
           price: o.budget || "",
           duration: o.timeframe || "",
