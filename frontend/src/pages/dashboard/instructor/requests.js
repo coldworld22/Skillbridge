@@ -1,57 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import RequestCard from "@/components/instructors/requests/RequestCard";
+import {
+  fetchInstructorBookings,
+  updateInstructorBooking,
+} from "@/services/instructor/bookingService";
 
 
-
-const mockRequests = [
-  {
-    id: 1,
-    student: {
-      id: 101,
-      name: "Alice Johnson",
-      avatar: "https://i.pravatar.cc/150?img=1",
-    },
-    subject: "Intro to Python",
-    date: "2025-05-12 10:00 AM",
-    status: "pending",
-  },
-  {
-    id: 2,
-    student: {
-      id: 102,
-      name: "Mark Lee",
-      avatar: "https://i.pravatar.cc/150?img=2",
-    },
-    subject: "React Components",
-    date: "2025-05-13 3:00 PM",
-    status: "approved",
-  },
-  {
-    id: 3,
-    student: {
-      id: 103,
-      name: "Sara Kim",
-      avatar: "https://i.pravatar.cc/150?img=3",
-    },
-    subject: "Machine Learning Basics",
-    date: "2025-05-14 1:00 PM",
-    status: "declined",
-  },
-];
 
 const tabs = ["All", "pending", "approved", "declined"];
 
 export default function InstructorRequestsPage() {
-  const [requests, setRequests] = useState(mockRequests);
+  const [requests, setRequests] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
 
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const data = await fetchInstructorBookings();
+        const formatted = (data || []).map((b) => ({
+          id: b.id,
+          student: {
+            id: b.student_id,
+            name: b.student_name || b.student_id,
+            avatar:
+              b.student_avatar_url ||
+              "https://via.placeholder.com/40x40?text=S",
+          },
+          subject: b.notes || b.class_title || "—",
+          date: b.start_time
+            ? new Date(b.start_time).toLocaleString()
+            : "",
+          status: b.status,
+        }));
+        setRequests(formatted);
+      } catch (err) {
+        console.error("Failed to load requests", err);
+        setRequests([]);
+      }
+    };
+    loadRequests();
+  }, []);
+
   const handleStatusChange = (id, newStatus) => {
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: newStatus } : r
-      )
-    );
+    updateInstructorBooking(id, { status: newStatus })
+      .then(() => {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, status: newStatus } : r
+          )
+        );
+      })
+      .catch((err) => {
+        console.error("Status update failed", err);
+      });
   };
 
   const filtered = activeTab === "All"

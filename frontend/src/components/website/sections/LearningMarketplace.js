@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 
 import { fetchOffers } from "@/services/offerService";
+import useAuthStore from "@/store/auth/authStore";
 
 const OfferBadge = ({ type }) => (
   <span
@@ -24,10 +25,8 @@ const OfferBadge = ({ type }) => (
 const OffersIndex = () => {
   const [offers, setOffers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(6);
-  const [showModal, setShowModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState(""); // "post" | "dashboard" | "detail"
-  const [selectedOfferId, setSelectedOfferId] = useState(null);
   const router = useRouter();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchOffers()
@@ -51,9 +50,9 @@ const OffersIndex = () => {
   const offersToShow = offers.slice(0, visibleCount);
   const allVisible = visibleCount >= offers.length;
 
-  const handleRoleSelection = (role) => {
-    setShowModal(false);
-    if (role === "guest") {
+  const handleNavigate = (action, id) => {
+    const role = user?.role?.toLowerCase();
+    if (!role) {
       alert("You must register to continue.");
       return;
     }
@@ -64,12 +63,12 @@ const OffersIndex = () => {
       admin: "/dashboard/admin/offers",
     };
 
-    if (pendingAction === "post") {
+    if (action === "post") {
       router.push(`${routes[role]}/new`);
-    } else if (pendingAction === "dashboard") {
+    } else if (action === "dashboard") {
       router.push(routes[role]);
-    } else if (pendingAction === "detail" && selectedOfferId) {
-      router.push(`${routes[role]}/${selectedOfferId}`);
+    } else if (action === "detail" && id) {
+      router.push(`${routes[role]}/${id}`);
     }
   };
 
@@ -85,10 +84,7 @@ const OffersIndex = () => {
             Students post help requests. Instructors offer courses. Engage and learn on your terms.
           </p>
           <button
-            onClick={() => {
-              setPendingAction("post");
-              setShowModal(true);
-            }}
+            onClick={() => handleNavigate("post")}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold flex items-center gap-2 mx-auto shadow-lg transition"
           >
             <FaPlus /> Post an Offer
@@ -100,11 +96,7 @@ const OffersIndex = () => {
           {offersToShow.map((offer) => (
             <div
               key={offer.id}
-              onClick={() => {
-                setSelectedOfferId(offer.id);
-                setPendingAction("detail");
-                setShowModal(true);
-              }}
+              onClick={() => handleNavigate("detail", offer.id)}
               className="bg-gray-800 hover:bg-gray-700 transition-all duration-300 cursor-pointer p-6 rounded-2xl shadow-lg group"
             >
               <div className="flex justify-between items-center mb-4">
@@ -143,10 +135,7 @@ const OffersIndex = () => {
         <div className="text-center mt-14">
           {allVisible ? (
             <button
-              onClick={() => {
-                setPendingAction("dashboard");
-                setShowModal(true);
-              }}
+              onClick={() => handleNavigate("dashboard")}
               className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-lg transition"
             >
               Go to Dashboard
@@ -162,36 +151,7 @@ const OffersIndex = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white text-gray-800 p-8 rounded-xl w-full max-w-md shadow-2xl text-center">
-            <h2 className="text-2xl font-bold mb-6">Who are you?</h2>
-            <div className="space-y-3">
-              {[
-                { label: "👤 I am a Guest", value: "guest", style: "gray" },
-                { label: "🎓 I am a Student", value: "student", style: "blue" },
-                { label: "🧑‍🏫 I am an Instructor", value: "instructor", style: "green" },
-                { label: "🛡️ I am an Admin", value: "admin", style: "yellow" },
-              ].map(({ label, value, style }) => (
-                <button
-                  key={value}
-                  onClick={() => handleRoleSelection(value)}
-                  className={`w-full border border-${style}-500 text-${style}-700 hover:bg-${style}-100 px-4 py-2 rounded transition`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowModal(false)}
-              className="mt-6 text-sm text-gray-500 hover:text-gray-700"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      
     </section>
   );
 };
