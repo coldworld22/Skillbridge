@@ -16,6 +16,7 @@ const NewOfferPage = () => {
   });
   const [tagInput, setTagInput] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
+  const [newTags, setNewTags] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ const NewOfferPage = () => {
     if (!exists) {
       try {
         await createOfferTag({ name: tag });
+        setNewTags((prev) => [...prev, tag]);
       } catch (_) {}
     }
     setSelectedTags((prev) => [...prev, tag]);
@@ -44,6 +46,7 @@ const NewOfferPage = () => {
 
   const removeTag = (tag) => {
     setSelectedTags((prev) => prev.filter((t) => t !== tag));
+    setNewTags((prev) => prev.filter((t) => t !== tag));
   };
 
   const handleSubmit = async (e) => {
@@ -71,8 +74,8 @@ const NewOfferPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-md mt-10 mb-10 border border-gray-100">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">📢 Post New Service Offer</h1>
-      <p className="text-gray-600 mb-6">Fill out the form below to describe the service you are offering</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-2">📢 Offer a New Service</h1>
+      <p className="text-gray-600 mb-6">Provide details about the service you wish to deliver to students</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -82,7 +85,7 @@ const NewOfferPage = () => {
             value={form.title}
             onChange={handleChange}
             required
-            placeholder="e.g. I will create a class"
+            placeholder="e.g. I will teach advanced math"
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
         </div>
@@ -123,8 +126,9 @@ const NewOfferPage = () => {
             {selectedTags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 text-xs rounded-full flex items-center bg-yellow-200"
-
+                className={`px-2 py-1 text-xs rounded-full flex items-center ${
+                  newTags.includes(tag) ? "bg-yellow-200" : "bg-gray-200"
+                }`}
               >
                 {tag}
                 <button type="button" onClick={() => removeTag(tag)} className="ml-1 text-gray-600 hover:text-gray-900">
