@@ -24,6 +24,7 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "tailwindcss/tailwind.css";
 import { fetchInstructorDashboardStats } from "@/services/instructor/instructorService";
+import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 
 const localizer = momentLocalizer(moment);
 
@@ -67,18 +68,6 @@ const mockDashboardCounts = {
   upcomingSessions: 3,
 };
 
-const mockEvents = [
-  {
-    title: "React Basics - Live Class",
-    start: new Date(moment().add(1, 'days').set({ hour: 10, minute: 0 }).toISOString()),
-    end: new Date(moment().add(1, 'days').set({ hour: 12, minute: 0 }).toISOString()),
-  },
-  {
-    title: "Final Exam Review",
-    start: new Date(moment().add(3, 'days').set({ hour: 14, minute: 0 }).toISOString()),
-    end: new Date(moment().add(3, 'days').set({ hour: 15, minute: 30 }).toISOString()),
-  },
-];
 
 const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
@@ -86,6 +75,7 @@ export default function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState("tutorials");
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     async function loadStats() {
@@ -98,6 +88,20 @@ export default function InstructorDashboard() {
       setChartData(mockChartData);
     }
     loadStats();
+    async function loadEvents() {
+      try {
+        const data = await fetchInstructorScheduleEvents();
+        const parsed = data.map((e) => ({
+          ...e,
+          start: new Date(e.start),
+          ...(e.end ? { end: new Date(e.end) } : {}),
+        }));
+        setEvents(parsed);
+      } catch (err) {
+        console.error('Failed to load schedule events', err);
+      }
+    }
+    loadEvents();
   }, []);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
@@ -165,7 +169,7 @@ export default function InstructorDashboard() {
           <div className="h-[500px]">
             <Calendar
               localizer={localizer}
-              events={mockEvents}
+              events={events}
               startAccessor="start"
               endAccessor="end"
               defaultView="week"
