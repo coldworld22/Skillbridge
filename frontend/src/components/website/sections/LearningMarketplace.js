@@ -33,7 +33,10 @@ const OffersIndex = () => {
       .then((data) => {
         const mapped = data.map((o) => ({
           id: o.id,
-          type: "student",
+          type:
+            o.student_role?.toLowerCase() === "instructor"
+              ? "instructor"
+              : "student",
           title: o.title,
           price: o.budget || "",
           duration: o.timeframe || "",

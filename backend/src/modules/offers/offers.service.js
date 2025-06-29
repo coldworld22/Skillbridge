@@ -14,6 +14,7 @@ exports.getOffers = () => {
       "u.role as student_role",
       "u.avatar_url as student_avatar"
     )
+    .where("o.status", "open")
     .orderBy("o.created_at", "desc");
 };
 
