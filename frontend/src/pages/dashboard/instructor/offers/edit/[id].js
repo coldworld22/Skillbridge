@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { fetchOfferById } from "@/services/offerService";
 import { updateOffer } from "@/services/admin/offerService";
 
+
 const EditOfferPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -45,6 +46,7 @@ const EditOfferPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setIsSubmitting(true);
 
     try {
@@ -61,6 +63,7 @@ const EditOfferPage = () => {
         ),
       };
       await updateOffer(id, payload);
+
       toast.success("Offer updated successfully!");
       router.push("/dashboard/instructor/offers");
     } catch (error) {
