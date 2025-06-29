@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { fetchOfferTags } from "@/services/offerTagService";
+import { fetchOfferTags, createOfferTag } from "@/services/offerTagService";
+import { createOffer } from "@/services/offerService";
 
 const NewOfferPage = () => {
   const router = useRouter();
@@ -11,32 +12,41 @@ const NewOfferPage = () => {
     title: "",
     price: "",
     duration: "",
-    tags: "",
     description: "",
   });
+  const [tagInput, setTagInput] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [newTags, setNewTags] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
 
   useEffect(() => {
-    const search = form.tags.split(',').pop().trim();
+    const search = tagInput.trim();
     if (!search) return setSuggestedTags([]);
     fetchOfferTags(search).then(setSuggestedTags).catch(() => {});
-  }, [form.tags]);
+  }, [tagInput]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-
-  const handleTagClick = (name) => {
-    const current = form.tags
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-    if (!current.includes(name)) {
-      const newTags = [...current, name].join(', ');
-      setForm((prev) => ({ ...prev, tags: newTags }));
+  const addTag = async (name) => {
+    const tag = name.trim();
+    if (!tag || selectedTags.includes(tag)) return;
+    const exists = suggestedTags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
+    if (!exists) {
+      try {
+        await createOfferTag({ name: tag });
+        setNewTags((prev) => [...prev, tag]);
+      } catch (_) {}
     }
+    setSelectedTags((prev) => [...prev, tag]);
+    setTagInput("");
+  };
+
+  const removeTag = (tag) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag));
+    setNewTags((prev) => prev.filter((t) => t !== tag));
   };
 
   const handleSubmit = async (e) => {
@@ -45,9 +55,14 @@ const NewOfferPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call with delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting new offer:", form);
+      const payload = {
+        title: form.title,
+        description: form.description,
+        budget: form.price,
+        timeframe: form.duration,
+        tags: JSON.stringify(selectedTags),
+      };
+      await createOffer(payload);
       toast.success("Your request has been posted successfully!");
       router.push("/dashboard/student/offers");
     } catch (error) {
@@ -109,21 +124,45 @@ const NewOfferPage = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-          <input
-            name="tags"
-            value={form.tags}
-            onChange={handleChange}
-            placeholder="Urgent, Online, Calculus"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          />
-
-          {suggestedTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded-lg px-2 py-1">
+            {selectedTags.map((tag) => (
+              <span
+                key={tag}
+                className={`px-2 py-1 text-xs rounded-full flex items-center ${
+                  newTags.includes(tag) ? "bg-yellow-200" : "bg-gray-200"
+                }`}
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-1 text-gray-600 hover:text-gray-900"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag(tagInput);
+                }
+              }}
+              className="flex-grow py-2 focus:outline-none"
+              placeholder="Add tag"
+            />
+          </div>
+          {suggestedTags.length > 0 && tagInput && (
             <div className="flex flex-wrap gap-2 mt-1">
               {suggestedTags.map((tag) => (
                 <button
                   type="button"
                   key={tag.id}
-                  onClick={() => handleTagClick(tag.name)}
+                  onClick={() => addTag(tag.name)}
                   className="bg-gray-200 hover:bg-gray-300 text-xs px-2 py-1 rounded-full"
                 >
                   {tag.name}
@@ -131,7 +170,6 @@ const NewOfferPage = () => {
               ))}
             </div>
           )}
-
         </div>
 
         <div>

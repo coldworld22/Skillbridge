@@ -95,6 +95,14 @@ exports.findAdmins = () => {
     .whereIn("role", ["Admin", "SuperAdmin"]);
 };
 
+// Fetch Instructor users
+exports.findInstructors = () => {
+  return db("users")
+    .select("id")
+    .whereRaw("LOWER(role) = ?", ["instructor"])
+    .andWhere({ status: "active" });
+};
+
 
 /**
  * ➕ Insert a new user
