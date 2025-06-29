@@ -61,11 +61,14 @@ router.post("/reset-password", validate(authValidation.resetPasswordSchema), aut
 // Social login routes
 // ─────────────────────────────────────────────────────────────
 
-router.get("/google", socialAuthController.googleAuth);
-router.get("/google/callback", socialAuthController.googleCallback);
-router.get("/facebook", socialAuthController.facebookAuth);
-router.get("/facebook/callback", socialAuthController.facebookCallback);
-router.get("/apple", socialAuthController.appleAuth);
-router.post("/apple/callback", socialAuthController.appleCallback);
+// Google routes are disabled until production deployment
+// router.get("/google", socialAuthController.googleAuth);
+// router.get("/google/callback", socialAuthController.googleCallback);
+// Facebook routes are disabled until production deployment
+// router.get("/facebook", socialAuthController.facebookAuth);
+// router.get("/facebook/callback", socialAuthController.facebookCallback);
+// Apple routes are disabled until production deployment
+// router.get("/apple", socialAuthController.appleAuth);
+// router.post("/apple/callback", socialAuthController.appleCallback);
 
 module.exports = router;
