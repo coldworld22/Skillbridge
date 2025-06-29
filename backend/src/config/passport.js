@@ -1,5 +1,4 @@
 const passport = require('passport');
-
 // Google login is disabled until production deployment
 // const GoogleStrategy = require('passport-google-oauth20').Strategy;
 // Facebook login is disabled until production deployment
