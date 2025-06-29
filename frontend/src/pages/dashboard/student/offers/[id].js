@@ -9,6 +9,7 @@ import {
   FaComments,
   FaLink,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
 import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import useAuthStore from "@/store/auth/authStore";
@@ -96,7 +97,10 @@ const OfferDetailsPage = () => {
   }, [offer]);
 
   const handleSendMessage = async ({ text, file, audio }) => {
-    if (!text && !file && !audio) return;
+    if (!text && !file && !audio) {
+      toast.error("Message is empty!");
+      return;
+    }
     try {
       const sent = await sendChatMessage(offer.userId, {
         text,
@@ -106,14 +110,20 @@ const OfferDetailsPage = () => {
       });
       setMessages((prev) => [...prev, sent]);
       setReplyTo(null);
-    } catch (_) {}
+      toast.success("Message sent!");
+    } catch (_) {
+      toast.error("Failed to send message");
+    }
   };
 
   const deleteMessage = async (msgId) => {
     try {
       await deleteChatMessage(msgId);
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
-    } catch (_) {}
+      toast.info("Message deleted");
+    } catch (_) {
+      toast.error("Failed to delete message");
+    }
   };
 
   if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
