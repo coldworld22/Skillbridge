@@ -9,7 +9,7 @@ const messageService = require("../messages/messages.service");
 const slugify = require("slugify");
 
 exports.createOffer = catchAsync(async (req, res) => {
-  const { tags: rawTags, title, description, budget, timeframe } = req.body;
+  const { tags: rawTags, title, description, budget, timeframe, offer_type } = req.body;
   const data = {
     id: uuidv4(),
     student_id: req.user.id,
@@ -17,6 +17,7 @@ exports.createOffer = catchAsync(async (req, res) => {
     description,
     budget,
     timeframe,
+    offer_type,
     status: "open",
   };
   const tags = rawTags ? JSON.parse(rawTags) : [];

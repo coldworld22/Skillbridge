@@ -9,6 +9,7 @@ const NewOfferPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
+    offerType: "class",
     title: "",
     price: "",
     duration: "",
@@ -58,6 +59,7 @@ const NewOfferPage = () => {
 
     try {
       const payload = {
+        offer_type: form.offerType,
         title: form.title,
         description: form.description,
         budget: form.price,
@@ -91,6 +93,19 @@ const NewOfferPage = () => {
             placeholder="e.g. I will teach advanced math"
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Offer Type</label>
+          <select
+            name="offerType"
+            value={form.offerType}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          >
+            <option value="class">Class</option>
+            <option value="tutorial">Tutorial</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
