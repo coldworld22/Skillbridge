@@ -10,6 +10,8 @@ import {
   FaDollarSign,
 } from "react-icons/fa";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import { fetchOffers } from "@/services/offerService";
+import useAuthStore from "@/store/auth/authStore";
 
 const InstructorOfferDashboard = () => {
   const [myOffers, setMyOffers] = useState([]);
@@ -17,23 +19,39 @@ const InstructorOfferDashboard = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const router = useRouter();
 
-  useEffect(() => {
-    const mockOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: i + 1,
-      userId: i % 2 === 0 ? "student1" : "instructor1",
-      type: i % 2 === 0 ? "student" : "instructor",
-      title: i % 2 === 0
-        ? `Need Help with Subject ${i + 1}`
-        : `Offering Course ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1),
-      date: `${i + 1} days ago`,
-    }));
+  const { user } = useAuthStore();
 
-    setMyOffers(mockOffers.filter((o) => o.type === "instructor"));
-    setStudentRequests(mockOffers.filter((o) => o.type === "student"));
-  }, []);
+  useEffect(() => {
+    fetchOffers()
+      .then((data) => {
+        const mapped = data.map((o) => ({
+          id: o.id,
+          userId: o.student_id,
+          type:
+            o.student_role?.toLowerCase() === "instructor"
+              ? "instructor"
+              : "student",
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: [],
+          date: o.created_at
+            ? new Date(o.created_at).toLocaleDateString()
+            : "",
+        }));
+
+        setMyOffers(
+          mapped.filter(
+            (o) => o.type === "instructor" && o.userId === user?.id
+          )
+        );
+        setStudentRequests(mapped.filter((o) => o.type === "student"));
+      })
+      .catch(() => {
+        setMyOffers([]);
+        setStudentRequests([]);
+      });
+  }, [user?.id]);
 
   const OfferCard = ({ offer }) => (
     <div className="flex flex-col justify-between h-full bg-white border border-gray-200 hover:shadow-xl transition-all p-5 rounded-xl">
