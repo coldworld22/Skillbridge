@@ -33,13 +33,16 @@ const NewOfferPage = () => {
   const addTag = async (name) => {
     const tag = name.trim();
     if (!tag || selectedTags.includes(tag)) return;
-    const exists = suggestedTags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
-    if (!exists) {
-      try {
+
+    try {
+      const result = await fetchOfferTags(tag);
+      const exists = result.some((t) => t.name.toLowerCase() === tag.toLowerCase());
+      if (!exists) {
         await createOfferTag({ name: tag });
         setNewTags((prev) => [...prev, tag]);
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
+
     setSelectedTags((prev) => [...prev, tag]);
     setTagInput("");
   };
