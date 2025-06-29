@@ -49,7 +49,7 @@ export default function StudentBookings() {
   };
 
   const handleChat = (instructorId) => {
-    window.location.href = `/website/pages/messages?userId=${instructorId}`;
+    window.location.href = `/messages?userId=${instructorId}`;
   };
 
   return (

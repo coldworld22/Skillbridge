@@ -162,7 +162,7 @@ export default function InstructorStudentsPage() {
                     <button onClick={() => setSelectedStudent(student)} className="inline-flex items-center gap-1 px-2 py-1 border border-sky-500 text-sky-600 hover:bg-sky-50 rounded-md transition" title="View">
                       <FaEye className="text-sm" /> View
                     </button>
-                    <button onClick={() => window.location.href = '/website/pages/messages'} className="inline-flex items-center gap-1 px-2 py-1 border border-green-500 text-green-600 hover:bg-green-50 rounded-md transition" title="Message">
+                    <button onClick={() => window.location.href = '/messages'} className="inline-flex items-center gap-1 px-2 py-1 border border-green-500 text-green-600 hover:bg-green-50 rounded-md transition" title="Message">
                       <FaEnvelope className="text-sm" /> Message
                     </button>
                     <button onClick={() => handleRemove(student.id)} className="inline-flex items-center gap-1 px-2 py-1 border border-red-500 text-red-600 hover:bg-red-50 rounded-md transition" title="Remove">

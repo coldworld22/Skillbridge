@@ -94,7 +94,7 @@ export default function InstructorRequestsPage() {
                 onAccept={() => handleStatusChange(req.id, "approved")}
                 onDecline={() => handleStatusChange(req.id, "declined")}
                 onChat={() =>
-                  window.location.href = `/website/pages/messages?userId=${req.student.id}`
+                  window.location.href = `/messages?userId=${req.student.id}`
                 }
               />
             ))
