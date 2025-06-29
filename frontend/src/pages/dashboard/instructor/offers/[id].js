@@ -15,6 +15,8 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
+import { getConversation, sendChatMessage } from "@/services/messageService";
+import formatRelativeTime from "@/utils/relativeTime";
 
 const OfferDetailsPage = () => {
   const router = useRouter();
@@ -25,6 +27,7 @@ const OfferDetailsPage = () => {
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -35,6 +38,8 @@ const OfferDetailsPage = () => {
         setOffer({
           id: o.id,
           userId: o.student_id,
+          name: o.student_name,
+          avatar: o.student_avatar,
           type:
             o.student_role?.toLowerCase() === "instructor"
               ? "instructor"
@@ -51,39 +56,31 @@ const OfferDetailsPage = () => {
         });
       })
       .catch(() => setOffer(null));
-
-    setMessages([
-      {
-        sender: "student1",
-        name: "Ahmed",
-        avatar: "/avatars/ahmed.jpg",
-        text: "Can you lower the price to $120?",
-        timeAgo: "3 days ago",
-      },
-      {
-        sender: "instructor1",
-        name: "Mr. Khaled",
-        avatar: "/avatars/khaled.jpg",
-        text: "I can offer $130 with extended support.",
-        timeAgo: "2 days ago",
-      },
-    ]);
   }, [id]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: currentUserId,
-          name: "Mr. Khaled",
-          avatar: "/avatars/khaled.jpg",
-          text: newMessage.trim(),
-          timeAgo: "just now",
-        },
-      ]);
+  useEffect(() => {
+    if (!offer) return;
+    const fetchMessages = () => {
+      getConversation(offer.userId)
+        .then(setMessages)
+        .catch(() => setMessages([]));
+    };
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 10000);
+    return () => clearInterval(interval);
+  }, [offer]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+    try {
+      const sent = await sendChatMessage(offer.userId, {
+        text: newMessage.trim(),
+        replyId: replyTo?.id,
+      });
+      setMessages((prev) => [...prev, sent]);
       setNewMessage("");
-    }
+      setReplyTo(null);
+    } catch (_) {}
   };
 
   if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
@@ -140,29 +137,52 @@ const OfferDetailsPage = () => {
       <div className="border-t pt-6 mb-10">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
         <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-          {messages.map((msg, index) => {
-            const isCurrentUser = msg.sender === currentUserId;
+          {messages.map((msg) => {
+            const isCurrentUser = msg.sender_id === currentUserId;
             return (
-              <div key={index} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+              <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
-                  <img src={msg.avatar} alt={msg.name} className="w-8 h-8 rounded-full mr-2 mt-1" />
+                  <img
+                    src={offer.avatar || "/images/default-avatar.png"}
+                    alt={offer.name}
+                    className="w-8 h-8 rounded-full mr-2 mt-1"
+                  />
                 )}
                 <div className="flex flex-col max-w-[75%]">
                   <div className={`p-3 rounded-lg text-sm ${isCurrentUser ? "bg-blue-100 text-blue-800 self-end" : "bg-gray-100 text-gray-700 self-start"}`}>
-                    <p className="font-medium">{isCurrentUser ? "You" : msg.name}</p>
-                    <p>{msg.text}</p>
+                    <p className="font-medium">{isCurrentUser ? "You" : offer.name}</p>
+                    {msg.reply_message && (
+                      <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
+                        {msg.reply_message}
+                      </div>
+                    )}
+                    <p>{msg.message}</p>
                   </div>
-                  <span className={`text-xs text-gray-400 mt-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                    {msg.timeAgo || "Just now"}
-                  </span>
+                  <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                    <span>{formatRelativeTime(msg.sent_at)}</span>
+                    <button onClick={() => setReplyTo(msg)} className="ml-2 underline">
+                      Reply
+                    </button>
+                  </div>
                 </div>
                 {isCurrentUser && (
-                  <img src={msg.avatar} alt="You" className="w-8 h-8 rounded-full ml-2 mt-1" />
+                  <img
+                    src={user?.avatar_url || "/images/default-avatar.png"}
+                    alt="You"
+                    className="w-8 h-8 rounded-full ml-2 mt-1"
+                  />
                 )}
               </div>
             );
           })}
         </div>
+
+        {replyTo && (
+          <div className="text-xs text-gray-600 mb-2">
+            Replying to: <span className="italic">{replyTo.message}</span>
+            <button onClick={() => setReplyTo(null)} className="ml-2 text-red-500">✖</button>
+          </div>
+        )}
 
         <div className="mt-4 flex gap-2">
           <input
