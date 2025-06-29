@@ -16,6 +16,7 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
 import { updateOffer } from "@/services/admin/offerService";
+import { toast } from "react-toastify";
 import { getConversation, sendChatMessage } from "@/services/messageService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
@@ -59,7 +60,13 @@ const OfferDetailsPage = () => {
     setOffer((prev) => ({ ...prev, status: newStatus }));
     try {
       await updateOffer(offer.id, { status: newStatus });
-    } catch (_) {}
+      toast.success(
+        `Offer ${newStatus === "open" ? "opened" : "closed"} successfully`,
+        { theme: "dark" }
+      );
+    } catch (_) {
+      toast.error("Failed to update offer", { theme: "dark" });
+    }
   };
 
   useEffect(() => {

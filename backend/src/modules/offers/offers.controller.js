@@ -81,7 +81,31 @@ exports.getOfferById = catchAsync(async (req, res) => {
 });
 
 exports.updateOffer = catchAsync(async (req, res) => {
+  const existing = await service.getOfferById(req.params.id);
   const offer = await service.updateOffer(req.params.id, req.body);
+
+  if (
+    existing &&
+    req.body.status &&
+    req.body.status !== existing.status &&
+    existing.student_id !== req.user.id
+  ) {
+    const statusMsg = req.body.status === "open" ? "reopened" : "closed";
+    const message = `Your offer "${existing.title}" was ${statusMsg}.`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: existing.student_id,
+        type: "offer_status_changed",
+        message,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: existing.student_id,
+        message,
+      }),
+    ]);
+  }
+
   sendSuccess(res, offer, "Offer updated");
 });
 
