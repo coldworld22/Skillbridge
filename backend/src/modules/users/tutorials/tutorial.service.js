@@ -115,3 +115,16 @@ exports.getPublicTutorialDetails = async (id) => {
 
   return { ...tutorial, chapters };
 };
+
+exports.addTutorialTags = async (tutorialId, tagIds) => {
+  if (!tagIds.length) return;
+  const rows = tagIds.map((tag_id) => ({ tutorial_id: tutorialId, tag_id }));
+  await db("tutorial_tag_map").insert(rows);
+};
+
+exports.getTutorialTags = async (tutorialId) => {
+  return db("tutorial_tag_map as m")
+    .join("tutorial_tags as t", "m.tag_id", "t.id")
+    .where("m.tutorial_id", tutorialId)
+    .select("t.id", "t.name", "t.slug");
+};

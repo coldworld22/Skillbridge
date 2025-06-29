@@ -4,6 +4,7 @@ const fs = require("fs");
 const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
+const tagService = require("./tutorialTag.service");
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
@@ -43,6 +44,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     start_date,
     end_date,
     status = "draft",
+    tags: rawTags,
     chapters = [],
   } = req.body;
 
@@ -99,6 +101,27 @@ exports.createTutorial = catchAsync(async (req, res) => {
   };
   await service.createTutorial(tutorial);
 
+  const tags = rawTags
+    ? typeof rawTags === "string"
+      ? JSON.parse(rawTags)
+      : rawTags
+    : [];
+  if (tags.length) {
+    const tagIds = [];
+    for (const name of tags) {
+      const existing = await tagService.findByName(name);
+      const tag =
+        existing ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addTutorialTags(id, tagIds);
+    tutorial.tags = await service.getTutorialTags(id);
+  }
+
   // Save chapters (if any)
   for (let i = 0; i < parsedChapters.length; i++) {
     const ch = parsedChapters[i];
@@ -131,7 +154,7 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
-  const data = req.body;
+  const { tags: rawTags, ...data } = req.body;
   if (data.duration) {
     data.duration = parseInt(data.duration);
   }
@@ -149,6 +172,24 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
+
+  const tags = rawTags ? (typeof rawTags === 'string' ? JSON.parse(rawTags) : rawTags) : null;
+  if (tags) {
+    await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
+    const tagIds = [];
+    for (const name of tags) {
+      const existing = await tagService.findByName(name);
+      const tag =
+        existing ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addTutorialTags(tutorial.id, tagIds);
+    tutorial.tags = await service.getTutorialTags(tutorial.id);
+  }
 
   sendSuccess(res, tutorial);
 });

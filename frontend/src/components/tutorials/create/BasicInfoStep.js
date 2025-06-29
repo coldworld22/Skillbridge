@@ -1,10 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { fetchTutorialTags } from "@/services/instructor/tutorialTagService";
 
 export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
   const [errors, setErrors] = useState({});
+  const [allTags, setAllTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+
+  const filteredTagSuggestions = useMemo(
+    () =>
+      allTags.filter(
+        (t) =>
+          tagInput &&
+          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+          !tutorialData.tags.includes(t.name)
+      ),
+    [allTags, tagInput, tutorialData.tags]
+  );
+
+  useEffect(() => {
+    fetchTutorialTags()
+      .then(setAllTags)
+      .catch(() => setAllTags([]));
+  }, []);
 
   const handleChange = (field, value) => {
     setTutorialData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const addTag = (tag) => {
+    if (tag && !tutorialData.tags.includes(tag)) {
+      setTutorialData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTutorialData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tagToRemove),
+    }));
   };
 
   const validateAndContinue = () => {
@@ -107,14 +141,52 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
 
       {/* Tags */}
       <div>
-        <label className="font-semibold">Tags (comma separated)</label>
-        <input
-          type="text"
-          className="w-full p-2 border rounded mt-1"
-          value={tutorialData.tags.join(", ")}
-          onChange={(e) => handleChange("tags", e.target.value.split(",").map(tag => tag.trim()))}
-          placeholder="e.g., Frontend, JavaScript, Web Development"
-        />
+        <label className="font-semibold">Tags</label>
+        <div className="relative">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {tutorialData.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-1.5 inline-flex text-yellow-500 hover:text-yellow-700"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag(tagInput);
+              }
+            }}
+            placeholder="Add tags..."
+            className="w-full p-2 border rounded mt-1"
+          />
+          {filteredTagSuggestions.length > 0 && tagInput && (
+            <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
+              {filteredTagSuggestions.map((t) => (
+                <div
+                  key={t.id}
+                  className="px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 cursor-pointer"
+                  onClick={() => addTag(t.name)}
+                >
+                  {t.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Is Free + Price */}

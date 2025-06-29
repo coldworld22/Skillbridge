@@ -6,6 +6,7 @@ const validate = require("../../../middleware/validate");
 const upload = require("./tutorialUploadMiddleware");
 const tutorialValidator = require("./tutorial.validator");
 const { isAdmin, verifyToken, isInstructorOrAdmin } = require("../../../middleware/auth/authMiddleware");
+const tagController = require("./tutorialTag.controller");
 
 // ✅ Admin routes
 router.post(
@@ -56,6 +57,9 @@ router.use("/chapters", require("./chapters/tutorialChapter.routes"));
 router.use("/reviews", require("./reviews/tutorialReview.routes"));
 
 router.use("/comments", require("./comments/tutorialComment.routes"));
+
+router.get("/tags", verifyToken, isInstructorOrAdmin, tagController.listTags);
+router.post("/tags", verifyToken, isInstructorOrAdmin, tagController.createTag);
 
 router.use("/enroll", require("./enrollments/tutorialEnrollment.routes"));
 router.use("/wishlist", require("./wishlist/tutorialWishlist.routes"));
