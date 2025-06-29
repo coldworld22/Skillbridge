@@ -8,6 +8,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
+const session = require("express-session");
+const passport = require("./config/passport");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 // Allow overriding the allowed origin via FRONTEND_URL env var.
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -103,6 +105,16 @@ app.use(express.json({ limit: "10mb" }));
 
 // 🍪 Parse cookies from incoming requests
 app.use(cookieParser());
+
+// 🔐 Session and Passport setup for social login
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "skillbridge",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
 
 // 🌐 Allow frontend to communicate with backend (CORS)
 app.use(
