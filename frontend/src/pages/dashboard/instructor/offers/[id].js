@@ -15,6 +15,7 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
+import { updateOffer } from "@/services/admin/offerService";
 import { getConversation, sendChatMessage } from "@/services/messageService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
@@ -52,6 +53,15 @@ const OfferDetailsPage = () => {
   const [messages, setMessages] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
 
+  const toggleStatus = async () => {
+    if (!offer) return;
+    const newStatus = offer.status === "open" ? "closed" : "open";
+    setOffer((prev) => ({ ...prev, status: newStatus }));
+    try {
+      await updateOffer(offer.id, { status: newStatus });
+    } catch (_) {}
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -67,6 +77,7 @@ const OfferDetailsPage = () => {
             o.student_role?.toLowerCase() === "instructor"
               ? "instructor"
               : "student",
+          offerType: o.offer_type,
           title: o.title,
           price: o.budget || "",
           duration: o.timeframe || "",
@@ -127,8 +138,11 @@ const OfferDetailsPage = () => {
         </span>
       </div>
 
-      <div className="flex justify-between text-sm text-gray-500 mb-6">
+      <div className="flex flex-wrap justify-between text-sm text-gray-500 mb-6 gap-2">
         <p>Posted: {offer.date}</p>
+        <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
+          Type: {offer.offerType}
+        </span>
         <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
           Status: {offer.status}
         </span>
@@ -317,6 +331,12 @@ const OfferDetailsPage = () => {
                 <FaEdit /> Edit
               </button>
             </Link>
+            <button
+              onClick={toggleStatus}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition"
+            >
+              {offer.status === "open" ? "Close" : "Open"} Offer
+            </button>
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to delete this offer?")) {
