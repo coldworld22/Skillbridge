@@ -8,6 +8,7 @@ import {
   FaTag,
   FaClock,
   FaDollarSign,
+  FaSearch,
 } from "react-icons/fa";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchOffers } from "@/services/offerService";
@@ -17,6 +18,8 @@ const InstructorOfferDashboard = () => {
   const [myOffers, setMyOffers] = useState([]);
   const [studentRequests, setStudentRequests] = useState([]);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const router = useRouter();
 
   const { user } = useAuthStore();
@@ -53,6 +56,22 @@ const InstructorOfferDashboard = () => {
         setStudentRequests([]);
       });
   }, [user?.id]);
+
+  const filteredMyOffers = myOffers
+    .filter((o) =>
+      o.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((o) =>
+      typeFilter === "all" ? true : o.offerType === typeFilter
+    );
+
+  const filteredStudentRequests = studentRequests
+    .filter((o) =>
+      o.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((o) =>
+      typeFilter === "all" ? true : o.offerType === typeFilter
+    );
 
   const OfferCard = ({ offer }) => (
     <div className="flex flex-col justify-between h-full bg-white border border-gray-200 hover:shadow-xl transition-all p-5 rounded-xl">
@@ -135,6 +154,29 @@ const InstructorOfferDashboard = () => {
           </Link>
         </div>
 
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="flex items-center gap-2 border rounded px-3 py-2 w-full sm:max-w-xs">
+            <FaSearch className="text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search offers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full outline-none"
+            />
+          </div>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="p-2 border rounded w-full sm:w-auto"
+          >
+            <option value="all">All Types</option>
+            <option value="class">Class</option>
+            <option value="tutorial">Tutorial</option>
+          </select>
+        </div>
+
         {/* My Offers */}
         <div className="mb-12">
           <h3 className="text-xl font-semibold mb-4">📦 My Course Offers</h3>
@@ -143,11 +185,11 @@ const InstructorOfferDashboard = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myOffers.slice(0, visibleCount).map((offer) => (
+                {filteredMyOffers.slice(0, visibleCount).map((offer) => (
                   <OfferCard key={offer.id} offer={offer} />
                 ))}
               </div>
-              {visibleCount < myOffers.length && (
+              {visibleCount < filteredMyOffers.length && (
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 6)}
@@ -168,7 +210,7 @@ const InstructorOfferDashboard = () => {
             <p className="text-gray-500">No student requests available yet.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {studentRequests.slice(0, visibleCount).map((offer) => (
+              {filteredStudentRequests.slice(0, visibleCount).map((offer) => (
                 <OfferCard key={offer.id} offer={offer} />
               ))}
             </div>
