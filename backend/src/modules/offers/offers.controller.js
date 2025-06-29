@@ -38,31 +38,26 @@ exports.createOffer = catchAsync(async (req, res) => {
   }
 
   const instructors = await userModel.findInstructors();
+  const students = await userModel.findStudents();
   const admins = await userModel.findAdmins();
   const message = `New offer from ${req.user.full_name} (${req.user.role})`;
+
+  let recipients = [];
+  if (req.user.role && req.user.role.toLowerCase() === "instructor") {
+    recipients = [...students, ...admins];
+  } else {
+    recipients = [...instructors, ...admins];
+  }
+
   await Promise.all([
-    ...instructors.map((u) =>
+    ...recipients.map((u) =>
       notificationService.createNotification({
         user_id: u.id,
         type: "new_offer",
         message,
       })
     ),
-    ...admins.map((u) =>
-      notificationService.createNotification({
-        user_id: u.id,
-        type: "new_offer",
-        message,
-      })
-    ),
-    ...instructors.map((u) =>
-      messageService.createMessage({
-        sender_id: req.user.id,
-        receiver_id: u.id,
-        message,
-      })
-    ),
-    ...admins.map((u) =>
+    ...recipients.map((u) =>
       messageService.createMessage({
         sender_id: req.user.id,
         receiver_id: u.id,
