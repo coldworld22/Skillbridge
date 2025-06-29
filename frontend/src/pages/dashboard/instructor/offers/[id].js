@@ -17,7 +17,11 @@ import useAuthStore from "@/store/auth/authStore";
 import { fetchOfferById } from "@/services/offerService";
 import { updateOffer } from "@/services/admin/offerService";
 import { toast } from "react-toastify";
-import { getConversation, sendChatMessage } from "@/services/messageService";
+import {
+  getConversation,
+  sendChatMessage,
+  deleteChatMessage,
+} from "@/services/messageService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
@@ -123,6 +127,16 @@ const OfferDetailsPage = () => {
 
       setReplyTo(null);
     } catch (_) {}
+  };
+
+  const deleteMessage = async (msgId) => {
+    try {
+      await deleteChatMessage(msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      toast.info("Message deleted", { theme: "colored" });
+    } catch (_) {
+      toast.error("Failed to delete message", { theme: "colored" });
+    }
   };
 
   if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
@@ -269,6 +283,9 @@ const OfferDetailsPage = () => {
                     <span>{formatRelativeTime(msg.sent_at)}</span>
                     <button onClick={() => setReplyTo(msg)} className="ml-2 underline">
                       Reply
+                    </button>
+                    <button onClick={() => deleteMessage(msg.id)} className="ml-2 underline text-red-500">
+                      Delete
                     </button>
                   </div>
                 </div>
