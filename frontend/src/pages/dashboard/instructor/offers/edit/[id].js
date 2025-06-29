@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import StudentLayout from "@/components/layouts/StudentLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import { toast } from "react-toastify";
 
 const EditOfferPage = () => {
   const router = useRouter();
@@ -48,9 +49,14 @@ const EditOfferPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate save
-    alert("Offer updated successfully!");
-    router.push("/dashboard/student/offers");
+
+    try {
+      // Simulate save
+      toast.success("Offer updated successfully!");
+      router.push("/dashboard/instructor/offers");
+    } catch (error) {
+      toast.error("Failed to update offer. Please try again.");
+    }
   };
 
   return (
@@ -132,6 +138,8 @@ const EditOfferPage = () => {
   );
 };
 
-EditOfferPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
+EditOfferPage.getLayout = (page) => (
+  <InstructorLayout>{page}</InstructorLayout>
+);
 
 export default EditOfferPage;
