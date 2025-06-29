@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
+// Facebook login is disabled until production deployment
+// const FacebookStrategy = require('passport-facebook').Strategy;
 const AppleStrategy = require('passport-apple').Strategy;
 const socialAuthService = require('../modules/auth/services/socialAuth.service');
 const socialLoginConfigService = require('../modules/socialLoginConfig/socialLoginConfig.service');
@@ -40,35 +41,36 @@ async function initStrategies() {
     );
   }
 
-  const facebook = providers.facebook || {};
-  if (facebook.active && (facebook.clientId || process.env.FACEBOOK_CLIENT_ID)) {
-    passport.use(
-      'facebook',
-      new FacebookStrategy(
-        {
-          clientID: facebook.clientId || process.env.FACEBOOK_CLIENT_ID || '',
-          clientSecret: facebook.clientSecret || process.env.FACEBOOK_CLIENT_SECRET || '',
-          callbackURL: '/api/auth/facebook/callback',
-          profileFields: ['id', 'displayName', 'email'],
-        },
-        async (_accessToken, _refreshToken, profile, done) => {
-          try {
-            const { id, displayName, emails } = profile;
-            const email = emails && emails[0] && emails[0].value;
-            const result = await socialAuthService.loginOrRegister({
-              provider: 'facebook',
-              providerId: id,
-              email,
-              fullName: displayName,
-            });
-            return done(null, result);
-          } catch (err) {
-            return done(err);
-          }
-        }
-      )
-    );
-  }
+  // Facebook login is temporarily disabled until the project is deployed
+  // const facebook = providers.facebook || {};
+  // if (facebook.active && (facebook.clientId || process.env.FACEBOOK_CLIENT_ID)) {
+  //   passport.use(
+  //     'facebook',
+  //     new FacebookStrategy(
+  //       {
+  //         clientID: facebook.clientId || process.env.FACEBOOK_CLIENT_ID || '',
+  //         clientSecret: facebook.clientSecret || process.env.FACEBOOK_CLIENT_SECRET || '',
+  //         callbackURL: '/api/auth/facebook/callback',
+  //         profileFields: ['id', 'displayName', 'email'],
+  //       },
+  //       async (_accessToken, _refreshToken, profile, done) => {
+  //         try {
+  //           const { id, displayName, emails } = profile;
+  //           const email = emails && emails[0] && emails[0].value;
+  //           const result = await socialAuthService.loginOrRegister({
+  //             provider: 'facebook',
+  //             providerId: id,
+  //             email,
+  //             fullName: displayName,
+  //           });
+  //           return done(null, result);
+  //         } catch (err) {
+  //           return done(err);
+  //         }
+  //       }
+  //     )
+  //   );
+  // }
 
   const apple = providers.apple || {};
   if (

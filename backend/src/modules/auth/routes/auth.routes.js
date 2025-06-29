@@ -63,8 +63,9 @@ router.post("/reset-password", validate(authValidation.resetPasswordSchema), aut
 
 router.get("/google", socialAuthController.googleAuth);
 router.get("/google/callback", socialAuthController.googleCallback);
-router.get("/facebook", socialAuthController.facebookAuth);
-router.get("/facebook/callback", socialAuthController.facebookCallback);
+// Facebook routes are disabled until production deployment
+// router.get("/facebook", socialAuthController.facebookAuth);
+// router.get("/facebook/callback", socialAuthController.facebookCallback);
 router.get("/apple", socialAuthController.appleAuth);
 router.post("/apple/callback", socialAuthController.appleCallback);
 
