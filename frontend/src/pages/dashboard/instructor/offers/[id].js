@@ -42,7 +42,6 @@ const isImage = (path) => {
   if (!path) return false;
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
 };
-
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -93,7 +92,6 @@ const OfferDetailsPage = () => {
     const interval = setInterval(fetchMessages, 10000);
     return () => clearInterval(interval);
   }, [offer]);
-
   const handleSendMessage = async ({ text, file, audio }) => {
     if (!text && !file && !audio) return;
     try {
@@ -104,6 +102,7 @@ const OfferDetailsPage = () => {
         replyId: replyTo?.id,
       });
       setMessages((prev) => [...prev, sent]);
+
       setReplyTo(null);
     } catch (_) {}
   };
