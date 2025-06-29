@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { fetchOfferById } from "@/services/admin/offerService";
 
 const AdminOfferDetails = () => {
   const router = useRouter();
@@ -24,25 +25,25 @@ const AdminOfferDetails = () => {
   useEffect(() => {
     if (!id) return;
 
-    const mockOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: `${i + 1}`,
-      userId: i % 2 === 0 ? "student1" : "instructor1",
-      type: i % 2 === 0 ? "student" : "instructor",
-      title: i % 2 === 0 ? `Need Help with Subject ${i + 1}` : `Offering Course ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1),
-      date: `${i + 1} days ago`,
-      description: i % 2 === 0
-        ? "Looking for weekly physics help."
-        : "Offering structured weekend math classes.",
-      status: i % 3 === 0 ? "Pending" : "Active",
-      email: `user${i}@example.com`,
-      phone: `+96650000000${i}`,
-    }));
-
-    const found = mockOffers.find((o) => o.id === id);
-    setOffer(found);
+    fetchOfferById(id)
+      .then((o) => {
+        if (!o) return setOffer(null);
+        setOffer({
+          id: o.id,
+          userId: o.student_id,
+          type: o.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: [],
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+          description: o.description || "",
+          status: o.status,
+          email: o.email || "",
+          phone: o.phone || "",
+        });
+      })
+      .catch(() => setOffer(null));
 
     setMessages([
       {

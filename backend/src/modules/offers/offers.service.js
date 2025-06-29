@@ -6,11 +6,28 @@ exports.createOffer = async (data) => {
 };
 
 exports.getOffers = () => {
-  return db("offers").orderBy("created_at", "desc");
+  return db("offers as o")
+    .join("users as u", "o.student_id", "u.id")
+    .select(
+      "o.*",
+      "u.full_name as student_name",
+      "u.role as student_role",
+      "u.avatar_url as student_avatar"
+    )
+    .orderBy("o.created_at", "desc");
 };
 
 exports.getOfferById = (id) => {
-  return db("offers").where({ id }).first();
+  return db("offers as o")
+    .join("users as u", "o.student_id", "u.id")
+    .select(
+      "o.*",
+      "u.full_name as student_name",
+      "u.role as student_role",
+      "u.avatar_url as student_avatar"
+    )
+    .where("o.id", id)
+    .first();
 };
 
 exports.updateOffer = async (id, data) => {
