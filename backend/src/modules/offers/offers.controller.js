@@ -82,6 +82,36 @@ exports.getOfferById = catchAsync(async (req, res) => {
 
 exports.updateOffer = catchAsync(async (req, res) => {
   const offer = await service.updateOffer(req.params.id, req.body);
+
+  const instructors = await userModel.findInstructors();
+  const students = await userModel.findStudents();
+  const admins = await userModel.findAdmins();
+  const message = `Offer updated by ${req.user.full_name} (${req.user.role})`;
+
+  let recipients = [];
+  if (req.user.role && req.user.role.toLowerCase() === "instructor") {
+    recipients = [...students, ...admins];
+  } else {
+    recipients = [...instructors, ...admins];
+  }
+
+  await Promise.all([
+    ...recipients.map((u) =>
+      notificationService.createNotification({
+        user_id: u.id,
+        type: "offer_updated",
+        message,
+      })
+    ),
+    ...recipients.map((u) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: u.id,
+        message,
+      })
+    ),
+  ]);
+
   sendSuccess(res, offer, "Offer updated");
 });
 
