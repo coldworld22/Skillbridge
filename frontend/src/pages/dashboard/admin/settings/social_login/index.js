@@ -79,7 +79,11 @@ export default function SocialLoginSettingsPage() {
     load();
   }, []);
 
-  const toggleGlobal = () => setGlobalActive(!globalActive);
+  const toggleGlobal = () => {
+    const newState = !globalActive;
+    setGlobalActive(newState);
+    setProviders((prev) => prev.map((p) => ({ ...p, active: newState })));
+  };
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
   const toggleProvider = (index) => {

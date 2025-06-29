@@ -42,6 +42,7 @@ const isImage = (path) => {
   return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
 };
 
+
 const OfferDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -166,6 +167,7 @@ const OfferDetailsPage = () => {
             return (
               <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
+
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
                     alt={offer.name}
@@ -185,11 +187,13 @@ const OfferDetailsPage = () => {
                     <p className="font-medium">
                       {isCurrentUser ? "You" : offer.name}
                     </p>
+
                     {msg.reply_message && (
                       <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
                         {msg.reply_message}
                       </div>
                     )}
+
                     {msg.reply_file_url && isImage(msg.reply_file_url) && (
                       <ChatImage
                         src={getMediaUrl(msg.reply_file_url)}
@@ -243,6 +247,7 @@ const OfferDetailsPage = () => {
                         className="mt-1 w-48"
                       />
                     )}
+
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
@@ -252,12 +257,14 @@ const OfferDetailsPage = () => {
                   </div>
                 </div>
                 {isCurrentUser && (
+
                   <ChatImage
                     src={getAvatarUrl(user?.avatar_url)}
                     alt="You"
                     className="w-8 h-8 rounded-full ml-2 mt-1"
                     width={32}
                     height={32}
+
                   />
                 )}
               </div>
@@ -266,6 +273,7 @@ const OfferDetailsPage = () => {
         </div>
 
         {replyTo && (
+
           <div className="text-xs text-gray-600 mb-2 flex items-center gap-2">
             <span>Replying to:</span>
             {replyTo.message && <span className="italic">{replyTo.message}</span>}
@@ -296,6 +304,7 @@ const OfferDetailsPage = () => {
               />
             )}
             <button onClick={() => setReplyTo(null)} className="text-red-500">✖</button>
+
           </div>
         )}
 
