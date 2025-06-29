@@ -1,4 +1,5 @@
-const passport = require('../../config/passport');
+// Import the configured passport instance
+const { passport } = require('../../config/passport');
 
 // Initiates Google OAuth
 exports.googleAuth = passport.authenticate('google', {
@@ -23,26 +24,25 @@ exports.googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-// Initiates Facebook OAuth
-exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] });
+// Facebook OAuth is disabled until the project is hosted
+// exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] });
 
-// Callback after Facebook OAuth
-exports.facebookCallback = (req, res, next) => {
-  passport.authenticate('facebook', { session: false }, (err, result) => {
-    if (err || !result) {
-      return res.redirect(`${process.env.FRONTEND_URL || ''}/auth/login?error=social`);
-    }
-    const { accessToken, refreshToken } = result;
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
-    res.redirect(redirectUrl);
-  })(req, res, next);
-};
+// exports.facebookCallback = (req, res, next) => {
+//   passport.authenticate('facebook', { session: false }, (err, result) => {
+//     if (err || !result) {
+//       return res.redirect(`${process.env.FRONTEND_URL || ''}/auth/login?error=social`);
+//     }
+//     const { accessToken, refreshToken } = result;
+//     res.cookie('refreshToken', refreshToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === 'production',
+//       sameSite: 'strict',
+//       maxAge: 7 * 24 * 60 * 60 * 1000,
+//     });
+//     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
+//     res.redirect(redirectUrl);
+//   })(req, res, next);
+// };
 
 // Initiates Apple OAuth
 exports.appleAuth = passport.authenticate('apple');
