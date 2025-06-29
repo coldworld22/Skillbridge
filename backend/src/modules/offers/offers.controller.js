@@ -81,6 +81,7 @@ exports.getOfferById = catchAsync(async (req, res) => {
 });
 
 exports.updateOffer = catchAsync(async (req, res) => {
+  const existing = await service.getOfferById(req.params.id);
   const offer = await service.updateOffer(req.params.id, req.body);
 
   const instructors = await userModel.findInstructors();
@@ -111,6 +112,7 @@ exports.updateOffer = catchAsync(async (req, res) => {
       })
     ),
   ]);
+
 
   sendSuccess(res, offer, "Offer updated");
 });
