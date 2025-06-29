@@ -17,6 +17,7 @@ const EditOfferPage = () => {
     tags: "",
     description: "",
   });
+  const [offer, setOffer] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load existing data from API
@@ -24,14 +25,15 @@ const EditOfferPage = () => {
     if (!id) return;
 
     fetchOfferById(id)
-      .then((offer) => {
-        if (!offer) return;
+      .then((offerData) => {
+        if (!offerData) return;
+        setOffer(offerData);
         setForm({
-          title: offer.title || "",
-          price: offer.budget || "",
-          duration: offer.timeframe || "",
-          tags: offer.tags ? offer.tags.map((t) => t.name).join(", ") : "",
-          description: offer.description || "",
+          title: offerData.title || "",
+          price: offerData.budget || "",
+          duration: offerData.timeframe || "",
+          tags: offerData.tags ? offerData.tags.map((t) => t.name).join(", ") : "",
+          description: offerData.description || "",
         });
       })
       .catch(() => {
@@ -76,6 +78,16 @@ const EditOfferPage = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow mt-10 mb-10">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">✏️ Edit Offer</h1>
+
+      {offer && (
+        <div className="p-4 mb-6 bg-gray-50 rounded shadow">
+          <h2 className="font-semibold mb-2 text-gray-700">Current Details</h2>
+          <p className="text-sm text-gray-600"><strong>Title:</strong> {offer.title}</p>
+          <p className="text-sm text-gray-600"><strong>Budget:</strong> {offer.budget}</p>
+          <p className="text-sm text-gray-600"><strong>Duration:</strong> {offer.timeframe}</p>
+          <p className="text-sm text-gray-600"><strong>Description:</strong> {offer.description}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
