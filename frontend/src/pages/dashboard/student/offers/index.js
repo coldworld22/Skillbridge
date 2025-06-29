@@ -8,31 +8,62 @@ import {
   FaTag,
   FaClock,
   FaDollarSign,
+  FaSearch,
 } from "react-icons/fa";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import { fetchOffers } from "@/services/offerService";
+import useAuthStore from "@/store/auth/authStore";
 
 const StudentOfferDashboard = () => {
   const [myOffers, setMyOffers] = useState([]);
   const [instructorOffers, setInstructorOffers] = useState([]);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const router = useRouter();
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    // Simulate full dataset
-    const mockOffers = Array.from({ length: 12 }, (_, i) => ({
-      id: i + 1,
-      userId: i % 2 === 0 ? "student1" : "instructor1",
-      type: i % 2 === 0 ? "student" : "instructor",
-      title: i % 2 === 0 ? `Need Help with Subject ${i + 1}` : `Offering Course ${i + 1}`,
-      price: `$${100 + i * 10}`,
-      duration: `${1 + i % 6} months`,
-      tags: ["Flexible", "LiveClass"].slice(0, (i % 2) + 1),
-      date: `${i + 1} days ago`,
-    }));
+    fetchOffers()
+      .then((data) => {
+        const mapped = data.map((o) => ({
+          id: o.id,
+          userId: o.student_id,
+          type:
+            o.student_role?.toLowerCase() === "instructor"
+              ? "instructor"
+              : "student",
+          offerType: o.offer_type,
+          title: o.title,
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          status: o.status || "open",
+          tags: [],
+          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+        }));
 
-    setMyOffers(mockOffers.filter((o) => o.type === "student"));
-    setInstructorOffers(mockOffers.filter((o) => o.type === "instructor"));
-  }, []);
+        setMyOffers(
+          mapped.filter((o) => o.type === "student" && o.userId === user?.id)
+        );
+        setInstructorOffers(mapped.filter((o) => o.type === "instructor"));
+      })
+      .catch(() => {
+        setMyOffers([]);
+        setInstructorOffers([]);
+      });
+  }, [user?.id]);
+
+  const filteredMyOffers = myOffers
+    .filter((o) =>
+      o.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((o) => (typeFilter === "all" ? true : o.offerType === typeFilter));
+
+  const filteredInstructorOffers = instructorOffers
+    .filter((o) =>
+      o.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((o) => (typeFilter === "all" ? true : o.offerType === typeFilter));
 
   const OfferCard = ({ offer }) => (
     <div
@@ -50,15 +81,26 @@ const StudentOfferDashboard = () => {
               <FaChalkboardTeacher className="text-green-500" />
             )}
           </div>
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
-              offer.type === "student"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-green-100 text-green-700"
-            }`}
-          >
-            {offer.type === "student" ? "My Request" : "Instructor Offer"}
-          </span>
+          <div className="flex gap-1">
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
+                offer.type === "student"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              {offer.type === "student" ? "My Request" : "Instructor Offer"}
+            </span>
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
+                offer.status === "open"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {offer.status}
+            </span>
+          </div>
         </div>
   
         <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
@@ -112,6 +154,29 @@ const StudentOfferDashboard = () => {
           </Link>
         </div>
 
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="flex items-center gap-2 border rounded px-3 py-2 w-full sm:max-w-xs">
+            <FaSearch className="text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search offers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full outline-none"
+            />
+          </div>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="p-2 border rounded w-full sm:w-auto"
+          >
+            <option value="all">All Types</option>
+            <option value="class">Class</option>
+            <option value="tutorial">Tutorial</option>
+          </select>
+        </div>
+
         {/* My Requests */}
         <div className="mb-12">
           <h3 className="text-xl font-semibold mb-4">🎓 My Requests</h3>
@@ -120,11 +185,11 @@ const StudentOfferDashboard = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myOffers.slice(0, visibleCount).map((offer) => (
+                {filteredMyOffers.slice(0, visibleCount).map((offer) => (
                   <OfferCard key={offer.id} offer={offer} />
                 ))}
               </div>
-              {visibleCount < myOffers.length && (
+              {visibleCount < filteredMyOffers.length && (
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 6)}
@@ -145,7 +210,7 @@ const StudentOfferDashboard = () => {
             <p className="text-gray-500">No instructor offers available yet.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {instructorOffers.slice(0, visibleCount).map((offer) => (
+              {filteredInstructorOffers.slice(0, visibleCount).map((offer) => (
                 <OfferCard key={offer.id} offer={offer} />
               ))}
             </div>
