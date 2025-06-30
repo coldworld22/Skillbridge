@@ -19,6 +19,7 @@ import {
   fetchMessages as fetchResponseMessages,
   sendMessage as sendResponseMessage,
   createResponse,
+  deleteMessage as deleteResponseMessage,
 } from "@/services/offerResponseService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
@@ -148,6 +149,16 @@ const OfferDetailsPage = () => {
     }
   };
 
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await deleteResponseMessage(offer.id, response.id, msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      toast.info("Message deleted.");
+    } catch (_) {
+      toast.error("Failed to delete message");
+    }
+  };
+
   if (!offer) return <div className="p-6 text-gray-600">Loading offer details...</div>;
 
   const isMyRequest = offer.userId === currentUserId && offer.type === "student";
@@ -270,6 +281,14 @@ const OfferDetailsPage = () => {
                     >
                       Reply
                     </button>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="ml-2 text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
                 {isCurrentUser && (

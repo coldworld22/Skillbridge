@@ -4,6 +4,8 @@ const AppError = require("../../utils/AppError");
 const responseService = require("./offerResponses.service");
 const messageService = require("./offerMessages.service");
 const userMessageService = require("../messages/messages.service");
+const notificationService = require("../notifications/notifications.service");
+const offerService = require("./offers.service");
 
 exports.createResponse = catchAsync(async (req, res) => {
   const { offerId } = req.params;
@@ -17,6 +19,21 @@ exports.createResponse = catchAsync(async (req, res) => {
     status: "pending",
   };
   const response = await responseService.createResponse(data);
+
+  const offer = await offerService.getOfferById(offerId);
+  if (offer) {
+    await notificationService.createNotification({
+      user_id: offer.student_id,
+      type: "offer_response",
+      message: `${req.user.full_name} responded to your offer`,
+    });
+    await userMessageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: offer.student_id,
+      message: `${req.user.full_name} responded to your offer`,
+    });
+  }
+
   sendSuccess(res, response, "Response created");
 });
 
@@ -57,6 +74,12 @@ exports.sendMessage = catchAsync(async (req, res) => {
     sender_id: req.user.id,
     receiver_id: receiverId,
     message: `Offer message: ${message.trim()}`,
+  });
+
+  await notificationService.createNotification({
+    user_id: receiverId,
+    type: "offer_message",
+    message: `${req.user.full_name} replied to an offer`,
   });
 
   sendSuccess(res, msg, "Message sent");
