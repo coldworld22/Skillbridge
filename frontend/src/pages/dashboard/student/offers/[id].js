@@ -18,6 +18,7 @@ import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
   sendMessage as sendResponseMessage,
+  createResponse,
 } from "@/services/offerResponseService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
