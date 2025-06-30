@@ -24,3 +24,10 @@ export const sendMessage = async (offerId, responseId, message, replyTo) => {
   );
   return data?.data ?? data;
 };
+
+export const deleteMessage = async (offerId, responseId, messageId) => {
+  const { data } = await api.delete(
+    `/offers/${offerId}/responses/${responseId}/messages/${messageId}`
+  );
+  return data?.data ?? data;
+};

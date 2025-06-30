@@ -32,3 +32,8 @@ exports.getMessages = (responseId) => {
     .where("m.response_id", responseId)
     .orderBy("m.sent_at", "asc");
 };
+
+exports.deleteMessage = async (id) => {
+  const [row] = await db("offer_messages").where({ id }).del().returning("*");
+  return row;
+};

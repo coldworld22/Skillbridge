@@ -61,3 +61,16 @@ exports.sendMessage = catchAsync(async (req, res) => {
 
   sendSuccess(res, msg, "Message sent");
 });
+
+exports.deleteMessage = catchAsync(async (req, res) => {
+  const { responseId, messageId } = req.params;
+  const msg = await messageService.getMessageById(messageId);
+  if (!msg || msg.response_id !== responseId) {
+    throw new AppError("Message not found", 404);
+  }
+  if (msg.sender_id !== req.user.id) {
+    throw new AppError("Not authorized", 403);
+  }
+  await messageService.deleteMessage(messageId);
+  sendSuccess(res, null, "Message deleted");
+});
