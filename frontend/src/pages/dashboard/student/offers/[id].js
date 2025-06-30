@@ -119,6 +119,20 @@ const OfferDetailsPage = () => {
       });
   }, [offer]);
 
+  useEffect(() => {
+    if (!offer || !response) return;
+
+    const loadMessages = () => {
+      fetchResponseMessages(offer.id, response.id)
+        .then(setMessages)
+        .catch(() => {});
+    };
+
+    loadMessages();
+    const interval = setInterval(loadMessages, 10000);
+    return () => clearInterval(interval);
+  }, [offer, response]);
+
   const handleSendMessage = async ({ text, file, audio }) => {
     if (!text?.trim()) return;
     if (file || audio) {
