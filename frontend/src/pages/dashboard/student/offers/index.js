@@ -131,7 +131,7 @@ const StudentOfferDashboard = () => {
       {offer.type === "instructor" && (
         <div className="mt-4">
           <button
-            onClick={() => router.push(`/website/pages/messages?to=${offer.userId}`)}
+            onClick={() => router.push(`/messages?to=${offer.userId}`)}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition"
           >
             Message

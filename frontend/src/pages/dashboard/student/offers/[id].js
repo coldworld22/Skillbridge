@@ -55,6 +55,7 @@ const OfferDetailsPage = () => {
   const [offer, setOffer] = useState(null);
   const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -110,8 +111,14 @@ const OfferDetailsPage = () => {
       toast.error("Attachments not supported for offer messages");
     }
     try {
-      const sent = await sendResponseMessage(offer.id, response.id, text.trim());
+      const sent = await sendResponseMessage(
+        offer.id,
+        response.id,
+        text.trim(),
+        replyTo?.id
+      );
       setMessages((prev) => [...prev, sent]);
+      setReplyTo(null);
       toast.success("Message sent!");
     } catch (_) {
       toast.error("Failed to send message");
@@ -235,7 +242,10 @@ const OfferDetailsPage = () => {
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
-                    <button disabled className="ml-2 text-gray-400 cursor-not-allowed">
+                    <button
+                      onClick={() => setReplyTo(msg)}
+                      className="ml-2 text-blue-600 hover:underline"
+                    >
                       Reply
                     </button>
                   </div>
@@ -255,7 +265,11 @@ const OfferDetailsPage = () => {
             </div>
 
             <div className="mt-4">
-              <MessageInput sendMessage={handleSendMessage} />
+              <MessageInput
+                sendMessage={handleSendMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
+              />
             </div>
           </>
         ) : (
@@ -268,7 +282,7 @@ const OfferDetailsPage = () => {
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Contact Instructor</h4>
         <div className="flex flex-wrap gap-4 items-center">
           <button
-            onClick={() => router.push(`/website/pages/messages?to=${offer.userId}`)}
+            onClick={() => router.push(`/messages?to=${offer.userId}`)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition"
           >
             <FaComments /> Message

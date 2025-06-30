@@ -57,6 +57,7 @@ const OfferDetailsPage = () => {
   const [offer, setOffer] = useState(null);
   const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
 
   const toggleStatus = async () => {
     if (!offer) return;
@@ -130,8 +131,14 @@ const OfferDetailsPage = () => {
       toast.error("Attachments not supported for offer messages", { theme: "colored" });
     }
     try {
-      const sent = await sendResponseMessage(offer.id, response.id, text.trim());
+      const sent = await sendResponseMessage(
+        offer.id,
+        response.id,
+        text.trim(),
+        replyTo?.id
+      );
       setMessages((prev) => [...prev, sent]);
+      setReplyTo(null);
       toast.success("Message sent!", { theme: "colored" });
     } catch (_) {
       toast.error("Failed to send message", { theme: "colored" });
@@ -194,11 +201,13 @@ const OfferDetailsPage = () => {
       {/* Offer Discussion Section */}
       <div className="border-t pt-6 mb-10">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
-        <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-          {messages.map((msg) => {
-            const isCurrentUser = msg.sender_id === currentUserId;
-            return (
-              <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+        {response ? (
+          <>
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
+              {messages.map((msg) => {
+              const isCurrentUser = msg.sender_id === currentUserId;
+              return (
+                <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
@@ -280,7 +289,10 @@ const OfferDetailsPage = () => {
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
-                    <button disabled className="ml-2 text-gray-400 cursor-not-allowed">
+                    <button
+                      onClick={() => setReplyTo(msg)}
+                      className="ml-2 text-blue-600 hover:underline"
+                    >
                       Reply
                     </button>
                   </div>
@@ -296,12 +308,20 @@ const OfferDetailsPage = () => {
                 )}
               </div>
             );
-          })}
-        </div>
+              })}
+            </div>
 
-        <div className="mt-4">
-          <MessageInput sendMessage={handleSendMessage} />
-        </div>
+            <div className="mt-4">
+              <MessageInput
+                sendMessage={handleSendMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-gray-500">No responses yet. Messaging will be available once a student responds.</p>
+        )}
       </div>
 
       {/* Actions */}
@@ -338,7 +358,7 @@ const OfferDetailsPage = () => {
             </h4>
             <div className="flex flex-wrap gap-4 items-center">
               <button
-                onClick={() => router.push(`/website/pages/messages?to=${offer.userId}`)}
+                onClick={() => router.push(`/messages?to=${offer.userId}`)}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition"
               >
                 <FaComments /> Message

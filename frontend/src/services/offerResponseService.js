@@ -15,7 +15,12 @@ export const fetchMessages = async (offerId, responseId) => {
   return data?.data ?? [];
 };
 
-export const sendMessage = async (offerId, responseId, message) => {
-  const { data } = await api.post(`/offers/${offerId}/responses/${responseId}/messages`, { message });
+export const sendMessage = async (offerId, responseId, message, replyTo) => {
+  const payload = { message };
+  if (replyTo) payload.replyTo = replyTo;
+  const { data } = await api.post(
+    `/offers/${offerId}/responses/${responseId}/messages`,
+    payload
+  );
   return data?.data ?? data;
 };

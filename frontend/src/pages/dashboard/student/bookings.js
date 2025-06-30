@@ -148,7 +148,7 @@ export default function StudentBookingsPage() {
                       <button
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
                         onClick={() =>
-                          (window.location.href = `/website/pages/messages?userId=${booking.instructor_id}`)
+                          (window.location.href = `/messages?userId=${booking.instructor_id}`)
                         }
                       >
                         <FaComments className="inline mr-1" /> Chat

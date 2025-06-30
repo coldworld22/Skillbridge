@@ -120,7 +120,7 @@ export default function StudentInstructorsAll() {
             onConfirm={() => {
               const target = chatInstructorId;
               setChatInstructorId(null);
-              router.push(`/website/pages/messages?userId=${target}`);
+              router.push(`/messages?userId=${target}`);
             }}
           />
         )}
