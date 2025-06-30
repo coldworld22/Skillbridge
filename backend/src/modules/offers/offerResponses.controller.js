@@ -3,6 +3,7 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const responseService = require("./offerResponses.service");
 const messageService = require("./offerMessages.service");
+const userMessageService = require("../messages/messages.service");
 
 exports.createResponse = catchAsync(async (req, res) => {
   const { offerId } = req.params;
@@ -33,7 +34,7 @@ exports.getMessages = catchAsync(async (req, res) => {
 
 exports.sendMessage = catchAsync(async (req, res) => {
   const { responseId } = req.params;
-  const { message } = req.body || {};
+  const { message, replyTo } = req.body || {};
   if (!message || !message.trim()) {
     throw new AppError("Message required", 400);
   }
@@ -42,10 +43,21 @@ exports.sendMessage = catchAsync(async (req, res) => {
   if (req.user.id !== resp.instructor_id && req.user.id !== resp.student_id) {
     throw new AppError("Not authorized", 403);
   }
-  const msg = await messageService.createMessage({
+  const created = await messageService.createMessage({
     response_id: responseId,
     sender_id: req.user.id,
     message: message.trim(),
+    reply_to_id: replyTo || null,
   });
+  const msg = await messageService.getMessageById(created.id);
+
+  const receiverId =
+    req.user.id === resp.instructor_id ? resp.student_id : resp.instructor_id;
+  await userMessageService.createMessage({
+    sender_id: req.user.id,
+    receiver_id: receiverId,
+    message: `Offer message: ${message.trim()}`,
+  });
+
   sendSuccess(res, msg, "Message sent");
 });
