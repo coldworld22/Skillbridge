@@ -22,6 +22,7 @@ import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
   sendMessage as sendResponseMessage,
+  deleteMessage as deleteResponseMessage,
 } from "@/services/offerResponseService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
@@ -123,7 +124,13 @@ const OfferDetailsPage = () => {
           return fetchResponseMessages(offer.id, myResp.id).then(setMessages);
         }
 
-        // No response from the current instructor yet
+        if (offer.userId === currentUserId) {
+          const firstResp = resps[0];
+          setResponse(firstResp);
+          return fetchResponseMessages(offer.id, firstResp.id).then(setMessages);
+        }
+
+        // No response associated with current instructor
         setResponse(null);
         setMessages([]);
       })
@@ -153,9 +160,13 @@ const OfferDetailsPage = () => {
     }
     try {
       let resp = response;
-      if (!resp) {
+      if (
+        !resp ||
+        (resp.instructor_id !== currentUserId && offer.userId !== currentUserId)
+      ) {
         resp = await createResponse(offer.id, {});
         setResponse(resp);
+        setMessages([]);
       }
       const sent = await sendResponseMessage(
         offer.id,
@@ -168,6 +179,16 @@ const OfferDetailsPage = () => {
       toast.success("Message sent!", { theme: "colored" });
     } catch (_) {
       toast.error("Failed to send message", { theme: "colored" });
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await deleteResponseMessage(offer.id, response.id, msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      toast.info("Message deleted.");
+    } catch (_) {
+      toast.error("Failed to delete message", { theme: "colored" });
     }
   };
 
@@ -320,6 +341,14 @@ const OfferDetailsPage = () => {
                     >
                       Reply
                     </button>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="ml-2 text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
                 {isCurrentUser && (
