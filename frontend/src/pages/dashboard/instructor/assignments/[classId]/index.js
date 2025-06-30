@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import Link from 'next/link';
 import { FaEdit, FaTrashAlt, FaEye, FaPlusCircle } from 'react-icons/fa';
+import { fetchClassAssignments } from '@/services/classService';
+import { deleteClassAssignment } from '@/services/instructor/classService';
 
 export default function ClassAssignmentsPage() {
   const router = useRouter();
@@ -19,30 +21,25 @@ export default function ClassAssignmentsPage() {
 
   useEffect(() => {
     if (mounted && classId) {
-      // Mock assignments for specific class
-      setAssignments([
-        {
-          id: 'a1',
-          title: 'Hooks Deep Dive',
-          dueDate: '2025-06-10T23:59:00Z',
-          type: 'MCQ',
-          status: 'Active',
-        },
-        {
-          id: 'a2',
-          title: 'State Management Mini Project',
-          dueDate: '2025-06-20T23:59:00Z',
-          type: 'Text',
-          status: 'Draft',
-        },
-      ]);
+      const load = async () => {
+        try {
+          const list = await fetchClassAssignments(classId);
+          setAssignments(list);
+        } catch (err) {
+          console.error('Failed to load assignments', err);
+        }
+      };
+      load();
     }
   }, [mounted, classId]);
 
-  const handleDelete = (id) => {
-    if (confirm('Are you sure you want to delete this assignment?')) {
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this assignment?')) return;
+    try {
+      await deleteClassAssignment(id);
       setAssignments((prev) => prev.filter((a) => a.id !== id));
-      alert('🗑️ Assignment deleted (mock)!');
+    } catch (err) {
+      console.error('Failed to delete assignment', err);
     }
   };
 
@@ -80,9 +77,9 @@ export default function ClassAssignmentsPage() {
                 {assignments.map((a) => (
                   <tr key={a.id} className="border-t">
                     <td className="p-3">{a.title}</td>
-                    <td className="p-3">{new Date(a.dueDate).toLocaleString()}</td>
-                    <td className="p-3">{a.type}</td>
-                    <td className="p-3">{a.status}</td>
+                    <td className="p-3">{a.due_date ? new Date(a.due_date).toLocaleString() : ''}</td>
+                    <td className="p-3">{a.type || '-'}</td>
+                    <td className="p-3">{a.status || '-'}</td>
                     <td className="p-3 flex gap-2">
                       <Link href={`/dashboard/instructor/assignments/view/${a.id}`} className="text-gray-600 hover:text-gray-800">
                         <FaEye />
