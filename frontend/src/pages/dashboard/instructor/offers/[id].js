@@ -253,27 +253,27 @@ const OfferDetailsPage = () => {
             {messages.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId;
             return (
-                <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                <div key={msg.id} className={`flex items-end ${isCurrentUser ? "justify-end" : "justify-start"}`}> 
                 {!isCurrentUser && (
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
                     alt={offer.name}
-                    className="w-8 h-8 rounded-full mr-2 mt-1"
+                    className="w-8 h-8 rounded-full mr-2"
                     width={32}
                     height={32}
                   />
                 )}
-                <div className="flex flex-col max-w-[75%]">
+                <div className={`flex flex-col max-w-[75%] space-y-1 ${isCurrentUser ? "items-end" : "items-start"}`}>
+                  <div className="text-xs text-gray-500">
+                    {isCurrentUser ? "You" : offer.name}
+                  </div>
                   <div
-                    className={`p-3 rounded-lg text-sm ${
+                    className={`px-4 py-2 rounded-2xl shadow text-sm ${
                       isCurrentUser
-                        ? "bg-blue-100 text-blue-800 self-end"
-                        : "bg-gray-100 text-gray-700 self-start"
+                        ? "bg-green-500 text-white rounded-br-sm"
+                        : "bg-gray-200 text-gray-900 rounded-bl-sm"
                     }`}
                   >
-                    <p className="font-medium">
-                      {isCurrentUser ? "You" : offer.name}
-                    </p>
                     {msg.reply_message && (
                       <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
                         {msg.reply_message}
