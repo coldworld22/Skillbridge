@@ -11,6 +11,7 @@ import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
   sendMessage as sendResponseMessage,
+  deleteMessage as deleteResponseMessage,
 } from "@/services/offerResponseService";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -53,6 +54,7 @@ const OfferDetailsPage = () => {
               msgs.map((m) => ({
                 id: m.id,
                 sender: m.sender_name,
+                senderId: m.sender_id,
                 text: m.message,
                 time: m.sent_at,
               }))
@@ -77,6 +79,7 @@ const OfferDetailsPage = () => {
       const msg = {
         id: sent.id,
         sender: user?.full_name || "You",
+        senderId: user?.id,
         text: sent.message,
         time: sent.sent_at,
       };
@@ -90,6 +93,13 @@ const OfferDetailsPage = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await deleteResponseMessage(id, response.id, msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (_) {}
   };
 
   const renderDealActions = () => {
@@ -195,7 +205,17 @@ const OfferDetailsPage = () => {
                     <span className="font-bold">{msg.sender}</span>
                     <span>{dayjs(msg.time).fromNow()}</span>
                   </div>
-                  <span>{msg.text}</span>
+                  <div className="flex justify-between items-start">
+                    <span>{msg.text}</span>
+                    {msg.senderId === user?.id && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="text-red-400 text-xs hover:text-red-500"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

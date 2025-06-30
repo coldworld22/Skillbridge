@@ -50,3 +50,18 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 ## Health Check
 
 `GET /` – returns a simple message confirming that the API is running.
+
+## Offers
+
+`/api/offers`
+
+- `GET /api/offers` – list open offers
+- `POST /api/offers` – create a new offer (auth required)
+- `GET /api/offers/:id` – view offer details
+- `PUT /api/offers/:id` – update an existing offer
+- `DELETE /api/offers/:id` – remove an offer
+- `GET /api/offers/:offerId/responses` – list responses for an offer
+- `POST /api/offers/:offerId/responses` – create a response
+- `GET /api/offers/:offerId/responses/:responseId/messages` – list offer messages
+- `POST /api/offers/:offerId/responses/:responseId/messages` – send a message
+- `DELETE /api/offers/:offerId/responses/:responseId/messages/:messageId` – delete a message you sent
