@@ -94,7 +94,8 @@ const OfferDetailsPage = () => {
           setMessages([]);
           return;
         }
-        const resp = resps[0];
+        const myResp = resps.find((r) => r.instructor_id === currentUserId);
+        const resp = myResp || resps[0];
         setResponse(resp);
         return fetchResponseMessages(offer.id, resp.id).then(setMessages);
       })
@@ -106,14 +107,22 @@ const OfferDetailsPage = () => {
 
   const handleSendMessage = async ({ text, file, audio }) => {
     if (!text?.trim()) return;
-    if (!response) return;
     if (file || audio) {
       toast.error("Attachments not supported for offer messages");
     }
     try {
+      let resp = response;
+      if (
+        !resp ||
+        (resp.instructor_id !== currentUserId && offer.userId !== currentUserId)
+      ) {
+        resp = await createResponse(offer.id, {});
+        setResponse(resp);
+        setMessages([]);
+      }
       const sent = await sendResponseMessage(
         offer.id,
-        response.id,
+        resp.id,
         text.trim(),
         replyTo?.id
       );
@@ -180,13 +189,12 @@ const OfferDetailsPage = () => {
       {/* Offer Discussion Section */}
       <div className="border-t pt-6 mb-10">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Offer Discussion</h3>
-        {response ? (
-          <>
-            <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
-              {messages.map((msg) => {
-                const isCurrentUser = msg.sender_id === currentUserId;
-                return (
-                  <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+        <>
+          <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
+            {messages.map((msg) => {
+              const isCurrentUser = msg.sender_id === currentUserId;
+              return (
+                <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}> 
                 {!isCurrentUser && (
                   <ChatImage
                     src={getAvatarUrl(offer.avatar)}
@@ -261,20 +269,20 @@ const OfferDetailsPage = () => {
                 )}
               </div>
             );
-              })}
-            </div>
+            })}
+            {messages.length === 0 && (
+              <p className="text-gray-500">No messages yet. Start the discussion below.</p>
+            )}
+          </div>
 
-            <div className="mt-4">
-              <MessageInput
-                sendMessage={handleSendMessage}
-                replyTo={replyTo}
-                onCancelReply={() => setReplyTo(null)}
-              />
-            </div>
-          </>
-        ) : (
-          <p className="text-gray-500">No responses yet. Messaging will be available once an instructor responds.</p>
-        )}
+          <div className="mt-4">
+            <MessageInput
+              sendMessage={handleSendMessage}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+            />
+          </div>
+        </>
       </div>
 
       {/* Contact / Copy Link */}
