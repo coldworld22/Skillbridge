@@ -9,5 +9,6 @@ router.get("/", controller.listResponses);
 
 router.get("/:responseId/messages", controller.getMessages);
 router.post("/:responseId/messages", controller.sendMessage);
+router.delete("/:responseId/messages/:messageId", controller.deleteMessage);
 
 module.exports = router;
