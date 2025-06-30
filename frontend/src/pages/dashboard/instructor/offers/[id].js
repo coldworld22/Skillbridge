@@ -136,18 +136,31 @@ const OfferDetailsPage = () => {
   }, [offer]);
 
   useEffect(() => {
-    if (!offer || !response) return;
+    if (!offer) return;
 
-    const loadMessages = () => {
-      fetchResponseMessages(offer.id, response.id)
-        .then(setMessages)
-        .catch(() => {});
+    const loadMessages = async () => {
+      try {
+        const resps = await fetchResponses(offer.id);
+        const allMsgs = await Promise.all(
+          resps.map((r) => fetchResponseMessages(offer.id, r.id))
+        );
+        const merged = allMsgs
+          .flat()
+          .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+        setMessages(merged);
+
+        if (!response) {
+          const myResp = resps.find((r) => r.instructor_id === currentUserId);
+          const activeResp = myResp || (offer.userId === currentUserId ? resps[0] : null);
+          if (activeResp) setResponse(activeResp);
+        }
+      } catch (_) {}
     };
 
     loadMessages();
     const interval = setInterval(loadMessages, 10000);
     return () => clearInterval(interval);
-  }, [offer, response]);
+  }, [offer]);
   const handleSendMessage = async ({ text, file, audio }) => {
     if (!text?.trim()) return;
     if (file || audio) {
