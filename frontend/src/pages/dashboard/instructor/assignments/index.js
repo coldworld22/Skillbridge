@@ -3,17 +3,27 @@ import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import Link from 'next/link';
 import { FaPlus, FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { fetchInstructorClasses } from '@/services/instructor/classService';
+import { fetchClassAssignments } from '@/services/classService';
 
 export default function InstructorAssignmentsAll() {
   const [assignments, setAssignments] = useState([]);
 
   useEffect(() => {
-    // Mock assignments fetch
-    setAssignments([
-      { id: 'a1', title: 'React Basics Quiz', dueDate: '2025-05-20', type: 'MCQ', status: 'Active', classId: 'react-bootcamp' },
-      { id: 'a2', title: 'JSX Mini Project', dueDate: '2025-05-25', type: 'Text', status: 'Draft', classId: 'react-bootcamp' },
-      { id: 'a3', title: 'Java Basics', dueDate: '2025-06-01', type: 'MCQ', status: 'Active', classId: 'java-crash-course' },
-    ]);
+    const load = async () => {
+      try {
+        const classes = await fetchInstructorClasses();
+        const all = [];
+        for (const cls of classes) {
+          const list = await fetchClassAssignments(cls.id);
+          list.forEach((a) => all.push({ ...a, classId: cls.id }));
+        }
+        setAssignments(all);
+      } catch (err) {
+        console.error('Failed to load assignments', err);
+      }
+    };
+    load();
   }, []);
 
   return (
@@ -47,9 +57,9 @@ export default function InstructorAssignmentsAll() {
                       {a.classId}
                     </Link>
                   </td>
-                  <td className="p-3">{a.dueDate}</td>
-                  <td className="p-3">{a.type}</td>
-                  <td className="p-3">{a.status}</td>
+                  <td className="p-3">{a.due_date ? new Date(a.due_date).toLocaleString() : ''}</td>
+                  <td className="p-3">{a.type || '-'}</td>
+                  <td className="p-3">{a.status || '-'}</td>
                   <td className="p-3 flex gap-2">
                     <Link href={`/dashboard/instructor/assignments/view/${a.id}`} className="text-blue-600 hover:text-blue-800"><FaEye /></Link>
                     <Link href={`/dashboard/instructor/assignments/edit/${a.id}`} className="text-gray-600 hover:text-gray-800"><FaEdit /></Link>
