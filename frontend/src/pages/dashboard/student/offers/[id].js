@@ -90,7 +90,7 @@ const OfferDetailsPage = () => {
   useEffect(() => {
     if (!offer) return;
     fetchResponses(offer.id)
-      .then((resps) => {
+      .then(async (resps) => {
         if (!resps.length) {
           setResponse(null);
           setMessages([]);
@@ -99,20 +99,18 @@ const OfferDetailsPage = () => {
 
         const myResp = resps.find((r) => r.instructor_id === currentUserId);
 
-        if (myResp) {
-          setResponse(myResp);
-          return fetchResponseMessages(offer.id, myResp.id).then(setMessages);
-        }
+        // Always prefer showing the conversation of the current instructor
+        const activeResp = myResp || (offer.userId === currentUserId ? resps[0] : null);
+        if (activeResp) setResponse(activeResp);
 
-        if (offer.userId === currentUserId) {
-          const firstResp = resps[0];
-          setResponse(firstResp);
-          return fetchResponseMessages(offer.id, firstResp.id).then(setMessages);
-        }
-
-        // User is neither the instructor who responded nor the offer owner
-        setResponse(null);
-        setMessages([]);
+        // Fetch messages from all responses so both parties can see the entire discussion
+        const allMsgs = await Promise.all(
+          resps.map((r) => fetchResponseMessages(offer.id, r.id))
+        );
+        const merged = allMsgs
+          .flat()
+          .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+        setMessages(merged);
       })
       .catch(() => {
         setResponse(null);
@@ -236,8 +234,8 @@ const OfferDetailsPage = () => {
                 <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}> 
                 {!isCurrentUser && (
                   <ChatImage
-                    src={getAvatarUrl(offer.avatar)}
-                    alt={offer.name}
+                    src={getAvatarUrl(msg.sender_avatar || offer.avatar)}
+                    alt={msg.sender_name || offer.name}
                     className="w-8 h-8 rounded-full mr-2 mt-1"
                     width={32}
                     height={32}
@@ -245,7 +243,7 @@ const OfferDetailsPage = () => {
                 )}
                 <div className="flex flex-col max-w-[75%]">
                   <div className={`p-3 rounded-lg text-sm ${isCurrentUser ? "bg-blue-100 text-blue-800 self-end" : "bg-gray-100 text-gray-700 self-start"}`}>
-                    <p className="font-medium">{isCurrentUser ? "You" : offer.name}</p>
+                    <p className="font-medium">{isCurrentUser ? "You" : msg.sender_name || offer.name}</p>
                     {msg.reply_message && (
                       <div className="text-xs italic text-gray-500 border-l-2 border-yellow-400 pl-2 mb-1">
                         {msg.reply_message}
