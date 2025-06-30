@@ -5,13 +5,29 @@ exports.createMessage = async (data) => {
   return row;
 };
 
-exports.getMessages = (responseId) => {
-  return db("offer_messages as m")
-    .join("users as u", "m.sender_id", "u.id")
+exports.getMessageById = (id) => {
+  return db({ m: "offer_messages" })
+    .leftJoin({ r: "offer_messages" }, "m.reply_to_id", "r.id")
+    .join({ u: "users" }, "m.sender_id", "u.id")
     .select(
       "m.*",
       "u.full_name as sender_name",
-      "u.avatar_url as sender_avatar"
+      "u.avatar_url as sender_avatar",
+      db.raw("r.message as reply_message")
+    )
+    .where("m.id", id)
+    .first();
+};
+
+exports.getMessages = (responseId) => {
+  return db({ m: "offer_messages" })
+    .leftJoin({ r: "offer_messages" }, "m.reply_to_id", "r.id")
+    .join({ u: "users" }, "m.sender_id", "u.id")
+    .select(
+      "m.*",
+      "u.full_name as sender_name",
+      "u.avatar_url as sender_avatar",
+      db.raw("r.message as reply_message")
     )
     .where("m.response_id", responseId)
     .orderBy("m.sent_at", "asc");

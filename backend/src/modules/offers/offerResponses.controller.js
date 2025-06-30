@@ -33,7 +33,7 @@ exports.getMessages = catchAsync(async (req, res) => {
 
 exports.sendMessage = catchAsync(async (req, res) => {
   const { responseId } = req.params;
-  const { message } = req.body || {};
+  const { message, replyTo } = req.body || {};
   if (!message || !message.trim()) {
     throw new AppError("Message required", 400);
   }
@@ -42,10 +42,12 @@ exports.sendMessage = catchAsync(async (req, res) => {
   if (req.user.id !== resp.instructor_id && req.user.id !== resp.student_id) {
     throw new AppError("Not authorized", 403);
   }
-  const msg = await messageService.createMessage({
+  const created = await messageService.createMessage({
     response_id: responseId,
     sender_id: req.user.id,
     message: message.trim(),
+    reply_to_id: replyTo || null,
   });
+  const msg = await messageService.getMessageById(created.id);
   sendSuccess(res, msg, "Message sent");
 });

@@ -57,6 +57,7 @@ const OfferDetailsPage = () => {
   const [offer, setOffer] = useState(null);
   const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
 
   const toggleStatus = async () => {
     if (!offer) return;
@@ -130,8 +131,14 @@ const OfferDetailsPage = () => {
       toast.error("Attachments not supported for offer messages", { theme: "colored" });
     }
     try {
-      const sent = await sendResponseMessage(offer.id, response.id, text.trim());
+      const sent = await sendResponseMessage(
+        offer.id,
+        response.id,
+        text.trim(),
+        replyTo?.id
+      );
       setMessages((prev) => [...prev, sent]);
+      setReplyTo(null);
       toast.success("Message sent!", { theme: "colored" });
     } catch (_) {
       toast.error("Failed to send message", { theme: "colored" });
@@ -282,7 +289,10 @@ const OfferDetailsPage = () => {
                   </div>
                   <div className={`flex items-center text-xs text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                     <span>{formatRelativeTime(msg.sent_at)}</span>
-                    <button disabled className="ml-2 text-gray-400 cursor-not-allowed">
+                    <button
+                      onClick={() => setReplyTo(msg)}
+                      className="ml-2 text-blue-600 hover:underline"
+                    >
                       Reply
                     </button>
                   </div>
@@ -302,7 +312,11 @@ const OfferDetailsPage = () => {
             </div>
 
             <div className="mt-4">
-              <MessageInput sendMessage={handleSendMessage} />
+              <MessageInput
+                sendMessage={handleSendMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
+              />
             </div>
           </>
         ) : (
