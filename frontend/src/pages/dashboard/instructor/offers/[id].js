@@ -109,30 +109,25 @@ const OfferDetailsPage = () => {
   useEffect(() => {
     if (!offer) return;
     fetchResponses(offer.id)
-      .then((resps) => {
+      .then(async (resps) => {
         if (!resps.length) {
           setResponse(null);
           setMessages([]);
           return;
         }
-        const myResp = resps.find(
-          (r) => r.instructor_id === currentUserId
+
+        const myResp = resps.find((r) => r.instructor_id === currentUserId);
+
+        // Always prefer showing the conversation of the current instructor
+        const activeResp = myResp || (offer.userId === currentUserId ? resps[0] : null);
+        if (activeResp) setResponse(activeResp);
+
+        // Fetch messages from all responses so both parties can see the entire discussion
+        const allMsgs = await Promise.all(
+          resps.map((r) => fetchResponseMessages(offer.id, r.id))
         );
-
-        if (myResp) {
-          setResponse(myResp);
-          return fetchResponseMessages(offer.id, myResp.id).then(setMessages);
-        }
-
-        if (offer.userId === currentUserId) {
-          const firstResp = resps[0];
-          setResponse(firstResp);
-          return fetchResponseMessages(offer.id, firstResp.id).then(setMessages);
-        }
-
-        // No response associated with current instructor
-        setResponse(null);
-        setMessages([]);
+        const merged = allMsgs.flat().sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+        setMessages(merged);
       })
       .catch(() => {
         setResponse(null);
@@ -253,11 +248,11 @@ const OfferDetailsPage = () => {
             {messages.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId;
             return (
-                <div key={msg.id} className={`flex items-end ${isCurrentUser ? "justify-end" : "justify-start"}`}> 
+                <div key={msg.id} className={`flex items-end ${isCurrentUser ? "justify-end" : "justify-start"}`}>
                 {!isCurrentUser && (
                   <ChatImage
-                    src={getAvatarUrl(offer.avatar)}
-                    alt={offer.name}
+                    src={getAvatarUrl(msg.sender_avatar || offer.avatar)}
+                    alt={msg.sender_name || offer.name}
                     className="w-8 h-8 rounded-full mr-2"
                     width={32}
                     height={32}
@@ -265,7 +260,7 @@ const OfferDetailsPage = () => {
                 )}
                 <div className={`flex flex-col max-w-[75%] space-y-1 ${isCurrentUser ? "items-end" : "items-start"}`}>
                   <div className="text-xs text-gray-500">
-                    {isCurrentUser ? "You" : offer.name}
+                    {isCurrentUser ? "You" : msg.sender_name || offer.name}
                   </div>
                   <div
                     className={`px-4 py-2 rounded-2xl shadow text-sm ${
