@@ -117,9 +117,15 @@ const OfferDetailsPage = () => {
         const myResp = resps.find(
           (r) => r.instructor_id === currentUserId
         );
-        const resp = myResp || resps[0];
-        setResponse(resp);
-        return fetchResponseMessages(offer.id, resp.id).then(setMessages);
+
+        if (myResp) {
+          setResponse(myResp);
+          return fetchResponseMessages(offer.id, myResp.id).then(setMessages);
+        }
+
+        // No response from the current instructor yet
+        setResponse(null);
+        setMessages([]);
       })
       .catch(() => {
         setResponse(null);

@@ -95,10 +95,23 @@ const OfferDetailsPage = () => {
           setMessages([]);
           return;
         }
+
         const myResp = resps.find((r) => r.instructor_id === currentUserId);
-        const resp = myResp || resps[0];
-        setResponse(resp);
-        return fetchResponseMessages(offer.id, resp.id).then(setMessages);
+
+        if (myResp) {
+          setResponse(myResp);
+          return fetchResponseMessages(offer.id, myResp.id).then(setMessages);
+        }
+
+        if (offer.userId === currentUserId) {
+          const firstResp = resps[0];
+          setResponse(firstResp);
+          return fetchResponseMessages(offer.id, firstResp.id).then(setMessages);
+        }
+
+        // User is neither the instructor who responded nor the offer owner
+        setResponse(null);
+        setMessages([]);
       })
       .catch(() => {
         setResponse(null);
