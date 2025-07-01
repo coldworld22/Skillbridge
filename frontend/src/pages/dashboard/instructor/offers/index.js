@@ -158,18 +158,10 @@ const InstructorOfferDashboard = () => {
       {offer.type === "student" && (
         <div className="mt-5">
           <button
-<<<<<<< HEAD
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/website/pages/messages?to=${offer.userId}`);
-            }}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2.5 rounded-lg font-medium transition-all duration-300 shadow-sm hover:shadow-md"
-=======
             onClick={() =>
               router.push(`/messages?to=${offer.userId}`)
             }
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition"
->>>>>>> d5a0ac447d69c33243d59aa925280f69184bcfd4
           >
             Message Student
           </button>
