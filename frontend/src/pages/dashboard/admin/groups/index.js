@@ -32,8 +32,11 @@ export default function AdminGroupsIndex() {
   const itemsPerPage = 6;
 
   useEffect(() => {
-    groupService.getAllGroups().then(setAllGroups).catch(() => setAllGroups([]));
-  }, []);
+    groupService
+      .getAllGroups(search, statusFilter)
+      .then(setAllGroups)
+      .catch(() => setAllGroups([]));
+  }, [search, statusFilter]);
 
   useEffect(() => {
     let filtered = [...allGroups];
@@ -70,6 +73,9 @@ export default function AdminGroupsIndex() {
       setGroups((prev) =>
         prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
       );
+      setAllGroups((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
+      );
     } catch {
       // ignore
     }
@@ -84,6 +90,7 @@ export default function AdminGroupsIndex() {
         // ignore
       }
       setGroups((prev) => prev.filter((g) => g.id !== id));
+      setAllGroups((prev) => prev.filter((g) => g.id !== id));
       setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
     }
   };
@@ -99,7 +106,32 @@ export default function AdminGroupsIndex() {
         }
       }
       setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
+      setAllGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
       setSelectedGroups([]);
+    }
+  };
+
+  const handleBulkStatusChange = async (status) => {
+    if (selectedGroups.length === 0) return;
+    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
+    if (confirmChange) {
+      for (const gid of selectedGroups) {
+        try {
+          await groupService.updateGroup(gid, { status });
+        } catch {
+          // ignore
+        }
+      }
+      setGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+      setAllGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
     }
   };
 
@@ -185,12 +217,32 @@ export default function AdminGroupsIndex() {
         </Link>
 
           {selectedGroups.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="bg-red-500 text-white px-3 py-2 rounded text-sm"
-            >
-              Delete Selected ({selectedGroups.length})
-            </button>
+            <>
+              <button
+                onClick={handleBulkDelete}
+                className="bg-red-500 text-white px-3 py-2 rounded text-sm"
+              >
+                Delete Selected ({selectedGroups.length})
+              </button>
+              <button
+                onClick={() => handleBulkStatusChange('active')}
+                className="bg-green-600 text-white px-3 py-2 rounded text-sm"
+              >
+                Set Active
+              </button>
+              <button
+                onClick={() => handleBulkStatusChange('inactive')}
+                className="bg-red-600 text-white px-3 py-2 rounded text-sm"
+              >
+                Set Inactive
+              </button>
+              <button
+                onClick={() => handleBulkStatusChange('suspended')}
+                className="bg-yellow-500 text-white px-3 py-2 rounded text-sm"
+              >
+                Suspend
+              </button>
+            </>
           )}
         </div>
 
@@ -272,7 +324,7 @@ export default function AdminGroupsIndex() {
                     <>
                       <button
                         onClick={() => toggleStatus(group.id, 'inactive')}
-                        className="bg-gray-500 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
+                        className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
                       >
                         <FaToggleOff /> Deactivate
                       </button>

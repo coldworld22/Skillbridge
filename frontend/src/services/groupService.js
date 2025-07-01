@@ -47,8 +47,8 @@ const groupService = {
     return groups.filter((g) => g.isPublic && g.status === 'active');
   },
 
-  getAllGroups: async (search) => {
-    const { data } = await api.get('/groups', { params: { search } });
+  getAllGroups: async (search, status) => {
+    const { data } = await api.get('/groups', { params: { search, status } });
     const list = data?.data ?? [];
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
