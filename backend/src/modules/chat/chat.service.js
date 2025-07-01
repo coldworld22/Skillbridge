@@ -28,6 +28,7 @@ exports.searchUsers = async (currentUserId, term) => {
       }
     })
     .whereNot("users.id", currentUserId)
+    .whereNotIn("users.role", ["Admin", "SuperAdmin"])
     .limit(20);
 };
 
