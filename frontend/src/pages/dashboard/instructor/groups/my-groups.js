@@ -60,6 +60,10 @@ export default function MyGroupsPage() {
       />
       <p className="text-sm text-gray-600">{group.description}</p>
 
+      <p className="text-xs text-gray-500">
+        👥 {group.membersCount ?? group.members_count ?? 0} members
+      </p>
+
       <div className="flex -space-x-2 pt-1">
         {[...Array(3)].map((_, i) => (
           <img
