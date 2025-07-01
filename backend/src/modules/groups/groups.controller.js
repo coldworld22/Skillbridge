@@ -8,7 +8,7 @@ const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
 exports.createGroup = catchAsync(async (req, res) => {
-  const { name, description, visibility, requires_approval } = req.body;
+  const { name, description, visibility, requires_approval, category_id, max_size, timezone } = req.body;
   if (await service.findByName(name)) {
     throw new AppError("Group name already exists", 409);
   }
@@ -20,7 +20,14 @@ exports.createGroup = catchAsync(async (req, res) => {
     visibility: visibility || "public",
     requires_approval: requires_approval || false,
     cover_image: req.file ? `/uploads/groups/${req.file.filename}` : undefined,
+    category_id: category_id || null,
+    max_size: max_size || null,
+    timezone: timezone || null,
   });
+  if (req.body.tags) {
+    const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+    await service.syncGroupTags(group.id, tags);
+  }
   await service.addMember(group.id, req.user.id, "admin");
 
   const students = await userModel.findStudents();
@@ -65,6 +72,10 @@ exports.updateGroup = catchAsync(async (req, res) => {
   const data = { ...req.body };
   if (req.file) data.cover_image = `/uploads/groups/${req.file.filename}`;
   const updated = await service.updateGroup(req.params.id, data);
+  if (req.body.tags) {
+    const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+    await service.syncGroupTags(req.params.id, tags);
+  }
   sendSuccess(res, updated);
 });
 

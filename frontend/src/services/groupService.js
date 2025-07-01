@@ -35,9 +35,10 @@ const groupService = {
   },
 
   getPublicGroups: async (search) => {
-    const { data } = await api.get("/groups", { params: { search } });
+    const { data } = await api.get('/groups', { params: { search } });
     const list = data?.data ?? [];
-    return Array.isArray(list) ? list.map(formatGroup) : list;
+    const groups = Array.isArray(list) ? list.map(formatGroup) : list;
+    return groups.filter((g) => g.isPublic);
   },
 
   getGroupById: async (id) => {

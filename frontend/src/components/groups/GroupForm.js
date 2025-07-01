@@ -134,6 +134,8 @@ export default function GroupForm() {
       if (imageFile) payload.append('cover_image', imageFile);
       if (category) payload.append('category_id', category);
       if (tags.length) payload.append('tags', JSON.stringify(tags));
+      if (maxSize) payload.append('max_size', maxSize);
+      if (timezone) payload.append('timezone', timezone);
 
       const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');
