@@ -17,7 +17,12 @@ export default function CreateGroupPage() {
 
   if (!hasHydrated || !user) return null;
 
-  const Layout = user.role === 'instructor' ? InstructorLayout : StudentLayout;
+  const layoutMap = {
+    instructor: InstructorLayout,
+    student: StudentLayout,
+  };
+
+  const Layout = layoutMap[user.role] || StudentLayout;
 
   return (
     <Layout>
