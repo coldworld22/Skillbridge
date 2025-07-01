@@ -135,7 +135,7 @@ export default function GroupForm() {
       toast.success('Group created successfully!');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create group');
+      toast.error(err.response?.data?.message || 'Failed to create group');
     } finally {
       setIsSubmitting(false);
     }
