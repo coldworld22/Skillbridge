@@ -297,12 +297,14 @@ export default function GroupForm() {
           />
 
           <div className="flex flex-wrap gap-3 max-h-60 overflow-y-auto">
-            {filteredUsers.map((user) => (
+          {filteredUsers.map((user) => (
               <div
                 key={user.id}
                 onClick={() => toggleUserInvite(user)}
                 className={`w-[calc(33%-0.75rem)] p-3 border rounded-lg cursor-pointer hover:bg-gray-50 flex gap-3 items-center transition-all ${
-                  invitedUsers.some((u) => u.id === user.id) ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'
+                  invitedUsers.some((u) => u.id === user.id)
+                    ? 'bg-yellow-50 border-yellow-400'
+                    : 'border-gray-200'
                 }`}
               >
 
@@ -318,9 +320,25 @@ export default function GroupForm() {
           </div>
 
           {invitedUsers.length > 0 && (
+            <div className="flex gap-2 mt-2 items-center">
+              {invitedUsers.slice(0, 10).map((u) => (
+                <img
+                  key={u.id}
+                  src={getAvatarUrl(u)}
+                  alt={u.name}
+                  className="w-8 h-8 rounded-full object-cover border"
+                />
+              ))}
+              {invitedUsers.length > 10 && (
+                <span className="text-xs text-gray-500">+{invitedUsers.length - 10} more</span>
+              )}
+            </div>
+          )}
+
+          {invitedUsers.length > 0 && (
             <div className="mt-4 space-y-2">
               <div className="flex gap-4 items-center">
-                <label className="text-sm font-medium">Send via:</label>
+                <label className="text-sm font-medium">Notification methods:</label>
                 <div className="flex flex-wrap gap-4">
                   {[
                     { value: 'email', icon: <Mail size={14} />, label: 'Email' },
@@ -339,6 +357,7 @@ export default function GroupForm() {
                     </label>
                   ))}
                 </div>
+                <p className="text-xs text-gray-500 mt-1">Select at least one method to notify invited users.</p>
               </div>
               <button
                 type="button"
