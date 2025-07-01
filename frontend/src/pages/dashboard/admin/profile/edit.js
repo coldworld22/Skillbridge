@@ -26,6 +26,7 @@ const profileSchema = z.object({
 export default function ProfileEditTemplate() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -43,10 +44,17 @@ export default function ProfileEditTemplate() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== "admin") return;
+
+    if (!hasHydrated) return;
+    if (!user || user.role?.toLowerCase() !== "admin") {
+      setLoadingProfile(false);
+      return;
+    }
 
     const loadProfile = async () => {
       try {
+        setLoadingProfile(true);
+
         const res = await getAdminProfile();
         const {
           full_name,
@@ -81,11 +89,14 @@ export default function ProfileEditTemplate() {
       } catch (err) {
         toast.error("Failed to load profile");
         console.error("Profile load error:", err);
+      } finally {
+        setLoadingProfile(false);
+
       }
     };
 
     loadProfile();
-  }, [user]);
+  }, [hasHydrated, user]);
 
 
   const handleChange = (e) => {
@@ -165,7 +176,9 @@ export default function ProfileEditTemplate() {
     }
   };
 
-  if (!hasHydrated) {
+
+  if (!hasHydrated || loadingProfile) {
+
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
