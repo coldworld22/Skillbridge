@@ -49,13 +49,14 @@ exports.getGroupTags = async (groupIds) => {
   return map;
 };
 
-exports.listGroups = async (search) => {
+exports.listGroups = async ({ search, status }) => {
   const rows = await db('groups as g')
     .leftJoin('users as u', 'g.creator_id', 'u.id')
     .leftJoin('categories as c', 'g.category_id', 'c.id')
     .leftJoin('group_members as gm', 'g.id', 'gm.group_id')
     .modify((qb) => {
       if (search) qb.whereILike('g.name', `%${search}%`);
+      if (status && status !== 'all') qb.andWhere('g.status', status);
     })
     .groupBy('g.id', 'u.full_name', 'c.name')
     .select(

@@ -61,7 +61,8 @@ exports.createGroup = catchAsync(async (req, res) => {
 });
 
 exports.listGroups = catchAsync(async (req, res) => {
-  const data = await service.listGroups(req.query.search);
+  const { search, status = 'all' } = req.query;
+  const data = await service.listGroups({ search, status });
   sendSuccess(res, data);
 });
 
