@@ -50,12 +50,22 @@ const groupService = {
   getGroupMembers: async (groupId) => {
     const { data } = await api.get(`/groups/${groupId}/members`);
     const list = data?.data ?? [];
-    return list.map((m) => ({
-      id: m.user_id,
-      name: m.name,
-      avatar: m.avatar,
-      role: m.role,
-    }));
+
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    return list.map((m) => {
+      const avatar = m.avatar
+        ? m.avatar.startsWith('http') || m.avatar.startsWith('blob:')
+          ? m.avatar
+          : `${base}${m.avatar}`
+        : '/images/default-avatar.png';
+      return {
+        id: m.user_id,
+        name: m.name,
+        avatar,
+        role: m.role,
+      };
+    });
+
   },
 
   manageMember: async (groupId, memberId, action) => {
