@@ -18,8 +18,11 @@ const formatGroup = (g) => {
     isPublic: g.visibility ? g.visibility === 'public' : g.isPublic ?? true,
     createdAt: g.created_at ?? g.createdAt,
     categoryId: g.category_id ?? g.categoryId ?? null,
+    category: g.category ?? g.category_name ?? null,
     maxSize: g.max_size ?? g.maxSize ?? null,
     timezone: g.timezone ?? null,
+    creator: g.creator_name ?? g.creator ?? null,
+    status: g.status ?? 'active',
     tags,
   };
 };
