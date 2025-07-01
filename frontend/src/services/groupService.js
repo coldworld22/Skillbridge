@@ -30,6 +30,11 @@ const groupService = {
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
+  getGroupById: async (id) => {
+    const { data } = await api.get(`/groups/${id}`);
+    return data?.data ? formatGroup(data.data) : null;
+  },
+
   joinGroup: async (groupId) => {
     const { data } = await api.post(`/groups/${groupId}/join`);
     return data?.data;

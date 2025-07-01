@@ -6,31 +6,8 @@ import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
 import GroupPermissionSettings from '@/components/chat/GroupPermissionSettings';
+import groupService from '@/services/groupService';
 
-const mockGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    description: 'React, Vue, and modern UI lovers',
-    tags: ['React', 'Tailwind'],
-    isPublic: true,
-    membersCount: 128,
-    createdAt: '2024-12-01',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdBy: 'Sarah Johnson',
-  },
-  {
-    id: 'g2',
-    name: 'AI Pioneers',
-    description: 'Discuss machine learning and AI trends',
-    tags: ['AI', 'ML'],
-    isPublic: true,
-    membersCount: 210,
-    createdAt: '2025-01-15',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdBy: 'Ali Mansour',
-  },
-];
 
 export default function GroupDetailsPage() {
   const router = useRouter();
@@ -42,21 +19,35 @@ export default function GroupDetailsPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!router.isReady) return;
-
-    const g = mockGroups.find((grp) => grp.id === groupId);
-    if (g) {
-      setGroup(g);
-      setLoading(false);
-    } else {
-      toast.error('Group not found.');
-      router.push('/dashboard/student/groups/explore');
-    }
+    if (!router.isReady || !groupId) return;
+    const fetchGroup = async () => {
+      try {
+        const data = await groupService.getGroupById(groupId);
+        if (data) {
+          setGroup(data);
+        } else {
+          toast.error('Group not found.');
+          router.push('/dashboard/student/groups/explore');
+        }
+      } catch (err) {
+        toast.error('Failed to load group.');
+        router.push('/dashboard/student/groups/explore');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGroup();
   }, [router.isReady, groupId]);
 
-  const handleJoin = () => {
-    setJoinStatus('pending');
-    toast.success('Join request sent!');
+  const handleJoin = async () => {
+    try {
+      setJoinStatus('pending');
+      await groupService.joinGroup(groupId);
+      toast.success('Join request sent!');
+    } catch (err) {
+      setJoinStatus('none');
+      toast.error('Failed to send join request');
+    }
   };
 
   if (loading || !group) {
@@ -79,10 +70,12 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
-            <p className="text-sm text-gray-500">👑 Created by {group.createdBy}</p>
+            {group.creator_id && (
+              <p className="text-sm text-gray-500">👑 Creator ID: {group.creator_id}</p>
+            )}
           </div>
           <span className="text-sm text-gray-500">
-            📅 {new Date(group.createdAt).toLocaleDateString()}
+            📅 {new Date(group.created_at).toLocaleDateString()}
           </span>
         </div>
 
@@ -102,15 +95,24 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'overview' && (
           <div className="space-y-4">
-            <img src={group.image} alt={group.name} className="w-full h-48 object-cover rounded-xl" />
+            <img
+              src={group.cover_image || group.image}
+              alt={group.name}
+              className="w-full h-48 object-cover rounded-xl"
+            />
             <p className="text-gray-700">{group.description}</p>
-            <div className="flex flex-wrap gap-2">
-              {group.tags.map((tag) => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+            {Array.isArray(group.tags) && group.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {group.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {joinStatus === 'none' && (
               <button
@@ -164,7 +166,7 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'members' && (
           <div className="space-y-4">
-            <GroupMembersList />
+            <GroupMembersList groupId={group.id} />
           </div>
         )}
 
