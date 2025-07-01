@@ -62,3 +62,32 @@ exports.listTags = async () => {
     .where("t.active", true)
     .orderBy("t.name");
 };
+// List all members of a group with basic user info
+exports.listMembers = (groupId) => {
+  return db('group_members as gm')
+    .join('users as u', 'gm.user_id', 'u.id')
+    .select(
+      'u.id as user_id',
+      db.raw("COALESCE(u.full_name, '') as name"),
+      db.raw("COALESCE(u.avatar_url, '') as avatar"),
+      'gm.role'
+    )
+    .where('gm.group_id', groupId);
+};
+
+// Update member role or remove
+exports.manageMember = async (groupId, userId, action) => {
+  if (action === 'kick') {
+    await db('group_members').where({ group_id: groupId, user_id: userId }).del();
+    return { action: 'kick' };
+  }
+  const role = action === 'promote' ? 'admin' : action === 'demote' ? 'member' : null;
+  if (role) {
+    const [row] = await db('group_members')
+      .where({ group_id: groupId, user_id: userId })
+      .update({ role })
+      .returning('*');
+    return row;
+  }
+  return null;
+};
