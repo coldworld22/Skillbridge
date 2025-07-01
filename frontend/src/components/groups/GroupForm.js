@@ -9,7 +9,164 @@ import { createNotification } from '@/services/notificationService';
 import { API_BASE_URL } from '@/config/config';
 
 export default function GroupForm() {
-  // ... (keep all your existing state declarations)
+  const [groupName, setGroupName] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState('');
+  const [category, setCategory] = useState('');
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [invitedUsers, setInvitedUsers] = useState([]);
+  const [query, setQuery] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inviteMethods, setInviteMethods] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [maxSize, setMaxSize] = useState('');
+  const [timezone, setTimezone] = useState('');
+
+  const getAvatarUrl = (user) => {
+    const url =
+      user.avatar ||
+      user.avatar_url ||
+      user.profileImage ||
+      user.profile_image ||
+      '';
+    if (!url) return '/images/default-avatar.png';
+    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:'))
+      return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `${API_BASE_URL}${clean}`;
+
+  };
+
+  useEffect(() => {
+    const loadInitial = async () => {
+      try {
+        const cats = await fetchAllCategories();
+        setAvailableCategories(cats?.data || cats || []);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+      }
+      try {
+        const tags = await groupService.getTags();
+        setAvailableTags(tags || []);
+      } catch (err) {
+        console.error('Failed to load tags', err);
+      }
+      try {
+        const result = await userService.searchUsers('');
+        setUsers(result);
+      } catch (err) {
+        console.error('Failed to load users', err);
+      }
+    };
+    loadInitial();
+  }, []);
+
+  useEffect(() => {
+    const search = async () => {
+      try {
+        const result = await userService.searchUsers(query);
+        setUsers(result);
+      } catch {
+        setUsers([]);
+      }
+    };
+    search();
+  }, [query]);
+
+  const filteredUsers = users.filter(
+    (u) => !['admin', 'superadmin'].includes(u.role?.toLowerCase())
+  );
+
+  const toggleUserInvite = (user) => {
+    if (invitedUsers.some((u) => u.id === user.id)) {
+      setInvitedUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } else {
+      setInvitedUsers((prev) => [...prev, user]);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+      setImageFile(file);
+    }
+  };
+
+  const handleTagAdd = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const handleTagSelect = (tag) => {
+    const name = typeof tag === 'string' ? tag : tag.name;
+    if (!tags.includes(name)) setTags([...tags, name]);
+  };
+
+  const toggleInviteMethod = (method) => {
+    setInviteMethods((prev) =>
+      prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const payload = new FormData();
+      payload.append('name', groupName);
+      payload.append('description', description);
+      payload.append('visibility', type || 'public');
+      payload.append('requires_approval', type === 'public');
+      if (imageFile) payload.append('cover_image', imageFile);
+      if (category) payload.append('category_id', category);
+      if (tags.length) payload.append('tags', JSON.stringify(tags));
+
+      await groupService.createGroup(payload);
+      toast.success('Group created successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to create group');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSendInvites = async () => {
+    try {
+      for (const user of invitedUsers) {
+        // always send message and notification
+        await sendChatMessage(user.id, {
+          text: `You are invited to join the group ${groupName}`,
+        });
+        await createNotification({
+          user_id: user.id,
+          type: 'group_invite',
+          message: `You are invited to join the group ${groupName}`,
+        });
+      }
+
+      if (inviteMethods.includes('email') || inviteMethods.includes('whatsapp')) {
+        toast.info(`Additional invite methods: ${inviteMethods.join(', ')}`);
+      }
+
+      toast.success(
+        `Invites sent to ${invitedUsers.length} member${invitedUsers.length !== 1 ? 's' : ''}.`
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to send invitations');
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-lg max-w-3xl mx-auto border border-gray-100">
@@ -293,11 +450,9 @@ export default function GroupForm() {
                     {[
                       { value: 'email', icon: <Mail size={16} />, label: 'Email' },
                       { value: 'whatsapp', icon: <Smartphone size={16} />, label: 'WhatsApp' },
-                      { value: 'platform', icon: <MessageSquare size={16} />, label: 'Platform' },
-                      { value: 'notification', icon: <Bell size={16} />, label: 'Notification' },
                     ].map((method) => (
-                      <label 
-                        key={method.value} 
+                      <label
+                        key={method.value}
                         className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition ${
                           inviteMethods.includes(method.value)
                             ? 'bg-blue-50 border-blue-300'
@@ -327,12 +482,7 @@ export default function GroupForm() {
                 <button
                   type="button"
                   onClick={handleSendInvites}
-                  disabled={!inviteMethods.length}
-                  className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg font-medium transition ${
-                    !inviteMethods.length
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }`}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   <Send size={16} />
                   Send Invitations to {invitedUsers.length} Member{invitedUsers.length !== 1 ? 's' : ''}
