@@ -2,23 +2,9 @@ import { useState, useEffect } from 'react';
 import { X, Mail, Bell, MessageSquare, Smartphone, Send, Image as ImageIcon, Tag, Users } from 'lucide-react';
 import { toast } from 'react-toastify';
 import groupService from '@/services/groupService';
+import { fetchAllCategories } from '@/services/admin/categoryService';
+import userService from '@/services/profile/userService';
 
-const allUsers = [
-  { id: 'u1', name: 'Ali Hassan', email: 'ali@example.com', phone: '+966500000001', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcUATNS9SzcJCCPuJ9OqlGynFYfxy2bOYVaw&s' },
-  { id: 'u2', name: 'Sarah Youssef', email: 'sarah@example.com', phone: '+966500000002', avatar: 'https://media.jimco.com/wp-content/uploads/2021/05/01133126/HJ_JIMCO_Image_Web-1.jpg' },
-  { id: 'u3', name: 'John Doe', email: 'john@example.com', phone: '+966500000003', avatar: 'https://left.eu/app/uploads/2024/07/HASSAN_Rima_FR_023-scaled.jpg' },
-  { id: 'u4', name: 'Fatima Noor', email: 'fatima@example.com', phone: '+966500000004', avatar: 'https://cemse.kaust.edu.sa/sites/default/files/styles/medium/public/images/KAUST-CEMSE-CS-Ali-Hassan.jpg.webp?itok=PcI2Ge_o' },
-  { id: 'u5', name: 'Omar Said', email: 'omar@example.com', phone: '+966500000005', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHH98-reZj7tZKtSFYHGE_cOXf6Qdg241Dzw&s' },
-  { id: 'u6', name: 'Lina Abbas', email: 'lina@example.com', phone: '+966500000006', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-  { id: 'u7', name: 'Hassan Alami', email: 'hassan@example.com', phone: '+966500000007', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-  { id: 'u8', name: 'Maha Taleb', email: 'maha@example.com', phone: '+966500000008', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-  { id: 'u9', name: 'Salim Rajab', email: 'salim@example.com', phone: '+966500000009', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-  { id: 'u10', name: 'Dana Kamel', email: 'dana@example.com', phone: '+966500000010', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-  { id: 'u11', name: 'Yousef Jaber', email: 'yousef@example.com', phone: '+966500000011', avatar: 'https://thrive.princeton.edu/wp-content/uploads/sites/3/2019/09/Muhsin-Hassan.jpg' },
-];
-
-const mockCategories = ['Web Development', 'AI', 'Education', 'Design', 'Marketing'];
-const mockTags = ['JavaScript', 'React', 'UI/UX', 'Backend', 'Data Science', 'Python', 'Blockchain'];
 
 export default function GroupForm() {
   const [groupName, setGroupName] = useState('');
@@ -33,22 +19,48 @@ export default function GroupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteMethods, setInviteMethods] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [users, setUsers] = useState([]);
   const [maxSize, setMaxSize] = useState('');
   const [timezone, setTimezone] = useState('');
 
   useEffect(() => {
-    setAvailableCategories(mockCategories);
+    const loadInitial = async () => {
+      try {
+        const cats = await fetchAllCategories();
+        setAvailableCategories(cats || []);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+      }
+      try {
+        const tags = await groupService.getTags();
+        setAvailableTags(tags || []);
+      } catch (err) {
+        console.error('Failed to load tags', err);
+      }
+      try {
+        const result = await userService.searchUsers('');
+        setUsers(result);
+      } catch (err) {
+        console.error('Failed to load users', err);
+      }
+    };
+    loadInitial();
   }, []);
 
-  const visibleUsers = allUsers.slice(0, 10);
-  const filteredUsers = query
-    ? allUsers.filter(
-        (u) =>
-          u.name.toLowerCase().includes(query.toLowerCase()) ||
-          u.email.toLowerCase().includes(query.toLowerCase()) ||
-          u.phone.includes(query)
-      )
-    : visibleUsers;
+  useEffect(() => {
+    const search = async () => {
+      try {
+        const result = await userService.searchUsers(query);
+        setUsers(result);
+      } catch {
+        setUsers([]);
+      }
+    };
+    search();
+  }, [query]);
+
+  const filteredUsers = users;
 
   const toggleUserInvite = (user) => {
     if (invitedUsers.some((u) => u.id === user.id)) {
@@ -75,7 +87,8 @@ export default function GroupForm() {
   };
 
   const handleTagSelect = (tag) => {
-    if (!tags.includes(tag)) setTags([...tags, tag]);
+    const name = typeof tag === 'string' ? tag : tag.name;
+    if (!tags.includes(name)) setTags([...tags, name]);
   };
 
   const toggleInviteMethod = (method) => {
@@ -94,6 +107,8 @@ export default function GroupForm() {
         visibility: type || 'public',
         requires_approval: false,
         cover_image: null,
+        category_id: category || null,
+        tags,
       });
       toast.success('Group created successfully!');
     } catch (err) {
@@ -162,7 +177,7 @@ export default function GroupForm() {
           >
             <option value="">Select a category</option>
             {availableCategories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
         </div>
@@ -179,16 +194,16 @@ export default function GroupForm() {
             />
             <button type="button" onClick={handleTagAdd} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm">Add</button>
           </div>
-          {mockTags.length > 0 && (
+          {availableTags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
-              {mockTags.map((tag) => (
+              {availableTags.map((tag) => (
                 <button
-                  key={tag}
+                  key={tag.id}
                   type="button"
                   onClick={() => handleTagSelect(tag)}
                   className="bg-gray-200 hover:bg-gray-300 text-xs px-2 py-1 rounded-full"
                 >
-                  {tag}
+                  {tag.name}
                 </button>
               ))}
             </div>
@@ -247,7 +262,7 @@ export default function GroupForm() {
                   invitedUsers.some((u) => u.id === user.id) ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'
                 }`}
               >
-                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                <img src={user.avatar || user.profileImage} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">{user.name}</div>
                   <div className="text-xs text-gray-500">{user.email} · {user.phone}</div>
