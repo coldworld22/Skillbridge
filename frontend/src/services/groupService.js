@@ -1,9 +1,18 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
+
+const formatGroup = (g) => ({
+  ...g,
+  cover_image: g.cover_image
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${g.cover_image}`
+    : g.cover_image,
+});
 
 const groupService = {
   getMyGroups: async () => {
     const { data } = await api.get("/groups/my");
-    return data?.data ?? [];
+    const list = data?.data ?? [];
+    return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
   getTags: async () => {
@@ -13,7 +22,8 @@ const groupService = {
 
   getPublicGroups: async (search) => {
     const { data } = await api.get("/groups", { params: { search } });
-    return data?.data ?? [];
+    const list = data?.data ?? [];
+    return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
   joinGroup: async (groupId) => {
@@ -25,7 +35,7 @@ const groupService = {
     const { data } = await api.post('/groups', payload, {
       headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     });
-    return data?.data;
+    return data?.data ? formatGroup(data.data) : null;
   },
 };
 
