@@ -65,3 +65,5 @@ items to the cart and completing checkout. The `checkout` method now generates a
 unique enrollment ID for each class and returns both the created enrollment and
 payment record.
 
+
+For a walkthrough of creating a class, managing assignments, calculating final scores and issuing certificates see [docs/class-lifecycle-workflow.md](docs/class-lifecycle-workflow.md).
