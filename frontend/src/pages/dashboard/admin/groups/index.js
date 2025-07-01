@@ -137,6 +137,7 @@ export default function AdminGroupsIndex() {
         )
       );
       toast.success(`Status updated to ${status} for selected groups`);
+
     }
   };
 
