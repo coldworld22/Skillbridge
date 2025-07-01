@@ -113,20 +113,36 @@ exports.requestJoin = async (groupId, userId) => {
 };
 
 exports.getUserGroups = async (userId) => {
-  const memberQuery = db("group_members as gm")
-    .join("groups as g", "gm.group_id", "g.id")
-    .leftJoin("users as u", "g.creator_id", "u.id")
-    .leftJoin("categories as c", "g.category_id", "c.id")
-    .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+
+  const memberQuery = db('group_members as gm')
+    .join('groups as g', 'gm.group_id', 'g.id')
+    .leftJoin('users as u', 'g.creator_id', 'u.id')
+    .leftJoin('categories as c', 'g.category_id', 'c.id')
+    .leftJoin('group_members as gm2', 'g.id', 'gm2.group_id')
     .select(
-      "g.*",
-      "gm.role",
+      'g.*',
+      'gm.role',
       db.raw("COALESCE(u.full_name, '') as creator_name"),
       db.raw("COALESCE(c.name, '') as category"),
-      db.raw("COUNT(DISTINCT gm2.id) as members_count")
+      db.raw('COUNT(DISTINCT gm2.id) as members_count')
     )
-    .where("gm.user_id", userId)
-    .groupBy("g.id", "gm.role", "u.full_name", "c.name");
+    .where('gm.user_id', userId)
+    .groupBy('g.id', 'gm.role', 'u.full_name', 'c.name');
+
+  const creatorQuery = db('groups as g')
+    .leftJoin('users as u', 'g.creator_id', 'u.id')
+    .leftJoin('categories as c', 'g.category_id', 'c.id')
+    .leftJoin('group_members as gm2', 'g.id', 'gm2.group_id')
+    .select(
+      'g.*',
+      db.raw("'admin' as role"),
+      db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(c.name, '') as category"),
+      db.raw('COUNT(DISTINCT gm2.id) as members_count')
+    )
+    .where('g.creator_id', userId)
+    .groupBy('g.id', 'u.full_name', 'c.name');
+
 
   const pendingQuery = db("group_join_requests as gj")
     .join("groups as g", "gj.group_id", "g.id")
@@ -144,9 +160,17 @@ exports.getUserGroups = async (userId) => {
     .andWhere("gj.status", "pending")
     .groupBy("g.id", "u.full_name", "c.name");
 
-  const rows = await memberQuery.unionAll(pendingQuery);
+  const rows = await creatorQuery.unionAll([memberQuery, pendingQuery]);
   const tagsMap = await exports.getGroupTags(rows.map((g) => g.id));
-  return rows.map((g) => ({ ...g, tags: tagsMap[g.id] || [] }));
+  const seen = new Set();
+  return rows
+    .filter((g) => {
+      if (seen.has(g.id)) return false;
+      seen.add(g.id);
+      return true;
+    })
+    .map((g) => ({ ...g, tags: tagsMap[g.id] || [] }));
+
 };
 
 exports.listTags = async () => {
