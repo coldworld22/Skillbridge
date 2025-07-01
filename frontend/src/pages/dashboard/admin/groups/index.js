@@ -164,6 +164,7 @@ export default function AdminGroupsIndex() {
             <option value="all">All Statuses</option>
             <option value="pending">🕓 Pending</option>
             <option value="active">✅ Active</option>
+            <option value="inactive">⏸ Inactive</option>
             <option value="suspended">🚫 Suspended</option>
           </select>
 
@@ -229,6 +230,8 @@ export default function AdminGroupsIndex() {
                         ? 'bg-green-100 text-green-700'
                         : group.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-800'
+                        : group.status === 'inactive'
+                        ? 'bg-gray-100 text-gray-700'
                         : 'bg-red-100 text-red-700'
                     }`}
                   >
@@ -266,11 +269,28 @@ export default function AdminGroupsIndex() {
                   )}
 
                   {group.status === 'active' && (
+                    <>
+                      <button
+                        onClick={() => toggleStatus(group.id, 'inactive')}
+                        className="bg-gray-500 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
+                      >
+                        <FaToggleOff /> Deactivate
+                      </button>
+                      <button
+                        onClick={() => toggleStatus(group.id, 'suspended')}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
+                      >
+                        <FaToggleOff /> Suspend
+                      </button>
+                    </>
+                  )}
+
+                  {group.status === 'inactive' && (
                     <button
-                      onClick={() => toggleStatus(group.id, 'suspended')}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
+                      onClick={() => toggleStatus(group.id, 'active')}
+                      className="bg-green-600 text-white px-3 py-1 rounded flex items-center gap-1 text-sm"
                     >
-                      <FaToggleOff /> Suspend
+                      <FaToggleOn /> Activate
                     </button>
                   )}
 

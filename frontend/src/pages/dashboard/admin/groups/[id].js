@@ -18,9 +18,6 @@ import {
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
 
-// Placeholder for pending join requests functionality
-const mockRequests = [];
-
 // ...imports (same as before)...
 
 // Continue from your existing AdminGroupDetailsPage component
@@ -31,7 +28,7 @@ export default function AdminGroupDetailsPage() {
   const [group, setGroup] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [members, setMembers] = useState([]);
-  const [requests, setRequests] = useState(mockRequests);
+  const [requests, setRequests] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -52,6 +49,12 @@ export default function AdminGroupDetailsPage() {
         setMembers(list);
       } catch {
         setMembers([]);
+      }
+      try {
+        const reqs = await groupService.getJoinRequestsForGroup(id);
+        setRequests(reqs);
+      } catch {
+        setRequests([]);
       }
     };
     load();
@@ -364,13 +367,18 @@ export default function AdminGroupDetailsPage() {
                       <td className="p-2 text-center flex justify-center gap-2">
                         <button
                           className="bg-green-600 text-white px-2 py-1 rounded"
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm(`Approve ${req.name}?`)) {
-                              setMembers([
-                                ...members,
-                                { id: Date.now(), name: req.name, role: 'member' },
-                              ]);
-                              setRequests(requests.filter((r) => r.id !== req.id));
+                              try {
+                                await groupService.approveRequest(req.id);
+                                setMembers([
+                                  ...members,
+                                  { id: req.userId, name: req.name, role: 'member' },
+                                ]);
+                                setRequests(requests.filter((r) => r.id !== req.id));
+                              } catch {
+                                // ignore
+                              }
                             }
                           }}
                         >
@@ -378,9 +386,14 @@ export default function AdminGroupDetailsPage() {
                         </button>
                         <button
                           className="bg-red-500 text-white px-2 py-1 rounded"
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm(`Reject ${req.name}?`)) {
-                              setRequests(requests.filter((r) => r.id !== req.id));
+                              try {
+                                await groupService.rejectRequest(req.id);
+                                setRequests(requests.filter((r) => r.id !== req.id));
+                              } catch {
+                                // ignore
+                              }
                             }
                           }}
                         >

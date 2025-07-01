@@ -18,8 +18,11 @@ const formatGroup = (g) => {
     isPublic: g.visibility ? g.visibility === 'public' : g.isPublic ?? true,
     createdAt: g.created_at ?? g.createdAt,
     categoryId: g.category_id ?? g.categoryId ?? null,
+    category: g.category ?? g.category_name ?? null,
     maxSize: g.max_size ?? g.maxSize ?? null,
     timezone: g.timezone ?? null,
+    creator: g.creator_name ?? g.creator ?? null,
+    status: g.status ?? 'active',
     tags,
   };
 };
@@ -135,6 +138,30 @@ const groupService = {
   updateGroup: async (id, payload) => {
     const { data } = await api.patch(`/groups/${id}`, payload);
     return data?.data ? formatGroup(data.data) : null;
+  },
+
+  getJoinRequestsForGroup: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/requests`);
+    const list = data?.data ?? [];
+    return Array.isArray(list)
+      ? list.map((r) => ({
+          id: r.id,
+          userId: r.user_id,
+          name: r.name,
+          email: r.email,
+          requestedAt: r.requested_at,
+        }))
+      : [];
+  },
+
+  approveRequest: async (requestId) => {
+    await api.post(`/groups/requests/${requestId}`, { action: 'approve' });
+    return true;
+  },
+
+  rejectRequest: async (requestId) => {
+    await api.post(`/groups/requests/${requestId}`, { action: 'reject' });
+    return true;
   },
 
 };
