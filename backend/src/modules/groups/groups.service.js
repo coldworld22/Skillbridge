@@ -115,16 +115,38 @@ exports.requestJoin = async (groupId, userId) => {
 exports.getUserGroups = async (userId) => {
   const memberQuery = db("group_members as gm")
     .join("groups as g", "gm.group_id", "g.id")
-    .select("g.*", "gm.role")
-    .where("gm.user_id", userId);
+    .leftJoin("users as u", "g.creator_id", "u.id")
+    .leftJoin("categories as c", "g.category_id", "c.id")
+    .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+    .select(
+      "g.*",
+      "gm.role",
+      db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(c.name, '') as category"),
+      db.raw("COUNT(DISTINCT gm2.id) as members_count")
+    )
+    .where("gm.user_id", userId)
+    .groupBy("g.id", "gm.role", "u.full_name", "c.name");
 
   const pendingQuery = db("group_join_requests as gj")
     .join("groups as g", "gj.group_id", "g.id")
-    .select("g.*", db.raw("'pending' as role"))
+    .leftJoin("users as u", "g.creator_id", "u.id")
+    .leftJoin("categories as c", "g.category_id", "c.id")
+    .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+    .select(
+      "g.*",
+      db.raw("'pending' as role"),
+      db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(c.name, '') as category"),
+      db.raw("COUNT(DISTINCT gm2.id) as members_count")
+    )
     .where("gj.user_id", userId)
-    .andWhere("gj.status", "pending");
+    .andWhere("gj.status", "pending")
+    .groupBy("g.id", "u.full_name", "c.name");
 
-  return memberQuery.unionAll(pendingQuery);
+  const rows = await memberQuery.unionAll(pendingQuery);
+  const tagsMap = await exports.getGroupTags(rows.map((g) => g.id));
+  return rows.map((g) => ({ ...g, tags: tagsMap[g.id] || [] }));
 };
 
 exports.listTags = async () => {
