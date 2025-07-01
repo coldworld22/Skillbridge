@@ -46,6 +46,22 @@ const groupService = {
     });
     return data?.data ? formatGroup(data.data) : null;
   },
+
+  getGroupMembers: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/members`);
+    const list = data?.data ?? [];
+    return list.map((m) => ({
+      id: m.user_id,
+      name: m.name,
+      avatar: m.avatar,
+      role: m.role,
+    }));
+  },
+
+  manageMember: async (groupId, memberId, action) => {
+    const { data } = await api.post(`/groups/${groupId}/members/${memberId}/manage`, { action });
+    return data?.data;
+  },
 };
 
 export default groupService;

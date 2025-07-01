@@ -54,3 +54,14 @@ exports.listTags = catchAsync(async (_req, res) => {
   const data = await service.listTags();
   sendSuccess(res, data);
 });
+exports.listMembers = catchAsync(async (req, res) => {
+  const members = await service.listMembers(req.params.id);
+  sendSuccess(res, members);
+});
+
+exports.manageMember = catchAsync(async (req, res) => {
+  const { memberId } = req.params;
+  const { action } = req.body;
+  const result = await service.manageMember(req.params.id, memberId, action);
+  sendSuccess(res, result);
+});
