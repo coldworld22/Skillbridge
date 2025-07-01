@@ -91,3 +91,11 @@ exports.manageMember = async (groupId, userId, action) => {
   }
   return null;
 };
+
+exports.isMember = async (groupId, userId) => {
+  const row = await db('group_members')
+    .where({ group_id: groupId, user_id: userId })
+    .first();
+  return !!row;
+};
+

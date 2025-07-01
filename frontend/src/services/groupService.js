@@ -72,6 +72,30 @@ const groupService = {
     const { data } = await api.post(`/groups/${groupId}/members/${memberId}/manage`, { action });
     return data?.data;
   },
+
+  getGroupMessages: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/messages`);
+    const list = data?.data ?? [];
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    return list.map((m) => ({
+      id: m.id,
+      senderId: m.sender_id,
+      sender: m.sender_name,
+      avatar: m.sender_avatar
+        ? m.sender_avatar.startsWith('http') || m.sender_avatar.startsWith('blob:')
+          ? m.sender_avatar
+          : `${base}${m.sender_avatar}`
+        : '/images/default-avatar.png',
+      text: m.content,
+      timestamp: m.sent_at,
+    }));
+  },
+
+  sendGroupMessage: async (groupId, message) => {
+    const { data } = await api.post(`/groups/${groupId}/messages`, { message });
+    return data?.data;
+  },
+
 };
 
 export default groupService;
