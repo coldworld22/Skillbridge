@@ -44,6 +44,7 @@ export default function ProfileEditTemplate() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   useEffect(() => {
+
     if (!hasHydrated) return;
     if (!user || user.role?.toLowerCase() !== "admin") {
       setLoadingProfile(false);
@@ -53,6 +54,7 @@ export default function ProfileEditTemplate() {
     const loadProfile = async () => {
       try {
         setLoadingProfile(true);
+
         const res = await getAdminProfile();
         const {
           full_name,
@@ -89,11 +91,13 @@ export default function ProfileEditTemplate() {
         console.error("Profile load error:", err);
       } finally {
         setLoadingProfile(false);
+
       }
     };
 
     loadProfile();
   }, [hasHydrated, user]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -172,7 +176,9 @@ export default function ProfileEditTemplate() {
     }
   };
 
+
   if (!hasHydrated || loadingProfile) {
+
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
