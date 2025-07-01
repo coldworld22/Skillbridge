@@ -113,6 +113,7 @@ exports.requestJoin = async (groupId, userId) => {
 };
 
 exports.getUserGroups = async (userId) => {
+
   const memberQuery = db('group_members as gm')
     .join('groups as g', 'gm.group_id', 'g.id')
     .leftJoin('users as u', 'g.creator_id', 'u.id')
@@ -142,6 +143,7 @@ exports.getUserGroups = async (userId) => {
     .where('g.creator_id', userId)
     .groupBy('g.id', 'u.full_name', 'c.name');
 
+
   const pendingQuery = db("group_join_requests as gj")
     .join("groups as g", "gj.group_id", "g.id")
     .leftJoin("users as u", "g.creator_id", "u.id")
@@ -168,6 +170,7 @@ exports.getUserGroups = async (userId) => {
       return true;
     })
     .map((g) => ({ ...g, tags: tagsMap[g.id] || [] }));
+
 };
 
 exports.listTags = async () => {
