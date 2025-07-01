@@ -12,6 +12,7 @@ router.get("/:id/members", verifyToken, ctrl.listMembers);
 router.post("/:id/members/:memberId/manage", verifyToken, ctrl.manageMember);
 router.get("/:id/messages", verifyToken, msgCtrl.getMessages);
 router.post("/:id/messages", verifyToken, msgUpload, msgCtrl.sendMessage);
+
 router.post("/", verifyToken, upload, ctrl.createGroup);
 router.get("/", ctrl.listGroups);
 router.get("/:id", ctrl.getGroup);

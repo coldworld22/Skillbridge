@@ -50,6 +50,7 @@ const groupService = {
   getGroupMembers: async (groupId) => {
     const { data } = await api.get(`/groups/${groupId}/members`);
     const list = data?.data ?? [];
+
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return list.map((m) => {
       const avatar = m.avatar
@@ -64,6 +65,7 @@ const groupService = {
         role: m.role,
       };
     });
+
   },
 
   manageMember: async (groupId, memberId, action) => {
@@ -85,11 +87,14 @@ const groupService = {
           : `${base}${m.sender_avatar}`
         : '/images/default-avatar.png',
       text: m.content,
+
       file: m.file_url ? (m.file_url.startsWith('http') || m.file_url.startsWith('blob:') || m.file_url.startsWith('data:') ? m.file_url : `${base}${m.file_url}`) : null,
       audio: m.audio_url ? (m.audio_url.startsWith('http') || m.audio_url.startsWith('blob:') || m.audio_url.startsWith('data:') ? m.audio_url : `${base}${m.audio_url}`) : null,
+
       timestamp: m.sent_at,
     }));
   },
+
 
   sendGroupMessage: async (groupId, { text, file, audio }) => {
     const form = new FormData();
@@ -101,6 +106,7 @@ const groupService = {
     });
     return data?.data;
   },
+
 };
 
 export default groupService;
