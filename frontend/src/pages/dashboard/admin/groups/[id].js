@@ -3,43 +3,23 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import {
-  FaUsers, FaCalendarAlt, FaLock, FaUserShield, FaTrash, FaUserTag,
-  FaUserPlus, FaTimes, FaDownload, FaCheckSquare, FaRegSquare, FaFolderOpen
+  FaUsers,
+  FaCalendarAlt,
+  FaLock,
+  FaUserShield,
+  FaTrash,
+  FaUserTag,
+  FaUserPlus,
+  FaTimes,
+  FaDownload,
+  FaCheckSquare,
+  FaRegSquare,
+  FaFolderOpen,
 } from 'react-icons/fa';
+import groupService from '@/services/groupService';
 
-const imagePool = [
-  'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE-jRZ8r7TmUYfX4yqoiabzWXlqMiU4mZbxw&s',
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFsWQ2eTVL1xGadTXxeFlmMgNmWr31H7CmRg&s',
-];
-
-const mockGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    creator: 'Sarah Johnson',
-    status: 'pending',
-    membersCount: 128,
-    isPublic: true,
-    createdAt: '2024-12-01',
-    image: imagePool[0],
-    category: 'Web Development',
-    description: 'Group for frontend engineers who love React, Vue, and UI topics.',
-    purpose: 'To collaborate on frontend tools, trends, and build open source UI kits.',
-    tools: ['Figma', 'React', 'TailwindCSS'],
-  }
-];
-
-const initialMembers = [
-  { id: 1, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'Owner', joinedAt: '2024-12-01' },
-  { id: 2, name: 'Ali Mansour', email: 'ali@example.com', role: 'Moderator', joinedAt: '2025-01-15' },
-  { id: 3, name: 'Noura Faris', email: 'noura@example.com', role: 'Member', joinedAt: '2025-02-05' },
-];
-
-const mockRequests = [
-  { id: 101, name: 'Lina Qassem', email: 'lina@example.com', requestedAt: '2025-03-12' },
-  { id: 102, name: 'Tariq Nabil', email: 'tariq@example.com', requestedAt: '2025-03-10' },
-];
+// Placeholder for pending join requests functionality
+const mockRequests = [];
 
 // ...imports (same as before)...
 
@@ -50,7 +30,7 @@ export default function AdminGroupDetailsPage() {
   const { id } = router.query;
   const [group, setGroup] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [members, setMembers] = useState(initialMembers);
+  const [members, setMembers] = useState([]);
   const [requests, setRequests] = useState(mockRequests);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
@@ -59,20 +39,31 @@ export default function AdminGroupDetailsPage() {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    if (id) {
-      const found = mockGroups.find((g) => g.id === id);
-      setGroup(found);
-    }
-  }, [id]);
+    if (!router.isReady || !id) return;
+    const load = async () => {
+      try {
+        const data = await groupService.getGroupById(id);
+        setGroup(data);
+      } catch {
+        setGroup(null);
+      }
+      try {
+        const list = await groupService.getGroupMembers(id);
+        setMembers(list);
+      } catch {
+        setMembers([]);
+      }
+    };
+    load();
+  }, [router.isReady, id]);
 
-  const filteredMembers = members.filter(m =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = members.filter((m) =>
+    m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const sortedMembers = [...filteredMembers].sort((a, b) => {
     if (sortKey === 'name') return a.name.localeCompare(b.name);
-    if (sortKey === 'role') return a.role.localeCompare(b.role);
-    return new Date(b.joinedAt) - new Date(a.joinedAt);
+    if (sortKey === 'role') return (a.role || '').localeCompare(b.role || '');
+    return 0;
   });
   const paginatedMembers = sortedMembers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
@@ -87,28 +78,52 @@ export default function AdminGroupDetailsPage() {
     setSelectedMembers(allSelected ? selectedMembers.filter(id => !ids.includes(id)) : [...new Set([...selectedMembers, ...ids])]);
   };
 
-  const bulkRemove = () => {
-    if (confirm("Are you sure you want to remove the selected members?")) {
-      setMembers(members.filter(m => !selectedMembers.includes(m.id)));
+  const bulkRemove = async () => {
+    if (!group) return;
+    if (confirm('Are you sure you want to remove the selected members?')) {
+      for (const mid of selectedMembers) {
+        try {
+          await groupService.manageMember(group.id, mid, 'kick');
+        } catch {
+          // ignore errors per member
+        }
+      }
+      setMembers(members.filter((m) => !selectedMembers.includes(m.id)));
       setSelectedMembers([]);
     }
   };
 
-  const handleRemove = (id) => {
-    if (confirm("Remove this member?")) {
-      setMembers(members.filter(m => m.id !== id));
+  const handleRemove = async (id) => {
+    if (!group) return;
+    if (confirm('Remove this member?')) {
+      try {
+        await groupService.manageMember(group.id, id, 'kick');
+        setMembers(members.filter((m) => m.id !== id));
+      } catch {
+        // ignore
+      }
     }
   };
 
-  const handlePromote = (id) => {
-    if (confirm("Promote this member to Moderator?")) {
-      setMembers(members.map(m => m.id === id && m.role === 'Member' ? { ...m, role: 'Moderator' } : m));
+  const handlePromote = async (id) => {
+    if (!group) return;
+    if (confirm('Promote this member to Moderator?')) {
+      try {
+        await groupService.manageMember(group.id, id, 'promote');
+        setMembers(
+          members.map((m) =>
+            m.id === id && m.role === 'member' ? { ...m, role: 'admin' } : m
+          )
+        );
+      } catch {
+        // ignore
+      }
     }
   };
 
   const exportMembersToCSV = () => {
-    const header = ['Name', 'Email', 'Role', 'JoinedAt'];
-    const rows = sortedMembers.map(m => [m.name, m.email, m.role, m.joinedAt]);
+    const header = ['Name', 'Role'];
+    const rows = sortedMembers.map((m) => [m.name, m.role]);
     const csv = [header, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a');
@@ -149,21 +164,65 @@ export default function AdminGroupDetailsPage() {
         {activeTab === 'overview' && (
           <div className="bg-white p-6 rounded-lg shadow space-y-4">
             <div className="flex flex-col md:flex-row gap-6">
-              <img src={group.image} alt={group.name} className="w-full max-w-xs h-48 object-cover rounded-lg border" />
+              <img
+                src={group.cover_image || group.image || '/images/placeholder.png'}
+                alt={group.name}
+                className="w-full max-w-xs h-48 object-cover rounded-lg border"
+              />
               <div className="flex-1 space-y-3">
                 <h2 className="text-xl font-bold text-gray-800">{group.name}</h2>
                 <p className="text-gray-700 text-sm leading-relaxed">{group.description}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
-                  <p><FaUserShield className="inline mr-1" /> Creator: <strong>{group.creator}</strong></p>
-                  <p><FaCalendarAlt className="inline mr-1" /> Created: {new Date(group.createdAt).toLocaleDateString()}</p>
-                  <p><FaUsers className="inline mr-1" /> Members: {group.membersCount}</p>
-                  <p><FaLock className="inline mr-1" /> Visibility: {group.isPublic ? 'Public' : 'Private'}</p>
-                  <p><FaFolderOpen className="inline mr-1" /> Category: {group.category}</p>
-                  <p>Status: <span className={`font-semibold ${group.status === 'active' ? 'text-green-600' : group.status === 'pending' ? 'text-yellow-600' : 'text-red-600'}`}>{group.status}</span></p>
+                  <p>
+                    <FaUserShield className="inline mr-1" /> Creator:{' '}
+                    <strong>{group.creator || group.creator_name || 'N/A'}</strong>
+                  </p>
+                  <p>
+                    <FaCalendarAlt className="inline mr-1" /> Created:{' '}
+                    {group.createdAt ? new Date(group.createdAt).toLocaleDateString() : 'N/A'}
+                  </p>
+                  <p>
+                    <FaUsers className="inline mr-1" /> Members: {group.membersCount ?? members.length}
+                  </p>
+                  <p>
+                    <FaLock className="inline mr-1" /> Visibility:{' '}
+                    {group.isPublic ? 'Public' : 'Private'}
+                  </p>
+                  {group.category && (
+                    <p>
+                      <FaFolderOpen className="inline mr-1" /> Category: {group.category}
+                    </p>
+                  )}
+                  {group.status && (
+                    <p>
+                      Status:{' '}
+                      <span
+                        className={`font-semibold ${
+                          group.status === 'active'
+                            ? 'text-green-600'
+                            : group.status === 'pending'
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                        }`}
+                      >
+                        {group.status}
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-600"><strong>Purpose:</strong> {group.purpose}</p>
-                  <p className="text-sm text-gray-600 mt-1"><strong>Tools Used:</strong> {group.tools.join(', ')}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <strong>Tools Used:</strong>{' '}
+                    {(() => {
+                      const tools = Array.isArray(group.tools)
+                        ? group.tools
+                        : Array.isArray(group.tags)
+                        ? group.tags
+                        : [];
+                      return tools.length > 0 ? tools.join(', ') : 'N/A';
+                    })()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -179,7 +238,6 @@ export default function AdminGroupDetailsPage() {
                 <select className="border text-sm px-2 py-1 rounded" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
                   <option value="name">Name</option>
                   <option value="role">Role</option>
-                  <option value="joinedAt">Joined Date</option>
                 </select>
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
@@ -217,9 +275,7 @@ export default function AdminGroupDetailsPage() {
                       </button>
                     </th>
                     <th className="p-2">Name</th>
-                    <th className="p-2">Email</th>
                     <th className="p-2">Role</th>
-                    <th className="p-2">Joined</th>
                     <th className="p-2 text-center">Actions</th>
                   </tr>
                 </thead>
@@ -232,13 +288,19 @@ export default function AdminGroupDetailsPage() {
                         </button>
                       </td>
                       <td className="p-2">{member.name}</td>
-                      <td className="p-2">{member.email}</td>
                       <td className="p-2 font-medium">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${member.role === 'Owner' ? 'bg-blue-100 text-blue-700' : member.role === 'Moderator' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-800'}`}>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            member.role === 'admin'
+                              ? 'bg-blue-100 text-blue-700'
+                              : member.role === 'member'
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
                           {member.role}
                         </span>
                       </td>
-                      <td className="p-2">{new Date(member.joinedAt).toLocaleDateString()}</td>
                       <td className="p-2 flex justify-center gap-2 text-sm">
                         <button
                           onClick={() => handleRemove(member.id)}
@@ -246,7 +308,7 @@ export default function AdminGroupDetailsPage() {
                         >
                           <FaTrash /> Remove
                         </button>
-                        {member.role === 'Member' && (
+                        {member.role === 'member' && (
                           <button
                             onClick={() => handlePromote(member.id)}
                             className="bg-yellow-500 text-white px-2 py-1 rounded flex items-center gap-1"
@@ -304,7 +366,10 @@ export default function AdminGroupDetailsPage() {
                           className="bg-green-600 text-white px-2 py-1 rounded"
                           onClick={() => {
                             if (confirm(`Approve ${req.name}?`)) {
-                              setMembers([...members, { id: Date.now(), name: req.name, email: req.email, role: 'Member', joinedAt: new Date().toISOString() }]);
+                              setMembers([
+                                ...members,
+                                { id: Date.now(), name: req.name, role: 'member' },
+                              ]);
                               setRequests(requests.filter((r) => r.id !== req.id));
                             }
                           }}
