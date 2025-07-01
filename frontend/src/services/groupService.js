@@ -4,10 +4,20 @@ import { API_BASE_URL } from "@/config/config";
 
 const formatGroup = (g) => {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  const tags = g.tags
+    ? Array.isArray(g.tags)
+      ? g.tags
+      : typeof g.tags === 'string'
+        ? JSON.parse(g.tags)
+        : []
+    : [];
   return {
     ...g,
     cover_image: g.cover_image ? `${base}${g.cover_image}` : g.cover_image,
     membersCount: g.members_count ?? g.membersCount ?? 0,
+    isPublic: g.visibility ? g.visibility === 'public' : g.isPublic ?? true,
+    createdAt: g.created_at ?? g.createdAt,
+    tags,
   };
 };
 

@@ -35,12 +35,14 @@ export default function ExploreGroupsPage() {
     if (searchTerm) {
       filtered = filtered.filter((g) =>
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (g.tags || []).some((tag) =>
+          tag.toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
     }
 
     if (selectedTag) {
-      filtered = filtered.filter((g) => g.tags.includes(selectedTag));
+      filtered = filtered.filter((g) => (g.tags || []).includes(selectedTag));
     }
 
     if (sortBy === 'newest') {
@@ -151,7 +153,7 @@ export default function ExploreGroupsPage() {
 
                 {/* Tag list */}
                 <div className="flex flex-wrap gap-2 text-sm">
-                  {group.tags.length > 0 ? group.tags.map((tag) => (
+                  {Array.isArray(group.tags) && group.tags.length > 0 ? group.tags.map((tag) => (
                     <span key={tag} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
                       #{tag}
                     </span>
