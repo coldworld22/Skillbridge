@@ -98,3 +98,4 @@ exports.isMember = async (groupId, userId) => {
     .first();
   return !!row;
 };
+
