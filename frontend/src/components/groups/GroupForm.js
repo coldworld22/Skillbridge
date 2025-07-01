@@ -139,14 +139,16 @@ export default function GroupForm() {
 
       const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');
-      const role = user?.role?.toLowerCase();
+
+      const normalizedRole = user?.role?.toLowerCase();
       const path =
-        role === 'instructor'
+        normalizedRole === 'instructor'
           ? '/dashboard/instructor/groups/my-groups'
-          : role === 'student'
+          : normalizedRole === 'student'
+
           ? '/dashboard/student/groups/my-groups'
           : '/dashboard/admin/groups';
-      router.push(path);
+      await router.push(path);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Failed to create group');
