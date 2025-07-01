@@ -140,6 +140,30 @@ const groupService = {
     return data?.data ? formatGroup(data.data) : null;
   },
 
+  getJoinRequestsForGroup: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/requests`);
+    const list = data?.data ?? [];
+    return Array.isArray(list)
+      ? list.map((r) => ({
+          id: r.id,
+          userId: r.user_id,
+          name: r.name,
+          email: r.email,
+          requestedAt: r.requested_at,
+        }))
+      : [];
+  },
+
+  approveRequest: async (requestId) => {
+    await api.post(`/groups/requests/${requestId}`, { action: 'approve' });
+    return true;
+  },
+
+  rejectRequest: async (requestId) => {
+    await api.post(`/groups/requests/${requestId}`, { action: 'reject' });
+    return true;
+  },
+
 };
 
 export default groupService;

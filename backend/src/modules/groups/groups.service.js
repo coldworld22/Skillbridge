@@ -171,3 +171,33 @@ exports.isMember = async (groupId, userId) => {
   return !!row;
 };
 
+// List pending join requests for a group
+exports.listJoinRequests = (groupId) => {
+  return db('group_join_requests as r')
+    .join('users as u', 'r.user_id', 'u.id')
+    .where('r.group_id', groupId)
+    .andWhere('r.status', 'pending')
+    .select(
+      'r.id',
+      'r.user_id',
+      db.raw("COALESCE(u.full_name, '') as name"),
+      db.raw("COALESCE(u.email, '') as email"),
+      db.raw('r.requested_at')
+    )
+    .orderBy('r.requested_at', 'asc');
+};
+
+// Approve or reject a join request
+exports.manageJoinRequest = async (id, action) => {
+  const status = action === 'approve' ? 'approved' : 'rejected';
+  const [row] = await db('group_join_requests')
+    .where({ id })
+    .update({ status, responded_at: db.fn.now() })
+    .returning('*');
+  if (!row) return null;
+  if (status === 'approved') {
+    await exports.addMember(row.group_id, row.user_id, 'member');
+  }
+  return row;
+};
+

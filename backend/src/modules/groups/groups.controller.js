@@ -114,3 +114,18 @@ exports.manageMember = catchAsync(async (req, res) => {
   const result = await service.manageMember(req.params.id, memberId, action);
   sendSuccess(res, result);
 });
+
+exports.listJoinRequests = catchAsync(async (req, res) => {
+  const requests = await service.listJoinRequests(req.params.id);
+  sendSuccess(res, requests);
+});
+
+exports.manageJoinRequest = catchAsync(async (req, res) => {
+  const { requestId } = req.params;
+  const { action } = req.body;
+  if (!['approve', 'reject'].includes(action)) {
+    throw new AppError('Invalid action', 400);
+  }
+  const result = await service.manageJoinRequest(requestId, action);
+  sendSuccess(res, result);
+});
