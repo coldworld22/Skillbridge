@@ -64,13 +64,16 @@ const calculateForStudent = async (classId, studentId) => {
   );
   const passed = totalScore >= policy.pass_score;
 
+
   await saveStudentScore(classId, studentId, {
+
     assignment_score: Math.round(assignmentAvg),
     attendance_score: Math.round(attendancePercent),
     final_exam_score: finalExamScore,
     total_score: totalScore,
     passed,
   });
+
 
   return getStudentScore(classId, studentId);
 };
@@ -84,11 +87,13 @@ const calculateForClass = async (classId) => {
   for (const enr of enrollments) {
     const score = await calculateForStudent(classId, enr.user_id);
     results.push({ ...score, student_id: enr.user_id, full_name: enr.full_name });
+
   }
   return results;
 };
 
 const getStudentScore = async (classId, studentId) => {
+
   const row = await db('student_class_scores as scs')
     .leftJoin('certificates as c', function () {
       this.on('c.class_id', '=', 'scs.class_id').andOn('c.user_id', '=', 'scs.student_id');
@@ -97,6 +102,7 @@ const getStudentScore = async (classId, studentId) => {
     .andWhere('scs.student_id', studentId)
     .select('scs.*', 'c.id as certificate_id')
     .first();
+
   return row;
 };
 

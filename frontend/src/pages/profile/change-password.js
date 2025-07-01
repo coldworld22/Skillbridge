@@ -3,13 +3,16 @@ import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import {
   FaLock, FaEye, FaEyeSlash, FaCheckCircle,
-  FaExclamationTriangle, FaArrowLeft
+  FaExclamationTriangle, FaArrowLeft, FaSpinner
 } from "react-icons/fa";
 
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { changeStudentPassword } from "@/services/student/studentService";
+import { changeInstructorPassword } from "@/services/instructor/instructorService";
+import { changeAdminPassword } from "@/services/admin/adminService";
 
 const ChangePasswordPage = ({ prevStep }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,6 +21,7 @@ const ChangePasswordPage = ({ prevStep }) => {
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
   const { user, accessToken } = useAuthStore.getState();
@@ -40,43 +44,31 @@ const ChangePasswordPage = ({ prevStep }) => {
       !/\d/.test(newPassword) ||
       !/[!@#$%^&*]/.test(newPassword)
     ) {
-      setError("❌ Password must be 5+ characters, include an uppercase letter, a number, and a special character.");
+      const msg =
+        "Password must be 5+ characters, include an uppercase letter, a number, and a special character.";
+      setError(`❌ ${msg}`);
+      toast.error(msg);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("❌ New password and confirm password do not match.");
+      const msg = "New password and confirm password do not match.";
+      setError(`❌ ${msg}`);
+      toast.error(msg);
       return;
     }
 
     try {
-      let endpoint = "";
-      let method = "PATCH";
-      let body = {};
+      setIsSubmitting(true);
 
       if (user.role === "Student") {
-        endpoint = "http://localhost:5000/api/users/student/change-password";
-        body = { currentPassword, newPassword };
+        await changeStudentPassword({ currentPassword, newPassword });
+      } else if (user.role === "Instructor") {
+        await changeInstructorPassword({ currentPassword, newPassword });
       } else if (user.role === "Admin" || user.role === "SuperAdmin") {
-        endpoint = `http://localhost:5000/api/users/admin/reset-password/${user.id}`;
-        method = "POST";
-        body = { newPassword };
+        await changeAdminPassword(user.id, newPassword);
       } else {
         throw new Error("Your role is not allowed to perform this action.");
-      }
-
-      const res = await fetch(endpoint, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.message || "Failed to update password");
       }
 
       setSuccess(true);
@@ -84,13 +76,18 @@ const ChangePasswordPage = ({ prevStep }) => {
       setNewPassword("");
       setConfirmPassword("");
 
+      toast.success("Password updated! Please log in again.");
       setTimeout(() => {
-        toast.success("Password updated! Please log in again.");
         window.location.href = "/auth/login";
       }, 1500);
     } catch (err) {
       console.error(err);
-      setError(`❌ ${err.message}`);
+      const msg =
+        err?.response?.data?.message || err.message || "Failed to update password";
+      setError(`❌ ${msg}`);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,10 +151,18 @@ const ChangePasswordPage = ({ prevStep }) => {
               <FaArrowLeft /> Back
             </button>
             <button
-              className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition font-bold text-lg"
+              className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition font-bold text-lg disabled:opacity-50"
               onClick={handlePasswordChange}
+              disabled={isSubmitting}
             >
-              Update Password
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <FaSpinner className="animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                "Update Password"
+              )}
             </button>
           </div>
         </motion.div>

@@ -1,14 +1,15 @@
 // Reusable Admin Profile Edit Template (Tailwind + API + Zod + Crop + Upload + Modal)
 // This is based on the polished UI you implemented — to be used for other roles/forms
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import Cropper from "react-easy-crop";
-import getCroppedImg from "@/utils/cropImage";
-import { FaSpinner, FaUpload, FaLock, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaSpinner, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useAuthStore from "@/store/auth/authStore";
+import { getAdminProfile, updateAdminProfile } from "@/services/admin/adminService";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -24,6 +25,8 @@ const profileSchema = z.object({
 
 export default function ProfileEditTemplate() {
   const router = useRouter();
+  const { user, hasHydrated } = useAuthStore();
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -38,6 +41,63 @@ export default function ProfileEditTemplate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+
+  useEffect(() => {
+
+    if (!hasHydrated) return;
+    if (!user || user.role?.toLowerCase() !== "admin") {
+      setLoadingProfile(false);
+      return;
+    }
+
+    const loadProfile = async () => {
+      try {
+        setLoadingProfile(true);
+
+        const res = await getAdminProfile();
+        const {
+          full_name,
+          phone,
+          gender,
+          date_of_birth,
+          avatar_url,
+          job_title,
+          department,
+          social_links,
+        } = res;
+
+        const socialMap = {};
+        social_links?.forEach((link) => {
+          socialMap[link.platform] = link.url;
+        });
+
+        setFormData((prev) => ({
+          ...prev,
+          full_name,
+          phone,
+          gender: gender || "male",
+          date_of_birth: date_of_birth?.split("T")[0] || "",
+          avatar_url,
+          avatarPreview: avatar_url
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}`
+            : null,
+          job_title: job_title || "",
+          department: department || "",
+          socialLinks: socialMap,
+        }));
+      } catch (err) {
+        toast.error("Failed to load profile");
+        console.error("Profile load error:", err);
+      } finally {
+        setLoadingProfile(false);
+
+      }
+    };
+
+    loadProfile();
+  }, [hasHydrated, user]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +116,7 @@ export default function ProfileEditTemplate() {
           newErrors[error.path[0]] = error.message;
         });
         setErrors(newErrors);
+        if (err.errors[0]) toast.error(err.errors[0].message);
       }
       return false;
     }
@@ -65,15 +126,67 @@ export default function ProfileEditTemplate() {
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
-      // await updateProfile(formData); // Replace with actual API call
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
+
+      await updateAdminProfile({
+        full_name: formData.full_name,
+        phone: formData.phone,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        job_title: formData.job_title,
+        department: formData.department,
+        social_links,
+      });
+
+      const fresh = await getAdminProfile();
+      const setUser = useAuthStore.getState().setUser;
+      setUser({
+        ...user,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender,
+        date_of_birth: fresh.date_of_birth,
+        avatar_url: fresh.avatar_url,
+        profile_complete: fresh.profile_complete,
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        job_title: fresh.job_title || "",
+        department: fresh.department || "",
+        avatarPreview: fresh.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${fresh.avatar_url}`
+          : null,
+        socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
+          acc[cur.platform] = cur.url;
+          return acc;
+        }, {}),
+      }));
+
       toast.success("Profile updated successfully!");
+      await fetchNotifications();
       router.push("/dashboard/admin");
     } catch (err) {
-      toast.error("Failed to update profile");
+      toast.error(err.message || "Failed to update profile");
+      console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+
+  if (!hasHydrated || loadingProfile) {
+
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <FaSpinner className="animate-spin text-4xl text-yellow-600" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
