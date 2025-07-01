@@ -140,6 +140,30 @@ export default function AdminGroupsIndex() {
     }
   };
 
+  const handleBulkStatusChange = async (status) => {
+    if (selectedGroups.length === 0) return;
+    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
+    if (confirmChange) {
+      for (const gid of selectedGroups) {
+        try {
+          await groupService.updateGroup(gid, { status });
+        } catch {
+          // ignore
+        }
+      }
+      setGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+      setAllGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+    }
+  };
+
   const exportToCSV = () => {
     const header = ['ID', 'Name', 'Status', 'Members', 'Public', 'CreatedAt'];
     const rows = groups.map(g => [g.id, g.name, g.status ?? 'active', g.membersCount, g.isPublic, g.createdAt]);
