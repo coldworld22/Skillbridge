@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import useAuthStore from '@/store/auth/authStore';
 import { X, Mail, Bell, MessageSquare, Smartphone, Send, Image as ImageIcon, Tag, Users } from 'lucide-react';
 import { toast } from 'react-toastify';
 import groupService from '@/services/groupService';
@@ -9,6 +11,8 @@ import { createNotification } from '@/services/notificationService';
 import { API_BASE_URL } from '@/config/config';
 
 export default function GroupForm() {
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('');
@@ -131,11 +135,18 @@ export default function GroupForm() {
       if (category) payload.append('category_id', category);
       if (tags.length) payload.append('tags', JSON.stringify(tags));
 
-      await groupService.createGroup(payload);
+      const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');
+      const path =
+        user?.role === 'instructor'
+          ? '/dashboard/instructor/groups/my-groups'
+          : user?.role === 'student'
+          ? '/dashboard/student/groups/my-groups'
+          : '/dashboard/admin/groups';
+      router.push(path);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create group');
+      toast.error(err.response?.data?.message || 'Failed to create group');
     } finally {
       setIsSubmitting(false);
     }

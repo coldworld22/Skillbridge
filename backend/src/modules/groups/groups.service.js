@@ -1,6 +1,12 @@
 const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
 
+exports.findByName = async (name) => {
+  return db("groups")
+    .whereRaw("LOWER(name) = ?", [name.toLowerCase()])
+    .first();
+};
+
 exports.createGroup = async (data) => {
   const [row] = await db("groups").insert(data).returning("*");
   return row;

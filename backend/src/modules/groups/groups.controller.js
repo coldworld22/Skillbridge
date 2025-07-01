@@ -2,9 +2,16 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./groups.service");
 const { v4: uuidv4 } = require("uuid");
+const AppError = require("../../utils/AppError");
+const userModel = require("../users/user.model");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const { name, description, visibility, requires_approval } = req.body;
+  if (await service.findByName(name)) {
+    throw new AppError("Group name already exists", 409);
+  }
   const group = await service.createGroup({
     id: uuidv4(),
     creator_id: req.user.id,
@@ -15,6 +22,32 @@ exports.createGroup = catchAsync(async (req, res) => {
     cover_image: req.file ? `/uploads/groups/${req.file.filename}` : undefined,
   });
   await service.addMember(group.id, req.user.id, "admin");
+
+  const students = await userModel.findStudents();
+  const instructors = await userModel.findInstructors();
+  const admins = await userModel.findAdmins();
+  const recipients = [...students, ...instructors, ...admins].filter(
+    (u) => u.id !== req.user.id
+  );
+  const message = `${req.user.full_name} created a new group "${name}"`;
+
+  await Promise.all([
+    ...recipients.map((u) =>
+      notificationService.createNotification({
+        user_id: u.id,
+        type: "group_created",
+        message,
+      })
+    ),
+    ...recipients.map((u) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: u.id,
+        message,
+      })
+    ),
+  ]);
+
   sendSuccess(res, group, "Group created");
 });
 
