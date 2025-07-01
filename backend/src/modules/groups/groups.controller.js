@@ -7,7 +7,6 @@ const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
-
 exports.createGroup = catchAsync(async (req, res) => {
   const { name, description, visibility, requires_approval } = req.body;
   if (await service.findByName(name)) {
