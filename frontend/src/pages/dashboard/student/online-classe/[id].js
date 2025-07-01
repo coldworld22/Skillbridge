@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { FaVideo, FaCheckCircle } from 'react-icons/fa';
 import VideoCallScreen from "@/components/video-call/VideoCallScreen";
+import StudentScoreSummary from "@/components/students/StudentScoreSummary";
 import {
   fetchClassDetails,
   fetchClassLessons,
@@ -149,6 +150,12 @@ export default function StudentClassRoom() {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Final Score */}
+      <div className="bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+        <h2 className="text-xl font-semibold mb-4">🏆 Final Score</h2>
+        <StudentScoreSummary classId={id} />
       </div>
 
       {/* Certificate Message */}

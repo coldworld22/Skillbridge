@@ -7,6 +7,7 @@ import ResourceUploadSection from "@/components/instructors/ResourceUploadSectio
 import BreakoutRoomControl from "@/components/instructors/BreakoutRoomControl";
 import CertificateIssuancePanel from "@/components/instructors/CertificateIssuancePanel";
 import AssignmentManager from "@/components/instructors/AssignmentManager"; // ✅ Assignment Manager added
+import FinalScorePanel from "@/components/instructors/FinalScorePanel";
 import { fetchClassManagementData } from "@/services/instructor/classService";
 import useAuthStore from "@/store/auth/authStore";
 
@@ -118,6 +119,12 @@ export default function InstructorClassRoom() {
 
           <AssignmentManager classId={id} assignments={assignments} />
 
+        </div>
+
+        {/* Final Scores */}
+        <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+          <h2 className="text-lg font-semibold text-yellow-300 mb-2">📊 Final Scores</h2>
+          <FinalScorePanel classId={id} />
         </div>
       </div>
     </div>
