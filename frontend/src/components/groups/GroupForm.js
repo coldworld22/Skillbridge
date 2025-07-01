@@ -19,6 +19,7 @@ export default function GroupForm() {
   const [invitedUsers, setInvitedUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteMethods, setInviteMethods] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -95,6 +96,7 @@ export default function GroupForm() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
+      setImageFile(file);
     }
   };
 
@@ -120,15 +122,16 @@ export default function GroupForm() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await groupService.createGroup({
-        name: groupName,
-        description,
-        visibility: type || 'public',
-        requires_approval: type === 'public',
-        cover_image: null,
-        category_id: category || null,
-        tags,
-      });
+      const payload = new FormData();
+      payload.append('name', groupName);
+      payload.append('description', description);
+      payload.append('visibility', type || 'public');
+      payload.append('requires_approval', type === 'public');
+      if (imageFile) payload.append('cover_image', imageFile);
+      if (category) payload.append('category_id', category);
+      if (tags.length) payload.append('tags', JSON.stringify(tags));
+
+      await groupService.createGroup(payload);
       toast.success('Group created successfully!');
     } catch (err) {
       console.error(err);
@@ -195,6 +198,16 @@ export default function GroupForm() {
             rows={3}
             className="w-full border border-gray-300 px-3 py-2 rounded"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+            <ImageIcon size={14} /> Group Avatar
+          </label>
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded object-cover mb-2" />
+          )}
+          <input type="file" accept="image/*" onChange={handleImageChange} />
         </div>
 
         <div>
@@ -297,12 +310,14 @@ export default function GroupForm() {
           />
 
           <div className="flex flex-wrap gap-3 max-h-60 overflow-y-auto">
-            {filteredUsers.map((user) => (
+          {filteredUsers.map((user) => (
               <div
                 key={user.id}
                 onClick={() => toggleUserInvite(user)}
                 className={`w-[calc(33%-0.75rem)] p-3 border rounded-lg cursor-pointer hover:bg-gray-50 flex gap-3 items-center transition-all ${
-                  invitedUsers.some((u) => u.id === user.id) ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'
+                  invitedUsers.some((u) => u.id === user.id)
+                    ? 'bg-yellow-50 border-yellow-400'
+                    : 'border-gray-200'
                 }`}
               >
 
@@ -318,9 +333,25 @@ export default function GroupForm() {
           </div>
 
           {invitedUsers.length > 0 && (
+            <div className="flex gap-2 mt-2 items-center">
+              {invitedUsers.slice(0, 10).map((u) => (
+                <img
+                  key={u.id}
+                  src={getAvatarUrl(u)}
+                  alt={u.name}
+                  className="w-8 h-8 rounded-full object-cover border"
+                />
+              ))}
+              {invitedUsers.length > 10 && (
+                <span className="text-xs text-gray-500">+{invitedUsers.length - 10} more</span>
+              )}
+            </div>
+          )}
+
+          {invitedUsers.length > 0 && (
             <div className="mt-4 space-y-2">
               <div className="flex gap-4 items-center">
-                <label className="text-sm font-medium">Send via:</label>
+                <label className="text-sm font-medium">Notification methods:</label>
                 <div className="flex flex-wrap gap-4">
                   {[
                     { value: 'email', icon: <Mail size={14} />, label: 'Email' },
@@ -339,6 +370,7 @@ export default function GroupForm() {
                     </label>
                   ))}
                 </div>
+                <p className="text-xs text-gray-500 mt-1">Select at least one method to notify invited users.</p>
               </div>
               <button
                 type="button"
