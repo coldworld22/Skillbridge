@@ -6,31 +6,8 @@ import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
 import GroupPermissionSettings from '@/components/chat/GroupPermissionSettings';
+import groupService from '@/services/groupService';
 
-const mockGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    description: 'React, Vue, and modern UI lovers',
-    tags: ['React', 'Tailwind'],
-    isPublic: true,
-    membersCount: 128,
-    createdAt: '2024-12-01',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdBy: 'Sarah Johnson',
-  },
-  {
-    id: 'g2',
-    name: 'AI Pioneers',
-    description: 'Discuss machine learning and AI trends',
-    tags: ['AI', 'ML'],
-    isPublic: true,
-    membersCount: 210,
-    createdAt: '2025-01-15',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdBy: 'Ali Mansour',
-  },
-];
 
 export default function GroupDetailsPage() {
   const router = useRouter();
@@ -42,21 +19,35 @@ export default function GroupDetailsPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!router.isReady) return;
-
-    const g = mockGroups.find((grp) => grp.id === groupId);
-    if (g) {
-      setGroup(g);
-      setLoading(false);
-    } else {
-      toast.error('Group not found.');
-      router.push('/dashboard/student/groups/explore');
-    }
+    if (!router.isReady || !groupId) return;
+    const fetchGroup = async () => {
+      try {
+        const data = await groupService.getGroupById(groupId);
+        if (data) {
+          setGroup(data);
+        } else {
+          toast.error('Group not found.');
+          router.push('/dashboard/student/groups/explore');
+        }
+      } catch (err) {
+        toast.error('Failed to load group.');
+        router.push('/dashboard/student/groups/explore');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGroup();
   }, [router.isReady, groupId]);
 
-  const handleJoin = () => {
-    setJoinStatus('pending');
-    toast.success('Join request sent!');
+  const handleJoin = async () => {
+    try {
+      setJoinStatus('pending');
+      await groupService.joinGroup(groupId);
+      toast.success('Join request sent!');
+    } catch (err) {
+      setJoinStatus('none');
+      toast.error('Failed to send join request');
+    }
   };
 
   if (loading || !group) {
@@ -164,7 +155,7 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'members' && (
           <div className="space-y-4">
-            <GroupMembersList />
+            <GroupMembersList groupId={group.id} />
           </div>
         )}
 
