@@ -19,6 +19,7 @@ export default function GroupForm() {
   const [invitedUsers, setInvitedUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteMethods, setInviteMethods] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -95,6 +96,7 @@ export default function GroupForm() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
+      setImageFile(file);
     }
   };
 
@@ -120,15 +122,16 @@ export default function GroupForm() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await groupService.createGroup({
-        name: groupName,
-        description,
-        visibility: type || 'public',
-        requires_approval: type === 'public',
-        cover_image: null,
-        category_id: category || null,
-        tags,
-      });
+      const payload = new FormData();
+      payload.append('name', groupName);
+      payload.append('description', description);
+      payload.append('visibility', type || 'public');
+      payload.append('requires_approval', type === 'public');
+      if (imageFile) payload.append('cover_image', imageFile);
+      if (category) payload.append('category_id', category);
+      if (tags.length) payload.append('tags', JSON.stringify(tags));
+
+      await groupService.createGroup(payload);
       toast.success('Group created successfully!');
     } catch (err) {
       console.error(err);
@@ -195,6 +198,16 @@ export default function GroupForm() {
             rows={3}
             className="w-full border border-gray-300 px-3 py-2 rounded"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+            <ImageIcon size={14} /> Group Avatar
+          </label>
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded object-cover mb-2" />
+          )}
+          <input type="file" accept="image/*" onChange={handleImageChange} />
         </div>
 
         <div>

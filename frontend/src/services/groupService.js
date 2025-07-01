@@ -22,7 +22,9 @@ const groupService = {
   },
 
   createGroup: async (payload) => {
-    const { data } = await api.post('/groups', payload);
+    const { data } = await api.post('/groups', payload, {
+      headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
     return data?.data;
   },
 };
