@@ -9,7 +9,6 @@ import useAuthStore from '@/store/auth/authStore';
 export default function MyGroupsPage() {
   const [groups, setGroups] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
-
   const { user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
@@ -31,8 +30,14 @@ export default function MyGroupsPage() {
     return arr;
   };
 
-  const createdGroups = sortList(groups.filter((g) => g.creator_id === user?.id));
-  const joinedGroups = sortList(groups.filter((g) => g.creator_id !== user?.id));
+
+  const createdGroups = sortList(
+    groups.filter((g) => String(g.creator_id) === String(user?.id))
+  );
+  const joinedGroups = sortList(
+    groups.filter((g) => String(g.creator_id) !== String(user?.id))
+  );
+
 
   const cancelJoinRequest = (groupId) => {
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
