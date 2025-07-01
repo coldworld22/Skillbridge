@@ -257,15 +257,21 @@ export default function AdminGroupsIndex() {
             <option value="suspended">🚫 Suspended</option>
           </select>
 
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="p-2 border rounded-md"
-          >
-            <option value="newest">📅 Newest</option>
-            <option value="oldest">📆 Oldest</option>
-            <option value="members">👥 Most Members</option>
-          </select>
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          className="p-2 border rounded-md"
+        >
+          <option value="newest">📅 Newest</option>
+          <option value="oldest">📆 Oldest</option>
+          <option value="members">👥 Most Members</option>
+        </select>
+
+        <Link href="/dashboard/admin/groups/create">
+          <button className="ml-auto border px-4 py-2 rounded text-sm bg-yellow-400 text-white hover:bg-yellow-500">
+            + Create Group
+          </button>
+        </Link>
 
           {selectedGroups.length > 0 && (
             <button

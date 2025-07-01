@@ -7,13 +7,10 @@ const mockUsers = [
   { id: 'u4', name: 'Lina Ahmed', email: 'lina.ahmed@example.com' },
 ];
 
-// ✅ Mock: Search Users by name/email
-const searchUsers = async (query) => {
-  return mockUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(query.toLowerCase()) ||
-      user.email.toLowerCase().includes(query.toLowerCase())
-  );
+// 🔍 Search users via backend
+const searchUsers = async (query = "") => {
+  const { data } = await api.get("/chat/users", { params: { q: query } });
+  return data?.data || [];
 };
 
 // ✅ Submit full profile to backend
