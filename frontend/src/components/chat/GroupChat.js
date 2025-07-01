@@ -17,9 +17,15 @@ export default function GroupChat({ groupId }) {
   }, [groupId]);
 
   const sendMessage = async (newMessage) => {
-    if (!newMessage.text) return;
+
+    if (!newMessage.text && !newMessage.file && !newMessage.audio) return;
     try {
-      const created = await groupService.sendGroupMessage(groupId, newMessage.text);
+      const created = await groupService.sendGroupMessage(groupId, {
+        text: newMessage.text,
+        file: newMessage.file,
+        audio: newMessage.audio,
+      });
+
       if (created) {
         setMessages((prev) => [...prev, {
           id: created.id,
@@ -27,6 +33,10 @@ export default function GroupChat({ groupId }) {
           senderId: created.sender_id,
           avatar: created.sender_avatar,
           text: created.content,
+
+          file: created.file_url ? created.file_url : null,
+          audio: created.audio_url ? created.audio_url : null,
+
           timestamp: created.sent_at,
         }]);
       }

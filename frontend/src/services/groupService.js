@@ -87,12 +87,23 @@ const groupService = {
           : `${base}${m.sender_avatar}`
         : '/images/default-avatar.png',
       text: m.content,
+
+      file: m.file_url ? (m.file_url.startsWith('http') || m.file_url.startsWith('blob:') || m.file_url.startsWith('data:') ? m.file_url : `${base}${m.file_url}`) : null,
+      audio: m.audio_url ? (m.audio_url.startsWith('http') || m.audio_url.startsWith('blob:') || m.audio_url.startsWith('data:') ? m.audio_url : `${base}${m.audio_url}`) : null,
+
       timestamp: m.sent_at,
     }));
   },
 
-  sendGroupMessage: async (groupId, message) => {
-    const { data } = await api.post(`/groups/${groupId}/messages`, { message });
+
+  sendGroupMessage: async (groupId, { text, file, audio }) => {
+    const form = new FormData();
+    if (text) form.append('message', text);
+    if (file) form.append('file', file);
+    if (audio) form.append('audio', audio);
+    const { data } = await api.post(`/groups/${groupId}/messages`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return data?.data;
   },
 
