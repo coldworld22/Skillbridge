@@ -27,10 +27,18 @@ export default function GroupForm() {
   const [maxSize, setMaxSize] = useState('');
   const [timezone, setTimezone] = useState('');
 
-  const getAvatarUrl = (url) => {
+  const getAvatarUrl = (user) => {
+    const url =
+      user.avatar ||
+      user.avatar_url ||
+      user.profileImage ||
+      user.profile_image ||
+      '';
     if (!url) return '/images/default-avatar.png';
     if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
-    return `${API_BASE_URL}${url}`;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `${API_BASE_URL}${clean}`;
+
   };
 
   useEffect(() => {
@@ -297,7 +305,9 @@ export default function GroupForm() {
                   invitedUsers.some((u) => u.id === user.id) ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'
                 }`}
               >
-                <img src={getAvatarUrl(user.avatar || user.profileImage)} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+
+                <img src={getAvatarUrl(user)} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+
                 <div className="flex-1">
                   <div className="text-sm font-medium">{user.name}</div>
                   <div className="text-xs text-gray-500">{user.email} · {user.phone}</div>
