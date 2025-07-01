@@ -13,15 +13,22 @@ import { getAdminProfile, updateAdminProfile } from "@/services/admin/adminServi
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
-const profileSchema = z.object({
-  full_name: z.string().min(3, "Full name must be at least 3 characters"),
-  phone: z.string().min(8, "Phone must be at least 8 digits"),
-  job_title: z.string().min(2),
-  department: z.string().min(2),
-  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
-  date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
-  socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
-});
+const profileSchema = z
+  .object({
+    full_name: z.string().min(3, "Full name must be at least 3 characters").optional(),
+    phone: z.string().min(8, "Phone must be at least 8 digits").optional(),
+    job_title: z.string().min(2).optional(),
+    department: z.string().min(2).optional(),
+    gender: z.enum(["male", "female", "other", "prefer-not-to-say"]).optional(),
+    date_of_birth: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" })
+      .optional(),
+    socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "No profile fields provided",
+  });
 
 export default function ProfileEditTemplate() {
   const router = useRouter();
@@ -106,9 +113,25 @@ export default function ProfileEditTemplate() {
   };
 
   const validateForm = () => {
+    const payload = { ...formData };
+    if (!payload.full_name?.trim()) delete payload.full_name;
+    if (!payload.phone?.trim()) delete payload.phone;
+    if (!payload.job_title?.trim()) delete payload.job_title;
+    if (!payload.department?.trim()) delete payload.department;
+    if (!payload.gender) delete payload.gender;
+    if (!payload.date_of_birth) delete payload.date_of_birth;
+    if (payload.socialLinks) {
+      const links = Object.entries(payload.socialLinks).filter(([, url]) => url.trim() !== "");
+      if (links.length) {
+        payload.socialLinks = Object.fromEntries(links);
+      } else {
+        delete payload.socialLinks;
+      }
+    }
+
     try {
-      profileSchema.parse(formData);
-      return true;
+      profileSchema.parse(payload);
+      return payload;
     } catch (err) {
       if (err instanceof z.ZodError) {
         const newErrors = {};
@@ -123,22 +146,17 @@ export default function ProfileEditTemplate() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    const payload = validateForm();
+    if (!payload) return;
     try {
       setIsSubmitting(true);
-      const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+      const social_links = payload.socialLinks
+        ? Object.entries(payload.socialLinks).map(([platform, url]) => ({ platform, url }))
+        : undefined;
+      const updatePayload = { ...payload };
+      if (social_links) updatePayload.social_links = social_links;
 
-      await updateAdminProfile({
-        full_name: formData.full_name,
-        phone: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.date_of_birth,
-        job_title: formData.job_title,
-        department: formData.department,
-        social_links,
-      });
+      await updateAdminProfile(updatePayload);
 
       const fresh = await getAdminProfile();
       const setUser = useAuthStore.getState().setUser;
@@ -205,7 +223,7 @@ export default function ProfileEditTemplate() {
             {expanded.personal && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <label className="block text-sm font-medium mb-1">Full Name</label>
                   <input
                     name="full_name"
                     value={formData.full_name}
@@ -215,7 +233,7 @@ export default function ProfileEditTemplate() {
                   {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone *</label>
+                  <label className="block text-sm font-medium mb-1">Phone</label>
                   <input
                     name="phone"
                     value={formData.phone}
@@ -226,7 +244,7 @@ export default function ProfileEditTemplate() {
                 </div>
                 {/* Gender and DOB */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Gender *</label>
+                  <label className="block text-sm font-medium mb-1">Gender</label>
                   <select
                     name="gender"
                     value={formData.gender}
@@ -240,7 +258,7 @@ export default function ProfileEditTemplate() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Date of Birth *</label>
+                  <label className="block text-sm font-medium mb-1">Date of Birth</label>
                   <input
                     type="date"
                     name="date_of_birth"

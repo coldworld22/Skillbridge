@@ -63,52 +63,62 @@ exports.updateProfile = async (req, res) => {
     avatar_url,
     job_title,
     department,
-    social_links = [],
+    social_links,
   } = req.body;
 
-  // 1. Update core user fields
-  await db("users").where({ id: userId }).update({
-    full_name,
-    phone,
-    gender,
-    date_of_birth,
-    avatar_url,
-    profile_complete: true,
-    is_email_verified: true,
-    is_phone_verified: true,
-    updated_at: new Date(),
-  });
+  // 1. Update core user fields only if provided
+  const userUpdates = {};
+  if (full_name !== undefined) userUpdates.full_name = full_name;
+  if (phone !== undefined) userUpdates.phone = phone;
+  if (gender !== undefined) userUpdates.gender = gender;
+  if (date_of_birth !== undefined) userUpdates.date_of_birth = date_of_birth;
+  if (avatar_url !== undefined) userUpdates.avatar_url = avatar_url;
+  if (Object.keys(userUpdates).length) {
+    Object.assign(userUpdates, {
+      profile_complete: true,
+      is_email_verified: true,
+      is_phone_verified: true,
+      updated_at: new Date(),
+    });
+    await db("users").where({ id: userId }).update(userUpdates);
+  }
 
   // 2. Upsert admin profile
-  const profileData = {
-    job_title,
-    department,
-    updated_at: new Date(),
-  };
+  const profileData = {};
+  if (job_title !== undefined) profileData.job_title = job_title;
+  if (department !== undefined) profileData.department = department;
+
+  if (Object.keys(profileData).length) {
+    profileData.updated_at = new Date();
+  }
 
   const existing = await db("admin_profiles").where({ user_id: userId }).first();
 
-  if (existing) {
-    await db("admin_profiles").where({ user_id: userId }).update(profileData);
-  } else {
-    await db("admin_profiles").insert({
-      user_id: userId,
-      ...profileData,
-      created_at: new Date(),
-    });
+  if (Object.keys(profileData).length) {
+    if (existing) {
+      await db("admin_profiles").where({ user_id: userId }).update(profileData);
+    } else {
+      await db("admin_profiles").insert({
+        user_id: userId,
+        ...profileData,
+        created_at: new Date(),
+      });
+    }
   }
 
   // 3. Replace social links
-  await db("user_social_links").where({ user_id: userId }).del();
+  if (Array.isArray(social_links)) {
+    await db("user_social_links").where({ user_id: userId }).del();
 
-  for (const link of social_links) {
-    if (link.url?.trim()) {
-      await db("user_social_links").insert({
-        user_id: userId,
-        platform: link.platform,
-        url: link.url.trim(),
-        created_at: new Date(),
-      });
+    for (const link of social_links) {
+      if (link.url?.trim()) {
+        await db("user_social_links").insert({
+          user_id: userId,
+          platform: link.platform,
+          url: link.url.trim(),
+          created_at: new Date(),
+        });
+      }
     }
   }
 
