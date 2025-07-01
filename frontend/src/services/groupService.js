@@ -1,6 +1,7 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
+
 const formatGroup = (g) => {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   return {
@@ -9,6 +10,7 @@ const formatGroup = (g) => {
     membersCount: g.members_count ?? g.membersCount ?? 0,
   };
 };
+
 
 const groupService = {
   getMyGroups: async () => {
