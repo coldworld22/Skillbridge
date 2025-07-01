@@ -13,6 +13,7 @@ import {
   FaRegSquare
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
+import { toast } from 'react-toastify';
 
 const imagePool = [
   'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
@@ -76,8 +77,9 @@ export default function AdminGroupsIndex() {
       setAllGroups((prev) =>
         prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
       );
+      toast.success(`Group status set to ${newStatus}`);
     } catch {
-      // ignore
+      toast.error('Failed to update status');
     }
   };
 
@@ -86,8 +88,9 @@ export default function AdminGroupsIndex() {
     if (confirmDelete) {
       try {
         await groupService.deleteGroup(id);
+        toast.success('Group deleted');
       } catch {
-        // ignore
+        toast.error('Failed to delete group');
       }
       setGroups((prev) => prev.filter((g) => g.id !== id));
       setAllGroups((prev) => prev.filter((g) => g.id !== id));
@@ -102,12 +105,38 @@ export default function AdminGroupsIndex() {
         try {
           await groupService.deleteGroup(gid);
         } catch {
-          // ignore
+          toast.error('Failed to delete some groups');
         }
       }
       setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
       setAllGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
       setSelectedGroups([]);
+      toast.success('Selected groups deleted');
+    }
+  };
+
+  const handleBulkStatusChange = async (status) => {
+    if (selectedGroups.length === 0) return;
+    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
+    if (confirmChange) {
+      for (const gid of selectedGroups) {
+        try {
+          await groupService.updateGroup(gid, { status });
+        } catch {
+          toast.error('Failed to update some groups');
+        }
+      }
+      setGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+      setAllGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+      toast.success(`Status updated to ${status} for selected groups`);
     }
   };
 
