@@ -28,7 +28,7 @@ export default function GroupForm() {
     const loadInitial = async () => {
       try {
         const cats = await fetchAllCategories();
-        setAvailableCategories(cats || []);
+        setAvailableCategories(cats?.data || cats || []);
       } catch (err) {
         console.error('Failed to load categories', err);
       }
