@@ -3,7 +3,10 @@ import api from "../api/api";
 // 🔍 Search users via backend
 const searchUsers = async (query = "") => {
   const { data } = await api.get("/chat/users", { params: { q: query } });
-  return data?.data || [];
+  const list = data?.data || [];
+  return list.filter(
+    (u) => !["admin", "superadmin"].includes(u.role?.toLowerCase())
+  );
 };
 
 // ✅ Submit full profile to backend
