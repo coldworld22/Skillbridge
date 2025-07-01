@@ -139,11 +139,13 @@ export default function GroupForm() {
 
       const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');
+
       const normalizedRole = user?.role?.toLowerCase();
       const path =
         normalizedRole === 'instructor'
           ? '/dashboard/instructor/groups/my-groups'
           : normalizedRole === 'student'
+
           ? '/dashboard/student/groups/my-groups'
           : '/dashboard/admin/groups';
       await router.push(path);
