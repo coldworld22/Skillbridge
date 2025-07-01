@@ -137,30 +137,7 @@ export default function AdminGroupsIndex() {
         )
       );
       toast.success(`Status updated to ${status} for selected groups`);
-    }
-  };
 
-  const handleBulkStatusChange = async (status) => {
-    if (selectedGroups.length === 0) return;
-    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
-    if (confirmChange) {
-      for (const gid of selectedGroups) {
-        try {
-          await groupService.updateGroup(gid, { status });
-        } catch {
-          // ignore
-        }
-      }
-      setGroups((prev) =>
-        prev.map((g) =>
-          selectedGroups.includes(g.id) ? { ...g, status } : g
-        )
-      );
-      setAllGroups((prev) =>
-        prev.map((g) =>
-          selectedGroups.includes(g.id) ? { ...g, status } : g
-        )
-      );
     }
   };
 
