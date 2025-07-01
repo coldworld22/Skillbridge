@@ -3,61 +3,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import toast from 'react-hot-toast';
-
-const mockGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    description: 'React, Vue, and modern UI lovers',
-    tags: ['React', 'Tailwind'],
-    isPublic: true,
-    membersCount: 128,
-    createdAt: '2024-12-01',
-    image: 'https://d1ymz67w5raq8g.cloudfront.net/Pictures/480xAny/8/9/2/108892_eic0515_cpd_f1_630m.jpg',
-  },
-  {
-    id: 'g2',
-    name: 'AI Pioneers',
-    description: 'Discuss machine learning and AI trends',
-    tags: ['AI', 'ML'],
-    isPublic: true,
-    membersCount: 210,
-    createdAt: '2025-01-15',
-    image: 'https://d1ymz67w5raq8g.cloudfront.net/Pictures/480xAny/8/9/2/108892_eic0515_cpd_f1_630m.jpg',
-  },
-  {
-    id: 'g3',
-    name: 'Design Guild',
-    description: 'Figma, UX, and UI talks',
-    tags: ['Figma', 'Design'],
-    isPublic: true,
-    membersCount: 90,
-    createdAt: '2024-11-20',
-    image: 'https://d1ymz67w5raq8g.cloudfront.net/Pictures/480xAny/8/9/2/108892_eic0515_cpd_f1_630m.jpg',
-  },
-  {
-    id: 'g4',
-    name: 'Fullstack Ninjas',
-    description: 'Talk everything backend and frontend',
-    tags: ['Node.js', 'React'],
-    isPublic: true,
-    membersCount: 150,
-    createdAt: '2025-02-10',
-    image: 'https://d1ymz67w5raq8g.cloudfront.net/Pictures/480xAny/8/9/2/108892_eic0515_cpd_f1_630m.jpg',
-  },
-  {
-    id: 'g5',
-    name: 'Crypto Coders',
-    description: 'Blockchain, Web3, and decentralization',
-    tags: ['Crypto', 'Blockchain'],
-    isPublic: true,
-    membersCount: 70,
-    createdAt: '2024-10-30',
-    image: 'https://d1ymz67w5raq8g.cloudfront.net/Pictures/480xAny/8/9/2/108892_eic0515_cpd_f1_630m.jpg',
-  }
-];
-
-const popularTags = ['React', 'AI', 'Design', 'Tailwind', 'ML', 'Figma'];
+import groupService from '@/services/groupService';
 
 export default function ExploreGroupsPage() {
   const [groups, setGroups] = useState([]);
@@ -66,10 +12,38 @@ export default function ExploreGroupsPage() {
   const [selectedTag, setSelectedTag] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [joinRequests, setJoinRequests] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [membersMap, setMembersMap] = useState({});
 
   useEffect(() => {
-    setGroups(mockGroups);
-    setFilteredGroups(mockGroups);
+    const fetchData = async () => {
+      try {
+        const [all, mine] = await Promise.all([
+          groupService.getPublicGroups(),
+          groupService.getMyGroups(),
+        ]);
+        const myIds = new Set(mine.map((g) => g.id));
+        const list = all.filter((g) => g.isPublic && !myIds.has(g.id));
+        setGroups(list);
+        setFilteredGroups(list);
+
+        const memberMap = {};
+        await Promise.all(
+          list.map(async (g) => {
+            try {
+              memberMap[g.id] = await groupService.getGroupMembers(g.id);
+            } catch {
+              memberMap[g.id] = [];
+            }
+          })
+        );
+        setMembersMap(memberMap);
+      } catch (err) {
+        toast.error('Failed to load groups');
+      }
+    };
+    fetchData();
+    groupService.getTags().then(setTags).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -78,12 +52,14 @@ export default function ExploreGroupsPage() {
     if (searchTerm) {
       filtered = filtered.filter((g) =>
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (g.tags || []).some((tag) =>
+          tag.toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
     }
 
     if (selectedTag) {
-      filtered = filtered.filter((g) => g.tags.includes(selectedTag));
+      filtered = filtered.filter((g) => (g.tags || []).includes(selectedTag));
     }
 
     if (sortBy === 'newest') {
@@ -97,9 +73,14 @@ export default function ExploreGroupsPage() {
     setFilteredGroups(filtered);
   }, [searchTerm, selectedTag, sortBy, groups]);
 
-  const handleJoin = (groupId) => {
-    setJoinRequests((prev) => [...prev, groupId]);
-    toast.success('Join request sent!');
+  const handleJoin = async (groupId) => {
+    try {
+      await groupService.joinGroup(groupId);
+      setJoinRequests((prev) => [...prev, groupId]);
+      toast.success('Join request sent!');
+    } catch {
+      toast.error('Failed to send join request');
+    }
   };
 
   return (
@@ -145,7 +126,7 @@ export default function ExploreGroupsPage() {
 
         {/* Tag Filters */}
         <div className="flex flex-wrap gap-2 pt-2">
-          {popularTags.map((tag) => (
+          {tags.map((tag) => (
             <button
               key={tag}
               onClick={() => setSelectedTag(tag === selectedTag ? '' : tag)}
@@ -194,24 +175,27 @@ export default function ExploreGroupsPage() {
 
                 {/* Tag list */}
                 <div className="flex flex-wrap gap-2 text-sm">
-                  {group.tags.length > 0 ? group.tags.map((tag) => (
-                    <span key={tag} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
-                      #{tag}
-                    </span>
-                  )) : <span className="text-xs text-gray-400">No tags</span>}
+                  {Array.isArray(group.tags) && group.tags.length > 0 ?
+                    group.tags.map((tag) => (
+                      <span key={tag} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
+                        #{tag}
+                      </span>
+                    )) : <span className="text-xs text-gray-400">No tags</span>}
                 </div>
 
-                {/* Avatars (placeholder) */}
+                {/* Avatars */}
                 <div className="flex items-center pt-1">
                   <div className="flex -space-x-2 overflow-hidden">
-                    {[...Array(3)].map((_, i) => (
-                      <img
-                        key={i}
-                        className="w-6 h-6 rounded-full border-2 border-white"
-                        src={`/avatars/user${i + 1}.jpg`}
-                        alt="member avatar"
-                      />
-                    ))}
+                    {(membersMap[group.id] || [])
+                      .slice(0, 4)
+                      .map((m, i) => (
+                        <img
+                          key={i}
+                          className="w-6 h-6 rounded-full border-2 border-white"
+                          src={m.avatar}
+                          alt={m.name}
+                        />
+                      ))}
                   </div>
                 </div>
 
