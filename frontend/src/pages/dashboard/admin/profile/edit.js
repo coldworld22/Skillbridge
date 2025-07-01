@@ -9,6 +9,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { FaSpinner, FaUpload, FaLock, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import useNotificationStore from "@/store/notifications/notificationStore";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -38,6 +39,7 @@ export default function ProfileEditTemplate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +58,7 @@ export default function ProfileEditTemplate() {
           newErrors[error.path[0]] = error.message;
         });
         setErrors(newErrors);
+        if (err.errors[0]) toast.error(err.errors[0].message);
       }
       return false;
     }
@@ -67,6 +70,7 @@ export default function ProfileEditTemplate() {
       setIsSubmitting(true);
       // await updateProfile(formData); // Replace with actual API call
       toast.success("Profile updated successfully!");
+      await fetchNotifications();
       router.push("/dashboard/admin");
     } catch (err) {
       toast.error("Failed to update profile");
