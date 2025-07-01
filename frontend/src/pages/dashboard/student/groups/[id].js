@@ -70,10 +70,12 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
-            <p className="text-sm text-gray-500">👑 Created by {group.createdBy}</p>
+            {group.creator_id && (
+              <p className="text-sm text-gray-500">👑 Creator ID: {group.creator_id}</p>
+            )}
           </div>
           <span className="text-sm text-gray-500">
-            📅 {new Date(group.createdAt).toLocaleDateString()}
+            📅 {new Date(group.created_at).toLocaleDateString()}
           </span>
         </div>
 
@@ -93,15 +95,24 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'overview' && (
           <div className="space-y-4">
-            <img src={group.image} alt={group.name} className="w-full h-48 object-cover rounded-xl" />
+            <img
+              src={group.cover_image || group.image}
+              alt={group.name}
+              className="w-full h-48 object-cover rounded-xl"
+            />
             <p className="text-gray-700">{group.description}</p>
-            <div className="flex flex-wrap gap-2">
-              {group.tags.map((tag) => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+            {Array.isArray(group.tags) && group.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {group.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {joinStatus === 'none' && (
               <button
