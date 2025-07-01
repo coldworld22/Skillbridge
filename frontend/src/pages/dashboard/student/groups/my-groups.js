@@ -2,71 +2,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import toast from 'react-hot-toast';
-
-const allGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    description: 'React, Vue, and modern UI lovers',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdAt: '2025-01-01',
-  },
-  {
-    id: 'g2',
-    name: 'AI Pioneers',
-    description: 'Discuss machine learning and AI trends',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdAt: '2025-02-10',
-  },
-  {
-    id: 'g3',
-    name: 'Design Guild',
-    description: 'Figma, UX, and UI talks',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuDDsrSKJXvX7_7I1l6XQMy6BlvfVGqDrdcQ&s',
-    createdAt: '2024-12-05',
-  },
-  {
-    id: 'g4',
-    name: 'Fullstack Ninjas',
-    description: 'Talk everything backend and frontend',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
-    createdAt: '2025-03-01',
-  },
-  {
-    id: 'g5',
-    name: 'Crypto Coders',
-    description: 'Blockchain, Web3, and decentralization',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
-    createdAt: '2024-11-20',
-  },
-  {
-    id: 'g6',
-    name: 'Math Masters',
-    description: 'Solving equations and proofs together',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
-    createdAt: '2024-10-10',
-  },
-  {
-    id: 'g7',
-    name: 'Cyber Security Squad',
-    description: 'Pen testing, exploits and more',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEysO5CaN4Jbgy9r--if2Whh32rFsiEkowTA&s',
-    createdAt: '2025-03-15',
-  },
-];
-
-const initialStudentGroups = [
-  { groupId: 'g1', role: 'admin' },
-  { groupId: 'g2', role: 'member' },
-  { groupId: 'g3', role: 'pending' },
-  { groupId: 'g4', role: 'admin' },
-  { groupId: 'g5', role: 'member' },
-  { groupId: 'g6', role: 'pending' },
-  { groupId: 'g7', role: 'member' },
-];
+import groupService from '@/services/groupService';
 
 export default function MyGroupsPage() {
-  const [studentGroups, setStudentGroups] = useState(initialStudentGroups);
+  const [groups, setGroups] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
@@ -75,24 +14,26 @@ export default function MyGroupsPage() {
   const tabs = ['all', 'admin', 'member', 'pending'];
 
   useEffect(() => {
-    const enriched = studentGroups.map((sg) => {
-      const group = allGroups.find((g) => g.id === sg.groupId);
-      return { ...group, role: sg.role };
-    });
+    groupService
+      .getMyGroups()
+      .then(setGroups)
+      .catch(() => toast.error('Failed to load groups'));
+  }, []);
 
-    let filtered = activeTab === 'all' ? enriched : enriched.filter((g) => g.role === activeTab);
+  useEffect(() => {
+    let filtered = activeTab === 'all' ? groups : groups.filter((g) => g.role === activeTab);
 
     if (sortBy === 'newest') {
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     } else if (sortBy === 'az') {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     setFilteredGroups(filtered);
-  }, [studentGroups, activeTab, sortBy]);
+  }, [groups, activeTab, sortBy]);
 
   const cancelJoinRequest = (groupId) => {
-    setStudentGroups((prev) => prev.filter((g) => g.groupId !== groupId));
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
     toast.success('Join request cancelled.');
   };
 
@@ -114,9 +55,12 @@ export default function MyGroupsPage() {
           {group.role === 'pending' && '⏳ Pending'}
         </span>
       </div>
-      <img src={group.image} alt={group.name} className="w-full h-32 object-cover rounded" />
+      <img
+        src={group.cover_image || group.image}
+        alt={group.name}
+        className="w-full h-32 object-cover rounded"
+      />
       <p className="text-sm text-gray-600">{group.description}</p>
-      <p className="text-xs text-gray-400">🕒 Last updated: 2d ago</p>
 
       <div className="flex -space-x-2 pt-1">
         {[...Array(3)].map((_, i) => (
