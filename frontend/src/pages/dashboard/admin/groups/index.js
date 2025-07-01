@@ -12,6 +12,7 @@ import {
   FaCheckSquare,
   FaRegSquare
 } from 'react-icons/fa';
+import groupService from '@/services/groupService';
 
 const imagePool = [
   'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
@@ -19,121 +20,9 @@ const imagePool = [
   'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFsWQ2eTVL1xGadTXxeFlmMgNmWr31H7CmRg&s',
 ];
 
-const mockGroups = [
-  {
-    id: 'g1',
-    name: 'Frontend Wizards',
-    creator: 'Sarah Johnson',
-    status: 'pending',
-    membersCount: 128,
-    isPublic: true,
-    createdAt: '2024-12-01',
-    image: imagePool[0],
-    category: 'Web Development',
-  },
-  {
-    id: 'g2',
-    name: 'AI Pioneers',
-    creator: 'Ali Mansour',
-    status: 'suspended',
-    membersCount: 210,
-    isPublic: false,
-    createdAt: '2025-01-15',
-    image: imagePool[1],
-    category: 'Artificial Intelligence',
-  },
-  {
-    id: 'g3',
-    name: 'Design Guild',
-    creator: 'Noura Faris',
-    status: 'active',
-    membersCount: 95,
-    isPublic: true,
-    createdAt: '2024-11-10',
-    image: imagePool[2],
-    category: 'UI/UX Design',
-  },
-  {
-    id: 'g4',
-    name: 'Backend Builders',
-    creator: 'Omar Al-Qahtani',
-    status: 'active',
-    membersCount: 150,
-    isPublic: false,
-    createdAt: '2025-01-22',
-    image: imagePool[0],
-    category: 'Backend Development',
-  },
-  {
-    id: 'g5',
-    name: 'Crypto Coders',
-    creator: 'Layla Mahmoud',
-    status: 'suspended',
-    membersCount: 180,
-    isPublic: true,
-    createdAt: '2024-10-05',
-    image: imagePool[1],
-    category: 'Blockchain',
-  },
-  {
-    id: 'g6',
-    name: 'Mobile Mavericks',
-    creator: 'Khalid Zayed',
-    status: 'active',
-    membersCount: 76,
-    isPublic: true,
-    createdAt: '2025-02-01',
-    image: imagePool[2],
-    category: 'Mobile Development',
-  },
-  {
-    id: 'g7',
-    name: 'Cloud Commanders',
-    creator: 'Yasmine Al-Khatib',
-    status: 'pending',
-    membersCount: 132,
-    isPublic: false,
-    createdAt: '2024-09-12',
-    image: imagePool[0],
-    category: 'Cloud Computing',
-  },
-  {
-    id: 'g8',
-    name: 'DevOps Den',
-    creator: 'Hassan El-Sayed',
-    status: 'active',
-    membersCount: 144,
-    isPublic: true,
-    createdAt: '2024-08-28',
-    image: imagePool[1],
-    category: 'DevOps',
-  },
-  {
-    id: 'g9',
-    name: 'Cyber Ninjas',
-    creator: 'Alya Dabbagh',
-    status: 'suspended',
-    membersCount: 99,
-    isPublic: true,
-    createdAt: '2025-01-05',
-    image: imagePool[2],
-    category: 'Cybersecurity',
-  },
-  {
-    id: 'g10',
-    name: 'AI Think Tank',
-    creator: 'Fahad Al-Rasheed',
-    status: 'pending',
-    membersCount: 110,
-    isPublic: false,
-    createdAt: '2025-03-01',
-    image: imagePool[0],
-    category: 'Machine Learning',
-  },
-];
-
 
 export default function AdminGroupsIndex() {
+  const [allGroups, setAllGroups] = useState([]);
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -143,7 +32,11 @@ export default function AdminGroupsIndex() {
   const itemsPerPage = 6;
 
   useEffect(() => {
-    let filtered = [...mockGroups];
+    groupService.getAllGroups().then(setAllGroups).catch(() => setAllGroups([]));
+  }, []);
+
+  useEffect(() => {
+    let filtered = [...allGroups];
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter((g) => g.status === statusFilter);
@@ -169,33 +62,50 @@ export default function AdminGroupsIndex() {
     }
 
     setGroups(filtered);
-  }, [search, statusFilter, sortOption]);
+  }, [search, statusFilter, sortOption, allGroups]);
 
-  const toggleStatus = (id, newStatus) => {
-    setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
-    );
+  const toggleStatus = async (id, newStatus) => {
+    try {
+      await groupService.updateGroup(id, { status: newStatus });
+      setGroups((prev) =>
+        prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
+      );
+    } catch {
+      // ignore
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const confirmDelete = confirm('Are you sure you want to delete this group?');
     if (confirmDelete) {
+      try {
+        await groupService.deleteGroup(id);
+      } catch {
+        // ignore
+      }
       setGroups((prev) => prev.filter((g) => g.id !== id));
       setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     const confirmDelete = confirm('Delete selected groups?');
     if (confirmDelete) {
+      for (const gid of selectedGroups) {
+        try {
+          await groupService.deleteGroup(gid);
+        } catch {
+          // ignore
+        }
+      }
       setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
       setSelectedGroups([]);
     }
   };
 
   const exportToCSV = () => {
-    const header = ['ID', 'Name', 'Creator', 'Status', 'Members', 'Public', 'CreatedAt', 'Category'];
-    const rows = groups.map(g => [g.id, g.name, g.creator, g.status, g.membersCount, g.isPublic, g.createdAt, g.category]);
+    const header = ['ID', 'Name', 'Status', 'Members', 'Public', 'CreatedAt'];
+    const rows = groups.map(g => [g.id, g.name, g.status ?? 'active', g.membersCount, g.isPublic, g.createdAt]);
     const csvContent = [header, ...rows].map(e => e.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -306,7 +216,7 @@ export default function AdminGroupsIndex() {
                 </button>
 
                 <img
-                  src={group.image}
+                  src={group.cover_image || imagePool[0]}
                   alt={group.name}
                   className="w-full h-32 object-cover rounded-md mb-2"
                 />
@@ -327,10 +237,10 @@ export default function AdminGroupsIndex() {
                 </div>
 
                 <p className="text-xs bg-gray-800 text-white inline-block px-2 py-0.5 rounded">
-                  📁 {group.category}
+                  📁 {group.category || 'N/A'}
                 </p>
 
-                <p className="text-sm text-gray-600">👤 {group.creator}</p>
+                <p className="text-sm text-gray-600">👤 {group.creator || group.creator_name || 'N/A'}</p>
                 <p className="text-sm text-gray-600">👥 {group.membersCount} members</p>
                 <p className="text-xs text-gray-400">
                   📅 Created: {new Date(group.createdAt).toLocaleDateString()}

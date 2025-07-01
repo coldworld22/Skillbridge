@@ -44,6 +44,12 @@ const groupService = {
     return groups.filter((g) => g.isPublic);
   },
 
+  getAllGroups: async (search) => {
+    const { data } = await api.get('/groups', { params: { search } });
+    const list = data?.data ?? [];
+    return Array.isArray(list) ? list.map(formatGroup) : list;
+  },
+
   getGroupById: async (id) => {
     const { data } = await api.get(`/groups/${id}`);
     return data?.data ? formatGroup(data.data) : null;
@@ -119,6 +125,16 @@ const groupService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data?.data;
+  },
+
+  deleteGroup: async (id) => {
+    await api.delete(`/groups/${id}`);
+    return true;
+  },
+
+  updateGroup: async (id, payload) => {
+    const { data } = await api.patch(`/groups/${id}`, payload);
+    return data?.data ? formatGroup(data.data) : null;
   },
 
 };
