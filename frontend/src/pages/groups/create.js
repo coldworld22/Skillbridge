@@ -22,7 +22,9 @@ export default function CreateGroupPage() {
     student: StudentLayout,
   };
 
-  const Layout = layoutMap[user.role] || StudentLayout;
+
+  const Layout = layoutMap[user.role?.toLowerCase()] || StudentLayout;
+
 
   return (
     <Layout>
