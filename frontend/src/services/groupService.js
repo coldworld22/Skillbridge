@@ -50,6 +50,7 @@ const groupService = {
   getGroupMembers: async (groupId) => {
     const { data } = await api.get(`/groups/${groupId}/members`);
     const list = data?.data ?? [];
+
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return list.map((m) => {
       const avatar = m.avatar
@@ -64,6 +65,7 @@ const groupService = {
         role: m.role,
       };
     });
+
   },
 
   manageMember: async (groupId, memberId, action) => {
