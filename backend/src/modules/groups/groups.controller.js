@@ -72,22 +72,65 @@ exports.getGroup = catchAsync(async (req, res) => {
 });
 
 exports.updateGroup = catchAsync(async (req, res) => {
+  const existing = await service.getGroupById(req.params.id);
+  if (!existing) throw new AppError('Group not found', 404);
+
   const data = { ...req.body };
-  if (data.status && !['active','inactive','suspended','pending'].includes(data.status)) {
+  if (
+    data.status &&
+    !['active', 'inactive', 'suspended', 'pending'].includes(data.status)
+  ) {
     throw new AppError('Invalid status', 400);
   }
+
   if (req.file) data.cover_image = `/uploads/groups/${req.file.filename}`;
   const updated = await service.updateGroup(req.params.id, data);
+
   if (req.body.tags) {
     const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
     await service.syncGroupTags(req.params.id, tags);
   }
+
+  if (data.status && data.status !== existing.status) {
+    const msg = `Your group "${existing.name}" status changed to ${data.status}`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: existing.creator_id,
+        type: 'group_status',
+        message: msg,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: existing.creator_id,
+        message: msg,
+      }),
+    ]);
+  }
+
   sendSuccess(res, updated);
 });
 
 exports.deleteGroup = catchAsync(async (req, res) => {
+  const existing = await service.getGroupById(req.params.id);
   await service.deleteGroup(req.params.id);
-  sendSuccess(res, null, "Deleted");
+
+  if (existing) {
+    const msg = `Your group "${existing.name}" has been deleted`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: existing.creator_id,
+        type: 'group_deleted',
+        message: msg,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: existing.creator_id,
+        message: msg,
+      }),
+    ]);
+  }
+
+  sendSuccess(res, null, 'Deleted');
 });
 
 exports.getMyGroups = catchAsync(async (req, res) => {
