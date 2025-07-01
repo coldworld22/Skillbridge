@@ -19,6 +19,7 @@ export default function MyGroupsPage() {
       .catch(() => toast.error('Failed to load groups'));
   }, [hasHydrated, user]);
 
+
   const sortList = (list) => {
     const arr = [...list];
     if (sortBy === 'newest') {
@@ -29,12 +30,14 @@ export default function MyGroupsPage() {
     return arr;
   };
 
+
   const createdGroups = sortList(
     groups.filter((g) => String(g.creator_id) === String(user?.id))
   );
   const joinedGroups = sortList(
     groups.filter((g) => String(g.creator_id) !== String(user?.id))
   );
+
 
   const cancelJoinRequest = (groupId) => {
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
