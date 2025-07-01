@@ -9,14 +9,17 @@ import useAuthStore from '@/store/auth/authStore';
 export default function MyGroupsPage() {
   const [groups, setGroups] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
-  const { user } = useAuthStore();
+
+  const { user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
+    if (!hasHydrated || !user) return;
     groupService
       .getMyGroups()
       .then(setGroups)
       .catch(() => toast.error('Failed to load groups'));
-  }, []);
+  }, [hasHydrated, user]);
+
 
   const sortList = (list) => {
     const arr = [...list];
