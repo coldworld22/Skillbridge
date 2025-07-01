@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Mail, Bell, MessageSquare, Smartphone, Send, Image as ImageIcon, Tag, Users } from 'lucide-react';
 import { toast } from 'react-toastify';
+import groupService from '@/services/groupService';
 
 const allUsers = [
   { id: 'u1', name: 'Ali Hassan', email: 'ali@example.com', phone: '+966500000001', avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcUATNS9SzcJCCPuJ9OqlGynFYfxy2bOYVaw&s' },
@@ -83,14 +84,24 @@ export default function GroupForm() {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      console.log({ groupName, description, type, category, tags, maxSize, timezone, invitedUsers, inviteMethods });
+    try {
+      await groupService.createGroup({
+        name: groupName,
+        description,
+        visibility: type || 'public',
+        requires_approval: false,
+        cover_image: null,
+      });
       toast.success('Group created successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to create group');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   const handleSendInvites = () => {
