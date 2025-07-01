@@ -13,3 +13,12 @@ exports.markRead = catchAsync(async (req, res) => {
   if (!note) throw new AppError("Notification not found", 404);
   sendSuccess(res, note, "Notification marked as read");
 });
+
+exports.create = catchAsync(async (req, res) => {
+  const { user_id, type, message } = req.body || {};
+  if (!user_id || !type || !message) {
+    throw new AppError("Missing fields", 400);
+  }
+  const note = await service.createNotification({ user_id, type, message });
+  sendSuccess(res, note, "Notification created");
+});

@@ -4,6 +4,9 @@ import { toast } from 'react-toastify';
 import groupService from '@/services/groupService';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import userService from '@/services/profile/userService';
+import { sendChatMessage } from '@/services/messageService';
+import { createNotification } from '@/services/notificationService';
+import { API_BASE_URL } from '@/config/config';
 
 
 export default function GroupForm() {
@@ -24,11 +27,17 @@ export default function GroupForm() {
   const [maxSize, setMaxSize] = useState('');
   const [timezone, setTimezone] = useState('');
 
+  const getAvatarUrl = (url) => {
+    if (!url) return '/images/default-avatar.png';
+    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
   useEffect(() => {
     const loadInitial = async () => {
       try {
         const cats = await fetchAllCategories();
-        setAvailableCategories(cats || []);
+        setAvailableCategories(cats?.data || cats || []);
       } catch (err) {
         console.error('Failed to load categories', err);
       }
@@ -60,7 +69,9 @@ export default function GroupForm() {
     search();
   }, [query]);
 
-  const filteredUsers = users;
+  const filteredUsers = users.filter(
+    (u) => !["admin", "superadmin"].includes(u.role?.toLowerCase())
+  );
 
   const toggleUserInvite = (user) => {
     if (invitedUsers.some((u) => u.id === user.id)) {
@@ -105,7 +116,7 @@ export default function GroupForm() {
         name: groupName,
         description,
         visibility: type || 'public',
-        requires_approval: false,
+        requires_approval: type === 'public',
         cover_image: null,
         category_id: category || null,
         tags,
@@ -119,12 +130,36 @@ export default function GroupForm() {
     }
   };
 
-  const handleSendInvites = () => {
+  const handleSendInvites = async () => {
     if (!inviteMethods.length) {
       toast.error('Please select at least one invite method.');
       return;
     }
-    toast.success(`Invites sent via ${inviteMethods.join(', ')} to ${invitedUsers.length} user(s).`);
+
+    try {
+      if (inviteMethods.includes('platform')) {
+        for (const user of invitedUsers) {
+          await sendChatMessage(user.id, {
+            text: `You are invited to join the group ${groupName}`,
+          });
+        }
+      }
+      if (inviteMethods.includes('notification')) {
+        for (const user of invitedUsers) {
+          await createNotification({
+            user_id: user.id,
+            type: 'group_invite',
+            message: `You are invited to join the group ${groupName}`,
+          });
+        }
+      }
+      toast.success(
+        `Invites sent via ${inviteMethods.join(', ')} to ${invitedUsers.length} user(s).`
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to send invitations');
+    }
   };
 
   return (
@@ -262,7 +297,7 @@ export default function GroupForm() {
                   invitedUsers.some((u) => u.id === user.id) ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'
                 }`}
               >
-                <img src={user.avatar || user.profileImage} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                <img src={getAvatarUrl(user.avatar || user.profileImage)} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
                 <div className="flex-1">
                   <div className="text-sm font-medium">{user.name}</div>
                   <div className="text-xs text-gray-500">{user.email} · {user.phone}</div>

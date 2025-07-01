@@ -1,16 +1,12 @@
 import api from "../api/api";
 
-const mockUsers = [
-  { id: 'u1', name: 'Ali Hassan', email: 'ali@example.com' },
-  { id: 'u2', name: 'Sarah Youssef', email: 'sarah@example.com' },
-  { id: 'u3', name: 'Mohammed Fathy', email: 'm.fathy@example.com' },
-  { id: 'u4', name: 'Lina Ahmed', email: 'lina.ahmed@example.com' },
-];
-
 // 🔍 Search users via backend
 const searchUsers = async (query = "") => {
   const { data } = await api.get("/chat/users", { params: { q: query } });
-  return data?.data || [];
+  const list = data?.data || [];
+  return list.filter(
+    (u) => !["admin", "superadmin"].includes(u.role?.toLowerCase())
+  );
 };
 
 // ✅ Submit full profile to backend
@@ -28,30 +24,10 @@ const uploadDemoVideo = async (userId, file) => {
 };
 
 
-// ✅ Mock: Get User Profile
-const getUserProfile = async (userId) => {
-  return mockUsers.find((u) => u.id === userId);
-};
-
-// ✅ Mock: Update User Profile
-const updateUserProfile = async (userId, userData) => {
-  console.log(`Updating user ${userId}`, userData);
-  return { ...userData, id: userId };
-};
-
-// ✅ Mock: Change Password
-const changePassword = async (userId, passwordData) => {
-  console.log(`Changing password for ${userId}`, passwordData);
-  return true;
-};
-
 const userService = {
-  getUserProfile,
-  updateUserProfile,
-  changePassword,
   searchUsers,
   completeUserProfile,
-  uploadDemoVideo
+  uploadDemoVideo,
 };
 
 export default userService;
