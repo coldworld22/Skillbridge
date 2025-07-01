@@ -1,12 +1,16 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatGroup = (g) => ({
-  ...g,
-  cover_image: g.cover_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${g.cover_image}`
-    : g.cover_image,
-});
+
+const formatGroup = (g) => {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  return {
+    ...g,
+    cover_image: g.cover_image ? `${base}${g.cover_image}` : g.cover_image,
+    membersCount: g.members_count ?? g.membersCount ?? 0,
+  };
+};
+
 
 const groupService = {
   getMyGroups: async () => {
