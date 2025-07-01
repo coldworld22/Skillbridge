@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import ChatImage from "../shared/ChatImage";
+import formatRelativeTime from "@/utils/relativeTime";
+import { API_BASE_URL } from "@/config/config";
 import {
   FaPlay,
-  FaUserCircle,
   FaCheckDouble,
   FaTrash,
   FaThumbtack,
@@ -12,6 +13,17 @@ import {
 const MessageItem = ({ message, onReply, onDelete, onPin }) => {
   const isSender = message.sender === "You";
 
+  const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
+  const isImage = (path) => {
+    if (!path) return false;
+    return /\.(png|jpe?g|gif|webp|svg)$/i.test(path) || path.startsWith("data:image/");
+  };
+
   return (
     <motion.div
       className={`flex items-start gap-3 my-2 ${isSender ? "justify-end" : "justify-start"}`}
@@ -20,7 +32,13 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
       transition={{ duration: 0.3 }}
     >
       {/* Avatar */}
-      {!isSender && <FaUserCircle className="text-gray-400 text-2xl" />}
+      <ChatImage
+        src={message.avatar || '/images/default-avatar.png'}
+        alt="avatar"
+        className="w-6 h-6 rounded-full border border-gray-500"
+        width={24}
+        height={24}
+      />
 
       {/* Message Bubble */}
       <div
@@ -39,14 +57,24 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
         {message.text && <p>{message.text}</p>}
 
         {/* 📷 Image */}
-        {message.image && (
+        {message.file && isImage(message.file) && (
           <ChatImage
-            src={message.image}
+            src={getMediaUrl(message.file)}
             alt="Sent image"
             className="rounded-md mt-2 max-w-full object-cover"
             width={300}
             height={200}
           />
+        )}
+        {message.file && !isImage(message.file) && (
+          <a
+            href={getMediaUrl(message.file)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-blue-200 text-xs break-all"
+          >
+            {message.file.split('/').pop()}
+          </a>
         )}
 
         {/* 🎤 Audio */}
@@ -72,7 +100,7 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
         {/* ⏰ Timestamp + Seen */}
         <div className="flex items-center justify-end mt-1 text-xs text-gray-300 gap-1">
-          <span>{message.timestamp || "..."}</span>
+          <span>{formatRelativeTime(message.timestamp)}</span>
           {isSender && message.status === "seen" && (
             <FaCheckDouble className="text-blue-300" title="Seen" />
           )}

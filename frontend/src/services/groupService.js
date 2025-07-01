@@ -46,6 +46,61 @@ const groupService = {
     });
     return data?.data ? formatGroup(data.data) : null;
   },
+
+  getGroupMembers: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/members`);
+    const list = data?.data ?? [];
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    return list.map((m) => {
+      const avatar = m.avatar
+        ? m.avatar.startsWith('http') || m.avatar.startsWith('blob:')
+          ? m.avatar
+          : `${base}${m.avatar}`
+        : '/images/default-avatar.png';
+      return {
+        id: m.user_id,
+        name: m.name,
+        avatar,
+        role: m.role,
+      };
+    });
+  },
+
+  manageMember: async (groupId, memberId, action) => {
+    const { data } = await api.post(`/groups/${groupId}/members/${memberId}/manage`, { action });
+    return data?.data;
+  },
+
+  getGroupMessages: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/messages`);
+    const list = data?.data ?? [];
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    return list.map((m) => ({
+      id: m.id,
+      senderId: m.sender_id,
+      sender: m.sender_name,
+      avatar: m.sender_avatar
+        ? m.sender_avatar.startsWith('http') || m.sender_avatar.startsWith('blob:')
+          ? m.sender_avatar
+          : `${base}${m.sender_avatar}`
+        : '/images/default-avatar.png',
+      text: m.content,
+      file: m.file_url ? (m.file_url.startsWith('http') || m.file_url.startsWith('blob:') || m.file_url.startsWith('data:') ? m.file_url : `${base}${m.file_url}`) : null,
+      audio: m.audio_url ? (m.audio_url.startsWith('http') || m.audio_url.startsWith('blob:') || m.audio_url.startsWith('data:') ? m.audio_url : `${base}${m.audio_url}`) : null,
+      timestamp: m.sent_at,
+    }));
+  },
+
+  sendGroupMessage: async (groupId, { text, file, audio }) => {
+    const form = new FormData();
+    if (text) form.append('message', text);
+    if (file) form.append('file', file);
+    if (audio) form.append('audio', audio);
+    const { data } = await api.post(`/groups/${groupId}/messages`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data?.data;
+  },
 };
 
 export default groupService;

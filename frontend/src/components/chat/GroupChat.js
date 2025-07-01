@@ -1,21 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MessageInput from './MessageInput';
 import MessageList from './MessageList';
 import TypingIndicator from './TypingIndicator';
 import ChatGroupHeader from './ChatGroupHeader';
+import groupService from '@/services/groupService';
 
-const mockMessages = [
-  { id: 1, sender: 'Sarah', text: 'Welcome to the group!', timestamp: new Date().toISOString() },
-  { id: 2, sender: 'Ali', text: 'Thanks! Happy to be here.', timestamp: new Date().toISOString() },
-];
 
 export default function GroupChat({ groupId }) {
-  const [messages, setMessages] = useState(mockMessages);
+  const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
 
-  const sendMessage = (newMessage) => {
-    setMessages((prev) => [...prev, { ...newMessage, id: Date.now(), timestamp: new Date().toISOString() }]);
+  useEffect(() => {
+    if (!groupId) return;
+    groupService.getGroupMessages(groupId).then(setMessages).catch(() => {});
+  }, [groupId]);
+
+  const sendMessage = async (newMessage) => {
+    if (!newMessage.text && !newMessage.file && !newMessage.audio) return;
+    try {
+      const created = await groupService.sendGroupMessage(groupId, {
+        text: newMessage.text,
+        file: newMessage.file,
+        audio: newMessage.audio,
+      });
+      if (created) {
+        setMessages((prev) => [...prev, {
+          id: created.id,
+          sender: created.sender_name,
+          senderId: created.sender_id,
+          avatar: created.sender_avatar,
+          text: created.content,
+          file: created.file_url ? created.file_url : null,
+          audio: created.audio_url ? created.audio_url : null,
+          timestamp: created.sent_at,
+        }]);
+      }
+    } catch (_) {}
   };
 
   const handleDelete = (id) => {
@@ -56,3 +77,4 @@ export default function GroupChat({ groupId }) {
     </div>
   );
 }
+

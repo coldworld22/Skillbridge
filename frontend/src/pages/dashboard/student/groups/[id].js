@@ -17,6 +17,7 @@ export default function GroupDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [joinStatus, setJoinStatus] = useState('member');
   const [activeTab, setActiveTab] = useState('overview');
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     if (!router.isReady || !groupId) return;
@@ -37,6 +38,7 @@ export default function GroupDetailsPage() {
       }
     };
     fetchGroup();
+    groupService.getGroupMembers(groupId).then(setMembers).catch(() => {});
   }, [router.isReady, groupId]);
 
   const handleJoin = async () => {
@@ -130,15 +132,19 @@ export default function GroupDetailsPage() {
             )}
 
             <div className="pt-4">
-              <h2 className="text-sm font-medium mb-1">👥 Members</h2>
-              <div className="flex gap-2 mt-1">
-                {[...Array(5)].map((_, i) => (
-                  <img
-                    key={i}
-                    src="https://i.pravatar.cc/40?img=12"
-                    className="w-8 h-8 rounded-full border"
-                    alt="member avatar"
-                  />
+              <h2 className="text-sm font-medium mb-1">
+                👥 Members ({members.length})
+              </h2>
+              <div className="flex flex-col gap-2 mt-1">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 text-sm">
+                    <img
+                      src={m.avatar}
+                      className="w-8 h-8 rounded-full border"
+                      alt={m.name}
+                    />
+                    <span>{m.name}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -149,15 +155,19 @@ export default function GroupDetailsPage() {
           <>
             <GroupChat groupId={group.id} />
             <div className="mt-6">
-              <h2 className="text-sm font-medium mb-1">👥 Members</h2>
-              <div className="flex gap-2 mt-1">
-                {[...Array(5)].map((_, i) => (
-                  <img
-                    key={i}
-                    src="https://i.pravatar.cc/40?img=12"
-                    className="w-8 h-8 rounded-full border"
-                    alt="member avatar"
-                  />
+              <h2 className="text-sm font-medium mb-1">
+                👥 Members ({members.length})
+              </h2>
+              <div className="flex flex-col gap-2 mt-1">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 text-sm">
+                    <img
+                      src={m.avatar}
+                      className="w-8 h-8 rounded-full border"
+                      alt={m.name}
+                    />
+                    <span>{m.name}</span>
+                  </div>
                 ))}
               </div>
             </div>
