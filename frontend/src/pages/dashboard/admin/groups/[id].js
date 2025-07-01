@@ -212,7 +212,17 @@ export default function AdminGroupDetailsPage() {
                 </div>
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-600"><strong>Purpose:</strong> {group.purpose}</p>
-                  <p className="text-sm text-gray-600 mt-1"><strong>Tools Used:</strong> {group.tools.join(', ')}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <strong>Tools Used:</strong>{' '}
+                    {(() => {
+                      const tools = Array.isArray(group.tools)
+                        ? group.tools
+                        : Array.isArray(group.tags)
+                        ? group.tags
+                        : [];
+                      return tools.length > 0 ? tools.join(', ') : 'N/A';
+                    })()}
+                  </p>
                 </div>
               </div>
             </div>
