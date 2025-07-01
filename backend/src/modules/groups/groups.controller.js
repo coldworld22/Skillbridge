@@ -23,6 +23,7 @@ exports.createGroup = catchAsync(async (req, res) => {
     category_id: category_id || null,
     max_size: max_size || null,
     timezone: timezone || null,
+    status: "pending",
   });
   if (req.body.tags) {
     const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
@@ -55,7 +56,8 @@ exports.createGroup = catchAsync(async (req, res) => {
     ),
   ]);
 
-  sendSuccess(res, group, "Group created");
+  const full = await service.getGroupById(group.id);
+  sendSuccess(res, full, "Group created");
 });
 
 exports.listGroups = catchAsync(async (req, res) => {
@@ -70,6 +72,9 @@ exports.getGroup = catchAsync(async (req, res) => {
 
 exports.updateGroup = catchAsync(async (req, res) => {
   const data = { ...req.body };
+  if (data.status && !['active','inactive','suspended','pending'].includes(data.status)) {
+    throw new AppError('Invalid status', 400);
+  }
   if (req.file) data.cover_image = `/uploads/groups/${req.file.filename}`;
   const updated = await service.updateGroup(req.params.id, data);
   if (req.body.tags) {
