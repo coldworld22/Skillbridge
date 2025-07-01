@@ -4,7 +4,7 @@ const service = require("./groups.service");
 const { v4: uuidv4 } = require("uuid");
 
 exports.createGroup = catchAsync(async (req, res) => {
-  const { name, description, visibility, requires_approval, cover_image } = req.body;
+  const { name, description, visibility, requires_approval } = req.body;
   const group = await service.createGroup({
     id: uuidv4(),
     creator_id: req.user.id,
@@ -12,7 +12,7 @@ exports.createGroup = catchAsync(async (req, res) => {
     description,
     visibility: visibility || "public",
     requires_approval: requires_approval || false,
-    cover_image,
+    cover_image: req.file ? `/uploads/groups/${req.file.filename}` : undefined,
   });
   await service.addMember(group.id, req.user.id, "admin");
   sendSuccess(res, group, "Group created");
@@ -29,7 +29,9 @@ exports.getGroup = catchAsync(async (req, res) => {
 });
 
 exports.updateGroup = catchAsync(async (req, res) => {
-  const updated = await service.updateGroup(req.params.id, req.body);
+  const data = { ...req.body };
+  if (req.file) data.cover_image = `/uploads/groups/${req.file.filename}`;
+  const updated = await service.updateGroup(req.params.id, data);
   sendSuccess(res, updated);
 });
 
