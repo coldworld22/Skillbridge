@@ -1,40 +1,47 @@
 // components/instructors/StudentProgressPanel.js
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  fetchClassScores,
+  issueClassCertificate,
+} from "@/services/classScoreService";
 
 export default function StudentProgressPanel({ classId }) {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    async function fetchProgress() {
-      // Replace with real API
-      const mockData = [
-        {
-          id: "stu1",
-          name: "Ahmed Mohamed",
-          attendancePercentage: 100,
-          assignmentsCompleted: true,
-          grade: "95%",
-          certificateIssued: false,
-        },
-        {
-          id: "stu2",
-          name: "Sara Ali",
-          attendancePercentage: 90,
-          assignmentsCompleted: false,
-          grade: "87%",
-          certificateIssued: false,
-        },
-      ];
-      setStudents(mockData);
-    }
-
-    fetchProgress();
+    if (!classId) return;
+    const load = async () => {
+      try {
+        const list = await fetchClassScores(classId);
+        const formatted = list.map((s) => ({
+          id: s.student_id,
+          name: s.full_name || s.student_id,
+          attendancePercentage: s.attendance_score,
+          assignmentsCompleted: s.assignment_score > 0,
+          grade: s.total_score,
+          certificateIssued: Boolean(s.certificate_issued),
+        }));
+        setStudents(formatted);
+      } catch (err) {
+        console.error("Failed to load progress", err);
+      }
+    };
+    load();
   }, [classId]);
 
-  const handleIssueCertificate = (studentId) => {
-    alert(`✅ Certificate Issued for Student ID: ${studentId}`);
-    // TODO: Call API to actually issue the certificate
+  const handleIssueCertificate = async (studentId) => {
+    try {
+      await issueClassCertificate(classId, studentId);
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId ? { ...s, certificateIssued: true } : s
+        )
+      );
+    } catch (err) {
+      console.error("Failed to issue certificate", err);
+      alert("Failed to issue certificate");
+    }
   };
 
   return (
