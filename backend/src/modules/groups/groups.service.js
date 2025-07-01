@@ -12,16 +12,60 @@ exports.createGroup = async (data) => {
   return row;
 };
 
-exports.listGroups = async (search) => {
-  return db("groups")
-    .modify((qb) => {
-      if (search) qb.whereILike("name", `%${search}%`);
-    })
-    .select("*")
-    .orderBy("created_at", "desc");
+exports.syncGroupTags = async (groupId, tagNames = []) => {
+  if (!tagNames.length) return [];
+  const existing = await db('group_tags').whereIn('name', tagNames);
+  const existingMap = {};
+  existing.forEach((t) => { existingMap[t.name] = t; });
+
+  const toInsert = tagNames.filter((n) => !existingMap[n]);
+  const inserted = [];
+  for (const name of toInsert) {
+    const slug = name.toLowerCase().replace(/\s+/g, '-');
+    const [row] = await db('group_tags').insert({ name, slug }).returning('*');
+    inserted.push(row);
+  }
+
+  const all = [...existing, ...inserted];
+  for (const tag of all) {
+    await db('group_tag_map')
+      .insert({ group_id: groupId, tag_id: tag.id })
+      .onConflict(['group_id', 'tag_id'])
+      .ignore();
+  }
+  return all;
 };
 
-exports.getGroupById = (id) => db("groups").where({ id }).first();
+exports.getGroupTags = async (groupIds) => {
+  const rows = await db('group_tag_map as m')
+    .join('group_tags as t', 'm.tag_id', 't.id')
+    .whereIn('m.group_id', Array.isArray(groupIds) ? groupIds : [groupIds])
+    .select('m.group_id', 't.name');
+  const map = {};
+  rows.forEach((r) => {
+    if (!map[r.group_id]) map[r.group_id] = [];
+    map[r.group_id].push(r.name);
+  });
+  return map;
+};
+
+exports.listGroups = async (search) => {
+  const groups = await db('groups')
+    .modify((qb) => {
+      if (search) qb.whereILike('name', `%${search}%`);
+    })
+    .select('*')
+    .orderBy('created_at', 'desc');
+  const tagsMap = await exports.getGroupTags(groups.map((g) => g.id));
+  return groups.map((g) => ({ ...g, tags: tagsMap[g.id] || [] }));
+};
+
+exports.getGroupById = async (id) => {
+  const group = await db('groups').where({ id }).first();
+  if (!group) return null;
+  const tagsMap = await exports.getGroupTags(id);
+  return { ...group, tags: tagsMap[id] || [] };
+};
 
 exports.updateGroup = async (id, data) => {
   const [row] = await db("groups").where({ id }).update(data).returning("*");

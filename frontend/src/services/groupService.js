@@ -17,6 +17,9 @@ const formatGroup = (g) => {
     membersCount: g.members_count ?? g.membersCount ?? 0,
     isPublic: g.visibility ? g.visibility === 'public' : g.isPublic ?? true,
     createdAt: g.created_at ?? g.createdAt,
+    categoryId: g.category_id ?? g.categoryId ?? null,
+    maxSize: g.max_size ?? g.maxSize ?? null,
+    timezone: g.timezone ?? null,
     tags,
   };
 };
@@ -35,9 +38,10 @@ const groupService = {
   },
 
   getPublicGroups: async (search) => {
-    const { data } = await api.get("/groups", { params: { search } });
+    const { data } = await api.get('/groups', { params: { search } });
     const list = data?.data ?? [];
-    return Array.isArray(list) ? list.map(formatGroup) : list;
+    const groups = Array.isArray(list) ? list.map(formatGroup) : list;
+    return groups.filter((g) => g.isPublic);
   },
 
   getGroupById: async (id) => {
