@@ -2,9 +2,13 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./groups.service");
 const { v4: uuidv4 } = require("uuid");
+const AppError = require("../../utils/AppError");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const { name, description, visibility, requires_approval } = req.body;
+  if (await service.findByName(name)) {
+    throw new AppError("Group name already exists", 409);
+  }
   const group = await service.createGroup({
     id: uuidv4(),
     creator_id: req.user.id,
