@@ -6,9 +6,21 @@ const AppError = require("../../utils/AppError");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const mailService = require("../../services/mailService");
+const whatsappService = require("../../services/whatsappService");
 
 exports.createGroup = catchAsync(async (req, res) => {
-  const { name, description, visibility, requires_approval, category_id, max_size, timezone } = req.body;
+  const {
+    name,
+    description,
+    visibility,
+    requires_approval,
+    category_id,
+    max_size,
+    timezone,
+    invited_users,
+    invite_methods,
+  } = req.body;
   if (await service.findByName(name)) {
     throw new AppError("Group name already exists", 409);
   }
@@ -31,30 +43,77 @@ exports.createGroup = catchAsync(async (req, res) => {
   }
   await service.addMember(group.id, req.user.id, "admin");
 
-  const students = await userModel.findStudents();
-  const instructors = await userModel.findInstructors();
-  const admins = await userModel.findAdmins();
-  const recipients = [...students, ...instructors, ...admins].filter(
-    (u) => u.id !== req.user.id
-  );
-  const message = `${req.user.full_name} created a new group "${name}"`;
+  const inviteUserIds = invited_users
+    ? Array.isArray(invited_users)
+      ? invited_users
+      : JSON.parse(invited_users)
+    : [];
+  const inviteMethods = invite_methods
+    ? Array.isArray(invite_methods)
+      ? invite_methods
+      : JSON.parse(invite_methods)
+    : [];
 
-  await Promise.all([
-    ...recipients.map((u) =>
-      notificationService.createNotification({
-        user_id: u.id,
-        type: "group_created",
-        message,
-      })
-    ),
-    ...recipients.map((u) =>
-      messageService.createMessage({
-        sender_id: req.user.id,
-        receiver_id: u.id,
-        message,
-      })
-    ),
-  ]);
+  const groupLink = `${process.env.FRONTEND_URL}/groups/${group.id}`;
+
+  if (visibility === 'private' && inviteUserIds.length) {
+    const inviteMsg = `${req.user.full_name} invited you to join the group "${name}".`;
+    const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
+    for (const uid of inviteUserIds) {
+      const contact = await userModel.findContactInfo(uid);
+      if (!contact) continue;
+      await Promise.all([
+        notificationService.createNotification({
+          user_id: uid,
+          type: 'group_invite',
+          message: inviteMsg,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: uid,
+          message: inviteMsg,
+        }),
+      ]);
+      if (inviteMethods.includes('email') && contact.email) {
+        await mailService.sendMail({
+          to: contact.email,
+          subject: 'Group Invitation',
+          html: `<p>${inviteMsg}</p><p><a href="${groupLink}">Join Group</a></p>`,
+        });
+      }
+      if (inviteMethods.includes('whatsapp') && contact.phone) {
+        await whatsappService.sendWhatsApp({
+          to: contact.phone,
+          message: inviteLinkMsg,
+        });
+      }
+    }
+  } else {
+    const students = await userModel.findStudents();
+    const instructors = await userModel.findInstructors();
+    const admins = await userModel.findAdmins();
+    const recipients = [...students, ...instructors, ...admins].filter(
+      (u) => u.id !== req.user.id
+    );
+    const message = `${req.user.full_name} created a new group "${name}"`;
+
+    await Promise.all([
+      ...recipients.map((u) =>
+        notificationService.createNotification({
+          user_id: u.id,
+          type: 'group_created',
+          message,
+        })
+      ),
+      ...recipients.map((u) =>
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: u.id,
+          message,
+        })
+      ),
+    ]);
+  }
 
   const full = await service.getGroupById(group.id);
   sendSuccess(res, full, "Group created");

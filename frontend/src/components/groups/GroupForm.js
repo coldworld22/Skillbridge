@@ -136,6 +136,15 @@ export default function GroupForm() {
       if (tags.length) payload.append('tags', JSON.stringify(tags));
       if (maxSize) payload.append('max_size', maxSize);
       if (timezone) payload.append('timezone', timezone);
+      if (invitedUsers.length) {
+        payload.append(
+          'invited_users',
+          JSON.stringify(invitedUsers.map((u) => u.id))
+        );
+      }
+      if (inviteMethods.length) {
+        payload.append('invite_methods', JSON.stringify(inviteMethods));
+      }
 
       const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');

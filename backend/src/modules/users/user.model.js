@@ -88,6 +88,14 @@ exports.findByPhone = async (phone) => {
   return db("users").where({ phone }).first();
 };
 
+// Fetch minimal contact info for invites
+exports.findContactInfo = async (id) => {
+  return db("users")
+    .select("id", "full_name", "email", "phone")
+    .where({ id })
+    .first();
+};
+
 // Fetch Admin and SuperAdmin users
 exports.findAdmins = () => {
   return db("users")
