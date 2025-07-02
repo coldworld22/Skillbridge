@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
-import GroupPermissionSettings from '@/components/chat/GroupPermissionSettings';
+import GroupPermissionSettings from '@/components/groups/GroupPermissionSettings';
 import groupService from '@/services/groupService';
 import JoinRequestCard from '@/components/groups/JoinRequestCard';
 import useAuthStore from '@/store/auth/authStore';
@@ -23,6 +23,7 @@ export default function GroupDetailsPage() {
   const { user, hasHydrated } = useAuthStore();
 
   const [members, setMembers] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     if (!router.isReady || !groupId || !hasHydrated) return;
@@ -65,6 +66,14 @@ export default function GroupDetailsPage() {
     load();
   }, [router.isReady, groupId, user, hasHydrated]);
 
+  useEffect(() => {
+    if (!groupId || !isAdmin) return;
+    groupService
+      .getJoinRequestsForGroup(groupId)
+      .then((list) => setPendingCount(Array.isArray(list) ? list.length : 0))
+      .catch(() => setPendingCount(0));
+  }, [groupId, isAdmin]);
+
   const handleJoin = async () => {
     try {
       setJoinStatus('pending');
@@ -88,7 +97,7 @@ export default function GroupDetailsPage() {
   if (joinStatus === 'joined') {
     tabs.push('chat');
     tabs.push('members');
-    if (isAdmin) tabs.push('settings');
+    if (isAdmin) tabs.push('member-management');
   }
 
   return (
@@ -119,7 +128,18 @@ export default function GroupDetailsPage() {
                 activeTab === tab ? 'border-b-2 border-yellow-500 text-yellow-600' : 'text-gray-500'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'member-management' ? (
+                <>
+                  Member Management
+                  {pendingCount > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-600 text-white">
+                      {pendingCount}
+                    </span>
+                  )}
+                </>
+              ) : (
+                tab.charAt(0).toUpperCase() + tab.slice(1)
+              )}
             </button>
           ))}
         </div>
@@ -159,14 +179,6 @@ export default function GroupDetailsPage() {
             {joinStatus === 'joined' && (
               <div className="text-green-600 font-semibold">✅ You are a member of this group</div>
             )}
-
-            {isAdmin && (
-              <div className="pt-4">
-                <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
-                <JoinRequestCard groupId={group.id} />
-              </div>
-            )}
-
               <div className="pt-4">
                 <h2 className="text-sm font-medium mb-1">
                   👥 Members ({members.length})
@@ -216,8 +228,12 @@ export default function GroupDetailsPage() {
           </div>
         )}
 
-        {activeTab === 'settings' && isAdmin && (
+        {activeTab === 'member-management' && isAdmin && (
           <div className="space-y-4">
+            <div className="pt-4">
+              <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
+              <JoinRequestCard groupId={group.id} onCountChange={setPendingCount} />
+            </div>
             <GroupPermissionSettings groupId={group.id} />
           </div>
         )}

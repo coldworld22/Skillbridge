@@ -164,6 +164,16 @@ const groupService = {
     return true;
   },
 
+  getGroupPermissions: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/permissions`);
+    return data?.data ?? {};
+  },
+
+  updateGroupPermissions: async (groupId, payload) => {
+    const { data } = await api.put(`/groups/${groupId}/permissions`, payload);
+    return data?.data;
+  },
+
 };
 
 export default groupService;
