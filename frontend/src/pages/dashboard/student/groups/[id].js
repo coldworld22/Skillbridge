@@ -1,6 +1,8 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import StudentLayout from '@/components/layouts/StudentLayout';
+import InstructorLayout from '@/components/layouts/InstructorLayout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
@@ -23,6 +25,14 @@ export default function GroupDetailsPage() {
   const [members, setMembers] = useState([]);
 
   const { user, hasHydrated } = useAuthStore();
+
+  const role = user?.role?.toLowerCase();
+  let Layout = StudentLayout;
+  if (role === 'instructor') {
+    Layout = InstructorLayout;
+  } else if (role === 'admin' || role === 'superadmin') {
+    Layout = AdminLayout;
+  }
 
   useEffect(() => {
     // Avoid running when navigating away from this page. When the route
@@ -82,9 +92,9 @@ export default function GroupDetailsPage() {
 
   if (loading || !group) {
     return (
-      <StudentLayout>
+      <Layout>
         <div className="p-6 text-center text-gray-500">⏳ Loading group...</div>
-      </StudentLayout>
+      </Layout>
     );
   }
 
@@ -96,7 +106,7 @@ export default function GroupDetailsPage() {
   }
 
   return (
-    <StudentLayout>
+    <Layout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Link href="/dashboard/student/groups/my-groups">
           <button className="text-sm text-blue-600 hover:underline">&larr; Back to My Groups</button>
@@ -233,6 +243,6 @@ export default function GroupDetailsPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </Layout>
   );
 }
