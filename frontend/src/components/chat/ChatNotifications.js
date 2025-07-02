@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaEnvelopeOpenText, FaUsers, FaBell } from "react-icons/fa";
 import { getNotifications } from "@/services/notificationService";
 import formatRelativeTime from "@/utils/relativeTime";
+import LinkText from "@/components/shared/LinkText";
 
 const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 1 }) => {
   const [systemNotifs, setSystemNotifs] = useState([]);
@@ -42,7 +43,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
           <ul className="space-y-2">
             {systemNotifs.map((n) => (
               <li key={n.id} className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500">
-                <div className="text-sm">{n.message}</div>
+                <div className="text-sm"><LinkText text={n.message} /></div>
                 <div className="text-xs text-gray-400">{formatRelativeTime(n.timestamp)}</div>
               </li>
             ))}

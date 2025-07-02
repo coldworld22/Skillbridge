@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
+import React from "react";
+import LinkText from "@/components/shared/LinkText";
 import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -22,7 +24,7 @@ const useNotificationStore = create((set, get) => ({
         const diff = unread - prevUnread;
         if (diff === 1) {
           const note = filtered.find((n) => !n.read);
-          toast.info(note.message);
+          toast.info(<LinkText text={note.message} />);
         } else {
           toast.info(`You have ${diff} new notifications`);
         }

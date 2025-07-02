@@ -28,6 +28,7 @@ import { API_BASE_URL } from "@/config/config";
 import useCartStore from "@/store/cart/cartStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
 
 // ✅ Assets
@@ -262,7 +263,7 @@ const Navbar = () => {
                             : "bg-yellow-50"
                         }`}
                       >
-                        <span>{note.message}</span>
+                        <span><LinkText text={note.message} /></span>
                         {!note.read && (
                           <span className="ml-2 text-xs text-red-500">new</span>
                         )}

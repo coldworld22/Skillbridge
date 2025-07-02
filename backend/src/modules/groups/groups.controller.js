@@ -63,8 +63,12 @@ exports.createGroup = catchAsync(async (req, res) => {
       if (!contact) continue;
 
       const role = (contact.role || '').toLowerCase();
-      const rolePath = role === 'instructor' ? 'instructor' : role === 'student' ? 'student' : 'admin';
-      const groupLink = `${process.env.FRONTEND_URL}/dashboard/${rolePath}/groups/${group.id}`;
+
+      const rolePath =
+        role === 'instructor' ? 'instructor' : role === 'student' ? 'student' : 'admin';
+      const host = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
+
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
 
       await Promise.all([

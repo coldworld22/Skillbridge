@@ -3,6 +3,7 @@ import formatRelativeTime from '@/utils/relativeTime';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
 import useNotificationStore from '@/store/notifications/notificationStore';
+import LinkText from '@/components/shared/LinkText';
 
 export default function StudentNotificationsPage() {
   const [filter, setFilter] = useState('all');
@@ -81,7 +82,7 @@ export default function StudentNotificationsPage() {
                     {note.type === 'class' ? <FaChalkboardTeacher /> : note.type === 'assignment' ? <FaCheckCircle /> : <FaBell />}
                   </div>
                   <div>
-                    <p className="text-sm mb-1 leading-relaxed font-medium">{note.message}</p>
+                    <p className="text-sm mb-1 leading-relaxed font-medium"><LinkText text={note.message} /></p>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
                       <FaCalendarAlt /> {formatRelativeTime(note.date)}
                     </p>
