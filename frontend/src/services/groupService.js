@@ -22,6 +22,7 @@ const formatGroup = (g) => {
     maxSize: g.max_size ?? g.maxSize ?? null,
     timezone: g.timezone ?? null,
     creator: g.creator_name ?? g.creator ?? null,
+    creatorRole: g.creator_role ?? g.creatorRole ?? null,
     status: g.status ?? 'active',
     tags,
   };
