@@ -106,16 +106,18 @@ export default function ExploreGroupsPage() {
         <div className="flex flex-wrap gap-2 pt-2">
           {tags.map((tag) => (
             <button
-              key={tag}
-              onClick={() => setSelectedTag(tag === selectedTag ? '' : tag)}
+              key={tag.id || tag.slug || tag.name}
+              onClick={() =>
+                setSelectedTag(tag.name === selectedTag ? '' : tag.name)
+              }
               className={`px-3 py-1 text-sm rounded-full border ${
-                selectedTag === tag
+                selectedTag === tag.name
                   ? 'bg-yellow-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
-              aria-label={`Filter by tag ${tag}`}
+              aria-label={`Filter by tag ${tag.name}`}
             >
-              #{tag}
+              #{tag.name}
             </button>
           ))}
         </div>
