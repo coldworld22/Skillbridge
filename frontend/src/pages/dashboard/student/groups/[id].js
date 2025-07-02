@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
-import GroupPermissionSettings from '@/components/chat/GroupPermissionSettings';
+import GroupPermissionSettings from '@/components/groups/GroupPermissionSettings';
 import groupService from '@/services/groupService';
 import JoinRequestCard from '@/components/groups/JoinRequestCard';
 import useAuthStore from '@/store/auth/authStore';
