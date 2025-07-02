@@ -212,7 +212,7 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'chat' && joinStatus === 'joined' && (
           <>
-            <GroupChat groupId={group.id} />
+            <GroupChat groupId={group.id} groupName={group.name} />
               <div className="mt-6">
                 <h2 className="text-sm font-medium mb-1">
                   👥 Members ({members.length})

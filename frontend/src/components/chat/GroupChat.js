@@ -6,14 +6,29 @@ import ChatGroupHeader from './ChatGroupHeader';
 import groupService from '@/services/groupService';
 
 
-export default function GroupChat({ groupId }) {
+export default function GroupChat({ groupId, groupName }) {
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
     if (!groupId) return;
-    groupService.getGroupMessages(groupId).then(setMessages).catch(() => {});
+    let isMounted = true;
+
+    const fetchMessages = async () => {
+      try {
+        const msgs = await groupService.getGroupMessages(groupId);
+        if (isMounted) setMessages(msgs);
+      } catch (_) {}
+    };
+
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [groupId]);
 
   const sendMessage = async (newMessage) => {
@@ -59,7 +74,7 @@ export default function GroupChat({ groupId }) {
 
   return (
     <div className="space-y-4">
-      <ChatGroupHeader groupId={groupId} />
+      <ChatGroupHeader groupId={groupId} groupName={groupName} />
 
       <div className="h-64 overflow-y-auto bg-gray-100 dark:bg-gray-800 border rounded p-3">
         <MessageList
