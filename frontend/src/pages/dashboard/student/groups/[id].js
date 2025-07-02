@@ -19,6 +19,7 @@ export default function GroupDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [joinStatus, setJoinStatus] = useState('none');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [members, setMembers] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
@@ -45,20 +46,24 @@ export default function GroupDetailsPage() {
         const mem = await groupService.getGroupMembers(groupId);
         setMembers(mem);
 
+        let role = null;
         if (user) {
           if (String(user.id) === String(data.creator_id)) {
             setIsAdmin(true);
             setJoinStatus('joined');
+            role = 'admin';
           } else {
             const member = mem.find((m) => String(m.id) === String(user.id));
             if (member) {
               setJoinStatus('joined');
+              role = member.role;
               if (member.role === 'admin') setIsAdmin(true);
             } else {
               setJoinStatus('none');
             }
           }
         }
+        setCurrentUserRole(role);
       } catch (err) {
         toast.error('Failed to load group.');
         router.push('/dashboard/student/groups/explore');
@@ -237,7 +242,11 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'members' && joinStatus === 'joined' && (
           <div className="space-y-4">
-            <GroupMembersList groupId={group.id} currentUserId={user?.id} />
+            <GroupMembersList
+              groupId={group.id}
+              currentUserId={user?.id}
+              canManage={isAdmin || currentUserRole === 'moderator'}
+            />
           </div>
         )}
 
