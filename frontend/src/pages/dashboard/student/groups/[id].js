@@ -25,6 +25,10 @@ export default function GroupDetailsPage() {
   const { user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
+    // Avoid running when navigating away from this page. When the route
+    // changes, Next.js reuses the component briefly with the new query
+    // params, which previously caused a redirect to the group explore page.
+    if (router.pathname !== '/dashboard/student/groups/[id]') return;
     if (!router.isReady || !groupId || !hasHydrated) return;
 
     const load = async () => {
@@ -105,17 +109,22 @@ export default function GroupDetailsPage() {
 
               <p className="text-sm text-gray-500">
                 👑 Creator:{' '}
-                <Link
-                  href={
-                    group.creatorRole?.toLowerCase() === 'student'
+                {(() => {
+                  const role = group.creatorRole?.toLowerCase();
+                  const href =
+                    role === 'instructor'
+                      ? `/instructors/${group.creator_id}`
+                      : role === 'student'
                       ? `/students/${group.creator_id}`
-                      : `/instructors/${group.creator_id}`
-                  }
-
-                  className="text-blue-600 hover:underline"
-                >
-                  {group.creator || group.creator_id}
-                </Link>
+                      : null;
+                  return href ? (
+                    <Link href={href} className="text-blue-600 hover:underline">
+                      {group.creator || group.creator_id}
+                    </Link>
+                  ) : (
+                    <span>{group.creator || group.creator_id}</span>
+                  );
+                })()}
               </p>
 
             )}
