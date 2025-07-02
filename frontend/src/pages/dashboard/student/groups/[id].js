@@ -106,7 +106,12 @@ export default function GroupDetailsPage() {
               <p className="text-sm text-gray-500">
                 👑 Creator:{' '}
                 <Link
-                  href={`/instructors/${group.creator_id}`}
+                  href={
+                    group.creatorRole?.toLowerCase() === 'student'
+                      ? `/students/${group.creator_id}`
+                      : `/instructors/${group.creator_id}`
+                  }
+
                   className="text-blue-600 hover:underline"
                 >
                   {group.creator || group.creator_id}

@@ -58,10 +58,11 @@ exports.listGroups = async ({ search, status }) => {
       if (search) qb.whereILike('g.name', `%${search}%`);
       if (status && status !== 'all') qb.andWhere('g.status', status);
     })
-    .groupBy('g.id', 'u.full_name', 'c.name')
+    .groupBy('g.id', 'u.full_name', 'u.role', 'c.name')
     .select(
       'g.*',
       db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw('COUNT(DISTINCT gm.id) as members_count')
     )
@@ -77,10 +78,11 @@ exports.getGroupById = async (id) => {
     .leftJoin('categories as c', 'g.category_id', 'c.id')
     .leftJoin('group_members as gm', 'g.id', 'gm.group_id')
     .where('g.id', id)
-    .groupBy('g.id', 'u.full_name', 'c.name')
+    .groupBy('g.id', 'u.full_name', 'u.role', 'c.name')
     .select(
       'g.*',
       db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw('COUNT(DISTINCT gm.id) as members_count')
     )
@@ -123,11 +125,12 @@ exports.getUserGroups = async (userId) => {
       'g.*',
       'gm.role',
       db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw('COUNT(DISTINCT gm2.id) as members_count')
     )
     .where('gm.user_id', userId)
-    .groupBy('g.id', 'gm.role', 'u.full_name', 'c.name');
+    .groupBy('g.id', 'gm.role', 'u.full_name', 'u.role', 'c.name');
 
   const creatorQuery = db('groups as g')
     .leftJoin('users as u', 'g.creator_id', 'u.id')
@@ -137,11 +140,12 @@ exports.getUserGroups = async (userId) => {
       'g.*',
       db.raw("'admin' as role"),
       db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw('COUNT(DISTINCT gm2.id) as members_count')
     )
     .where('g.creator_id', userId)
-    .groupBy('g.id', 'u.full_name', 'c.name');
+    .groupBy('g.id', 'u.full_name', 'u.role', 'c.name');
 
 
   const pendingQuery = db('group_join_requests as gj')
@@ -153,12 +157,13 @@ exports.getUserGroups = async (userId) => {
       'g.*',
       db.raw("'pending' as role"),
       db.raw("COALESCE(u.full_name, '') as creator_name"),
+      db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw('COUNT(DISTINCT gm2.id) as members_count')
     )
     .where('gj.user_id', userId)
     .andWhere('gj.status', 'pending')
-    .groupBy('g.id', 'u.full_name', 'c.name');
+    .groupBy('g.id', 'u.full_name', 'u.role', 'c.name');
 
   const [createdRows, memberRows, pendingRows] = await Promise.all([
     creatorQuery,
