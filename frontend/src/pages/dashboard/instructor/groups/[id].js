@@ -232,7 +232,9 @@ export default function GroupDetailsPage() {
           <div className="space-y-4">
             <div className="pt-4">
               <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
+
               <JoinRequestCard groupId={group.id} onCountChange={setPendingCount} />
+
             </div>
             <GroupPermissionSettings groupId={group.id} />
           </div>
