@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import ChatImage from "../shared/ChatImage";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
+import useAuthStore from "@/store/auth/authStore";
 import {
   FaPlay,
   FaCheckDouble,
@@ -11,7 +12,8 @@ import {
 } from "react-icons/fa";
 
 const MessageItem = ({ message, onReply, onDelete, onPin }) => {
-  const isSender = message.sender === "You";
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const isSender = message.senderId === currentUserId || message.sender === "You";
 
   const getMediaUrl = (url) => {
     if (!url) return null;
@@ -101,9 +103,7 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
         {/* ⏰ Timestamp + Seen */}
         <div className="flex items-center justify-end mt-1 text-xs text-gray-300 gap-1">
           <span>{formatRelativeTime(message.timestamp)}</span>
-          {isSender && message.status === "seen" && (
-            <FaCheckDouble className="text-blue-300" title="Seen" />
-          )}
+          {isSender && <FaCheckDouble className="text-blue-300" title="Sent" />}
         </div>
       </div>
     </motion.div>
