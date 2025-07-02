@@ -19,6 +19,7 @@ import { toggleInstructorStatus } from "@/services/instructor/instructorService"
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useAppConfigStore from "@/store/appConfigStore";
+import LinkText from "@/components/shared/LinkText";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -278,7 +279,7 @@ export default function Header() {
                           : "bg-yellow-50 dark:bg-gray-600"
                       }`}
                     >
-                      {n.message}
+                      <LinkText text={n.message} />
                     </li>
                   ))}
                   {notifications.length === 0 && (

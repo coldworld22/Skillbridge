@@ -54,43 +54,44 @@ exports.createGroup = catchAsync(async (req, res) => {
       : JSON.parse(invite_methods)
     : [];
 
-  const groupLink = `${process.env.FRONTEND_URL}/groups/${group.id}`;
-
   if (visibility === 'private' && inviteUserIds.length) {
 
     const inviteMsg = `${req.user.full_name} invited you to join the group "${name}".`;
-    const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
 
     for (const uid of inviteUserIds) {
       const contact = await userModel.findContactInfo(uid);
       if (!contact) continue;
+
+      const role = (contact.role || '').toLowerCase();
+      const rolePath =
+        role === 'instructor' ? 'instructor' : role === 'student' ? 'student' : 'admin';
+      const host = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
+      const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
+
       await Promise.all([
         notificationService.createNotification({
           user_id: uid,
           type: 'group_invite',
-          message: inviteMsg,
+          message: inviteLinkMsg,
         }),
         messageService.createMessage({
           sender_id: req.user.id,
           receiver_id: uid,
-          message: inviteMsg,
+          message: inviteLinkMsg,
         }),
       ]);
       if (inviteMethods.includes('email') && contact.email) {
         await mailService.sendMail({
           to: contact.email,
           subject: 'Group Invitation',
-
           html: `<p>${inviteMsg}</p><p><a href="${groupLink}">Join Group</a></p>`,
-
         });
       }
       if (inviteMethods.includes('whatsapp') && contact.phone) {
         await whatsappService.sendWhatsApp({
           to: contact.phone,
-
           message: inviteLinkMsg,
-
         });
       }
     }
