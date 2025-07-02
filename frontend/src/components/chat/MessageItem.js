@@ -48,6 +48,10 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
           isSender ? "bg-yellow-500 text-gray-900 ml-auto" : "bg-gray-700 text-white"
         }`}
       >
+        {/* Sender Name */}
+        <div className="text-xs font-semibold mb-1">
+          {isSender ? 'You' : message.sender}
+        </div>
         {/* 📌 Reply Preview */}
         {message.replyTo && (
           <div className="text-sm italic text-yellow-300 mb-2 border-l-4 border-yellow-400 pl-2">
