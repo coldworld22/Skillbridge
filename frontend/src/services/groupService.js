@@ -131,6 +131,11 @@ const groupService = {
     return data?.data;
   },
 
+  deleteGroupMessage: async (messageId) => {
+    const { data } = await api.delete(`/groups/messages/${messageId}`);
+    return data?.data ?? data;
+  },
+
   deleteGroup: async (id) => {
     await api.delete(`/groups/${id}`);
     return true;

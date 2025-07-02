@@ -16,6 +16,7 @@ router.get("/:id/permissions", verifyToken, ctrl.getGroupPermissions);
 router.put("/:id/permissions", verifyToken, ctrl.updateGroupPermissions);
 router.get("/:id/messages", verifyToken, msgCtrl.getMessages);
 router.post("/:id/messages", verifyToken, msgUpload, msgCtrl.sendMessage);
+router.delete("/messages/:id", verifyToken, msgCtrl.deleteMessage);
 
 router.post("/", verifyToken, upload, ctrl.createGroup);
 router.get("/", ctrl.listGroups);

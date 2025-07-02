@@ -4,6 +4,7 @@ import MessageList from './MessageList';
 import TypingIndicator from './TypingIndicator';
 import ChatGroupHeader from './ChatGroupHeader';
 import groupService from '@/services/groupService';
+import toast from 'react-hot-toast';
 
 
 export default function GroupChat({ groupId, groupName }) {
@@ -58,8 +59,14 @@ export default function GroupChat({ groupId, groupName }) {
     } catch (_) {}
   };
 
-  const handleDelete = (id) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await groupService.deleteGroupMessage(id);
+      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+      toast.success('Message deleted');
+    } catch (_) {
+      toast.error('Failed to delete message');
+    }
   };
 
   const handlePin = (id) => {
