@@ -12,6 +12,8 @@ router.get("/:id/members", verifyToken, ctrl.listMembers);
 router.post("/:id/members/:memberId/manage", verifyToken, ctrl.manageMember);
 router.get("/:id/requests", verifyToken, ctrl.listJoinRequests);
 router.post("/requests/:requestId", verifyToken, ctrl.manageJoinRequest);
+router.get("/:id/permissions", verifyToken, ctrl.getGroupPermissions);
+router.put("/:id/permissions", verifyToken, ctrl.updateGroupPermissions);
 router.get("/:id/messages", verifyToken, msgCtrl.getMessages);
 router.post("/:id/messages", verifyToken, msgUpload, msgCtrl.sendMessage);
 
