@@ -28,3 +28,11 @@ exports.listMessages = (groupId) => {
     .where("m.group_id", groupId)
     .orderBy("m.sent_at", "asc");
 };
+
+exports.deleteMessage = async (userId, id) => {
+  const [row] = await db("group_messages")
+    .where({ id, sender_id: userId })
+    .del()
+    .returning("*");
+  return row;
+};

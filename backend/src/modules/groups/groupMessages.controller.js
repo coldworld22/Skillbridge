@@ -3,6 +3,8 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const msgService = require("./groupMessages.service");
 const groupService = require("./groups.service");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 exports.getMessages = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -32,7 +34,39 @@ exports.sendMessage = catchAsync(async (req, res) => {
     audio_url: audio ? `/uploads/chat/${audio.filename}` : null,
   });
 
-
   const full = await msgService.getMessageById(created.id);
+
+  const group = await groupService.getGroupById(id);
+  const members = await groupService.listMembers(id);
+  const recipients = members
+    .map((m) => m.user_id)
+    .filter((uid) => uid !== req.user.id);
+  const note = `New message in group "${group.name}" from ${req.user.full_name}`;
+  await Promise.all(
+    recipients.map((uid) =>
+      notificationService.createNotification({
+        user_id: uid,
+        type: "group_message",
+        message: note,
+      })
+    )
+  );
+  await Promise.all(
+    recipients.map((uid) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: uid,
+        message: note,
+      })
+    )
+  );
+
   sendSuccess(res, full, "Message sent");
+});
+
+exports.deleteMessage = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const deleted = await msgService.deleteMessage(req.user.id, id);
+  if (!deleted) throw new AppError("Message not found", 404);
+  sendSuccess(res, deleted, "Message deleted");
 });
