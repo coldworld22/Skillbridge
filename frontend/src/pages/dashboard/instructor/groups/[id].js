@@ -26,6 +26,10 @@ export default function GroupDetailsPage() {
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
+    // Avoid running when navigating away from this page. When the route
+    // changes, Next.js reuses the component briefly with the new query
+    // params, which previously caused a redirect to the group explore page.
+    if (router.pathname !== '/dashboard/instructor/groups/[id]') return;
     if (!router.isReady || !groupId || !hasHydrated) return;
 
     const load = async () => {
