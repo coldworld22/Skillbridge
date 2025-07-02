@@ -4,11 +4,13 @@ import MessageList from './MessageList';
 import TypingIndicator from './TypingIndicator';
 import ChatGroupHeader from './ChatGroupHeader';
 import groupService from '@/services/groupService';
+import toast from 'react-hot-toast';
 
 
 export default function GroupChat({ groupId, groupName }) {
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
 
   useEffect(() => {
@@ -24,10 +26,17 @@ export default function GroupChat({ groupId, groupName }) {
 
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000);
+    const typingPoll = setInterval(async () => {
+      try {
+        const names = await groupService.getTypingStatus(groupId);
+        setTypingUsers(names);
+      } catch (_) {}
+    }, 2000);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      clearInterval(typingPoll);
     };
   }, [groupId]);
 
@@ -54,12 +63,19 @@ export default function GroupChat({ groupId, groupName }) {
 
           timestamp: created.sent_at,
         }]);
+        groupService.setTypingStatus(groupId, false).catch(() => {});
       }
     } catch (_) {}
   };
 
-  const handleDelete = (id) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await groupService.deleteGroupMessage(id);
+      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+      toast.success('Message deleted');
+    } catch (_) {
+      toast.error('Failed to delete message');
+    }
   };
 
   const handlePin = (id) => {
@@ -85,13 +101,16 @@ export default function GroupChat({ groupId, groupName }) {
         />
       </div>
 
-      <TypingIndicator isTyping={typing} />
+      <TypingIndicator names={typingUsers} />
 
       <MessageInput
         sendMessage={sendMessage}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
-        onTyping={(isTyping) => setTyping(isTyping)}
+        onTyping={(isTyping) => {
+          setTyping(isTyping);
+          groupService.setTypingStatus(groupId, isTyping).catch(() => {});
+        }}
       />
     </div>
   );

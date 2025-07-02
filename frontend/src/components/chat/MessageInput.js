@@ -8,7 +8,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
+const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -18,6 +18,8 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
   const mediaRecorderRef = useRef(null);
   const fileInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
+
+  const typingTimeout = useRef(null);
 
   const handleSend = () => {
     if (!message.trim() && !file && !audioBlob) return;
@@ -34,6 +36,7 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
     setAudioBlob(null);
     setShowEmojiPicker(false);
     onCancelReply?.();
+    onTyping?.(false);
   };
 
   const handleEmojiClick = (emoji) => {
@@ -140,7 +143,12 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply }) => {
         <input
           type="text"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            onTyping?.(true);
+            clearTimeout(typingTimeout.current);
+            typingTimeout.current = setTimeout(() => onTyping?.(false), 1500);
+          }}
           placeholder="Type a message..."
           className="flex-1 px-2 py-[2px] text-xs bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-[1px] focus:ring-yellow-400 shadow-sm"
         />

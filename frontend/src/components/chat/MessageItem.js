@@ -28,7 +28,7 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
 
   return (
     <motion.div
-      className={`flex items-start gap-3 my-2 ${isSender ? "justify-end" : "justify-start"}`}
+      className={`flex items-start gap-3 my-2 ${isSender ? "flex-row-reverse justify-start" : "justify-start"}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -45,9 +45,13 @@ const MessageItem = ({ message, onReply, onDelete, onPin }) => {
       {/* Message Bubble */}
       <div
         className={`relative group p-3 rounded-lg max-w-xs shadow-md ${
-          isSender ? "bg-yellow-500 text-gray-900 ml-auto" : "bg-gray-700 text-white"
+          isSender ? "bg-yellow-500 text-gray-900" : "bg-gray-700 text-white"
         }`}
       >
+        {/* Sender Name */}
+        <div className="text-xs font-semibold mb-1">
+          {isSender ? 'You' : message.sender}
+        </div>
         {/* 📌 Reply Preview */}
         {message.replyTo && (
           <div className="text-sm italic text-yellow-300 mb-2 border-l-4 border-yellow-400 pl-2">

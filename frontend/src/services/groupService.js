@@ -131,6 +131,21 @@ const groupService = {
     return data?.data;
   },
 
+  deleteGroupMessage: async (messageId) => {
+    const { data } = await api.delete(`/groups/messages/${messageId}`);
+    return data?.data ?? data;
+  },
+
+  setTypingStatus: async (groupId, typing) => {
+    await api.post(`/groups/${groupId}/typing`, { typing });
+    return true;
+  },
+
+  getTypingStatus: async (groupId) => {
+    const { data } = await api.get(`/groups/${groupId}/typing`);
+    return data?.data ?? [];
+  },
+
   deleteGroup: async (id) => {
     await api.delete(`/groups/${id}`);
     return true;

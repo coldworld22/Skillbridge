@@ -19,11 +19,13 @@ const useNotificationStore = create((set, get) => ({
       const prevUnread = get().items.filter((n) => !n.read).length;
       const unread = filtered.filter((n) => !n.read).length;
       if (showAlert && unread > prevUnread) {
-        toast.info(
-          `You have ${unread - prevUnread} new notification${
-            unread - prevUnread > 1 ? "s" : ""
-          }`
-        );
+        const diff = unread - prevUnread;
+        if (diff === 1) {
+          const note = filtered.find((n) => !n.read);
+          toast.info(note.message);
+        } else {
+          toast.info(`You have ${diff} new notifications`);
+        }
       }
       set({ items: filtered, loading: false });
     } catch (err) {

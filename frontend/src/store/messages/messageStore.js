@@ -19,11 +19,13 @@ const useMessageStore = create((set, get) => ({
       const prevUnread = get().items.filter((m) => !m.read).length;
       const unread = filtered.filter((m) => !m.read).length;
       if (showAlert && unread > prevUnread) {
-        toast.info(
-          `You have ${unread - prevUnread} new message${
-            unread - prevUnread > 1 ? "s" : ""
-          }`
-        );
+        const diff = unread - prevUnread;
+        if (diff === 1) {
+          const msg = filtered.find((m) => !m.read);
+          toast.info(`${msg.sender_name || "System"}: ${msg.message}`);
+        } else {
+          toast.info(`You have ${diff} new messages`);
+        }
       }
       set({ items: filtered, loading: false });
 
