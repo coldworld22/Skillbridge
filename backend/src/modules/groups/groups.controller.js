@@ -173,3 +173,13 @@ exports.manageJoinRequest = catchAsync(async (req, res) => {
   const result = await service.manageJoinRequest(requestId, action);
   sendSuccess(res, result);
 });
+
+exports.getGroupPermissions = catchAsync(async (req, res) => {
+  const perms = await service.getGroupPermissions(req.params.id);
+  sendSuccess(res, perms);
+});
+
+exports.updateGroupPermissions = catchAsync(async (req, res) => {
+  const perms = await service.updateGroupPermissions(req.params.id, req.body);
+  sendSuccess(res, perms);
+});

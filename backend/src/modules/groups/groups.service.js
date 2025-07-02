@@ -254,3 +254,22 @@ exports.manageJoinRequest = async (id, action) => {
   return row;
 };
 
+const DEFAULT_PERMISSIONS = {
+  admin: { message: true, upload: true, video: true, invite: true },
+  moderator: { message: true, upload: true, video: true, invite: true },
+  member: { message: true, upload: false, video: false, invite: false },
+};
+
+exports.getGroupPermissions = async (groupId) => {
+  const row = await db('groups').where({ id: groupId }).first();
+  return row && row.permissions ? row.permissions : DEFAULT_PERMISSIONS;
+};
+
+exports.updateGroupPermissions = async (groupId, permissions) => {
+  const [row] = await db('groups')
+    .where({ id: groupId })
+    .update({ permissions })
+    .returning('permissions');
+  return row ? row.permissions : permissions;
+};
+

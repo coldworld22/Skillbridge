@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
 
-export default function JoinRequestCard({ groupId }) {
+export default function JoinRequestCard({ groupId, onCountChange }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -10,6 +10,7 @@ export default function JoinRequestCard({ groupId }) {
       const data = await groupService.getJoinRequestsForGroup(groupId);
       setRequests(data);
       setLoading(false);
+      if (onCountChange) onCountChange(data.length);
     };
     fetchRequests();
   }, [groupId]);
@@ -18,7 +19,11 @@ export default function JoinRequestCard({ groupId }) {
     if (action === 'approve') await groupService.approveRequest(id);
     else await groupService.rejectRequest(id);
 
-    setRequests(prev => prev.filter(r => r.id !== id));
+    setRequests(prev => {
+      const next = prev.filter(r => r.id !== id);
+      if (onCountChange) onCountChange(next.length);
+      return next;
+    });
   };
 
   if (loading) return <p>Loading join requests...</p>;
