@@ -7,6 +7,8 @@ import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
 import GroupPermissionSettings from '@/components/chat/GroupPermissionSettings';
 import groupService from '@/services/groupService';
+import JoinRequestCard from '@/components/groups/JoinRequestCard';
+import useAuthStore from '@/store/auth/authStore';
 
 export default function GroupDetailsPage() {
   const router = useRouter();
@@ -14,21 +16,43 @@ export default function GroupDetailsPage() {
 
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [joinStatus, setJoinStatus] = useState('member');
+  const [joinStatus, setJoinStatus] = useState('none');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  const { user, hasHydrated } = useAuthStore();
 
   const [members, setMembers] = useState([]);
 
   useEffect(() => {
-    if (!router.isReady || !groupId) return;
-    const fetchGroup = async () => {
+    if (!router.isReady || !groupId || !hasHydrated) return;
+
+    const load = async () => {
       try {
         const data = await groupService.getGroupById(groupId);
-        if (data) {
-          setGroup(data);
-        } else {
+        if (!data) {
           toast.error('Group not found.');
           router.push('/dashboard/instructor/groups/explore');
+          return;
+        }
+        setGroup(data);
+
+        const mem = await groupService.getGroupMembers(groupId);
+        setMembers(mem);
+
+        if (user) {
+          if (String(user.id) === String(data.creator_id)) {
+            setIsAdmin(true);
+            setJoinStatus('joined');
+          } else {
+            const member = mem.find((m) => String(m.id) === String(user.id));
+            if (member) {
+              setJoinStatus('joined');
+              if (member.role === 'admin') setIsAdmin(true);
+            } else {
+              setJoinStatus('none');
+            }
+          }
         }
       } catch (err) {
         toast.error('Failed to load group.');
@@ -37,9 +61,9 @@ export default function GroupDetailsPage() {
         setLoading(false);
       }
     };
-    fetchGroup();
-    groupService.getGroupMembers(groupId).then(setMembers).catch(() => {});
-  }, [router.isReady, groupId]);
+
+    load();
+  }, [router.isReady, groupId, user, hasHydrated]);
 
   const handleJoin = async () => {
     try {
@@ -60,7 +84,12 @@ export default function GroupDetailsPage() {
     );
   }
 
-  const tabs = ['overview', 'chat', 'members', 'settings'];
+  const tabs = ['overview'];
+  if (joinStatus === 'joined') {
+    tabs.push('chat');
+    tabs.push('members');
+    if (isAdmin) tabs.push('settings');
+  }
 
   return (
     <InstructorLayout>
@@ -131,6 +160,13 @@ export default function GroupDetailsPage() {
               <div className="text-green-600 font-semibold">✅ You are a member of this group</div>
             )}
 
+            {isAdmin && (
+              <div className="pt-4">
+                <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
+                <JoinRequestCard groupId={group.id} />
+              </div>
+            )}
+
               <div className="pt-4">
                 <h2 className="text-sm font-medium mb-1">
                   👥 Members ({members.length})
@@ -151,7 +187,7 @@ export default function GroupDetailsPage() {
           </div>
         )}
 
-        {activeTab === 'chat' && (
+        {activeTab === 'chat' && joinStatus === 'joined' && (
           <>
             <GroupChat groupId={group.id} />
               <div className="mt-6">
@@ -174,13 +210,13 @@ export default function GroupDetailsPage() {
           </>
         )}
 
-        {activeTab === 'members' && (
+        {activeTab === 'members' && joinStatus === 'joined' && (
           <div className="space-y-4">
             <GroupMembersList groupId={group.id} />
           </div>
         )}
 
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && isAdmin && (
           <div className="space-y-4">
             <GroupPermissionSettings groupId={group.id} />
           </div>
