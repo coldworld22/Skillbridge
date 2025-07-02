@@ -144,23 +144,29 @@ exports.getUserGroups = async (userId) => {
     .groupBy('g.id', 'u.full_name', 'c.name');
 
 
-  const pendingQuery = db("group_join_requests as gj")
-    .join("groups as g", "gj.group_id", "g.id")
-    .leftJoin("users as u", "g.creator_id", "u.id")
-    .leftJoin("categories as c", "g.category_id", "c.id")
-    .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+  const pendingQuery = db('group_join_requests as gj')
+    .join('groups as g', 'gj.group_id', 'g.id')
+    .leftJoin('users as u', 'g.creator_id', 'u.id')
+    .leftJoin('categories as c', 'g.category_id', 'c.id')
+    .leftJoin('group_members as gm2', 'g.id', 'gm2.group_id')
     .select(
-      "g.*",
+      'g.*',
       db.raw("'pending' as role"),
       db.raw("COALESCE(u.full_name, '') as creator_name"),
       db.raw("COALESCE(c.name, '') as category"),
-      db.raw("COUNT(DISTINCT gm2.id) as members_count")
+      db.raw('COUNT(DISTINCT gm2.id) as members_count')
     )
-    .where("gj.user_id", userId)
-    .andWhere("gj.status", "pending")
-    .groupBy("g.id", "u.full_name", "c.name");
+    .where('gj.user_id', userId)
+    .andWhere('gj.status', 'pending')
+    .groupBy('g.id', 'u.full_name', 'c.name');
 
-  const rows = await creatorQuery.unionAll([memberQuery, pendingQuery]);
+  const [createdRows, memberRows, pendingRows] = await Promise.all([
+    creatorQuery,
+    memberQuery,
+    pendingQuery,
+  ]);
+
+  const rows = [...createdRows, ...memberRows, ...pendingRows];
   const tagsMap = await exports.getGroupTags(rows.map((g) => g.id));
   const seen = new Set();
   return rows
