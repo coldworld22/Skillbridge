@@ -36,3 +36,10 @@ exports.sendMessage = catchAsync(async (req, res) => {
   const full = await msgService.getMessageById(created.id);
   sendSuccess(res, full, "Message sent");
 });
+
+exports.deleteMessage = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const deleted = await msgService.deleteMessage(req.user.id, id);
+  if (!deleted) throw new AppError("Message not found", 404);
+  sendSuccess(res, deleted, "Message deleted");
+});
