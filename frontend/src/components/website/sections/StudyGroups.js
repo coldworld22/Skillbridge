@@ -8,24 +8,18 @@ import useAuthStore from "@/store/auth/authStore";
 const StudyGroups = () => {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState("");
-  const { user, hasHydrated } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     const load = async () => {
       try {
         const all = await groupService.getPublicGroups();
-        if (hasHydrated && user) {
-          const mine = await groupService.getMyGroups();
-          const myIds = new Set(mine.map((g) => g.id));
-          setGroups(all.filter((g) => !myIds.has(g.id)));
-        } else {
-          setGroups(all);
-        }
+        setGroups(all);
       } catch {}
     };
     load();
-  }, [user, hasHydrated]);
+  }, []);
 
   const filtered = groups.filter(
     (g) =>
@@ -174,14 +168,10 @@ const StudyGroups = () => {
 
                   <button
                     onClick={() => {
-                      if (!user) {
-                        alert("Please sign in to view group details");
-                        return;
-                      }
-                      const role = user?.role?.toLowerCase();
+                      const role = user?.role?.toLowerCase() || "student";
                       const target = ["admin", "superadmin"].includes(role)
                         ? "admin"
-                        : role || "guest";
+                        : role;
                       router.push(`/dashboard/${target}/groups/${group.id}`);
                     }}
                     className="w-full py-2.5 text-center bg-gray-700 hover:bg-gray-600 text-amber-400 rounded-lg font-medium transition-colors"
