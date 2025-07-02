@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
 import { FaUserSlash, FaVolumeMute, FaUserShield } from 'react-icons/fa';
 
-export default function GroupMembersList({ groupId, currentUserId }) {
+export default function GroupMembersList({
+  groupId,
+  currentUserId,
+  currentUserRole,
+}) {
   const [members, setMembers] = useState([]);
 
   useEffect(() => {
@@ -52,13 +56,14 @@ export default function GroupMembersList({ groupId, currentUserId }) {
                 <span className="text-xs ml-2 text-gray-500">({member.role})</span>
                 {member.muted && <span className="ml-1 text-red-400">[Muted]</span>}
               </div>
-              {member.id !== currentUserId && (
-                <div className="flex gap-2">
-                  <button
-                    title="Kick"
-                    onClick={() => handleAction(member.id, 'kick')}
-                    className="text-red-500 hover:text-red-600"
-                  >
+              {member.id !== currentUserId &&
+                ['admin', 'moderator'].includes(currentUserRole) && (
+                  <div className="flex gap-2">
+                    <button
+                      title="Kick"
+                      onClick={() => handleAction(member.id, 'kick')}
+                      className="text-red-500 hover:text-red-600"
+                    >
                     <FaUserSlash />
                   </button>
                   <button
@@ -75,10 +80,10 @@ export default function GroupMembersList({ groupId, currentUserId }) {
                   >
                     <FaUserShield />
                   </button>
-                </div>
-              )}
-            </li>
-          ))}
+                  </div>
+                )}
+              </li>
+            ))}
       </ul>
     </div>
   );
