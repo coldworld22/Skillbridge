@@ -102,6 +102,7 @@ export default function GroupDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
             {(group.creator || group.creator_id) && (
+
               <p className="text-sm text-gray-500">
                 👑 Creator:{' '}
                 <Link
@@ -111,6 +112,7 @@ export default function GroupDetailsPage() {
                   {group.creator || group.creator_id}
                 </Link>
               </p>
+
             )}
           </div>
           <span className="text-sm text-gray-500">
