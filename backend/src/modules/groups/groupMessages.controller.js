@@ -6,6 +6,12 @@ const groupService = require("./groups.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
+
+// In-memory map to track who is typing in each group
+// { groupId => Map<userId, { name, ts }> }
+const typingStatus = new Map();
+
+
 exports.getMessages = catchAsync(async (req, res) => {
   const { id } = req.params;
   const messages = await msgService.listMessages(id);
@@ -70,3 +76,34 @@ exports.deleteMessage = catchAsync(async (req, res) => {
   if (!deleted) throw new AppError("Message not found", 404);
   sendSuccess(res, deleted, "Message deleted");
 });
+
+
+exports.updateTyping = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { typing } = req.body || {};
+  if (!typingStatus.has(id)) typingStatus.set(id, new Map());
+  const map = typingStatus.get(id);
+  if (typing) {
+    map.set(req.user.id, { name: req.user.full_name, ts: Date.now() });
+  } else {
+    map.delete(req.user.id);
+  }
+  sendSuccess(res, { ok: true });
+});
+
+exports.getTyping = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const map = typingStatus.get(id);
+  if (!map) return sendSuccess(res, []);
+  const now = Date.now();
+  const names = [];
+  for (const [uid, info] of map.entries()) {
+    if (now - info.ts < 4000) {
+      if (uid !== req.user.id) names.push(info.name);
+    } else {
+      map.delete(uid);
+    }
+  }
+  sendSuccess(res, names);
+});
+
