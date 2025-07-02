@@ -5,7 +5,9 @@ import { FaUserSlash, FaVolumeMute, FaUserShield } from 'react-icons/fa';
 export default function GroupMembersList({
   groupId,
   currentUserId,
+
   canManage = false,
+
 }) {
   const [members, setMembers] = useState([]);
 
@@ -56,7 +58,9 @@ export default function GroupMembersList({
                 <span className="text-xs ml-2 text-gray-500">({member.role})</span>
                 {member.muted && <span className="ml-1 text-red-400">[Muted]</span>}
               </div>
+
               {member.id !== currentUserId && canManage && (
+
                   <div className="flex gap-2">
                     <button
                       title="Kick"

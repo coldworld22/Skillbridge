@@ -245,7 +245,9 @@ export default function GroupDetailsPage() {
             <GroupMembersList
               groupId={group.id}
               currentUserId={user?.id}
+
               canManage={isAdmin || currentUserRole === 'moderator'}
+
             />
           </div>
         )}
