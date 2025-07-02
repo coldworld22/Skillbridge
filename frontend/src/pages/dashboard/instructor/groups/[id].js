@@ -111,7 +111,17 @@ export default function GroupDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
             {(group.creator || group.creator_id) && (
-              <p className="text-sm text-gray-500">👑 Creator: {group.creator || group.creator_id}</p>
+
+              <p className="text-sm text-gray-500">
+                👑 Creator:{' '}
+                <Link
+                  href={`/instructors/${group.creator_id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {group.creator || group.creator_id}
+                </Link>
+              </p>
+
             )}
           </div>
           <span className="text-sm text-gray-500">
