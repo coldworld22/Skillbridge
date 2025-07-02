@@ -57,7 +57,10 @@ exports.createGroup = catchAsync(async (req, res) => {
   const groupLink = `${process.env.FRONTEND_URL}/groups/${group.id}`;
 
   if (visibility === 'private' && inviteUserIds.length) {
-    const inviteMsg = `${req.user.full_name} invited you to join the group "${name}". ${groupLink}`;
+
+    const inviteMsg = `${req.user.full_name} invited you to join the group "${name}".`;
+    const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
+
     for (const uid of inviteUserIds) {
       const contact = await userModel.findContactInfo(uid);
       if (!contact) continue;
@@ -77,13 +80,17 @@ exports.createGroup = catchAsync(async (req, res) => {
         await mailService.sendMail({
           to: contact.email,
           subject: 'Group Invitation',
-          html: `<p>${req.user.full_name} invited you to join the group <strong>${name}</strong>.</p><p><a href="${groupLink}">Join Group</a></p>`,
+
+          html: `<p>${inviteMsg}</p><p><a href="${groupLink}">Join Group</a></p>`,
+
         });
       }
       if (inviteMethods.includes('whatsapp') && contact.phone) {
         await whatsappService.sendWhatsApp({
           to: contact.phone,
-          message: inviteMsg,
+
+          message: inviteLinkMsg,
+
         });
       }
     }
