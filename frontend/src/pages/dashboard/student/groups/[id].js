@@ -101,8 +101,16 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
-            {group.creator_id && (
-              <p className="text-sm text-gray-500">👑 Creator ID: {group.creator_id}</p>
+            {(group.creator || group.creator_id) && (
+              <p className="text-sm text-gray-500">
+                👑 Creator:{' '}
+                <Link
+                  href={`/instructors/${group.creator_id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {group.creator || group.creator_id}
+                </Link>
+              </p>
             )}
           </div>
           <span className="text-sm text-gray-500">
@@ -212,7 +220,7 @@ export default function GroupDetailsPage() {
 
         {activeTab === 'members' && joinStatus === 'joined' && (
           <div className="space-y-4">
-            <GroupMembersList groupId={group.id} />
+            <GroupMembersList groupId={group.id} currentUserId={user?.id} />
           </div>
         )}
 
