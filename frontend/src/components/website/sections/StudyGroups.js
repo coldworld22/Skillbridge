@@ -92,7 +92,17 @@ const StudyGroups = () => {
                     ))}
                   </div>
                   <button
-                    onClick={() => router.push(`/dashboard/instructor/groups/${group.id}`)}
+                    onClick={() => {
+                      const role = user?.role?.toLowerCase();
+                      if (!role) {
+                        alert("You must register to continue.");
+                        return;
+                      }
+                      const target = ["admin", "superadmin"].includes(role)
+                        ? "admin"
+                        : role;
+                      router.push(`/dashboard/${target}/groups/${group.id}`);
+                    }}
                     className="text-sm text-yellow-400 underline"
                   >
                     View Details
