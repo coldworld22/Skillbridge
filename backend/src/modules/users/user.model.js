@@ -91,7 +91,7 @@ exports.findByPhone = async (phone) => {
 // Fetch minimal contact info for invites
 exports.findContactInfo = async (id) => {
   return db("users")
-    .select("id", "full_name", "email", "phone")
+    .select("id", "full_name", "email", "phone", "role")
     .where({ id })
     .first();
 };
