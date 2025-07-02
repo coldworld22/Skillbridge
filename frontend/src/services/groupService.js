@@ -136,6 +136,7 @@ const groupService = {
     return data?.data ?? data;
   },
 
+
   setTypingStatus: async (groupId, typing) => {
     await api.post(`/groups/${groupId}/typing`, { typing });
     return true;
@@ -145,6 +146,7 @@ const groupService = {
     const { data } = await api.get(`/groups/${groupId}/typing`);
     return data?.data ?? [];
   },
+
 
   deleteGroup: async (id) => {
     await api.delete(`/groups/${id}`);

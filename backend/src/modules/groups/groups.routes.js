@@ -17,8 +17,10 @@ router.put("/:id/permissions", verifyToken, ctrl.updateGroupPermissions);
 router.get("/:id/messages", verifyToken, msgCtrl.getMessages);
 router.post("/:id/messages", verifyToken, msgUpload, msgCtrl.sendMessage);
 router.delete("/messages/:id", verifyToken, msgCtrl.deleteMessage);
+
 router.post("/:id/typing", verifyToken, msgCtrl.updateTyping);
 router.get("/:id/typing", verifyToken, msgCtrl.getTyping);
+
 
 router.post("/", verifyToken, upload, ctrl.createGroup);
 router.get("/", ctrl.listGroups);

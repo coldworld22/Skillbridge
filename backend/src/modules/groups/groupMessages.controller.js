@@ -6,9 +6,11 @@ const groupService = require("./groups.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
+
 // In-memory map to track who is typing in each group
 // { groupId => Map<userId, { name, ts }> }
 const typingStatus = new Map();
+
 
 exports.getMessages = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -75,6 +77,7 @@ exports.deleteMessage = catchAsync(async (req, res) => {
   sendSuccess(res, deleted, "Message deleted");
 });
 
+
 exports.updateTyping = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { typing } = req.body || {};
@@ -103,3 +106,4 @@ exports.getTyping = catchAsync(async (req, res) => {
   }
   sendSuccess(res, names);
 });
+
