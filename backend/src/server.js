@@ -70,6 +70,7 @@ const paymentConfigRoutes = require("./modules/paymentConfig/paymentConfig.route
 const payoutRoutes = require("./modules/payouts/payouts.routes");
 const adsRoutes = require("./modules/ads/ads.routes");
 const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
+const publicStudentRoutes = require("./modules/students/student.routes");
 const cartRoutes = require("./modules/cart/cart.routes");
 const notificationRoutes = require("./modules/notifications/notifications.routes");
 const messageRoutes = require("./modules/messages/messages.routes");
@@ -170,6 +171,7 @@ app.use("/api/groups", groupRoutes); // 📚 Study groups
 app.use("/api/offers", offersRoutes); // 📚 Learning marketplace offers
 app.use("/api/offers/:offerId/responses", offerResponseRoutes); // 💬 Offer negotiations
 app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
+app.use("/api/students", publicStudentRoutes); // 🎓 Public student listing
 app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
 app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
 app.use("/api/messages", messageRoutes); // 💬 User messages
