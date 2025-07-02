@@ -118,7 +118,9 @@ export default function GroupDetailsPage() {
 
               <p className="text-sm text-gray-500">
                 👑 Creator:{' '}
+
                 <span>{group.creator || group.creator_id}</span>
+
               </p>
 
             )}
