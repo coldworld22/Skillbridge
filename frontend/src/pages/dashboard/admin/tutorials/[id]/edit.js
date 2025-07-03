@@ -28,7 +28,11 @@ function EditTutorialPage() {
 
     const draft = localStorage.getItem(`editTutorialDraft-${id}`);
     if (draft) {
-      setTutorialData(JSON.parse(draft));
+      const parsed = JSON.parse(draft);
+      setTutorialData({
+        ...parsed,
+        lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+      });
       return;
     }
 
@@ -53,6 +57,7 @@ function EditTutorialPage() {
           categoryName: tutorial.categoryName,
           level: tutorial.level,
           language: tutorial.language || "",
+          lessonCount: mappedChapters.length,
           tags: tutorial.tags || [],
           chapters: mappedChapters,
           thumbnail: tutorial.thumbnail,
