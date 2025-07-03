@@ -109,6 +109,37 @@ export default function InstructorTutorialsPage() {
                     Updated: {new Date(tutorial.updatedAt).toLocaleDateString()}
                   </p>
 
+                  <div className="flex items-center justify-between text-xs text-gray-600 mt-1">
+                    <a
+                      href={`/instructors/${tutorial.instructor_id}`}
+                      className="hover:underline text-blue-600"
+                    >
+                      {tutorial.instructor_name || tutorial.instructor}
+                    </a>
+                    <span className="font-semibold">
+                      {tutorial.price ? `$${tutorial.price}` : 'Free'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Language: {tutorial.language || 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Category: {tutorial.category_name || 'N/A'} • Level: {tutorial.level || 'N/A'}
+                  </p>
+                  {tutorial.tags && tutorial.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {tutorial.tags.map((tag) => (
+                        <span
+                          key={tag.id || tag}
+                          className="bg-gray-200 px-2 py-0.5 rounded-full text-[10px] text-gray-700"
+                        >
+                          {tag.name || tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Status Badge */}
                   <div className="mt-3">
                     <span

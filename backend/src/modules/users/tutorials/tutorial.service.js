@@ -34,16 +34,24 @@ exports.getTutorialById = async (id) => {
 };
 
 exports.getTutorialsByInstructor = async (instructorId) => {
-  return db("tutorials as t")
+  const tutorials = await db("tutorials as t")
     .leftJoin("categories as c", "t.category_id", "c.id")
+    .leftJoin("users as u", "t.instructor_id", "u.id")
     .select(
       "t.*",
       "c.name as category_name",
-      "c.image_url as category_image_url"
+      "c.image_url as category_image_url",
+      "u.full_name as instructor_name"
     )
     .where("t.instructor_id", instructorId)
     .whereNot("t.status", "archived")
     .orderBy("t.created_at", "desc");
+
+  for (const tut of tutorials) {
+    tut.tags = await exports.getTutorialTags(tut.id);
+  }
+
+  return tutorials;
 };
 
 exports.updateTutorial = async (id, data) => {
