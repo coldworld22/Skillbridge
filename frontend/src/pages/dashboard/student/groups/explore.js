@@ -14,13 +14,38 @@ export default function ExploreGroupsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [joinRequests, setJoinRequests] = useState([]);
   const [tags, setTags] = useState([]);
+  const [membersMap, setMembersMap] = useState({});
+  const [roleMap, setRoleMap] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const list = await groupService.getPublicGroups();
+        const [all, mine] = await Promise.all([
+          groupService.getPublicGroups(),
+          groupService.getMyGroups().catch(() => []),
+        ]);
+
+        const rMap = {};
+        mine.forEach((g) => {
+          rMap[g.id] = g.role;
+        });
+
+        const list = all.map((g) => ({ ...g, myRole: rMap[g.id] || null }));
+        setRoleMap(rMap);
         setGroups(list);
         setFilteredGroups(list);
+
+        const memberMap = {};
+        await Promise.all(
+          list.map(async (g) => {
+            try {
+              memberMap[g.id] = await groupService.getGroupMembers(g.id);
+            } catch {
+              memberMap[g.id] = [];
+            }
+          })
+        );
+        setMembersMap(memberMap);
       } catch (err) {
         toast.error('Failed to load groups');
       }
@@ -56,9 +81,18 @@ export default function ExploreGroupsPage() {
     setFilteredGroups(filtered);
   }, [searchTerm, selectedTag, sortBy, groups]);
 
-  const handleJoin = (groupId) => {
-    setJoinRequests((prev) => [...prev, groupId]);
-    toast.success('Join request sent!');
+  const handleJoin = async (groupId) => {
+    try {
+      await groupService.joinGroup(groupId);
+      setJoinRequests((prev) => [...prev, groupId]);
+      setRoleMap((prev) => ({ ...prev, [groupId]: 'pending' }));
+      setGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? { ...g, myRole: 'pending' } : g))
+      );
+      toast.success('Join request sent!');
+    } catch {
+      toast.error('Failed to send join request');
+    }
   };
 
   return (
@@ -136,7 +170,10 @@ export default function ExploreGroupsPage() {
               <div key={group.id} className="p-4 bg-white rounded-xl shadow hover:shadow-md transition space-y-2 border">
                 {/* Group Image */}
                 <img
-                  src={group.image || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9j4tIUxekJJJM1t9t3tpF-iaHb4j08EUh5lUhB7AijizhKWfCnT7M-ymI5Vl333KPsXo&usqp=CAU'}
+                  src={group.cover_image || group.image || '/images/group-placeholder.jpg'}
+                  onError={(e) => {
+                    e.target.src = '/images/group-placeholder.jpg';
+                  }}
                   alt={group.name}
                   className="w-full h-32 object-cover rounded-lg"
                 />
@@ -148,6 +185,10 @@ export default function ExploreGroupsPage() {
                     {group.isPublic ? 'Public' : 'Private'}
                   </span>
                 </div>
+
+                {group.creator && (
+                  <p className="text-xs text-gray-500">👤 {group.creator}</p>
+                )}
 
                 <p className="text-sm text-gray-600 line-clamp-2">{group.description}</p>
                 <p className="text-xs text-gray-500">👥 {group.membersCount} members</p>
@@ -165,29 +206,48 @@ export default function ExploreGroupsPage() {
                 {/* Avatars (placeholder) */}
                 <div className="flex items-center pt-1">
                   <div className="flex -space-x-2 overflow-hidden">
-                    {[...Array(3)].map((_, i) => (
-                      <img
-                        key={i}
-                        className="w-6 h-6 rounded-full border-2 border-white"
-                        src={`/avatars/user${i + 1}.jpg`}
-                        alt="member avatar"
-                      />
-                    ))}
+                    {(membersMap[group.id] || [])
+                      .slice(0, 4)
+                      .map((m, i) => (
+                        <img
+                          key={i}
+                          className="w-6 h-6 rounded-full border-2 border-white"
+                          src={m.avatar}
+                          alt={m.name}
+                        />
+                      ))}
                   </div>
                 </div>
 
                 {/* Join and View buttons */}
-                <button
-                  onClick={() => handleJoin(group.id)}
-                  disabled={joinRequests.includes(group.id)}
-                  className={`mt-2 w-full px-4 py-2 rounded text-sm ${
-                    joinRequests.includes(group.id)
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-yellow-600 text-white hover:bg-yellow-700'
-                  }`}
-                >
-                  {joinRequests.includes(group.id) ? 'Request Sent' : 'Join Group'}
-                </button>
+                {(() => {
+                  const role = group.myRole || roleMap[group.id];
+                  const requestSent =
+                    role === 'pending' || joinRequests.includes(group.id);
+                  const disabled =
+                    role === 'admin' || role === 'member' || requestSent;
+                  const label =
+                    role === 'admin'
+                      ? 'Your Group'
+                      : role === 'member'
+                      ? 'Member'
+                      : requestSent
+                      ? 'Request Sent'
+                      : 'Join Group';
+                  return (
+                    <button
+                      onClick={() => handleJoin(group.id)}
+                      disabled={disabled}
+                      className={`mt-2 w-full px-4 py-2 rounded text-sm ${
+                        disabled
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })()}
 
                 <Link href={`/dashboard/student/groups/${group.id}`}>
                   <button className="text-sm text-blue-600 underline w-full mt-1">View Group</button>
