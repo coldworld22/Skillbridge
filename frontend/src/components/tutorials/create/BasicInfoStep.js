@@ -30,7 +30,29 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
   }, [tagInput, tutorialData.tags]);
 
   const handleChange = (field, value) => {
-    setTutorialData((prev) => ({ ...prev, [field]: value }));
+    if (field === "lessonCount") {
+      const count = parseInt(value, 10);
+      setTutorialData((prev) => {
+        const lessons = isNaN(count) || count <= 0 ? 0 : count;
+        let chapters = prev.chapters || [];
+        if (chapters.length > lessons) {
+          chapters = chapters.slice(0, lessons);
+        } else if (chapters.length < lessons) {
+          chapters = chapters.concat(
+            Array.from({ length: lessons - chapters.length }, () => ({
+              title: "",
+              duration: "",
+              video: null,
+              videoUrl: "",
+              preview: false,
+            }))
+          );
+        }
+        return { ...prev, lessonCount: value, chapters };
+      });
+    } else {
+      setTutorialData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const addTag = (tag) => {
