@@ -38,7 +38,9 @@ exports.createGroup = catchAsync(async (req, res) => {
     status: "pending",
   });
   if (req.body.tags) {
-    const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+    const tags = Array.isArray(req.body.tags)
+      ? req.body.tags
+      : JSON.parse(req.body.tags);
     await service.syncGroupTags(group.id, tags);
   }
   await service.addMember(group.id, req.user.id, "admin");
@@ -54,19 +56,22 @@ exports.createGroup = catchAsync(async (req, res) => {
       : JSON.parse(invite_methods)
     : [];
 
-  if (visibility === 'private' && inviteUserIds.length) {
-
+  if (visibility === "private" && inviteUserIds.length) {
     const inviteMsg = `${req.user.full_name} invited you to join the group "${name}".`;
 
     for (const uid of inviteUserIds) {
       const contact = await userModel.findContactInfo(uid);
       if (!contact) continue;
 
-      const role = (contact.role || '').toLowerCase();
+      const role = (contact.role || "").toLowerCase();
 
       const rolePath =
-        role === 'instructor' ? 'instructor' : role === 'student' ? 'student' : 'admin';
-      const host = process.env.FRONTEND_URL || 'http://localhost:3000';
+        role === "instructor"
+          ? "instructor"
+          : role === "student"
+            ? "student"
+            : "admin";
+      const host = process.env.FRONTEND_URL || "http://localhost:3000";
       const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
 
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
@@ -74,7 +79,7 @@ exports.createGroup = catchAsync(async (req, res) => {
       await Promise.all([
         notificationService.createNotification({
           user_id: uid,
-          type: 'group_invite',
+          type: "group_invite",
           message: inviteLinkMsg,
         }),
         messageService.createMessage({
@@ -83,14 +88,14 @@ exports.createGroup = catchAsync(async (req, res) => {
           message: inviteLinkMsg,
         }),
       ]);
-      if (inviteMethods.includes('email') && contact.email) {
+      if (inviteMethods.includes("email") && contact.email) {
         await mailService.sendMail({
           to: contact.email,
-          subject: 'Group Invitation',
+          subject: "Group Invitation",
           html: `<p>${inviteMsg}</p><p><a href="${groupLink}">Join Group</a></p>`,
         });
       }
-      if (inviteMethods.includes('whatsapp') && contact.phone) {
+      if (inviteMethods.includes("whatsapp") && contact.phone) {
         await whatsappService.sendWhatsApp({
           to: contact.phone,
           message: inviteLinkMsg,
@@ -102,7 +107,7 @@ exports.createGroup = catchAsync(async (req, res) => {
     const instructors = await userModel.findInstructors();
     const admins = await userModel.findAdmins();
     const recipients = [...students, ...instructors, ...admins].filter(
-      (u) => u.id !== req.user.id
+      (u) => u.id !== req.user.id,
     );
     const message = `${req.user.full_name} created a new group "${name}"`;
 
@@ -110,16 +115,16 @@ exports.createGroup = catchAsync(async (req, res) => {
       ...recipients.map((u) =>
         notificationService.createNotification({
           user_id: u.id,
-          type: 'group_created',
+          type: "group_created",
           message,
-        })
+        }),
       ),
       ...recipients.map((u) =>
         messageService.createMessage({
           sender_id: req.user.id,
           receiver_id: u.id,
           message,
-        })
+        }),
       ),
     ]);
   }
@@ -129,7 +134,7 @@ exports.createGroup = catchAsync(async (req, res) => {
 });
 
 exports.listGroups = catchAsync(async (req, res) => {
-  const { search, status = 'all' } = req.query;
+  const { search, status = "all" } = req.query;
   const data = await service.listGroups({ search, status });
   sendSuccess(res, data);
 });
@@ -141,21 +146,23 @@ exports.getGroup = catchAsync(async (req, res) => {
 
 exports.updateGroup = catchAsync(async (req, res) => {
   const existing = await service.getGroupById(req.params.id);
-  if (!existing) throw new AppError('Group not found', 404);
+  if (!existing) throw new AppError("Group not found", 404);
 
   const data = { ...req.body };
   if (
     data.status &&
-    !['active', 'inactive', 'suspended', 'pending'].includes(data.status)
+    !["active", "inactive", "suspended", "pending"].includes(data.status)
   ) {
-    throw new AppError('Invalid status', 400);
+    throw new AppError("Invalid status", 400);
   }
 
   if (req.file) data.cover_image = `/uploads/groups/${req.file.filename}`;
   const updated = await service.updateGroup(req.params.id, data);
 
   if (req.body.tags) {
-    const tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+    const tags = Array.isArray(req.body.tags)
+      ? req.body.tags
+      : JSON.parse(req.body.tags);
     await service.syncGroupTags(req.params.id, tags);
   }
 
@@ -164,7 +171,7 @@ exports.updateGroup = catchAsync(async (req, res) => {
     await Promise.all([
       notificationService.createNotification({
         user_id: existing.creator_id,
-        type: 'group_status',
+        type: "group_status",
         message: msg,
       }),
       messageService.createMessage({
@@ -187,7 +194,7 @@ exports.deleteGroup = catchAsync(async (req, res) => {
     await Promise.all([
       notificationService.createNotification({
         user_id: existing.creator_id,
-        type: 'group_deleted',
+        type: "group_deleted",
         message: msg,
       }),
       messageService.createMessage({
@@ -198,7 +205,7 @@ exports.deleteGroup = catchAsync(async (req, res) => {
     ]);
   }
 
-  sendSuccess(res, null, 'Deleted');
+  sendSuccess(res, null, "Deleted");
 });
 
 exports.getMyGroups = catchAsync(async (req, res) => {
@@ -223,7 +230,21 @@ exports.listMembers = catchAsync(async (req, res) => {
 exports.manageMember = catchAsync(async (req, res) => {
   const { memberId } = req.params;
   const { action } = req.body;
-  const result = await service.manageMember(req.params.id, memberId, action);
+  const groupId = req.params.id;
+
+  const role = await service.getMemberRole(groupId, req.user.id);
+  if (!role || !["admin", "moderator"].includes(role)) {
+    throw new AppError("Forbidden", 403);
+  }
+
+  if (role === "moderator") {
+    const targetRole = await service.getMemberRole(groupId, memberId);
+    if (targetRole === "admin") {
+      throw new AppError("Cannot manage admin", 403);
+    }
+  }
+
+  const result = await service.manageMember(groupId, memberId, action);
   sendSuccess(res, result);
 });
 
@@ -235,8 +256,8 @@ exports.listJoinRequests = catchAsync(async (req, res) => {
 exports.manageJoinRequest = catchAsync(async (req, res) => {
   const { requestId } = req.params;
   const { action } = req.body;
-  if (!['approve', 'reject'].includes(action)) {
-    throw new AppError('Invalid action', 400);
+  if (!["approve", "reject"].includes(action)) {
+    throw new AppError("Invalid action", 400);
   }
   const result = await service.manageJoinRequest(requestId, action);
   sendSuccess(res, result);
