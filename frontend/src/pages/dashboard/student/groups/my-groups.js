@@ -11,6 +11,7 @@ export default function MyGroupsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [visibleCount, setVisibleCount] = useState(6);
   const [isLoading, setIsLoading] = useState(true);
+  const [membersMap, setMembersMap] = useState({});
 
   const tabs = [
     { id: 'all', label: 'All Groups', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
@@ -23,8 +24,19 @@ export default function MyGroupsPage() {
     setIsLoading(true);
     groupService
       .getMyGroups()
-      .then((data) => {
+      .then(async (data) => {
         setGroups(data);
+        const map = {};
+        await Promise.all(
+          data.map(async (g) => {
+            try {
+              map[g.id] = await groupService.getGroupMembers(g.id);
+            } catch {
+              map[g.id] = [];
+            }
+          })
+        );
+        setMembersMap(map);
         setIsLoading(false);
       })
       .catch(() => {
@@ -95,14 +107,16 @@ export default function MyGroupsPage() {
         </p>
         
         <div className="flex -space-x-2">
-          {[...Array(Math.min(3, group.membersCount || 0))].map((_, i) => (
-            <img
-              key={i}
-              src={`https://i.pravatar.cc/40?img=${i + 1}`}
-              className="w-6 h-6 rounded-full border-2 border-white"
-              alt="member avatar"
-            />
-          ))}
+          {(membersMap[group.id] || [])
+            .slice(0, 3)
+            .map((m, i) => (
+              <img
+                key={i}
+                src={m.avatar}
+                className="w-6 h-6 rounded-full border-2 border-white"
+                alt={m.name}
+              />
+            ))}
           {(group.membersCount || 0) > 3 && (
             <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">
               +{(group.membersCount || 0) - 3}
