@@ -1,27 +1,33 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
 
 export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
   const [errors, setErrors] = useState({});
-  const [allTags, setAllTags] = useState([]);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [tagInput, setTagInput] = useState("");
 
-  const filteredTagSuggestions = useMemo(
-    () =>
-      allTags.filter(
-        (t) =>
-          tagInput &&
-          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !tutorialData.tags.includes(t.name)
-      ),
-    [allTags, tagInput, tutorialData.tags]
-  );
-
   useEffect(() => {
-    fetchTutorialTags()
-      .then(setAllTags)
-      .catch(() => setAllTags([]));
-  }, []);
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+    let ignore = false;
+    fetchTutorialTags(tagInput)
+      .then((tags) => {
+        if (!ignore) {
+          const filtered = tags.filter(
+            (t) => !tutorialData.tags.includes(t.name)
+          );
+          setTagSuggestions(filtered);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setTagSuggestions([]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [tagInput, tutorialData.tags]);
 
   const handleChange = (field, value) => {
     setTutorialData((prev) => ({ ...prev, [field]: value }));
@@ -30,10 +36,14 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
   const addTag = (tag) => {
     if (tag && !tutorialData.tags.includes(tag)) {
       setTutorialData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
-      const exists = allTags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
+      const exists = tagSuggestions.some(
+        (t) => t.name.toLowerCase() === tag.toLowerCase()
+      );
       if (!exists) {
         createTutorialTag({ name: tag })
-          .then((newTag) => setAllTags((prev) => [...prev, newTag]))
+          .then((newTag) =>
+            setTagSuggestions((prev) => [...prev, newTag])
+          )
           .catch(() => {});
       }
       setTagInput("");
@@ -212,9 +222,9 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
             placeholder="Add tags..."
             className="w-full p-2 border rounded mt-1"
           />
-          {filteredTagSuggestions.length > 0 && tagInput && (
+          {tagSuggestions.length > 0 && tagInput && (
             <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
-              {filteredTagSuggestions.map((t) => (
+              {tagSuggestions.map((t) => (
                 <div
                   key={t.id}
                   className="px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 cursor-pointer"
