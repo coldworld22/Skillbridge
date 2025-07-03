@@ -19,6 +19,7 @@ function CreateTutorialPage() {
     category: "",
     categoryName: "",
     level: "",
+    lessonCount: 1,
     tags: [],
     chapters: [],
     thumbnail: null,
@@ -34,7 +35,12 @@ function CreateTutorialPage() {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
       const draft = JSON.parse(savedDraft);
-      setTutorialData({ ...draft, thumbnail: null, preview: null });
+      setTutorialData({
+        ...draft,
+        thumbnail: null,
+        preview: null,
+        lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+      });
     }
 
     const loadCategories = async () => {

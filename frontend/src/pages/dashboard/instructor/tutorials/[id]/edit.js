@@ -21,7 +21,11 @@ export default function EditTutorialPage() {
     if (!id) return;
     const draft = localStorage.getItem(`editTutorialDraft-${id}`);
     if (draft) {
-      setTutorialData(JSON.parse(draft));
+      const parsed = JSON.parse(draft);
+      setTutorialData({
+        ...parsed,
+        lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
+      });
       setLoading(false);
       return;
     }
@@ -29,7 +33,15 @@ export default function EditTutorialPage() {
     const load = async () => {
       try {
         const data = await fetchTutorialDetails(id);
-        setTutorialData(data?.data || data || null);
+        const formatted = data?.data || data || null;
+        if (formatted) {
+          setTutorialData({
+            ...formatted,
+            lessonCount: formatted.chapters?.length || 1,
+          });
+        } else {
+          setTutorialData(null);
+        }
       } catch (err) {
         console.error(err);
         setError("Failed to load tutorial");
