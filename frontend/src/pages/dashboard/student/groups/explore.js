@@ -14,6 +14,7 @@ export default function ExploreGroupsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [joinRequests, setJoinRequests] = useState([]);
   const [tags, setTags] = useState([]);
+  const [membersMap, setMembersMap] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -21,6 +22,18 @@ export default function ExploreGroupsPage() {
         const list = await groupService.getPublicGroups();
         setGroups(list);
         setFilteredGroups(list);
+
+        const memberMap = {};
+        await Promise.all(
+          list.map(async (g) => {
+            try {
+              memberMap[g.id] = await groupService.getGroupMembers(g.id);
+            } catch {
+              memberMap[g.id] = [];
+            }
+          })
+        );
+        setMembersMap(memberMap);
       } catch (err) {
         toast.error('Failed to load groups');
       }
@@ -56,9 +69,14 @@ export default function ExploreGroupsPage() {
     setFilteredGroups(filtered);
   }, [searchTerm, selectedTag, sortBy, groups]);
 
-  const handleJoin = (groupId) => {
-    setJoinRequests((prev) => [...prev, groupId]);
-    toast.success('Join request sent!');
+  const handleJoin = async (groupId) => {
+    try {
+      await groupService.joinGroup(groupId);
+      setJoinRequests((prev) => [...prev, groupId]);
+      toast.success('Join request sent!');
+    } catch {
+      toast.error('Failed to send join request');
+    }
   };
 
   return (
@@ -165,14 +183,16 @@ export default function ExploreGroupsPage() {
                 {/* Avatars (placeholder) */}
                 <div className="flex items-center pt-1">
                   <div className="flex -space-x-2 overflow-hidden">
-                    {[...Array(3)].map((_, i) => (
-                      <img
-                        key={i}
-                        className="w-6 h-6 rounded-full border-2 border-white"
-                        src={`/avatars/user${i + 1}.jpg`}
-                        alt="member avatar"
-                      />
-                    ))}
+                    {(membersMap[group.id] || [])
+                      .slice(0, 4)
+                      .map((m, i) => (
+                        <img
+                          key={i}
+                          className="w-6 h-6 rounded-full border-2 border-white"
+                          src={m.avatar}
+                          alt={m.name}
+                        />
+                      ))}
                   </div>
                 </div>
 
