@@ -18,6 +18,8 @@ export default function CreateTutorialPage() {
     category: "",
     categoryName: "",
     level: "",
+    language: "",
+    lessonCount: 1,
     tags: [],
     chapters: [],
     thumbnail: null,
@@ -32,7 +34,13 @@ export default function CreateTutorialPage() {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
       const draft = JSON.parse(savedDraft);
-      setTutorialData({ ...draft, thumbnail: null, preview: null });
+      setTutorialData({
+        ...draft,
+        thumbnail: null,
+        preview: null,
+        language: draft.language || "",
+        lessonCount: draft.lessonCount || 1,
+      });
     }
 
     const loadCategories = async () => {
@@ -58,6 +66,7 @@ export default function CreateTutorialPage() {
     formData.append("description", tutorialData.shortDescription);
     formData.append("category_id", tutorialData.category);
     formData.append("level", tutorialData.level);
+    formData.append("language", tutorialData.language);
     formData.append("status", status);
     formData.append("is_paid", (!tutorialData.isFree).toString());
     if (!tutorialData.isFree) {
