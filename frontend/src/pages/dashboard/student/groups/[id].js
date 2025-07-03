@@ -23,6 +23,8 @@ export default function GroupDetailsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [members, setMembers] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
 
   const { user, hasHydrated } = useAuthStore();
 
@@ -94,6 +96,28 @@ export default function GroupDetailsPage() {
     }
   };
 
+  const handleSaveName = async () => {
+    try {
+      const updated = await groupService.updateGroup(group.id, { name: newName });
+      setGroup(updated);
+      toast.success('Group name updated');
+      setEditingName(false);
+    } catch (err) {
+      toast.error('Failed to update group');
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!confirm('Are you sure you want to delete this group?')) return;
+    try {
+      await groupService.deleteGroup(group.id);
+      toast.success('Group deleted');
+      router.push('/dashboard/student/groups/my-groups');
+    } catch (err) {
+      toast.error('Failed to delete group');
+    }
+  };
+
   if (loading || !group) {
     return (
       <StudentLayout>
@@ -119,20 +143,57 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
+            {["admin", "moderator"].includes(currentUserRole) && !editingName && (
+              <button
+                onClick={() => {
+                  setEditingName(true);
+                  setNewName(group.name);
+                }}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Edit Name
+              </button>
+            )}
+            {editingName && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="border p-1 rounded text-sm"
+                />
+                <button
+                  onClick={handleSaveName}
+                  className="bg-blue-600 text-white px-2 rounded text-sm"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditingName(false)}
+                  className="text-sm text-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
             {(group.creator || group.creator_id) && (
-
               <p className="text-sm text-gray-500">
-                👑 Creator:{' '}
-
-                <span>{group.creator || group.creator_id}</span>
-
+                👑 Creator: <span>{group.creator || group.creator_id}</span>
               </p>
-
             )}
           </div>
-          <span className="text-sm text-gray-500">
-            📅 {new Date(group.created_at).toLocaleDateString()}
-          </span>
+          <div className="text-right space-y-1">
+            <span className="text-sm text-gray-500 block">
+              📅 {new Date(group.created_at).toLocaleDateString()}
+            </span>
+            {isAdmin && (
+              <button
+                onClick={handleDeleteGroup}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Delete Group
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-4 border-b pb-2">
