@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { fetchTutorialTags } from "@/services/instructor/tutorialTagService";
+import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
 
 export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
   const [errors, setErrors] = useState({});
@@ -30,6 +30,12 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
   const addTag = (tag) => {
     if (tag && !tutorialData.tags.includes(tag)) {
       setTutorialData((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+      const exists = allTags.some((t) => t.name.toLowerCase() === tag.toLowerCase());
+      if (!exists) {
+        createTutorialTag({ name: tag })
+          .then((newTag) => setAllTags((prev) => [...prev, newTag]))
+          .catch(() => {});
+      }
       setTagInput("");
     }
   };
@@ -49,11 +55,29 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
     if (!tutorialData.category) newErrors.category = "Category is required.";
     if (!tutorialData.level) newErrors.level = "Level is required.";
     if (!tutorialData.language) newErrors.language = "Tutorial language is required.";
+    if (!tutorialData.lessonCount || isNaN(tutorialData.lessonCount) || tutorialData.lessonCount <= 0) {
+      newErrors.lessonCount = "Number of lessons is required.";
+    }
     if (!tutorialData.isFree && (!tutorialData.price || isNaN(tutorialData.price))) newErrors.price = "Valid price is required.";
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
+      const lessons = parseInt(tutorialData.lessonCount || 0, 10);
+      const existing = tutorialData.chapters || [];
+      let chapters = existing.slice(0, lessons);
+      if (chapters.length < lessons) {
+        chapters = chapters.concat(
+          Array.from({ length: lessons - chapters.length }, () => ({
+            title: "",
+            duration: "",
+            video: null,
+            videoUrl: "",
+            preview: false,
+          }))
+        );
+      }
+      setTutorialData((prev) => ({ ...prev, chapters }));
       onNext();
     }
   };
@@ -137,6 +161,21 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
           <option value="Advanced">Advanced</option>
         </select>
         {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
+      </div>
+
+      {/* Number of Lessons */}
+      <div>
+        <label className="font-semibold">Number of Lessons *</label>
+        <input
+          type="number"
+          className="w-full p-2 border rounded mt-1"
+          value={tutorialData.lessonCount || ""}
+          onChange={(e) => handleChange("lessonCount", e.target.value)}
+          placeholder="e.g., 5"
+        />
+        {errors.lessonCount && (
+          <p className="text-red-500 text-sm mt-1">{errors.lessonCount}</p>
+        )}
       </div>
 
       {/* Tags */}
