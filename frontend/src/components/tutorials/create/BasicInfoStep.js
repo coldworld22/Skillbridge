@@ -231,19 +231,28 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
               </span>
             ))}
           </div>
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag(tagInput);
-              }
-            }}
-            placeholder="Add tags..."
-            className="w-full p-2 border rounded mt-1"
-          />
+          <div className="flex gap-2 mt-1">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTag(tagInput);
+                }
+              }}
+              placeholder="Add tags..."
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              type="button"
+              onClick={() => addTag(tagInput)}
+              className="px-3 py-2 bg-yellow-500 text-white rounded"
+            >
+              Add
+            </button>
+          </div>
           {tagSuggestions.length > 0 && tagInput && (
             <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
               {tagSuggestions.map((t) => (
