@@ -35,7 +35,7 @@ export default function GroupMembersList({
       case "unmute":
         return { muted: false };
       case "promote":
-        return { role: "moderator" };
+        return { role: "admin" };
       case "demote":
         return { role: "member" };
       case "disable":
@@ -106,14 +106,14 @@ export default function GroupMembersList({
                     </button>
                     <button
                       title={
-                        member.role === "moderator"
-                          ? "Demote"
-                          : "Promote to Moderator"
+                        member.role === "admin"
+                          ? "Demote to Member"
+                          : "Make Admin"
                       }
                       onClick={() =>
                         handleAction(
                           member.id,
-                          member.role === "moderator" ? "demote" : "promote",
+                          member.role === "admin" ? "demote" : "promote",
                         )
                       }
                       className="text-blue-500 hover:text-blue-600"
