@@ -33,8 +33,6 @@ export const fetchAllTutorials = async () => {
       : null,
     createdAt: t.created_at,
     updatedAt: t.updated_at,
-    startDate: t.start_date,
-    endDate: t.end_date,
     instructor: t.instructor_name,
     category: t.category_name,
     status: t.status === "published" ? "Published" : "Draft",
@@ -92,8 +90,6 @@ export const fetchTutorialById = async (id) => {
       : null,
     price: t.price,
     isFree: !t.is_paid,
-    startDate: t.start_date,
-    endDate: t.end_date,
   };
 };
 
