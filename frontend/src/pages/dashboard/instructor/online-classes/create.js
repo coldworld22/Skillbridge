@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -12,7 +12,7 @@ import withAuthProtection from '@/hooks/withAuthProtection';
 
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import { createInstructorClass, createClassLesson } from '@/services/instructor/classService';
-import { fetchClassTags } from '@/services/instructor/classTagService';
+import { fetchClassTags, createClassTag } from '@/services/instructor/classTagService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
@@ -57,29 +57,36 @@ function CreateOnlineClass() {
   const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [allTags, setAllTags] = useState([]);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-
-  const filteredTagSuggestions = useMemo(
-    () =>
-      allTags.filter(
-        (t) =>
-          tagInput &&
-          t.name.toLowerCase().includes(tagInput.toLowerCase()) &&
-          !selectedTags.includes(t.name)
-      ),
-    [allTags, tagInput, selectedTags]
-  );
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
       .then((res) => setCategories(res?.data || []))
       .catch(() => setCategories([]));
-    fetchClassTags()
-      .then(setAllTags)
-      .catch(() => setAllTags([]));
   }, []);
+
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+    let ignore = false;
+    fetchClassTags(tagInput)
+      .then((tags) => {
+        if (!ignore) {
+          const filtered = tags.filter((t) => !selectedTags.includes(t.name));
+          setTagSuggestions(filtered);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setTagSuggestions([]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [tagInput, selectedTags]);
 
   useEffect(() => {
     if (user?.full_name) {
@@ -162,6 +169,16 @@ function CreateOnlineClass() {
   const addTag = (tag) => {
     if (tag && !selectedTags.includes(tag)) {
       setSelectedTags((prev) => [...prev, tag]);
+      const exists = tagSuggestions.some(
+        (t) => t.name.toLowerCase() === tag.toLowerCase()
+      );
+      if (!exists) {
+        createClassTag({ name: tag })
+          .then((newTag) =>
+            setTagSuggestions((prev) => [...prev, newTag])
+          )
+          .catch(() => {});
+      }
       setTagInput('');
     }
   };
@@ -375,9 +392,9 @@ function CreateOnlineClass() {
                             placeholder="Add tags..."
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                           />
-                          {filteredTagSuggestions.length > 0 && tagInput && (
+                          {tagSuggestions.length > 0 && tagInput && (
                             <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
-                              {filteredTagSuggestions.map((t) => (
+                              {tagSuggestions.map((t) => (
                                 <div
                                   key={t.id}
                                   className="px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 cursor-pointer"
