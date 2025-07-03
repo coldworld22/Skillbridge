@@ -5,6 +5,7 @@ import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "@/config/config";
 import {
   fetchCategoryTree,
   fetchCategoryById,
@@ -44,7 +45,10 @@ function EditCategory() {
           setName(category.name);
           setParentId(category.parent_id || "");
           setStatus(category.status);
-          if (category.image_url) setPreview(category.image_url);
+          if (category.image_url) {
+            const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+            setPreview(`${base}${category.image_url}`);
+          }
         }
       } catch (err) {
         console.error("Failed to load category", err);

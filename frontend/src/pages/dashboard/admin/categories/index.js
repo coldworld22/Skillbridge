@@ -8,6 +8,7 @@ import {
   deleteCategory,
   updateCategoryStatus,
 } from "@/services/admin/categoryService";
+import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 
 function AdminCategoryIndex() {
@@ -80,9 +81,12 @@ function AdminCategoryIndex() {
     }
   };
 
-  const getImage = (src) =>
-    src ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/${src.replace(/^\/+/, "")}` :
-    "https://via.placeholder.com/80x80?text=No+Image";
+  const getImage = (src) => {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    return src
+      ? `${base}/${src.replace(/^\/+/, "")}`
+      : "https://via.placeholder.com/80x80?text=No+Image";
+  };
 
   const buildTree = (list, parentId = null) =>
     list
