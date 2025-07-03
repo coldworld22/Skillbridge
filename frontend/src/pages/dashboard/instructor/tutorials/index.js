@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaPlus, FaEdit, FaEye, FaTrash } from "react-icons/fa";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function InstructorTutorialsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchPublishedTutorials();
+        const data = await fetchInstructorTutorials();
         setTutorials(data?.data || data || []);
       } catch (err) {
         console.error(err);

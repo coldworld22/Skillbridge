@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
-import { fetchTutorialDetails } from "@/services/tutorialService";
+import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function ViewTutorialPage() {
     if (!id) return;
     const load = async () => {
       try {
-        const data = await fetchTutorialDetails(id);
+        const data = await fetchInstructorTutorialById(id);
         setTutorial(data?.data || data || null);
       } catch (err) {
         console.error(err);

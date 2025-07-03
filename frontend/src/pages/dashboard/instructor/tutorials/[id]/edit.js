@@ -6,7 +6,7 @@ import BasicInfoStep from '@/components/tutorials/create/BasicInfoStep';
 import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
-import { fetchTutorialDetails } from "@/services/tutorialService";
+import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function EditTutorialPage() {
 
     const load = async () => {
       try {
-        const data = await fetchTutorialDetails(id);
+        const data = await fetchInstructorTutorialById(id);
         const formatted = data?.data || data || null;
         if (formatted) {
           setTutorialData({

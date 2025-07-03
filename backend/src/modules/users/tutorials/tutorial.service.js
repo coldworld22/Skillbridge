@@ -33,6 +33,19 @@ exports.getTutorialById = async (id) => {
     );
 };
 
+exports.getTutorialsByInstructor = async (instructorId) => {
+  return db("tutorials as t")
+    .leftJoin("categories as c", "t.category_id", "c.id")
+    .select(
+      "t.*",
+      "c.name as category_name",
+      "c.image_url as category_image_url"
+    )
+    .where("t.instructor_id", instructorId)
+    .whereNot("t.status", "archived")
+    .orderBy("t.created_at", "desc");
+};
+
 exports.updateTutorial = async (id, data) => {
   const [updated] = await db("tutorials").where({ id }).update(data).returning("*");
   return updated;

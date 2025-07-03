@@ -141,6 +141,11 @@ exports.getAllTutorials = async (req, res) => {
   sendSuccess(res, tutorials);
 };
 
+exports.getMyTutorials = catchAsync(async (req, res) => {
+  const tutorials = await service.getTutorialsByInstructor(req.user.id);
+  sendSuccess(res, tutorials);
+});
+
 
 exports.getTutorialById = catchAsync(async (req, res) => {
   const tutorial = await service.getTutorialById(req.params.id);
