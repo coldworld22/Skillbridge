@@ -1,14 +1,14 @@
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import InstructorLayout from '@/components/layouts/InstructorLayout';
-import toast from 'react-hot-toast';
-import Link from 'next/link';
-import GroupChat from '@/components/chat/GroupChat';
-import GroupMembersList from '@/components/groups/GroupMembersList';
-import GroupPermissionSettings from '@/components/groups/GroupPermissionSettings';
-import groupService from '@/services/groupService';
-import JoinRequestCard from '@/components/groups/JoinRequestCard';
-import useAuthStore from '@/store/auth/authStore';
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import toast from "react-hot-toast";
+import Link from "next/link";
+import GroupChat from "@/components/chat/GroupChat";
+import GroupMembersList from "@/components/groups/GroupMembersList";
+import GroupPermissionSettings from "@/components/groups/GroupPermissionSettings";
+import groupService from "@/services/groupService";
+import JoinRequestCard from "@/components/groups/JoinRequestCard";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function GroupDetailsPage() {
   const router = useRouter();
@@ -16,29 +16,31 @@ export default function GroupDetailsPage() {
 
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [joinStatus, setJoinStatus] = useState('none');
+  const [joinStatus, setJoinStatus] = useState("none");
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { user, hasHydrated } = useAuthStore();
 
   const [members, setMembers] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     // Avoid running when navigating away from this page. When the route
     // changes, Next.js reuses the component briefly with the new query
     // params, which previously caused a redirect to the group explore page.
-    if (router.pathname !== '/dashboard/instructor/groups/[id]') return;
+    if (router.pathname !== "/dashboard/instructor/groups/[id]") return;
     if (!router.isReady || !groupId || !hasHydrated) return;
 
     const load = async () => {
       try {
         const data = await groupService.getGroupById(groupId);
         if (!data) {
-          toast.error('Group not found.');
-          router.push('/dashboard/instructor/groups/explore');
+          toast.error("Group not found.");
+          router.push("/dashboard/instructor/groups/explore");
           return;
         }
         setGroup(data);
@@ -50,23 +52,23 @@ export default function GroupDetailsPage() {
         if (user) {
           if (String(user.id) === String(data.creator_id)) {
             setIsAdmin(true);
-            setJoinStatus('joined');
-            role = 'admin';
+            setJoinStatus("joined");
+            role = "admin";
           } else {
             const member = mem.find((m) => String(m.id) === String(user.id));
             if (member) {
-              setJoinStatus('joined');
+              setJoinStatus("joined");
               role = member.role;
-              if (member.role === 'admin') setIsAdmin(true);
+              if (member.role === "admin") setIsAdmin(true);
             } else {
-              setJoinStatus('none');
+              setJoinStatus("none");
             }
           }
         }
         setCurrentUserRole(role);
       } catch (err) {
-        toast.error('Failed to load group.');
-        router.push('/dashboard/instructor/groups/explore');
+        toast.error("Failed to load group.");
+        router.push("/dashboard/instructor/groups/explore");
       } finally {
         setLoading(false);
       }
@@ -85,12 +87,36 @@ export default function GroupDetailsPage() {
 
   const handleJoin = async () => {
     try {
-      setJoinStatus('pending');
+      setJoinStatus("pending");
       await groupService.joinGroup(groupId);
-      toast.success('Join request sent!');
+      toast.success("Join request sent!");
     } catch (err) {
-      setJoinStatus('none');
-      toast.error('Failed to send join request');
+      setJoinStatus("none");
+      toast.error("Failed to send join request");
+    }
+  };
+
+  const handleSaveName = async () => {
+    try {
+      const updated = await groupService.updateGroup(group.id, {
+        name: newName,
+      });
+      setGroup(updated);
+      toast.success("Group name updated");
+      setEditingName(false);
+    } catch (err) {
+      toast.error("Failed to update group");
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!confirm("Are you sure you want to delete this group?")) return;
+    try {
+      await groupService.deleteGroup(group.id);
+      toast.success("Group deleted");
+      router.push("/dashboard/instructor/groups/my-groups");
+    } catch (err) {
+      toast.error("Failed to delete group");
     }
   };
 
@@ -102,37 +128,77 @@ export default function GroupDetailsPage() {
     );
   }
 
-  const tabs = ['overview'];
-  if (joinStatus === 'joined') {
-    tabs.push('chat');
-    tabs.push('members');
-    if (isAdmin) tabs.push('member-management');
+  const tabs = ["overview"];
+  if (joinStatus === "joined") {
+    tabs.push("chat");
+    tabs.push("members");
+    if (isAdmin) tabs.push("member-management");
   }
 
   return (
     <InstructorLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Link href="/dashboard/instructor/groups/my-groups">
-          <button className="text-sm text-blue-600 hover:underline">&larr; Back to My Groups</button>
+          <button className="text-sm text-blue-600 hover:underline">
+            &larr; Back to My Groups
+          </button>
         </Link>
 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
+            {["admin", "moderator"].includes(currentUserRole) &&
+              !editingName && (
+                <button
+                  onClick={() => {
+                    setEditingName(true);
+                    setNewName(group.name);
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Edit Name
+                </button>
+              )}
+            {editingName && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="border p-1 rounded text-sm"
+                />
+                <button
+                  onClick={handleSaveName}
+                  className="bg-blue-600 text-white px-2 rounded text-sm"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditingName(false)}
+                  className="text-sm text-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
             {(group.creator || group.creator_id) && (
-
               <p className="text-sm text-gray-500">
-                👑 Creator:{' '}
-
-                <span>{group.creator || group.creator_id}</span>
-
+                👑 Creator: <span>{group.creator || group.creator_id}</span>
               </p>
-
             )}
           </div>
-          <span className="text-sm text-gray-500">
-            📅 {new Date(group.created_at).toLocaleDateString()}
-          </span>
+          <div className="text-right space-y-1">
+            <span className="text-sm text-gray-500 block">
+              📅 {new Date(group.created_at).toLocaleDateString()}
+            </span>
+            {isAdmin && (
+              <button
+                onClick={handleDeleteGroup}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Delete Group
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-4 border-b pb-2">
@@ -141,10 +207,12 @@ export default function GroupDetailsPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-1 text-sm font-medium ${
-                activeTab === tab ? 'border-b-2 border-yellow-500 text-yellow-600' : 'text-gray-500'
+                activeTab === tab
+                  ? "border-b-2 border-yellow-500 text-yellow-600"
+                  : "text-gray-500"
               }`}
             >
-              {tab === 'member-management' ? (
+              {tab === "member-management" ? (
                 <>
                   Member Management
                   {pendingCount > 0 && (
@@ -160,7 +228,7 @@ export default function GroupDetailsPage() {
           ))}
         </div>
 
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="space-y-4">
             <img
               src={group.cover_image || group.image}
@@ -181,7 +249,7 @@ export default function GroupDetailsPage() {
               </div>
             )}
 
-            {joinStatus === 'none' && (
+            {joinStatus === "none" && (
               <button
                 onClick={handleJoin}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg"
@@ -189,56 +257,60 @@ export default function GroupDetailsPage() {
                 Join Group
               </button>
             )}
-            {joinStatus === 'pending' && (
-              <div className="text-yellow-700 font-semibold">⏳ Join request pending approval</div>
-            )}
-            {joinStatus === 'joined' && (
-              <div className="text-green-600 font-semibold">✅ You are a member of this group</div>
-            )}
-              <div className="pt-4">
-                <h2 className="text-sm font-medium mb-1">
-                  👥 Members ({members.length})
-                </h2>
-                <div className="flex flex-col gap-2 mt-1">
-                  {members.map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 text-sm">
-                      <img
-                        src={m.avatar}
-                        className="w-8 h-8 rounded-full border"
-                        alt={m.name}
-                      />
-                      <span>{m.name}</span>
-                    </div>
-                  ))}
-                </div>
+            {joinStatus === "pending" && (
+              <div className="text-yellow-700 font-semibold">
+                ⏳ Join request pending approval
               </div>
+            )}
+            {joinStatus === "joined" && (
+              <div className="text-green-600 font-semibold">
+                ✅ You are a member of this group
+              </div>
+            )}
+            <div className="pt-4">
+              <h2 className="text-sm font-medium mb-1">
+                👥 Members ({members.length})
+              </h2>
+              <div className="flex flex-col gap-2 mt-1">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 text-sm">
+                    <img
+                      src={m.avatar}
+                      className="w-8 h-8 rounded-full border"
+                      alt={m.name}
+                    />
+                    <span>{m.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
-        {activeTab === 'chat' && joinStatus === 'joined' && (
+        {activeTab === "chat" && joinStatus === "joined" && (
           <>
             <GroupChat groupId={group.id} groupName={group.name} />
-              <div className="mt-6">
-                <h2 className="text-sm font-medium mb-1">
-                  👥 Members ({members.length})
-                </h2>
-                <div className="flex flex-col gap-2 mt-1">
-                  {members.map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 text-sm">
-                      <img
-                        src={m.avatar}
-                        className="w-8 h-8 rounded-full border"
-                        alt={m.name}
-                      />
-                      <span>{m.name}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className="mt-6">
+              <h2 className="text-sm font-medium mb-1">
+                👥 Members ({members.length})
+              </h2>
+              <div className="flex flex-col gap-2 mt-1">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 text-sm">
+                    <img
+                      src={m.avatar}
+                      className="w-8 h-8 rounded-full border"
+                      alt={m.name}
+                    />
+                    <span>{m.name}</span>
+                  </div>
+                ))}
               </div>
+            </div>
           </>
         )}
 
-        {activeTab === 'members' && joinStatus === 'joined' && (
+        {activeTab === "members" && joinStatus === "joined" && (
           <div className="space-y-4">
             <GroupMembersList
               groupId={group.id}
@@ -248,13 +320,15 @@ export default function GroupDetailsPage() {
           </div>
         )}
 
-        {activeTab === 'member-management' && isAdmin && (
+        {activeTab === "member-management" && isAdmin && (
           <div className="space-y-4">
             <div className="pt-4">
               <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
 
-              <JoinRequestCard groupId={group.id} onCountChange={setPendingCount} />
-
+              <JoinRequestCard
+                groupId={group.id}
+                onCountChange={setPendingCount}
+              />
             </div>
             <GroupPermissionSettings groupId={group.id} />
           </div>
