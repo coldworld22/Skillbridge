@@ -22,6 +22,7 @@ router.post(
 );
 
 router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllTutorials);
+router.get("/admin/my", verifyToken, isInstructorOrAdmin, controller.getMyTutorials);
 router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getTutorialById);
 
 router.put(
