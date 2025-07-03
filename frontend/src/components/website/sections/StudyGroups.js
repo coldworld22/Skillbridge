@@ -82,7 +82,13 @@ const StudyGroups = () => {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/groups/explore')}
+              onClick={() => {
+                const role = user?.role?.toLowerCase() || 'student';
+                const target = ['admin', 'superadmin'].includes(role)
+                  ? 'admin'
+                  : role;
+                router.push(`/dashboard/${target}/groups/explore`);
+              }}
               className="flex items-center gap-2 text-amber-400 hover:text-amber-300 font-medium py-3 px-6 rounded-xl border border-amber-500 hover:border-amber-400 transition-colors"
             >
               <FaUsers />
