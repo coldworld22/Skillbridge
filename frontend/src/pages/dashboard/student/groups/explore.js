@@ -15,7 +15,9 @@ export default function ExploreGroupsPage() {
   const [joinRequests, setJoinRequests] = useState([]);
   const [tags, setTags] = useState([]);
   const [membersMap, setMembersMap] = useState({});
+
   const [roleMap, setRoleMap] = useState({});
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,10 +87,12 @@ export default function ExploreGroupsPage() {
     try {
       await groupService.joinGroup(groupId);
       setJoinRequests((prev) => [...prev, groupId]);
+
       setRoleMap((prev) => ({ ...prev, [groupId]: 'pending' }));
       setGroups((prev) =>
         prev.map((g) => (g.id === groupId ? { ...g, myRole: 'pending' } : g))
       );
+
       toast.success('Join request sent!');
     } catch {
       toast.error('Failed to send join request');
