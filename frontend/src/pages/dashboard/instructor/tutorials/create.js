@@ -8,6 +8,7 @@ import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
 import ReviewStep from "@/components/tutorials/create/ReviewStep";
+import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 
 export default function CreateTutorialPage() {
   const [step, setStep] = useState(1);
@@ -112,20 +113,14 @@ export default function CreateTutorialPage() {
       <div className="p-8 bg-gray-100 min-h-screen">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
 
-        {/* Step Indicators */}
-        <div className="flex justify-between mb-12">
-          {["Basic Info", "Curriculum", "Media", "Pricing & Publish"].map((label, index) => (
-            <div key={index} className="flex flex-col items-center text-center">
-              <div className={`w-10 h-10 flex items-center justify-center rounded-full text-white font-bold
-                ${step === index + 1 ? "bg-yellow-500" : "bg-gray-400"}`}>
-                {index + 1}
-              </div>
-              <span className={`mt-2 text-sm ${step === index + 1 ? "text-yellow-500" : "text-gray-500"}`}>
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* Step Progress */}
+        <StepProgressBar
+          steps={["Basic Info", "Curriculum", "Media", "Pricing & Publish"]}
+          currentStep={step}
+          onStepClick={(s) => {
+            if (s < step) setStep(s);
+          }}
+        />
 
         {/* Step Content */}
         <div className="bg-white p-8 rounded-lg shadow space-y-6">
