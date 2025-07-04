@@ -10,6 +10,9 @@ const formatTutorial = (tut) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
     : null,
   instructor: tut.instructor_name || tut.instructor,
+  rating: typeof tut.rating === "string" || typeof tut.rating === "number"
+    ? parseFloat(tut.rating)
+    : 0,
   tags: tut.tags || [],
   trending: Boolean(tut.trending),
 });
