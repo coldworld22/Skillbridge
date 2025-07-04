@@ -104,7 +104,9 @@ export default function InstructorTutorialsPage() {
 
               <div className="flex-1 p-4 flex flex-col justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800 truncate">{tutorial.title}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 truncate">
+                    {tutorial.title}
+                  </h2>
                   <p className="text-xs text-gray-500 mt-2">
                     Updated: {new Date(tutorial.updatedAt).toLocaleDateString()}
                   </p>
@@ -117,15 +119,16 @@ export default function InstructorTutorialsPage() {
                       {tutorial.instructor_name || tutorial.instructor}
                     </a>
                     <span className="font-semibold">
-                      {tutorial.price ? `$${tutorial.price}` : 'Free'}
+                      {tutorial.price ? `$${tutorial.price}` : "Free"}
                     </span>
                   </div>
 
                   <p className="text-xs text-gray-500 mt-1">
-                    Language: {tutorial.language || 'N/A'}
+                    Language: {tutorial.language || "N/A"}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Category: {tutorial.category_name || 'N/A'} • Level: {tutorial.level || 'N/A'}
+                    Category: {tutorial.category_name || "N/A"} • Level:{" "}
+                    {tutorial.level || "N/A"}
                   </p>
                   {tutorial.tags && tutorial.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -183,7 +186,9 @@ export default function InstructorTutorialsPage() {
                 {/* Buttons */}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
-                    onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/view`)}
+                    onClick={() =>
+                      router.push(`/dashboard/instructor/tutorials/${tutorial.id}/view`)
+                    }
                     title="View Tutorial"
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded-lg"
                   >
@@ -192,7 +197,9 @@ export default function InstructorTutorialsPage() {
 
                   {(tutorial.status === "Draft" || tutorial.status === "Rejected") && (
                     <button
-                      onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/edit`)}
+                      onClick={() =>
+                        router.push(`/dashboard/instructor/tutorials/${tutorial.id}/edit`)
+                      }
                       title="Edit Tutorial"
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm py-2 rounded-lg"
                     >
