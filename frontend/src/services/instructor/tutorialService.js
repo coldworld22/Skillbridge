@@ -29,6 +29,12 @@ export const fetchInstructorTutorials = async () => {
     ...formatBase(t),
     status: mapStatus(t),
     updatedAt: t.updated_at,
+    createdAt: t.created_at,
+    views: t.views || 0,
+    rating: t.rating || 0,
+    enrollments: t.enrollments || 0,
+    comments: t.comment_count || 0,
+    watchTime: t.watch_time || 0,
   }));
 };
 
@@ -46,4 +52,9 @@ export const fetchInstructorTutorialById = async (id) => {
     updatedAt: tut.updated_at,
     chapters,
   };
+};
+
+export const submitTutorialForReview = async (id) => {
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
+  return data?.data;
 };
