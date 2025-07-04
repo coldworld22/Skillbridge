@@ -11,7 +11,9 @@ import useCartStore from "@/store/cart/cartStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
 import { fetchFeaturedTutorials } from "@/services/tutorialService";
+
 const PROGRESS_KEY = "skillbridge_tutorialProgress";
+
 
 const getStars = (rating) => {
   const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
@@ -34,7 +36,9 @@ const LandingTutorialsSection = () => {
   const [progress, setProgress] = useState({});
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+
   const [isMobile, setIsMobile] = useState(false);
+
 
   useEffect(() => {
     if (typeof navigator !== "undefined") {
@@ -53,6 +57,12 @@ const LandingTutorialsSection = () => {
         setCategories(cats?.data || cats || []);
       } catch (err) {
         toast.error("Failed to load categories");
+      }
+      try {
+        const cats = await fetchAllCategories({ limit: 100 });
+        setCategories(cats?.data || cats || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
       }
       try {
         const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
@@ -193,7 +203,9 @@ const LandingTutorialsSection = () => {
 
               <div className="flex gap-2 mt-4">
                 <button
+
                   aria-label="View tutorial details"
+
                   onClick={(e) => {
                     e.stopPropagation();
                     router.push(`/tutorials/${tut.id}`);
@@ -203,13 +215,16 @@ const LandingTutorialsSection = () => {
                   View Details
                 </button>
                 <button
+
                   aria-label="Add tutorial to cart"
+
                   onClick={async (e) => {
                     e.stopPropagation();
                     try {
                       await addItem({ id: tut.id, name: tut.title, price: tut.price || 0 });
                       toast.success('Added to cart');
                     } catch (err) {
+
                       toast.error('Failed to add to cart');
                     }
                   }}
