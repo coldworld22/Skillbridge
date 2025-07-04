@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
+import { safeEncodeURI } from '@/utils/url';
 import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart, FaRegHeart, FaCalendarAlt, FaClock, FaTag, FaInfoCircle, FaUsers, FaDollarSign } from 'react-icons/fa';
 import {
   enrollInClass,
@@ -286,7 +287,7 @@ export default function ClassDetailsPage() {
         <div className="mb-10 rounded-xl overflow-hidden shadow-2xl border border-gray-700">
           {classInfo.demo_video_url ? (
             <CustomVideoPlayer
-              videos={[{ src: encodeURI(classInfo.demo_video_url) }]}
+              videos={[{ src: safeEncodeURI(classInfo.demo_video_url) }]}
               className="w-full"
             />
           ) : (

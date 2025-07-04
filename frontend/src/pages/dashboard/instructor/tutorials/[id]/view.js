@@ -12,6 +12,7 @@ import {
   FaRegComments,
 } from "react-icons/fa";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
 import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
 
@@ -229,7 +230,7 @@ export default function ViewTutorialPage() {
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Preview</h2>
           {tutorial.preview ? (
             <CustomVideoPlayer
-              videos={[{ src: encodeURI(tutorial.preview) }]}
+              videos={[{ src: safeEncodeURI(tutorial.preview) }]}
             />
           ) : (
             <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">

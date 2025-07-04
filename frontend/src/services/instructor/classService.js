@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { toDateInput } from "@/utils/date";
+import { safeEncodeURI } from "@/utils/url";
 
 const formatClass = (cls) => ({
   ...cls,
@@ -7,7 +8,7 @@ const formatClass = (cls) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
     : null,
   demo_video_url: cls.demo_video_url
-    ? encodeURI(
+    ? safeEncodeURI(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
       )
     : null,

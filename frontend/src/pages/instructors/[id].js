@@ -12,6 +12,7 @@ import { fetchPublicInstructorById } from "@/services/public/instructorService";
 import { fetchPublishedClasses } from "@/services/classService";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 
 export default function InstructorProfilePage() {
   const router = useRouter();
@@ -206,7 +207,7 @@ export default function InstructorProfilePage() {
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-3">Demo Video</h2>
                 <div className="rounded-lg overflow-hidden shadow-md">
-                  <CustomVideoPlayer videos={[{ src: encodeURI(instructor.demo_video_url) }]} />
+                  <CustomVideoPlayer videos={[{ src: safeEncodeURI(instructor.demo_video_url) }]} />
                 </div>
               </div>
             )}

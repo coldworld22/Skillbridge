@@ -5,6 +5,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 
 export default function AdminClassDetailPage() {
   const { id } = useRouter().query;
@@ -75,7 +76,7 @@ export default function AdminClassDetailPage() {
                   <h3 className="text-sm font-medium text-gray-700">Class Demo Video</h3>
                 </div>
                 <CustomVideoPlayer
-                  videos={[{ src: encodeURI(details.demo_video_url) }]}
+                  videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
                 />
               </div>
             )}
