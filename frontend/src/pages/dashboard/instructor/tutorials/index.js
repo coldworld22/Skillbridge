@@ -10,7 +10,6 @@ import {
   FaRegComments,
   FaStar,
   FaUsers,
-  FaCopy,
   FaDownload,
   FaSearch,
   FaFilter,
@@ -371,15 +370,6 @@ export default function InstructorTutorialsPage() {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => {
-                      const copy = { ...tutorial, id: `copy-${Date.now()}` };
-                      setTutorials((prev) => [copy, ...prev]);
-                    }}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
-                  >
-                    <FaCopy className="mr-2" /> Duplicate
-                  </button>
 
                   <button
                     onClick={() => {
