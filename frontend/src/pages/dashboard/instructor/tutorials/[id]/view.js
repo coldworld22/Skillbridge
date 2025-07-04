@@ -3,7 +3,15 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
-import { FaEdit, FaDownload, FaRegEye, FaUsers, FaStar, FaRegComments } from "react-icons/fa";
+import {
+  FaEdit,
+  FaDownload,
+  FaRegEye,
+  FaUsers,
+  FaStar,
+  FaRegComments,
+} from "react-icons/fa";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
 import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
 
@@ -141,7 +149,8 @@ export default function ViewTutorialPage() {
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Course Description</h2>
           <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-            {tutorial.shortDescription || "No description provided yet."}
+            {tutorial.description || tutorial.shortDescription ||
+              "No description provided yet."}
           </p>
         </div>
 
@@ -195,13 +204,19 @@ export default function ViewTutorialPage() {
                 transition={{ duration: 0.4 }}
               >
                 {tutorial.chapters.map((chapter, index) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg shadow-sm">
-                    <h3 className="font-semibold text-gray-800">{chapter.title}</h3>
-                    <ul className="mt-2 list-disc list-inside text-gray-600 text-sm sm:text-base">
-                      {chapter.lessons.map((lesson, idx) => (
-                        <li key={idx}>{lesson}</li>
-                      ))}
-                    </ul>
+                  <div
+                    key={index}
+                    className="p-4 bg-gray-50 rounded-lg shadow-sm space-y-1"
+                  >
+                    <h3 className="font-semibold text-gray-800">
+                      {chapter.title}
+                      {chapter.duration ? ` (${chapter.duration} min)` : ""}
+                    </h3>
+                    {chapter.content && (
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {chapter.content}
+                      </p>
+                    )}
                   </div>
                 ))}
               </motion.div>
@@ -213,10 +228,9 @@ export default function ViewTutorialPage() {
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Preview</h2>
           {tutorial.preview ? (
-            <video controls className="w-full rounded-xl shadow">
-              <source src={tutorial.preview} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+            <CustomVideoPlayer
+              videos={[{ src: encodeURI(tutorial.preview) }]}
+            />
           ) : (
             <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
               No preview available
