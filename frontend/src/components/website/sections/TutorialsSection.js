@@ -10,16 +10,12 @@ import {
   FaPaintBrush,
   FaCubes,
 } from "react-icons/fa";
+import { toast } from "react-toastify";
+import useCartStore from "@/store/cart/cartStore";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 
 import { fetchFeaturedTutorials } from "@/services/tutorialService";
 const PROGRESS_KEY = "tutorialProgress";
-
-const categoryTabs = [
-  { label: "All", value: "All", icon: null },
-  { label: "Frontend", value: "Frontend", icon: <FaCode /> },
-  { label: "Backend", value: "Backend", icon: <FaCubes /> },
-  { label: "Design", value: "Design", icon: <FaPaintBrush /> }
-];
 
 const getStars = (rating) => {
   const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
@@ -38,8 +34,10 @@ const getStars = (rating) => {
 const LandingTutorialsSection = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [tutorials, setTutorials] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [progress, setProgress] = useState({});
   const router = useRouter();
+  const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     const load = async () => {
@@ -48,6 +46,12 @@ const LandingTutorialsSection = () => {
         setTutorials(data || []);
       } catch (err) {
         console.error("Failed to load tutorials", err);
+      }
+      try {
+        const cats = await fetchAllCategories({ limit: 100 });
+        setCategories(cats?.data || cats || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
       }
       try {
         const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
@@ -81,7 +85,7 @@ const LandingTutorialsSection = () => {
 
       {/* Category Tabs */}
       <div className="flex justify-center gap-4 flex-wrap mb-8">
-        {categoryTabs.map((tab) => (
+        {[{ label: "All", value: "All" }, ...categories.map((c) => ({ label: c.name, value: c.name }))].map((tab) => (
           <button
             key={tab.value}
             className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
@@ -91,7 +95,6 @@ const LandingTutorialsSection = () => {
             }`}
             onClick={() => setActiveTab(tab.value)}
           >
-            {tab.icon}
             {tab.label}
           </button>
         ))}
@@ -182,6 +185,33 @@ const LandingTutorialsSection = () => {
                 <div className="text-xs text-gray-400 mt-1">
                   Watched: {progress[tut.id] || 0}%
                 </div>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/tutorials/${tut.id}`);
+                  }}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 rounded"
+                >
+                  View Details
+                </button>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await addItem({ id: tut.id, name: tut.title, price: tut.price || 0 });
+                      toast.success('Added to cart');
+                    } catch (err) {
+                      console.error('Failed to add to cart', err);
+                      toast.error('Failed to add to cart');
+                    }
+                  }}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black py-1 rounded"
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           </motion.div>
