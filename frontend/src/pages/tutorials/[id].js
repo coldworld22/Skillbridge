@@ -12,96 +12,91 @@ import CommentsSection from "@/components/tutorials/detail/CommentsSection";
 import BackButton from "@/components/tutorials/detail/BackButton";
 import ReviewsSection from "@/components/tutorials/detail/ReviewsSection";
 import TestQuiz from "@/components/tutorials/detail/TestQuiz";
-
-const allTutorials = [
-  {
-    id: 1,
-    title: "Mastering React.js",
-    instructor: "John Doe",
-    duration: "30 min",
-    category: "React",
-    level: "Beginner",
-    rating: 4.8,
-    views: 100,
-    video: "/videos/tutorials/default-preview.mp4",
-    description: "This is a complete React.js tutorial for beginners...",
-    instructorBio: "Senior React Developer with 10+ years of experience...",
-    chapters: [
-      { title: "Preview: Introduction to React", duration: "5 min", videoUrl: "/videos/tutorials/default-preview.mp4" },
-      { title: "Components and Props", duration: "10 min", videoUrl: "/videos/tutorials/locked1.mp4" },
-      { title: "State and Lifecycle", duration: "8 min", videoUrl: "/videos/tutorials/locked2.mp4" },
-      { title: "Hooks Overview", duration: "7 min", videoUrl: "/videos/tutorials/locked3.mp4" },
-    ],
-  },
-  {
-    id: 2,
-    title: "React for Designers",
-    instructor: "Jane Smith",
-    duration: "40 min",
-    category: "React",
-    level: "Intermediate",
-    rating: 4.6,
-    views: 95,
-    video: "/videos/tutorials/design.mp4",
-    description: "Learn React with a focus on UI/UX design.",
-    instructorBio: "Frontend UI Specialist and UX-focused developer.",
-    chapters: [
-      { title: "Getting Started with JSX", duration: "8 min", videoUrl: "/videos/tutorials/default-preview.mp4" },
-      { title: "Styling in React", duration: "10 min", videoUrl: "/videos/tutorials/locked1.mp4" },
-    ],
-  },
-  {
-    id: 7,
-    title: "Fundamentals of Medical Terminology",
-    instructor: "Dr. Olivia Hale",
-    duration: "40 min",
-    level: "Beginner",
-    rating: 4.6,
-    thumbnail: "https://i.ytimg.com/vi/medical_thumbnail.jpg",
-    tags: ["Medical", "Terminology", "Beginner Friendly"],
-    category: "Medical",
-    preview: "https://www.w3schools.com/html/mov_bbb.mp4"
-  },
-  {
-    id: 8,
-    title: "Nursing Skills 101",
-    instructor: "Nurse Amanda Grey",
-    duration: "1h",
-    level: "Intermediate",
-    rating: 4.9,
-    thumbnail: "https://i.ytimg.com/vi/nursing_thumbnail.jpg",
-    tags: ["Nursing", "Hands-on", "Care"],
-    category: "Nursing",
-    preview: "https://www.w3schools.com/html/mov_bbb.mp4"
-  }
-  
-];
-
+import {
+  fetchTutorialDetails,
+  fetchPublishedTutorials,
+} from "@/services/tutorialService";
 
 export default function TutorialDetail() {
   const router = useRouter();
   const { id } = router.query;
+  const [tutorial, setTutorial] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [testPassed, setTestPassed] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // TODO: integrate auth
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const tutorialId = parseInt(id);
-  const tutorial = allTutorials.find((tut) => tut.id === tutorialId);
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchTutorialDetails(id);
+        if (!data) {
+          setError("Tutorial not found");
+          setLoading(false);
+          return;
+        }
+        const chapters = (data.chapters || []).map((ch) => ({
+          ...ch,
+          videoUrl: ch.video_url || ch.videoUrl,
+        }));
+        setTutorial({ ...data, chapters });
 
-  const related = allTutorials.filter(
-    (tut) => tut.category === tutorial?.category && tut.id !== tutorial?.id
-  );
+        const list = await fetchPublishedTutorials();
+        const others = (list?.data || list || []).filter(
+          (t) => String(t.id) !== String(data.id),
+        );
+        setRelated(others.slice(0, 3));
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load tutorial");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
 
   useEffect(() => {
-    const enrolled = localStorage.getItem(`enrolled-${tutorialId}`);
+    if (!tutorial) return;
+    const enrolled = localStorage.getItem(`enrolled-${tutorial.id}`);
     if (enrolled) setIsEnrolled(true);
-  }, [tutorialId]);
+  }, [tutorial]);
 
   const enroll = () => {
-    localStorage.setItem(`enrolled-${tutorialId}`, true);
+    if (!tutorial) return;
+    localStorage.setItem(`enrolled-${tutorial.id}`, true);
     setIsEnrolled(true);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-300">Loading tutorial...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <p className="text-lg text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (!tutorial) {
+    return (
+      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-300">Tutorial not found</p>
+      </div>
+    );
+  }
 
   if (!tutorial) {
     return (
@@ -174,7 +169,6 @@ export default function TutorialDetail() {
           </button>
         </div>
 
-
         <TutorialHeader {...tutorial} />
         <TutorialOverview description={tutorial.description} />
 
@@ -185,9 +179,11 @@ export default function TutorialDetail() {
           onSelect={(index) => setCurrentIndex(index)}
         />
 
-        <TestQuiz onComplete={(finalScore) => {
-          if (finalScore >= 2) setTestPassed(true);
-        }} />
+        <TestQuiz
+          onComplete={(finalScore) => {
+            if (finalScore >= 2) setTestPassed(true);
+          }}
+        />
 
         {testPassed && (
           <div className="mt-6 text-center">
