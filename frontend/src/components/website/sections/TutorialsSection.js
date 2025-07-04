@@ -22,11 +22,12 @@ const categoryTabs = [
 ];
 
 const getStars = (rating) => {
-  const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5;
+  const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
+  const full = Math.floor(safeRating);
+  const half = safeRating % 1 >= 0.5;
   return (
     <>
-      {Array(full).fill().map((_, i) => (
+      {Array.from({ length: full }).map((_, i) => (
         <FaStar key={i} className="text-yellow-400" />
       ))}
       {half && <FaStar className="text-yellow-300 opacity-50" />}
