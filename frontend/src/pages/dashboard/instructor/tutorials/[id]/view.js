@@ -195,13 +195,19 @@ export default function ViewTutorialPage() {
                 transition={{ duration: 0.4 }}
               >
                 {tutorial.chapters.map((chapter, index) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg shadow-sm">
-                    <h3 className="font-semibold text-gray-800">{chapter.title}</h3>
-                    <ul className="mt-2 list-disc list-inside text-gray-600 text-sm sm:text-base">
-                      {chapter.lessons.map((lesson, idx) => (
-                        <li key={idx}>{lesson}</li>
-                      ))}
-                    </ul>
+                  <div
+                    key={index}
+                    className="p-4 bg-gray-50 rounded-lg shadow-sm space-y-1"
+                  >
+                    <h3 className="font-semibold text-gray-800">
+                      {chapter.title}
+                      {chapter.duration ? ` (${chapter.duration} min)` : ""}
+                    </h3>
+                    {chapter.content && (
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {chapter.content}
+                      </p>
+                    )}
                   </div>
                 ))}
               </motion.div>
