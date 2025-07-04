@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
-import { fetchInstructorTutorialAnalytics } from "@/services/instructor/tutorialService";
+import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function TutorialAnalyticsPage() {
@@ -12,8 +12,9 @@ export default function TutorialAnalyticsPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetchInstructorTutorialAnalytics(id)
-      .then((data) => setStats(data))
+    axios
+      .get(`/api/tutorials/${id}/analytics`)
+      .then((res) => setStats(res.data))
       .catch(() => setStats(null));
   }, [id]);
 
