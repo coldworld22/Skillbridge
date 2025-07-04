@@ -101,9 +101,21 @@ exports.getArchivedTutorials = async () => {
 };
 
 exports.getFeaturedTutorials = async () => {
-  return db("tutorials")
-    .where({ status: "published", moderation_status: "Approved" })
-    .orderBy("created_at", "desc")
+  const ratingSubquery = db("tutorial_reviews")
+    .select("tutorial_id")
+    .avg({ avg_rating: "rating" })
+    .groupBy("tutorial_id");
+
+  return db({ t: "tutorials" })
+    .leftJoin("users as u", "t.instructor_id", "u.id")
+    .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
+    .where({ "t.status": "published", "t.moderation_status": "Approved" })
+    .select(
+      "t.*",
+      "u.full_name as instructor_name",
+      db.raw("COALESCE(r.avg_rating, 0) as rating")
+    )
+    .orderBy("t.created_at", "desc")
     .limit(6);
 };
 
