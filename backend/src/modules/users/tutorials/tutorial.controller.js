@@ -6,6 +6,7 @@ const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const tagService = require("./tutorialTag.service");
 const notificationService = require("../../notifications/notifications.service");
+const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 
 const catchAsync = require("../../../utils/catchAsync");
@@ -233,21 +234,81 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 
 
 exports.togglePublishStatus = catchAsync(async (req, res) => {
-  await service.togglePublishStatus(req.params.id);
+  const tutorialId = req.params.id;
+  await service.togglePublishStatus(tutorialId);
+
+  const tut = await service.getTutorialById(tutorialId);
+  if (
+    req.user.role !== "instructor" &&
+    tut.instructor_id &&
+    tut.instructor_id !== req.user.id
+  ) {
+    const message = `An admin changed the status of your tutorial "${tut.title}" to ${tut.status}`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: tut.instructor_id,
+        type: "tutorial_status_changed",
+        message,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: tut.instructor_id,
+        message,
+      }),
+    ]);
+  }
 
   sendSuccess(res, { message: "Status toggled" });
 });
 
 
 exports.approveTutorial = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "Approved");
+  const tutorialId = req.params.id;
+  await service.updateModeration(tutorialId, "Approved");
+
+  const tut = await service.getTutorialById(tutorialId);
+  if (tut.instructor_id && tut.instructor_id !== req.user.id) {
+    const message = `Your tutorial "${tut.title}" has been approved`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: tut.instructor_id,
+        type: "tutorial_approved",
+        message: `Tutorial "${tut.title}" approved. You can now start teaching`,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: tut.instructor_id,
+        message,
+      }),
+    ]);
+  }
 
   sendSuccess(res, { message: "Tutorial approved" });
 });
 
 
 exports.rejectTutorial = catchAsync(async (req, res) => {
-  await service.updateModeration(req.params.id, "Rejected", req.body.reason);
+  const tutorialId = req.params.id;
+  const reason = req.body.reason;
+  await service.updateModeration(tutorialId, "Rejected", reason);
+
+  const tut = await service.getTutorialById(tutorialId);
+  if (tut.instructor_id && tut.instructor_id !== req.user.id) {
+    const msgReason = reason ? `: ${reason}` : "";
+    const message = `Your tutorial "${tut.title}" was rejected${msgReason}`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: tut.instructor_id,
+        type: "tutorial_rejected",
+        message,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: tut.instructor_id,
+        message,
+      }),
+    ]);
+  }
 
   sendSuccess(res, { message: "Tutorial rejected" });
 });
