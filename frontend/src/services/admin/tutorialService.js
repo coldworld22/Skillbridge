@@ -81,6 +81,8 @@ export const fetchTutorialById = async (id) => {
     categoryName: t.category_name,
     level: t.level,
     language: t.language,
+    instructorId: t.instructor_id,
+    instructorName: t.instructor_name,
     tags: t.tags || [],
     thumbnail: t.thumbnail_url
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
