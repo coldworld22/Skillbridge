@@ -8,8 +8,17 @@ export default function ProgressChecklistModal({ isOpen, onClose, tutorial }) {
   const checklist = [
     { label: "Title & Description", valid: tutorial.title && tutorial.description },
     { label: "Thumbnail", valid: !!tutorial.thumbnail },
-    { label: "At least 1 Lesson", valid: tutorial.lessons?.length > 0 },
-    { label: "Category", valid: !!tutorial.category_id },
+    {
+      label: "At least 1 Lesson",
+      valid:
+        (Array.isArray(tutorial.lessons) && tutorial.lessons.length > 0) ||
+        (Array.isArray(tutorial.chapters) && tutorial.chapters.length > 0) ||
+        (typeof tutorial.lessonCount === "number" && tutorial.lessonCount > 0),
+    },
+    {
+      label: "Category",
+      valid: !!tutorial.category_id || !!tutorial.categoryId,
+    },
     { label: "Tags", valid: tutorial.tags?.length > 0 },
     { label: "Language & Level", valid: tutorial.language && tutorial.level },
     { label: "Price or Free", valid: tutorial.price !== undefined },
