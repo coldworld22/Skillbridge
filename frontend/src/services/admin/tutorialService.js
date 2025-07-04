@@ -111,3 +111,8 @@ export const bulkDeleteTutorials = async (ids) => {
 };
 
 
+
+export const fetchAdminTutorialAnalytics = async (id) => {
+  const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
+  return data?.data ?? {};
+};

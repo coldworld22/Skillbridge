@@ -149,3 +149,31 @@ exports.getTutorialTags = async (tutorialId) => {
     .where("m.tutorial_id", tutorialId)
     .select("t.id", "t.name", "t.slug");
 };
+exports.getTutorialAnalytics = async (tutorialId) => {
+  const [totalRow] = await db('tutorial_enrollments')
+    .where({ tutorial_id: tutorialId })
+    .count();
+  const [completedRow] = await db('tutorial_enrollments')
+    .where({ tutorial_id: tutorialId, status: 'completed' })
+    .count();
+  const trendRows = await db('tutorial_enrollments')
+    .where({ tutorial_id: tutorialId })
+    .select(db.raw('DATE(enrolled_at) as date'))
+    .count('* as students')
+    .groupByRaw('DATE(enrolled_at)')
+    .orderBy('date');
+  const [revenueRow] = await db('payments')
+    .where({ item_type: 'tutorial', item_id: tutorialId, status: 'paid' })
+    .sum({ revenue: 'amount' });
+  return {
+    totalStudents: parseInt(totalRow.count, 10) || 0,
+    completed: parseInt(completedRow.count, 10) || 0,
+    totalRevenue: parseFloat(revenueRow.revenue) || 0,
+    devices: [],
+    locations: [],
+    registrationTrend: trendRows.map((r) => ({
+      date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : r.date,
+      students: parseInt(r.students, 10),
+    })),
+  };
+};

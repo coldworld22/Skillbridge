@@ -7,6 +7,14 @@ jest.mock('../src/config/database', () => ({
 
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   getTutorialsByCategory: jest.fn(),
+  getTutorialAnalytics: jest.fn(),
+}));
+
+jest.mock('../src/middleware/auth/authMiddleware', () => ({
+  verifyToken: (_req, _res, next) => next(),
+  isInstructorOrAdmin: (_req, _res, next) => next(),
+  isAdmin: (_req, _res, next) => next(),
+  isStudent: (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/users/tutorials/tutorial.service');
@@ -26,5 +34,17 @@ describe('GET /api/users/tutorials/category/:categoryId', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockTutorials);
     expect(service.getTutorialsByCategory).toHaveBeenCalledWith('123');
+  });
+});
+
+describe('GET /api/users/tutorials/admin/:id/analytics', () => {
+  it('returns tutorial analytics', async () => {
+    const analytics = { totalStudents: 5 };
+    service.getTutorialAnalytics = jest.fn().mockResolvedValue(analytics);
+
+    const res = await request(app).get('/api/users/tutorials/admin/1/analytics');
+    expect(res.status).toBe(200);
+    expect(service.getTutorialAnalytics).toHaveBeenCalledWith('1');
+    expect(res.body.data).toEqual(analytics);
   });
 });
