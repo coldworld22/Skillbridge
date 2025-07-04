@@ -1,12 +1,20 @@
 // EditTutorialPage.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from '@/components/tutorials/create/BasicInfoStep';
 import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
 import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
+import { updateTutorial } from "@/services/admin/tutorialService";
+import { fetchAllCategories } from "@/services/admin/categoryService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -16,6 +24,11 @@ export default function EditTutorialPage() {
   const [tutorialData, setTutorialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
     if (!id) return;
@@ -32,8 +45,11 @@ export default function EditTutorialPage() {
 
     const load = async () => {
       try {
-        const data = await fetchInstructorTutorialById(id);
-        const formatted = data?.data || data || null;
+        const [tutorial, cats] = await Promise.all([
+          fetchInstructorTutorialById(id),
+          fetchAllCategories(),
+        ]);
+        const formatted = tutorial?.data || tutorial || null;
         if (formatted) {
           setTutorialData({
             ...formatted,
@@ -42,6 +58,7 @@ export default function EditTutorialPage() {
         } else {
           setTutorialData(null);
         }
+        setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
         setError("Failed to load tutorial");
@@ -73,6 +90,7 @@ export default function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
+            categories={categories}
           />
         )}
         {step === 2 && (
@@ -94,11 +112,57 @@ export default function EditTutorialPage() {
         {step === 4 && (
           <ReviewStep
             tutorialData={tutorialData}
-            onPrev={onPrev}
-            onSubmit={() => {
-              alert("✅ Tutorial Updated Successfully!");
-              localStorage.removeItem(`editTutorialDraft-${id}`); // optional: clear draft after submit
-              router.push("/dashboard/instructor/tutorials"); // go back to tutorials list
+            onBack={onPrev}
+            actionLabel="Save Changes"
+            onPublish={async () => {
+              const formData = new FormData();
+              formData.append("title", tutorialData.title);
+              formData.append("description", tutorialData.shortDescription);
+              formData.append("category_id", tutorialData.category);
+              formData.append("level", tutorialData.level);
+              formData.append("is_paid", (!tutorialData.isFree).toString());
+              if (!tutorialData.isFree) {
+                formData.append("price", tutorialData.price);
+              }
+              if (tutorialData.tags.length) {
+                formData.append("tags", JSON.stringify(tutorialData.tags));
+              }
+              if (tutorialData.chapters.length) {
+                const chapters = tutorialData.chapters.map((ch, idx) => ({
+                  title: ch.title,
+                  duration: ch.duration,
+                  video_url: ch.videoUrl,
+                  order: idx + 1,
+                  is_preview: ch.preview,
+                }));
+                formData.append("chapters", JSON.stringify(chapters));
+              }
+              if (tutorialData.thumbnail instanceof File) {
+                formData.append("thumbnail", tutorialData.thumbnail);
+              }
+              if (tutorialData.preview instanceof File) {
+                formData.append("preview", tutorialData.preview);
+              }
+
+              try {
+                await updateTutorial(id, formData);
+                toast.success("Tutorial updated successfully!");
+                await createNotification({
+                  user_id: user.id,
+                  type: "tutorial_updated",
+                  message: `Your tutorial "${tutorialData.title}" was updated.`,
+                });
+                await sendChatMessage(user.id, {
+                  text: `Your tutorial "${tutorialData.title}" was updated.`,
+                });
+                refreshNotifications?.();
+                refreshMessages?.();
+                localStorage.removeItem(`editTutorialDraft-${id}`);
+                router.push("/dashboard/instructor/tutorials");
+              } catch (err) {
+                console.error(err);
+                toast.error("Failed to update tutorial");
+              }
             }}
           />
         )}
