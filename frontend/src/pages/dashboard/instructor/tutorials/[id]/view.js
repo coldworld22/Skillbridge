@@ -3,7 +3,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
-import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
+import { FaEdit, FaCopy, FaDownload, FaRegEye, FaUsers, FaStar, FaRegComments } from "react-icons/fa";
+import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
+import { fetchInstructorTutorialById, submitTutorialForReview } from "@/services/instructor/tutorialService";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function ViewTutorialPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [curriculumOpen, setCurriculumOpen] = useState(true); // For mobile accordion
+  const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -51,13 +54,40 @@ export default function ViewTutorialPage() {
           </button>
         </div>
 
-        {/* Edit Button */}
-        <div className="flex justify-end mb-6">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-end mb-6 gap-2">
           <button
             onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/edit`)}
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
             ✏️ Edit Tutorial
+          </button>
+          <button
+            onClick={() => setShowChecklist(true)}
+            className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
+          >
+            📋 Checklist
+          </button>
+          <button
+            onClick={() => {
+              const copy = { ...tutorial, id: `copy-${Date.now()}` };
+              setTutorial(copy);
+            }}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
+          >
+            <FaCopy /> Duplicate
+          </button>
+          <button
+            onClick={() => {
+              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tutorial, null, 2));
+              const a = document.createElement("a");
+              a.href = dataStr;
+              a.download = `${tutorial.slug || tutorial.id}.json`;
+              a.click();
+            }}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
+          >
+            <FaDownload /> Export
           </button>
         </div>
 
@@ -89,6 +119,9 @@ export default function ViewTutorialPage() {
               {tutorial.status}
             </span>
             <span>Last updated: {new Date(tutorial.updatedAt).toLocaleDateString()}</span>
+            {tutorial.createdAt && (
+              <span>Created: {new Date(tutorial.createdAt).toLocaleDateString()}</span>
+            )}
           </div>
         </div>
 
@@ -110,6 +143,27 @@ export default function ViewTutorialPage() {
                   #{tag}
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {tutorial.status === "Approved" && (
+          <div className="grid grid-cols-4 gap-4 text-center mt-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <FaRegEye className="mx-auto text-blue-500" />
+              <span className="text-xs mt-1">{tutorial.views}</span>
+            </div>
+            <div className="p-2 bg-green-50 rounded-lg">
+              <FaUsers className="mx-auto text-green-500" />
+              <span className="text-xs mt-1">{tutorial.enrollments}</span>
+            </div>
+            <div className="p-2 bg-yellow-50 rounded-lg">
+              <FaStar className="mx-auto text-yellow-500" />
+              <span className="text-xs mt-1">{tutorial.rating || 'N/A'}</span>
+            </div>
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <FaRegComments className="mx-auto text-purple-500" />
+              <span className="text-xs mt-1">{tutorial.comments}</span>
             </div>
           </div>
         )}
@@ -169,9 +223,37 @@ export default function ViewTutorialPage() {
               ></div>
             </div>
             <p className="text-xs text-gray-500 mt-1">{tutorial.progress || 40}% Completed</p>
+            {tutorial.progress === 100 && (
+              <button
+                onClick={async () => {
+                  await submitTutorialForReview(tutorial.id);
+                  setTutorial({ ...tutorial, status: "Submitted" });
+                }}
+                className="mt-3 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-md text-sm"
+              >
+                🚀 Submit for Review
+              </button>
+            )}
+          </div>
+        )}
+
+        {tutorial.status === "Rejected" && tutorial.rejection_reason && (
+          <div className="mt-4 bg-red-50 text-red-700 px-3 py-2 rounded-lg">
+            ❌ Rejection Reason: <strong>{tutorial.rejection_reason}</strong>
+          </div>
+        )}
+
+        {tutorial.status === "Submitted" && (
+          <div className="mt-4 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg">
+            ⏳ Pending Approval
           </div>
         )}
       </motion.div>
+      <ProgressChecklistModal
+        isOpen={showChecklist}
+        onClose={() => setShowChecklist(false)}
+        tutorial={tutorial}
+      />
     </InstructorLayout>
   );
 }
