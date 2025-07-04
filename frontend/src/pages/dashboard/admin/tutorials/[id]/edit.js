@@ -14,6 +14,11 @@ import {
 } from "@/services/admin/tutorialService";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { fetchChaptersByTutorial } from "@/services/admin/tutorialChapterService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 function EditTutorialPage() {
   const router = useRouter();
@@ -22,6 +27,9 @@ function EditTutorialPage() {
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
   const [categories, setCategories] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
     if (!id) return;
@@ -57,6 +65,7 @@ function EditTutorialPage() {
           categoryName: tutorial.categoryName,
           level: tutorial.level,
           language: tutorial.language || "",
+          instructorId: tutorial.instructorId,
           lessonCount: mappedChapters.length,
           tags: tutorial.tags || [],
           chapters: mappedChapters,
@@ -151,6 +160,26 @@ function EditTutorialPage() {
               try {
                 await updateTutorial(id, formData);
                 toast.success("Tutorial updated successfully!");
+                await createNotification({
+                  user_id: user.id,
+                  type: "tutorial_updated",
+                  message: `Tutorial "${tutorialData.title}" was updated.`,
+                });
+                if (tutorialData.instructorId) {
+                  await createNotification({
+                    user_id: tutorialData.instructorId,
+                    type: "tutorial_updated",
+                    message: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                  });
+                  await sendChatMessage(tutorialData.instructorId, {
+                    text: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                  });
+                }
+                await sendChatMessage(user.id, {
+                  text: `Tutorial "${tutorialData.title}" was updated.`,
+                });
+                refreshNotifications?.();
+                refreshMessages?.();
                 localStorage.removeItem(`editTutorialDraft-${id}`);
                 router.push("/dashboard/admin/tutorials");
               } catch (err) {
