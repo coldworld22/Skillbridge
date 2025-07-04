@@ -69,6 +69,12 @@ export default function ViewTutorialPage() {
             📋 Checklist
           </button>
           <button
+            onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/analytics`)}
+            className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
+          >
+            📈 Analytics
+          </button>
+          <button
             onClick={() => {
               const copy = { ...tutorial, id: `copy-${Date.now()}` };
               setTutorial(copy);
