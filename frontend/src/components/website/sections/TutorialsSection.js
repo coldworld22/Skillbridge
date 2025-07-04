@@ -4,18 +4,16 @@ import { motion } from "framer-motion";
 import {
   FaStar,
   FaClock,
-  FaFire,
   FaBookmark,
-  FaCode,
-  FaPaintBrush,
-  FaCubes,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
 import { fetchFeaturedTutorials } from "@/services/tutorialService";
-const PROGRESS_KEY = "tutorialProgress";
+
+const PROGRESS_KEY = "skillbridge_tutorialProgress";
+
 
 const getStars = (rating) => {
   const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
@@ -39,13 +37,26 @@ const LandingTutorialsSection = () => {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+
   useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+    }
+
     const load = async () => {
       try {
         const data = await fetchFeaturedTutorials();
         setTutorials(data || []);
       } catch (err) {
-        console.error("Failed to load tutorials", err);
+        toast.error("Failed to load tutorials");
+      }
+      try {
+        const cats = await fetchAllCategories({ limit: 100 });
+        setCategories(cats?.data || cats || []);
+      } catch (err) {
+        toast.error("Failed to load categories");
       }
       try {
         const cats = await fetchAllCategories({ limit: 100 });
@@ -94,6 +105,7 @@ const LandingTutorialsSection = () => {
                 : "bg-gray-800 text-yellow-300 border-gray-600"
             }`}
             onClick={() => setActiveTab(tab.value)}
+            aria-label={`Show ${tab.label} tutorials`}
           >
             {tab.label}
           </button>
@@ -113,32 +125,34 @@ const LandingTutorialsSection = () => {
             onClick={() => router.push(`/tutorials/${tut.id}`)}
           >
             <div className="relative h-40">
-              {tut.preview ? (
+              {!isMobile && tut.preview ? (
                 <video
                   src={tut.preview}
-                  autoPlay
+                  autoPlay={!isMobile}
                   muted
+                  playsInline
                   loop
+                  poster={tut.thumbnail || "/images/logo.png"}
+                  title={tut.title}
                   className="w-full h-full object-cover group-hover:brightness-75"
                 />
               ) : (
                 <img
-                  src={tut.thumbnail}
+                  src={tut.thumbnail || "/images/logo.png"}
                   alt={tut.title}
                   loading="lazy"
                   className="w-full h-full object-cover group-hover:brightness-75"
                 />
               )}
-              {tut.tags.includes("Top Rated") && (
-                <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 text-xs rounded-full shadow">
-                  🔥 Top Rated
+              {tut.tags.includes("Top Rated") || tut.trending ? (
+                <span
+                  className={`absolute top-2 left-2 px-2 py-1 text-xs rounded-full shadow text-white ${
+                    tut.tags.includes("Top Rated") ? "bg-red-600" : "bg-orange-600"
+                  }`}
+                >
+                  {tut.tags.includes("Top Rated") ? "🔥 Top Rated" : "🔥 Trending"}
                 </span>
-              )}
-              {tut.trending && (
-                <span className="absolute top-2 left-2 bg-orange-600 text-white px-2 py-1 text-xs rounded-full shadow">
-                  🔥 Trending
-                </span>
-              )}
+              ) : null}
               <FaBookmark className="absolute top-2 right-2 text-white bg-gray-700 rounded-full p-1 w-6 h-6 hover:text-yellow-400" />
             </div>
 
@@ -189,6 +203,9 @@ const LandingTutorialsSection = () => {
 
               <div className="flex gap-2 mt-4">
                 <button
+
+                  aria-label="View tutorial details"
+
                   onClick={(e) => {
                     e.stopPropagation();
                     router.push(`/tutorials/${tut.id}`);
@@ -198,13 +215,16 @@ const LandingTutorialsSection = () => {
                   View Details
                 </button>
                 <button
+
+                  aria-label="Add tutorial to cart"
+
                   onClick={async (e) => {
                     e.stopPropagation();
                     try {
                       await addItem({ id: tut.id, name: tut.title, price: tut.price || 0 });
                       toast.success('Added to cart');
                     } catch (err) {
-                      console.error('Failed to add to cart', err);
+
                       toast.error('Failed to add to cart');
                     }
                   }}
