@@ -19,6 +19,7 @@ import {
 import {
   fetchInstructorTutorials,
   submitTutorialForReview,
+  deleteInstructorTutorial,
 } from "@/services/instructor/tutorialService";
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 
@@ -56,9 +57,14 @@ export default function InstructorTutorialsPage() {
     setStatusFilter(status);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this tutorial?")) {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this tutorial?")) return;
+    try {
+      await deleteInstructorTutorial(id);
       setTutorials((prev) => prev.filter((tut) => tut.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete tutorial");
     }
   };
 
