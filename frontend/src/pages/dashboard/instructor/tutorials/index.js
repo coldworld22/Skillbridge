@@ -1,8 +1,23 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
-import { FaPlus, FaEdit, FaEye, FaTrash } from "react-icons/fa";
-import { fetchInstructorTutorials } from "@/services/instructor/tutorialService";
+import {
+  FaPlus,
+  FaEdit,
+  FaEye,
+  FaTrash,
+  FaRegEye,
+  FaRegComments,
+  FaStar,
+  FaUsers,
+  FaCopy,
+  FaDownload,
+} from "react-icons/fa";
+import {
+  fetchInstructorTutorials,
+  submitTutorialForReview,
+} from "@/services/instructor/tutorialService";
+import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
@@ -11,6 +26,9 @@ export default function InstructorTutorialsPage() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [checklistTutorial, setChecklistTutorial] = useState(null);
+  const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -41,11 +59,19 @@ export default function InstructorTutorialsPage() {
     }
   };
 
-  const filteredTutorials = tutorials.filter((tut) => {
-    const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
-    const matchesStatus = statusFilter ? tut.status === statusFilter : true;
-    return matchesTitle && matchesStatus;
-  });
+  const filteredTutorials = tutorials
+    .filter((tut) => {
+      const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
+      const matchesStatus = statusFilter ? tut.status === statusFilter : true;
+      return matchesTitle && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === "views") return b.views - a.views;
+      if (sortBy === "enrollments") return b.enrollments - a.enrollments;
+      if (sortBy === "oldest")
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      return new Date(b.createdAt) - new Date(a.createdAt); // newest
+    });
 
   if (loading) {
     return <div className="p-6">Loading tutorials...</div>;
@@ -87,6 +113,16 @@ export default function InstructorTutorialsPage() {
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
           </select>
+          <select
+            className="border border-gray-300 p-2 rounded-lg w-full md:w-1/4"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="newest">Sort: Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="views">Most Viewed</option>
+            <option value="enrollments">Most Enrolled</option>
+          </select>
         </div>
 
         {/* Grid */}
@@ -109,6 +145,9 @@ export default function InstructorTutorialsPage() {
                   </h2>
                   <p className="text-xs text-gray-500 mt-2">
                     Updated: {new Date(tutorial.updatedAt).toLocaleDateString()}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Created: {new Date(tutorial.createdAt).toLocaleDateString()}
                   </p>
 
                   <div className="flex items-center justify-between text-xs text-gray-600 mt-1">
@@ -143,6 +182,28 @@ export default function InstructorTutorialsPage() {
                     </div>
                   )}
 
+                  {/* Mini stats */}
+                  <div className="flex flex-wrap gap-2 text-[11px] text-gray-600 mt-2">
+                    <span className="flex items-center gap-1">
+                      <FaRegEye /> {tutorial.views}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FaRegComments /> {tutorial.comments}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FaUsers /> {tutorial.enrollments}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FaStar className="text-yellow-500" />
+                      {tutorial.rating}
+                    </span>
+                    {tutorial.watchTime > 0 && (
+                      <span className="flex items-center gap-1">
+                        🕒 {tutorial.watchTime}
+                      </span>
+                    )}
+                  </div>
+
                   {/* Status Badge */}
                   <div className="mt-3">
                     <span
@@ -163,6 +224,11 @@ export default function InstructorTutorialsPage() {
                     {tutorial.status === "Submitted" && (
                       <div className="mt-2 bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded">
                         ⏳ Pending Approval
+                      </div>
+                    )}
+                    {tutorial.status === "Rejected" && tutorial.rejection_reason && (
+                      <div className="mt-2 bg-red-100 text-red-700 text-xs font-medium px-2 py-1 rounded">
+                        {tutorial.rejection_reason}
                       </div>
                     )}
                   </div>
@@ -207,6 +273,34 @@ export default function InstructorTutorialsPage() {
                     </button>
                   )}
 
+                  <button
+                    onClick={() => {
+                      setChecklistTutorial(tutorial);
+                      setShowChecklist(true);
+                    }}
+                    title="Checklist"
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-2 rounded-lg"
+                  >
+                    🧩 Checklist
+                  </button>
+
+                  {tutorial.status === "Draft" && tutorial.progress === 100 && (
+                    <button
+                      onClick={async () => {
+                        await submitTutorialForReview(tutorial.id);
+                        setTutorials((prev) =>
+                          prev.map((t) =>
+                            t.id === tutorial.id ? { ...t, status: "Submitted" } : t
+                          )
+                        );
+                      }}
+                      title="Submit for review"
+                      className="flex-1 bg-purple-500 hover:bg-purple-600 text-white text-sm py-2 rounded-lg"
+                    >
+                      Submit
+                    </button>
+                  )}
+
                   {/* Delete Option */}
                   {(tutorial.status === "Draft" || tutorial.status === "Rejected") && (
                     <button
@@ -217,6 +311,33 @@ export default function InstructorTutorialsPage() {
                       <FaTrash className="inline mr-1" /> Delete
                     </button>
                   )}
+
+                  <button
+                    onClick={() => {
+                      const copy = { ...tutorial, id: `copy-${Date.now()}` };
+                      setTutorials((prev) => [copy, ...prev]);
+                    }}
+                    title="Duplicate"
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-sm py-2 rounded-lg"
+                  >
+                    <FaCopy className="inline mr-1" /> Duplicate
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const dataStr =
+                        "data:text/json;charset=utf-8," +
+                        encodeURIComponent(JSON.stringify(tutorial, null, 2));
+                      const a = document.createElement("a");
+                      a.href = dataStr;
+                      a.download = `${tutorial.slug || tutorial.id}.json`;
+                      a.click();
+                    }}
+                    title="Export"
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-sm py-2 rounded-lg"
+                  >
+                    <FaDownload className="inline mr-1" /> Export
+                  </button>
                 </div>
               </div>
             </div>
@@ -231,6 +352,11 @@ export default function InstructorTutorialsPage() {
           </div>
         )}
       </div>
+      <ProgressChecklistModal
+        isOpen={showChecklist}
+        onClose={() => setShowChecklist(false)}
+        tutorial={checklistTutorial}
+      />
     </InstructorLayout>
   );
 }
