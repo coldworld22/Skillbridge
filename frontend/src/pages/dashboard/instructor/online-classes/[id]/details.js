@@ -4,6 +4,7 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClassById } from "@/services/instructor/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
+import { safeEncodeURI } from "@/utils/url";
 
 export default function InstructorClassDetailPage() {
   const { id } = useRouter().query;
@@ -44,7 +45,7 @@ export default function InstructorClassDetailPage() {
           )}
           {details?.demo_video_url && (
             <div className="mt-4">
-              <CustomVideoPlayer videos={[{ src: encodeURI(details.demo_video_url) }]} />
+              <CustomVideoPlayer videos={[{ src: safeEncodeURI(details.demo_video_url) }]} />
             </div>
           )}
 
