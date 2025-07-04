@@ -5,6 +5,8 @@ const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const tagService = require("./tutorialTag.service");
+const notificationService = require("../../notifications/notifications.service");
+const userModel = require("../user.model");
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
@@ -131,6 +133,25 @@ exports.createTutorial = catchAsync(async (req, res) => {
       is_preview: ch.is_preview ?? false,
     });
   }
+
+  await notificationService.createNotification({
+    user_id: instructor_id,
+    type: "tutorial_created",
+    message:
+      "New tutorial added successfully. It's under review and will be available after we approve it",
+  });
+
+  const instructor = await userModel.findById(instructor_id);
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_tutorial",
+        message: `Instructor ${instructor.full_name} added new tutorial \"${title}\" waiting for review`,
+      })
+    )
+  );
 
   sendSuccess(res, tutorial, "Tutorial with chapters created");
 });
