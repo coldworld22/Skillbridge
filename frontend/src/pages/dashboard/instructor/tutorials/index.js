@@ -10,7 +10,6 @@ import {
   FaRegComments,
   FaStar,
   FaUsers,
-  FaCopy,
   FaDownload,
   FaSearch,
   FaFilter,
@@ -19,6 +18,7 @@ import {
 import {
   fetchInstructorTutorials,
   submitTutorialForReview,
+  deleteInstructorTutorial,
 } from "@/services/instructor/tutorialService";
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 
@@ -56,9 +56,14 @@ export default function InstructorTutorialsPage() {
     setStatusFilter(status);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this tutorial?")) {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this tutorial?")) return;
+    try {
+      await deleteInstructorTutorial(id);
       setTutorials((prev) => prev.filter((tut) => tut.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete tutorial");
     }
   };
 
@@ -365,15 +370,6 @@ export default function InstructorTutorialsPage() {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => {
-                      const copy = { ...tutorial, id: `copy-${Date.now()}` };
-                      setTutorials((prev) => [copy, ...prev]);
-                    }}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
-                  >
-                    <FaCopy className="mr-2" /> Duplicate
-                  </button>
 
                   <button
                     onClick={() => {

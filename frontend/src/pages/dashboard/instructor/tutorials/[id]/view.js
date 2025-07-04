@@ -3,9 +3,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
-import { FaEdit, FaCopy, FaDownload, FaRegEye, FaUsers, FaStar, FaRegComments } from "react-icons/fa";
+import { FaEdit, FaDownload, FaRegEye, FaUsers, FaStar, FaRegComments } from "react-icons/fa";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
-import { fetchInstructorTutorialById, submitTutorialForReview } from "@/services/instructor/tutorialService";
+import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
@@ -75,13 +75,19 @@ export default function ViewTutorialPage() {
             📈 Analytics
           </button>
           <button
-            onClick={() => {
-              const copy = { ...tutorial, id: `copy-${Date.now()}` };
-              setTutorial(copy);
+            onClick={async () => {
+              if (!window.confirm('Are you sure you want to delete this tutorial?')) return;
+              try {
+                await deleteInstructorTutorial(tutorial.id);
+                router.push('/dashboard/instructor/tutorials');
+              } catch (err) {
+                console.error(err);
+                alert('Failed to delete tutorial');
+              }
             }}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
+            className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            <FaCopy /> Duplicate
+            🗑 Delete
           </button>
           <button
             onClick={() => {

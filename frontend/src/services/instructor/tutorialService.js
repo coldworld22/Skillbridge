@@ -71,3 +71,10 @@ export const fetchInstructorTutorialAnalytics = async (id) => {
   const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
   return data?.data ?? {};
 };
+
+// Permanently delete one of the instructor's tutorials
+// Used from the instructor dashboard tutorials list
+export const deleteInstructorTutorial = async (id) => {
+  const { data } = await api.delete(`/users/tutorials/admin/${id}`);
+  return data?.data ?? null;
+};
