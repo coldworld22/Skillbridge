@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   const { id } = req.query;
   try {
     const { data } = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/tutorials/admin/${id}/analytics`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/tutorials/admin/${id}/analytics`,
       {
         headers: req.headers.cookie ? { Cookie: req.headers.cookie } : {},
         withCredentials: true,
