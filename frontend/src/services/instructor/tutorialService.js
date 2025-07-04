@@ -50,6 +50,14 @@ export const fetchInstructorTutorialById = async (id) => {
     ...formatBase(tut),
     status: mapStatus(tut),
     updatedAt: tut.updated_at,
+    createdAt: tut.created_at,
+    views: tut.views || 0,
+    rating: tut.rating || 0,
+    enrollments: tut.enrollments || 0,
+    comments: tut.comment_count || 0,
+    watchTime: tut.watch_time || 0,
+    rejection_reason: tut.rejection_reason,
+    progress: tut.progress,
     chapters,
   };
 };
