@@ -66,3 +66,8 @@ export const submitTutorialForReview = async (id) => {
   const { data } = await api.patch(`/users/tutorials/admin/${id}/status`);
   return data?.data;
 };
+
+export const fetchInstructorTutorialAnalytics = async (id) => {
+  const { data } = await api.get(`/users/tutorials/admin/${id}/analytics`);
+  return data?.data ?? {};
+};

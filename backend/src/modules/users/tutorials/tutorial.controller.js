@@ -277,3 +277,8 @@ exports.getTutorialsByCategory = async (req, res) => {
   sendSuccess(res, tutorials);
 };
 
+
+exports.getTutorialAnalytics = catchAsync(async (req, res) => {
+  const data = await service.getTutorialAnalytics(req.params.id);
+  sendSuccess(res, data);
+});
