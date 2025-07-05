@@ -352,6 +352,16 @@ exports.getPublishedTutorials = catchAsync(async (req, res) => {
 exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
   const tutorial = await service.getPublicTutorialDetails(req.params.id);
 
+  if (tutorial) {
+    await service.recordTutorialView(
+      req.params.id,
+      req.user?.id,
+      req.ip,
+      req.headers["user-agent"]
+    );
+    tutorial.views = await service.getTutorialViewCount(req.params.id);
+  }
+
   analyticsService.logEvent(req.user?.id || null, 'view_tutorial', {
     tutorialId: req.params.id,
   });

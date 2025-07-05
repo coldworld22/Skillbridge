@@ -21,15 +21,55 @@ exports.getAllTutorials = async () => {
 };
 
 exports.getTutorialById = async (id) => {
-  return db("tutorials")
-    .leftJoin("categories", "tutorials.category_id", "categories.id")
-    .leftJoin("users", "tutorials.instructor_id", "users.id")
-    .where("tutorials.id", id)
+  return db({ t: 'tutorials' })
+    .leftJoin('categories as c', 't.category_id', 'c.id')
+    .leftJoin('users as u', 't.instructor_id', 'u.id')
+    .leftJoin(
+      db('tutorial_reviews')
+        .select('tutorial_id')
+        .avg({ avg_rating: 'rating' })
+        .groupBy('tutorial_id')
+        .as('r'),
+      'r.tutorial_id',
+      't.id'
+    )
+    .leftJoin(
+      db('tutorial_comments')
+        .select('tutorial_id')
+        .count({ comment_count: 'id' })
+        .groupBy('tutorial_id')
+        .as('com'),
+      'com.tutorial_id',
+      't.id'
+    )
+    .leftJoin(
+      db('tutorial_enrollments')
+        .select('tutorial_id')
+        .countDistinct({ enrollments: 'user_id' })
+        .groupBy('tutorial_id')
+        .as('en'),
+      'en.tutorial_id',
+      't.id'
+    )
+    .leftJoin(
+      db('tutorial_views')
+        .select('tutorial_id')
+        .count({ views: 'id' })
+        .groupBy('tutorial_id')
+        .as('v'),
+      'v.tutorial_id',
+      't.id'
+    )
+    .where('t.id', id)
     .first(
-      "tutorials.*",
-      "categories.name as category_name",
-      "categories.image_url as category_image_url",
-      "users.full_name as instructor_name"
+      't.*',
+      'c.name as category_name',
+      'c.image_url as category_image_url',
+      'u.full_name as instructor_name',
+      db.raw('COALESCE(r.avg_rating,0) as rating'),
+      db.raw('COALESCE(com.comment_count,0) as comment_count'),
+      db.raw('COALESCE(en.enrollments,0) as enrollments'),
+      db.raw('COALESCE(v.views,0) as views')
     );
 };
 
@@ -37,11 +77,51 @@ exports.getTutorialsByInstructor = async (instructorId) => {
   const tutorials = await db("tutorials as t")
     .leftJoin("categories as c", "t.category_id", "c.id")
     .leftJoin("users as u", "t.instructor_id", "u.id")
+    .leftJoin(
+      db("tutorial_reviews")
+        .select("tutorial_id")
+        .avg({ avg_rating: "rating" })
+        .groupBy("tutorial_id")
+        .as("r"),
+      "r.tutorial_id",
+      "t.id"
+    )
+    .leftJoin(
+      db("tutorial_comments")
+        .select("tutorial_id")
+        .count({ comment_count: "id" })
+        .groupBy("tutorial_id")
+        .as("com"),
+      "com.tutorial_id",
+      "t.id"
+    )
+    .leftJoin(
+      db("tutorial_enrollments")
+        .select("tutorial_id")
+        .countDistinct({ enrollments: "user_id" })
+        .groupBy("tutorial_id")
+        .as("en"),
+      "en.tutorial_id",
+      "t.id"
+    )
+    .leftJoin(
+      db("tutorial_views")
+        .select("tutorial_id")
+        .count({ views: "id" })
+        .groupBy("tutorial_id")
+        .as("v"),
+      "v.tutorial_id",
+      "t.id"
+    )
     .select(
       "t.*",
       "c.name as category_name",
       "c.image_url as category_image_url",
-      "u.full_name as instructor_name"
+      "u.full_name as instructor_name",
+      db.raw("COALESCE(r.avg_rating, 0) as rating"),
+      db.raw("COALESCE(com.comment_count, 0) as comment_count"),
+      db.raw("COALESCE(en.enrollments, 0) as enrollments"),
+      db.raw("COALESCE(v.views, 0) as views")
     )
     .where("t.instructor_id", instructorId)
     .whereNot("t.status", "archived")
@@ -172,8 +252,8 @@ exports.getPublicTutorialDetails = async (id) => {
   const chapters = await db("tutorial_chapters")
     .where({ tutorial_id: id })
     .orderBy("order");
-
-  return { ...tutorial, chapters };
+  const views = await exports.getTutorialViewCount(id);
+  return { ...tutorial, chapters, views };
 };
 
 exports.addTutorialTags = async (tutorialId, tagIds) => {
@@ -188,12 +268,35 @@ exports.getTutorialTags = async (tutorialId) => {
     .where("m.tutorial_id", tutorialId)
     .select("t.id", "t.name", "t.slug");
 };
+
+exports.recordTutorialView = async (tutorialId, viewerId, ip, userAgent) => {
+  return db('tutorial_views').insert({
+    tutorial_id: tutorialId,
+    viewer_id: viewerId || null,
+    ip_address: ip,
+    user_agent: userAgent,
+  });
+};
+
+exports.getTutorialViewCount = async (tutorialId) => {
+  const [row] = await db('tutorial_views').where({ tutorial_id: tutorialId }).count();
+  return parseInt(row.count, 10) || 0;
+};
 exports.getTutorialAnalytics = async (tutorialId) => {
   const [totalRow] = await db('tutorial_enrollments')
     .where({ tutorial_id: tutorialId })
     .count();
   const [completedRow] = await db('tutorial_enrollments')
     .where({ tutorial_id: tutorialId, status: 'completed' })
+    .count();
+  const [commentRow] = await db('tutorial_comments')
+    .where({ tutorial_id: tutorialId })
+    .count();
+  const [ratingRow] = await db('tutorial_reviews')
+    .where({ tutorial_id: tutorialId })
+    .avg({ rating: 'rating' });
+  const [viewRow] = await db('tutorial_views')
+    .where({ tutorial_id: tutorialId })
     .count();
   const trendRows = await db('tutorial_enrollments')
     .where({ tutorial_id: tutorialId })
@@ -208,6 +311,9 @@ exports.getTutorialAnalytics = async (tutorialId) => {
     totalStudents: parseInt(totalRow.count, 10) || 0,
     completed: parseInt(completedRow.count, 10) || 0,
     totalRevenue: parseFloat(revenueRow.revenue) || 0,
+    views: parseInt(viewRow.count, 10) || 0,
+    commentCount: parseInt(commentRow.count, 10) || 0,
+    rating: parseFloat(ratingRow.rating) || 0,
     devices: [],
     locations: [],
     registrationTrend: trendRows.map((r) => ({
