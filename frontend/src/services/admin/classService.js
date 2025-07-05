@@ -67,6 +67,16 @@ export const deleteAdminClass = async (id) => {
   return true;
 };
 
+export const permanentlyDeleteClass = async (id) => {
+  const res = await api.delete(`/users/classes/admin/${id}`);
+  return res.data;
+};
+
+export const bulkDeleteClasses = async (ids) => {
+  await api.post("/users/classes/admin/bulk-delete", { ids });
+  return true;
+};
+
 export const fetchAdminClassAnalytics = async (id) => {
   const { data } = await api.get(`/users/classes/admin/${id}/analytics`);
   return data?.data ?? {};
