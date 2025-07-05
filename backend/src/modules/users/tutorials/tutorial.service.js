@@ -120,9 +120,22 @@ exports.getFeaturedTutorials = async () => {
 };
 
 exports.getPublishedTutorials = async () => {
-  return db("tutorials")
-    .where({ status: "published", moderation_status: "Approved" })
-    .orderBy("created_at", "desc");
+  const ratingSubquery = db("tutorial_reviews")
+    .select("tutorial_id")
+    .avg({ avg_rating: "rating" })
+    .groupBy("tutorial_id");
+
+  return db({ t: "tutorials" })
+    .leftJoin("users as u", "t.instructor_id", "u.id")
+    .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
+    .where({ "t.status": "published", "t.moderation_status": "Approved" })
+    .select(
+      "t.*",
+      "u.full_name as instructor_name",
+      "u.avatar_url as instructor_avatar",
+      db.raw("COALESCE(r.avg_rating, 0) as rating")
+    )
+    .orderBy("t.created_at", "desc");
 };
 
 exports.getTutorialsByCategory = async (categoryId) => {
@@ -136,9 +149,23 @@ exports.getTutorialsByCategory = async (categoryId) => {
 };
 
 exports.getPublicTutorialDetails = async (id) => {
-  const tutorial = await db("tutorials")
-    .where({ id, status: "published", moderation_status: "Approved" })
-    .first();
+  const ratingSubquery = db("tutorial_reviews")
+    .select("tutorial_id")
+    .avg({ avg_rating: "rating" })
+    .groupBy("tutorial_id");
+
+  const tutorial = await db({ t: "tutorials" })
+    .leftJoin("users as u", "t.instructor_id", "u.id")
+    .leftJoin("instructor_profiles as p", "u.id", "p.user_id")
+    .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
+    .where({ "t.id": id, "t.status": "published", "t.moderation_status": "Approved" })
+    .first(
+      "t.*",
+      "u.full_name as instructor_name",
+      "u.avatar_url as instructor_avatar",
+      "p.bio as instructor_bio",
+      db.raw("COALESCE(r.avg_rating, 0) as rating")
+    );
 
   if (!tutorial) return null;
 

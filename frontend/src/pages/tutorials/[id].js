@@ -241,6 +241,11 @@ export default function TutorialDetail() {
         </div>
 
         <TutorialHeader {...tutorial} />
+        <InstructorBio
+          name={tutorial.instructor}
+          avatarUrl={tutorial.instructorAvatar}
+          instructorBio={tutorial.instructorBio}
+        />
         <TutorialOverview description={tutorial.description} />
         <CourseProgress percentage={progressPercentage} />
 
@@ -268,7 +273,6 @@ export default function TutorialDetail() {
           </div>
         )}
 
-        <InstructorBio instructorBio={tutorial.instructorBio} />
         <ReviewsSection tutorialId={tutorial.id} canReview={isEnrolled} />
         <CommentsSection tutorialId={tutorial.id} canComment={isEnrolled} />
         <RelatedTutorials tutorials={related} />
