@@ -12,6 +12,7 @@ import CommentsSection from "@/components/tutorials/detail/CommentsSection";
 import BackButton from "@/components/tutorials/detail/BackButton";
 import ReviewsSection from "@/components/tutorials/detail/ReviewsSection";
 import TestQuiz from "@/components/tutorials/detail/TestQuiz";
+import VideoPreviewList from "@/components/tutorials/detail/VideoPreviewList";
 import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
@@ -68,11 +69,6 @@ export default function TutorialDetail() {
     if (enrolled) setIsEnrolled(true);
   }, [tutorial]);
 
-  const enroll = () => {
-    if (!tutorial) return;
-    localStorage.setItem(`enrolled-${tutorial.id}`, true);
-    setIsEnrolled(true);
-  };
 
   if (loading) {
     return (
@@ -120,7 +116,11 @@ export default function TutorialDetail() {
     );
   }
 
-  const currentVideo = tutorial.chapters[currentIndex]?.videoUrl;
+  const videoList = tutorial.chapters.map((ch) => ({
+    src: ch.videoUrl,
+    title: ch.title,
+  }));
+  const currentVideo = videoList[currentIndex]?.src;
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
@@ -133,22 +133,19 @@ export default function TutorialDetail() {
           videos={[{ src: currentVideo }]}
         />
 
+        <VideoPreviewList
+          videos={videoList}
+          currentIndex={currentIndex}
+          onSelect={(index) => setCurrentIndex(index)}
+        />
+
         <div className="flex justify-end mb-4 gap-3">
-          {!isEnrolled && currentIndex !== 0 && (
+          {!isEnrolled && (
             <button
-              onClick={enroll}
+              onClick={() => router.push(`/payments/checkout?tutorialId=${tutorial.id}`)}
               className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
             >
-              💳 Unroll to Unlock
-            </button>
-          )}
-
-          {isEnrolled && (
-            <button
-              onClick={() => router.push("/payments")}
-              className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
-            >
-              💰 Manage Payment
+              💳 Enroll Now
             </button>
           )}
 
