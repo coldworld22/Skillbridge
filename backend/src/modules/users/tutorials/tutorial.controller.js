@@ -8,6 +8,7 @@ const tagService = require("./tutorialTag.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
+const analyticsService = require("../../../services/analyticsService");
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
@@ -350,6 +351,10 @@ exports.getPublishedTutorials = catchAsync(async (req, res) => {
 
 exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
   const tutorial = await service.getPublicTutorialDetails(req.params.id);
+
+  analyticsService.logEvent(req.user?.id || null, 'view_tutorial', {
+    tutorialId: req.params.id,
+  });
 
   sendSuccess(res, tutorial);
 });
