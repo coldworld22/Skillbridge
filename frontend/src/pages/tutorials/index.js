@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
@@ -6,7 +7,6 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
-
 
 const TutorialsSection = () => {
   const [tutorials, setTutorials] = useState([]);
@@ -78,10 +78,10 @@ const TutorialsSection = () => {
   });
 
   const sortedTutorials = [...filteredTutorials].sort((a, b) => {
-      if (sortBy === "views") return b.views - a.views;
-      if (sortBy === "rating") return b.rating - a.rating;
-      return 0;
-    });
+    if (sortBy === "views") return b.views - a.views;
+    if (sortBy === "rating") return b.rating - a.rating;
+    return 0;
+  });
 
   const visibleTutorials = sortedTutorials.slice(0, visibleCount);
 
@@ -93,7 +93,7 @@ const TutorialsSection = () => {
           setVisibleCount((prev) => Math.min(prev + 3, sortedTutorials.length));
         }
       },
-      { threshold: 1 }
+      { threshold: 1 },
     );
 
     if (loader.current) observer.observe(loader.current);
@@ -166,16 +166,21 @@ const TutorialsSection = () => {
 
                 let progressPercent = 0;
                 if (typeof window !== "undefined") {
-                  const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+                  const saved = localStorage.getItem(
+                    `progress-tutorial-${tut.id}`,
+                  );
                   if (saved) {
                     try {
                       const data = JSON.parse(saved);
                       const total = Array.isArray(tut.chapters)
                         ? tut.chapters.length
-                        : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
+                        : tut.totalLessons ||
+                          tut.total_chapters ||
+                          tut.chapter_count ||
+                          0;
                       if (total) {
                         progressPercent =
-                          (data.completedChapters?.length || 0) / total * 100;
+                          ((data.completedChapters?.length || 0) / total) * 100;
                       }
                     } catch {}
                   }
@@ -183,100 +188,110 @@ const TutorialsSection = () => {
                 return (
                   <motion.div
                     key={tut.id}
-
-                  whileHover={{ scale: 1.03 }}
-                  className="bg-gray-800 rounded-lg shadow-lg overflow-hidden text-left relative group cursor-pointer"
-                  onClick={() => router.push(`/tutorials/${tut.id}`)}
-                >
-                  <div className="relative h-40">
-                    {tut.preview ? (
-                      <video
-                        className="w-full h-full object-cover group-hover:brightness-75"
-                        src={tut.preview}
-                        autoPlay
-                        muted
-                        loop
-                      />
-                    ) : (
-                      <img
-                        src={tut.thumbnail}
-                        alt={tut.title}
-                        className="w-full h-full object-cover group-hover:brightness-75"
-                      />
-                    )}
-                    {tut.trending && (
-                      <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs rounded-full shadow">
-                        🔥 Trending
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg text-yellow-400 mb-1">{tut.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-300">
-
-                      {(() => {
-                        const avatar =
-                          tut.instructorAvatar ||
-                          tut.instructor_avatar ||
-                          tut.instructor_avatar_url;
-                        return (
-                          <img
-                            src={avatar || "/images/default-avatar.png"}
-                            alt={tut.instructor}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        );
-                      })()}
-
-                      <span>{tut.instructor}</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                      <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">{tut.level}</span>
-                      {tut.tags?.map((tag, i) => (
-                        <span key={i} className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300">
-                          #{tag}
+                    whileHover={{ scale: 1.03 }}
+                    className="bg-gray-800 rounded-lg shadow-lg overflow-hidden text-left relative group cursor-pointer"
+                    onClick={() => router.push(`/tutorials/${tut.id}`)}
+                  >
+                    <div className="relative h-40">
+                      {tut.preview ? (
+                        <video
+                          className="w-full h-full object-cover group-hover:brightness-75"
+                          src={tut.preview}
+                          autoPlay
+                          muted
+                          loop
+                        />
+                      ) : (
+                        <img
+                          src={tut.thumbnail}
+                          alt={tut.title}
+                          className="w-full h-full object-cover group-hover:brightness-75"
+                        />
+                      )}
+                      {tut.trending && (
+                        <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs rounded-full shadow">
+                          🔥 Trending
                         </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between mt-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <FaStar className="text-yellow-400" /> {tut.rating}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FaEye /> {tut.views} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FaClock /> {tut.duration}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-sm text-gray-300">
-                      <span>{tut.is_paid && tut.price ? `$${tut.price}` : "Free"}</span>
-                      {enrolled && (
-                        <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs">Enrolled</span>
                       )}
                     </div>
 
-                    {enrolled && (
-                      <div className="w-full bg-gray-700 h-2 rounded-full relative mt-2">
-                        <div className="absolute right-1 -top-4 text-xs text-gray-400">
-                          {Math.round(progressPercent)}%
-                        </div>
-                        <div
-                          className="h-2 bg-yellow-500 rounded-full"
-                          style={{ width: `${progressPercent}%` }}
-                        ></div>
-                      </div>
-                    )}
+                    <div className="p-4">
+                      <h3 className="font-bold text-lg text-yellow-400 mb-1">
+                        {tut.title}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        {(() => {
+                          const avatar =
+                            tut.instructorAvatar ||
+                            tut.instructor_avatar ||
+                            tut.instructor_avatar_url;
+                          return (
+                            <img
+                              src={avatar || "/images/default-avatar.png"}
+                              alt={tut.instructor}
+                              className="w-6 h-6 rounded-full"
+                            />
+                          );
+                        })()}
 
-                  </div>
-                </motion.div>
-              );
+                        <span>{tut.instructor}</span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                        <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">
+                          {tut.level}
+                        </span>
+                        {tut.tags?.map((tag, i) => (
+                          <span
+                            key={i}
+                            className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 text-sm text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <FaStar className="text-yellow-400" /> {tut.rating}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FaEye /> {tut.views} views
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FaClock /> {tut.duration}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-2 text-sm text-gray-300">
+                        <span>
+                          {tut.is_paid && tut.price ? `$${tut.price}` : "Free"}
+                        </span>
+                        {enrolled && (
+                          <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs">
+                            Enrolled
+                          </span>
+                        )}
+                      </div>
+
+                      {enrolled && (
+                        <div className="w-full bg-gray-700 h-2 rounded-full relative mt-2">
+                          <div className="absolute right-1 -top-4 text-xs text-gray-400">
+                            {Math.round(progressPercent)}%
+                          </div>
+                          <div
+                            className="h-2 bg-yellow-500 rounded-full"
+                            style={{ width: `${progressPercent}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
               })}
               {visibleTutorials.length === 0 && (
-                <p className="col-span-full text-center text-gray-400">No tutorials found.</p>
+                <p className="col-span-full text-center text-gray-400">
+                  No tutorials found.
+                </p>
               )}
             </div>
 
