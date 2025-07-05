@@ -17,6 +17,8 @@ import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
 } from "@/services/tutorialService";
+import { API_BASE_URL } from "@/config/config";
+import { safeEncodeURI } from "@/utils/url";
 
 export default function TutorialDetail() {
   const router = useRouter();
@@ -42,10 +44,16 @@ export default function TutorialDetail() {
           setLoading(false);
           return;
         }
-        const chapters = (data.chapters || []).map((ch) => ({
-          ...ch,
-          videoUrl: ch.video_url || ch.videoUrl,
-        }));
+        const chapters = (data.chapters || []).map((ch) => {
+          let url = ch.video_url || ch.videoUrl;
+          if (url && !url.startsWith('http')) {
+            url = `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${url}`;
+          }
+          return {
+            ...ch,
+            videoUrl: url ? safeEncodeURI(url) : null,
+          };
+        });
         setTutorial({ ...data, chapters });
 
         const list = await fetchPublishedTutorials();
