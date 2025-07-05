@@ -8,7 +8,115 @@ import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
 
 const TutorialsSection = () => {
-  // ... existing state and logic remains the same ...
+  const [tutorials, setTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState("default");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [filters, setFilters] = useState({
+    categories: [],
+    levels: [],
+    price: 100,
+  });
+  const router = useRouter();
+  const loader = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleFilterChange = (f) => {
+    setFilters(f);
+    setVisibleCount(6);
+  };
+
+  const resetFilters = () => {
+    setFilters({ categories: [], levels: [], price: 100 });
+  };
+
+  useEffect(() => {
+    const loadTutorials = async () => {
+      try {
+        const data = await fetchPublishedTutorials();
+        setTutorials(data?.data || data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load tutorials");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTutorials();
+  }, []);
+
+  const filteredTutorials = tutorials.filter((tut) => {
+    const matchCategory =
+      !filters.categories.length ||
+      filters.categories.includes(tut.category_name) ||
+      (tut.tags || []).some((tag) => filters.categories.includes(tag));
+
+    const matchLevel =
+      !filters.levels.length || filters.levels.includes(tut.level);
+
+    const matchPrice =
+      !filters.price ||
+      !tut.is_paid ||
+      (tut.price != null && Number(tut.price) <= Number(filters.price));
+
+    const matchSearch =
+      tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tut.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchCategory && matchLevel && matchPrice && matchSearch;
+  });
+
+  const sortedTutorials = [...filteredTutorials].sort((a, b) => {
+    if (sortBy === "views") return b.views - a.views;
+    if (sortBy === "rating") return b.rating - a.rating;
+    return 0;
+  });
+
+  const visibleTutorials = sortedTutorials.slice(0, visibleCount);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + 3, sortedTutorials.length));
+        }
+      },
+      { threshold: 1 }
+    );
+
+    if (loader.current) observer.observe(loader.current);
+
+    return () => {
+      if (loader.current) observer.unobserve(loader.current);
+    };
+  }, [loader, sortedTutorials.length]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-yellow-400">
+        ⏳ Loading tutorials...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <section className="min-h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -119,8 +227,33 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                // ... existing card logic remains the same ...
-                
+                const enrolled =
+                  typeof window !== "undefined" &&
+                  localStorage.getItem(`enrolled-${tut.id}`);
+
+                let progressPercent = 0;
+                if (typeof window !== "undefined") {
+                  const saved = localStorage.getItem(
+                    `progress-tutorial-${tut.id}`
+                  );
+                  if (saved) {
+                    try {
+                      const data = JSON.parse(saved);
+                      const total = Array.isArray(tut.chapters)
+                        ? tut.chapters.length
+                        :
+                          tut.totalLessons ||
+                          tut.total_chapters ||
+                          tut.chapter_count ||
+                          0;
+                      if (total) {
+                        progressPercent =
+                          ((data.completedChapters?.length || 0) / total) * 100;
+                      }
+                    } catch {}
+                  }
+                }
+
                 return (
                   <motion.div
                     key={tut.id}
