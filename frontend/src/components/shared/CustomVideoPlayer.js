@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaVolumeUp, FaVolumeMute, FaDownload, FaExpand } from "react-icons/fa";
 import { MdSpeed, MdReplay10, MdForward10 } from "react-icons/md";
 
-
 export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUpdate, onEnded }) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
