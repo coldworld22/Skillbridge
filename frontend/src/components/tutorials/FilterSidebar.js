@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaChevronDown, FaChevronUp, FaTimesCircle } from "react-icons/fa";
+import { fetchCategoryTree } from "@/services/admin/categoryService";
 
 const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -8,12 +9,24 @@ const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [priceRange, setPriceRange] = useState(100);
   const [expandedCategory, setExpandedCategory] = useState(null);
 
-  // Categories and Subcategories
-  const categories = {
-    "Web Development": ["React", "Vue", "Angular", "JavaScript"],
-    "AI & Machine Learning": ["Deep Learning", "NLP", "Computer Vision"],
-    "Design": ["UI/UX", "Graphic Design", "Figma"],
-  };
+  // Categories fetched from the API
+  const [categories, setCategories] = useState({});
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const tree = await fetchCategoryTree();
+        const map = {};
+        (tree || []).forEach((cat) => {
+          map[cat.name] = (cat.children || []).map((c) => c.name);
+        });
+        setCategories(map);
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   // Handle Category Selection
   const toggleCategory = (category) => {
