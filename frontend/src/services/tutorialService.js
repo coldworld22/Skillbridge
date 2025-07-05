@@ -47,3 +47,22 @@ export const getMyTutorialWishlist = async () => {
   return data?.data ?? [];
 };
 
+export const fetchTutorialReviews = async (tutorialId) => {
+  const { data } = await api.get(`/users/tutorials/reviews/${tutorialId}`);
+  return data?.data ?? [];
+};
+
+export const submitTutorialReview = async (tutorialId, payload) => {
+  const { data } = await api.post(`/users/tutorials/reviews/${tutorialId}`, payload);
+  return data;
+};
+
+export const fetchTutorialComments = async (tutorialId) => {
+  const { data } = await api.get(`/users/tutorials/comments/${tutorialId}`);
+  return data?.data ?? [];
+};
+
+export const postTutorialComment = async (tutorialId, payload) => {
+  const { data } = await api.post(`/users/tutorials/comments/${tutorialId}`, payload);
+  return data;
+};
