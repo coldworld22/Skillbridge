@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
-import TutorialPlayer from "@/components/tutorials/detail/TutorialPlayer";
+import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import TutorialHeader from "@/components/tutorials/detail/TutorialHeader";
 import TutorialOverview from "@/components/tutorials/detail/TutorialOverview";
 import InstructorBio from "@/components/tutorials/detail/InstructorBio";
@@ -120,7 +120,6 @@ export default function TutorialDetail() {
     );
   }
 
-  const isLocked = currentIndex !== 0 && !isEnrolled;
   const currentVideo = tutorial.chapters[currentIndex]?.videoUrl;
 
   return (
@@ -129,11 +128,9 @@ export default function TutorialDetail() {
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
         <BackButton />
 
-        <TutorialPlayer
-          video={currentVideo}
-          tutorialId={`${tutorial.id}-${currentIndex}`}
-          chapters={tutorial.chapters}
-          isRestricted={isLocked}
+        <CustomVideoPlayer
+          key={currentIndex}
+          videos={[{ src: currentVideo }]}
         />
 
         <div className="flex justify-end mb-4 gap-3">
@@ -197,8 +194,8 @@ export default function TutorialDetail() {
         )}
 
         <InstructorBio instructorBio={tutorial.instructorBio} />
-        <ReviewsSection />
-        <CommentsSection />
+        <ReviewsSection tutorialId={tutorial.id} canReview={isEnrolled} />
+        <CommentsSection tutorialId={tutorial.id} canComment={isEnrolled} />
         <RelatedTutorials tutorials={related} />
       </div>
       <Footer />
