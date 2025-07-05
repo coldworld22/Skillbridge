@@ -163,9 +163,27 @@ const TutorialsSection = () => {
                 const enrolled =
                   typeof window !== "undefined" &&
                   localStorage.getItem(`enrolled-${tut.id}`);
+
+                let progressPercent = 0;
+                if (typeof window !== "undefined") {
+                  const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+                  if (saved) {
+                    try {
+                      const data = JSON.parse(saved);
+                      const total = Array.isArray(tut.chapters)
+                        ? tut.chapters.length
+                        : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
+                      if (total) {
+                        progressPercent =
+                          (data.completedChapters?.length || 0) / total * 100;
+                      }
+                    } catch {}
+                  }
+                }
                 return (
-                <motion.div
-                  key={tut.id}
+                  <motion.div
+                    key={tut.id}
+
                   whileHover={{ scale: 1.03 }}
                   className="bg-gray-800 rounded-lg shadow-lg overflow-hidden text-left relative group cursor-pointer"
                   onClick={() => router.push(`/tutorials/${tut.id}`)}
@@ -196,11 +214,21 @@ const TutorialsSection = () => {
                   <div className="p-4">
                     <h3 className="font-bold text-lg text-yellow-400 mb-1">{tut.title}</h3>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <img
-                        src={tut.instructorAvatar || "/images/default-avatar.png"}
-                        alt={tut.instructor}
-                        className="w-6 h-6 rounded-full"
-                      />
+
+                      {(() => {
+                        const avatar =
+                          tut.instructorAvatar ||
+                          tut.instructor_avatar ||
+                          tut.instructor_avatar_url;
+                        return (
+                          <img
+                            src={avatar || "/images/default-avatar.png"}
+                            alt={tut.instructor}
+                            className="w-6 h-6 rounded-full"
+                          />
+                        );
+                      })()}
+
                       <span>{tut.instructor}</span>
                     </div>
 
@@ -230,6 +258,19 @@ const TutorialsSection = () => {
                         <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs">Enrolled</span>
                       )}
                     </div>
+
+                    {enrolled && progressPercent > 0 && (
+                      <div className="w-full bg-gray-700 h-2 rounded-full relative mt-2">
+                        <div className="absolute right-1 -top-4 text-xs text-gray-400">
+                          {Math.round(progressPercent)}%
+                        </div>
+                        <div
+                          className="h-2 bg-yellow-500 rounded-full"
+                          style={{ width: `${progressPercent}%` }}
+                        ></div>
+                      </div>
+                    )}
+
                   </div>
                 </motion.div>
               );
