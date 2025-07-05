@@ -17,11 +17,20 @@ import {
   bulkApproveTutorials,
   bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 function AdminTutorialsPage() {
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,18 +116,37 @@ function AdminTutorialsPage() {
   const togglePublishStatus = async (id) => {
     try {
       await toggleTutorialStatus(id);
+      let target;
       setTutorials((prev) =>
-        prev.map((tut) =>
-          tut.id === id
-            ? {
-                ...tut,
-                status: tut.status === "Published" ? "Draft" : "Published",
-                updatedAt: new Date().toISOString(),
-              }
-            : tut
-        )
+        prev.map((tut) => {
+          if (tut.id === id) {
+            const newStatus = tut.status === "Published" ? "Draft" : "Published";
+            target = { ...tut, status: newStatus };
+            return { ...target, updatedAt: new Date().toISOString() };
+          }
+          return tut;
+        })
       );
+      const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
       toast.success("Tutorial status updated!");
+      await createNotification({
+        user_id: user.id,
+        type: "tutorial_status_changed",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      if (target.instructorId && target.instructorId !== user.id) {
+        await createNotification({
+          user_id: target.instructorId,
+          type: "tutorial_status_changed",
+          message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+        });
+        await sendChatMessage(target.instructorId, {
+          text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+        });
+      }
+      refreshNotifications?.();
+      refreshMessages?.();
     } catch (err) {
       console.error(err);
       toast.error("Failed to update status");
@@ -154,19 +182,36 @@ function AdminTutorialsPage() {
   const handleConfirmReject = async (reason) => {
     try {
       await rejectTutorial(tutorialToReject, reason);
+      let target;
       setTutorials((prev) =>
-        prev.map((tut) =>
-          tut.id === tutorialToReject
-            ? {
-                ...tut,
-                approvalStatus: "Rejected",
-                rejectionReason: reason,
-                updatedAt: new Date().toISOString(),
-              }
-            : tut
-        )
+        prev.map((tut) => {
+          if (tut.id === tutorialToReject) {
+            target = { ...tut, approvalStatus: "Rejected", rejectionReason: reason };
+            return { ...target, updatedAt: new Date().toISOString() };
+          }
+          return tut;
+        })
       );
       toast.success("Tutorial rejected with reason!");
+      const message = `Tutorial "${target.title}" was rejected.`;
+      await createNotification({
+        user_id: user.id,
+        type: "tutorial_rejected",
+        message,
+      });
+      await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
+      if (target.instructorId && target.instructorId !== user.id) {
+        await createNotification({
+          user_id: target.instructorId,
+          type: "tutorial_rejected",
+          message: `Your tutorial "${target.title}" was rejected.`,
+        });
+        await sendChatMessage(target.instructorId, {
+          text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
+        });
+      }
+      refreshNotifications?.();
+      refreshMessages?.();
     } catch (err) {
       console.error(err);
       toast.error("Failed to reject tutorial");
@@ -179,12 +224,36 @@ function AdminTutorialsPage() {
   const handleApproval = async (id) => {
     try {
       await approveTutorial(id);
+      let target;
       setTutorials((prev) =>
-        prev.map((tut) =>
-          tut.id === id ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() } : tut
-        )
+        prev.map((tut) => {
+          if (tut.id === id) {
+            target = { ...tut, approvalStatus: "Approved" };
+            return { ...target, updatedAt: new Date().toISOString() };
+          }
+          return tut;
+        })
       );
       toast.success("Tutorial approved successfully!");
+      const message = `Tutorial "${target.title}" approved.`;
+      await createNotification({
+        user_id: user.id,
+        type: "tutorial_approved",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      if (target.instructorId && target.instructorId !== user.id) {
+        await createNotification({
+          user_id: target.instructorId,
+          type: "tutorial_approved",
+          message: `Your tutorial "${target.title}" was approved!`,
+        });
+        await sendChatMessage(target.instructorId, {
+          text: `Your tutorial "${target.title}" was approved!`,
+        });
+      }
+      refreshNotifications?.();
+      refreshMessages?.();
     } catch (err) {
       console.error(err);
       toast.error("Failed to update tutorial");
@@ -523,29 +592,47 @@ function AdminTutorialsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span
+                        <Button
                           onClick={() => togglePublishStatus(tutorial.id)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
+                          className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
                             tutorial.status === "Published"
                               ? "bg-green-100 text-green-800 hover:bg-green-200"
                               : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                           }`}
                         >
                           {tutorial.status}
-                        </span>
+                        </Button>
                       </td>
                       <td className="py-3 px-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            tutorial.approvalStatus === "Approved"
-                              ? "bg-green-100 text-green-800"
-                              : tutorial.approvalStatus === "Pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {tutorial.approvalStatus}
-                        </span>
+                        {tutorial.approvalStatus === "Pending" ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleApproval(tutorial.id)}
+                              className="bg-green-100 hover:bg-green-200 text-green-700 text-xs px-3 py-1 rounded-full"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              onClick={() => openRejectModal(tutorial.id)}
+                              className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1 rounded-full"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            disabled
+                            className={`px-3 py-1 rounded-full text-xs font-bold cursor-default ${
+                              tutorial.approvalStatus === "Approved"
+                                ? "bg-green-100 text-green-800"
+                                : tutorial.approvalStatus === "Rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {tutorial.approvalStatus}
+                          </Button>
+                        )}
                         {tutorial.approvalStatus === "Rejected" && tutorial.rejectionReason && (
                           <div className="text-xs text-red-600 mt-1 max-w-xs truncate" title={tutorial.rejectionReason}>
                             {tutorial.rejectionReason}
@@ -568,24 +655,6 @@ function AdminTutorialsPage() {
                           >
                             <FaTrash className="text-sm" />
                           </Button>
-                          {tutorial.approvalStatus === "Pending" && (
-                            <>
-                              <Button
-                                onClick={() => handleApproval(tutorial.id)}
-                                className="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg"
-                                title="Approve"
-                              >
-                                <FaCheck className="text-sm" />
-                              </Button>
-                              <Button
-                                onClick={() => openRejectModal(tutorial.id)}
-                                className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
-                                title="Reject"
-                              >
-                                <FaTimes className="text-sm" />
-                              </Button>
-                            </>
-                          )}
                         </div>
                       </td>
                     </tr>
