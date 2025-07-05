@@ -88,9 +88,18 @@ const RelatedTutorials = ({ tutorials = [] }) => {
             </div>
 
             <div className="p-4">
-              <h3 className="font-bold text-yellow-400 text-lg mb-1 truncate">
-                {tut.title}
-              </h3>
+              <div className="flex items-center gap-2 mb-1">
+                {tut.instructorAvatar && (
+                  <img
+                    src={tut.instructorAvatar}
+                    alt={tut.instructor}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
+                <h3 className="font-bold text-yellow-400 text-lg truncate">
+                  {tut.title}
+                </h3>
+              </div>
               <p className="text-sm text-gray-300 truncate">
                 Instructor: {tut.instructor}
               </p>
