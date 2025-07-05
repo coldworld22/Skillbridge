@@ -155,6 +155,26 @@ exports.createTutorial = catchAsync(async (req, res) => {
     )
   );
 
+  // Send direct messages to admins about the new tutorial
+  if (admins.length) {
+    await Promise.all(
+      admins.map((admin) =>
+        messageService.createMessage({
+          sender_id: instructor_id,
+          receiver_id: admin.id,
+          message: `New tutorial \"${title}\" created by ${instructor.full_name} and awaiting your review`,
+        })
+      )
+    );
+  }
+
+  // Optional message to the instructor confirming creation
+  await messageService.createMessage({
+    sender_id: instructor_id,
+    receiver_id: instructor_id,
+    message: "Your tutorial was submitted and is pending review",
+  });
+
   sendSuccess(res, tutorial, "Tutorial with chapters created");
 });
 
