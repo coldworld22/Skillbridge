@@ -73,3 +73,9 @@ export const postTutorialComment = async (tutorialId, payload) => {
   const { data } = await api.post(`/users/tutorials/comments/${tutorialId}`, payload);
   return data;
 };
+
+// Fetch assignments linked to a tutorial
+export const fetchTutorialAssignments = async (tutorialId) => {
+  const res = await api.get(`/users/classes/assignments/class/${tutorialId}`);
+  return res.data?.data ?? [];
+};
