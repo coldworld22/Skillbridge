@@ -28,6 +28,7 @@ export const fetchAllTutorials = async () => {
   return tutorials.map((t) => ({
     id: t.id,
     title: t.title,
+    instructorId: t.instructor_id,
     thumbnail: t.thumbnail_url
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
       : null,
