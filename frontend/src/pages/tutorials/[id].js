@@ -31,6 +31,7 @@ export default function TutorialDetail() {
   const [isLoggedIn, setIsLoggedIn] = useState(true); // TODO: integrate auth
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [startTime, setStartTime] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -76,6 +77,16 @@ export default function TutorialDetail() {
     const enrolled = localStorage.getItem(`enrolled-${tutorial.id}`);
     if (enrolled) setIsEnrolled(true);
   }, [tutorial]);
+
+  // Load saved progress when chapter changes
+  useEffect(() => {
+    if (!tutorial || !tutorial.chapters[currentIndex]) return;
+    const ch = tutorial.chapters[currentIndex];
+    const saved = localStorage.getItem(
+      `tutorial-${tutorial.id}-chapter-${ch.id}`
+    );
+    setStartTime(saved ? parseFloat(saved) : 0);
+  }, [tutorial, currentIndex]);
 
 
   if (loading) {
@@ -130,6 +141,15 @@ export default function TutorialDetail() {
   }));
   const currentVideo = videoList[currentIndex]?.src;
 
+  const handleVideoTimeUpdate = (time) => {
+    const ch = tutorial.chapters[currentIndex];
+    if (!ch) return;
+    localStorage.setItem(
+      `tutorial-${tutorial.id}-chapter-${ch.id}`,
+      String(time)
+    );
+  };
+
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <Navbar />
@@ -139,6 +159,8 @@ export default function TutorialDetail() {
         <CustomVideoPlayer
           key={currentIndex}
           videos={[{ src: currentVideo }]}
+          startTime={startTime}
+          onTimeUpdate={handleVideoTimeUpdate}
         />
 
         <VideoPreviewList
