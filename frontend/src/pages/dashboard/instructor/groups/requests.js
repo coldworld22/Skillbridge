@@ -14,8 +14,6 @@ export default function JoinRequestsPage() {
       })
       .catch(() => setRequests([]));
   }, []);
-
-export default function JoinRequestsPage() {
   return (
     <InstructorLayout>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
