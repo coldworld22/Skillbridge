@@ -163,6 +163,7 @@ const TutorialsSection = () => {
                 const enrolled =
                   typeof window !== "undefined" &&
                   localStorage.getItem(`enrolled-${tut.id}`);
+
                 let progressPercent = 0;
                 if (typeof window !== "undefined") {
                   const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
@@ -182,6 +183,7 @@ const TutorialsSection = () => {
                 return (
                   <motion.div
                     key={tut.id}
+
                   whileHover={{ scale: 1.03 }}
                   className="bg-gray-800 rounded-lg shadow-lg overflow-hidden text-left relative group cursor-pointer"
                   onClick={() => router.push(`/tutorials/${tut.id}`)}
@@ -212,6 +214,7 @@ const TutorialsSection = () => {
                   <div className="p-4">
                     <h3 className="font-bold text-lg text-yellow-400 mb-1">{tut.title}</h3>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
+
                       {(() => {
                         const avatar =
                           tut.instructorAvatar ||
@@ -225,6 +228,7 @@ const TutorialsSection = () => {
                           />
                         );
                       })()}
+
                       <span>{tut.instructor}</span>
                     </div>
 
@@ -254,6 +258,7 @@ const TutorialsSection = () => {
                         <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs">Enrolled</span>
                       )}
                     </div>
+
                     {enrolled && progressPercent > 0 && (
                       <div className="w-full bg-gray-700 h-2 rounded-full relative mt-2">
                         <div className="absolute right-1 -top-4 text-xs text-gray-400">
@@ -265,6 +270,7 @@ const TutorialsSection = () => {
                         ></div>
                       </div>
                     )}
+
                   </div>
                 </motion.div>
               );
