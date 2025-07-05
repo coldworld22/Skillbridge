@@ -3,9 +3,12 @@ import { API_BASE_URL } from "@/config/config";
 
 const formatTutorial = (tut) => ({
   ...tut,
-  thumbnail: tut.thumbnail_url
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.thumbnail_url}`
-    : null,
+  thumbnail:
+    tut.thumbnail_url || tut.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${
+          tut.thumbnail_url || tut.cover_image
+        }`
+      : null,
   preview: tut.preview_video
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
     : null,
