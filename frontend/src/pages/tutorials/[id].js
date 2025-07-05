@@ -7,10 +7,15 @@ import TutorialHeader from "@/components/tutorials/detail/TutorialHeader";
 import TutorialOverview from "@/components/tutorials/detail/TutorialOverview";
 import InstructorBio from "@/components/tutorials/detail/InstructorBio";
 import ChapterList from "@/components/tutorials/detail/ChapterList";
-import RelatedTutorials from "@/components/tutorials/detail/RelatedTutorials";
-import CommentsSection from "@/components/tutorials/detail/CommentsSection";
+import dynamic from "next/dynamic";
+import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
+import CourseProgress from "@/components/classes/CourseProgress";
+import toast from "react-hot-toast";
+
+const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
+const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
 import BackButton from "@/components/tutorials/detail/BackButton";
-import ReviewsSection from "@/components/tutorials/detail/ReviewsSection";
+const ReviewsSection = dynamic(() => import("@/components/tutorials/detail/ReviewsSection"), { ssr: false });
 import TestQuiz from "@/components/tutorials/detail/TestQuiz";
 import VideoPreviewList from "@/components/tutorials/detail/VideoPreviewList";
 import {
@@ -32,6 +37,16 @@ export default function TutorialDetail() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
+
+  const [progress, setProgress] = useState({ completedChapters: [], lastIndex: 0, times: {} });
+
+  const enroll = () => {
+    if (!tutorial) return;
+    localStorage.setItem(`enrolled-${tutorial.id}`, true);
+    setIsEnrolled(true);
+    toast.success("Enrolled successfully!");
+  };
+
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +71,15 @@ export default function TutorialDetail() {
           };
         });
         setTutorial({ ...data, chapters });
+
+        const stored = localStorage.getItem(`progress-tutorial-${data.id}`);
+        if (stored) {
+          try {
+            const prog = JSON.parse(stored);
+            setProgress(prog);
+            setCurrentIndex(prog.lastIndex || 0);
+          } catch {}
+        }
 
         const list = await fetchPublishedTutorials();
         const others = (list?.data || list || []).filter(
@@ -82,17 +106,19 @@ export default function TutorialDetail() {
   useEffect(() => {
     if (!tutorial || !tutorial.chapters[currentIndex]) return;
     const ch = tutorial.chapters[currentIndex];
-    const saved = localStorage.getItem(
-      `tutorial-${tutorial.id}-chapter-${ch.id}`
-    );
-    setStartTime(saved ? parseFloat(saved) : 0);
-  }, [tutorial, currentIndex]);
+
+    const time = progress.times?.[ch.id] || 0;
+    setStartTime(time);
+  }, [tutorial, currentIndex, progress]);
+
 
 
   if (loading) {
     return (
       <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-300">Loading tutorial...</p>
+        <div className="container mx-auto px-6 py-12 mt-16">
+          <TutorialSkeleton />
+        </div>
       </div>
     );
   }
@@ -116,7 +142,9 @@ export default function TutorialDetail() {
   if (!tutorial) {
     return (
       <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-300">Loading tutorial...</p>
+        <div className="container mx-auto px-6 py-12 mt-16">
+          <TutorialSkeleton />
+        </div>
       </div>
     );
   }
@@ -141,12 +169,23 @@ export default function TutorialDetail() {
   }));
   const currentVideo = videoList[currentIndex]?.src;
 
+  const progressPercentage = tutorial.chapters.length
+    ? (progress.completedChapters.length / tutorial.chapters.length) * 100
+    : 0;
+
   const handleVideoTimeUpdate = (time) => {
     const ch = tutorial.chapters[currentIndex];
     if (!ch) return;
+    const newProg = {
+      ...progress,
+      lastIndex: currentIndex,
+      times: { ...progress.times, [ch.id]: time },
+    };
+    setProgress(newProg);
     localStorage.setItem(
-      `tutorial-${tutorial.id}-chapter-${ch.id}`,
-      String(time)
+      `progress-tutorial-${tutorial.id}`,
+      JSON.stringify(newProg)
+
     );
   };
 
@@ -161,18 +200,27 @@ export default function TutorialDetail() {
           videos={[{ src: currentVideo }]}
           startTime={startTime}
           onTimeUpdate={handleVideoTimeUpdate}
+
+          onEnded={(idx) => {
+            const updated = Array.from(new Set([...progress.completedChapters, idx]));
+            const newProg = { ...progress, completedChapters: updated, lastIndex: idx };
+            setProgress(newProg);
+            localStorage.setItem(`progress-tutorial-${tutorial.id}`, JSON.stringify(newProg));
+          }}
+
         />
 
         <VideoPreviewList
           videos={videoList}
           currentIndex={currentIndex}
+          completed={progress.completedChapters}
           onSelect={(index) => setCurrentIndex(index)}
         />
 
         <div className="flex justify-end mb-4 gap-3">
           {!isEnrolled && (
             <button
-              onClick={() => router.push(`/payments/checkout?tutorialId=${tutorial.id}`)}
+              onClick={enroll}
               className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
             >
               💳 Enroll Now
@@ -195,11 +243,12 @@ export default function TutorialDetail() {
 
         <TutorialHeader {...tutorial} />
         <TutorialOverview description={tutorial.description} />
+        <CourseProgress percentage={progressPercentage} />
 
         <ChapterList
           chapters={tutorial.chapters}
           currentIndex={currentIndex}
-          completedChapters={[]} // you can integrate tracking
+          completedChapters={progress.completedChapters}
           onSelect={(index) => setCurrentIndex(index)}
         />
 
