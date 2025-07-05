@@ -16,6 +16,11 @@ const TutorialsSection = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [searchQuery, setSearchQuery] = useState("");
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [filters, setFilters] = useState({
+    categories: [],
+    levels: [],
+    price: 100,
+  });
   const router = useRouter();
   const loader = useRef(null);
 
@@ -26,6 +31,15 @@ const TutorialsSection = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleFilterChange = (f) => {
+    setFilters(f);
+    setVisibleCount(6);
+  };
+
+  const resetFilters = () => {
+    setFilters({ categories: [], levels: [], price: 100 });
+  };
 
   useEffect(() => {
     const loadTutorials = async () => {
@@ -42,12 +56,28 @@ const TutorialsSection = () => {
     loadTutorials();
   }, []);
 
-  const sortedTutorials = [...tutorials]
-    .filter(tut =>
+  const filteredTutorials = tutorials.filter((tut) => {
+    const matchCategory =
+      !filters.categories.length ||
+      filters.categories.includes(tut.category_name) ||
+      (tut.tags || []).some((tag) => filters.categories.includes(tag));
+
+    const matchLevel =
+      !filters.levels.length || filters.levels.includes(tut.level);
+
+    const matchPrice =
+      !filters.price ||
+      !tut.is_paid ||
+      (tut.price != null && Number(tut.price) <= Number(filters.price));
+
+    const matchSearch =
       tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tut.instructor.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
+      tut.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchCategory && matchLevel && matchPrice && matchSearch;
+  });
+
+  const sortedTutorials = [...filteredTutorials].sort((a, b) => {
       if (sortBy === "views") return b.views - a.views;
       if (sortBy === "rating") return b.rating - a.rating;
       return 0;
@@ -102,7 +132,10 @@ const TutorialsSection = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/4 w-full">
-            <FilterSidebar />
+            <FilterSidebar
+              onFilterChange={handleFilterChange}
+              onResetFilters={resetFilters}
+            />
           </div>
 
           <div className="flex-grow">
@@ -126,7 +159,11 @@ const TutorialsSection = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleTutorials.map((tut) => (
+              {visibleTutorials.map((tut) => {
+                const enrolled =
+                  typeof window !== "undefined" &&
+                  localStorage.getItem(`enrolled-${tut.id}`);
+                return (
                 <motion.div
                   key={tut.id}
                   whileHover={{ scale: 1.03 }}
@@ -158,7 +195,14 @@ const TutorialsSection = () => {
 
                   <div className="p-4">
                     <h3 className="font-bold text-lg text-yellow-400 mb-1">{tut.title}</h3>
-                    <p className="text-sm text-gray-300">Instructor: {tut.instructor}</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <img
+                        src={tut.instructorAvatar || "/images/default-avatar.png"}
+                        alt={tut.instructor}
+                        className="w-6 h-6 rounded-full"
+                      />
+                      <span>{tut.instructor}</span>
+                    </div>
 
                     <div className="flex flex-wrap gap-2 mt-2 text-xs">
                       <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">{tut.level}</span>
@@ -180,9 +224,16 @@ const TutorialsSection = () => {
                         <FaClock /> {tut.duration}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between mt-2 text-sm text-gray-300">
+                      <span>{tut.is_paid && tut.price ? `$${tut.price}` : "Free"}</span>
+                      {enrolled && (
+                        <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs">Enrolled</span>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
-              ))}
+              );
+              })}
               {visibleTutorials.length === 0 && (
                 <p className="col-span-full text-center text-gray-400">No tutorials found.</p>
               )}
