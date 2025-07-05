@@ -227,8 +227,33 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                // ... existing card logic remains the same ...
-                
+                const enrolled =
+                  typeof window !== "undefined" &&
+                  localStorage.getItem(`enrolled-${tut.id}`);
+
+                let progressPercent = 0;
+                if (typeof window !== "undefined") {
+                  const saved = localStorage.getItem(
+                    `progress-tutorial-${tut.id}`
+                  );
+                  if (saved) {
+                    try {
+                      const data = JSON.parse(saved);
+                      const total = Array.isArray(tut.chapters)
+                        ? tut.chapters.length
+                        :
+                          tut.totalLessons ||
+                          tut.total_chapters ||
+                          tut.chapter_count ||
+                          0;
+                      if (total) {
+                        progressPercent =
+                          ((data.completedChapters?.length || 0) / total) * 100;
+                      }
+                    } catch {}
+                  }
+                }
+
                 return (
                   <motion.div
                     key={tut.id}
