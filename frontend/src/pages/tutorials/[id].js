@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -11,6 +12,10 @@ import dynamic from "next/dynamic";
 import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
 import CourseProgress from "@/components/classes/CourseProgress";
 import toast from "react-hot-toast";
+import useAuthStore from "@/store/auth/authStore";
+import useTutorialProgress from "@/hooks/useTutorialProgress";
+import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
+import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
 
 const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
 const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
@@ -33,15 +38,21 @@ export default function TutorialDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [testPassed, setTestPassed] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // TODO: integrate auth
+  const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
 
-  const [progress, setProgress] = useState({ completedChapters: [], lastIndex: 0, times: {} });
+  const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
+    useTutorialProgress(id);
 
   const enroll = () => {
     if (!tutorial) return;
+    if (!isLoggedIn) {
+      toast.error("Please login first");
+      router.push("/auth/login");
+      return;
+    }
     localStorage.setItem(`enrolled-${tutorial.id}`, true);
     setIsEnrolled(true);
     toast.success("Enrolled successfully!");
@@ -72,15 +83,6 @@ export default function TutorialDetail() {
         });
         setTutorial({ ...data, chapters });
 
-        const stored = localStorage.getItem(`progress-tutorial-${data.id}`);
-        if (stored) {
-          try {
-            const prog = JSON.parse(stored);
-            setProgress(prog);
-            setCurrentIndex(prog.lastIndex || 0);
-          } catch {}
-        }
-
         const list = await fetchPublishedTutorials();
         const others = (list?.data || list || []).filter(
           (t) => String(t.id) !== String(data.id),
@@ -106,10 +108,16 @@ export default function TutorialDetail() {
   useEffect(() => {
     if (!tutorial || !tutorial.chapters[currentIndex]) return;
     const ch = tutorial.chapters[currentIndex];
-
-    const time = progress.times?.[ch.id] || 0;
+    const time = startTimeFor(ch.id);
     setStartTime(time);
-  }, [tutorial, currentIndex, progress]);
+  }, [tutorial, currentIndex, startTimeFor]);
+
+  // Resume last position
+  useEffect(() => {
+    if (progress.lastIndex && tutorial) {
+      setCurrentIndex(progress.lastIndex);
+    }
+  }, [progress.lastIndex, tutorial]);
 
 
   if (loading) {
@@ -138,31 +146,15 @@ export default function TutorialDetail() {
     );
   }
 
-  if (!tutorial) {
-    return (
-      <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-        <div className="container mx-auto px-6 py-12 mt-16">
-          <TutorialSkeleton />
-        </div>
-      </div>
-    );
-  }
-
   if (!isLoggedIn) {
-    return (
-      <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-xl">🚫 Please log in to view this tutorial.</p>
-        <button
-          onClick={() => router.push("/auth/login")}
-          className="bg-yellow-500 text-black px-6 py-2 rounded-full hover:bg-yellow-600"
-        >
-          Login Now
-        </button>
-      </div>
-    );
+    return <LoginPrompt />;
   }
 
-  const videoList = tutorial.chapters.map((ch) => ({
+  const accessibleChapters = isEnrolled
+    ? tutorial.chapters
+    : tutorial.chapters.slice(0, 1);
+
+  const videoList = accessibleChapters.map((ch) => ({
     src: ch.videoUrl,
     title: ch.title,
   }));
@@ -175,38 +167,31 @@ export default function TutorialDetail() {
   const handleVideoTimeUpdate = (time) => {
     const ch = tutorial.chapters[currentIndex];
     if (!ch) return;
-    const newProg = {
-      ...progress,
-      lastIndex: currentIndex,
-      times: { ...progress.times, [ch.id]: time },
-    };
-    setProgress(newProg);
-    localStorage.setItem(
-      `progress-tutorial-${tutorial.id}`,
-      JSON.stringify(newProg)
-
-    );
+    saveTime(ch.id, time);
+    setIndex(currentIndex);
   };
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
+      <Head>
+        <title>{tutorial.title} | SkillBridge</title>
+        <meta name="description" content={tutorial.description} />
+      </Head>
       <Navbar />
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
         <BackButton />
+
+        {!isEnrolled && <EnrollBanner onEnroll={enroll} />}
 
         <CustomVideoPlayer
           key={currentIndex}
           videos={[{ src: currentVideo }]}
           startTime={startTime}
           onTimeUpdate={handleVideoTimeUpdate}
-
+          locked={!isEnrolled}
           onEnded={(idx) => {
-            const updated = Array.from(new Set([...progress.completedChapters, idx]));
-            const newProg = { ...progress, completedChapters: updated, lastIndex: idx };
-            setProgress(newProg);
-            localStorage.setItem(`progress-tutorial-${tutorial.id}`, JSON.stringify(newProg));
+            completeChapter(idx);
           }}
-
         />
 
         <VideoPreviewList
@@ -217,22 +202,17 @@ export default function TutorialDetail() {
         />
 
         <div className="flex justify-end mb-4 gap-3">
-          {!isEnrolled && (
-            <button
-              onClick={enroll}
-              className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-            >
-              💳 Enroll Now
-            </button>
-          )}
 
           <button
             onClick={() =>
-              navigator.share({
-                title: tutorial.title,
-                text: "Check out this tutorial on SkillBridge!",
-                url: typeof window !== "undefined" ? window.location.href : "",
-              })
+              navigator
+                .share({
+                  title: tutorial.title,
+                  text: "Check out this tutorial on SkillBridge!",
+                  url: typeof window !== "undefined" ? window.location.href : "",
+                })
+                .then(() => toast.success("Shared successfully!"))
+                .catch(() => {})
             }
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
@@ -254,15 +234,22 @@ export default function TutorialDetail() {
           currentIndex={currentIndex}
           completedChapters={progress.completedChapters}
           onSelect={(index) => setCurrentIndex(index)}
+          isEnrolled={isEnrolled}
         />
 
-        <TestQuiz
-          onComplete={(finalScore) => {
-            if (finalScore >= 2) setTestPassed(true);
-          }}
-        />
+        {isEnrolled ? (
+          <TestQuiz
+            onComplete={(finalScore) => {
+              if (finalScore >= 2) setTestPassed(true);
+            }}
+          />
+        ) : (
+          <div className="text-center text-gray-400" title="Enroll to access quiz">
+            Quiz locked
+          </div>
+        )}
 
-        {testPassed && (
+        {testPassed && isEnrolled ? (
           <div className="mt-6 text-center">
             <button
               onClick={() => router.push(`/certificate/${tutorial.id}`)}
@@ -270,6 +257,13 @@ export default function TutorialDetail() {
             >
               🎉 Claim Your Certificate
             </button>
+          </div>
+        ) : (
+          <div
+            className="mt-6 text-center text-gray-400"
+            title="Pass quiz to unlock certificate"
+          >
+            Certificate locked
           </div>
         )}
 
