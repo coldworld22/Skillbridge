@@ -259,7 +259,7 @@ const TutorialsSection = () => {
                       )}
                     </div>
 
-                    {enrolled && progressPercent > 0 && (
+                    {enrolled && (
                       <div className="w-full bg-gray-700 h-2 rounded-full relative mt-2">
                         <div className="absolute right-1 -top-4 text-xs text-gray-400">
                           {Math.round(progressPercent)}%
