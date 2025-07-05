@@ -3,6 +3,7 @@ import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaVolumeUp, FaVolumeMut
 import { MdSpeed, MdReplay10, MdForward10 } from "react-icons/md";
 
 export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUpdate, onEnded }) {
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);

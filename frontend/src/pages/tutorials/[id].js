@@ -37,6 +37,7 @@ export default function TutorialDetail() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
+
   const [progress, setProgress] = useState({ completedChapters: [], lastIndex: 0, times: {} });
 
   const enroll = () => {
@@ -45,6 +46,7 @@ export default function TutorialDetail() {
     setIsEnrolled(true);
     toast.success("Enrolled successfully!");
   };
+
 
   useEffect(() => {
     if (!id) return;
@@ -104,6 +106,7 @@ export default function TutorialDetail() {
   useEffect(() => {
     if (!tutorial || !tutorial.chapters[currentIndex]) return;
     const ch = tutorial.chapters[currentIndex];
+
     const time = progress.times?.[ch.id] || 0;
     setStartTime(time);
   }, [tutorial, currentIndex, progress]);
@@ -181,6 +184,7 @@ export default function TutorialDetail() {
     localStorage.setItem(
       `progress-tutorial-${tutorial.id}`,
       JSON.stringify(newProg)
+
     );
   };
 
@@ -195,12 +199,14 @@ export default function TutorialDetail() {
           videos={[{ src: currentVideo }]}
           startTime={startTime}
           onTimeUpdate={handleVideoTimeUpdate}
+
           onEnded={(idx) => {
             const updated = Array.from(new Set([...progress.completedChapters, idx]));
             const newProg = { ...progress, completedChapters: updated, lastIndex: idx };
             setProgress(newProg);
             localStorage.setItem(`progress-tutorial-${tutorial.id}`, JSON.stringify(newProg));
           }}
+
         />
 
         <VideoPreviewList
