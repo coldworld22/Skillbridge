@@ -26,9 +26,11 @@ import VideoPreviewList from "@/components/tutorials/detail/VideoPreviewList";
 import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
+  fetchTutorialAssignments,
 } from "@/services/tutorialService";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
+import Link from "next/link";
 
 export default function TutorialDetail() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function TutorialDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [testPassed, setTestPassed] = useState(false);
+  const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -82,6 +85,12 @@ export default function TutorialDetail() {
           };
         });
         setTutorial({ ...data, chapters });
+        try {
+          const assignList = await fetchTutorialAssignments(id);
+          setAssignments(assignList);
+        } catch (err) {
+          console.error('Failed to load assignments', err);
+        }
 
         const list = await fetchPublishedTutorials();
         const others = (list?.data || list || []).filter(
@@ -220,7 +229,10 @@ export default function TutorialDetail() {
           </button>
         </div>
 
-        <TutorialHeader {...tutorial} />
+        <TutorialHeader
+          {...tutorial}
+          price={tutorial.is_paid && tutorial.price ? `$${tutorial.price}` : "Free"}
+        />
         <InstructorBio
           name={tutorial.instructor}
           avatarUrl={tutorial.instructorAvatar}
@@ -246,6 +258,21 @@ export default function TutorialDetail() {
         ) : (
           <div className="text-center text-gray-400" title="Enroll to access quiz">
             Quiz locked
+          </div>
+        )}
+
+        {assignments.length > 0 && (
+          <div className="mt-6 text-center">
+            {testPassed && isEnrolled ? (
+              <Link
+                href={`/dashboard/student/assignments/${assignments[0].id}`}
+                className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition"
+              >
+                📚 Start Assignment
+              </Link>
+            ) : (
+              <div className="text-gray-400">Complete the quiz to unlock assignments</div>
+            )}
           </div>
         )}
 
