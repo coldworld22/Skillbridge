@@ -1,6 +1,13 @@
 // pages/api/tutorials/[id]/analytics.js
 import axios from 'axios';
 
+const EMPTY_ANALYTICS = {
+  totalStudents: 0,
+  completed: 0,
+  totalRevenue: 0,
+  registrationTrend: [],
+};
+
 export default async function handler(req, res) {
   const { id } = req.query;
   try {
@@ -12,13 +19,11 @@ export default async function handler(req, res) {
       }
     );
     if (!data?.data) {
-      return res.status(404).json({ error: 'Analytics not found' });
+      return res.status(200).json(EMPTY_ANALYTICS);
     }
     return res.status(200).json(data.data);
   } catch (err) {
-    const status = err.response?.status || 500;
-    const message = err.response?.data?.message || 'Failed to fetch analytics';
-    return res.status(status).json({ error: message });
+    return res.status(200).json(EMPTY_ANALYTICS);
   }
 }
 
