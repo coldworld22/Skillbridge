@@ -336,7 +336,34 @@ exports.rejectTutorial = catchAsync(async (req, res) => {
 
 
 exports.bulkApproveTutorials = catchAsync(async (req, res) => {
-  await service.bulkUpdateModeration(req.body.ids, "Approved");
+  const ids = req.body.ids || [];
+  if (!ids.length) {
+    return sendSuccess(res, { message: "Bulk approval done" });
+  }
+
+  await service.bulkUpdateModeration(ids, "Approved");
+
+  const tutorials = await service.getTutorialsByIds(ids);
+  await Promise.all(
+    tutorials.map((tut) => {
+      if (tut.instructor_id && tut.instructor_id !== req.user.id) {
+        const message = `Your tutorial "${tut.title}" has been approved`;
+        return Promise.all([
+          notificationService.createNotification({
+            user_id: tut.instructor_id,
+            type: "tutorial_approved",
+            message: `Tutorial "${tut.title}" approved. You can now start teaching`,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: tut.instructor_id,
+            message,
+          }),
+        ]);
+      }
+      return Promise.resolve();
+    })
+  );
 
   sendSuccess(res, { message: "Bulk approval done" });
 });

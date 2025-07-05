@@ -166,6 +166,12 @@ exports.bulkUpdateModeration = async (ids, status) => {
   });
 };
 
+exports.getTutorialsByIds = async (ids) => {
+  return db('tutorials')
+    .select('id', 'title', 'instructor_id')
+    .whereIn('id', ids);
+};
+
 exports.bulkUpdateStatus = async (ids, status) => {
   return db("tutorials").whereIn("id", ids).update({ status });
 };
