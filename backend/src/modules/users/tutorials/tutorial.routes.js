@@ -55,6 +55,12 @@ router.patch(
   validate(tutorialValidator.reject),
   controller.rejectTutorial
 );
+router.patch(
+  "/admin/:id/suspend",
+  verifyToken,
+  isAdmin,
+  controller.suspendTutorial
+);
 
 /*
  * ✅ Tutorial chapters routes  

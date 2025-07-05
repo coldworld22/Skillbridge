@@ -153,6 +153,10 @@ exports.togglePublishStatus = async (id) => {
   return db("tutorials").where({ id }).update({ status: newStatus });
 };
 
+exports.suspendTutorial = async (id) => {
+  return db("tutorials").where({ id }).update({ status: "suspended" });
+};
+
 exports.updateModeration = async (id, status, reason = null) => {
   return db("tutorials").where({ id }).update({
     moderation_status: status,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner, FaBan } from "react-icons/fa";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -14,6 +14,7 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
+  suspendTutorial,
   bulkApproveTutorials,
   bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
@@ -33,8 +34,10 @@ function AdminTutorialsPage() {
   // Modals and Selections
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [tutorialToDelete, setTutorialToDelete] = useState(null);
   const [tutorialToReject, setTutorialToReject] = useState(null);
+  const [tutorialToSuspend, setTutorialToSuspend] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
   // Load tutorials and categories from backend on mount
@@ -112,7 +115,12 @@ function AdminTutorialsPage() {
           tut.id === id
             ? {
                 ...tut,
-                status: tut.status === "Published" ? "Draft" : "Published",
+                status:
+                  tut.status === "Published"
+                    ? "Draft"
+                    : tut.status === "Draft"
+                    ? "Published"
+                    : "Published",
                 updatedAt: new Date().toISOString(),
               }
             : tut
@@ -133,6 +141,11 @@ function AdminTutorialsPage() {
   const openRejectModal = (id) => {
     setTutorialToReject(id);
     setIsRejectionModalOpen(true);
+  };
+
+  const openSuspendModal = (id) => {
+    setTutorialToSuspend(id);
+    setIsSuspendModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -173,6 +186,26 @@ function AdminTutorialsPage() {
     } finally {
       setIsRejectionModalOpen(false);
       setTutorialToReject(null);
+    }
+  };
+
+  const handleConfirmSuspend = async () => {
+    try {
+      await suspendTutorial(tutorialToSuspend);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          tut.id === tutorialToSuspend
+            ? { ...tut, status: "Suspended", updatedAt: new Date().toISOString() }
+            : tut
+        )
+      );
+      toast.success("Tutorial suspended!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to suspend tutorial");
+    } finally {
+      setIsSuspendModalOpen(false);
+      setTutorialToSuspend(null);
     }
   };
 
@@ -372,6 +405,7 @@ function AdminTutorialsPage() {
               <option value="All">All Status</option>
               <option value="Published">Published</option>
               <option value="Draft">Draft</option>
+              <option value="Suspended">Suspended</option>
             </select>
             
             <select
@@ -524,10 +558,14 @@ function AdminTutorialsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          onClick={() => togglePublishStatus(tutorial.id)}
+                          onClick={() =>
+                            tutorial.status !== "Suspended" && togglePublishStatus(tutorial.id)
+                          }
                           className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
                             tutorial.status === "Published"
                               ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : tutorial.status === "Suspended"
+                              ? "bg-orange-100 text-orange-800"
                               : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                           }`}
                         >
@@ -567,6 +605,13 @@ function AdminTutorialsPage() {
                             title="Delete"
                           >
                             <FaTrash className="text-sm" />
+                          </Button>
+                          <Button
+                            onClick={() => openSuspendModal(tutorial.id)}
+                            className="bg-orange-100 hover:bg-orange-200 text-orange-700 p-2 rounded-lg"
+                            title="Suspend"
+                          >
+                            <FaBan className="text-sm" />
                           </Button>
                           {tutorial.approvalStatus === "Pending" && (
                             <>
@@ -637,7 +682,14 @@ function AdminTutorialsPage() {
           title="Confirm Deletion"
           message="Are you sure you want to permanently delete this tutorial? This action cannot be undone."
         />
-        
+
+        <ConfirmModal
+          isOpen={isSuspendModalOpen}
+          onClose={() => setIsSuspendModalOpen(false)}
+          onConfirm={handleConfirmSuspend}
+          message="Suspend this tutorial?"
+        />
+
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}

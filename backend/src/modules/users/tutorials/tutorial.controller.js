@@ -334,6 +334,30 @@ exports.rejectTutorial = catchAsync(async (req, res) => {
   sendSuccess(res, { message: "Tutorial rejected" });
 });
 
+exports.suspendTutorial = catchAsync(async (req, res) => {
+  const tutorialId = req.params.id;
+  await service.suspendTutorial(tutorialId);
+
+  const tut = await service.getTutorialById(tutorialId);
+  if (tut.instructor_id && tut.instructor_id !== req.user.id) {
+    const message = `Your tutorial "${tut.title}" was suspended by an admin`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: tut.instructor_id,
+        type: "tutorial_suspended",
+        message,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: tut.instructor_id,
+        message,
+      }),
+    ]);
+  }
+
+  sendSuccess(res, { message: "Tutorial suspended" });
+});
+
 
 exports.bulkApproveTutorials = catchAsync(async (req, res) => {
   const ids = req.body.ids || [];

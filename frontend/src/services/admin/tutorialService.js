@@ -35,7 +35,12 @@ export const fetchAllTutorials = async () => {
     updatedAt: t.updated_at,
     instructor: t.instructor_name,
     category: t.category_name,
-    status: t.status === "published" ? "Published" : "Draft",
+    status:
+      t.status === "published"
+        ? "Published"
+        : t.status === "suspended"
+        ? "Suspended"
+        : "Draft",
     approvalStatus: t.moderation_status ?? "Pending",
     rating: t.rating,
     views: t.views,
@@ -65,6 +70,11 @@ export const approveTutorial = async (id) => {
 
 export const rejectTutorial = async (id, reason) => {
   const { data } = await api.patch(`/users/tutorials/admin/${id}/reject`, { reason });
+  return data?.data;
+};
+
+export const suspendTutorial = async (id) => {
+  const { data } = await api.patch(`/users/tutorials/admin/${id}/suspend`);
   return data?.data;
 };
 
