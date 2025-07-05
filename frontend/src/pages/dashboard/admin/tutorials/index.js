@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
@@ -18,10 +18,10 @@ import {
   bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 
-
 function AdminTutorialsPage() {
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +41,7 @@ function AdminTutorialsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
         const [tuts, cats] = await Promise.all([
           fetchAllTutorials(),
           fetchAllCategories(),
@@ -50,6 +51,8 @@ function AdminTutorialsPage() {
       } catch (err) {
         console.error(err);
         toast.error("Failed to load tutorials");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -58,7 +61,7 @@ function AdminTutorialsPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const tutorialsPerPage = 5;
+  const tutorialsPerPage = 10;
 
   // Filtering
   const filteredTutorials = tutorials
@@ -98,7 +101,6 @@ function AdminTutorialsPage() {
       );
     }
   };
-
 
   const clearSelected = () => setSelectedTutorials([]);
 
@@ -222,16 +224,72 @@ function AdminTutorialsPage() {
     setSelectedTutorials([]);
   };
 
+  // Pagination controls
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Render page numbers
+  const renderPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage, endPage;
+
+    if (totalPages <= maxPagesToShow) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      const maxPagesBeforeCurrent = Math.floor(maxPagesToShow / 2);
+      const maxPagesAfterCurrent = Math.ceil(maxPagesToShow / 2) - 1;
+      
+      if (currentPage <= maxPagesBeforeCurrent) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage + maxPagesAfterCurrent >= totalPages) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - maxPagesBeforeCurrent;
+        endPage = currentPage + maxPagesAfterCurrent;
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          className={`px-3 py-1 rounded-md ${
+            currentPage === i
+              ? "bg-yellow-500 text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
   return (
     <AdminLayout>
-      <div className="p-6 bg-gray-100 min-h-screen space-y-8">
+      <div className="p-6 bg-gray-50 min-h-screen space-y-6">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-800">📚 Manage Tutorials</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">📚 Manage Tutorials</h1>
+            <p className="text-gray-600 mt-1">
+              Create, edit, and manage all tutorials in the system
+            </p>
+          </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
-            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center"
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-2.5 px-6 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
           >
             <FaPlus className="mr-2" /> Create New Tutorial
           </Button>
@@ -239,232 +297,352 @@ function AdminTutorialsPage() {
 
         {/* Bulk Actions */}
         {selectedTutorials.length > 0 && (
-          <div className="flex flex-wrap gap-3 items-center p-4 bg-white rounded-lg shadow transition-all animate-fade-in">
+          <div className="flex flex-wrap gap-3 items-center p-4 bg-white rounded-xl shadow-md border border-yellow-100 transition-all animate-fade-in">
             <span className="font-semibold text-gray-700">
-              {selectedTutorials.length} selected
+              {selectedTutorials.length} {selectedTutorials.length === 1 ? "tutorial" : "tutorials"} selected
             </span>
 
             <Button
               onClick={handleBulkApprove}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-              disabled={selectedTutorials.length === 0}
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow"
             >
-              ✅ Approve Selected
+              <FaCheck className="mr-2" /> Approve Selected
             </Button>
 
             <Button
               onClick={handleBulkDelete}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-              disabled={selectedTutorials.length === 0}
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg flex items-center shadow"
             >
-              🗑️ Delete Selected
+              <FaTrash className="mr-2" /> Delete Selected
             </Button>
 
             <Button
               onClick={clearSelected}
-              className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg flex items-center border border-gray-300"
             >
-              ✖️ Clear Selection
+              <FaTimes className="mr-2" /> Clear Selection
             </Button>
           </div>
         )}
 
-
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row flex-wrap gap-4">
-          <input
-            type="text"
-            placeholder="🔍 Search by title or instructor..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="p-2 border rounded flex-1 min-w-[200px]"
-          />
-          <select
-            value={filterCategory}
-            onChange={(e) => {
-              setFilterCategory(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="p-2 border rounded"
-          >
-            <option value="All">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="p-2 border rounded"
-          >
-            <option value="All">All Status</option>
-            <option value="Published">Published</option>
-            <option value="Draft">Draft</option>
-          </select>
-          <select
-            value={filterApproval}
-            onChange={(e) => {
-              setFilterApproval(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="p-2 border rounded"
-          >
-            <option value="All">All Approval</option>
-            <option value="Approved">Approved</option>
-            <option value="Pending">Pending</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+        {/* Filters Card */}
+        <div className="bg-white p-5 rounded-xl shadow-md border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <FaSearch />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by title or instructor..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-10 p-2.5 w-full border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+              />
+            </div>
+            
+            <select
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+            >
+              <option value="All">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            
+            <select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+            >
+              <option value="All">All Status</option>
+              <option value="Published">Published</option>
+              <option value="Draft">Draft</option>
+            </select>
+            
+            <select
+              value={filterApproval}
+              onChange={(e) => {
+                setFilterApproval(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+            >
+              <option value="All">All Approval</option>
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            
+            <Button
+              onClick={() => {
+                setSearchQuery("");
+                setFilterCategory("All");
+                setFilterStatus("All");
+                setFilterApproval("All");
+                setCurrentPage(1);
+              }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg border border-gray-300"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
 
+        {/* Stats Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
+            <p className="text-gray-600">Total Tutorials</p>
+            <p className="text-2xl font-bold">{tutorials.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
+            <p className="text-gray-600">Pending Approval</p>
+            <p className="text-2xl font-bold">{tutorials.filter(t => t.approvalStatus === "Pending").length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
+            <p className="text-gray-600">Published</p>
+            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Published").length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
+            <p className="text-gray-600">Drafts</p>
+            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Draft").length}</p>
+          </div>
+        </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-200 text-gray-700">
-            <tr>
-              <th className="py-3 px-4">
-                <input
-                  type="checkbox"
-                  checked={paginatedTutorials.length > 0 && paginatedTutorials.every((tut) => selectedTutorials.includes(tut.id))}
-                  onChange={(e) => toggleSelectAll(e.target.checked)}
-                  className="form-checkbox h-5 w-5 text-yellow-500"
-                />
-              </th>
-              <th className="py-3 px-4 text-left">Thumbnail</th>
-              <th className="py-3 px-4 text-left">Created</th>
-              <th className="py-3 px-4 text-left">Updated</th>
-              <th className="py-3 px-4 text-left">Title</th>
-              <th className="py-3 px-4 text-left">Instructor</th>
-              <th className="py-3 px-4 text-left">Category</th>
-              <th className="py-3 px-4 text-left">Rating</th>
-              <th className="py-3 px-4 text-left">Views</th>
-              <th className="py-3 px-4 text-left">Status</th>
-              <th className="py-3 px-4 text-left">Approval</th>
-              <th className="py-3 px-4 text-left">Actions</th>
-            </tr>
-          </thead>
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="py-4 px-4 text-left w-12">
+                    <input
+                      type="checkbox"
+                      checked={paginatedTutorials.length > 0 && paginatedTutorials.every((tut) => selectedTutorials.includes(tut.id))}
+                      onChange={(e) => toggleSelectAll(e.target.checked)}
+                      className="h-4 w-4 rounded text-yellow-500 focus:ring-yellow-400"
+                    />
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Thumbnail</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Title</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Instructor</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Category</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Approval</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            {paginatedTutorials.map((tutorial) => (
-              <tr key={tutorial.id} className="border-t hover:bg-gray-50">
-                <td className="py-3 px-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedTutorials.includes(tutorial.id)}
-                    onChange={() => toggleSelectOne(tutorial.id)}
-                    className="form-checkbox h-5 w-5 text-yellow-500"
-                  />
-                </td>
-                <td className="py-3 px-4">
-                  <img
-                    src={tutorial.thumbnail}
-                    alt={tutorial.title}
-                    className="h-14 w-24 object-cover rounded"
-                  />
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  {new Date(tutorial.createdAt).toLocaleDateString()}
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  {new Date(tutorial.updatedAt).toLocaleDateString()}
-                </td>
-                <td className="py-3 px-4">{tutorial.title}</td>
-                <td className="py-3 px-4">{tutorial.instructor}</td>
-                <td className="py-3 px-4">{tutorial.category}</td>
-                <td className="py-3 px-4">{tutorial.rating}</td>
-                <td className="py-3 px-4">{tutorial.views}</td>
-                <td className="py-3 px-4">
-                  <span
-                    onClick={() => togglePublishStatus(tutorial.id)}
-                    className={`px-2 py-1 rounded-full text-xs font-bold cursor-pointer ${tutorial.status === "Published"
-                        ? "bg-green-200 text-green-800"
-                        : "bg-yellow-200 text-yellow-800"
-                      }`}
-                  >
-                    {tutorial.status}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-bold ${tutorial.approvalStatus === "Approved"
-                        ? "bg-green-200 text-green-800"
-                        : tutorial.approvalStatus === "Pending"
-                          ? "bg-yellow-200 text-yellow-800"
-                          : "bg-red-200 text-red-800"
-                      }`}
-                  >
-                    {tutorial.approvalStatus}
-                  </span>
-                </td>
-                <td className="py-3 px-4 flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => router.push(`/dashboard/admin/tutorials/${tutorial.id}/edit`)}
-                    className="text-blue-500 hover:text-blue-700"
-                    title="Edit"
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(tutorial.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Delete"
-                  >
-                    <FaTrash />
-                  </button>
-                  {tutorial.approvalStatus === "Pending" && (
-                    <>
-                      <button
-                        onClick={() => handleApproval(tutorial.id)}
-                        className="text-green-500 hover:text-green-700"
-                        title="Approve"
-                      >
-                        ✅
-                      </button>
-                      <button
-                        onClick={() => openRejectModal(tutorial.id)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Reject"
-                      >
-                        ❌
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="py-12 text-center">
+                      <div className="flex justify-center">
+                        <FaSpinner className="animate-spin text-yellow-500 text-3xl" />
+                      </div>
+                      <p className="mt-2 text-gray-600">Loading tutorials...</p>
+                    </td>
+                  </tr>
+                ) : paginatedTutorials.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-12 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-400 mb-4">
+                          <FaSearch className="text-2xl" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">No tutorials found</h3>
+                        <p className="mt-1 text-gray-500 max-w-md">
+                          Try adjusting your search or filter to find what you're looking for.
+                        </p>
+                        <Button
+                          onClick={() => {
+                            setSearchQuery("");
+                            setFilterCategory("All");
+                            setFilterStatus("All");
+                            setFilterApproval("All");
+                            setCurrentPage(1);
+                          }}
+                          className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800"
+                        >
+                          Reset Filters
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedTutorials.map((tutorial) => (
+                    <tr 
+                      key={tutorial.id} 
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedTutorials.includes(tutorial.id)}
+                          onChange={() => toggleSelectOne(tutorial.id)}
+                          className="h-4 w-4 rounded text-yellow-500 focus:ring-yellow-400"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <img
+                          src={tutorial.thumbnail || "/default-thumbnail.jpg"}
+                          alt={tutorial.title}
+                          className="h-14 w-24 object-cover rounded-lg border"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/default-thumbnail.jpg";
+                          }}
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-gray-900">{tutorial.title}</div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(tutorial.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-gray-900">{tutorial.instructor}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {tutorial.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          onClick={() => togglePublishStatus(tutorial.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
+                            tutorial.status === "Published"
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                          }`}
+                        >
+                          {tutorial.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            tutorial.approvalStatus === "Approved"
+                              ? "bg-green-100 text-green-800"
+                              : tutorial.approvalStatus === "Pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {tutorial.approvalStatus}
+                        </span>
+                        {tutorial.approvalStatus === "Rejected" && tutorial.rejectionReason && (
+                          <div className="text-xs text-red-600 mt-1 max-w-xs truncate" title={tutorial.rejectionReason}>
+                            {tutorial.rejectionReason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => router.push(`/dashboard/admin/tutorials/${tutorial.id}/edit`)}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg"
+                            title="Edit"
+                          >
+                            <FaEdit className="text-sm" />
+                          </Button>
+                          <Button
+                            onClick={() => openDeleteModal(tutorial.id)}
+                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
+                            title="Delete"
+                          >
+                            <FaTrash className="text-sm" />
+                          </Button>
+                          {tutorial.approvalStatus === "Pending" && (
+                            <>
+                              <Button
+                                onClick={() => handleApproval(tutorial.id)}
+                                className="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg"
+                                title="Approve"
+                              >
+                                <FaCheck className="text-sm" />
+                              </Button>
+                              <Button
+                                onClick={() => openRejectModal(tutorial.id)}
+                                className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
+                                title="Reject"
+                              >
+                                <FaTimes className="text-sm" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            {/* No Tutorials Found */}
-            {paginatedTutorials.length === 0 && (
-              <tr>
-                <td colSpan="12" className="text-center py-8 text-gray-500">
-                  No tutorials found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          {/* Pagination */}
+          {filteredTutorials.length > 0 && !loading && (
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between">
+              <div className="text-sm text-gray-700 mb-4 sm:mb-0">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+                <span className="font-medium">{Math.min(endIndex, filteredTutorials.length)}</span> of{" "}
+                <span className="font-medium">{filteredTutorials.length}</span> results
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex space-x-1">
+                  {renderPageNumbers()}
+                </div>
+                
+                <Button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-
 
         {/* Modals */}
         <ConfirmModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          message="Are you sure you want to delete this tutorial?"
+          title="Confirm Deletion"
+          message="Are you sure you want to permanently delete this tutorial? This action cannot be undone."
         />
+        
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
+          title="Reject Tutorial"
         />
       </div>
     </AdminLayout>
