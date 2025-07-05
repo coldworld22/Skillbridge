@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
+const EMPTY_STATS = {
+  totalStudents: 0,
+  completed: 0,
+  totalRevenue: 0,
+  registrationTrend: [],
+};
+
 export default function TutorialAnalyticsPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -15,7 +22,7 @@ export default function TutorialAnalyticsPage() {
     axios
       .get(`/api/tutorials/${id}/analytics`)
       .then((res) => setStats(res.data))
-      .catch(() => setStats(null));
+      .catch(() => setStats(EMPTY_STATS));
   }, [id]);
 
   if (!stats) {
