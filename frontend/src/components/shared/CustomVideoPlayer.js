@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaVolumeUp, FaVolumeMute, FaDownload, FaExpand } from "react-icons/fa";
 import { MdSpeed, MdReplay10, MdForward10 } from "react-icons/md";
 
-export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUpdate, onEnded }) {
+export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUpdate, onEnded, locked = false }) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -131,7 +131,7 @@ export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUp
   };
 
   return (
-    <div 
+    <div
       ref={playerRef}
       className="relative bg-black rounded-lg border-2 border-yellow-500 overflow-hidden shadow-lg"
     >
@@ -144,6 +144,12 @@ export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUp
         autoPlay={isPlaying}
         muted={isMuted}
       />
+
+      {locked && (
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-center p-4">
+          <p>Login and enroll to watch full tutorial</p>
+        </div>
+      )}
 
       {/* Video Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">

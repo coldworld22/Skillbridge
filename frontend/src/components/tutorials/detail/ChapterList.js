@@ -1,7 +1,12 @@
 // ✅ 1. ChapterList.js
-import { Play, CheckCircle } from "lucide-react";
-
-const ChapterList = ({ chapters = [], onSelect = () => {}, currentIndex = 0, completedChapters = [] }) => {
+import { Play, CheckCircle, Lock } from "lucide-react";
+const ChapterList = ({
+  chapters = [],
+  onSelect = () => {},
+  currentIndex = 0,
+  completedChapters = [],
+  isEnrolled = false,
+}) => {
   if (!chapters.length) return null;
 
   return (
@@ -11,19 +16,25 @@ const ChapterList = ({ chapters = [], onSelect = () => {}, currentIndex = 0, com
         {chapters.map((chapter, index) => {
           const isActive = index === currentIndex;
           const isCompleted = completedChapters.includes(index);
+          const locked = !isEnrolled && index > 0;
 
           return (
             <li
               key={index}
-              onClick={() => onSelect(index)}
-              className={`flex items-start gap-3 p-4 rounded-lg cursor-pointer transition border ${
-                isActive
-                  ? "bg-yellow-500 text-black border-yellow-400"
-                  : "bg-gray-800 hover:bg-gray-700 border-gray-700"
+              onClick={() => !locked && onSelect(index)}
+              title={locked ? "Enroll to unlock" : ""}
+              className={`flex items-start gap-3 p-4 rounded-lg transition border ${
+                locked
+                  ? "bg-gray-800 opacity-50 cursor-not-allowed border-gray-700"
+                  : isActive
+                  ? "bg-yellow-500 text-black border-yellow-400 cursor-pointer"
+                  : "bg-gray-800 hover:bg-gray-700 border-gray-700 cursor-pointer"
               }`}
             >
               <div className="mt-1">
-                {isCompleted ? (
+                {locked ? (
+                  <Lock className="text-gray-400 w-5 h-5" />
+                ) : isCompleted ? (
                   <CheckCircle className="text-green-400 w-5 h-5" />
                 ) : (
                   <Play className="text-yellow-400 w-5 h-5" />
