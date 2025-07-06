@@ -1,4 +1,6 @@
-exports.up = function(knex) {
+exports.up = async function(knex) {
+  const exists = await knex.schema.hasTable('categories');
+  if (exists) return;
   return knex.schema.createTable("categories", function (table) {
     table.uuid("id").primary();
     table.string("name").notNullable();
@@ -10,6 +12,8 @@ exports.up = function(knex) {
   });
 };
 
-exports.down = function(knex) {
+exports.down = async function(knex) {
+  const exists = await knex.schema.hasTable('categories');
+  if (!exists) return;
   return knex.schema.dropTable("categories");
 };

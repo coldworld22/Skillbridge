@@ -1,4 +1,10 @@
 exports.up = async function (knex) {
+  const info = await knex('tutorials').columnInfo('category_id');
+  if (info && info.type === 'uuid') {
+    // already migrated
+    return;
+  }
+
   // add temporary uuid column if it doesn't exist
   const hasTmp = await knex.schema.hasColumn('tutorials', 'category_id_tmp');
   if (!hasTmp) {
@@ -46,6 +52,11 @@ exports.up = async function (knex) {
 };
 
 exports.down = async function (knex) {
+  const info = await knex('tutorials').columnInfo('category_id');
+  if (info && info.type === 'integer') {
+    // already reverted
+    return;
+  }
   const hasTmp = await knex.schema.hasColumn('tutorials', 'category_id_tmp');
   if (!hasTmp) {
     await knex.schema.table('tutorials', (table) => {
