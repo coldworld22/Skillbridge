@@ -1,20 +1,15 @@
-exports.up = async function (knex) {
-  await knex.schema.createTable("certificates", (table) => {
-    table
-      .uuid("id")
-      .primary()
-      .defaultTo(knex.raw("gen_random_uuid()"));
+exports.up = function (knex) {
+  return knex.schema.createTable("certificates", function (table) {
+    table.uuid("id").primary().defaultTo(knex.raw("uuid_generate_v4()"));
     table.string("title").notNullable();
-    table.text("description");
-    table.uuid("user_id").notNullable();
-    table.uuid("class_id").notNullable();
-    table.timestamp("issued_at").defaultTo(knex.fn.now());
+    table.string("recipient_name").notNullable();
+    table.string("course_name").notNullable();
+    table.date("issue_date").notNullable();
+    table.string("certificate_url").notNullable();
     table.timestamps(true, true);
   });
-  return true;
 };
 
-exports.down = async function (knex) {
-  await knex.schema.dropTableIfExists("certificates");
-  return true;
+exports.down = function (knex) {
+  return knex.schema.dropTable("certificates");
 };
