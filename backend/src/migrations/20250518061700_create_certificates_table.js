@@ -13,10 +13,8 @@ exports.up = function (knex) {
     table.timestamp("issued_at").defaultTo(knex.fn.now());
     table.timestamps(true, true);
   });
-  return true;
 };
 
-exports.down = async function (knex) {
-  await knex.schema.dropTableIfExists("certificates");
-  return true;
+exports.down = function (knex) {
+  return knex.schema.dropTableIfExists("certificates");
 };

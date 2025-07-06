@@ -11,7 +11,6 @@ exports.up = function (knex) {
     table.text('notes');
     table.timestamp('performed_at').defaultTo(knex.fn.now());
   });
-  return true;
 };
 
 
