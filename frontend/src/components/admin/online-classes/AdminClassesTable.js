@@ -9,6 +9,11 @@ import {
   rejectAdminClass,
   toggleClassStatus,
 } from "@/services/admin/classService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -35,6 +40,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
     setClassList(classes);
@@ -82,6 +90,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
 
   
   const handleStatusChange = async (id, action, reason = "") => {
+    const target = classList.find((c) => c.id === id);
     try {
 
       if (action === "approve") {
@@ -94,6 +103,21 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           )
         );
         toast.success("Class approved");
+        const message = `Class "${target.title}" approved.`;
+        await createNotification({ user_id: user.id, type: "class_approved", message });
+        await sendChatMessage(user.id, { text: message });
+        if (target.instructor_id && target.instructor_id !== user.id) {
+          await createNotification({
+            user_id: target.instructor_id,
+            type: "class_approved",
+            message: `Your class "${target.title}" was approved!`,
+          });
+          await sendChatMessage(target.instructor_id, {
+            text: `Your class "${target.title}" was approved!`,
+          });
+        }
+        refreshNotifications?.();
+        refreshMessages?.();
       } else if (action === "reject") {
         await rejectAdminClass(id, reason);
         setClassList((prev) =>
@@ -102,6 +126,21 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           )
         );
         toast.success("Class rejected");
+        const message = `Class "${target.title}" was rejected.`;
+        await createNotification({ user_id: user.id, type: "class_rejected", message });
+        await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
+        if (target.instructor_id && target.instructor_id !== user.id) {
+          await createNotification({
+            user_id: target.instructor_id,
+            type: "class_rejected",
+            message: `Your class "${target.title}" was rejected.`,
+          });
+          await sendChatMessage(target.instructor_id, {
+            text: `Your class "${target.title}" was rejected. Reason: ${reason}`,
+          });
+        }
+        refreshNotifications?.();
+        refreshMessages?.();
       } else if (action === "toggle") {
         const updated = await toggleClassStatus(id);
         setClassList((prev) =>
@@ -110,6 +149,21 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
           )
         );
         toast.success("Status updated");
+        const message = `Class "${target.title}" status changed to ${updated.status}.`;
+        await createNotification({ user_id: user.id, type: "class_status_changed", message });
+        await sendChatMessage(user.id, { text: message });
+        if (target.instructor_id && target.instructor_id !== user.id) {
+          await createNotification({
+            user_id: target.instructor_id,
+            type: "class_status_changed",
+            message: `Your class "${target.title}" status was changed to ${updated.status}.`,
+          });
+          await sendChatMessage(target.instructor_id, {
+            text: `Your class "${target.title}" status was changed to ${updated.status}.`,
+          });
+        }
+        refreshNotifications?.();
+        refreshMessages?.();
       }
 
     } catch (err) {
@@ -261,26 +315,45 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span
+                  <button
                     onClick={() => handleStatusChange(cls.id, 'toggle')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer ${
-                      cls.status === 'published'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                        cls.status === 'published'
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                      }`}
                   >
                     {cls.status === 'published' ? 'Published' : 'Draft'}
-                  </span>
+                  </button>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
-                    Approved: 'bg-green-100 text-green-800',
-                    Pending: 'bg-yellow-100 text-yellow-700',
-                    Rejected: 'bg-red-100 text-red-700'
-                  }[cls.approvalStatus] || 'bg-gray-100 text-gray-700'}`}
-                  >
-                    {cls.approvalStatus}
-                  </span>
+                  {cls.approvalStatus === 'Pending' ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleStatusChange(cls.id, 'approve')}
+                        className="bg-green-100 hover:bg-green-200 text-green-700 text-xs px-3 py-1 rounded-full"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => { setModalClass(cls); setModalType('reject'); setRejectionReason(''); }}
+                        className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1 rounded-full"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  ) : (
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        {
+                          Approved: 'bg-green-100 text-green-800',
+                          Rejected: 'bg-red-100 text-red-700'
+                        }[cls.approvalStatus] || 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {cls.approvalStatus}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right space-x-1 space-y-1">
                   <button title="Approve Class"
