@@ -1,6 +1,9 @@
 exports.up = function (knex) {
-  return knex.schema.createTable("certificates", function (table) {
-    table.uuid("id").primary();
+  return knex.schema.createTable("certificates", (table) => {
+    table
+      .uuid("id")
+      .primary()
+      .defaultTo(knex.raw("gen_random_uuid()"));
     table.string("title").notNullable();
     table.text("description");
     table.uuid("user_id").notNullable();
