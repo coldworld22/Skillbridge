@@ -1,5 +1,7 @@
-exports.up = async function (knex) {
-  await knex.schema.createTable("certificates", (table) => {
+
+exports.up = function (knex) {
+  return knex.schema.createTable("certificates", (table) => {
+
     table
       .uuid("id")
       .primary()
