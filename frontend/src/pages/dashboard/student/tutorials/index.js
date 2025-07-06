@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { FaBookOpen, FaPlayCircle, FaCheckCircle } from "react-icons/fa";
+import { FaBookOpen, FaPlayCircle, FaCheckCircle, FaStar } from "react-icons/fa";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
 
 export default function StudentTutorialsPage() {
@@ -78,39 +78,53 @@ export default function StudentTutorialsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((tut) => (
-            <div key={tut.id} className="bg-white shadow rounded-lg p-4 space-y-2 border border-gray-200">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">{tut.category}</span>
-                <FaBookOpen className="text-yellow-500" /> {tut.title}
-              </h2>
-              <p className="text-sm text-gray-600">{tut.description}</p>
-              <p className="text-xs text-gray-500">Instructor: {tut.instructor}</p>
-              <div className="w-full bg-gray-100 h-2 rounded-full relative">
-                <div className="absolute right-1 top-[-18px] text-xs text-gray-500">
-                  {Math.round((tut.completedLessons / tut.totalLessons) * 100)}%
+          {filtered.map((tut) => {
+            const progressPercent = tut.totalLessons
+              ? (tut.completedLessons / tut.totalLessons) * 100
+              : 0;
+            return (
+              <div key={tut.id} className="bg-white shadow rounded-lg p-4 space-y-2 border border-gray-200">
+                <img
+                  src={tut.thumbnail || "/default-thumbnail.jpg"}
+                  alt={tut.title}
+                  className="w-full h-40 object-cover rounded-md"
+                />
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                    {tut.category}
+                  </span>
+                  <FaBookOpen className="text-yellow-500" /> {tut.title}
+                </h2>
+                <p className="text-xs text-gray-500">Instructor: {tut.instructor}</p>
+                <div className="w-full bg-gray-100 h-2 rounded-full relative">
+                  <div className="absolute right-1 top-[-18px] text-xs text-gray-500">
+                    {Math.round(progressPercent)}%
+                  </div>
+                  <div
+                    className="h-2 bg-yellow-400 rounded-full"
+                    style={{ width: `${progressPercent}%` }}
+                  ></div>
                 </div>
-                <div
-                  className="h-2 bg-yellow-400 rounded-full"
-                  style={{ width: `${(tut.completedLessons / tut.totalLessons) * 100}%` }}
-                ></div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>{tut.completedLessons}/{tut.totalLessons} lessons</span>
+                  {tut.isCompleted ? (
+                    <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Completed</span>
+                  ) : (
+                    <span className="text-blue-600 flex items-center gap-1"><FaPlayCircle /> In Progress</span>
+                  )}
+                </div>
+                <div className="flex items-center text-xs text-gray-500 gap-1">
+                  <FaStar className="text-yellow-400" /> {tut.rating?.toFixed?.(1) ?? tut.rating}
+                </div>
+                <a
+                  href={`/tutorials/${tut.id}`}
+                  className="inline-flex items-center gap-2 text-sm mt-2 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition"
+                >
+                  {tut.isCompleted ? "Review" : "Continue"}
+                </a>
               </div>
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>{tut.completedLessons}/{tut.totalLessons} lessons</span>
-                {tut.isCompleted ? (
-                  <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Completed</span>
-                ) : (
-                  <span className="text-blue-600 flex items-center gap-1"><FaPlayCircle /> In Progress</span>
-                )}
-              </div>
-              <a
-                href={`/tutorials/${tut.id}`}
-                className="inline-flex items-center gap-2 text-sm mt-2 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition"
-              >
-                {tut.isCompleted ? "Review" : "Continue"}
-              </a>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (
