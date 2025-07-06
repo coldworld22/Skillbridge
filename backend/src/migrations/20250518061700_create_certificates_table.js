@@ -1,6 +1,11 @@
+
 exports.up = function (knex) {
-  return knex.schema.createTable("certificates", function (table) {
-    table.uuid("id").primary().defaultTo(knex.raw("uuid_generate_v4()"));
+  return knex.schema.createTable("certificates", (table) => {
+
+    table
+      .uuid("id")
+      .primary()
+      .defaultTo(knex.raw("gen_random_uuid()"));
     table.string("title").notNullable();
     table.string("recipient_name").notNullable();
     table.string("course_name").notNullable();
