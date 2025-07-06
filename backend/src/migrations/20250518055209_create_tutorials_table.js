@@ -13,7 +13,7 @@ exports.up = function(knex) {
     table.enu('status', ['draft', 'published', 'archived']).defaultTo('draft');
     table.boolean('is_paid').defaultTo(false);
     table.decimal('price', 10, 2);
-    table.integer('category_id').references('id').inTable('categories').onDelete('SET NULL');
+    table.uuid('category_id').references('id').inTable('categories').onDelete('SET NULL');
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
   });

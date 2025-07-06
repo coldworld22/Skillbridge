@@ -2,10 +2,10 @@
 
 exports.up = function(knex) {
   return knex.schema.createTable('categories', function(table) {
-    table.increments('id').primary();
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('name').notNullable().unique();
     table.text('description');
-    table.integer('parent_id').references('id').inTable('categories').onDelete('SET NULL');
+    table.uuid('parent_id').references('id').inTable('categories').onDelete('SET NULL');
     table.boolean('active').defaultTo(true);
     table.timestamp('created_at').defaultTo(knex.fn.now());
   });
