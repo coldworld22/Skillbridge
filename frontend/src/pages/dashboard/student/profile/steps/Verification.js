@@ -20,7 +20,7 @@ import {
 } from "@/services/verificationService";
 import StudentLayout from "@/components/layouts/StudentLayout";
 
-const Verification = ({ nextStep, prevStep }) => {
+const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [emailOTP, setEmailOTP] = useState("");

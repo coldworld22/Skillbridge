@@ -10,7 +10,12 @@ import {
   FaYoutube,
 } from "react-icons/fa";
 
-const SocialLinks = ({ formData, setFormData, onNext, onBack }) => {
+const SocialLinks = ({
+  formData = {},
+  setFormData = () => {},
+  onNext = () => {},
+  onBack = () => {},
+}) => {
   const [errors, setErrors] = useState({});
   const socialLinks = formData.socialLinks || {};
 

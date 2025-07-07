@@ -1,6 +1,6 @@
 // pages/payments/checkout.js
 import { useState } from "react";
-import { ethers } from "ethers";
+import { BrowserProvider, parseEther } from "ethers";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
@@ -65,11 +65,11 @@ export default function CheckoutPage() {
   const handleMetaMaskPayment = async () => {
     try {
       setEthStatus("🔄 Sending transaction...");
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
       const tx = await signer.sendTransaction({
         to: "0xYourWalletAddressHere", // your wallet
-        value: ethers.utils.parseEther(ethPrice.toString()),
+        value: parseEther(ethPrice.toString()),
       });
       await tx.wait();
       setEthStatus("✅ ETH Payment successful!");

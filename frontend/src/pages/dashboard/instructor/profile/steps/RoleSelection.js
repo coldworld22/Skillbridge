@@ -1,6 +1,10 @@
 import { useState } from "react";
 
-const RoleSelection = ({ formData, setFormData, onNext }) => {
+const RoleSelection = ({
+  formData = {},
+  setFormData = () => {},
+  onNext = () => {},
+}) => {
   const [role, setRole] = useState(formData.role || ""); // Store role state
 
   const handleNext = () => {

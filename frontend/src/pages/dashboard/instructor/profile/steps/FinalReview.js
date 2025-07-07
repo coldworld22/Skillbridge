@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaCheckCircle, FaUpload, FaExclamationTriangle, FaPlayCircle, FaTrash } from "react-icons/fa";
 
-const FinalReview = ({ formData, prevStep }) => {
+const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
   const [isAgreed, setIsAgreed] = useState(false);
   const [demoVideo, setDemoVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);

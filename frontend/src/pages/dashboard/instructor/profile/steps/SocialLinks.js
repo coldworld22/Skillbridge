@@ -2,7 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaLinkedin, FaGithub, FaTwitter, FaGlobe, FaYoutube } from "react-icons/fa";
 
-const SocialLinks = ({ formData, setFormData, onNext, onBack }) => {
+const SocialLinks = ({
+  formData = {},
+  setFormData = () => {},
+  onNext = () => {},
+  onBack = () => {},
+}) => {
   const [errors, setErrors] = useState({});
 
   // ✅ Handle Input Change

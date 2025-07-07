@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-const RoleSelection = ({ formData, setFormData, onNext, prevStep }) => {
+const RoleSelection = ({
+  formData = {},
+  setFormData = () => {},
+  onNext = () => {},
+  prevStep = () => {},
+}) => {
   const [role, setRole] = useState(formData.role || "");
 
   const handleNext = () => {
