@@ -9,20 +9,23 @@ const SocialLinks = ({
   onBack = () => {},
 }) => {
   const [errors, setErrors] = useState({});
+  const socialLinks = formData.socialLinks || {};
 
   // ✅ Handle Input Change
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      socialLinks: { ...formData.socialLinks, [e.target.name]: e.target.value },
+      socialLinks: { ...socialLinks, [name]: value },
     });
-    setErrors({ ...errors, [e.target.name]: "" });
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   // ✅ Validate URLs
   const validateURL = (name, value) => {
-    const urlRegex = /^(https?:\/\/)?([\w\d]+\.)?[\w\d]+\.\w+\/?.*$/;
-    if (value && !urlRegex.test(value)) {
+    const urlRegex =
+      /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/\S*)?$/;
+    if (value && !urlRegex.test(value.trim())) {
       setErrors((prev) => ({ ...prev, [name]: "Enter a valid URL" }));
     }
   };
@@ -52,7 +55,7 @@ const SocialLinks = ({
             <input
               type="url"
               name={name}
-              value={formData.socialLinks[name] || ""}
+              value={socialLinks[name] || ""}
               onChange={handleChange}
               onBlur={(e) => validateURL(name, e.target.value)}
               className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
