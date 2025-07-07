@@ -136,12 +136,24 @@ app.use((req, res, next) => {
 });
 
 // 🌐 Allow frontend to communicate with backend (CORS)
-app.use(
-  cors({
-    origin: ALLOWED_ORIGINS,
-    credentials: true,
-  })
-);
+// 🌐 Allow frontend to communicate with backend (CORS)
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://147.93.121.45:3000',
+  'https://eduskillbridge.net',
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS policy violation"));
+    }
+  },
+  credentials: true,
+}));
+
 
 // 📋 HTTP request logger
 app.use(morgan("dev"));

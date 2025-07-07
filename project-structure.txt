@@ -1,0 +1,493 @@
+.
+├── .editorconfig
+├── .gitignore
+├── LICENSE
+├── README.md
+├── SkillBridge_DB_Schema_Overview.md
+├── backend
+│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── backend-structure.txt
+│   ├── jest.config.js
+│   ├── knexfile.js
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── src
+│   │   ├── config
+│   │   │   ├── database.js
+│   │   │   └── passport.js
+│   │   ├── docs
+│   │   │   ├── postman_collection.json
+│   │   │   └── swagger.yaml
+│   │   ├── jobs
+│   │   │   ├── cleanupJob.js
+│   │   │   ├── emailJob.js
+│   │   │   └── queue.js
+│   │   ├── middleware
+│   │   │   ├── auth
+│   │   │   ├── ensureVerified.js
+│   │   │   ├── errorHandler.js
+│   │   │   ├── rateLimiter.js
+│   │   │   ├── validate.js
+│   │   │   └── videoUploadMiddleware.js
+│   │   ├── migrations
+│   │   │   ├── 20250707063134_create_users_table.js
+│   │   │   ├── 20250707063200_create_auth_tables.js
+│   │   │   ├── 20250707063250_create_settings_and_classes_tables.js
+│   │   │   └── 20250707063300_create_notifications_table.js
+│   │   ├── modules
+│   │   │   ├── ads
+│   │   │   ├── appConfig
+│   │   │   ├── auth
+│   │   │   ├── bookings
+│   │   │   ├── cart
+│   │   │   ├── chat
+│   │   │   ├── classes
+│   │   │   ├── community
+│   │   │   ├── groups
+│   │   │   ├── instructors
+│   │   │   ├── messages
+│   │   │   ├── notifications
+│   │   │   ├── offers
+│   │   │   ├── paymentConfig
+│   │   │   ├── paymentMethods
+│   │   │   ├── payments
+│   │   │   ├── payouts
+│   │   │   ├── plans
+│   │   │   ├── roles
+│   │   │   ├── socialLoginConfig
+│   │   │   ├── students
+│   │   │   ├── users
+│   │   │   └── verify
+│   │   ├── scripts
+│   │   │   ├── exportUsersToCSV.js
+│   │   │   ├── seedDatabase.js
+│   │   │   └── syncExchangeRates.js
+│   │   ├── seeds
+│   │   │   ├── 01_categories_seed.js
+│   │   │   ├── 02_roles_seed.js
+│   │   │   └── seed_superadmin_user.js
+│   │   ├── server.js
+│   │   ├── services
+│   │   │   ├── analyticsService.js
+│   │   │   ├── authService.js
+│   │   │   ├── fileService.js
+│   │   │   ├── mailService.js
+│   │   │   └── whatsappService.js
+│   │   └── utils
+│   │       ├── AppError.js
+│   │       ├── catchAsync.js
+│   │       ├── date.js
+│   │       ├── email.js
+│   │       ├── enums.js
+│   │       ├── jwt.js
+│   │       ├── logger.js
+│   │       └── response.js
+│   ├── structure.txt
+│   ├── tests
+│   │   ├── adminBookingRoutes.test.js
+│   │   ├── adminCommunityRoutes.test.js
+│   │   ├── adminDashboardRoutes.test.js
+│   │   ├── adminInstructorRoutes.test.js
+│   │   ├── adminPaymentRoutes.test.js
+│   │   ├── adsRoutes.test.js
+│   │   ├── appConfigRoutes.test.js
+│   │   ├── categoryRoutes.test.js
+│   │   ├── chatRoutes.test.js
+│   │   ├── classAnalyticsRoutes.test.js
+│   │   ├── instructorDashboardRoutes.test.js
+│   │   ├── messageRoutes.test.js
+│   │   ├── notificationRoutes.test.js
+│   │   ├── roleRoutes.test.js
+│   │   ├── studentClass.test.js
+│   │   └── tutorialRoutes.test.js
+│   └── uploads
+│       ├── admin
+│       │   ├── avatars
+│       │   └── identity
+│       ├── ads
+│       │   ├── .gitkeep
+│       │   ├── 1750246789836-ad.jpg
+│       │   ├── 1750246887438-ad.jpg
+│       │   ├── 1750247615149-ad.jpg
+│       │   ├── 1750253458027-ad.jpg
+│       │   ├── 1750253935308-ad.jpg
+│       │   └── 1750254165671-ad.jpg
+│       ├── app
+│       ├── avatars
+│       │   ├── instructor
+│       │   └── student
+│       ├── categories
+│       │   ├── category-1748931386968.jpeg
+│       │   ├── category-1749853269976.jpg
+│       │   ├── category-1749853751779.jpg
+│       │   ├── category-1749853891064.jpg
+│       │   ├── category-1749854959572.jpeg
+│       │   ├── category-1749855202488.jpeg
+│       │   ├── category-1749855235785.jpg
+│       │   ├── category-1749857597504.png
+│       │   ├── category-1749858082467.jpg
+│       │   ├── category-1749858119330.png
+│       │   ├── category-1749891242026.png
+│       │   ├── category-1749891263589.png
+│       │   ├── category-1751748089745.jpg
+│       │   └── category-1751748097340.png
+│       ├── certificates
+│       │   └── instructor
+│       ├── chat
+│       │   ├── 1751033941258-243020762.pdf
+│       │   ├── 1751033941269-412441381.webm
+│       │   ├── 1751033981287-807929217.webm
+│       │   ├── 1751053801393-336863872
+│       │   ├── 1751377493776-167780085
+│       │   ├── 1751461699602-360992147
+│       │   └── 1751461732380-900016629
+│       ├── classes
+│       │   ├── 1750599684939-Untitled.png
+│       │   ├── 1750677388730-Untitled.png
+│       │   ├── 1750677388732-C-vs-C++-vs-C#.mp4
+│       │   ├── 1750705492746-Untitled.png
+│       │   ├── 1750705492749-default-preview.mp4
+│       │   ├── 1750707090812-Untitled.png
+│       │   ├── 1750707090817-default-preview.mp4
+│       │   ├── 1750746530786-Untitled.png
+│       │   ├── 1750746530790-C-vs-C++-vs-C#.mp4
+│       │   ├── 1750784982459-Ù\204Ù\204Ø¥Ù\206Ø¶Ù\205Ø§Ù\205-Ø§Ù\204Ù\211-Ù\210Ø±Ø´Ø©-Ø¹Ù\205Ù\204-25-Ù\212Ù\210Ù\206Ù\212Ù\210.jpg
+│       │   ├── 1750784982468-C-vs-C++-vs-C#.mp4
+│       │   ├── 1750838130386-Untitled.png
+│       │   ├── 1750838130390-C-vs-C++-vs-C#.mp4
+│       │   ├── 1750940983407-Untitled.png
+│       │   ├── 1750940983409-C-vs-C++-vs-C.mp4
+│       │   ├── 1750945462891-Untitled.png
+│       │   ├── 1750945462893-C-vs-C++-vs-C.mp4
+│       │   ├── 1750962493996-----25-.jpg
+│       │   ├── 1750962494002-C-vs-C++-vs-C.mp4
+│       │   ├── 1750964275375-----25-.jpg
+│       │   ├── 1750964275380-C-vs-C++-vs-C.mp4
+│       │   ├── 1750966982053-Untitled.png
+│       │   └── 1750966982057-C-vs-C++-vs-C.mp4
+│       ├── demos
+│       │   └── instructor
+│       ├── groups
+│       │   ├── 1751362986315------TR-1.jpg
+│       │   ├── 1751377380421-Untitled.png
+│       │   ├── 1751403739537-pikwizard-portrait-of-doctors-and-nurse.jpg
+│       │   ├── 1751404701141-----25-.jpg
+│       │   ├── 1751411160506------TR-1.jpg
+│       │   ├── 1751411412497-Untitled.png
+│       │   ├── 1751411484349-Untitled.png
+│       │   ├── 1751413104465------TR-1.jpg
+│       │   ├── 1751439357230-pikwizard-portrait-of-doctors-and-nurse.jpg
+│       │   ├── 1751442653236-Untitled.png
+│       │   ├── 1751481691249-----25-.jpg
+│       │   ├── 1751482553477------21-.jpg
+│       │   └── 1751485107702------TR-1.jpg
+│       ├── identity
+│       │   └── student
+│       ├── lessons
+│       │   ├── 1750966982201-arej-nda.pdf
+│       │   ├── 1750966982203-arej-custody.pdf
+│       │   ├── 1750966982204-ØªØ§Ø±Ù\212Ø®-Ø¥Ø¬Ø±Ø§Ø¡-Ø§Ù\204Ù\201Ø­Øµ_-Ù-Ù¢__Ù-Ù¦__Ù¢Ù-Ù¢Ù¥Ø\214-Ù£_Ù¢Ù¢_Ù¥Ù£Â-Ù\205-(1).pdf
+│       │   ├── 1750966982206-DigitalContract_3-1490950684747_2025-06-02+12_12_46_Ø£Ù\205Ø±+Ù\205Ø¨Ù\212Ø¹Ø§Øª+Ø¬Ø¯Ù\212Ø¯Ø©.pdf
+│       │   └── 1750966982208-arej-custody.pdf
+│       └── tutorials
+│           ├── C-vs-C++-vs-C#-1749023476809.mp4
+│           ├── C-vs-C++-vs-C#-1749024883346.mp4
+│           ├── C-vs-C++-vs-C#-1749025338467.mp4
+│           ├── C-vs-C++-vs-C#-1749025630262.mp4
+│           ├── C-vs-C++-vs-C#-1749025801642.mp4
+│           ├── C-vs-C++-vs-C#-1749027718302.mp4
+│           ├── C-vs-C++-vs-C#-1749028769894.mp4
+│           ├── C-vs-C++-vs-C#-1749029571646.mp4
+│           ├── C-vs-C++-vs-C#-1749029724069.mp4
+│           ├── C-vs-C++-vs-C#-1749736055545.mp4
+│           ├── DSC04122-1749023476805.jpg
+│           ├── DSC04122-1749024883333.jpg
+│           ├── DSC04122-1749025338463.jpg
+│           ├── DSC04122-1749025630258.jpg
+│           ├── DSC04122-1749025801623.jpg
+│           ├── DSC04122-1749027718291.jpg
+│           ├── DSC04122-1749028769888.jpg
+│           ├── DSC04122-1749029571643.jpg
+│           ├── DSC04122-1749029724062.jpg
+│           ├── DSC04122-1749736055540.jpg
+│           ├── admin
+│           ├── chapters
+│           └── instructor
+├── database
+│   └── schema.sql
+├── docker-compose.yml
+├── docs
+│   ├── api-docs.md
+│   ├── architecture.md
+│   ├── changelog.md
+│   ├── class-lifecycle-workflow.md
+│   ├── deployment.md
+│   ├── installation.md
+│   ├── student-enrollment-workflow.md
+│   └── student-registration-guide.md
+├── frontend
+│   ├── .env.local
+│   ├── .env.local.example
+│   ├── .eslintrc.cjs
+│   ├── .gitignore
+│   ├── .next
+│   │   ├── BUILD_ID
+│   │   ├── app-build-manifest.json
+│   │   ├── build-manifest.json
+│   │   ├── cache
+│   │   │   ├── .rscinfo
+│   │   │   ├── swc
+│   │   │   └── webpack
+│   │   ├── diagnostics
+│   │   │   ├── build-diagnostics.json
+│   │   │   └── framework.json
+│   │   ├── dynamic-css-manifest.json
+│   │   ├── export
+│   │   │   ├── 404.html
+│   │   │   ├── _next
+│   │   │   ├── about.html
+│   │   │   ├── admin
+│   │   │   ├── ai-tutoring
+│   │   │   ├── ai-tutoring.html
+│   │   │   ├── assignments
+│   │   │   ├── assignments.html
+│   │   │   ├── auth
+│   │   │   ├── blog.html
+│   │   │   ├── cart
+│   │   │   ├── cart.html
+│   │   │   ├── community
+│   │   │   ├── community.html
+│   │   │   ├── contact.html
+│   │   │   ├── dashboard
+│   │   │   └── dashboard.html
+│   │   ├── export-detail.json
+│   │   ├── fallback-build-manifest.json
+│   │   ├── package.json
+│   │   ├── react-loadable-manifest.json
+│   │   ├── required-server-files.json
+│   │   ├── routes-manifest.json
+│   │   ├── server
+│   │   │   ├── app-paths-manifest.json
+│   │   │   ├── chunks
+│   │   │   ├── dynamic-css-manifest.js
+│   │   │   ├── functions-config-manifest.json
+│   │   │   ├── interception-route-rewrite-manifest.js
+│   │   │   ├── middleware-build-manifest.js
+│   │   │   ├── middleware-manifest.json
+│   │   │   ├── middleware-react-loadable-manifest.js
+│   │   │   ├── next-font-manifest.js
+│   │   │   ├── next-font-manifest.json
+│   │   │   ├── pages
+│   │   │   ├── pages-manifest.json
+│   │   │   ├── server-reference-manifest.js
+│   │   │   ├── server-reference-manifest.json
+│   │   │   ├── webpack-api-runtime.js
+│   │   │   └── webpack-runtime.js
+│   │   ├── static
+│   │   │   ├── DEo-odTtopVUDl_JjvFmV
+│   │   │   ├── chunks
+│   │   │   ├── css
+│   │   │   ├── development
+│   │   │   └── media
+│   │   └── trace
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── codecanyon statictcs.txt
+│   ├── eslint.config.local.mjs
+│   ├── eslint.config.mjs
+│   ├── jest.config.js
+│   ├── jsconfig.json
+│   ├── next-i18next.config.js
+│   ├── next.config.mjs
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── postcss.config.mjs
+│   ├── public
+│   │   ├── file.svg
+│   │   ├── globe.svg
+│   │   ├── images
+│   │   │   ├── certificate
+│   │   │   ├── default-avatar.png
+│   │   │   ├── logo.png
+│   │   │   ├── paper-texture.png
+│   │   │   └── profile
+│   │   ├── locales
+│   │   │   ├── ar
+│   │   │   ├── de
+│   │   │   ├── en
+│   │   │   ├── es
+│   │   │   └── fr
+│   │   ├── next.svg
+│   │   ├── vercel.svg
+│   │   ├── videos
+│   │   │   └── tutorials
+│   │   └── window.svg
+│   ├── src
+│   │   ├── components
+│   │   │   ├── Certificate.js
+│   │   │   ├── FileUploader.js
+│   │   │   ├── QuizModal.js
+│   │   │   ├── RichTextEditor.js
+│   │   │   ├── admin
+│   │   │   ├── assignments
+│   │   │   ├── auth
+│   │   │   ├── certificates
+│   │   │   ├── chat
+│   │   │   ├── classes
+│   │   │   ├── common
+│   │   │   ├── community
+│   │   │   ├── courses
+│   │   │   ├── dashboard
+│   │   │   ├── groups
+│   │   │   ├── instructors
+│   │   │   ├── layouts
+│   │   │   ├── likes
+│   │   │   ├── marketplace
+│   │   │   ├── online-classes
+│   │   │   ├── payments
+│   │   │   ├── shared
+│   │   │   ├── student
+│   │   │   ├── students
+│   │   │   ├── tutorials
+│   │   │   ├── ui
+│   │   │   ├── video-call
+│   │   │   ├── website
+│   │   │   └── wishlist
+│   │   ├── config
+│   │   │   ├── config.js
+│   │   │   └── plansConfig.js
+│   │   ├── context
+│   │   │   └── ChatContext.js
+│   │   ├── data
+│   │   │   └── featureCategories.js
+│   │   ├── hooks
+│   │   │   ├── RequireProfileCompletion.js
+│   │   │   ├── useAuthHydration.js
+│   │   │   ├── useLastSeen.js
+│   │   │   ├── useTutorialProgress.js
+│   │   │   ├── useVideoCall.js
+│   │   │   └── withAuthProtection.js
+│   │   ├── locales
+│   │   │   ├── ar.json
+│   │   │   ├── en.json
+│   │   │   └── fr.json
+│   │   ├── mocks
+│   │   │   ├── ads.json
+│   │   │   ├── rolesPermissionsMock.js
+│   │   │   ├── sampleCart.json
+│   │   │   ├── sampleCourses.json
+│   │   │   ├── sampleGroups.json
+│   │   │   ├── sampleMessages.json
+│   │   │   ├── sampleUsers.json
+│   │   │   ├── searchResults.json
+│   │   │   └── usersMock.js
+│   │   ├── pages
+│   │   │   ├── 404.js
+│   │   │   ├── _app.js
+│   │   │   ├── about
+│   │   │   ├── admin
+│   │   │   ├── ai-tutoring
+│   │   │   ├── api
+│   │   │   ├── assignments
+│   │   │   ├── auth
+│   │   │   ├── blog
+│   │   │   ├── cart
+│   │   │   ├── community
+│   │   │   ├── contact
+│   │   │   ├── dashboard
+│   │   │   ├── error
+│   │   │   ├── faqs
+│   │   │   ├── groups
+│   │   │   ├── help
+│   │   │   ├── index.js
+│   │   │   ├── instructors
+│   │   │   ├── likes
+│   │   │   ├── live-streams
+│   │   │   ├── messages
+│   │   │   ├── notifications
+│   │   │   ├── offers
+│   │   │   ├── online-classes
+│   │   │   ├── payments
+│   │   │   ├── profile
+│   │   │   ├── promotions
+│   │   │   ├── recordings
+│   │   │   ├── search
+│   │   │   ├── structure.txt
+│   │   │   ├── students
+│   │   │   ├── support
+│   │   │   ├── tutorials
+│   │   │   ├── video-call.js
+│   │   │   ├── video-player-demo.js
+│   │   │   ├── website
+│   │   │   └── wishlist
+│   │   ├── services
+│   │   │   ├── admin
+│   │   │   ├── adsService.js
+│   │   │   ├── aiCourseRecommendation.js
+│   │   │   ├── api
+│   │   │   ├── appConfigService.js
+│   │   │   ├── auth
+│   │   │   ├── cartService.js
+│   │   │   ├── chatService.js
+│   │   │   ├── classScoreService.js
+│   │   │   ├── classService.js
+│   │   │   ├── courseService.js
+│   │   │   ├── firebaseConfig.js
+│   │   │   ├── groupService.js
+│   │   │   ├── instructor
+│   │   │   ├── liveClassService.js
+│   │   │   ├── messageService.js
+│   │   │   ├── notificationService.js
+│   │   │   ├── offerResponseService.js
+│   │   │   ├── offerService.js
+│   │   │   ├── offerTagService.js
+│   │   │   ├── paymentMethodService.js
+│   │   │   ├── paymentService.js
+│   │   │   ├── profile
+│   │   │   ├── public
+│   │   │   ├── socialLoginService.js
+│   │   │   ├── socketService.js
+│   │   │   ├── student
+│   │   │   ├── tutorialService.js
+│   │   │   ├── verificationService.js
+│   │   │   └── videoCallService.js
+│   │   ├── shared
+│   │   │   ├── GoogleAd.js
+│   │   │   ├── api
+│   │   │   ├── assets
+│   │   │   └── components
+│   │   ├── store
+│   │   │   ├── admin
+│   │   │   ├── appConfigStore.js
+│   │   │   ├── auth
+│   │   │   ├── cart
+│   │   │   ├── messages
+│   │   │   ├── notifications
+│   │   │   └── schedule
+│   │   ├── styles
+│   │   │   └── globals.css
+│   │   ├── tests
+│   │   │   ├── __tests__
+│   │   │   ├── index.js
+│   │   │   └── setupTests.js
+│   │   └── utils
+│   │       ├── MessageFilter.js
+│   │       ├── auth
+│   │       ├── community
+│   │       ├── cropImage.js
+│   │       ├── date.js
+│   │       ├── plans
+│   │       ├── relativeTime.js
+│   │       ├── url.js
+│   │       └── validation
+│   ├── structure.txt
+│   ├── tailwind.config.js
+│   └── tailwind.config.mjs
+├── project-structure.txt
+└── structure.txt
+
+193 directories, 298 files
