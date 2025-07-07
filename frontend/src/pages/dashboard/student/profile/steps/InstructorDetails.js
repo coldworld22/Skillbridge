@@ -16,12 +16,20 @@ const InstructorDetails = ({
     additionalDocs: [],
   });
 
+  // ✅ Safe fallback for nested instructor details
+  const instructorData = formData.instructorDetails || {
+    experience: "",
+    certifications: "",
+    availability: "",
+    pricing: "",
+  };
+
   // ✅ Handle Input Change
   const handleChange = (e) => {
     setFormData({
       ...formData,
       instructorDetails: {
-        ...formData.instructorDetails,
+        ...instructorData,
         [e.target.name]: e.target.value,
       },
     });
@@ -64,8 +72,8 @@ const InstructorDetails = ({
   // ✅ Validate Form Fields
   const validateForm = () => {
     let newErrors = {};
-    if (!formData.instructorDetails.experience) newErrors.experience = "Experience is required";
-    if (!formData.instructorDetails.certifications) newErrors.certifications = "Certifications are required";
+    if (!instructorData.experience) newErrors.experience = "Experience is required";
+    if (!instructorData.certifications) newErrors.certifications = "Certifications are required";
     if (!uploadedFiles.courseCertificate) newErrors.courseCertificate = "Upload a Course Certificate";
     if (!uploadedFiles.universityCertificate) newErrors.universityCertificate = "Upload a University Certificate";
     if (!uploadedFiles.experienceCertificate) newErrors.experienceCertificate = "Upload an Experience Certificate";
@@ -90,7 +98,7 @@ const InstructorDetails = ({
         <input
           type="number"
           name="experience"
-          value={formData.instructorDetails.experience}
+          value={instructorData.experience}
           onChange={handleChange}
           className="w-full p-2 border rounded bg-gray-800 text-white"
         />
@@ -103,7 +111,7 @@ const InstructorDetails = ({
         <input
           type="text"
           name="certifications"
-          value={formData.instructorDetails.certifications}
+          value={instructorData.certifications}
           onChange={handleChange}
           className="w-full p-2 border rounded bg-gray-800 text-white"
         />
@@ -177,7 +185,7 @@ const InstructorDetails = ({
         <input
           type="text"
           name="availability"
-          value={formData.instructorDetails.availability}
+          value={instructorData.availability}
           onChange={handleChange}
           className="w-full p-2 border rounded bg-gray-800 text-white"
         />
@@ -189,7 +197,7 @@ const InstructorDetails = ({
         <input
           type="text"
           name="pricing"
-          value={formData.instructorDetails.pricing}
+          value={instructorData.pricing}
           onChange={handleChange}
           className="w-full p-2 border rounded bg-gray-800 text-white"
         />
