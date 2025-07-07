@@ -5,19 +5,19 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5000',
+        port: '5002',
         pathname: '/uploads/**', // legacy path
       },
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5000',
+        port: '5002',
         pathname: '/api/uploads/**', // Allow images served via API
       },
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5000',
+        port: '5002',
         pathname: '/api/uploads/**', // Development server
       },
       {

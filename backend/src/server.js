@@ -309,7 +309,7 @@ io.on("connection", (socket) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Default to port 5000 to match example env and docker-compose
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
