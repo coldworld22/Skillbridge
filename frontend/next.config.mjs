@@ -4,12 +4,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'eduskillbridge.net',
+        hostname: 'yourdomain.com',
         pathname: '/api/uploads/**', // Production domain
       },
       {
         protocol: 'https',
-        hostname: 'eduskillbridge.net',
+        hostname: 'yourdomain.com',
         pathname: '/uploads/**',
       },
       {

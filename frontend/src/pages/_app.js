@@ -74,7 +74,7 @@ function MyApp({ Component, pageProps, router }) {
           {settings.favicon_url && (
             <link
               rel="icon"
-              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://eduskillbridge.net/api'}${settings.favicon_url}`}
+              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
             />
           )}
         </Head>
