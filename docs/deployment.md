@@ -10,7 +10,7 @@ Follow these steps to run SkillBridge on a server or production host.
      specify multiple domains separated by commas. For example:
      
      ```bash
-     FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
+    FRONTEND_URL=https://eduskillbridge.net
      ```
      
     This value is used for CORS and socket.io connections. If it still points to
@@ -33,10 +33,10 @@ that the environment changes take effect.
 
 ## Next.js image domains
 
-If your uploads are served from the backend domain you should also update the
+If your uploads are served from the backend domain you should update the
 `remotePatterns` in `frontend/next.config.mjs` to include your production domain
-or IP so that Next.js can display those images. For example add entries for
-`https://eduskillbridge.net` and `http://147.93.121.45`.
+so Next.js can display those images. For example add an entry for
+`https://eduskillbridge.net`.
 
 ## Troubleshooting
 
