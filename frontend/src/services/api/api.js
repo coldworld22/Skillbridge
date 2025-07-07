@@ -7,13 +7,20 @@
 
 import axios from "axios";
 
-// Fallback to production domain when the env var is missing
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://eduskillbridge.net/api";
+// If NEXT_PUBLIC_API_BASE_URL isn't provided, default to a relative path so
+// the frontend works regardless of the domain it's served from. This prevents
+// hard coded production URLs from causing CORS or redirect issues in other
+// environments.
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 // Warn developers if the default domain URL is used in production
-if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_BASE_URL && window.location.hostname !== "eduskillbridge.net") {
+if (
+  typeof window !== "undefined" &&
+  !process.env.NEXT_PUBLIC_API_BASE_URL &&
+  window.location.hostname !== "localhost"
+) {
   console.warn(
-    "NEXT_PUBLIC_API_BASE_URL is not set. Using https://eduskillbridge.net/api which will fail in production if this domain is unavailable. Update frontend/.env.local"
+    "NEXT_PUBLIC_API_BASE_URL is not set. Using '/api'. Set this variable in frontend/.env.local to avoid unexpected network errors."
   );
 }
 

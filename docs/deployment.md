@@ -10,7 +10,7 @@ Follow these steps to run SkillBridge on a server or production host.
      specify multiple domains separated by commas. For example:
      
      ```bash
-    FRONTEND_URL=https://eduskillbridge.net
+    FRONTEND_URL=https://yourdomain.com
      ```
      
     This value is used for CORS and socket.io connections. If it still points to
@@ -22,11 +22,11 @@ Follow these steps to run SkillBridge on a server or production host.
    For example:
    
    ```bash
-   NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
+   NEXT_PUBLIC_API_BASE_URL=https://yourdomain.com/api
    ```
    
-   Without this variable the frontend defaults to `https://eduskillbridge.net` which
-   will fail once the app is deployed.
+   Without this variable the frontend defaults to `/api` which may point to the
+   wrong server when deployed.
 
 After updating these files, rebuild the Docker images or restart the server so
 that the environment changes take effect.
@@ -36,7 +36,7 @@ that the environment changes take effect.
 If your uploads are served from the backend domain you should update the
 `remotePatterns` in `frontend/next.config.mjs` to include your production domain
 so Next.js can display those images. For example add an entry for
-`https://eduskillbridge.net`.
+`https://yourdomain.com`.
 
 ## Troubleshooting
 
