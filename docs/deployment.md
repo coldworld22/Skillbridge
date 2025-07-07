@@ -6,10 +6,11 @@ Follow these steps to run SkillBridge on a server or production host.
 
 1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
    - `PORT` – typically `5000` unless changed.
-   - `FRONTEND_URL` – set this to the full URL of your frontend. For example:
+   - `FRONTEND_URL` – set this to the full URL of your frontend. You can
+     specify multiple domains separated by commas. For example:
      
      ```bash
-     FRONTEND_URL=https://eduskillbridge.net
+     FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
      ```
      
      This value is used for CORS and socket.io connections. If it still points to
@@ -34,4 +35,5 @@ that the environment changes take effect.
 
 If your uploads are served from the backend domain you should also update the
 `remotePatterns` in `frontend/next.config.mjs` to include your production domain
-so that Next.js can display those images.
+or IP so that Next.js can display those images. For example add entries for
+`https://eduskillbridge.net` and `http://147.93.121.45`.

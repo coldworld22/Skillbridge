@@ -13,6 +13,8 @@ const { passport, initStrategies } = require("./config/passport");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 // Allow overriding the allowed origin via FRONTEND_URL env var.
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+// Support multiple comma-separated origins (e.g. "https://example.com,http://1.2.3.4")
+const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map((o) => o.trim());
 const db = require("./config/database");
 
 // Ensure new moderation columns exist even if migrations haven't been run
@@ -85,7 +87,7 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: FRONTEND_URL, credentials: true },
+  cors: { origin: ALLOWED_ORIGINS, credentials: true },
 });
 app.disable("etag"); // prevent 304 responses due to ETag
 app.use((req, res, next) => {
@@ -129,7 +131,7 @@ app.use(passport.initialize());
 // 🌐 Allow frontend to communicate with backend (CORS)
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   }),
 );
