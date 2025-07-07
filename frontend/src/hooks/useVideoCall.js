@@ -16,7 +16,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
 
   useEffect(() => {
     socketRef.current = io(
-      process.env.NEXT_PUBLIC_API_URL || "https://eduskillbridge.net",
+      // Use current origin if NEXT_PUBLIC_API_URL isn't defined
+      process.env.NEXT_PUBLIC_API_URL || "",
     );
     const initMedia = async () => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({

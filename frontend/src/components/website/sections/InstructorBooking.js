@@ -17,7 +17,8 @@ import {
 } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://eduskillbridge.net/api";
+// Use a relative API base URL by default so deployments work on any domain
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 const defaultCategories = ["All"];
 const sortOptions = ["Highest Rated", "Most Experienced"];

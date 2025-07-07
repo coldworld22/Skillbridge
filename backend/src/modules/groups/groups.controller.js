@@ -71,8 +71,8 @@ exports.createGroup = catchAsync(async (req, res) => {
           : role === "student"
             ? "student"
             : "admin";
-      // Use configured frontend URL or default to production domain
-      const host = process.env.FRONTEND_URL || "https://eduskillbridge.net";
+      // Use configured frontend URL or default to localhost for dev
+      const host = process.env.FRONTEND_URL || "http://localhost:3000";
       const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
 
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;

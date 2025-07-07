@@ -9,8 +9,8 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    ```bash
    cp backend/.env.example backend/.env
    # edit backend/.env and set your secrets
-   # FRONTEND_URL defaults to https://eduskillbridge.net
-   # change it if your frontend uses a different domain
+   # FRONTEND_URL defaults to http://localhost:3000
+   # set it to your frontend's domain if different
    ```
 
 2. Initialize the database (run migrations and seeds):
@@ -26,7 +26,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    docker-compose up --build
    ```
 
-4. Visit `https://eduskillbridge.net` to access the frontend. The API is available at `https://eduskillbridge.net/api`.
+4. Visit `http://localhost:3000` to access the frontend when running locally. The API will be available at `http://localhost:5000/api`.
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.

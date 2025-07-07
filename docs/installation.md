@@ -22,7 +22,7 @@ Follow these steps to run SkillBridge on your local machine.
    ```bash
    cp backend/.env.example backend/.env
    # edit backend/.env and set your secrets
-   # FRONTEND_URL defaults to https://eduskillbridge.net
+   # FRONTEND_URL defaults to http://localhost:3000
    # change it if your frontend uses a different domain
    ```
 
@@ -47,8 +47,8 @@ Follow these steps to run SkillBridge on your local machine.
    docker-compose up --build
    ```
 
-   - Backend API: `https://eduskillbridge.net/api`
-   - Frontend: `https://eduskillbridge.net`
+   - Backend API: `http://localhost:5000/api`
+   - Frontend: `http://localhost:3000`
    - PostgreSQL: `localhost:5432`
    - pgAdmin: `http://localhost:5050`
 

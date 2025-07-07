@@ -23,8 +23,8 @@ export default function InstructorProfilePage() {
   const [showBooking, setShowBooking] = useState(false);
   const { user } = useAuthStore();
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://eduskillbridge.net/api";
+  // Default to a relative path so the page works on any domain
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
   const openBooking = () => {
     if (!user || user.role?.toLowerCase() !== "student") {
