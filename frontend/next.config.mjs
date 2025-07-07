@@ -2,14 +2,21 @@
 const nextConfig = {
   images: {
     remotePatterns: [
+
+      {
+        protocol: 'http',
+        hostname: '147.93.121.45',
+        port: '5002', // Add port explicitly
+        pathname: '/**',
+      },
       {
         protocol: 'https',
-        hostname: 'yourdomain.com',
+        hostname: 'eduskillbridge.net',
         pathname: '/api/uploads/**', // Production domain
       },
       {
         protocol: 'https',
-        hostname: 'yourdomain.com',
+        hostname: 'eduskillbridge.net',
         pathname: '/uploads/**',
       },
       {
