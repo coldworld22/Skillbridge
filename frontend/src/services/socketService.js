@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SOCKET_SERVER_URL = "http://localhost:4000"; // Change this when backend is ready
+const SOCKET_SERVER_URL = "https://eduskillbridge.net"; // Production socket URL
 
 const socket = io(SOCKET_SERVER_URL, {
   transports: ["websocket"],

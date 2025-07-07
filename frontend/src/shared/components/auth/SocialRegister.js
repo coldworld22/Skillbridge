@@ -25,7 +25,7 @@ export default function SocialRegister() {
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
-            window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/${key}`;
+            window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://eduskillbridge.net'}/api/auth/${key}`;
           };
           return (
             <motion.button
