@@ -37,3 +37,13 @@ If your uploads are served from the backend domain you should also update the
 `remotePatterns` in `frontend/next.config.mjs` to include your production domain
 or IP so that Next.js can display those images. For example add entries for
 `https://eduskillbridge.net` and `http://147.93.121.45`.
+
+## Troubleshooting
+
+### Login page requests `http://localhost:5000`
+
+If you deploy the frontend and see network errors pointing to
+`http://localhost:5000/api` it means the build did not have
+`NEXT_PUBLIC_API_BASE_URL` set.  Update `frontend/.env.local` with the correct
+backend URL and rebuild/restart the frontend container so the new value is
+picked up.
