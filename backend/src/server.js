@@ -13,7 +13,7 @@ const { passport, initStrategies } = require("./config/passport");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 // Allow overriding the allowed origin via FRONTEND_URL env var.
 // Default to port 3001 when FRONTEND_URL is not set to match docker-compose
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3001";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://147.93.121.45:3001";
 // Support multiple comma-separated origins (e.g. "https://example.com,http://1.2.3.4")
 const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map((o) => o.trim());
 const db = require("./config/database");
@@ -311,5 +311,5 @@ io.on("connection", (socket) => {
 // Default to port 5000 to match example env and docker-compose
 const PORT = process.env.PORT || 5002;
 server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://147.93.121.45:${PORT}`);
 });

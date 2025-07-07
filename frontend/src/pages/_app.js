@@ -74,7 +74,7 @@ function MyApp({ Component, pageProps, router }) {
           {settings.favicon_url && (
             <link
               rel="icon"
-              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${settings.favicon_url}`}
+              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://147.93.121.45:5002'}${settings.favicon_url}`}
             />
           )}
         </Head>
