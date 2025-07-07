@@ -9,7 +9,8 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    ```bash
    cp backend/.env.example backend/.env
    # edit backend/.env and set your secrets
-   # Optionally set FRONTEND_URL to match your frontend port
+   # FRONTEND_URL defaults to http://localhost:3001 for Docker Compose
+   # change it if your frontend uses a different port
    ```
 
 2. Initialize the database (run migrations and seeds):

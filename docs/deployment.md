@@ -13,9 +13,9 @@ Follow these steps to run SkillBridge on a server or production host.
      FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
      ```
      
-     This value is used for CORS and socket.io connections. If it still points to
-     `http://localhost:3000` you may see `Network Error` or CORS errors when
-     logging in from the deployed site.
+    This value is used for CORS and socket.io connections. If it still points to
+    `http://localhost:3001` you may see `Network Error` or CORS errors when
+    logging in from the deployed site.
 
 2. **Frontend** – create a `.env.local` file inside `frontend` and set
    `NEXT_PUBLIC_API_BASE_URL` to your backend URL including the `/api` prefix.

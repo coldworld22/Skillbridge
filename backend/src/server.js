@@ -12,7 +12,8 @@ const session = require("express-session");
 const { passport, initStrategies } = require("./config/passport");
 require("dotenv").config(); // ✅ Load environment variables from .env file
 // Allow overriding the allowed origin via FRONTEND_URL env var.
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+// Default to port 3001 when FRONTEND_URL is not set to match docker-compose
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3001";
 // Support multiple comma-separated origins (e.g. "https://example.com,http://1.2.3.4")
 const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map((o) => o.trim());
 const db = require("./config/database");

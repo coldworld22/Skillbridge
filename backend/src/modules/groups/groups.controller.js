@@ -71,7 +71,8 @@ exports.createGroup = catchAsync(async (req, res) => {
           : role === "student"
             ? "student"
             : "admin";
-      const host = process.env.FRONTEND_URL || "http://localhost:3000";
+      // Default to port 3001 so invite links work in docker-compose dev setup
+      const host = process.env.FRONTEND_URL || "http://localhost:3001";
       const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
 
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;
