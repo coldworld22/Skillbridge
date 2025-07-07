@@ -98,8 +98,8 @@ const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
       {/* ✅ Social Links */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold">🔗 Social Links</h3>
-        <p><strong>LinkedIn:</strong> {formData.socialLinks.linkedin || "Not Provided"}</p>
-        <p><strong>Portfolio:</strong> {formData.socialLinks.portfolio || "Not Provided"}</p>
+        <p><strong>LinkedIn:</strong> {formData.socialLinks?.linkedin || "Not Provided"}</p>
+        <p><strong>Portfolio:</strong> {formData.socialLinks?.portfolio || "Not Provided"}</p>
       </div>
 
       {/* ✅ Demo Video Upload (For Instructors Only) */}
