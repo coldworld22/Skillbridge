@@ -11,8 +11,14 @@ import api from "@/services/api/api";
  * @returns {Promise<{ accessToken: string, user: object }>}
  */
 export const loginUser = async ({ email, password }) => {
-  const res = await api.post("/auth/login", { email, password });
-  return res.data;
+  try {
+    console.log("🔐 loginUser requesting", api.defaults.baseURL + "/auth/login");
+    const res = await api.post("/auth/login", { email, password });
+    return res.data;
+  } catch (err) {
+    console.error("❌ loginUser error", err?.response || err);
+    throw err;
+  }
 };
 
 /**

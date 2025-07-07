@@ -18,6 +18,7 @@ const useAuthStore = create(
       isAuthenticated: () => !!get().accessToken && !!get().user,
 
       login: async (credentials) => {
+        console.log("🔑 authStore.login", credentials.email);
         const { accessToken, user } = await authService.loginUser(credentials);
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;

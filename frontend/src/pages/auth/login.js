@@ -80,6 +80,7 @@ export default function Login() {
   // ─────────────────────────────
   const onSubmit = async (data) => {
   try {
+    console.log("➡️ login onSubmit", data.email);
     const loggedInUser = await login(data);
     toast.success("Login successful");
     fetchNotifications();
@@ -100,6 +101,7 @@ export default function Login() {
       router.push(targetPath);
     }, 1200);
   } catch (err) {
+    console.error("❌ login onSubmit error", err);
     const msg =
       err?.response?.data?.message ||
       err?.response?.data?.error ||
