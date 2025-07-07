@@ -9,16 +9,24 @@ const StudentDetails = ({
   prevStep = () => {},
 }) => {
   const [errors, setErrors] = useState({});
-  const [profilePic, setProfilePic] = useState(null);
+  const studentData = formData.studentDetails || {
+    educationLevel: "",
+    learningGoals: "",
+    learningStyle: "",
+    studySchedule: "",
+    profilePicture: "",
+  };
+
+  const [profilePic, setProfilePic] = useState(studentData.profilePicture || null);
 
   // ✅ Handle Input Change
   const handleChange = (e) => {
-    setFormData({ 
-      ...formData, 
-      studentDetails: { 
-        ...formData.studentDetails, 
-        [e.target.name]: e.target.value 
-      }
+    setFormData({
+      ...formData,
+      studentDetails: {
+        ...studentData,
+        [e.target.name]: e.target.value,
+      },
     });
   };
 
@@ -28,12 +36,12 @@ const StudentDetails = ({
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setProfilePic(imageUrl);
-      setFormData({ 
-        ...formData, 
-        studentDetails: { 
-          ...formData.studentDetails, 
-          profilePicture: imageUrl 
-        }
+      setFormData({
+        ...formData,
+        studentDetails: {
+          ...studentData,
+          profilePicture: imageUrl,
+        },
       });
     }
   };
@@ -41,20 +49,20 @@ const StudentDetails = ({
   // ✅ Remove Profile Picture
   const removeImage = () => {
     setProfilePic(null);
-    setFormData({ 
-      ...formData, 
-      studentDetails: { 
-        ...formData.studentDetails, 
-        profilePicture: "" 
-      }
+    setFormData({
+      ...formData,
+      studentDetails: {
+        ...studentData,
+        profilePicture: "",
+      },
     });
   };
 
   // ✅ Validate Form Fields
   const validateForm = () => {
     let newErrors = {};
-    if (!formData.studentDetails.educationLevel) newErrors.educationLevel = "Field of study is required";
-    if (!formData.studentDetails.learningGoals) newErrors.learningGoals = "Learning goals are required";
+    if (!studentData.educationLevel) newErrors.educationLevel = "Field of study is required";
+    if (!studentData.learningGoals) newErrors.learningGoals = "Learning goals are required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -93,7 +101,7 @@ const StudentDetails = ({
         <label className="block text-sm font-medium">Education Level</label>
         <select 
           name="educationLevel" 
-          value={formData.studentDetails.educationLevel} 
+          value={studentData.educationLevel}
           onChange={handleChange} 
           className="w-full p-2 border rounded bg-gray-800 text-white"
         >
@@ -112,7 +120,7 @@ const StudentDetails = ({
         <input
           type="text"
           name="learningGoals"
-          value={formData.studentDetails.learningGoals}
+          value={studentData.learningGoals}
           onChange={handleChange}
           className="w-full p-2 border rounded bg-gray-800 text-white"
         />
@@ -124,7 +132,7 @@ const StudentDetails = ({
         <label className="block text-sm font-medium">Preferred Learning Style</label>
         <select 
           name="learningStyle" 
-          value={formData.studentDetails.learningStyle} 
+          value={studentData.learningStyle}
           onChange={handleChange} 
           className="w-full p-2 border rounded bg-gray-800 text-white"
         >
@@ -141,7 +149,7 @@ const StudentDetails = ({
         <input
           type="text"
           name="studySchedule"
-          value={formData.studentDetails.studySchedule}
+          value={studentData.studySchedule}
           onChange={handleChange}
           placeholder="e.g., Evenings, Weekends"
           className="w-full p-2 border rounded bg-gray-800 text-white"
