@@ -2,13 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
-import PersonalDetails from "./steps/PersonalDetails";
-import Verification from "./steps/Verification";
-import RoleSelection from "./steps/RoleSelection";
-import StudentDetails from "./steps/StudentDetails";
-import InstructorDetails from "./steps/InstructorDetails";
-import SocialLinks from "./steps/SocialLinks";
-import FinalReview from "./steps/FinalReview";
+import PersonalDetails from "../../components/profile/steps/PersonalDetails";
+import Verification from "../../components/profile/steps/Verification";
+import RoleSelection from "../../components/profile/steps/RoleSelection";
+import StudentDetails from "../../components/profile/steps/StudentDetails";
+import InstructorDetails from "../../components/profile/steps/InstructorDetails";
+import SocialLinks from "../../components/profile/steps/SocialLinks";
+import FinalReview from "../../components/profile/steps/FinalReview";
 
 const steps = [
   { id: 1, title: "Personal Details" },
