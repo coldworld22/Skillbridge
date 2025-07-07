@@ -29,7 +29,6 @@ exports.seed = async function(knex) {
       role: "SuperAdmin", // ✅ Role matches updated enum constraint
       avatar_url: null,
       is_email_verified: true,
-      is_phone_verified: true,
       status: "active",
       created_at: knex.fn.now(),
       updated_at: knex.fn.now(),
