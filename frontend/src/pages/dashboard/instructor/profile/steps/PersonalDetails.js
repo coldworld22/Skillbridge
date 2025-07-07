@@ -3,7 +3,11 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage"; // Helper function for cropping
 import { FaUpload, FaTimesCircle, FaCrop, FaCheck } from "react-icons/fa";
 
-const PersonalDetails = ({ formData, setFormData, nextStep }) => {
+const PersonalDetails = ({
+  formData = {},
+  setFormData = () => {},
+  nextStep = () => {},
+}) => {
   const [errors, setErrors] = useState({});
   const [preview, setPreview] = useState(formData.profilePicture || "");
   const [file, setFile] = useState(null);

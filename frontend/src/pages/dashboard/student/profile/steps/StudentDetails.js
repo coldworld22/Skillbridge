@@ -8,7 +8,12 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 
-const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
+const StudentDetails = ({
+  formData = {},
+  setFormData = () => {},
+  nextStep = () => {},
+  prevStep = () => {},
+}) => {
   const [errors, setErrors] = useState({});
 
   // ✅ Safe fallback for nested fields

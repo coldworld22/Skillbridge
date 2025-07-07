@@ -2,7 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaUpload, FaTrash, FaCheckCircle } from "react-icons/fa";
 
-const StudentDetails = ({ formData, setFormData, nextStep, prevStep }) => {
+const StudentDetails = ({
+  formData = {},
+  setFormData = () => {},
+  nextStep = () => {},
+  prevStep = () => {},
+}) => {
   const [errors, setErrors] = useState({});
   const [profilePic, setProfilePic] = useState(null);
 

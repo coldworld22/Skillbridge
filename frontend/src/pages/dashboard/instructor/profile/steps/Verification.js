@@ -20,7 +20,7 @@ import {
   confirmPhoneOtp,
 } from "@/services/verificationService";
 
-const Verification = ({ onNext, onBack }) => {
+const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [emailOTP, setEmailOTP] = useState("");

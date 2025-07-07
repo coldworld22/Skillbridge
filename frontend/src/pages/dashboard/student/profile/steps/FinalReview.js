@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { updateProfile, uploadDemoVideo } from "@/services/profile/profileService";
 import useAuthStore from "@/store/auth/authStore"; // ✅ Get logged-in user info
 
-const FinalReview = ({ formData }) => {
+const FinalReview = ({ formData = {} }) => {
   const router = useRouter();
   const { user } = useAuthStore(); // ✅ access user.id
   const [loading, setLoading] = useState(false);

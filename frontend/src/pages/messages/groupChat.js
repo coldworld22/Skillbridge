@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
-import { getGroups, sendGroupMessage } from "@/services/groupService";
+import { getGroups } from "@/services/messageService";
+import { sendGroupMessage } from "@/services/groupService";
 import { motion } from "framer-motion";
 import ChatImage from "@/components/shared/ChatImage";
 import formatRelativeTime from "@/utils/relativeTime";

@@ -2,7 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaUpload, FaTrash } from "react-icons/fa";
 
-const InstructorDetails = ({ formData, setFormData, nextStep, prevStep }) => {
+const InstructorDetails = ({
+  formData = {},
+  setFormData = () => {},
+  nextStep = () => {},
+  prevStep = () => {},
+}) => {
   const [errors, setErrors] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState({
     courseCertificate: null,
