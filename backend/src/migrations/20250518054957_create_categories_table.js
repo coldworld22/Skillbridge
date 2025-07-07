@@ -1,7 +1,12 @@
 // 📁 migrations/YYYYMMDD_create_categories_table.js
 
+<<<<<<< HEAD
 exports.up = function(knex) {
   return knex.schema.createTable('categories', function(table) {
+=======
+exports.up = function (knex) {
+  return knex.schema.createTable('categories', function (table) {
+>>>>>>> b2ebd48 (fgf)
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('name').notNullable().unique();
     table.text('description');
@@ -11,6 +16,6 @@ exports.up = function(knex) {
   });
 };
 
-exports.down = function(knex) {
+exports.down = function (knex) {
   return knex.schema.dropTable('categories');
 };
