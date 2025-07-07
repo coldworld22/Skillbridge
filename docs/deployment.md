@@ -25,7 +25,7 @@ Follow these steps to run SkillBridge on a server or production host.
    NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
    ```
    
-   Without this variable the frontend defaults to `http://localhost:5000` which
+   Without this variable the frontend defaults to `https://eduskillbridge.net` which
    will fail once the app is deployed.
 
 After updating these files, rebuild the Docker images or restart the server so
