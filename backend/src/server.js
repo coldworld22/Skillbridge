@@ -135,6 +135,11 @@ app.use(
     credentials: true,
   }),
 );
+// Allow Chrome private network access when frontend is hosted elsewhere
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Private-Network", "true");
+  next();
+});
 
 // 📋 HTTP request logger
 app.use(morgan("dev"));
