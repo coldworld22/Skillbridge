@@ -71,8 +71,8 @@ exports.createGroup = catchAsync(async (req, res) => {
           : role === "student"
             ? "student"
             : "admin";
-      // Default to port 3001 so invite links work in docker-compose dev setup
-      const host = process.env.FRONTEND_URL || "http://localhost:3001";
+      // Use configured frontend URL or default to production domain
+      const host = process.env.FRONTEND_URL || "https://eduskillbridge.net";
       const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
 
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;

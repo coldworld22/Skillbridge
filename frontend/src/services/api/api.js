@@ -7,13 +7,13 @@
 
 import axios from "axios";
 
-// Fallback to localhost when the env var is missing
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://147.93.121.45:5002/api";
+// Fallback to production domain when the env var is missing
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://eduskillbridge.net/api";
 
-// Warn developers if the default localhost URL is used in production
-if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_BASE_URL && window.location.hostname !== "147.93.121.45") {
+// Warn developers if the default domain URL is used in production
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_BASE_URL && window.location.hostname !== "eduskillbridge.net") {
   console.warn(
-    "NEXT_PUBLIC_API_BASE_URL is not set. Using http://147.93.121.45:5002/api which will fail in production. Update frontend/.env.local"
+    "NEXT_PUBLIC_API_BASE_URL is not set. Using https://eduskillbridge.net/api which will fail in production if this domain is unavailable. Update frontend/.env.local"
   );
 }
 

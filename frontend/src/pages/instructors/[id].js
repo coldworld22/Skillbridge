@@ -24,7 +24,7 @@ export default function InstructorProfilePage() {
   const { user } = useAuthStore();
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://eduskillbridge.net/api";
 
   const openBooking = () => {
     if (!user || user.role?.toLowerCase() !== "student") {
