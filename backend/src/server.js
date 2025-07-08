@@ -55,6 +55,45 @@ const db = require("./config/database");
   }
 })();
 
+// Ensure essential user profile columns exist
+(async () => {
+  try {
+    const needsPhone = !(await db.schema.hasColumn("users", "is_phone_verified"));
+    const needsProfile = !(await db.schema.hasColumn("users", "profile_complete"));
+    const needsOnline = !(await db.schema.hasColumn("users", "is_online"));
+    const needsGender = !(await db.schema.hasColumn("users", "gender"));
+    const needsDob = !(await db.schema.hasColumn("users", "date_of_birth"));
+    const needsJob = !(await db.schema.hasColumn("users", "job_title"));
+    const needsDept = !(await db.schema.hasColumn("users", "department"));
+    const needsIdDoc = !(await db.schema.hasColumn("users", "identity_doc_url"));
+
+    if (
+      needsPhone ||
+      needsProfile ||
+      needsOnline ||
+      needsGender ||
+      needsDob ||
+      needsJob ||
+      needsDept ||
+      needsIdDoc
+    ) {
+      await db.schema.alterTable("users", (table) => {
+        if (needsPhone) table.boolean("is_phone_verified").defaultTo(false);
+        if (needsProfile) table.boolean("profile_complete").defaultTo(false);
+        if (needsOnline) table.boolean("is_online").defaultTo(false);
+        if (needsGender) table.string("gender");
+        if (needsDob) table.string("date_of_birth");
+        if (needsJob) table.string("job_title");
+        if (needsDept) table.string("department");
+        if (needsIdDoc) table.text("identity_doc_url");
+      });
+      console.log("ℹ️ Ensured users table has profile and verification columns");
+    }
+  } catch (err) {
+    console.error("Error ensuring users columns:", err);
+  }
+})();
+
 // ───── Import Route Modules ─────
 const authRoutes = require("./modules/auth/routes/auth.routes");
 const userRoutes = require("./modules/users/user.routes");
