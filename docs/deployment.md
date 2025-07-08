@@ -10,7 +10,8 @@ Follow these steps to run SkillBridge on a server or production host.
      specify multiple domains separated by commas. For example:
      
      ```bash
-    FRONTEND_URL=https://yourdomain.com
+    # Example using SkillBridge's VPS domain and IP
+    FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
      ```
      
     This value is used for CORS and socket.io connections. If it still points to
@@ -22,7 +23,8 @@ Follow these steps to run SkillBridge on a server or production host.
    For example:
    
    ```bash
-   NEXT_PUBLIC_API_BASE_URL=https://yourdomain.com/api
+   # Point the frontend to your backend including the /api prefix
+   NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
    ```
    
    Without this variable the frontend defaults to `/api` which may point to the

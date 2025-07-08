@@ -136,12 +136,9 @@ app.use((req, res, next) => {
 });
 
 // 🌐 Allow frontend to communicate with backend (CORS)
-// 🌐 Allow frontend to communicate with backend (CORS)
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://147.93.121.45:3000',
-  'https://eduskillbridge.net',
-];
+// Use the ALLOWED_ORIGINS derived from the FRONTEND_URL env var
+// This ensures CORS automatically works for any domains configured in .env
+const allowedOrigins = ALLOWED_ORIGINS;
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
