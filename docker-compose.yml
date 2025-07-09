@@ -30,18 +30,18 @@ services:
   backend:
     build: ./backend
     restart: always
-    ports:
-      - "5000:5000"
     environment:
-      - PORT=5000
+      - PORT=5002
       - DATABASE_URL=postgres://postgres:your_db_password@db:5432/eduSkillbridge
-      - FRONTEND_URL=http://147.93.121.45,http://localhost:3000
+      - FRONTEND_URL=http://eduskillbridge.net
       - JWT_SECRET=SkillBr1dge-!Secure.JWT-Key!
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=465
       - SMTP_SECURE=true
       - SMTP_USER=your@gmail.com
       - SMTP_PASS=your_app_password
+    expose:
+      - "5002"
     depends_on:
       - db
 
@@ -49,11 +49,23 @@ services:
     build: ./frontend
     restart: always
     ports:
-      - "3000:3000"
+      - "3000:3000"   # ✅ This line maps internal container port 3000 to host
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://147.93.121.45:5000/api
     depends_on:
       - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
 
 volumes:
   postgres_data:
