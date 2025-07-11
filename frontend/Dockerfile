@@ -4,15 +4,20 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and install dependencies
+# Copy package.json and lock file
 COPY package.json package-lock.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy application source code
+# Copy rest of the app
 COPY . .
 
-# Expose frontend port
+# Build the Next.js app
+RUN npm run build
+
+# Expose Next.js port
 EXPOSE 3000
 
-# Start frontend
-CMD ["npm", "run", "dev"]
+# Start the production server
+CMD ["npm", "start"]

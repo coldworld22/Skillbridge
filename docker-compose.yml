@@ -12,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - skillbridge_net
 
   pgadmin:
     image: dpage/pgadmin4
@@ -26,6 +28,8 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - db
+    networks:
+      - skillbridge_net
 
   backend:
     build: ./backend
@@ -33,7 +37,7 @@ services:
     environment:
       - PORT=5002
       - DATABASE_URL=postgres://postgres:your_db_password@db:5432/eduSkillbridge
-      - FRONTEND_URL=http://eduskillbridge.net
+      - FRONTEND_URL=https://eduskillbridge.net
       - JWT_SECRET=SkillBr1dge-!Secure.JWT-Key!
       - SMTP_HOST=smtp.gmail.com
       - SMTP_PORT=465
@@ -44,20 +48,25 @@ services:
       - "5002"
     depends_on:
       - db
+    networks:
+      - skillbridge_net
 
   frontend:
     build: ./frontend
     restart: always
     ports:
-      - "3000:3000"   # ✅ This line maps internal container port 3000 to host
+      - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://147.93.121.45:5000/api
+      - NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
     depends_on:
       - backend
+    networks:
+      - skillbridge_net
 
   nginx:
     image: nginx:latest
     container_name: nginx
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -66,7 +75,13 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
+    networks:
+      - skillbridge_net
 
 volumes:
   postgres_data:
   pgadmin_data:
+
+networks:
+  skillbridge_net:
+    driver: bridge
