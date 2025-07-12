@@ -1,18 +1,18 @@
-// knexfile.js
-require("dotenv").config();
-const path = require("path");
-
 module.exports = {
   development: {
-    client: "pg",
-    connection: process.env.DATABASE_URL,
+    client: 'pg',
+    connection: {
+      host: 'localhost',       // أو اسم الخدمة في Docker مثل: postgres
+      user: 'postgres',
+      password: 'your_db_password',
+      database: 'eduskillbridge',
+      port: 5432,
+    },
     migrations: {
-      directory: "./src/migrations",
+      directory: './src/migrations'
     },
     seeds: {
-      directory: "./src/seeds",
-    },
-  },
+      directory: './src/seeds'
+    }
+  }
 };
-
-
