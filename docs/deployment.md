@@ -80,3 +80,4 @@ frontend's origin.  Double check that `FRONTEND_URL` in `backend/.env`
 matches the deployed domain exactly and restart the backend.  The
 `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` must also point to the
 backend including the `/api` prefix.
+
