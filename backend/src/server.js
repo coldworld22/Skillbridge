@@ -15,7 +15,9 @@ require("dotenv").config();
 // 🔄 Ensure DB schema is up to date
 (async () => {
   try {
-    await db.migrate.latest();
+    await db.migrate.latest({
+      directory: path.join(__dirname, "migrations"),
+    });
     console.log("✅ Database migrations up to date");
   } catch (err) {
     console.error("❌ Failed running migrations:", err.message);
