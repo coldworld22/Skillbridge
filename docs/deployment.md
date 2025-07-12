@@ -12,6 +12,8 @@ Follow these steps to run SkillBridge on a server or production host.
      ```bash
     # Example using SkillBridge's VPS domain and IP
     FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
+    # Do not prefix with "FRONTEND_URL=" when using
+    # docker-compose environment variables.
      ```
      
     This value is used for CORS and socket.io connections. If it still points to
