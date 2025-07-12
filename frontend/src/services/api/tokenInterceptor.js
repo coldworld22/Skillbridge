@@ -10,6 +10,7 @@ import useAuthStore from "@/store/auth/authStore";
 
 let isRefreshing = false;
 let failedQueue = [];
+let lastNetworkToast = 0;
 
 // Function to process the queue of failed requests
 const processQueue = (error, token = null) => {
@@ -43,6 +44,16 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
+
+    if (
+      (error.code === "ERR_NETWORK" || !error.response) &&
+      Date.now() - lastNetworkToast > 5000
+    ) {
+      toast.error(
+        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings."
+      );
+      lastNetworkToast = Date.now();
+    }
 
     const isAuthRoute =
       originalRequest?.url?.includes("/auth/login") ||
