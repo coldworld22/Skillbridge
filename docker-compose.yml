@@ -35,7 +35,7 @@ services:
       - PORT=5002
       - DATABASE_URL=postgres://postgres:postgres@db:5432/eduSkillbridge
       - JWT_SECRET=SkillBr1dge-!Secure.JWT-Key!
-      - FRONTEND_URL=FRONTEND_URL=https://eduskillbridge.net
+      - FRONTEND_URL=https://eduskillbridge.net
     depends_on:
       - db
     volumes:
