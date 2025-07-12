@@ -72,6 +72,7 @@ These messages mean the frontend cannot reach the API. Verify that
 including the `/api` prefix.  Also confirm the backend server is running and
 that the `FRONTEND_URL` in `backend/.env` includes your frontend domain.
 
+
 ### Login redirects repeatedly
 
 If you briefly see the home page then get bounced back to the login form with
@@ -80,3 +81,4 @@ frontend's origin.  Double check that `FRONTEND_URL` in `backend/.env`
 matches the deployed domain exactly and restart the backend.  The
 `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` must also point to the
 backend including the `/api` prefix.
+
