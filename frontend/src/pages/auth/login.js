@@ -96,17 +96,20 @@ export default function Login() {
         ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
         : "/website";
 
-    // ⏳ Delay before redirecting (e.g., 1.2 seconds)
-    setTimeout(() => {
-      router.push(targetPath);
-    }, 1200);
+    // 🚀 Redirect immediately after a successful login
+    router.push(targetPath);
   } catch (err) {
     console.error("❌ login onSubmit error", err);
-    const msg =
+    let msg =
       err?.response?.data?.message ||
       err?.response?.data?.error ||
       err?.message ||
       "Login failed. Please try again.";
+
+    if (err.code === "ERR_NETWORK") {
+      msg =
+        "Network error: please check your connection or server configuration.";
+    }
 
     toast.error(msg);
     setValue("password", "");

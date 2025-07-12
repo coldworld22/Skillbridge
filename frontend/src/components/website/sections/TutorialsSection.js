@@ -50,18 +50,21 @@ const LandingTutorialsSection = () => {
         const data = await fetchFeaturedTutorials();
         setTutorials(data || []);
       } catch (err) {
-        toast.error("Failed to load tutorials");
+        const msg =
+          err.code === "ERR_NETWORK"
+            ? "Network error: please check API_BASE_URL and backend server."
+            : "Failed to load tutorials";
+        toast.error(msg);
       }
       try {
         const cats = await fetchAllCategories({ limit: 100 });
         setCategories(cats?.data || cats || []);
       } catch (err) {
-        toast.error("Failed to load categories");
-      }
-      try {
-        const cats = await fetchAllCategories({ limit: 100 });
-        setCategories(cats?.data || cats || []);
-      } catch (err) {
+        const msg =
+          err.code === "ERR_NETWORK"
+            ? "Network error: please check API_BASE_URL and backend server."
+            : "Failed to load categories";
+        toast.error(msg);
         console.error("Failed to load categories", err);
       }
       try {
