@@ -11,6 +11,17 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const path = require("path");
 require("dotenv").config();
+
+// 🔄 Ensure DB schema is up to date
+(async () => {
+  try {
+    await db.migrate.latest();
+    console.log("✅ Database migrations up to date");
+  } catch (err) {
+    console.error("❌ Failed running migrations:", err.message);
+    process.exit(1);
+  }
+})();
 // ─── Database Migration for Online Classes Moderation ───
 const app = express();
 const server = http.createServer(app);
