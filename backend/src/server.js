@@ -1,125 +1,55 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// 📁 SkillBridge Backend – Main Server Entry Point
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── SkillBridge Backend – Main Server Entry Point ───
 
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-const { Server } = require("socket.io");
 const session = require("express-session");
+const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
-require("dotenv").config(); // ✅ Load environment variables from .env file
-// Allow overriding the allowed origin via FRONTEND_URL env var.
-// Default to localhost when FRONTEND_URL is not set
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-// Support multiple comma-separated origins (e.g. "https://example.com,http://1.2.3.4")
-const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map((o) => o.trim());
 const db = require("./config/database");
+const path = require("path");
+require("dotenv").config();
 
-// Ensure new moderation columns exist even if migrations haven't been run
+const app = express();
+const server = http.createServer(app);
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map(o => o.trim());
+
 (async () => {
   try {
-    const hasStatus = await db.schema.hasColumn(
-      "online_classes",
-      "moderation_status",
-    );
-    const hasReason = await db.schema.hasColumn(
-      "online_classes",
-      "rejection_reason",
-    );
+    const hasStatus = await db.schema.hasColumn("online_classes", "moderation_status");
+    const hasReason = await db.schema.hasColumn("online_classes", "rejection_reason");
     if (!hasStatus || !hasReason) {
-      await db.schema.alterTable("online_classes", (table) => {
-        if (!hasStatus) {
-          table
-            .enu("moderation_status", ["Pending", "Approved", "Rejected"])
-            .defaultTo("Pending");
-        }
-        if (!hasReason) {
-          table.text("rejection_reason");
-        }
+      await db.schema.alterTable("online_classes", table => {
+        if (!hasStatus) table.enu("moderation_status", ["Pending", "Approved", "Rejected"]).defaultTo("Pending");
+        if (!hasReason) table.text("rejection_reason");
       });
-      await db.raw(
-        "ALTER TABLE online_classes DROP CONSTRAINT IF EXISTS online_classes_moderation_status_check",
-      );
-      await db.raw(
-        "ALTER TABLE online_classes ADD CONSTRAINT online_classes_moderation_status_check CHECK (moderation_status IS NULL OR moderation_status IN ('Pending','Approved','Rejected'))",
-      );
-      console.log(
-        "ℹ️ Ensured online_classes has moderation_status and rejection_reason columns",
-      );
+      await db.raw("ALTER TABLE online_classes DROP CONSTRAINT IF EXISTS online_classes_moderation_status_check");
+      await db.raw("ALTER TABLE online_classes ADD CONSTRAINT online_classes_moderation_status_check CHECK (moderation_status IS NULL OR moderation_status IN ('Pending','Approved','Rejected'))");
+      console.log("ℹ️ Ensured online_classes has moderation_status and rejection_reason columns");
     }
   } catch (err) {
     console.error("Error ensuring moderation columns:", err);
   }
 })();
 
-// ───── Import Route Modules ─────
-const authRoutes = require("./modules/auth/routes/auth.routes");
-const userRoutes = require("./modules/users/user.routes");
-const verifyRoutes = require("./modules/verify/verify.routes"); // ✅ OTP routes
-const certificatePublicRoutes = require("./modules/users/tutorials/certificate/certificatePublic.routes");
-const adminBookingRoutes = require("./modules/bookings/bookings.routes");
-const studentBookingRoutes = require("./modules/bookings/student.routes");
-const instructorBookingRoutes = require("./modules/bookings/instructor.routes");
-const adminCommunityRoutes = require("./modules/community/admin/admin.routes");
-const roleRoutes = require("./modules/roles/roles.routes");
-const planRoutes = require("./modules/plans/plans.routes");
-const paymentRoutes = require("./modules/payments/payments.routes");
-const paymentMethodRoutes = require("./modules/paymentMethods/paymentMethods.routes");
-const paymentMethodsPublicRoutes = require("./modules/paymentMethods/paymentMethods.public.routes");
-const paymentConfigRoutes = require("./modules/paymentConfig/paymentConfig.routes");
-const payoutRoutes = require("./modules/payouts/payouts.routes");
-const adsRoutes = require("./modules/ads/ads.routes");
-const publicInstructorRoutes = require("./modules/instructors/instructor.routes");
-const publicStudentRoutes = require("./modules/students/student.routes");
-const cartRoutes = require("./modules/cart/cart.routes");
-const notificationRoutes = require("./modules/notifications/notifications.routes");
-const messageRoutes = require("./modules/messages/messages.routes");
-const chatRoutes = require("./modules/chat/chat.routes");
-const groupRoutes = require("./modules/groups/groups.routes");
-const offersRoutes = require("./modules/offers/offers.routes");
-const offerResponseRoutes = require("./modules/offers/offerResponses.routes");
-const socialLoginConfigRoutes = require("./modules/socialLoginConfig/socialLoginConfig.routes");
-const appConfigRoutes = require("./modules/appConfig/appConfig.routes");
-const errorHandler = require("./middleware/errorHandler");
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: ALLOWED_ORIGINS, credentials: true },
-});
-app.disable("etag"); // prevent 304 responses due to ETag
+app.disable("etag");
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔧 Global Middleware Setup
-// ─────────────────────────────────────────────────────────────────────────────
-const path = require("path");
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔧 Global Middleware Setup
-// ─────────────────────────────────────────────────────────────────────────────
-
-// 🧠 Parse incoming JSON bodies
-// Increase payload limit to handle image uploads or larger requests
 app.use(express.json({ limit: "10mb" }));
-
-// 🍪 Parse cookies from incoming requests
 app.use(cookieParser());
+app.use(morgan("dev"));
+app.use(session({
+  secret: process.env.SESSION_SECRET || "skillbridge",
+  resave: false,
+  saveUninitialized: false,
+}));
 
-// 🔐 Session and Passport setup for social login
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "skillbridge",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
 (async () => {
   try {
     await initStrategies();
@@ -129,169 +59,72 @@ app.use(
 })();
 app.use(passport.initialize());
 
-// Allow Chrome private network access when frontend is hosted elsewhere
+// 🌐 CORS Middleware (Dynamic)
+// Ensure CORS headers are always present, even on errors
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
+
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/api/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Private-Network", "true");
   next();
 });
 
-// 🌐 Allow frontend to communicate with backend (CORS)
-// Use the ALLOWED_ORIGINS derived from the FRONTEND_URL env var
-// This ensures CORS automatically works for any domains configured in .env
-const allowedOrigins = ALLOWED_ORIGINS;
+// ─── Routes ───
+app.use("/api/auth", require("./modules/auth/routes/auth.routes"));
+app.use("/api/users", require("./modules/users/user.routes"));
+app.use("/api/verify", require("./modules/verify/verify.routes"));
+app.use("/api/certificates", require("./modules/users/tutorials/certificate/certificatePublic.routes"));
+app.use("/api/bookings/admin", require("./modules/bookings/bookings.routes"));
+app.use("/api/bookings/student", require("./modules/bookings/student.routes"));
+app.use("/api/bookings/instructor", require("./modules/bookings/instructor.routes"));
+app.use("/api/community/admin", require("./modules/community/admin/admin.routes"));
+app.use("/api/roles", require("./modules/roles/roles.routes"));
+app.use("/api/plans", require("./modules/plans/plans.routes"));
+app.use("/api/payment-methods", require("./modules/paymentMethods/paymentMethods.public.routes"));
+app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
+app.use("/api/payment-methods/admin", require("./modules/paymentMethods/paymentMethods.routes"));
+app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.routes"));
+app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
+app.use("/api/app-config", require("./modules/appConfig/appConfig.routes"));
+app.use("/api/payouts/admin", require("./modules/payouts/payouts.routes"));
+app.use("/api/ads", require("./modules/ads/ads.routes"));
+app.use("/api/groups", require("./modules/groups/groups.routes"));
+app.use("/api/offers", require("./modules/offers/offers.routes"));
+app.use("/api/offers/:offerId/responses", require("./modules/offers/offerResponses.routes"));
+app.use("/api/instructors", require("./modules/instructors/instructor.routes"));
+app.use("/api/students", require("./modules/students/student.routes"));
+app.use("/api/cart", require("./modules/cart/cart.routes"));
+app.use("/api/notifications", require("./modules/notifications/notifications.routes"));
+app.use("/api/messages", require("./modules/messages/messages.routes"));
+app.use("/api/chat", require("./modules/chat/chat.routes"));
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Private-Network', 'true'); // Critical fix
-  }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
+app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
+
+const io = new Server(server, {
+  cors: { origin: ALLOWED_ORIGINS, credentials: true },
 });
-
-// Handle preflight requests
-app.options('*', (req, res) => {
-  res.sendStatus(200);
-});
-
-
-// 📋 HTTP request logger
-app.use(morgan("dev"));
-
-// 📁 Serve uploaded static files (avatars, identity, etc.)
-// Support both `/uploads` and `/api/uploads` to allow direct access in production
-// Use project root uploads directory (one level above backend)
-// Example paths from modules resolve to "../../uploads"
-const uploadsDir = path.join(__dirname, "../uploads");
-app.use("/api/uploads", express.static(uploadsDir));
-app.use("/uploads", express.static(uploadsDir));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 📦 API Routes
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use("/api/auth", authRoutes); // 🔐 Auth: login, register, password reset
-app.use("/api/users", userRoutes); // 👤 Users: profile, avatar, demo video
-app.use("/api/verify", verifyRoutes); // ✅ OTP: send/confirm email/phone
-app.use("/api/certificates", certificatePublicRoutes); // 🎓 Public certificate verification
-app.use("/api/bookings/admin", adminBookingRoutes); // 📅 Admin bookings management
-app.use("/api/bookings/student", studentBookingRoutes); // 🎒 Student bookings
-app.use("/api/bookings/instructor", instructorBookingRoutes); // 👩‍🏫 Instructor bookings
-app.use("/api/community/admin", adminCommunityRoutes); // 🗣️ Admin community management
-app.use("/api/roles", roleRoutes); // 🛡️ Role and permission management
-app.use("/api/plans", planRoutes); // 💳 Subscription plans
-app.use("/api/payment-methods", paymentMethodsPublicRoutes); // 💳 Public payment methods
-app.use("/api/payments/admin", paymentRoutes); // 💵 Payments management
-app.use("/api/payment-methods/admin", paymentMethodRoutes); // 💳 Payment methods
-app.use("/api/payments/config", paymentConfigRoutes); // ⚙️ Payment settings
-app.use("/api/social-login/config", socialLoginConfigRoutes); // 🔑 Social login settings
-app.use("/api/app-config", appConfigRoutes); // 🛠️ Application settings
-app.use("/api/payouts/admin", payoutRoutes); // 🏦 Instructor payouts
-app.use("/api/ads", adsRoutes); // 📢 Advertisements
-app.use("/api/groups", groupRoutes); // 📚 Study groups
-app.use("/api/offers", offersRoutes); // 📚 Learning marketplace offers
-app.use("/api/offers/:offerId/responses", offerResponseRoutes); // 💬 Offer negotiations
-app.use("/api/instructors", publicInstructorRoutes); // 📚 Public instructor listing
-app.use("/api/students", publicStudentRoutes); // 🎓 Public student listing
-app.use("/api/cart", cartRoutes); // 🛒 Shopping cart
-app.use("/api/notifications", notificationRoutes); // 🔔 User notifications
-app.use("/api/messages", messageRoutes); // 💬 User messages
-app.use("/api/chat", chatRoutes); // 💬 Direct chat
-
-// 🩺 Health check (for CI/CD or uptime monitoring)
-app.get("/", (req, res) => {
-  res.send("🚀 SkillBridge API is live.");
-});
-
-// Endpoint to retrieve participants in a room
-app.get("/api/video-calls/:roomId/participants", (req, res) => {
-  const { roomId } = req.params;
-  res.json(participants[roomId] || []);
-});
-
-// Simple in-memory store for call messages
-const callMessages = {};
-
-// Retrieve all messages for a room
-app.get("/api/video-calls/:roomId/messages", (req, res) => {
-  const { roomId } = req.params;
-  res.json(callMessages[roomId] || []);
-});
-
-// Post a new message to a room
-app.post("/api/video-calls/:roomId/messages", (req, res) => {
-  const { roomId } = req.params;
-  const { sender, text } = req.body || {};
-  if (!text || !text.trim()) {
-    return res.status(400).json({ message: "Message text required" });
-  }
-  const message = {
-    id: Date.now(),
-    sender: sender || "Anonymous",
-    text: text.trim(),
-    timestamp: new Date().toISOString(),
-  };
-  if (callMessages[roomId]) {
-    callMessages[roomId].push(message);
-  } else {
-    callMessages[roomId] = [message];
-  }
-  res.status(201).json(message);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ⚠️ Global Error Handler
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use((err, req, res, next) => {
-  const status = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-
-  console.error(`❌ Error: ${message}`);
-  res.status(status).json({ message });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 📦 Custom Error Handler Middleware
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use(errorHandler); // ✅ After all routes
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🎥 Socket.io Signaling for Video Calls
-// ─────────────────────────────────────────────────────────────────────────────
-
-const rooms = {};
-// Track participants with additional info
-const participants = {};
+const rooms = {}, participants = {}, callMessages = {};
 
 io.on("connection", (socket) => {
   socket.on("join-room", ({ roomId, name, role }) => {
-    if (rooms[roomId]) {
-      rooms[roomId].push(socket.id);
-    } else {
-      rooms[roomId] = [socket.id];
-    }
-
-    if (participants[roomId]) {
-      participants[roomId].push({
-        id: socket.id,
-        name,
-        role: role || "participant",
-        isMuted: false,
-      });
-    } else {
-      participants[roomId] = [
-        { id: socket.id, name, role: role || "participant", isMuted: false },
-      ];
-    }
-
-    const otherUsers = rooms[roomId].filter((id) => id !== socket.id);
-    socket.emit("all-users", otherUsers);
+    rooms[roomId] = rooms[roomId] || [];
+    participants[roomId] = participants[roomId] || [];
+    rooms[roomId].push(socket.id);
+    participants[roomId].push({ id: socket.id, name, role: role || "participant", isMuted: false });
     socket.join(roomId);
+    socket.emit("all-users", rooms[roomId].filter((id) => id !== socket.id));
 
     socket.on("sending-signal", (payload) => {
       io.to(payload.userToSignal).emit("user-joined", {
@@ -309,23 +142,35 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
-      if (participants[roomId]) {
-        participants[roomId] = participants[roomId].filter(
-          (p) => p.id !== socket.id,
-        );
-      }
+      participants[roomId] = participants[roomId].filter((p) => p.id !== socket.id);
       socket.to(roomId).emit("user-disconnected", socket.id);
     });
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🚀 Start Server
-// ─────────────────────────────────────────────────────────────────────────────
+app.get("/api/video-calls/:roomId/participants", (req, res) => {
+  res.json(participants[req.params.roomId] || []);
+});
+app.get("/api/video-calls/:roomId/messages", (req, res) => {
+  res.json(callMessages[req.params.roomId] || []);
+});
+app.post("/api/video-calls/:roomId/messages", (req, res) => {
+  const { sender, text } = req.body || {};
+  const roomId = req.params.roomId;
+  if (!text?.trim()) return res.status(400).json({ message: "Message text required" });
+  const message = { id: Date.now(), sender: sender || "Anonymous", text: text.trim(), timestamp: new Date().toISOString() };
+  callMessages[roomId] = callMessages[roomId] || [];
+  callMessages[roomId].push(message);
+  res.status(201).json(message);
+});
 
-// Default to port 5000 to match example env and docker-compose
+app.use(require("./middleware/errorHandler"));
+app.use((err, req, res, next) => {
+  console.error("❌", err.message);
+  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+});
+
 const PORT = process.env.PORT || 5002;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
-
