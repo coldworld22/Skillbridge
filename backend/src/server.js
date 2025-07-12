@@ -11,10 +11,11 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const path = require("path");
 require("dotenv").config();
-
+// ─── Database Migration for Online Classes Moderation ───
 const app = express();
 const server = http.createServer(app);
 
+// 🌐 Fix CORS (must be very early)
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map(o => o.trim());
 
@@ -69,6 +70,9 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); // ⚠️ Preflight must be short-circuited
+  }
   next();
 });
 
@@ -163,6 +167,23 @@ app.post("/api/video-calls/:roomId/messages", (req, res) => {
   callMessages[roomId].push(message);
   res.status(201).json(message);
 });
+
+// ✅ Final fallback CORS headers in case route errors skip the first middleware
+// Final fallback CORS headers on errors
+app.use((err, req, res, next) => {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  console.error("❌", err.message);
+  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+});
+
+
 
 app.use(require("./middleware/errorHandler"));
 app.use((err, req, res, next) => {
