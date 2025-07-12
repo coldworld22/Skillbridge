@@ -16,7 +16,10 @@ const app = express();
 const server = http.createServer(app);
 
 // 🌐 Fix CORS (must be very early)
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
+  FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
+}
 const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map(o => o.trim());
 
 (async () => {
