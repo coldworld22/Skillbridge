@@ -72,7 +72,6 @@ These messages mean the frontend cannot reach the API. Verify that
 including the `/api` prefix.  Also confirm the backend server is running and
 that the `FRONTEND_URL` in `backend/.env` includes your frontend domain.
 
-
 ### Login redirects repeatedly
 
 If you briefly see the home page then get bounced back to the login form with
