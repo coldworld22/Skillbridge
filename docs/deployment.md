@@ -51,3 +51,16 @@ If you deploy the frontend and see network errors pointing to
 `NEXT_PUBLIC_API_BASE_URL` set.  Update `frontend/.env.local` with the correct
 backend URL and rebuild/restart the frontend container so the new value is
 picked up.
+
+### CORS errors when logging in
+
+If the browser console shows messages like `No 'Access-Control-Allow-Origin'` or
+`ERR_NETWORK` during login, your backend is rejecting the frontend's origin.
+Edit `backend/.env` and ensure the `FRONTEND_URL` variable lists the exact
+domain of your deployed site, for example:
+
+```bash
+FRONTEND_URL=https://eduskillbridge.net
+```
+
+Restart the backend so the updated CORS settings take effect.
