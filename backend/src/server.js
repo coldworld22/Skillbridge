@@ -11,12 +11,26 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const path = require("path");
 require("dotenv").config();
+
+// 🔄 Ensure DB schema is up to date
+(async () => {
+  try {
+    await db.migrate.latest();
+    console.log("✅ Database migrations up to date");
+  } catch (err) {
+    console.error("❌ Failed running migrations:", err.message);
+    process.exit(1);
+  }
+})();
 // ─── Database Migration for Online Classes Moderation ───
 const app = express();
 const server = http.createServer(app);
 
 // 🌐 Fix CORS (must be very early)
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
+  FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
+}
 const ALLOWED_ORIGINS = FRONTEND_URL.split(',').map(o => o.trim());
 
 (async () => {
