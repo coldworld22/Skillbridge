@@ -100,11 +100,16 @@ export default function Login() {
     router.push(targetPath);
   } catch (err) {
     console.error("❌ login onSubmit error", err);
-    const msg =
+    let msg =
       err?.response?.data?.message ||
       err?.response?.data?.error ||
       err?.message ||
       "Login failed. Please try again.";
+
+    if (err.code === "ERR_NETWORK") {
+      msg =
+        "Network error: please check your connection or server configuration.";
+    }
 
     toast.error(msg);
     setValue("password", "");
