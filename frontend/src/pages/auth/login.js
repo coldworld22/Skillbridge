@@ -96,10 +96,8 @@ export default function Login() {
         ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
         : "/website";
 
-    // ⏳ Delay before redirecting (e.g., 1.2 seconds)
-    setTimeout(() => {
-      router.push(targetPath);
-    }, 1200);
+    // 🚀 Redirect immediately after a successful login
+    router.push(targetPath);
   } catch (err) {
     console.error("❌ login onSubmit error", err);
     const msg =
