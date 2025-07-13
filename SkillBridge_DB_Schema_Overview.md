@@ -83,6 +83,38 @@
 - **Foreign Keys**: `user_id, class_id`
 
 
+### `class_comments`
+- **Purpose**: Threaded class discussions
+- **Primary Key**: `id`
+- **Foreign Keys**: `class_id, user_id, parent_id`
+
+### `class_tags`
+- **Purpose**: Tag library for classes
+- **Primary Key**: `id`
+- **Foreign Keys**: `—`
+
+### `class_tag_map`
+- **Purpose**: Links classes to tags
+- **Primary Key**: `(class_id, tag_id)`
+- **Foreign Keys**: `class_id, tag_id`
+
+### `class_views`
+- **Purpose**: Track class page hits
+- **Primary Key**: `id`
+- **Foreign Keys**: `class_id, viewer_id`
+
+### `class_scoring_policies`
+- **Purpose**: Grading weights & pass mark
+- **Primary Key**: `class_id (PK)`
+- **Foreign Keys**: `class_id`
+
+### `student_class_scores`
+- **Purpose**: Aggregate scores per student
+- **Primary Key**: `id`
+- **Foreign Keys**: `class_id, student_id`
+
+
+
 ## Tutorials Tables
 
 ### `tutorials`
