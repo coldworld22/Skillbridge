@@ -82,6 +82,7 @@
 - **Primary Key**: `id`
 - **Foreign Keys**: `user_id, class_id`
 
+
 ### `class_comments`
 - **Purpose**: Threaded class discussions
 - **Primary Key**: `id`
@@ -111,6 +112,7 @@
 - **Purpose**: Aggregate scores per student
 - **Primary Key**: `id`
 - **Foreign Keys**: `class_id, student_id`
+
 
 
 ## Tutorials Tables
