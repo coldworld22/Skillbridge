@@ -10,11 +10,18 @@ Follow these steps to run SkillBridge on a server or production host.
      specify multiple domains separated by commas. For example:
      
      ```bash
-    # Example using SkillBridge's VPS domain and IP
-    FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
-    # Do not prefix with "FRONTEND_URL=" when using
-    # docker-compose environment variables.
-     ```
+   # Example using SkillBridge's VPS domain and IP
+   FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
+   # Do not prefix with "FRONTEND_URL=" when using
+   # docker-compose environment variables.
+    ```
+
+   If the frontend and backend are on different subdomains, also set
+   `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
+
+   ```bash
+   COOKIE_DOMAIN=.eduskillbridge.net
+   ```
      
     This value is used for CORS and socket.io connections. If it still points to
     `http://localhost:3001` you may see `Network Error` or CORS errors when
@@ -79,5 +86,8 @@ browser console messages about CORS, your backend is not allowing the
 frontend's origin.  Double check that `FRONTEND_URL` in `backend/.env`
 matches the deployed domain exactly and restart the backend.  The
 `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` must also point to the
-backend including the `/api` prefix.
+backend including the `/api` prefix. When the frontend and API are on
+different subdomains, set `COOKIE_DOMAIN` in `backend/.env` to the shared
+base domain (e.g. `.eduskillbridge.net`) so the authentication cookie is
+available to both sites.
 
