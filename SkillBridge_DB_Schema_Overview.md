@@ -72,6 +72,16 @@
 - **Primary Key**: `id`
 - **Foreign Keys**: `class_id, user_id`
 
+### `class_likes`
+- **Purpose**: Track class likes by students
+- **Primary Key**: `id`
+- **Foreign Keys**: `user_id, class_id`
+
+### `class_wishlist`
+- **Purpose**: Students' saved classes
+- **Primary Key**: `id`
+- **Foreign Keys**: `user_id, class_id`
+
 
 ## Tutorials Tables
 
