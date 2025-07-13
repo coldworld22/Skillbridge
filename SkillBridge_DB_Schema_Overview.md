@@ -170,6 +170,7 @@
 - **Purpose**: Custom template library
 - **Primary Key**: `id`
 - **Foreign Keys**: `—`
+- **Columns**: `name`, `type`, `font_family`, `title_font`, `border_color`, `logo`, `background`, `show_qr`, timestamps
 
 ### `certificates`
 - **Purpose**: Issued certs
@@ -180,6 +181,7 @@
 - **Purpose**: Logs public scans/verifications
 - **Primary Key**: `id`
 - **Foreign Keys**: `certificate_id`
+- **Columns**: `certificate_id`, `ip_address`, `user_agent`, `verified_at`
 
 
 ## Payments Tables
