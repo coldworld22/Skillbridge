@@ -405,3 +405,4 @@
 - **Purpose**: Admin action trail
 - **Primary Key**: `id`
 - **Foreign Keys**: `admin_id`
+- **Columns**: `admin_id`, `action`, `details`, `ip_address`, `created_at`
