@@ -7,8 +7,12 @@ module.exports = {
   sendMail: async ({ to, subject, html, from }) => {
     const cfg = (await getSettings()) || {};
     const transporter = await createTransporter();
+
+    const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
+    const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
+
     const mailOptions = {
-      from: from || cfg.fromEmail || process.env.SMTP_USER,
+      from: from || `${fromName} <${fromEmail}>`,
       to,
       subject,
       html,

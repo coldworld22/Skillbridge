@@ -30,8 +30,12 @@ exports.createTransporter = createTransporter;
 exports.sendOtpEmail = async (to, otp) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+
+  const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
+  const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
+
   const mailOptions = {
-    from: cfg.fromEmail || process.env.SMTP_USER,
+    from: `${fromName} <${fromEmail}>`,
     to,
     subject: "Your OTP for SkillBridge",
     html: `<p>Your OTP code is: <strong>${otp}</strong></p>`,
@@ -42,5 +46,28 @@ exports.sendOtpEmail = async (to, otp) => {
     console.log(`OTP sent to ${to}`);
   } catch (error) {
     console.error("Error sending email: ", error);
+  }
+};
+
+// Notify user of successful password change
+exports.sendPasswordChangeEmail = async (to) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
+  const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    to,
+    subject: "Your SkillBridge password was changed",
+    html: `<p>Your password was changed successfully. If you didn't request this, please contact support immediately.</p>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Password change notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending password change email: ", error);
   }
 };
