@@ -12,18 +12,9 @@ const db = require("./config/database");
 const path = require("path");
 require("dotenv").config();
 
-// 🔄 Ensure DB schema is up to date
-(async () => {
-  try {
-    await db.migrate.latest({
-      directory: path.join(__dirname, "migrations"),
-    });
-    console.log("✅ Database migrations up to date");
-  } catch (err) {
-    console.error("❌ Failed running migrations:", err.message);
-    process.exit(1);
-  }
-})();
+
+// ─── Express and HTTP Setup ───
+
 const app = express();
 const server = http.createServer(app);
 
@@ -49,13 +40,6 @@ app.use(session({
   saveUninitialized: false,
 }));
 
-(async () => {
-  try {
-    await initStrategies();
-  } catch (err) {
-    console.error("Failed to init social login strategies", err);
-  }
-})();
 app.use(passport.initialize());
 
 // 🌐 CORS Middleware
@@ -183,6 +167,19 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5002;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await db.migrate.latest({ directory: path.join(__dirname, "migrations") });
+    console.log("✅ Database migrations up to date");
+    await initStrategies();
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err.message);
+    process.exit(1);
+  }
+}
+
+startServer();
