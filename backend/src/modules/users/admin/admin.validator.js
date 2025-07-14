@@ -2,6 +2,7 @@ const { z } = require("zod");
 
 exports.adminProfileSchema = z.object({
   full_name: z.string().min(3),
+  email: z.string().email(),
   phone: z.string().min(8),
   gender: z.string().min(1),             // ✅ Added
   date_of_birth: z.string().min(4),      // ✅ Added

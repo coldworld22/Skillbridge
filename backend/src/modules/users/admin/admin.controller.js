@@ -57,6 +57,7 @@ exports.updateProfile = async (req, res) => {
   const userId = req.user.id;
   const {
     full_name,
+    email,
     phone,
     gender,
     date_of_birth,
@@ -68,6 +69,7 @@ exports.updateProfile = async (req, res) => {
 
   // 1. Update core user fields
   await db("users").where({ id: userId }).update({
+    email,
     full_name,
     phone,
     gender,
