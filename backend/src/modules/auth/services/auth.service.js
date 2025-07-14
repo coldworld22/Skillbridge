@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
-const { sendOtpEmail } = require("../../../utils/email");
+const { sendOtpEmail, sendPasswordChangeEmail } = require("../../../utils/email");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
@@ -217,6 +217,8 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  await sendPasswordChangeEmail(user.email);
 
   await notificationService.createNotification({
     user_id: user.id,
