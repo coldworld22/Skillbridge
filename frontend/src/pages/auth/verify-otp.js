@@ -63,12 +63,14 @@ export default function VerifyOTP() {
     try {
       const result = await verifyOtpCode({ email, code });
       if (result.valid) {
-        toast.success("OTP verified!");
+        toast.success("OTP verified! Redirecting...");
         localStorage.setItem("otp_verified_email", email);
         localStorage.setItem("otp_verified_code", code);
 
         setIsVerified(true);
-        router.push("/auth/reset-password");
+        setTimeout(() => {
+          router.push("/auth/reset-password");
+        }, 500);
       } else {
         toast.error("Invalid OTP code.");
       }
