@@ -4,15 +4,22 @@ const emailConfigService = require("../modules/emailConfig/emailConfig.service")
 
 async function createTransporter() {
   const cfg = (await emailConfigService.getSettings()) || {};
+
+  const host = (cfg.smtpHost || process.env.SMTP_HOST || "").trim();
+  const port = parseInt(cfg.smtpPort || process.env.SMTP_PORT, 10);
+  const user = (cfg.username || process.env.SMTP_USER || "").trim();
+  const pass = (cfg.password || process.env.SMTP_PASS || "").trim();
+
   return nodemailer.createTransport({
-    host: cfg.smtpHost || process.env.SMTP_HOST,
-    port: cfg.smtpPort || process.env.SMTP_PORT,
+    host,
+    port,
     secure:
-      cfg.encryption === "SSL" || cfg.encryption === "TLS" ||
+      cfg.encryption === "SSL" ||
+      cfg.encryption === "TLS" ||
       process.env.SMTP_SECURE === "true",
     auth: {
-      user: cfg.username || process.env.SMTP_USER,
-      pass: cfg.password || process.env.SMTP_PASS,
+      user,
+      pass,
     },
   });
 }
