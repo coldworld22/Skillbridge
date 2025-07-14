@@ -1,34 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import FormField from "@/components/ui/FormField";
 import FormSelect from "@/components/ui/FormSelect";
 import PasswordField from "@/components/ui/PasswordField";
 import { FaSave, FaEnvelopeOpenText } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { fetchEmailConfig, updateEmailConfig } from "@/services/admin/emailConfigService";
+
+const defaultConfig = {
+  fromName: "SkillBridge Admin",
+  fromEmail: "admin@skillbridge.com",
+  replyTo: "support@skillbridge.com",
+  smtpHost: "smtp.gmail.com",
+  smtpPort: 587,
+  encryption: "TLS",
+  username: "admin@skillbridge.com",
+  password: "",
+  method: "smtp",
+};
 
 export default function EmailConfigPage() {
-  const [form, setForm] = useState({
-    fromName: "SkillBridge Admin",
-    fromEmail: "admin@skillbridge.com",
-    replyTo: "support@skillbridge.com",
-    smtpHost: "smtp.gmail.com",
-    smtpPort: 587,
-    encryption: "TLS",
-    username: "admin@skillbridge.com",
-    password: "",
-    method: "smtp",
-  });
+  const [form, setForm] = useState(defaultConfig);
 
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchEmailConfig();
+        if (data) setForm({ ...defaultConfig, ...data });
+      } catch (err) {
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    toast.success("✅ Email configuration saved successfully!");
-    // TODO: connect to backend
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await updateEmailConfig(form);
+      toast.success("✅ Email configuration saved successfully!");
+    } catch (err) {
+      toast.error("Failed to save settings");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendTestEmail = () => {

@@ -1,21 +1,30 @@
 // 📁 src/utils/email.js
 const nodemailer = require("nodemailer");
+const emailConfigService = require("../modules/emailConfig/emailConfig.service");
 
-// Create a transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+async function createTransporter() {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  return nodemailer.createTransport({
+    host: cfg.smtpHost || process.env.SMTP_HOST,
+    port: cfg.smtpPort || process.env.SMTP_PORT,
+    secure:
+      cfg.encryption === "SSL" || cfg.encryption === "TLS" ||
+      process.env.SMTP_SECURE === "true",
+    auth: {
+      user: cfg.username || process.env.SMTP_USER,
+      pass: cfg.password || process.env.SMTP_PASS,
+    },
+  });
+}
 
-// Send OTP Email
+exports.createTransporter = createTransporter;
+
+// Send OTP Email using saved configuration or env vars
 exports.sendOtpEmail = async (to, otp) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: cfg.fromEmail || process.env.SMTP_USER,
     to,
     subject: "Your OTP for SkillBridge",
     html: `<p>Your OTP code is: <strong>${otp}</strong></p>`,
