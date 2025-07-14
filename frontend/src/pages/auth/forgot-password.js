@@ -24,7 +24,10 @@ export default function ForgotPassword() {
       toast.success("OTP sent successfully!");
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
-      const msg = err?.response?.data?.error || "Failed to send OTP.";
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Failed to send OTP.";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);

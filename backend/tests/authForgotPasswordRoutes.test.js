@@ -1,6 +1,10 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/config/database', () => ({
+  raw: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../src/modules/auth/services/auth.service', () => ({
   generateOtp: jest.fn(),
 }));
