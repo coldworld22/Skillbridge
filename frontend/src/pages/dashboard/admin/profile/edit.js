@@ -15,6 +15,7 @@ import { getAdminProfile, updateAdminProfile } from "@/services/admin/adminServi
 
 const profileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
   phone: z.string().min(8, "Phone must be at least 8 digits"),
   job_title: z.string().min(2),
   department: z.string().min(2),
@@ -29,6 +30,7 @@ export default function ProfileEditTemplate() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
+    email: "",
     phone: "",
     gender: "male",
     date_of_birth: "",
@@ -58,6 +60,7 @@ export default function ProfileEditTemplate() {
         const res = await getAdminProfile();
         const {
           full_name,
+          email,
           phone,
           gender,
           date_of_birth,
@@ -75,6 +78,7 @@ export default function ProfileEditTemplate() {
         setFormData((prev) => ({
           ...prev,
           full_name,
+          email: email || "",
           phone,
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
@@ -132,6 +136,7 @@ export default function ProfileEditTemplate() {
 
       await updateAdminProfile({
         full_name: formData.full_name,
+        email: formData.email,
         phone: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
@@ -145,6 +150,7 @@ export default function ProfileEditTemplate() {
       setUser({
         ...user,
         full_name: fresh.full_name,
+        email: fresh.email,
         phone: fresh.phone,
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
@@ -154,6 +160,7 @@ export default function ProfileEditTemplate() {
 
       setFormData((prev) => ({
         ...prev,
+        email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
         avatarPreview: fresh.avatar_url
@@ -213,6 +220,17 @@ export default function ProfileEditTemplate() {
                     className={`w-full px-3 py-2 border ${errors.full_name ? "border-red-500" : "border-gray-300"} rounded-md`}
                   />
                   {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border ${errors.email ? "border-red-500" : "border-gray-300"} rounded-md`}
+                  />
+                  {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Phone *</label>
