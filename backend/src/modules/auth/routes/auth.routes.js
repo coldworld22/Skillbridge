@@ -44,6 +44,18 @@ router.post("/logout", authController.logout);
 router.post("/request-reset", limitAuthRequests, validate(authValidation.otpRequestSchema), authController.requestReset);
 
 /**
+ * @route   POST /auth/forgot-password
+ * @desc    Alias for requesting a password reset OTP via email
+ * @access  Public
+ */
+router.post(
+  "/forgot-password",
+  limitAuthRequests,
+  validate(authValidation.otpRequestSchema),
+  authController.requestReset
+);
+
+/**
  * @route   POST /auth/verify-otp
  * @desc    Verify submitted OTP code
  * @access  Public
