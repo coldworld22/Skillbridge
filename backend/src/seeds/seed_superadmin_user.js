@@ -35,6 +35,15 @@ exports.seed = async function(knex) {
     })
     .returning("id");
 
+  // Create matching admin profile
+  await knex("admin_profiles").insert({
+    user_id: superAdminUserId.id || superAdminUserId,
+    job_title: "Super Administrator",
+    department: "Management",
+    created_at: knex.fn.now(),
+    updated_at: knex.fn.now(),
+  });
+
   // 🔗 Link user to role (if using a many-to-many system)
   await knex("user_roles").insert({
     user_id: superAdminUserId.id || superAdminUserId,
