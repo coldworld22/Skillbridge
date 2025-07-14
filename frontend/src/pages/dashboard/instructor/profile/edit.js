@@ -254,8 +254,9 @@ export default function InstructorProfileEdit() {
       const blob = await fetch(croppedUrl).then((r) => r.blob());
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadInstructorAvatar(user.id, file);
-      const setUser = useAuthStore.getState().setUser;
-      setUser((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+      const { setUser } = useAuthStore.getState();
+      const current = useAuthStore.getState().user;
+      setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
