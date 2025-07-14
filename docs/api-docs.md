@@ -10,8 +10,8 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 - `POST /login` – authenticate and receive tokens
 - `POST /refresh` – refresh an access token
 - `POST /logout` – clear the refresh token
-- `POST /request-reset` – send a password reset OTP
-- `POST /forgot-password` – alternative endpoint to request a reset OTP
+- `POST /request-reset` – send a password reset OTP *(legacy)*
+- `POST /forgot-password` – send a password reset OTP via email
 - `POST /verify-otp` – verify the reset code
 - `POST /reset-password` – update the password
 

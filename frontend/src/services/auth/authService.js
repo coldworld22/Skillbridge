@@ -39,7 +39,7 @@ export const registerUser = async (payload) => {
  * @returns {Promise<{ message: string }>}
  */
 export const requestPasswordReset = async (email) => {
-  const res = await api.post("/auth/request-reset", { email });
+  const res = await api.post("/auth/forgot-password", { email });
   return res.data;
 };
 
