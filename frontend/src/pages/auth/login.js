@@ -63,6 +63,7 @@ export default function Login() {
         admin: "/dashboard/admin/profile/edit",
         instructor: "/dashboard/instructor/profile/edit",
         student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
       };
       const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
       router.replace(rolePath);
@@ -89,6 +90,7 @@ export default function Login() {
       admin: "/dashboard/admin/profile/edit",
       instructor: "/dashboard/instructor/profile/edit",
       student: "/dashboard/student/profile/edit",
+      superadmin: "/dashboard/admin/profile/edit",
     };
 
     const targetPath =
