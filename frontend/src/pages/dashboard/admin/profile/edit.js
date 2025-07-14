@@ -361,6 +361,30 @@ export default function ProfileEditTemplate() {
                   />
                   {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Job Title *</label>
+                  <input
+                    name="job_title"
+                    value={formData.job_title}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border ${errors.job_title ? "border-red-500" : "border-gray-300"} rounded-md`}
+                  />
+                  {errors.job_title && (
+                    <p className="text-sm text-red-500 mt-1">{errors.job_title}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Department *</label>
+                  <input
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border ${errors.department ? "border-red-500" : "border-gray-300"} rounded-md`}
+                  />
+                  {errors.department && (
+                    <p className="text-sm text-red-500 mt-1">{errors.department}</p>
+                  )}
+                </div>
                 {/* Gender and DOB */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Gender *</label>
