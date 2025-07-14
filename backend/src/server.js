@@ -12,7 +12,9 @@ const db = require("./config/database");
 const path = require("path");
 require("dotenv").config();
 
+
 // ─── Express and HTTP Setup ───
+
 const app = express();
 const server = http.createServer(app);
 
