@@ -9,25 +9,37 @@ Follow these steps to run SkillBridge on a server or production host.
    - `FRONTEND_URL` – set this to the full URL of your frontend. You can
      specify multiple domains separated by commas. For example:
      
-     ```bash
-   # Example using SkillBridge's VPS domain and IP
-   FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
-   # Do not prefix with "FRONTEND_URL=" when using
-   # docker-compose environment variables.
+    ```bash
+  # Example using SkillBridge's VPS domain and IP
+  FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
+  # Do not prefix with "FRONTEND_URL=" when using
+  # docker-compose environment variables.
     ```
 
    If the frontend and backend are on different subdomains, also set
-   `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
+    `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
 
-   ```bash
-   COOKIE_DOMAIN=.eduskillbridge.net
-   ```
+    ```bash
+    COOKIE_DOMAIN=.eduskillbridge.net
+    ```
+
+    To enable password recovery via email, provide SMTP settings or
+    configure them later through the `/api/email-config` endpoint. At a minimum
+    the backend requires the following variables:
+
+    ```bash
+    SMTP_HOST=smtp.mailtrap.io
+    SMTP_PORT=587
+    SMTP_SECURE=false
+    SMTP_USER=your_smtp_username
+    SMTP_PASS=your_smtp_password
+    ```
      
     This value is used for CORS and socket.io connections. If it still points to
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
-2. **Frontend** – create a `.env.local` file inside `frontend` and set
+ 2. **Frontend** – create a `.env.local` file inside `frontend` and set
    `NEXT_PUBLIC_API_BASE_URL` to your backend URL including the `/api` prefix.
    For example:
    
