@@ -83,8 +83,9 @@ const Navbar = () => {
         admin: "/dashboard/admin/profile/edit",
         instructor: "/dashboard/instructor/profile/edit",
         student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
       };
-      const rolePath = profilePaths[userRole] || "/auth/login";
+      const rolePath = profilePaths[userRole] || "/website";
       if (router.pathname !== rolePath) {
         router.replace(rolePath);
         toast.info("Please complete your profile to continue.");
