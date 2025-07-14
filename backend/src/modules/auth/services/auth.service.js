@@ -161,7 +161,7 @@ exports.verifyRefreshToken = (token) => {
  */
 exports.generateOtp = async (email) => {
   const user = await userModel.findByEmail(email);
-  if (!user) throw new AppError("User not found", 404);
+  if (!user) throw new AppError("Email not found", 404);
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000);

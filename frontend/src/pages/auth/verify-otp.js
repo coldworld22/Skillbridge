@@ -68,7 +68,7 @@ export default function VerifyOTP() {
         localStorage.setItem("otp_verified_code", code);
 
         setIsVerified(true);
-        setTimeout(() => router.push("/auth/reset-password"), 2000);
+        router.push("/auth/reset-password");
       } else {
         toast.error("Invalid OTP code.");
       }

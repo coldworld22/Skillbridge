@@ -24,11 +24,17 @@ export default function ForgotPassword() {
       toast.success("OTP sent successfully!");
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Failed to send OTP.";
-      toast.error(msg);
+
+      if (err?.response?.status === 404) {
+        toast.error("This email does not exist.");
+      } else {
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to send OTP.";
+        toast.error(msg);
+      }
+
     } finally {
       setIsSubmitting(false);
     }
