@@ -1,15 +1,29 @@
 // Reusable Admin Profile Edit Template (Tailwind + API + Zod + Crop + Upload + Modal)
 // This is based on the polished UI you implemented — to be used for other roles/forms
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { FaSpinner, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import {
+  FaSpinner,
+  FaChevronDown,
+  FaChevronUp,
+  FaUserCircle,
+  FaTrash,
+  FaUpload,
+  FaCheck,
+} from "react-icons/fa";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useAuthStore from "@/store/auth/authStore";
-import { getAdminProfile, updateAdminProfile } from "@/services/admin/adminService";
+import {
+  getAdminProfile,
+  updateAdminProfile,
+  uploadAdminAvatar,
+} from "@/services/admin/adminService";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -43,6 +57,12 @@ export default function ProfileEditTemplate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
+  const [showCropper, setShowCropper] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [tempAvatar, setTempAvatar] = useState(null);
+  const [tempFileName, setTempFileName] = useState("");
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   useEffect(() => {
@@ -107,6 +127,57 @@ export default function ProfileEditTemplate() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const onCropComplete = useCallback((_, area) => {
+    setCroppedAreaPixels(area);
+  }, []);
+
+  const handleAvatarSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Max size 2MB");
+      return;
+    }
+    setTempFileName(file.name);
+    setTempAvatar(URL.createObjectURL(file));
+    setShowCropper(true);
+  };
+
+  const handleCropUpload = async () => {
+    if (!tempAvatar || !croppedAreaPixels) return;
+    setIsSubmitting(true);
+    try {
+      const croppedUrl = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      const blob = await fetch(croppedUrl).then((r) => r.blob());
+      const file = new File([blob], tempFileName || "avatar.jpg", {
+        type: blob.type,
+      });
+      const res = await uploadAdminAvatar(user.id, file);
+      const setUser = useAuthStore.getState().setUser;
+      setUser((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+      setFormData((prev) => ({
+        ...prev,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+      }));
+      setShowCropper(false);
+      URL.revokeObjectURL(tempAvatar);
+      setTempAvatar(null);
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    setTempAvatar(null);
+    setCroppedAreaPixels(null);
+    setZoom(1);
+    setCrop({ x: 0, y: 0 });
   };
 
   const validateForm = () => {
@@ -200,6 +271,52 @@ export default function ProfileEditTemplate() {
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Profile Edit</h1>
         <div className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <FaUserCircle className="text-yellow-600" /> Profile Picture
+            </h2>
+            <div className="flex flex-col items-center">
+              {formData.avatarPreview ? (
+                <div className="relative mb-4">
+                  <img
+                    src={formData.avatarPreview}
+                    alt="Avatar"
+                    className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
+                  />
+                  <button
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, avatarPreview: null }))
+                    }
+                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
+                  <FaUserCircle size={48} className="text-gray-400" />
+                </div>
+              )}
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarSelect}
+                  className="hidden"
+                />
+                <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
+                  {isSubmitting ? (
+                    <FaSpinner className="animate-spin" />
+                  ) : (
+                    <FaUpload />
+                  )}
+                  {formData.avatarPreview ? "Change Photo" : "Upload Photo"}
+                </div>
+              </label>
+            </div>
+          </div>
+
           {/* Personal Section */}
           <div className="bg-white border rounded-xl shadow">
             <div
@@ -320,6 +437,38 @@ export default function ProfileEditTemplate() {
           </div>
         </div>
       </div>
+      {showCropper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
+            <div className="relative w-full h-64">
+              <Cropper
+                image={tempAvatar}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={handleCropCancel}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropUpload}
+                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
+              >
+                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
