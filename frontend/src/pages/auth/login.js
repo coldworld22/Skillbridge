@@ -63,6 +63,7 @@ export default function Login() {
         admin: "/dashboard/admin/profile/edit",
         instructor: "/dashboard/instructor/profile/edit",
         student: "/dashboard/student/profile/edit",
+        superadmin: "/dashboard/admin/profile/edit",
       };
       const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
       router.replace(rolePath);
@@ -89,6 +90,7 @@ export default function Login() {
       admin: "/dashboard/admin/profile/edit",
       instructor: "/dashboard/instructor/profile/edit",
       student: "/dashboard/student/profile/edit",
+      superadmin: "/dashboard/admin/profile/edit",
     };
 
     const targetPath =
@@ -108,7 +110,7 @@ export default function Login() {
 
     if (err.code === "ERR_NETWORK") {
       msg =
-        "Network error: please check your connection or server configuration.";
+        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.";
     }
 
     toast.error(msg);
