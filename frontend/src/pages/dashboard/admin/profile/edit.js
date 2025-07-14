@@ -171,6 +171,17 @@ export default function ProfileEditTemplate() {
     }
   };
 
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    setTempAvatar(null);
+    setCroppedAreaPixels(null);
+    setZoom(1);
+    setCrop({ x: 0, y: 0 });
+  };
+
+
   const validateForm = () => {
     try {
       profileSchema.parse(formData);
@@ -444,11 +455,9 @@ export default function ProfileEditTemplate() {
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => {
-                  setShowCropper(false);
-                  if (tempAvatar) URL.revokeObjectURL(tempAvatar);
-                  setTempAvatar(null);
-                }}
+
+                onClick={handleCropCancel}
+
                 className="px-4 py-2 bg-gray-200 rounded"
               >
                 Cancel
