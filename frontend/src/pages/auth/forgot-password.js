@@ -24,6 +24,7 @@ export default function ForgotPassword() {
       toast.success("OTP sent successfully!");
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
+
       if (err?.response?.status === 404) {
         toast.error("This email does not exist.");
       } else {
@@ -33,6 +34,7 @@ export default function ForgotPassword() {
           "Failed to send OTP.";
         toast.error(msg);
       }
+
     } finally {
       setIsSubmitting(false);
     }
