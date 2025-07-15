@@ -22,11 +22,12 @@ export default function ForgotPassword() {
     try {
       await authService.requestPasswordReset(email);
       toast.success("OTP sent successfully!");
+      localStorage.setItem("otp_email", email);
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
 
       if (err?.response?.status === 404) {
-        toast.error("This email does not exist.");
+        toast.error("This account does not exist. Please register.");
       } else {
         const msg =
           err?.response?.data?.message ||

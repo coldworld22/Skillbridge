@@ -69,10 +69,13 @@ export default function VerifyOTP() {
 
         setIsVerified(true);
         setTimeout(() => {
-          router.push("/auth/reset-password");
+          router.push({
+            pathname: "/auth/reset-password",
+            query: { email, code },
+          });
         }, 500);
       } else {
-        toast.error("Invalid OTP code.");
+        toast.error("Wrong OTP code.");
       }
     } catch (err) {
       const msg = err?.response?.data?.message || "Verification failed.";
