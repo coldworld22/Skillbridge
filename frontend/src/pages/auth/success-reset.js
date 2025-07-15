@@ -15,17 +15,16 @@ export default function SuccessReset() {
     if (!verifiedEmail) {
       toast.info("Please complete the OTP verification first.");
       router.replace("/auth/forgot-password");
-    } else {
-      toast.success("Password reset successful!");
-      localStorage.removeItem("otp_verified_email");
-      localStorage.removeItem("otp_verified_code");
-      // Automatically redirect user to login after short delay
-      const timer = setTimeout(() => {
-        router.push("/auth/login");
-      }, 4000);
-
-      return () => clearTimeout(timer);
+      return;
     }
+
+    localStorage.removeItem("otp_verified_email");
+    localStorage.removeItem("otp_verified_code");
+    const timer = setTimeout(() => {
+      router.push("/auth/login");
+    }, 4000);
+
+    return () => clearTimeout(timer);
   }, [router]);
 
   return (
