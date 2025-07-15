@@ -3,6 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchAppConfig, updateAppConfig, uploadAppLogo, uploadAppFavicon } from "@/services/admin/appConfigService";
 import { FaSave, FaUpload, FaImage, FaGlobe } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "@/config/config";
 
 const defaultConfig = { 
   appName: "", 
@@ -205,9 +206,12 @@ export default function AppSettingsPage() {
                 
                 {(config.logo_url || logoPreview) && (
                   <div className="mb-3 flex items-center gap-4">
-                    <img 
-                      src={logoPreview || config.logo_url} 
-                      alt="Logo preview" 
+                    <img
+                      src={
+                        logoPreview ||
+                        (config.logo_url ? `${API_BASE_URL}${config.logo_url}` : "")
+                      }
+                      alt="Logo preview"
                       className="h-16 object-contain border border-gray-200 dark:border-gray-600 rounded"
                     />
                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -251,9 +255,14 @@ export default function AppSettingsPage() {
                 
                 {(config.favicon_url || faviconPreview) && (
                   <div className="mb-3 flex items-center gap-4">
-                    <img 
-                      src={faviconPreview || config.favicon_url} 
-                      alt="Favicon preview" 
+                    <img
+                      src={
+                        faviconPreview ||
+                        (config.favicon_url
+                          ? `${API_BASE_URL}${config.favicon_url}`
+                          : "")
+                      }
+                      alt="Favicon preview"
                       className="h-10 w-10 object-contain border border-gray-200 dark:border-gray-600 rounded"
                     />
                     <span className="text-xs text-gray-500 dark:text-gray-400">
