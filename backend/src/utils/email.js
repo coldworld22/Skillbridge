@@ -76,7 +76,7 @@ exports.sendOtpEmail = async (to, otp) => {
         <p style="font-size:24px"><strong>🔐 ${otp}</strong></p>
         <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
 
-        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
+        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:${support}">${support}</a>.</p>
         <p>Thank you,<br/>The SkillBridge Team</p>
         ${EMAIL_FOOTER}
       </div>`,
