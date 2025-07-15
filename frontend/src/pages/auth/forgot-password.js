@@ -22,6 +22,7 @@ export default function ForgotPassword() {
     try {
       await authService.requestPasswordReset(email);
       toast.success("OTP sent successfully!");
+      localStorage.setItem("otp_email", email);
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
 

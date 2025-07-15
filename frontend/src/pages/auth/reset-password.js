@@ -18,17 +18,24 @@ export default function ResetPassword() {
   const [code, setCode] = useState("");
 
   useEffect(() => {
-    const verifiedEmail = localStorage.getItem("otp_verified_email");
-    const verifiedCode = localStorage.getItem("otp_verified_code");
+    const queryEmail = router.query.email;
+    const queryCode = router.query.code;
+    const storedEmail = localStorage.getItem("otp_verified_email");
+    const storedCode = localStorage.getItem("otp_verified_code");
 
-    if (!verifiedEmail || !verifiedCode) {
+    if (queryEmail && queryCode) {
+      localStorage.setItem("otp_verified_email", queryEmail);
+      localStorage.setItem("otp_verified_code", queryCode);
+      setEmail(queryEmail);
+      setCode(queryCode);
+    } else if (storedEmail && storedCode) {
+      setEmail(storedEmail);
+      setCode(storedCode);
+    } else {
       toast.error("Missing OTP verification. Please try again.");
       router.replace("/auth/forgot-password");
-    } else {
-      setEmail(verifiedEmail);
-      setCode(verifiedCode);
     }
-  }, [router]);
+  }, [router.query]);
 
   const isStrongPassword =
     newPassword.length >= 8 &&
