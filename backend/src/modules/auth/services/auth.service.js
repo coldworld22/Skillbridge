@@ -14,7 +14,7 @@ const messageService = require("../../messages/messages.service");
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "15m";
 const REFRESH_EXPIRES_IN = "7d";
-const OTP_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_MINUTES = 15;
 
 /**
  * Register a new user

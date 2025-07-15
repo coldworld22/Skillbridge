@@ -24,7 +24,8 @@ Follow these steps to run SkillBridge on a server or production host.
     ```
 
     To enable password recovery via email, provide SMTP settings or
-    configure them later through the `/api/email-config` endpoint. At a minimum
+    configure them later through the `/api/email-config` endpoint or the admin
+    dashboard at `/dashboard/admin/settings/email-config`. At a minimum
     the backend requires the following variables:
 
     ```bash
@@ -34,6 +35,9 @@ Follow these steps to run SkillBridge on a server or production host.
     SMTP_USER=your_smtp_username
     SMTP_PASS=your_smtp_password
     ```
+
+    The default templates include your logo and a footer. OTP codes expire
+    after **15 minutes**.
      
     This value is used for CORS and socket.io connections. If it still points to
     `http://localhost:3001` you may see `Network Error` or CORS errors when
