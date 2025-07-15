@@ -2,6 +2,10 @@
 const nodemailer = require("nodemailer");
 const emailConfigService = require("../modules/emailConfig/emailConfig.service");
 
+// Common footer used in transactional emails
+const EMAIL_FOOTER =
+  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
+
 async function createTransporter() {
   const cfg = (await emailConfigService.getSettings()) || {};
 
@@ -38,8 +42,6 @@ exports.sendOtpEmail = async (to, otp) => {
   ).trim();
   const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
 
-  const footer =
-    '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
     replyTo: cfg.replyTo || fromEmail,
@@ -54,7 +56,7 @@ exports.sendOtpEmail = async (to, otp) => {
         <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
         <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
         <p>Thank you,<br/>The SkillBridge Team</p>
-        ${footer}
+        ${EMAIL_FOOTER}
       </div>`,
   };
 
@@ -78,8 +80,6 @@ exports.sendPasswordChangeEmail = async (to) => {
   ).trim();
   const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
 
-  const footer =
-    '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
     replyTo: cfg.replyTo || fromEmail,
@@ -93,7 +93,7 @@ exports.sendPasswordChangeEmail = async (to) => {
         <p>If you did not request this change, please contact us <strong>immediately</strong> at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
         <p>For your security, we recommend regularly updating your password and not sharing it with others.</p>
         <p>Thank you,<br/>The SkillBridge Team</p>
-        ${footer}
+        ${EMAIL_FOOTER}
       </div>`,
   };
 
