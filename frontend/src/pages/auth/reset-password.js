@@ -62,9 +62,6 @@ export default function ResetPassword() {
     try {
       await resetPassword({ email, code, new_password: newPassword });
       toast.success("Password reset successful!");
-      // Clear stored verification data once password has been changed
-      localStorage.removeItem("otp_verified_email");
-      localStorage.removeItem("otp_verified_code");
       router.push("/auth/success-reset");
     } catch (err) {
       const msg = err?.response?.data?.message || "Password reset failed.";

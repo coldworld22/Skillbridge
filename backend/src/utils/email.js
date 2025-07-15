@@ -31,14 +31,31 @@ exports.sendOtpEmail = async (to, otp) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "no-reply@eduskillbridge.net"
+  ).trim();
   const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
 
+  const footer =
+    '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
     to,
     subject: "Your OTP for SkillBridge",
-    html: `<p>Your OTP code is: <strong>${otp}</strong></p>`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="https://eduskillbridge.net/logo.png" alt="SkillBridge" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your One-Time Password (OTP) for verifying your SkillBridge account is:</p>
+        <p style="font-size:24px"><strong>🔐 ${otp}</strong></p>
+        <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
+        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
+        <p>Thank you,<br/>The SkillBridge Team</p>
+        ${footer}
+      </div>`,
   };
 
   try {
@@ -54,14 +71,30 @@ exports.sendPasswordChangeEmail = async (to) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  const fromEmail = (cfg.fromEmail || process.env.SMTP_USER || "").trim();
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "no-reply@eduskillbridge.net"
+  ).trim();
   const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
 
+  const footer =
+    '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
     to,
     subject: "Your SkillBridge password was changed",
-    html: `<p>Your password was changed successfully. If you didn't request this, please contact support immediately.</p>`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="https://eduskillbridge.net/logo.png" alt="SkillBridge" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your SkillBridge password was changed successfully.</p>
+        <p>If you did not request this change, please contact us <strong>immediately</strong> at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
+        <p>For your security, we recommend regularly updating your password and not sharing it with others.</p>
+        <p>Thank you,<br/>The SkillBridge Team</p>
+        ${footer}
+      </div>`,
   };
 
   try {
