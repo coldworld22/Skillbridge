@@ -213,6 +213,11 @@ exports.resetPassword = async ({ email, code, new_password }) => {
 
   if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
 
+  const samePassword = await bcrypt.compare(new_password, user.password_hash);
+  if (samePassword) {
+    throw new AppError("You already used this password before", 400);
+  }
+
   const hashed = await bcrypt.hash(new_password, SALT_ROUNDS);
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
