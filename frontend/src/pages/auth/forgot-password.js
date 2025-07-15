@@ -26,7 +26,7 @@ export default function ForgotPassword() {
     } catch (err) {
 
       if (err?.response?.status === 404) {
-        toast.error("This email does not exist.");
+        toast.error("This account does not exist. Please register.");
       } else {
         const msg =
           err?.response?.data?.message ||

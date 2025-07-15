@@ -48,8 +48,6 @@ export default function ResetPassword() {
 
     try {
       await resetPassword({ email, code, new_password: newPassword });
-      localStorage.removeItem("otp_verified_email");
-      localStorage.removeItem("otp_verified_code");
       toast.success("Password reset successful!");
       router.push("/auth/success-reset");
     } catch (err) {

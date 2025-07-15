@@ -72,7 +72,7 @@ export default function VerifyOTP() {
           router.push("/auth/reset-password");
         }, 500);
       } else {
-        toast.error("Invalid OTP code.");
+        toast.error("Wrong OTP code.");
       }
     } catch (err) {
       const msg = err?.response?.data?.message || "Verification failed.";
