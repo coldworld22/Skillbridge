@@ -145,7 +145,6 @@ app.post("/api/video-calls/:roomId/messages", (req, res) => {
 });
 
 app.use(require("./middleware/errorHandler"));
-
 const PORT = process.env.PORT || 5002;
 
 async function startServer() {
