@@ -37,7 +37,11 @@ Follow these steps to run SkillBridge on a server or production host.
     ```
 
     The default templates include your logo and a footer. OTP codes expire
-    after **15 minutes**.
+
+    after **15 minutes**. You can customize the app name, logo and contact
+    email from `/dashboard/admin/settings/app` so outbound emails show your
+    branding.
+
      
     This value is used for CORS and socket.io connections. If it still points to
     `http://localhost:3001` you may see `Network Error` or CORS errors when

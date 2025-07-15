@@ -1,6 +1,7 @@
 // 📁 src/utils/email.js
 const nodemailer = require("nodemailer");
 const emailConfigService = require("../modules/emailConfig/emailConfig.service");
+const appConfigService = require("../modules/appConfig/appConfig.service");
 
 async function createTransporter() {
   const cfg = (await emailConfigService.getSettings()) || {};
@@ -29,6 +30,7 @@ exports.createTransporter = createTransporter;
 // Send OTP Email using saved configuration or env vars
 exports.sendOtpEmail = async (to, otp) => {
   const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
   const fromEmail = (
@@ -36,7 +38,21 @@ exports.sendOtpEmail = async (to, otp) => {
     process.env.SMTP_USER ||
     "no-reply@eduskillbridge.net"
   ).trim();
-  const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
+
+  const footer = `<p style="font-size:12px;color:#555;margin-top:20px">${fromName} © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>`;
+
 
   const footer =
     '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
@@ -44,16 +60,18 @@ exports.sendOtpEmail = async (to, otp) => {
     from: `${fromName} <${fromEmail}>`,
     replyTo: cfg.replyTo || fromEmail,
     to,
-    subject: "Your OTP for SkillBridge",
+
+    subject: `Your OTP for ${fromName}`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
-        <img src="https://eduskillbridge.net/logo.png" alt="SkillBridge" style="max-width:150px;margin-bottom:20px"/>
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
         <p>Hello,</p>
-        <p>Your One-Time Password (OTP) for verifying your SkillBridge account is:</p>
+        <p>Your One-Time Password (OTP) for verifying your ${fromName} account is:</p>
         <p style="font-size:24px"><strong>🔐 ${otp}</strong></p>
         <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
-        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
-        <p>Thank you,<br/>The SkillBridge Team</p>
+        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:${support}">${support}</a>.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+
         ${footer}
       </div>`,
   };
@@ -69,6 +87,7 @@ exports.sendOtpEmail = async (to, otp) => {
 // Notify user of successful password change
 exports.sendPasswordChangeEmail = async (to) => {
   const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
   const fromEmail = (
@@ -76,7 +95,21 @@ exports.sendPasswordChangeEmail = async (to) => {
     process.env.SMTP_USER ||
     "no-reply@eduskillbridge.net"
   ).trim();
-  const fromName = (cfg.fromName || process.env.SMTP_NAME || "SkillBridge").trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
+
+  const footer = `<p style="font-size:12px;color:#555;margin-top:20px">${fromName} © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>`;
+
 
   const footer =
     '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
@@ -84,15 +117,17 @@ exports.sendPasswordChangeEmail = async (to) => {
     from: `${fromName} <${fromEmail}>`,
     replyTo: cfg.replyTo || fromEmail,
     to,
-    subject: "Your SkillBridge password was changed",
+
+    subject: `Your ${fromName} password was changed`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
-        <img src="https://eduskillbridge.net/logo.png" alt="SkillBridge" style="max-width:150px;margin-bottom:20px"/>
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
         <p>Hello,</p>
-        <p>Your SkillBridge password was changed successfully.</p>
-        <p>If you did not request this change, please contact us <strong>immediately</strong> at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
+        <p>Your ${fromName} password was changed successfully.</p>
+        <p>If you did not request this change, please contact us <strong>immediately</strong> at <a href="mailto:${support}">${support}</a>.</p>
         <p>For your security, we recommend regularly updating your password and not sharing it with others.</p>
-        <p>Thank you,<br/>The SkillBridge Team</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+
         ${footer}
       </div>`,
   };
