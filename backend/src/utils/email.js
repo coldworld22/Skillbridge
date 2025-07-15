@@ -7,10 +7,6 @@ const appConfigService = require("../modules/appConfig/appConfig.service");
 const EMAIL_FOOTER =
   '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
 
-// Common footer used in transactional emails
-const EMAIL_FOOTER =
-  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
-
 // Skip actual email sending when true
 const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
 
@@ -55,6 +51,16 @@ exports.sendOtpEmail = async (to, otp) => {
     "no-reply@eduskillbridge.net"
   ).trim();
 
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -70,7 +76,7 @@ exports.sendOtpEmail = async (to, otp) => {
         <p style="font-size:24px"><strong>🔐 ${otp}</strong></p>
         <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
 
-        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:support@eduskillbridge.net">support@eduskillbridge.net</a>.</p>
+        <p>If you didn’t request this, please ignore this message or contact us at <a href="mailto:${support}">${support}</a>.</p>
         <p>Thank you,<br/>The SkillBridge Team</p>
         ${EMAIL_FOOTER}
       </div>`,
@@ -101,6 +107,16 @@ exports.sendPasswordChangeEmail = async (to) => {
     "no-reply@eduskillbridge.net"
   ).trim();
 
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
