@@ -19,6 +19,12 @@ export default function SuccessReset() {
       toast.success("Password reset successful!");
       localStorage.removeItem("otp_verified_email");
       localStorage.removeItem("otp_verified_code");
+      // Automatically redirect user to login after short delay
+      const timer = setTimeout(() => {
+        router.push("/auth/login");
+      }, 4000);
+
+      return () => clearTimeout(timer);
     }
   }, [router]);
 

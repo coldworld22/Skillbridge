@@ -25,9 +25,11 @@ export default function ForgotPassword() {
       localStorage.setItem("otp_email", email);
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
+      const status = err?.response?.status;
+      const message = err?.response?.data?.message || "";
 
-      if (err?.response?.status === 404) {
-        toast.error("This account does not exist. Please register.");
+      if (status === 404 || message.toLowerCase().includes("not found")) {
+        toast.error("Account not found. Please register first.");
       } else {
         const msg =
           err?.response?.data?.message ||
