@@ -10,6 +10,12 @@ const nextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5002',
+        pathname: '/**',
+      },
+      {
         protocol: 'https',
         hostname: 'eduskillbridge.net',
         pathname: '/api/uploads/**', // Production domain
