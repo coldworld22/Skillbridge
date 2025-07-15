@@ -7,10 +7,6 @@ const appConfigService = require("../modules/appConfig/appConfig.service");
 const EMAIL_FOOTER =
   '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
 
-// Common footer used in transactional emails
-const EMAIL_FOOTER =
-  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
-
 // Skip actual email sending when true
 const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
 
