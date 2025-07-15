@@ -1,6 +1,7 @@
 const authService = require("../services/auth.service");
 const userModel = require("../../users/user.model");
 const catchAsync = require("../../../utils/catchAsync");
+const AppError = require("../../../utils/AppError");
 
 // 🔧 Cookie options used in login and logout
 const refreshCookieOptions = {
@@ -102,6 +103,12 @@ exports.logout = catchAsync(async (req, res) => {
  */
 exports.requestReset = catchAsync(async (req, res) => {
   const { email } = req.body;
+  // Ensure the email exists before attempting to send an OTP
+  const userExists = await userModel.findByEmail(email);
+  if (!userExists) {
+    throw new AppError("Email not found", 404);
+  }
+
   await authService.generateOtp(email);
   res.json({ message: "OTP sent to email" });
 });
