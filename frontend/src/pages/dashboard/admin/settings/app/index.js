@@ -61,6 +61,11 @@ export default function AppSettingsPage() {
     setConfig((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await handleSave();
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -106,19 +111,19 @@ export default function AppSettingsPage() {
 
   return (
     <AdminLayout title="App Settings">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Application Settings</h1>
           <button
-            onClick={handleSave}
+            type="submit"
             disabled={isLoading}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-              isLoading 
-                ? "bg-gray-300 cursor-not-allowed" 
+              isLoading
+                ? "bg-gray-300 cursor-not-allowed"
                 : "bg-yellow-600 hover:bg-yellow-700 text-white"
             }`}
           >
-            <FaSave /> 
+            <FaSave />
             {isLoading ? "Saving..." : "Save Settings"}
           </button>
         </div>
@@ -286,7 +291,7 @@ export default function AppSettingsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </AdminLayout>
   );
 }
