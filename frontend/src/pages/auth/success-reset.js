@@ -17,7 +17,8 @@ export default function SuccessReset() {
       router.replace("/auth/forgot-password");
     } else {
       toast.success("Password reset successful!");
-      localStorage.removeItem("otp_verified_email"); // Clean up
+      localStorage.removeItem("otp_verified_email");
+      localStorage.removeItem("otp_verified_code");
     }
   }, [router]);
 
