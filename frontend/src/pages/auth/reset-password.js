@@ -18,12 +18,14 @@ export default function ResetPassword() {
   const [code, setCode] = useState("");
 
   useEffect(() => {
+
     if (!router.isReady) return; // wait for query params
 
     const queryEmail = router.query.email;
     const queryCode = router.query.code;
     const storedEmail = localStorage.getItem("otp_verified_email");
     const storedCode = localStorage.getItem("otp_verified_code");
+
 
     if (queryEmail && queryCode) {
       localStorage.setItem("otp_verified_email", queryEmail);
@@ -37,7 +39,9 @@ export default function ResetPassword() {
       toast.error("Missing OTP verification. Please try again.");
       router.replace("/auth/forgot-password");
     }
+
   }, [router.isReady, router.query]);
+
 
   const isStrongPassword =
     newPassword.length >= 8 &&
