@@ -7,6 +7,13 @@ const appConfigService = require("../modules/appConfig/appConfig.service");
 const EMAIL_FOOTER =
   '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
 
+// Common footer used in transactional emails
+const EMAIL_FOOTER =
+  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
+
+// Skip actual email sending when true
+const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
+
 async function createTransporter() {
   const cfg = (await emailConfigService.getSettings()) || {};
 
@@ -37,25 +44,16 @@ exports.sendOtpEmail = async (to, otp) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] OTP for ${to}: ${otp}`);
+    return;
+  }
+
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
     "no-reply@eduskillbridge.net"
   ).trim();
-
-  const fromName = (
-    cfg.fromName ||
-    process.env.SMTP_NAME ||
-    app.appName ||
-    "SkillBridge"
-  ).trim();
-
-  const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
-
-  const footer = `<p style="font-size:12px;color:#555;margin-top:20px">${fromName} © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>`;
 
 
   const mailOptions = {
@@ -92,25 +90,16 @@ exports.sendPasswordChangeEmail = async (to) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Password change notice for ${to}`);
+    return;
+  }
+
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
     "no-reply@eduskillbridge.net"
   ).trim();
-
-  const fromName = (
-    cfg.fromName ||
-    process.env.SMTP_NAME ||
-    app.appName ||
-    "SkillBridge"
-  ).trim();
-
-  const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
-
-  const footer = `<p style="font-size:12px;color:#555;margin-top:20px">${fromName} © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>`;
 
 
   const mailOptions = {
