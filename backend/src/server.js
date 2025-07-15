@@ -156,7 +156,8 @@ app.use((err, req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   console.error("❌", err.message);
-  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+  const status = err.statusCode || err.status || 500;
+  res.status(status).json({ message: err.message || "Internal Server Error" });
 });
 
 
@@ -164,7 +165,8 @@ app.use((err, req, res, next) => {
 app.use(require("./middleware/errorHandler"));
 app.use((err, req, res, next) => {
   console.error("❌", err.message);
-  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+  const status = err.statusCode || err.status || 500;
+  res.status(status).json({ message: err.message || "Internal Server Error" });
 });
 
 const PORT = process.env.PORT || 5002;
