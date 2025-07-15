@@ -7,10 +7,6 @@ const appConfigService = require("../modules/appConfig/appConfig.service");
 const EMAIL_FOOTER =
   '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
 
-// Common footer used in transactional emails
-const EMAIL_FOOTER =
-  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
-
 // Skip actual email sending when true
 const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
 
@@ -55,6 +51,16 @@ exports.sendOtpEmail = async (to, otp) => {
     "no-reply@eduskillbridge.net"
   ).trim();
 
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -101,6 +107,16 @@ exports.sendPasswordChangeEmail = async (to) => {
     "no-reply@eduskillbridge.net"
   ).trim();
 
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+  const logo = app.logo_url
+    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
