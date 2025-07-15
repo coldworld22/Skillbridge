@@ -14,7 +14,7 @@ const messageService = require("../../messages/messages.service");
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "15m";
 const REFRESH_EXPIRES_IN = "7d";
-const OTP_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_MINUTES = 15;
 
 /**
  * Register a new user
@@ -164,15 +164,16 @@ exports.generateOtp = async (email) => {
   if (!user) throw new AppError("Email not found", 404);
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000);
 
   await db("password_resets").insert({
     id: uuidv4(),
     user_id: user.id,
     code,
-    expires_at: expires,
+    expires_at: db.raw(
+      `CURRENT_TIMESTAMP + INTERVAL '${OTP_EXPIRY_MINUTES} minutes'`
+    ),
     used: false,
-    created_at: new Date(),
+    created_at: db.fn.now(),
   });
 
   await sendOtpEmail(email, code);
@@ -212,6 +213,11 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     .first();
 
   if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
+
+  const samePassword = await bcrypt.compare(new_password, user.password_hash);
+  if (samePassword) {
+    throw new AppError("You already used this password before", 400);
+  }
 
   const hashed = await bcrypt.hash(new_password, SALT_ROUNDS);
   await db("users").where({ id: user.id }).update({ password_hash: hashed });

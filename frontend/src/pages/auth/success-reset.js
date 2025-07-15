@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
-import { toast } from "react-toastify";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 
@@ -11,15 +10,9 @@ export default function SuccessReset() {
   const router = useRouter();
 
   useEffect(() => {
-    const verifiedEmail = localStorage.getItem("otp_verified_email");
-    if (!verifiedEmail) {
-      toast.info("Please complete the OTP verification first.");
-      router.replace("/auth/forgot-password");
-      return;
-    }
-
     localStorage.removeItem("otp_verified_email");
     localStorage.removeItem("otp_verified_code");
+
     const timer = setTimeout(() => {
       router.push("/auth/login");
     }, 4000);
