@@ -36,6 +36,12 @@ Follow these steps to run SkillBridge on a server or production host.
     SMTP_PASS=your_smtp_password
     ```
 
+    To disable sending emails (OTP codes will be logged instead), set:
+
+    ```bash
+    DISABLE_EMAILS=true
+    ```
+
     The default templates include your logo and a footer. OTP codes expire
     after **15 minutes**.
      
