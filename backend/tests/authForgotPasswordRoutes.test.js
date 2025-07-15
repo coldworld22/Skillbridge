@@ -21,6 +21,8 @@ const app = express();
 app.use(express.json());
 app.use('/api/auth', routes);
 
+const errorHandler = require('../src/middleware/errorHandler');
+app.use(errorHandler);
 describe('POST /api/auth/forgot-password', () => {
   it('invokes generateOtp and returns message', async () => {
     service.generateOtp.mockResolvedValue();
@@ -32,5 +34,13 @@ describe('POST /api/auth/forgot-password', () => {
     expect(service.generateOtp).toHaveBeenCalledWith('test@example.com');
     expect(res.body.message).toBeDefined();
   });
-});
 
+  it('returns 404 for unknown email', async () => {
+    userModel.findByEmail.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'missing@example.com' });
+    expect(res.status).toBe(404);
+    expect(res.body.message).toMatch(/not found/i);
+  });
+});
