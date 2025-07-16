@@ -94,5 +94,9 @@ router.post(
 // router.get("/apple", socialAuthController.appleAuth);
 // router.post("/apple/callback", socialAuthController.appleCallback);
 
+// GitHub routes
+router.get("/github", socialAuthController.githubAuth);
+router.get("/github/callback", socialAuthController.githubCallback);
+
 
 module.exports = router;
