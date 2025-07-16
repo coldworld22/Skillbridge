@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import PhoneInput from "react-phone-number-input";
 import 'react-phone-number-input/style.css';
@@ -84,7 +83,9 @@ export default function Register() {
         className="relative bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
-          <Image
+
+          <img
+
             src={settings.logo_url
               ? `${API_BASE_URL}${settings.logo_url}`
               : "/images/logo.png"}
@@ -92,7 +93,6 @@ export default function Register() {
             width={80}
             height={80}
             className="rounded-full object-contain"
-            priority
           />
         </div>
 
