@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchAppConfig, updateAppConfig, uploadAppLogo, uploadAppFavicon } from "@/services/admin/appConfigService";
+import useAppConfigStore from "@/store/appConfigStore";
 import { FaSave, FaUpload, FaImage, FaGlobe } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "@/config/config";
@@ -21,13 +22,17 @@ export default function AppSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState("");
   const [faviconPreview, setFaviconPreview] = useState("");
+  const updateConfigStore = useAppConfigStore((state) => state.update);
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
       try {
         const data = await fetchAppConfig();
-        if (data) setConfig({ ...defaultConfig, ...data });
+        if (data) {
+          setConfig({ ...defaultConfig, ...data });
+          updateConfigStore(data);
+        }
       } catch (err) {
         console.error("Failed to load app settings", err);
         toast.error("Failed to load settings");
@@ -70,7 +75,8 @@ export default function AppSettingsPage() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await updateAppConfig(config);
+      const updated = await updateAppConfig(config);
+      updateConfigStore(updated);
       toast.success("Settings saved successfully");
     } catch (err) {
       console.error("Failed to save settings", err);
@@ -86,6 +92,7 @@ export default function AppSettingsPage() {
     try {
       const data = await uploadAppLogo(logoFile);
       setConfig((prev) => ({ ...prev, ...data }));
+      updateConfigStore(data);
       setLogoFile(null);
       toast.success("Logo uploaded successfully");
     } catch (err) {
@@ -101,6 +108,7 @@ export default function AppSettingsPage() {
     try {
       const data = await uploadAppFavicon(faviconFile);
       setConfig((prev) => ({ ...prev, ...data }));
+      updateConfigStore(data);
       setFaviconFile(null);
       toast.success("Favicon uploaded successfully");
     } catch (err) {

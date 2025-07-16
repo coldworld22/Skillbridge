@@ -14,10 +14,12 @@ const useAppConfigStore = create(
         try {
           const data = await getAppConfig();
           set({ settings: data, loaded: true, loading: false });
-        } catch (err) {
+        } catch (_err) {
           set({ loaded: true, loading: false });
         }
       },
+      update: (newSettings) =>
+        set((state) => ({ settings: { ...state.settings, ...newSettings } })),
       clear: () => set({ settings: {}, loaded: false }),
     }),
     { name: "app-config" }
