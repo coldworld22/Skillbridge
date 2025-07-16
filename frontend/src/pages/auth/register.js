@@ -83,7 +83,9 @@ export default function Register() {
         className="relative bg-gray-800/90 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md border border-yellow-500/40 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+
           <img
+
             src={settings.logo_url
               ? `${API_BASE_URL}${settings.logo_url}`
               : "/images/logo.png"}

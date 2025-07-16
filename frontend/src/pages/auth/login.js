@@ -96,8 +96,10 @@ export default function Login() {
         ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
         : "/website";
 
-    // 🚀 Redirect immediately after a successful login
-    router.push(targetPath);
+    // 🚀 Redirect after a short delay so the toast is visible
+    setTimeout(() => {
+      router.push(targetPath);
+    }, 500);
   } catch (err) {
     console.error("❌ login onSubmit error", err);
     let msg =
@@ -137,7 +139,9 @@ export default function Login() {
         className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+
           <img
+
             src={settings.logo_url
               ? `${API_BASE_URL}${settings.logo_url}`
               : "/images/logo.png"}
