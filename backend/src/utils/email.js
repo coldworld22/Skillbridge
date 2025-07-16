@@ -48,7 +48,7 @@ exports.sendOtpEmail = async (to, otp) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "no-reply@eduskillbridge.net"
+    "support@eduskillbridge.net"
   ).trim();
 
   const fromName = (
@@ -104,7 +104,7 @@ exports.sendPasswordChangeEmail = async (to) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "no-reply@eduskillbridge.net"
+    "support@eduskillbridge.net"
   ).trim();
 
   const fromName = (
