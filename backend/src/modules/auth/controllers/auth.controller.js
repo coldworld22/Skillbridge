@@ -20,8 +20,8 @@ const refreshCookieOptions = {
  */
 exports.register = catchAsync(async (req, res, next) => {
   try {
-    const result = await authService.registerUser(req.body);
-    res.status(201).json(result);
+    const { user } = await authService.registerUser(req.body);
+    res.status(201).json({ message: "Registration successful", user });
   } catch (err) {
     console.error("🔥 Registration error caught:");
     console.error("Name:", err.name);
@@ -37,6 +37,11 @@ exports.register = catchAsync(async (req, res, next) => {
       if (err.detail.includes("users_phone_unique")) {
         return res.status(400).json({ error: "Phone number is already registered" });
       }
+    }
+
+    // Handle expected AppError instances thrown by the service
+    if (err instanceof AppError && err.isOperational) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
 
     // ⛔ Unknown error — fallback to generic

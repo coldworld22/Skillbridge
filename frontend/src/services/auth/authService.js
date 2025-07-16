@@ -8,7 +8,7 @@ import api from "@/services/api/api";
  * @param {Object} credentials - User credentials
  * @param {string} credentials.email
  * @param {string} credentials.password
- * @returns {Promise<{ accessToken: string, user: object }>}
+ * @returns {Promise<{ message: string, user: object }>}
  */
 export const loginUser = async ({ email, password }) => {
   try {
@@ -25,7 +25,7 @@ export const loginUser = async ({ email, password }) => {
  * 🧾 Register a new user account (Student, Instructor, Admin).
  * 
  * @param {Object} payload - Registration data
- * @returns {Promise<{ accessToken: string, user: object }>}
+ * @returns {Promise<{ message: string, user: object }>}
  */
 export const registerUser = async (payload) => {
   const res = await api.post("/auth/register", payload);
