@@ -5,6 +5,7 @@ const passport = require('passport');
 // const FacebookStrategy = require('passport-facebook').Strategy;
 // Apple login is disabled until production deployment
 // const AppleStrategy = require('passport-apple').Strategy;
+const GitHubStrategy = require('passport-github2').Strategy;
 
 const socialAuthService = require('../modules/auth/services/socialAuth.service');
 const socialLoginConfigService = require('../modules/socialLoginConfig/socialLoginConfig.service');
@@ -14,6 +15,37 @@ let initialized = false;
 async function initStrategies() {
   const cfg = await socialLoginConfigService.getSettings();
   const providers = cfg?.providers || {};
+
+  const github = providers.github || {};
+  if (github.active && (github.clientId || process.env.GITHUB_CLIENT_ID)) {
+    passport.use(
+      'github',
+      new GitHubStrategy(
+        {
+          clientID: github.clientId || process.env.GITHUB_CLIENT_ID || '',
+          clientSecret: github.clientSecret || process.env.GITHUB_CLIENT_SECRET || '',
+          callbackURL: '/api/auth/github/callback',
+          scope: ['user:email'],
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            const { id, displayName, username, emails } = profile;
+            const email = emails && emails[0] && emails[0].value;
+            const fullName = displayName || username;
+            const result = await socialAuthService.loginOrRegister({
+              provider: 'github',
+              providerId: id,
+              email,
+              fullName,
+            });
+            return done(null, result);
+          } catch (err) {
+            return done(err);
+          }
+        }
+      )
+    );
+  }
 
   // Google login is temporarily disabled until the project is deployed
   // const google = providers.google || {};
