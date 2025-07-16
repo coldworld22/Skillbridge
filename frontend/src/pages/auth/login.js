@@ -97,8 +97,10 @@ export default function Login() {
         ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
         : "/website";
 
-    // 🚀 Redirect immediately after a successful login
-    router.push(targetPath);
+    // 🚀 Redirect after a short delay so the toast is visible
+    setTimeout(() => {
+      router.push(targetPath);
+    }, 500);
   } catch (err) {
     console.error("❌ login onSubmit error", err);
     let msg =
