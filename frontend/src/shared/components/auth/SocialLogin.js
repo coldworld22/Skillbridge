@@ -4,6 +4,11 @@ import { FaGoogle, FaFacebook, FaApple } from "react-icons/fa";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 
 const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
+const styleMap = {
+  google: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100",
+  facebook: "bg-[#3b5998] text-white hover:bg-[#314d86]",
+  apple: "bg-black text-white hover:bg-gray-800",
+};
 
 export default function SocialLogin() {
   const [config, setConfig] = useState(null);
@@ -19,8 +24,12 @@ export default function SocialLogin() {
 
   return (
     <>
-      <div className="mt-4 text-center text-gray-500 text-sm">or continue with</div>
-      <div className="mt-2 flex space-x-4 justify-center">
+      <div className="flex items-center my-4">
+        <hr className="flex-grow border-gray-600" />
+        <span className="mx-2 text-gray-500 text-xs uppercase">or continue with</span>
+        <hr className="flex-grow border-gray-600" />
+      </div>
+      <div className="mt-2 flex space-x-3 justify-center">
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
@@ -34,7 +43,7 @@ export default function SocialLogin() {
               onClick={handleClick}
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
-              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition shadow ${styleMap[key] || "bg-yellow-500 text-white hover:bg-yellow-600"}`}
             >
               <Icon size={20} />
               <span className="hidden sm:block">{p.label || key}</span>
