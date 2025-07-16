@@ -208,6 +208,7 @@ export default function SocialLoginSettingsPage() {
     return `${base.replace(/\/$/, '')}/api/auth/${key}/callback`;
   };
 
+
   return (
     <AdminLayout>
       <div className="p-6">
