@@ -1,3 +1,47 @@
+
+/**
+ * @todo 🔐 Full Password Recovery Hardening & Code Standardization
+ *
+ * 📌 SECURITY IMPROVEMENTS:
+ * - ✅ Apply `limitAuthRequests` middleware to `/auth/verify-otp` and `/auth/reset-password`
+ *   to prevent brute-force OTP attacks.
+ * - ✅ Hash OTP codes before storing in `password_resets` table (use `bcrypt.hash`).
+ * - ✅ Verify OTP using `bcrypt.compare` instead of plain match.
+ * - ✅ Enforce backend password complexity:
+ *     • Minimum 8 characters
+ *     • At least 1 uppercase letter
+ *     • At least 1 special character
+ *     • Match frontend rules to prevent bypass
+ * - ✅ Invalidate all active sessions after successful password reset (optional but recommended).
+ * - ✅ Return generic messages for expired or invalid OTPs to avoid info leaks.
+ *
+ * 🧼 CODE QUALITY & ORGANIZATION:
+ * - ✅ Use consistent modular structure: separate route, controller, service, and validator files.
+ * - ✅ Add JSDoc-style comments for all exported functions (`@desc`, `@param`, `@returns`).
+ * - ✅ Move shared constants (password regex, OTP length) to a `constants.js` file.
+ * - ✅ Ensure error handling uses consistent structure with custom error classes (if available).
+ * - ✅ Avoid duplicated logic — reuse functions like `generateOtp`, `sendEmail`, `hashPassword`.
+ *
+ * 📬 EMAIL & UX:
+ * - ✅ Use verified sender email (`support@eduskillbridge.net`) for all outbound mail.
+ * - ✅ Brand email content with app name and logo.
+ * - ✅ Include contact support and generic footer in all transactional emails.
+ *
+ * 🧪 TEST COVERAGE:
+ * - ✅ Test OTP expiry, invalid OTPs, reused OTPs, rate-limited requests.
+ * - ✅ Validate new password strength during reset (unit and integration tests).
+ * - ✅ Mock email sending in tests and verify `sendMail` was called correctly.
+ *
+ * 🛡️ OPTIONAL ENHANCEMENTS:
+ * - [ ] Log user IP/user-agent during OTP request for forensic tracking.
+ * - [ ] Add audit log entries for password reset success/failure.
+ * - [ ] Implement feature flag to disable password reset temporarily via `.env`.
+ *
+ * ✅ Outcome:
+ * This section must meet OWASP security standards, backend/frontend parity,
+ * and clean, documented, test-covered code architecture.
+ */
+
 const authService = require("../services/auth.service");
 const userModel = require("../../users/user.model");
 const catchAsync = require("../../../utils/catchAsync");
