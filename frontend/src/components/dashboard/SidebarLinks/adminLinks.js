@@ -82,7 +82,8 @@ export const adminNavLinks = [
     title: 'Legal',
     items: [
       { label: 'Privacy Policy', href: '/privacy-policy', icon: FileSignature },
-      { label: 'Terms of Service', href: '/terms', icon: FileSignature }
+      { label: 'Terms of Service', href: '/terms', icon: FileSignature },
+      { label: 'Delete Account', href: '/delete-account', icon: FileSignature }
     ]
   }
 ];
