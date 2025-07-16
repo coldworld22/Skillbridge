@@ -1,7 +1,9 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import { useRouter } from "next/router";
+import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
@@ -11,13 +13,25 @@ import {
 } from "@/services/verificationService";
 import StudentLayout from "@/components/layouts/StudentLayout";
 
-const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
+
+const Verification = ({ prevStep = () => {} }) => {
+  const router = useRouter();
+
   const { user } = useAuthStore();
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
   const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
   const [emailOTP, setEmailOTP] = useState("");
   const [phoneOTP, setPhoneOTP] = useState("");
   const [otpSent, setOtpSent] = useState({ email: false, phone: false });
+
+  // Redirect immediately if already verified
+  useEffect(() => {
+    if (emailVerified && phoneVerified) {
+      toast.success("Both email and phone verified. Redirecting to dashboard...");
+      const t = setTimeout(() => router.push("/dashboard"), 1500);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   const sendOtp = async (type) => {
     try {
@@ -52,7 +66,8 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {
-        toast.success("Both email and phone verified. You can proceed.");
+        toast.success("Both email and phone verified. Redirecting to dashboard...");
+        setTimeout(() => router.push("/dashboard"), 1500);
       }
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid or expired OTP";
@@ -157,22 +172,12 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
 
 
         {/* Navigation */}
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-start mt-6">
           <button
             className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center gap-2"
-            onClick={prevStep} // ✅ was: onBack
+            onClick={prevStep}
           >
             <FaArrowLeft /> Back
-          </button>
-          <button
-            className={`px-5 py-2 rounded-lg flex items-center gap-2 transition ${!emailVerified || !phoneVerified
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-yellow-500 text-white hover:bg-yellow-600"
-              }`}
-            onClick={nextStep}
-            disabled={!emailVerified || !phoneVerified}
-          >
-            Next <FaArrowRight />
           </button>
 
         </div>

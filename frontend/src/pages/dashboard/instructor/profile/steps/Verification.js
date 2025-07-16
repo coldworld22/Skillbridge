@@ -1,7 +1,9 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import { useRouter } from "next/router";
+import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
@@ -10,7 +12,8 @@ import {
   confirmPhoneOtp,
 } from "@/services/verificationService";
 
-const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
+const Verification = ({ onBack = () => {} }) => {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
   const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
@@ -18,6 +21,16 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
   const [phoneOTP, setPhoneOTP] = useState("");
   const [otpSent, setOtpSent] = useState({ email: false, phone: false });
   const [showOtpModal, setShowOtpModal] = useState(null);
+
+  // Redirect if verification already complete
+  useEffect(() => {
+    if (emailVerified && phoneVerified) {
+      toast.success("Both email and phone verified. Redirecting to dashboard...");
+      const t = setTimeout(() => router.push("/dashboard"), 1500);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
 
   // ✅ Send OTP via API
   const sendOtp = async (type) => {
@@ -56,7 +69,8 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {
-        toast.success("Both email and phone verified. You can proceed.");
+        toast.success("Both email and phone verified. Redirecting to dashboard...");
+        setTimeout(() => router.push("/dashboard"), 1500);
       }
       setShowOtpModal(null);
       toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
@@ -118,13 +132,10 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
       </div>
 
 
-      {/* ✅ Navigation Buttons */}
-      <div className="flex justify-between mt-6">
+      {/* Navigation */}
+      <div className="flex justify-start mt-6">
         <button className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2" onClick={onBack}>
           <FaArrowLeft /> Back
-        </button>
-        <button className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2" onClick={onNext} disabled={!emailVerified || !phoneVerified}>
-          Next <FaArrowRight />
         </button>
       </div>
     </motion.div>
