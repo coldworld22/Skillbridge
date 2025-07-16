@@ -5,6 +5,11 @@ import { motion } from "framer-motion";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 
 const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
+const styleMap = {
+  google: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100",
+  facebook: "bg-[#3b5998] text-white hover:bg-[#314d86]",
+  apple: "bg-black text-white hover:bg-gray-800",
+};
 
 export default function SocialRegister() {
   const [config, setConfig] = useState(null);
@@ -20,8 +25,12 @@ export default function SocialRegister() {
 
   return (
     <>
-      <div className="mt-6 text-center text-gray-400 text-sm">or continue with</div>
-      <div className="mt-2 flex space-x-4 w-full justify-center">
+      <div className="flex items-center my-6">
+        <hr className="flex-grow border-gray-600" />
+        <span className="mx-2 text-gray-400 text-xs uppercase">or continue with</span>
+        <hr className="flex-grow border-gray-600" />
+      </div>
+      <div className="mt-2 flex space-x-3 w-full justify-center">
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
@@ -34,7 +43,7 @@ export default function SocialRegister() {
               key={key}
               onClick={handleClick}
               whileHover={{ scale: 1.1 }}
-              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition shadow focus:outline-none focus:ring-2 focus:ring-yellow-400 ${styleMap[key] || "bg-yellow-500 text-white hover:bg-yellow-600"}`}
             >
               <Icon size={20} />
               <span className="hidden sm:block">{p.label || key}</span>
