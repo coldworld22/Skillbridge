@@ -68,8 +68,8 @@ export default function MessageServiceConfig() {
     );
   };
 
-  const handleSave = () => {
-    alert("Settings saved!");
+  const handleSaveProvider = (index) => {
+    alert(`${providers[index].name} settings saved!`);
   };
 
   return (
@@ -135,6 +135,12 @@ export default function MessageServiceConfig() {
                 />
               </div>
             </div>
+            <button
+              onClick={() => handleSaveProvider(providers.findIndex(p => p.id === provider.id))}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
+            >
+              <FaSave /> Save
+            </button>
           </div>
         ))}
 
@@ -171,17 +177,16 @@ export default function MessageServiceConfig() {
               <p className="text-sm text-gray-500">
                 Firebase Auth is used for phone number OTP during login. No toggle is required.
               </p>
+              <button
+                onClick={() => handleSaveProvider(providers.findIndex(p => p.id === otpProvider.id))}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
+              >
+                <FaSave /> Save
+              </button>
             </div>
           </>
         )}
 
-        {/* --- Save Button --- */}
-        <button
-          onClick={handleSave}
-          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
-        >
-          <FaSave /> Save All
-        </button>
       </div>
     </AdminLayout>
   );
