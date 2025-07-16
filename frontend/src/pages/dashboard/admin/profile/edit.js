@@ -39,7 +39,7 @@ const profileSchema = z.object({
   socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
 });
 
-export default function ProfileEditTemplate() {
+function ProfileEditTemplate() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
