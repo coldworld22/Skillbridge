@@ -203,7 +203,11 @@ export default function SocialLoginSettingsPage() {
     }
   };
 
-  const getRedirectUrl = (key) => `https://yourdomain.com/api/auth/${key}/callback`;
+  const getRedirectUrl = (key) => {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+    return `${base.replace(/\/$/, '')}/api/auth/${key}/callback`;
+  };
+
 
   return (
     <AdminLayout>
@@ -326,7 +330,16 @@ export default function SocialLoginSettingsPage() {
                     </div>
                   </>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Redirect URL: <code>{getRedirectUrl(provider.key)}</code></p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Redirect URL: <code>{getRedirectUrl(provider.key)}</code>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider.key))}
+                    className="ml-2 text-blue-600 underline"
+                  >
+                    Copy
+                  </button>
+                </p>
               </div>
 
               {provider.active && (
