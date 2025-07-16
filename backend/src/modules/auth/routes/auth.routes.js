@@ -60,14 +60,24 @@ router.post(
  * @desc    Verify submitted OTP code
  * @access  Public
  */
-router.post("/verify-otp", validate(authValidation.otpVerifySchema), authController.verifyOtp);
+router.post(
+  "/verify-otp",
+  limitAuthRequests,
+  validate(authValidation.otpVerifySchema),
+  authController.verifyOtp
+);
 
 /**
  * @route   POST /auth/reset-password
  * @desc    Reset password using valid OTP
  * @access  Public
  */
-router.post("/reset-password", validate(authValidation.resetPasswordSchema), authController.resetPassword);
+router.post(
+  "/reset-password",
+  limitAuthRequests,
+  validate(authValidation.resetPasswordSchema),
+  authController.resetPassword
+);
 
 // ─────────────────────────────────────────────────────────────
 // Social login routes

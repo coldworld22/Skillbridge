@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require("uuid");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 const { sendOtpEmail, sendPasswordChangeEmail } = require("../../../utils/email");
+const { generateOtp } = require("../utils/otp");
+const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
@@ -157,18 +159,21 @@ exports.verifyRefreshToken = (token) => {
 };
 
 /**
- * Generate OTP for password reset and send to user's email
+ * Generate OTP for password reset and email it to the user.
+ * @param {string} email - User email address
+ * @returns {Promise<void>}
  */
 exports.generateOtp = async (email) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Email not found", 404);
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = generateOtp(OTP_LENGTH);
+  const codeHash = await bcrypt.hash(code, SALT_ROUNDS);
 
   await db("password_resets").insert({
     id: uuidv4(),
     user_id: user.id,
-    code,
+    code_hash: codeHash,
     expires_at: db.raw(
       `CURRENT_TIMESTAMP + INTERVAL '${OTP_EXPIRY_MINUTES} minutes'`
     ),
@@ -184,35 +189,47 @@ exports.generateOtp = async (email) => {
 };
 
 /**
- * Validate OTP
+ * Validate an OTP code for the given email address.
+ * @param {{email:string, code:string}} data
+ * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
   const record = await db("password_resets")
-    .where({ user_id: user.id, code, used: false })
+    .where({ user_id: user.id, used: false })
     .andWhere("expires_at", ">", new Date())
     .orderBy("created_at", "desc")
     .first();
 
   if (!record) throw new AppError("Invalid or expired OTP", 400);
+
+  const match = await bcrypt.compare(code, record.code_hash);
+  if (!match) throw new AppError("Invalid or expired OTP", 400);
+
   return true;
 };
 
 /**
- * Reset user password using OTP
+ * Reset a user's password using a valid OTP code.
+ * @param {{email:string, code:string, new_password:string}} data
+ * @returns {Promise<void>}
  */
 exports.resetPassword = async ({ email, code, new_password }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
   const resetRecord = await db("password_resets")
-    .where({ user_id: user.id, code, used: false })
+    .where({ user_id: user.id, used: false })
     .andWhere("expires_at", ">", new Date())
+    .orderBy("created_at", "desc")
     .first();
 
   if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
+
+  const match = await bcrypt.compare(code, resetRecord.code_hash);
+  if (!match) throw new AppError("Invalid or expired OTP", 400);
 
   const samePassword = await bcrypt.compare(new_password, user.password_hash);
   if (samePassword) {

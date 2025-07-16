@@ -5,7 +5,9 @@
  * @param {number} length - Length of OTP (default: 6)
  * @returns {string} - A zero-padded numeric OTP (e.g. "045321")
  */
-exports.generateOtp = (length = 6) => {
+const { OTP_LENGTH } = require("../constants");
+
+exports.generateOtp = (length = OTP_LENGTH) => {
   const min = Math.pow(10, length - 1);
   const max = Math.pow(10, length) - 1;
   return Math.floor(Math.random() * (max - min + 1)) + min + "";
