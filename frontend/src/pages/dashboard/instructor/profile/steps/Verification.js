@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -29,6 +30,7 @@ const Verification = ({ onBack = () => {} }) => {
       return () => clearTimeout(t);
     }
   }, []);
+
 
   // ✅ Send OTP via API
   const sendOtp = async (type) => {
@@ -71,6 +73,7 @@ const Verification = ({ onBack = () => {} }) => {
         setTimeout(() => router.push("/dashboard"), 1500);
       }
       setShowOtpModal(null);
+      toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid or expired OTP";
       toast.error(msg);

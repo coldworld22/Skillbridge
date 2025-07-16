@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -12,8 +13,10 @@ import {
 } from "@/services/verificationService";
 import StudentLayout from "@/components/layouts/StudentLayout";
 
+
 const Verification = ({ prevStep = () => {} }) => {
   const router = useRouter();
+
   const { user } = useAuthStore();
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
   const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
@@ -176,6 +179,7 @@ const Verification = ({ prevStep = () => {} }) => {
           >
             <FaArrowLeft /> Back
           </button>
+
         </div>
       </motion.div>
     </StudentLayout>
