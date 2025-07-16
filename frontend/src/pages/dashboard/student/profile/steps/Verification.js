@@ -17,7 +17,7 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 const Verification = ({ prevStep = () => {} }) => {
   const router = useRouter();
 
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
   const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
   const [emailOTP, setEmailOTP] = useState("");
@@ -62,6 +62,8 @@ const Verification = ({ prevStep = () => {} }) => {
         toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
       }
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
+
+      await refreshUser();
 
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;

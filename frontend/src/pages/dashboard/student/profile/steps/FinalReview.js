@@ -6,7 +6,7 @@ import useAuthStore from "@/store/auth/authStore"; // ✅ Get logged-in user inf
 
 const FinalReview = ({ formData = {} }) => {
   const router = useRouter();
-  const { user } = useAuthStore(); // ✅ access user.id
+  const { user, refreshUser } = useAuthStore(); // ✅ access user.id
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -29,6 +29,7 @@ const FinalReview = ({ formData = {} }) => {
 
       // 1. Submit JSON profile data
       await updateProfile(payload);
+      await refreshUser();
 
       // 2. Upload demo video (instructor only)
       const demoVideo = formData.instructorDetails?.demo_video;

@@ -11,7 +11,7 @@ import {
 } from "@/services/verificationService";
 
 const Verification = ({ onNext, onBack }) => {
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
   const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
   const [emailOTP, setEmailOTP] = useState("");
@@ -52,6 +52,9 @@ const Verification = ({ onNext, onBack }) => {
       }
       if (type === "email") setEmailVerified(true);
       if (type === "phone") setPhoneVerified(true);
+
+      // 🔄 Refresh stored user data after verification
+      await refreshUser();
 
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;

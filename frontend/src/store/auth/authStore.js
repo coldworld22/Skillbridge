@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import * as authService from "@/services/auth/authService";
+import { getFullProfile } from "@/services/profile/profileService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
@@ -25,6 +26,20 @@ const useAuthStore = create(
         }
         set({ accessToken, user });
         return user;
+      },
+
+      refreshUser: async () => {
+        try {
+          const res = await getFullProfile();
+          const fresh = res.data;
+          if (fresh.avatar_url?.startsWith("blob:") || fresh.avatar_url === "null") {
+            fresh.avatar_url = null;
+          }
+          set({ user: fresh });
+          return fresh;
+        } catch (err) {
+          console.error("❌ refreshUser error", err);
+        }
       },
 
       register: async (data) => {
