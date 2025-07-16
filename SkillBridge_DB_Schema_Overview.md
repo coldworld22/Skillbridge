@@ -34,6 +34,11 @@
 - **Foreign Keys**: `user_id → users(id)`
 - **Columns**: `user_id`, `code_hash`, `expires_at`, `used`, `created_at`
 
+### `student_profiles`
+- **Purpose**: Extra details for student accounts
+- **Primary Key**: `user_id (PK)`
+- **Foreign Keys**: `user_id → users(id)`
+
 
 ## Classes Tables
 
