@@ -1,7 +1,8 @@
 // pages/dashboard/admin/settings/messages-config.js
 import { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { FaToggleOn, FaToggleOff, FaSave, FaCheckCircle } from "react-icons/fa";
+import { FaToggleOn, FaToggleOff, FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const initialProviders = [
   {
@@ -69,7 +70,7 @@ export default function MessageServiceConfig() {
   };
 
   const handleSaveProvider = (index) => {
-    alert(`${providers[index].name} settings saved!`);
+    toast.success(`${providers[index].name} settings saved!`, { theme: "colored" });
   };
 
   return (
