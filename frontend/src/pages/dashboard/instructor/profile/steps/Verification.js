@@ -59,6 +59,7 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
         toast.success("Both email and phone verified. You can proceed.");
       }
       setShowOtpModal(null);
+      toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid or expired OTP";
       toast.error(msg);

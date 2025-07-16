@@ -85,6 +85,5 @@ exports.verifyOtp = async (userId, type, code) => {
       });
     }
   }
-
   return { alreadyVerified: false };
 };
