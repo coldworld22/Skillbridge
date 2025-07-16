@@ -39,6 +39,11 @@ exports.register = catchAsync(async (req, res, next) => {
       }
     }
 
+    // Handle expected AppError instances thrown by the service
+    if (err instanceof AppError && err.isOperational) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+
     // ⛔ Unknown error — fallback to generic
     console.error("Registration error:", err);
     return res.status(500).json({ error: "Registration failed. Please try again." });
