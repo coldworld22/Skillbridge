@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import {
   FaArrowLeft,
@@ -33,11 +34,12 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
 
   const sendOtp = async (type) => {
     try {
-      if (type === "email") await sendEmailOtp();
-      else await sendPhoneOtp();
+      const { code } =
+        type === "email" ? await sendEmailOtp() : await sendPhoneOtp();
       setOtpSent((prev) => ({ ...prev, [type]: true }));
+      toast.success(`OTP sent: ${code}`);
     } catch (err) {
-      alert("Failed to send OTP");
+      toast.error("Failed to send OTP");
     }
   };
 
@@ -47,8 +49,10 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
       if (type === "email") await confirmEmailOtp(enteredOTP);
       else await confirmPhoneOtp(enteredOTP);
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
+      toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
     } catch (err) {
-      alert("Invalid OTP. Please try again.");
+      const msg = err?.response?.data?.message || "Invalid or expired OTP";
+      toast.error(msg);
     }
   };
 
@@ -70,7 +74,7 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
       };
       reader.readAsDataURL(file);
     } else {
-      alert("Invalid file type. Please upload an image or PDF.");
+      toast.error("Invalid file type. Please upload an image or PDF.");
       setIdentityFile(null);
     }
   };
