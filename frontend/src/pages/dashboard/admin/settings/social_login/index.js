@@ -136,9 +136,15 @@ export default function SocialLoginSettingsPage() {
   };
 
   const handleSave = async () => {
+    // ensure providers with credentials default to active unless explicitly disabled
+    const adjusted = providers.map((p) => ({
+      ...p,
+      active: p.active || providerHasCredentials(p),
+    }));
+
     const payload = {
       enabled: globalActive,
-      providers: providers.reduce((acc, p) => {
+      providers: adjusted.reduce((acc, p) => {
         acc[p.key] = {
           active: p.active,
           clientId: p.clientId,
@@ -159,6 +165,7 @@ export default function SocialLoginSettingsPage() {
     };
     try {
       await updateSocialLoginConfig(payload);
+      setProviders(adjusted);
       toast.success("Settings saved");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save settings");
