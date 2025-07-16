@@ -88,7 +88,25 @@ This ensures custom branding files persist across deployments.
 If your uploads are served from the backend domain you should update the
 `remotePatterns` in `frontend/next.config.mjs` to include your production domain
 so Next.js can display those images. For example add an entry for
-`https://yourdomain.com`.
+`https://yourdomain.com`:
+
+```js
+// frontend/next.config.mjs
+export default {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'yourdomain.com',
+        pathname: '/uploads/**',
+      },
+    ],
+  },
+};
+```
+
+Rebuild the frontend container after editing this file so Next.js picks up the
+new domain.
 
 ## Troubleshooting
 
