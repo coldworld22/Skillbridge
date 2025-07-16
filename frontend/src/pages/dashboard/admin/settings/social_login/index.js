@@ -107,15 +107,11 @@ export default function SocialLoginSettingsPage() {
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
   const toggleProvider = (index) => {
-    const updated = [...providers];
-    const provider = updated[index];
-    const newState = !provider.active;
-    if (newState && !providerHasCredentials(provider)) {
-      toast.error("No data for this service");
-      return;
-    }
-    provider.active = newState;
-    setProviders(updated);
+    setProviders((prev) => {
+      const updated = [...prev];
+      updated[index].active = !updated[index].active;
+      return updated;
+    });
   };
 
   const handleChange = (index, field, value) => {
@@ -172,7 +168,45 @@ export default function SocialLoginSettingsPage() {
     }
   };
 
-  const getRedirectUrl = (key) => `https://yourdomain.com/api/auth/${key}/callback`;
+  const handleProviderSave = async (index) => {
+    const adjusted = providers.map((p) => ({
+      ...p,
+      active: p.active || providerHasCredentials(p),
+    }));
+    const payload = {
+      enabled: globalActive,
+      providers: adjusted.reduce((acc, p) => {
+        acc[p.key] = {
+          active: p.active,
+          clientId: p.clientId,
+          clientSecret: p.clientSecret,
+          teamId: p.teamId,
+          keyId: p.keyId,
+          privateKey: p.privateKey,
+          label: p.label,
+          icon: p.icon,
+        };
+        return acc;
+      }, {}),
+      recaptcha: {
+        active: recaptchaActive,
+        siteKey: recaptchaSiteKey,
+        secretKey: recaptchaSecretKey,
+      },
+    };
+    try {
+      await updateSocialLoginConfig(payload);
+      setProviders(adjusted);
+      toast.success(`${providers[index].name} settings saved`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save settings");
+    }
+  };
+
+  const getRedirectUrl = (key) => {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+    return `${base.replace(/\/$/, '')}/api/auth/${key}/callback`;
+  };
 
   return (
     <AdminLayout>
@@ -212,7 +246,6 @@ export default function SocialLoginSettingsPage() {
                     className="w-full border rounded p-2"
                     value={provider.label}
                     onChange={(e) => handleChange(index, "label", e.target.value)}
-                    disabled={!provider.active}
                   />
                 </div>
                 <div>
@@ -221,7 +254,6 @@ export default function SocialLoginSettingsPage() {
                     className="w-full border rounded p-2"
                     value={provider.icon}
                     onChange={(e) => handleChange(index, "icon", e.target.value)}
-                    disabled={!provider.active}
                   >
                     {Object.keys(availableIcons).map((key) => (
                       <option key={key} value={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</option>
@@ -234,7 +266,6 @@ export default function SocialLoginSettingsPage() {
                     type="file"
                     accept="image/svg+xml,image/png"
                     onChange={(e) => handleIconUpload(e, provider.key)}
-                    disabled={!provider.active}
                   />
                 </div>
                 {provider.key === "apple" ? (
@@ -246,7 +277,6 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.clientId}
                         onChange={(e) => handleChange(index, "clientId", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                     <div>
@@ -256,7 +286,6 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.teamId}
                         onChange={(e) => handleChange(index, "teamId", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                     <div>
@@ -266,7 +295,6 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.keyId}
                         onChange={(e) => handleChange(index, "keyId", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                     <div>
@@ -276,7 +304,6 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.privateKey}
                         onChange={(e) => handleChange(index, "privateKey", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                   </>
@@ -289,7 +316,6 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.clientId}
                         onChange={(e) => handleChange(index, "clientId", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                     <div>
@@ -299,12 +325,20 @@ export default function SocialLoginSettingsPage() {
                         className="w-full border rounded p-2"
                         value={provider.clientSecret}
                         onChange={(e) => handleChange(index, "clientSecret", e.target.value)}
-                        disabled={!provider.active}
                       />
                     </div>
                   </>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Redirect URL: <code>{getRedirectUrl(provider.key)}</code></p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Redirect URL: <code>{getRedirectUrl(provider.key)}</code>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider.key))}
+                    className="ml-2 text-blue-600 underline"
+                  >
+                    Copy
+                  </button>
+                </p>
               </div>
 
               {provider.active && (
@@ -314,6 +348,14 @@ export default function SocialLoginSettingsPage() {
               ) && (
                 <p className="mt-2 text-sm text-red-500">⚠️ Missing credentials</p>
               )}
+              <div className="mt-4 text-right">
+                <button
+                  className="bg-yellow-500 text-gray-900 px-4 py-1 rounded shadow hover:bg-yellow-600 transition"
+                  onClick={() => handleProviderSave(index)}
+                >
+                  Save {provider.name}
+                </button>
+              </div>
             </div>
           ))}
         </div>
