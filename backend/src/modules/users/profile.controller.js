@@ -1,5 +1,7 @@
 const userModel = require("./user.model");
 const db = require("../../config/database");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 /**
  * PATCH /users/profile
@@ -87,6 +89,25 @@ exports.updateProfile = async (req, res) => {
 
     if (profileComplete) {
       await userModel.updateUser(userId, { profile_complete: true });
+
+      // Notify user profile completion
+      await notificationService.createNotification({
+        user_id: userId,
+        type: "profile",
+        message:
+          "Your profile is complete! You can now use the platform and all its features.",
+      });
+
+      const admins = await userModel.findAdmins();
+      const firstAdmin = admins[0];
+      if (firstAdmin) {
+        await messageService.createMessage({
+          sender_id: firstAdmin.id,
+          receiver_id: userId,
+          message:
+            "Your profile is complete! You can now use the platform and all its features.",
+        });
+      }
     }
 
     // ─────────────────────────────────────────────────────

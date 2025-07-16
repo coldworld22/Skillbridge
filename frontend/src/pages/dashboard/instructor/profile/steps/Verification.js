@@ -1,18 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import {
-  FaArrowLeft,
-  FaArrowRight,
-  FaUpload,
-  FaCheckCircle,
-  FaEnvelope,
-  FaPhone,
-  FaCropAlt,
-  FaTrash,
-  FaFilePdf,
-} from "react-icons/fa";
-import Cropper from "react-easy-crop";
-import getCroppedImg from "@/utils/cropImage"; // ✅ Import the cropping function
+import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
   sendPhoneOtp,
@@ -21,32 +11,29 @@ import {
 } from "@/services/verificationService";
 
 const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const { user } = useAuthStore();
+  const [emailVerified, setEmailVerified] = useState(user?.is_email_verified || false);
+  const [phoneVerified, setPhoneVerified] = useState(user?.is_phone_verified || false);
   const [emailOTP, setEmailOTP] = useState("");
   const [phoneOTP, setPhoneOTP] = useState("");
   const [otpSent, setOtpSent] = useState({ email: false, phone: false });
   const [showOtpModal, setShowOtpModal] = useState(null);
-  
-  // Identity Upload & Cropping
-  const [identityFile, setIdentityFile] = useState(null);
-  const [identityPreview, setIdentityPreview] = useState(null);
-  const [isPDF, setIsPDF] = useState(false); // ✅ Detect if file is PDF
-  const [croppedImage, setCroppedImage] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   // ✅ Send OTP via API
   const sendOtp = async (type) => {
     try {
-      if (type === "email") await sendEmailOtp();
-      else await sendPhoneOtp();
+      const res = type === "email" ? await sendEmailOtp() : await sendPhoneOtp();
+      if (res.verified) {
+        type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
+        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+        return;
+      }
+      const { code } = res;
       setOtpSent((prev) => ({ ...prev, [type]: true }));
       setShowOtpModal(type);
+      toast.success(`OTP sent: ${code}`);
     } catch (err) {
-      alert("Failed to send OTP");
+      toast.error("Failed to send OTP");
     }
   };
 
@@ -54,60 +41,32 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
   const verifyOtp = async (type) => {
     const enteredOTP = type === "email" ? emailOTP : phoneOTP;
     try {
-      if (type === "email") await confirmEmailOtp(enteredOTP);
-      else await confirmPhoneOtp(enteredOTP);
+      const res =
+        type === "email"
+          ? await confirmEmailOtp(enteredOTP)
+          : await confirmPhoneOtp(enteredOTP);
+      if (res.alreadyVerified) {
+        toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
+      } else {
+        toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
+      }
       if (type === "email") setEmailVerified(true);
       if (type === "phone") setPhoneVerified(true);
+
+      const emailNow = type === "email" ? true : emailVerified;
+      const phoneNow = type === "phone" ? true : phoneVerified;
+      if (emailNow && phoneNow) {
+        toast.success("Both email and phone verified. You can proceed.");
+      }
       setShowOtpModal(null);
     } catch (err) {
-      alert("Invalid OTP. Please try again.");
+      const msg = err?.response?.data?.message || "Invalid or expired OTP";
+      toast.error(msg);
     }
   };
 
   // ✅ Handle Identity Upload (Images & PDFs)
-  const handleIdentityUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setIdentityFile(file);
-    const fileType = file.type;
-
-    if (fileType === "application/pdf") {
-      // ✅ If PDF, do not allow cropping, just preview
-      setIsPDF(true);
-      setIdentityPreview(URL.createObjectURL(file));
-    } else if (fileType.startsWith("image/")) {
-      // ✅ If Image, allow cropping
-      setIsPDF(false);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setIdentityPreview(reader.result);
-        setShowCropper(true);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      alert("Invalid file type. Please upload an image or PDF.");
-      setIdentityFile(null);
-    }
-  };
-
-  // ✅ Handle Cropping Completion
-  const onCropComplete = useCallback((_, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  // ✅ Apply Cropped Image
-  const handleCropSave = async () => {
-    if (!identityPreview || !croppedAreaPixels) return;
-    
-    try {
-      const croppedImg = await getCroppedImg(identityPreview, croppedAreaPixels);
-      setCroppedImage(croppedImg);
-      setShowCropper(false);
-    } catch (error) {
-      console.error("Error cropping image:", error);
-    }
-  };
+  // No identity document upload required
 
   return (
     <motion.div
@@ -157,37 +116,13 @@ const Verification = ({ onNext = () => {}, onBack = () => {} }) => {
         )}
       </div>
 
-      {/* ✅ Identity Upload */}
-      <div className="mb-6 bg-gray-700 p-4 rounded-lg">
-        <label className="block text-gray-300 mb-2">Upload Identity Document:</label>
-        <input id="identityUpload" type="file" accept="image/*,application/pdf" onChange={handleIdentityUpload} className="hidden" />
-        <label htmlFor="identityUpload" className="cursor-pointer flex items-center gap-2 bg-gray-600 p-3 rounded-lg hover:bg-gray-500 transition">
-          <FaUpload className="text-yellow-400" /> {identityFile ? identityFile.name : "Click to Upload"}
-        </label>
-      </div>
-
-      {/* ✅ Preview Identity Document */}
-      {identityPreview && (
-        <div className="mb-6 flex flex-col items-center">
-          {isPDF ? (
-            <a href={identityPreview} target="_blank" rel="noopener noreferrer" className="text-yellow-400 flex items-center gap-2">
-              <FaFilePdf size={30} /> Open PDF
-            </a>
-          ) : (
-            <img src={identityPreview} alt="Identity Preview" className="w-40 h-40 rounded-lg shadow-lg border-2 border-yellow-500" />
-          )}
-          <button className="mt-2 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2" onClick={() => setIdentityFile(null)}>
-            <FaTrash /> Remove
-          </button>
-        </div>
-      )}
 
       {/* ✅ Navigation Buttons */}
       <div className="flex justify-between mt-6">
         <button className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2" onClick={onBack}>
           <FaArrowLeft /> Back
         </button>
-        <button className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2" onClick={onNext} disabled={!emailVerified || !phoneVerified || !identityFile}>
+        <button className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2" onClick={onNext} disabled={!emailVerified || !phoneVerified}>
           Next <FaArrowRight />
         </button>
       </div>
