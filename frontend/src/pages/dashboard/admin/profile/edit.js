@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   FaSpinner,
   FaChevronDown,
@@ -38,7 +39,7 @@ const profileSchema = z.object({
   socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
 });
 
-export default function ProfileEditTemplate() {
+function ProfileEditTemplate() {
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -259,18 +260,15 @@ export default function ProfileEditTemplate() {
 
 
   if (!hasHydrated || loadingProfile) {
-
     return (
-      <AdminLayout>
-        <div className="flex justify-center items-center h-64">
-          <FaSpinner className="animate-spin text-4xl text-yellow-600" />
-        </div>
-      </AdminLayout>
+      <div className="flex justify-center items-center h-64">
+        <FaSpinner className="animate-spin text-4xl text-yellow-600" />
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Profile Edit</h1>
         <div className="space-y-6">
@@ -498,6 +496,19 @@ export default function ProfileEditTemplate() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </>
   );
 }
+
+ProfileEditTemplate.getLayout = function getLayout(page) {
+  return <AdminLayout>{page}</AdminLayout>;
+};
+
+const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
+
+export default ProtectedProfileEdit;
