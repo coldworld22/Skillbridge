@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
+const { sendOtpEmail } = require("../../utils/email");
 
 const generateCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -21,7 +22,18 @@ exports.sendOtp = async (userId, type) => {
     created_at: new Date(),
   });
 
-  console.log(`[OTP] Sent ${type} code:`, code); // Replace with email/SMS sending
+  const user = await userModel.findById(userId);
+  if (type === "email") {
+    try {
+      await sendOtpEmail(user.email, code);
+    } catch (err) {
+      console.error("Error sending OTP email:", err.message);
+    }
+  } else {
+    console.log(`[SMS] Phone OTP for ${user.phone}: ${code}`); // Replace with SMS provider
+  }
+
+  console.log(`[OTP] Sent ${type} code:`, code);
 
   return code;
 };
