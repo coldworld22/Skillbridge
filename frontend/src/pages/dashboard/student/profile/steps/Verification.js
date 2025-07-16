@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -48,6 +49,7 @@ const Verification = ({ nextStep = () => {}, prevStep = () => {} }) => {
         toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
       }
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
+      toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid or expired OTP";
       toast.error(msg);
