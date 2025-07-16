@@ -10,7 +10,6 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import PhoneInput from "react-phone-number-input";
 import 'react-phone-number-input/style.css';
 
-import logo from "@/shared/assets/images/login/logo.png";
 import { API_BASE_URL } from "@/config/config";
 import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
@@ -86,7 +85,9 @@ export default function Register() {
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
           <Image
-            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo}
+            src={settings.logo_url
+              ? `${API_BASE_URL}${settings.logo_url}`
+              : "/images/logo.png"}
             alt={(settings.appName || 'SkillBridge') + ' Logo'}
             width={80}
             height={80}
