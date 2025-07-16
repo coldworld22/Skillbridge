@@ -68,6 +68,21 @@ Follow these steps to run SkillBridge on a server or production host.
 After updating these files, rebuild the Docker images or restart the server so
 that the environment changes take effect.
 
+## Preserve uploaded media
+
+The admin panel lets you upload a logo and favicon under
+`/dashboard/admin/settings/app`. These files are stored inside the backend
+container under `/app/uploads`. To keep them after a container restart, mount the
+`backend/uploads` folder from the host. In `docker-compose.yml` add:
+
+```yaml
+  backend:
+    volumes:
+      - ./backend/uploads:/app/uploads
+```
+
+This ensures custom branding files persist across deployments.
+
 ## Next.js image domains
 
 If your uploads are served from the backend domain you should update the
