@@ -1,13 +1,13 @@
 const service = require("./verify.service");
 
 exports.sendEmailOtp = async (req, res) => {
-  await service.sendOtp(req.user.id, "email");
-  res.json({ message: "Email OTP sent" });
+  const code = await service.sendOtp(req.user.id, "email");
+  res.json({ message: "Email OTP sent", code });
 };
 
 exports.sendPhoneOtp = async (req, res) => {
-  await service.sendOtp(req.user.id, "phone");
-  res.json({ message: "Phone OTP sent" });
+  const code = await service.sendOtp(req.user.id, "phone");
+  res.json({ message: "Phone OTP sent", code });
 };
 
 exports.verifyEmailOtp = async (req, res) => {

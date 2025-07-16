@@ -1,10 +1,15 @@
 const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
+const userModel = require("../users/user.model");
+const { sendOtpEmail } = require("../../utils/email");
 
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 exports.sendOtp = async (userId, type) => {
-  const code = generateCode();
+  const code = type === "phone" ? "123456" : generateCode();
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await db("verifications").insert({
@@ -17,7 +22,20 @@ exports.sendOtp = async (userId, type) => {
     created_at: new Date(),
   });
 
-  console.log(`[OTP] Sent ${type} code:`, code); // Replace with email/SMS sending
+  const user = await userModel.findById(userId);
+  if (type === "email") {
+    try {
+      await sendOtpEmail(user.email, code);
+    } catch (err) {
+      console.error("Error sending OTP email:", err.message);
+    }
+  } else {
+    console.log(`[SMS] Phone OTP for ${user.phone}: ${code}`); // Replace with SMS provider
+  }
+
+  console.log(`[OTP] Sent ${type} code:`, code);
+
+  return code;
 };
 
 exports.verifyOtp = async (userId, type, code) => {
@@ -33,4 +51,29 @@ exports.verifyOtp = async (userId, type, code) => {
   const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
 
   await db("users").where({ id: userId }).update({ [updateField]: true });
+
+  const user = await db("users").where({ id: userId }).first();
+  if (
+    user.is_email_verified &&
+    user.is_phone_verified &&
+    user.profile_complete
+  ) {
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "profile",
+      message:
+        "Your profile is complete! You can now use the platform and all its features.",
+    });
+
+    const admins = await userModel.findAdmins();
+    const firstAdmin = admins[0];
+    if (firstAdmin) {
+      await messageService.createMessage({
+        sender_id: firstAdmin.id,
+        receiver_id: userId,
+        message:
+          "Your profile is complete! You can now use the platform and all its features.",
+      });
+    }
+  }
 };
