@@ -14,7 +14,7 @@ const initialProviders = [
   {
     name: "Google",
     key: "google",
-    active: true,
+    active: false,
     clientId: "",
     clientSecret: "",
     label: "Sign in with Google",
@@ -42,6 +42,13 @@ const initialProviders = [
   }
 ];
 
+const providerHasCredentials = (p) => {
+  if (p.key === "apple") {
+    return p.clientId && p.teamId && p.keyId && p.privateKey;
+  }
+  return p.clientId && p.clientSecret;
+};
+
 export default function SocialLoginSettingsPage() {
   const [globalActive, setGlobalActive] = useState(true);
   const [providers, setProviders] = useState(initialProviders);
@@ -62,7 +69,10 @@ export default function SocialLoginSettingsPage() {
               const saved = cfg.providers[p.key] || {};
               return {
                 ...p,
-                active: saved.active ?? p.active,
+                active:
+                  saved.active !== undefined
+                    ? saved.active
+                    : providerHasCredentials(saved),
                 clientId: saved.clientId || "",
                 clientSecret: saved.clientSecret || "",
                 teamId: saved.teamId || "",
@@ -87,13 +97,24 @@ export default function SocialLoginSettingsPage() {
   const toggleGlobal = () => {
     const newState = !globalActive;
     setGlobalActive(newState);
-    setProviders((prev) => prev.map((p) => ({ ...p, active: newState })));
+    setProviders((prev) =>
+      prev.map((p) => ({
+        ...p,
+        active: newState && providerHasCredentials(p),
+      }))
+    );
   };
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
   const toggleProvider = (index) => {
     const updated = [...providers];
-    updated[index].active = !updated[index].active;
+    const provider = updated[index];
+    const newState = !provider.active;
+    if (newState && !providerHasCredentials(provider)) {
+      toast.error("No data for this service");
+      return;
+    }
+    provider.active = newState;
     setProviders(updated);
   };
 
