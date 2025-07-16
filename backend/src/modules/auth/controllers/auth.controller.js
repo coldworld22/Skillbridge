@@ -20,8 +20,8 @@ const refreshCookieOptions = {
  */
 exports.register = catchAsync(async (req, res, next) => {
   try {
-    const result = await authService.registerUser(req.body);
-    res.status(201).json(result);
+    const { user } = await authService.registerUser(req.body);
+    res.status(201).json({ message: "Registration successful", user });
   } catch (err) {
     console.error("🔥 Registration error caught:");
     console.error("Name:", err.name);

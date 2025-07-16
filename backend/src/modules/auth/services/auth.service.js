@@ -58,10 +58,6 @@ exports.registerUser = async (data) => {
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
-  const tokenRoles = roles.length ? roles : [newUser.role];
-
-  const accessToken = generateAccessToken({ id: newUser.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = generateRefreshToken({ id: newUser.id });
 
   const welcomeMessage =
     newUser.role && newUser.role.toLowerCase() === "instructor"
@@ -120,7 +116,7 @@ exports.registerUser = async (data) => {
     console.error("Error sending registration emails:", err.message);
   }
 
-  return { accessToken, refreshToken, user: { ...newUser, roles } };
+  return { user: { ...newUser, roles } };
 };
 
 

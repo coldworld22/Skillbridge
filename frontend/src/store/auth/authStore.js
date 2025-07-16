@@ -28,12 +28,7 @@ const useAuthStore = create(
       },
 
       register: async (data) => {
-        const { accessToken, user } = await authService.registerUser(data);
-        if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
-          user.avatar_url = null;
-        }
-        set({ accessToken, user });
-        return user;
+        await authService.registerUser(data);
       },
 
       logout: async () => {
