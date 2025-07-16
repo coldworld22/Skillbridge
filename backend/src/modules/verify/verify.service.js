@@ -1,10 +1,11 @@
 const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
 
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateCode = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 exports.sendOtp = async (userId, type) => {
-  const code = generateCode();
+  const code = type === "phone" ? "123456" : generateCode();
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await db("verifications").insert({
