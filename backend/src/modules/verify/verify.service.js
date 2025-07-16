@@ -9,6 +9,12 @@ const generateCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
 exports.sendOtp = async (userId, type) => {
+  const user = await userModel.findById(userId);
+
+  if ((type === "email" && user.is_email_verified) || (type === "phone" && user.is_phone_verified)) {
+    return { alreadyVerified: true };
+  }
+
   const code = type === "phone" ? "123456" : generateCode();
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
@@ -21,8 +27,6 @@ exports.sendOtp = async (userId, type) => {
     verified: false,
     created_at: new Date(),
   });
-
-  const user = await userModel.findById(userId);
   if (type === "email") {
     try {
       await sendOtpEmail(user.email, code);
@@ -35,10 +39,17 @@ exports.sendOtp = async (userId, type) => {
 
   console.log(`[OTP] Sent ${type} code:`, code);
 
-  return code;
+  return { code };
 };
 
 exports.verifyOtp = async (userId, type, code) => {
+  const user = await db("users").where({ id: userId }).first();
+  const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
+
+  if (user[updateField]) {
+    return { alreadyVerified: true };
+  }
+
   const record = await db("verifications")
     .where({ user_id: userId, type, code, verified: false })
     .andWhere("expires_at", ">", new Date())
@@ -48,15 +59,15 @@ exports.verifyOtp = async (userId, type, code) => {
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
-  const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
-
   await db("users").where({ id: userId }).update({ [updateField]: true });
 
-  const user = await db("users").where({ id: userId }).first();
+
+  const userAfter = await db("users").where({ id: userId }).first();
   if (
-    user.is_email_verified &&
-    user.is_phone_verified &&
-    user.profile_complete
+    userAfter.is_email_verified &&
+    userAfter.is_phone_verified &&
+    userAfter.profile_complete
+
   ) {
     await notificationService.createNotification({
       user_id: userId,
@@ -76,4 +87,8 @@ exports.verifyOtp = async (userId, type, code) => {
       });
     }
   }
+
+
+  return { alreadyVerified: false };
+
 };
