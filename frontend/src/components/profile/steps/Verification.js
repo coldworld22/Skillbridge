@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -23,7 +22,6 @@ const Verification = ({ onNext, onBack }) => {
   // ✅ Send OTP via API
   const sendOtp = async (type) => {
     try {
-
       const res = type === "email" ? await sendEmailOtp() : await sendPhoneOtp();
       if (res.verified) {
         type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
@@ -54,6 +52,12 @@ const Verification = ({ onNext, onBack }) => {
       }
       if (type === "email") setEmailVerified(true);
       if (type === "phone") setPhoneVerified(true);
+
+      const emailNow = type === "email" ? true : emailVerified;
+      const phoneNow = type === "phone" ? true : phoneVerified;
+      if (emailNow && phoneNow) {
+        toast.success("Both email and phone verified. You can proceed.");
+      }
       setShowOtpModal(null);
       toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
     } catch (err) {
@@ -62,8 +66,7 @@ const Verification = ({ onNext, onBack }) => {
     }
   };
 
-
-
+  // No identity document upload required
 
   return (
     <motion.div
