@@ -77,5 +77,12 @@ export const adminNavLinks = [
         ]
       }
     ]
+  },
+  {
+    title: 'Legal',
+    items: [
+      { label: 'Privacy Policy', href: '/privacy-policy', icon: FileSignature },
+      { label: 'Terms of Service', href: '/terms', icon: FileSignature }
+    ]
   }
 ];
