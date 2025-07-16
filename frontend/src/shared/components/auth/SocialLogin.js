@@ -34,9 +34,10 @@ export default function SocialLogin() {
               onClick={handleClick}
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
-              className="w-14 h-14 flex items-center justify-center bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition"
             >
-              <Icon size={28} />
+              <Icon size={20} />
+              <span className="hidden sm:block">{p.label || key}</span>
             </motion.button>
           );
         })}
