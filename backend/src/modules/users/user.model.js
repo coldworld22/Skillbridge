@@ -99,7 +99,7 @@ exports.findContactInfo = async (id) => {
 // Fetch Admin and SuperAdmin users
 exports.findAdmins = () => {
   return db("users")
-    .select("id")
+    .select("id", "email", "full_name")
     .whereIn("role", ["Admin", "SuperAdmin"]);
 };
 

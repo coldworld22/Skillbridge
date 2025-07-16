@@ -3,7 +3,12 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
-const { sendOtpEmail, sendPasswordChangeEmail } = require("../../../utils/email");
+const {
+  sendOtpEmail,
+  sendPasswordChangeEmail,
+  sendWelcomeEmail,
+  sendNewUserAdminEmail,
+} = require("../../../utils/email");
 const { generateOtp } = require("../utils/otp");
 const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
@@ -99,6 +104,21 @@ exports.registerUser = async (data) => {
       })
     )
   );
+
+  // Send emails
+  try {
+    await sendWelcomeEmail(newUser.email, newUser.full_name);
+    await Promise.all(
+      admins.map((admin) =>
+        sendNewUserAdminEmail(admin.email, {
+          full_name: newUser.full_name,
+          email: newUser.email,
+        })
+      )
+    );
+  } catch (err) {
+    console.error("Error sending registration emails:", err.message);
+  }
 
   return { accessToken, refreshToken, user: { ...newUser, roles } };
 };
