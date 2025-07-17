@@ -15,7 +15,8 @@ exports.registerSchema = z.object({
       PASSWORD_REGEX,
       "Password must be at least 8 characters, include an uppercase letter and a special character"
     ),
-  role: z.enum(["Student", "Instructor", "Admin"]).optional() // Optional for fallback logic
+  role: z.enum(["Student", "Instructor", "Admin"]).optional(), // Optional for fallback logic
+  recaptchaToken: z.string().optional(),
 });
 
 /**
@@ -24,6 +25,7 @@ exports.registerSchema = z.object({
 exports.loginSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
+  recaptchaToken: z.string().optional(),
 });
 
 /**
