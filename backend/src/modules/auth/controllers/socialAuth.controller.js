@@ -1,5 +1,6 @@
 // Import the configured passport instance
 const { passport } = require('../../../config/passport');
+const { refreshCookieOptions } = require('../../../utils/cookie');
 
 
 // Google OAuth
@@ -13,13 +14,7 @@ exports.googleCallback = (req, res, next) => {
       return res.redirect(`${process.env.FRONTEND_URL || ''}/auth/login?error=social`);
     }
     const { accessToken, refreshToken } = result;
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'None',
-      domain: process.env.COOKIE_DOMAIN,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);
@@ -74,13 +69,7 @@ exports.githubCallback = (req, res, next) => {
       return res.redirect(`${process.env.FRONTEND_URL || ''}/auth/login?error=social`);
     }
     const { accessToken, refreshToken } = result;
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'None',
-      domain: process.env.COOKIE_DOMAIN,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);

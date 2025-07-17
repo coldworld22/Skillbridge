@@ -4,15 +4,7 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 
 // 🔧 Cookie options used in login and logout
-const refreshCookieOptions = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-
-  domain: process.env.COOKIE_DOMAIN,
-
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-};
+const { refreshCookieOptions } = require("../../../utils/cookie");
 
 /**
  * @desc Register a new user
