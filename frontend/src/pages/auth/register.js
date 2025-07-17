@@ -1,5 +1,5 @@
 // 📁 src/pages/auth/register.js
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
@@ -17,6 +17,8 @@ import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
+import ReCAPTCHA from "react-google-recaptcha";
+import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 
 export default function Register() {
   const router = useRouter();
@@ -24,6 +26,8 @@ export default function Register() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
+  const recaptchaRef = useRef(null);
 
   const {
     register,
@@ -55,10 +59,26 @@ export default function Register() {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
+  useEffect(() => {
+    fetchSocialLoginConfig().then(setRecaptchaCfg).catch(() => {});
+  }, []);
+
   const onSubmit = async (data) => {
     try {
       const { full_name, email, phone, password, role } = data;
-      await registerUser({ full_name, email, phone, password, role });
+      let token;
+      if (recaptchaCfg?.recaptcha?.active && recaptchaRef.current) {
+        token = await recaptchaRef.current.executeAsync();
+        recaptchaRef.current.reset();
+      }
+      await registerUser({
+        full_name,
+        email,
+        phone,
+        password,
+        role,
+        recaptchaToken: token,
+      });
       toast.success("Registration successful");
       fetchNotifications();
       router.push("/auth/login");
@@ -185,6 +205,14 @@ export default function Register() {
         >
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>
+
+        {recaptchaCfg?.recaptcha?.active && (
+          <ReCAPTCHA
+            sitekey={recaptchaCfg.recaptcha.siteKey}
+            size="invisible"
+            ref={recaptchaRef}
+          />
+        )}
 
         {/* ✅ Social Login + Footer */}
         <SocialRegister />

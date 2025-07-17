@@ -2,6 +2,8 @@ const authService = require("../services/auth.service");
 const userModel = require("../../users/user.model");
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
+const socialLoginConfigService = require("../../socialLoginConfig/socialLoginConfig.service");
+const recaptchaService = require("../../recaptcha/recaptcha.service");
 
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions } = require("../../../utils/cookie");
@@ -12,6 +14,13 @@ const { refreshCookieOptions } = require("../../../utils/cookie");
  */
 exports.register = catchAsync(async (req, res, next) => {
   try {
+    const cfg = await socialLoginConfigService.getSettings();
+    if (cfg?.recaptcha?.active) {
+      const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
+      if (!valid) {
+        throw new AppError('Failed reCAPTCHA verification', 400);
+      }
+    }
     const { user } = await authService.registerUser(req.body);
     res.status(201).json({ message: "Registration successful", user });
   } catch (err) {
@@ -48,8 +57,17 @@ exports.register = catchAsync(async (req, res, next) => {
  * @access Public
  */
 exports.login = catchAsync(async (req, res) => {
+  const cfg = await socialLoginConfigService.getSettings();
+  if (cfg?.recaptcha?.active) {
+    const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
+    if (!valid) {
+      throw new AppError('Failed reCAPTCHA verification', 400);
+    }
+  }
   const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
-  res.cookie("refreshToken", refreshToken, refreshCookieOptions).json({ accessToken, user });
+  res
+    .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .json({ accessToken, user });
 });
 
 /**
