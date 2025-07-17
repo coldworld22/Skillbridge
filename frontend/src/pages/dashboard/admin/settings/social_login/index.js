@@ -214,8 +214,12 @@ export default function SocialLoginSettingsPage() {
   };
 
   const getRedirectUrl = (key) => {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
-    return `${base.replace(/\/$/, '')}/api/auth/${key}/callback`;
+    let base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+    base = base.replace(/\/$/, '');
+    if (base.endsWith('/api')) {
+      base = base.slice(0, -4);
+    }
+    return `${base}/api/auth/${key}/callback`;
   };
 
 
