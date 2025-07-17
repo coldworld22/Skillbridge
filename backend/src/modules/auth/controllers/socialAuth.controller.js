@@ -15,8 +15,9 @@ exports.googleCallback = (req, res, next) => {
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'None',
+      domain: process.env.COOKIE_DOMAIN,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
@@ -75,8 +76,9 @@ exports.githubCallback = (req, res, next) => {
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'None',
+      domain: process.env.COOKIE_DOMAIN,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
