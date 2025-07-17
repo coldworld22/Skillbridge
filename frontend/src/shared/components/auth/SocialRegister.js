@@ -5,11 +5,8 @@ import { motion } from "framer-motion";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 
 const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
-const styleMap = {
-  google: "bg-white text-gray-700 hover:bg-gray-100 border-gray-300",
-  facebook: "bg-[#3b5998] text-white hover:bg-[#314d86] border-transparent",
-  apple: "bg-black text-white hover:bg-gray-800 border-transparent",
-};
+const unifiedButtonStyle =
+  "w-12 h-12 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400";
 
 export default function SocialRegister() {
   const [config, setConfig] = useState(null);
@@ -27,12 +24,7 @@ export default function SocialRegister() {
 
   return (
     <>
-      <div className="flex items-center mt-6 mb-4">
-        <hr className="flex-grow border-gray-600" />
-        <span className="mx-3 text-gray-400 text-xs uppercase">or sign up with</span>
-        <hr className="flex-grow border-gray-600" />
-      </div>
-      <div className="flex justify-center gap-4">
+      <div className="flex justify-center gap-4 mt-6">
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
@@ -45,9 +37,7 @@ export default function SocialRegister() {
               onClick={handleClick}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center border shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-                styleMap[key] || "bg-yellow-500 text-white hover:bg-yellow-600 border-transparent"
-              }`}
+              className={unifiedButtonStyle}
               aria-label={`Sign up with ${p.label || key}`}
             >
               <Icon size={20} />
