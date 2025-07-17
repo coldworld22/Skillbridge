@@ -1,4 +1,6 @@
+// ───────────────────────────────────────
 // 📁 frontend/src/pages/auth/login.js
+//  ──────────────────────────────────────
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +17,9 @@ import SocialLogin from "@/shared/components/auth/SocialLogin";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 
+// ─────────────────────
+// 🔐 Validation schema
+// ─────────────────────
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password is required" }),
@@ -30,6 +35,9 @@ export default function Login() {
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
 
+  // ─────────────────────
+  // 📝 Form setup
+  // ─────────────────────
   const {
     register,
     handleSubmit,
@@ -66,49 +74,58 @@ export default function Login() {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
+  // ─────────────────────────────
+  // 🔑 Handle form submission
+  // ─────────────────────────────
   const onSubmit = async (data) => {
-    try {
-      const loggedInUser = await login(data);
-      toast.success("Login successful");
-      fetchNotifications();
+  try {
+    console.log("➡️ login onSubmit", data.email);
+    const loggedInUser = await login(data);
+    toast.success("Login successful");
+    fetchNotifications();
 
-      const profilePaths = {
-        admin: "/dashboard/admin/profile/edit",
-        instructor: "/dashboard/instructor/profile/edit",
-        student: "/dashboard/student/profile/edit",
-        superadmin: "/dashboard/admin/profile/edit",
-      };
+    const profilePaths = {
+      admin: "/dashboard/admin/profile/edit",
+      instructor: "/dashboard/instructor/profile/edit",
+      student: "/dashboard/student/profile/edit",
+      superadmin: "/dashboard/admin/profile/edit",
+    };
 
-      const targetPath =
-        loggedInUser.profile_complete === false
-          ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
-          : "/website";
+    const targetPath =
+      loggedInUser.profile_complete === false
+        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+        : "/website";
 
-      setTimeout(() => {
-        router.push(targetPath);
-      }, 500);
-    } catch (err) {
-      let msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Login failed. Please try again.";
+    // 🚀 Redirect after a short delay so the toast is visible
+    setTimeout(() => {
+      router.push(targetPath);
+    }, 500);
+  } catch (err) {
+    console.error("❌ login onSubmit error", err);
+    let msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "Login failed. Please try again.";
 
-      if (err.code === "ERR_NETWORK") {
-        msg =
-          "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.";
-      }
-
-      toast.error(msg);
-      setValue("password", "");
-      document.activeElement?.blur();
-
-      setTimeout(() => {
-        const loginBtn = document.querySelector("button[type=submit]");
-        loginBtn?.blur();
-      }, 100);
+    if (err.code === "ERR_NETWORK") {
+      msg =
+        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.";
     }
-  };
+
+    toast.error(msg);
+    setValue("password", "");
+    document.activeElement?.blur();
+
+    setTimeout(() => {
+      const loginBtn = document.querySelector("button[type=submit]");
+      loginBtn?.blur();
+    }, 100);
+  }
+};
+
+
+
 
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-gray-900">
@@ -122,7 +139,9 @@ export default function Login() {
         className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+
           <img
+
             src={settings.logo_url
               ? `${API_BASE_URL}${settings.logo_url}`
               : "/images/logo.png"}
@@ -185,9 +204,7 @@ export default function Login() {
           </motion.button>
         </form>
 
-        <div className="w-full mt-6">
-          <SocialLogin />
-        </div>
+        <SocialLogin />
 
         <p className="text-center mt-6 text-gray-400 text-sm">
           Don't have an account?{" "}
