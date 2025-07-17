@@ -220,6 +220,7 @@ export default function SocialLoginSettingsPage() {
     }
   };
 
+
   const getDefaultRedirectUrl = (key) => {
     let base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
     base = base.replace(/\/$/, '');
@@ -227,6 +228,7 @@ export default function SocialLoginSettingsPage() {
       base = base.slice(0, -4);
     }
     return `${base}/api/auth/${key}/callback`;
+
   };
 
   const getRedirectUrl = (provider) => {
