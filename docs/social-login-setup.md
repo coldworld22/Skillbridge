@@ -18,6 +18,7 @@ This guide explains how to configure OAuth providers like Google so users can si
    ```
 
 3. Copy the generated **Client ID** and **Client secret** and set them in `backend/.env` or through the admin dashboard under **Social Login Settings**.
-4. Restart the backend so the new credentials take effect.
+4. If the auto-generated redirect URL shown in the admin panel does not match the one configured in Google, enter the desired URL in the **Redirect URL** field for Google and save.
+5. Restart the backend so the new credentials take effect.
 
 If the redirect URI does not exactly match what is configured on Google, the login page will display **Error 400: redirect_uri_mismatch**.

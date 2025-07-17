@@ -18,6 +18,7 @@ const initialProviders = [
     active: false,
     clientId: "",
     clientSecret: "",
+    redirectUrl: "",
     label: "Sign in with Google",
     icon: "google"
   },
@@ -27,6 +28,7 @@ const initialProviders = [
     active: false,
     clientId: "",
     clientSecret: "",
+    redirectUrl: "",
     label: "Sign in with Facebook",
     icon: "facebook"
   },
@@ -38,6 +40,7 @@ const initialProviders = [
     teamId: "",
     keyId: "",
     privateKey: "",
+    redirectUrl: "",
     label: "Sign in with Apple",
     icon: "apple"
   },
@@ -47,6 +50,7 @@ const initialProviders = [
     active: false,
     clientId: "",
     clientSecret: "",
+    redirectUrl: "",
     label: "Sign in with GitHub",
     icon: "github"
   }
@@ -88,6 +92,7 @@ export default function SocialLoginSettingsPage() {
                 teamId: saved.teamId || "",
                 keyId: saved.keyId || "",
                 privateKey: saved.privateKey || "",
+                redirectUrl: saved.redirectUrl || "",
                 label: saved.label || p.label,
                 icon: saved.icon || p.icon,
               };
@@ -158,6 +163,7 @@ export default function SocialLoginSettingsPage() {
           teamId: p.teamId,
           keyId: p.keyId,
           privateKey: p.privateKey,
+          redirectUrl: p.redirectUrl,
           label: p.label,
           icon: p.icon,
         };
@@ -193,6 +199,7 @@ export default function SocialLoginSettingsPage() {
           teamId: p.teamId,
           keyId: p.keyId,
           privateKey: p.privateKey,
+          redirectUrl: p.redirectUrl,
           label: p.label,
           icon: p.icon,
         };
@@ -213,13 +220,20 @@ export default function SocialLoginSettingsPage() {
     }
   };
 
-  const getRedirectUrl = (key) => {
+
+  const getDefaultRedirectUrl = (key) => {
     let base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
     base = base.replace(/\/$/, '');
     if (base.endsWith('/api')) {
       base = base.slice(0, -4);
     }
     return `${base}/api/auth/${key}/callback`;
+
+  };
+
+  const getRedirectUrl = (provider) => {
+    if (typeof provider === 'string') return getDefaultRedirectUrl(provider);
+    return provider.redirectUrl || getDefaultRedirectUrl(provider.key);
   };
 
 
@@ -344,16 +358,26 @@ export default function SocialLoginSettingsPage() {
                     </div>
                   </>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Redirect URL: <code>{getRedirectUrl(provider.key)}</code>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider.key))}
-                    className="ml-2 text-blue-600 underline"
-                  >
-                    Copy
-                  </button>
-                </p>
+                <div>
+                  <label className="block text-sm font-medium">Redirect URL</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded p-2"
+                    value={provider.redirectUrl}
+                    onChange={(e) => handleChange(index, "redirectUrl", e.target.value)}
+                    placeholder={getDefaultRedirectUrl(provider.key)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Default: <code>{getDefaultRedirectUrl(provider.key)}</code>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider))}
+                      className="ml-2 text-blue-600 underline"
+                    >
+                      Copy
+                    </button>
+                  </p>
+                </div>
               </div>
 
               {provider.active && (
