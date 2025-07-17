@@ -23,12 +23,17 @@ const isAdminRole = (roles = []) => {
  */
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+  let token = null;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Missing or malformed token" });
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
 
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Missing or malformed token" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

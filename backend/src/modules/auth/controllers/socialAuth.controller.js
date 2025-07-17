@@ -16,8 +16,13 @@ exports.googleCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const redirectUrl = `${frontendBase}/auth/social-success?token=${accessToken}`;
-    res.redirect(redirectUrl);
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      domain: '.eduskillbridge.net',
+      sameSite: 'Lax',
+    });
+    res.redirect(`${frontendBase}/website`);
   })(req, res, next);
 };
 
