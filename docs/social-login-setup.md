@@ -22,3 +22,5 @@ This guide explains how to configure OAuth providers like Google so users can si
 5. Restart the backend so the new credentials take effect.
 
 If the redirect URI does not exactly match what is configured on Google, the login page will display **Error 400: redirect_uri_mismatch**.
+
+If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, make sure the frontend's `NEXT_PUBLIC_API_BASE_URL` is set to your backend URL including the `/api` prefix. Without this variable the social login buttons default to `/api/auth/*`.
