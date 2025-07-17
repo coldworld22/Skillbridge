@@ -8,6 +8,7 @@ const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
+const { frontendBase } = require("../../utils/frontend");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const {
@@ -72,7 +73,7 @@ exports.createGroup = catchAsync(async (req, res) => {
             ? "student"
             : "admin";
       // Use configured frontend URL or default to localhost for dev
-      const host = process.env.FRONTEND_URL || "http://localhost:3000";
+      const host = frontendBase;
       const groupLink = `${host}/dashboard/${rolePath}/groups/${group.id}`;
 
       const inviteLinkMsg = `${inviteMsg} ${groupLink}`;

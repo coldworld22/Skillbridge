@@ -2,6 +2,7 @@
 const nodemailer = require("nodemailer");
 const emailConfigService = require("../modules/emailConfig/emailConfig.service");
 const appConfigService = require("../modules/appConfig/appConfig.service");
+const { frontendBase } = require("./frontend");
 
 // Common footer used in transactional emails
 const EMAIL_FOOTER =
@@ -58,7 +59,7 @@ exports.sendOtpEmail = async (to, otp) => {
     "SkillBridge"
   ).trim();
   const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    ? `${frontendBase}${app.logo_url}`
     : "https://eduskillbridge.net/logo.png";
   const support = app.contactEmail || "support@eduskillbridge.net";
 
@@ -114,7 +115,7 @@ exports.sendPasswordChangeEmail = async (to) => {
     "SkillBridge"
   ).trim();
   const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    ? `${frontendBase}${app.logo_url}`
     : "https://eduskillbridge.net/logo.png";
   const support = app.contactEmail || "support@eduskillbridge.net";
 
@@ -170,7 +171,7 @@ exports.sendWelcomeEmail = async (to, name) => {
   ).trim();
 
   const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    ? `${frontendBase}${app.logo_url}`
     : "https://eduskillbridge.net/logo.png";
   const support = app.contactEmail || "support@eduskillbridge.net";
 
@@ -224,7 +225,7 @@ exports.sendNewUserAdminEmail = async (to, user) => {
   ).trim();
 
   const logo = app.logo_url
-    ? `${process.env.FRONTEND_URL || ""}${app.logo_url}`
+    ? `${frontendBase}${app.logo_url}`
     : "https://eduskillbridge.net/logo.png";
 
   const mailOptions = {
