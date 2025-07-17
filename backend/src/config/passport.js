@@ -24,7 +24,7 @@ async function initStrategies() {
         {
           clientID: github.clientId || process.env.GITHUB_CLIENT_ID || '',
           clientSecret: github.clientSecret || process.env.GITHUB_CLIENT_SECRET || '',
-          callbackURL: '/api/auth/github/callback',
+          callbackURL: github.redirectUrl || '/api/auth/github/callback',
           scope: ['user:email'],
         },
         async (_accessToken, _refreshToken, profile, done) => {
@@ -55,7 +55,7 @@ async function initStrategies() {
         {
           clientID: google.clientId || process.env.GOOGLE_CLIENT_ID || '',
           clientSecret: google.clientSecret || process.env.GOOGLE_CLIENT_SECRET || '',
-          callbackURL: '/api/auth/google/callback',
+          callbackURL: google.redirectUrl || '/api/auth/google/callback',
         },
         async (_accessToken, _refreshToken, profile, done) => {
           try {
