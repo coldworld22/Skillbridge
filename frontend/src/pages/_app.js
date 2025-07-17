@@ -8,6 +8,8 @@ import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
 import useAppConfigStore from "@/store/appConfigStore";
+import * as authService from "@/services/auth/authService";
+import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
 import "@/styles/globals.css"; // or whatever your path is
 
@@ -40,6 +42,20 @@ function MyApp({ Component, pageProps, router }) {
         });
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { accessToken } = await authService.refreshAccessToken();
+        useAuthStore.setState({ accessToken });
+        const res = await getFullProfile();
+        useAuthStore.setState({ user: res.data });
+      } catch (_) {
+        // no active session
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {

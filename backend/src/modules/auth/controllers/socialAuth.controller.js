@@ -16,8 +16,16 @@ exports.googleCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const redirectUrl = `${frontendBase}/auth/social-success?token=${accessToken}`;
-    res.redirect(redirectUrl);
+    const tokenCookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+    };
+    if (process.env.COOKIE_DOMAIN) {
+      tokenCookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+    res.cookie('token', accessToken, tokenCookieOptions);
+    res.redirect(`${frontendBase}/website`);
   })(req, res, next);
 };
 
