@@ -4,7 +4,8 @@ import { FaGoogle, FaFacebook, FaApple } from "react-icons/fa";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 
 const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
-const unifiedButtonStyle = "bg-yellow-500 hover:bg-yellow-600 text-white border-transparent";
+const unifiedButtonStyle =
+  "w-12 h-12 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400";
 
 export default function SocialLogin() {
   const [config, setConfig] = useState(null);
@@ -20,12 +21,7 @@ export default function SocialLogin() {
 
   return (
     <>
-      <div className="flex items-center mt-6 mb-4">
-        <hr className="flex-grow border-gray-600" />
-        <span className="mx-3 text-gray-500 text-xs uppercase">or continue with</span>
-        <hr className="flex-grow border-gray-600" />
-      </div>
-      <div className="flex justify-center gap-4">
+      <div className="flex justify-center gap-4 mt-6">
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
@@ -39,10 +35,9 @@ export default function SocialLogin() {
               onClick={handleClick}
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-md transition-colors ${styleMap[key] || "bg-yellow-500 text-white hover:bg-yellow-600 border-transparent"}`}
+              className={unifiedButtonStyle}
             >
               <Icon size={20} />
-              <span className="hidden sm:block">{p.label || key}</span>
             </motion.button>
           );
         })}
