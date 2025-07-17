@@ -84,9 +84,9 @@ router.post(
 // ─────────────────────────────────────────────────────────────
 
 
-// Google routes are disabled until production deployment
-// router.get("/google", socialAuthController.googleAuth);
-// router.get("/google/callback", socialAuthController.googleCallback);
+// Google login routes
+router.get("/google", socialAuthController.googleAuth);
+router.get("/google/callback", socialAuthController.googleCallback);
 // Facebook routes are disabled until production deployment
 // router.get("/facebook", socialAuthController.facebookAuth);
 // router.get("/facebook/callback", socialAuthController.facebookCallback);

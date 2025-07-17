@@ -29,7 +29,7 @@ export default function SocialRegister() {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
             const base = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-            window.location.href = `${base}/api/auth/${key}`;
+            window.location.href = `${base}/auth/${key}`;
           };
           return (
             <motion.button

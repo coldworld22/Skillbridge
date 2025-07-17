@@ -27,7 +27,7 @@ export default function SocialLogin() {
           const handleClick = () => {
             // Default to a relative path when NEXT_PUBLIC_API_BASE_URL isn't set
             const base = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-            window.location.href = `${base}/api/auth/${key}`;
+            window.location.href = `${base}/auth/${key}`;
           };
           return (
             <motion.button
