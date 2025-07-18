@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { FaGoogle, FaFacebook, FaApple } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
+import { API_BASE_URL } from "@/config/config";
 
 const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
 const unifiedButtonStyle =
@@ -28,7 +29,8 @@ export default function SocialRegister() {
         {activeProviders.map(([key, p]) => {
           const Icon = iconMap[p.icon] || iconMap[key] || FaGoogle;
           const handleClick = () => {
-            const base = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+            // Align with API service defaulting to '/api' when env is missing
+            const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
             window.location.href = `${base}/auth/${key}`;
           };
           return (
