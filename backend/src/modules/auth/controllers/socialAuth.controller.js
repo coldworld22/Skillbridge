@@ -19,10 +19,11 @@ exports.googleCallback = (req, res, next) => {
     res.cookie('token', accessToken, {
       httpOnly: true,
       secure: true,
-      domain: '.eduskillbridge.net',
       sameSite: 'Lax',
+      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
     });
-    res.redirect(`${frontendBase}/website`);
+    const host = req.get('origin') || frontendBase;
+    res.redirect(`${host}/website`);
   })(req, res, next);
 };
 
@@ -76,7 +77,8 @@ exports.githubCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const redirectUrl = `${frontendBase}/auth/social-success?token=${accessToken}`;
+    const host = req.get('origin') || frontendBase;
+    const redirectUrl = `${host}/auth/social-success?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);
 };
