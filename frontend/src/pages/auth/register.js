@@ -217,15 +217,6 @@ export default function Register() {
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>
 
-        {recaptchaCfg?.recaptcha?.active && (
-          <ReCAPTCHA
-            sitekey={recaptchaCfg.recaptcha.siteKey}
-            size="invisible"
-            badge="bottomleft"
-            ref={recaptchaRef}
-          />
-        )}
-
         {/* ✅ Social Login + Footer */}
         <SocialRegister />
 
@@ -236,6 +227,16 @@ export default function Register() {
           </a>
         </p>
       </motion.div>
+
+      {/* Avoid moving the reCAPTCHA badge when hovering the card */}
+      {recaptchaCfg?.recaptcha?.active && (
+        <ReCAPTCHA
+          sitekey={recaptchaCfg.recaptcha.siteKey}
+          size="invisible"
+          badge="bottomleft"
+          ref={recaptchaRef}
+        />
+      )}
     </div>
   );
 }
