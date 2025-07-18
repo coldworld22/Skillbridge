@@ -1,7 +1,7 @@
 // ───────────────────────────────────────
 // 📁 frontend/src/pages/auth/login.js
 //  ──────────────────────────────────────
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
+import ReCAPTCHA from "react-google-recaptcha";
+import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 
@@ -34,6 +36,9 @@ export default function Login() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
+  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
+  const [cfgLoading, setCfgLoading] = useState(true);
+  const recaptchaRef = useRef(null);
 
   // ─────────────────────
   // 📝 Form setup
@@ -74,13 +79,31 @@ export default function Login() {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
+  useEffect(() => {
+    fetchSocialLoginConfig()
+      .then(setRecaptchaCfg)
+      .catch(() => {})
+      .finally(() => setCfgLoading(false));
+  }, []);
+
   // ─────────────────────────────
   // 🔑 Handle form submission
   // ─────────────────────────────
   const onSubmit = async (data) => {
   try {
     console.log("➡️ login onSubmit", data.email);
-    const loggedInUser = await login(data);
+    let cfg = recaptchaCfg;
+    if (!cfg && cfgLoading) {
+      cfg = await fetchSocialLoginConfig().catch(() => null);
+      setRecaptchaCfg(cfg);
+      setCfgLoading(false);
+    }
+    let token;
+    if (cfg?.recaptcha?.active && recaptchaRef.current) {
+      token = await recaptchaRef.current.executeAsync();
+      recaptchaRef.current.reset();
+    }
+    const loggedInUser = await login({ ...data, recaptchaToken: token });
     toast.success("Login successful");
     fetchNotifications();
 
@@ -193,16 +216,26 @@ export default function Login() {
 
           <motion.button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (cfgLoading && !recaptchaCfg)}
             whileHover={{ scale: 1.05 }}
-            className={`w-full mt-6 py-2 rounded-lg font-semibold transition ${isSubmitting
-              ? "bg-gray-500 cursor-not-allowed text-white"
-              : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
-              }`}
+            className={`w-full mt-6 py-2 rounded-lg font-semibold transition ${
+              isSubmitting || (cfgLoading && !recaptchaCfg)
+                ? "bg-gray-500 cursor-not-allowed text-white"
+                : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+            }`}
           >
             {isSubmitting ? "Logging in..." : "Login"}
           </motion.button>
         </form>
+
+        {recaptchaCfg?.recaptcha?.active && (
+          <ReCAPTCHA
+            sitekey={recaptchaCfg.recaptcha.siteKey}
+            size="invisible"
+            badge="bottomleft"
+            ref={recaptchaRef}
+          />
+        )}
 
         <SocialLogin />
 

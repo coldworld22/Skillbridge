@@ -10,10 +10,10 @@ import api from "@/services/api/api";
  * @param {string} credentials.password
  * @returns {Promise<{ message: string, user: object }>}
  */
-export const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ email, password, recaptchaToken }) => {
   try {
     console.log("🔐 loginUser requesting", api.defaults.baseURL + "/auth/login");
-    const res = await api.post("/auth/login", { email, password });
+    const res = await api.post("/auth/login", { email, password, recaptchaToken });
     return res.data;
   } catch (err) {
     console.error("❌ loginUser error", err?.response || err);

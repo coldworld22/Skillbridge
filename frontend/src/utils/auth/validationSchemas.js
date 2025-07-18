@@ -5,6 +5,7 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  recaptchaToken: z.string().optional(),
 });
 
 // 🧾 Register Schema
@@ -21,6 +22,7 @@ export const registerSchema = z
       .regex(/[\W_]/, "Password must contain a special character"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     role: z.enum(["Student", "Instructor", "Admin"]),
+    recaptchaToken: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
