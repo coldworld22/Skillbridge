@@ -19,8 +19,8 @@ exports.googleCallback = (req, res, next) => {
     res.cookie('token', accessToken, {
       httpOnly: true,
       secure: true,
-      domain: '.eduskillbridge.net',
       sameSite: 'Lax',
+      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
     });
     res.redirect(`${frontendBase}/website`);
   })(req, res, next);

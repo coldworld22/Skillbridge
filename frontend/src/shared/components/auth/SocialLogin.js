@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaGoogle, FaFacebook, FaApple } from "react-icons/fa";
+import { FaGoogle, FaFacebook, FaApple, FaGithub } from "react-icons/fa";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import { API_BASE_URL } from "@/config/config";
 
-const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple };
+const iconMap = { google: FaGoogle, facebook: FaFacebook, apple: FaApple, github: FaGithub };
 const unifiedButtonStyle =
   "w-12 h-12 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400";
 

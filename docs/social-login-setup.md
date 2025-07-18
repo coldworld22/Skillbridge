@@ -24,3 +24,16 @@ This guide explains how to configure OAuth providers like Google so users can si
 If the redirect URI does not exactly match what is configured on Google, the login page will display **Error 400: redirect_uri_mismatch**.
 
 If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, make sure the frontend's `NEXT_PUBLIC_API_BASE_URL` is set to your backend URL including the `/api` prefix. Without this variable the social login buttons default to `/api/auth/*`.
+
+## GitHub
+
+1. On GitHub open **Settings → Developer settings → OAuth Apps** and create a new OAuth App.
+2. Set the **Authorization callback URL** to:
+   ```
+   http://localhost:5000/api/auth/github/callback
+   ```
+   Replace `http://localhost:5000` with your backend URL when deployed.
+3. Enter the generated **Client ID** and **Client Secret** in `backend/.env` or the admin panel under **Social Login Settings**.
+4. Save the settings and restart the backend so the GitHub strategy is initialized.
+
+After completing these steps the **Sign in with GitHub** button should redirect back to `/auth/social-success` and automatically log the user in.
