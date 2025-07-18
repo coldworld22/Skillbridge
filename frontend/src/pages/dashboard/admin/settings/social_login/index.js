@@ -368,7 +368,7 @@ export default function SocialLoginSettingsPage() {
                     placeholder={getDefaultRedirectUrl(provider.key)}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Default: <code>{getDefaultRedirectUrl(provider.key)}</code>
+                    Default: <code>{getDefaultRedirectUrl(provider.key)}</code>{" "}
                     <button
                       type="button"
                       onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider))}
