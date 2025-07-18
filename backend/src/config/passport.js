@@ -29,14 +29,16 @@ async function initStrategies() {
         },
         async (_accessToken, _refreshToken, profile, done) => {
           try {
-            const { id, displayName, username, emails } = profile;
+            const { id, displayName, username, emails, photos } = profile;
             const email = emails && emails[0] && emails[0].value;
             const fullName = displayName || username;
+            const avatarUrl = photos && photos[0] && photos[0].value;
             const result = await socialAuthService.loginOrRegister({
               provider: 'github',
               providerId: id,
               email,
               fullName,
+              avatarUrl,
             });
             return done(null, result);
           } catch (err) {
@@ -59,13 +61,15 @@ async function initStrategies() {
         },
         async (_accessToken, _refreshToken, profile, done) => {
           try {
-            const { id, displayName, emails } = profile;
+            const { id, displayName, emails, photos } = profile;
             const email = emails && emails[0] && emails[0].value;
+            const avatarUrl = photos && photos[0] && photos[0].value;
             const result = await socialAuthService.loginOrRegister({
               provider: 'google',
               providerId: id,
               email,
               fullName: displayName,
+              avatarUrl,
             });
             return done(null, result);
           } catch (err) {

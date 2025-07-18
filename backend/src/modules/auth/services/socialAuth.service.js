@@ -4,7 +4,13 @@ const { generateAccessToken, generateRefreshToken } = require("./auth.service");
 
 const SALT_ROUNDS = 12;
 
-exports.loginOrRegister = async ({ provider, providerId, email, fullName }) => {
+exports.loginOrRegister = async ({
+  provider,
+  providerId,
+  email,
+  fullName,
+  avatarUrl,
+}) => {
   let account = await userModel.findBySocialAccount(provider, providerId);
   let user;
 
@@ -30,10 +36,14 @@ exports.loginOrRegister = async ({ provider, providerId, email, fullName }) => {
         is_email_verified: !!email,
         is_phone_verified: false,
         profile_complete: false,
+        avatar_url: avatarUrl || null,
         created_at: new Date(),
         updated_at: new Date(),
       });
       user = newUser;
+    } else if (avatarUrl && !user.avatar_url) {
+      await userModel.updateUser(user.id, { avatar_url: avatarUrl });
+      user.avatar_url = avatarUrl;
     }
     await userModel.addSocialAccount(user.id, provider, providerId, email);
   }
