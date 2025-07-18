@@ -27,6 +27,7 @@ export default function Register() {
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const [recaptchaCfg, setRecaptchaCfg] = useState(null);
+  const [cfgLoading, setCfgLoading] = useState(true);
   const recaptchaRef = useRef(null);
 
   const {
@@ -60,14 +61,23 @@ export default function Register() {
   }, [fetchAppConfig]);
 
   useEffect(() => {
-    fetchSocialLoginConfig().then(setRecaptchaCfg).catch(() => {});
+    fetchSocialLoginConfig()
+      .then(setRecaptchaCfg)
+      .catch(() => {})
+      .finally(() => setCfgLoading(false));
   }, []);
 
   const onSubmit = async (data) => {
     try {
       const { full_name, email, phone, password, role } = data;
+      let cfg = recaptchaCfg;
+      if (!cfg && cfgLoading) {
+        cfg = await fetchSocialLoginConfig().catch(() => null);
+        setRecaptchaCfg(cfg);
+        setCfgLoading(false);
+      }
       let token;
-      if (recaptchaCfg?.recaptcha?.active && recaptchaRef.current) {
+      if (cfg?.recaptcha?.active && recaptchaRef.current) {
         token = await recaptchaRef.current.executeAsync();
         recaptchaRef.current.reset();
       }
@@ -197,11 +207,12 @@ export default function Register() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           onClick={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${isSubmitting
-            ? "bg-gray-500 cursor-not-allowed"
-            : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
-            }`}
+          disabled={isSubmitting || (cfgLoading && !recaptchaCfg)}
+          className={`w-full mt-4 py-2 rounded-lg font-semibold transition ${
+            isSubmitting || (cfgLoading && !recaptchaCfg)
+              ? "bg-gray-500 cursor-not-allowed"
+              : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+          }`}
         >
           {isSubmitting ? "Registering..." : "Register"}
         </motion.button>
@@ -210,6 +221,7 @@ export default function Register() {
           <ReCAPTCHA
             sitekey={recaptchaCfg.recaptcha.siteKey}
             size="invisible"
+            badge="bottomleft"
             ref={recaptchaRef}
           />
         )}
