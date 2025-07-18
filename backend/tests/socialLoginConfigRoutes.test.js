@@ -24,13 +24,19 @@ app.use(express.json());
 app.use('/api/social-login/config', routes);
 
 describe('GET /api/social-login/config', () => {
-  it('returns settings', async () => {
-    const mock = { enabled: true };
+  it('returns sanitized settings', async () => {
+    const mock = {
+      providers: { google: { clientId: 'id', clientSecret: 'secret' } },
+      recaptcha: { siteKey: 'site', secretKey: 'priv' },
+    };
     service.getSettings.mockResolvedValue(mock);
 
     const res = await request(app).get('/api/social-login/config');
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual(mock);
+    expect(res.body.data).toEqual({
+      providers: { google: { clientId: 'id' } },
+      recaptcha: { siteKey: 'site' },
+    });
     expect(service.getSettings).toHaveBeenCalled();
   });
 });
