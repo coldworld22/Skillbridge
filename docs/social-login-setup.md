@@ -17,7 +17,7 @@ This guide explains how to configure OAuth providers like Google so users can si
    https://yourdomain.com/api/auth/google/callback
    ```
 
-3. Copy the generated **Client ID** and **Client secret** and set them in `backend/.env` or through the admin dashboard under **Social Login Settings**.
+3. Copy the generated **Client ID** and **Client secret** and enter them in the admin dashboard under **Social Login Settings**. Saving will automatically write the values to `backend/.env`.
 4. If the auto-generated redirect URL shown in the admin panel does not match the one configured in Google, enter the desired URL in the **Redirect URL** field for Google and save.
 5. Restart the backend so the new credentials take effect.
 
@@ -40,7 +40,7 @@ request's `Origin` header automatically.
    http://localhost:5000/api/auth/github/callback
    ```
    Replace `http://localhost:5000` with your backend URL when deployed.
-3. Enter the generated **Client ID** and **Client Secret** in `backend/.env` or the admin panel under **Social Login Settings**.
+3. Enter the generated **Client ID** and **Client Secret** in the admin panel under **Social Login Settings**. These values will be stored in `backend/.env` automatically.
 4. Save the settings and restart the backend so the GitHub strategy is initialized.
 
 After completing these steps the **Sign in with GitHub** button should redirect back to `/auth/social-success` and automatically log the user in.
