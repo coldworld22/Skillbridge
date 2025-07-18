@@ -25,10 +25,12 @@ If the redirect URI does not exactly match what is configured on Google, the log
 
 If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, make sure the frontend's `NEXT_PUBLIC_API_BASE_URL` is set to your backend URL including the `/api` prefix. Without this variable the social login buttons default to `/api/auth/*`.
 
+
 If the authentication completes but you land on a 404 page, check that the backend's
 `FRONTEND_URL` matches your frontend domain. An incorrect value can cause the API
 to redirect to the wrong host. You may also omit `FRONTEND_URL` to use the
 request's `Origin` header automatically.
+
 
 ## GitHub
 
