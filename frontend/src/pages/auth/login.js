@@ -228,16 +228,8 @@ export default function Login() {
           </motion.button>
         </form>
 
-        {recaptchaCfg?.recaptcha?.active && (
-          <ReCAPTCHA
-            sitekey={recaptchaCfg.recaptcha.siteKey}
-            size="invisible"
-            badge="bottomleft"
-            ref={recaptchaRef}
-          />
-        )}
-
         <SocialLogin />
+
 
         <p className="text-center mt-6 text-gray-400 text-sm">
           Don't have an account?{" "}
@@ -246,6 +238,17 @@ export default function Login() {
           </a>
         </p>
       </motion.div>
+
+      {/* Place reCAPTCHA outside the motion.div so hovering the card doesn't
+          move the badge */}
+      {recaptchaCfg?.recaptcha?.active && (
+        <ReCAPTCHA
+          sitekey={recaptchaCfg.recaptcha.siteKey}
+          size="invisible"
+          badge="bottomleft"
+          ref={recaptchaRef}
+        />
+      )}
     </div>
   );
 }
