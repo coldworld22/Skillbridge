@@ -16,7 +16,7 @@ exports.googleCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const host = req.get('origin') || frontendBase;
+    const host = req.query.origin || req.get('origin') || frontendBase;
     const redirectUrl = `${host}/auth/social-success?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);
@@ -72,7 +72,7 @@ exports.githubCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const host = req.get('origin') || frontendBase;
+    const host = req.query.origin || req.get('origin') || frontendBase;
     const redirectUrl = `${host}/auth/social-success?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);

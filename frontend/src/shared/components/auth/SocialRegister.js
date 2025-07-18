@@ -31,7 +31,9 @@ export default function SocialRegister() {
           const handleClick = () => {
             // Align with API service defaulting to '/api' when env is missing
             const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-            window.location.href = `${base}/auth/${key}`;
+            const origin = window.location.origin;
+            const url = `${base}/auth/${key}?origin=${encodeURIComponent(origin)}`;
+            window.location.href = url;
           };
           return (
             <motion.button
