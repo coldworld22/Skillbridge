@@ -16,7 +16,8 @@ exports.googleCallback = (req, res, next) => {
     }
     const { accessToken, refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const redirectUrl = `${frontendBase}/website?token=${accessToken}`;
+    const host = req.get('origin') || frontendBase;
+    const redirectUrl = `${host}/website?token=${accessToken}`;
     res.redirect(redirectUrl);
   })(req, res, next);
 };
