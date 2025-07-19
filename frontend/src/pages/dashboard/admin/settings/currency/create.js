@@ -68,7 +68,8 @@ function CreateCurrencyPage() {
       router.push("/dashboard/admin/settings/currency");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save currency.");
+      const msg = err.response?.data?.message || "Failed to save currency.";
+      toast.error(msg);
     }
   };
 

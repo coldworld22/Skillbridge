@@ -61,7 +61,8 @@ function CurrencyManagerPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update status");
+      const msg = err.response?.data?.message || "Failed to update status";
+      toast.error(msg);
     }
   };
 
@@ -82,7 +83,8 @@ function CurrencyManagerPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to set default");
+      const msg = err.response?.data?.message || "Failed to set default";
+      toast.error(msg);
     }
   };
 
@@ -105,7 +107,8 @@ function CurrencyManagerPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update");
+      const msg = err.response?.data?.message || "Failed to update";
+      toast.error(msg);
     }
   };
 
@@ -129,7 +132,8 @@ function CurrencyManagerPage() {
         refreshMessages?.();
       } catch (err) {
         console.error(err);
-        toast.error("Failed to delete");
+        const msg = err.response?.data?.message || "Failed to delete";
+        toast.error(msg);
       }
     }
   };
@@ -164,7 +168,8 @@ function CurrencyManagerPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Bulk delete failed");
+      const msg = err.response?.data?.message || "Bulk delete failed";
+      toast.error(msg);
     }
   };
 
