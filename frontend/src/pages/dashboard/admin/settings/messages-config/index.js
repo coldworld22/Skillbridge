@@ -1,8 +1,9 @@
 // pages/dashboard/admin/settings/messages-config.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaToggleOn, FaToggleOff, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { fetchMessagesConfig, updateMessagesConfig } from "@/services/admin/messagesConfigService";
 
 const initialProviders = [
   {
@@ -50,6 +51,24 @@ const initialProviders = [
 
 export default function MessageServiceConfig() {
   const [providers, setProviders] = useState(initialProviders);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchMessagesConfig();
+        if (data && Array.isArray(data.providers)) {
+          setProviders(data.providers);
+        }
+      } catch (err) {
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   // Separate groups
   const smsProviders = providers.filter(p => p.type === "Gateway");
@@ -70,7 +89,15 @@ export default function MessageServiceConfig() {
   };
 
   const handleSaveProvider = (index) => {
-    toast.success(`${providers[index].name} settings saved!`, { theme: "colored" });
+    const save = async () => {
+      try {
+        await updateMessagesConfig({ providers });
+        toast.success(`${providers[index].name} settings saved!`, { theme: "colored" });
+      } catch (err) {
+        toast.error("Failed to save settings");
+      }
+    };
+    save();
   };
 
   return (

@@ -75,6 +75,7 @@ app.use("/api/payment-methods", require("./modules/paymentMethods/paymentMethods
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
 app.use("/api/payment-methods/admin", require("./modules/paymentMethods/paymentMethods.routes"));
 app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.routes"));
+app.use("/api/messages/config", require("./modules/messagesConfig/messagesConfig.routes"));
 app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
 app.use("/api/app-config", require("./modules/appConfig/appConfig.routes"));
 app.use("/api/email-config", require("./modules/emailConfig/emailConfig.routes"));
