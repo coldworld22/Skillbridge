@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { FaUserCircle, FaCommentDots, FaUsers, FaPlus, FaSearch } from "react-icons/fa";
 import Link from "next/link";
 import Navbar from "@/components/website/sections/Navbar";
-import Footer from "@/components/website/sections/Footer";
 
 const CommunityLandingPage = () => {
   const [discussions, setDiscussions] = useState([]);
@@ -143,7 +142,6 @@ const CommunityLandingPage = () => {
           Not a member yet? <Link href="/auth/register" className="text-yellow-400 hover:underline">Join now</Link> and start contributing!
         </motion.div>
       </motion.section>
-      <Footer />
     </div>
   );
 };
