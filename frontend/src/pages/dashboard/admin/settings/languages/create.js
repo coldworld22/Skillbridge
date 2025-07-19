@@ -3,8 +3,9 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
+import { createLanguage } from "@/services/languageService";
 
-const predefinedNamespaces = ["common", "website", "dashboard", "auth", "classes"];
+const predefinedNamespaces = ["auth", "website", "dashboard"];
 
 export default function CreateLanguagePage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function CreateLanguagePage() {
     default: false,
     description: "",
     namespaceFiles: {},
+    icon: null,
   });
   const [error, setError] = useState("");
   const [jsonPreviews, setJsonPreviews] = useState({});
@@ -43,6 +45,12 @@ export default function CreateLanguagePage() {
     }
   };
 
+  const handleIconChange = (file) => {
+    if (file && file.type.startsWith("image/")) {
+      setForm((prev) => ({ ...prev, icon: file }));
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
@@ -58,13 +66,20 @@ export default function CreateLanguagePage() {
 
   const existingCodes = ["en", "ar", "fr"];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (existingCodes.includes(form.code.toLowerCase())) {
       alert("Language code already exists.");
       return;
     }
-    console.log("Creating language:", form);
+    const fd = new FormData();
+    fd.append("name", form.label);
+    fd.append("code", form.code);
+    fd.append("is_active", form.active);
+    fd.append("is_default", form.default);
+    if (form.icon) fd.append("icon", form.icon);
+
+    await createLanguage(fd);
     router.push("/dashboard/admin/settings/languages");
   };
 
@@ -105,15 +120,32 @@ export default function CreateLanguagePage() {
               placeholder="e.g. ar"
               required
               className="w-full border p-2 rounded"
+          />
+          {form.code && (
+            <img
+              src={`https://flagcdn.com/24x18/${form.code === 'en' ? 'gb' : form.code}.png`}
+              alt="Flag preview"
+              className="mt-2 w-6 h-4 rounded border"
             />
-            {form.code && (
-              <img
-                src={`https://flagcdn.com/24x18/${form.code === 'en' ? 'gb' : form.code}.png`}
-                alt="Flag preview"
-                className="mt-2 w-6 h-4 rounded border"
-              />
-            )}
-          </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block font-semibold mb-1">Language Icon</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleIconChange(e.target.files[0])}
+            className="w-full border p-2 rounded"
+          />
+          {form.icon && (
+            <img
+              src={URL.createObjectURL(form.icon)}
+              alt="icon preview"
+              className="mt-2 w-6 h-6 rounded"
+            />
+          )}
+        </div>
 
           <div>
             <label className="block font-semibold mb-1">Text Direction</label>

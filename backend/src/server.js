@@ -89,6 +89,7 @@ app.use("/api/cart", require("./modules/cart/cart.routes"));
 app.use("/api/notifications", require("./modules/notifications/notifications.routes"));
 app.use("/api/messages", require("./modules/messages/messages.routes"));
 app.use("/api/chat", require("./modules/chat/chat.routes"));
+app.use("/api/languages", require("./modules/languages/languages.routes"));
 
 app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
 
