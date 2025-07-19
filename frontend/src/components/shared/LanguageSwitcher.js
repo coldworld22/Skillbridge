@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 

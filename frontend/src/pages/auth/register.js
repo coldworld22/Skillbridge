@@ -19,7 +19,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 import ReCAPTCHA from "react-google-recaptcha";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 export default function Register() {
   const router = useRouter();

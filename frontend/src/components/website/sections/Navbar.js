@@ -38,7 +38,7 @@ const fetcher = (url) => api.get(url).then((res) => res.data.data);
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 import { mutate } from "swr";
 
 const Navbar = () => {
@@ -77,13 +77,22 @@ const Navbar = () => {
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", fetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
-  const changeLang = (lng) => {
-    i18n.changeLanguage(lng);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("lng", lng);
+  const changeLang = async (lng) => {
+    try {
+      await i18n.changeLanguage(lng);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("lng", lng);
+      }
+      mutate("/languages");
+      const selected = langs?.find((l) => l.code === lng);
+      toast.success(
+        `Language changed${selected ? ` to ${selected.name}` : ""}`
+      );
+    } catch (_) {
+      toast.error("Failed to change language");
+    } finally {
+      setLanguageOpen(false);
     }
-    mutate("/languages");
-    setLanguageOpen(false);
   };
 
   useEffect(() => {
