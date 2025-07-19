@@ -16,6 +16,7 @@ const fetchTranslations = async (code) => {
   return data;
 };
 
+
 const namespaces = ["common", "website", "dashboard", "auth"];
 
 export default function EditLanguagePage() {
