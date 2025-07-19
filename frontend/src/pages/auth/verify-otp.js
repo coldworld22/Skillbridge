@@ -10,7 +10,7 @@ import { FaCheckCircle } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import { verifyOtpCode, requestPasswordReset } from "@/services/auth/authService";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 // ✅ OTP Schema
 const otpSchema = z.object({
