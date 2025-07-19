@@ -110,6 +110,7 @@ export default function FooterSettingsPage() {
       const updated = await updateAppConfig(payload);
       setConfig(updated);
       updateStore(updated);
+
       await fetchConfig();
       toast.success("Settings saved");
     } catch (_err) {

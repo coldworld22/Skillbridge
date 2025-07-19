@@ -1,35 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import dynamic from "next/dynamic";
 import { FaSave, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
 
 // ReactQuill (lazy load to avoid SSR issues)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
 const initialPolicies = {
-  "Privacy Policy": {
-    title: "Privacy Policy",
-    content: "<p>We respect your privacy...</p>",
-  },
-  "Terms & Conditions": {
-    title: "Terms & Conditions",
-    content: "<p>By using this platform...</p>",
-  },
-  "Refund Policy": {
-    title: "Refund Policy",
-    content: "<p>Refunds are only applicable...</p>",
-  },
-  "Delete Account": {
-    title: "Delete Account",
-    content: "<p>Instructions on permanently removing a user account.</p>",
-  },
+  "Privacy Policy": { title: "Privacy Policy", content: "" },
+  "Terms of Service": { title: "Terms of Service", content: "" },
+  "Delete Account": { title: "Delete Account", content: "" },
 };
 
 export default function AdminPoliciesPage() {
   const [policies, setPolicies] = useState(initialPolicies);
   const [activeTab, setActiveTab] = useState("Privacy Policy");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPolicy, setNewPolicy] = useState({ title: "", content: "" });
@@ -45,9 +34,34 @@ export default function AdminPoliciesPage() {
     }));
   };
 
-  const handleSave = () => {
-    toast.success(`✅ ${activeTab} saved successfully!`);
-    // TODO: Save to backend API
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchPolicies();
+        if (data && Object.keys(data).length) {
+          setPolicies({ ...initialPolicies, ...data });
+        }
+      } catch (err) {
+        toast.error("Failed to load policies");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const updated = await updatePolicies(policies);
+      setPolicies(updated);
+      toast.success(`✅ ${activeTab} saved successfully!`);
+    } catch (err) {
+      toast.error("Failed to save policies");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -107,9 +121,10 @@ export default function AdminPoliciesPage() {
             </button>
             <button
               onClick={handleSave}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-base flex items-center gap-2"
+              disabled={isLoading}
+              className={`bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-base flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaSave /> Save {activeTab}
+              <FaSave /> {isLoading ? 'Saving...' : `Save ${activeTab}`}
             </button>
           </div>
         </div>
