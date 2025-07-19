@@ -1,4 +1,32 @@
 {
   "welcome_admin": "Welcome, Admin",
-  "users": "Users"
+  "users": "Users",
+  "settings": "Settings",
+  "language_manager": "Language Manager",
+  "language_config": "Language Config",
+  "currency_manager": "Currency Manager",
+  "social_logins": "Social Logins",
+  "email_config": "Email Config",
+  "messages_config": "Messages Config",
+  "policies": "Policies",
+  "contact_info": "Contact Info",
+  "blogs": "Blogs",
+  "faqs": "FAQs",
+  "app_settings": "App Settings",
+  "footer_settings": "Footer Settings",
+  "seo_manager": "SEO Manager",
+  "popups_alerts": "Popups / Alerts",
+  "certificate_templates": "Certificate Templates",
+  "third_party_config": "Third Parties Config",
+  "monetization": "Monetization",
+  "subscription_plans": "Subscription Plans",
+  "payment_config": "Payment Config",
+  "ads_manager": "Ads Manager",
+  "offers": "Offers",
+  "support": "Support",
+  "legal": "Legal",
+  "privacy_policy": "Privacy Policy",
+  "terms_of_service": "Terms of Service",
+  "delete_account": "Delete Account"
+
 }
