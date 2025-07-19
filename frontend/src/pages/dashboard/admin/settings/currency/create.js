@@ -5,8 +5,9 @@ import { useSWRConfig } from "swr";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import { createCurrency } from "@/services/admin/currencyService";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function CreateCurrencyPage() {
+function CreateCurrencyPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const [form, setForm] = useState({
@@ -42,7 +43,6 @@ export default function CreateCurrencyPage() {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (logoFile) fd.append("logo", logoFile);
-
     try {
       await createCurrency(fd);
       mutate("/currencies");
@@ -204,4 +204,17 @@ export default function CreateCurrencyPage() {
     </AdminLayout>
   );
 }
+
+CreateCurrencyPage.getLayout = function getLayout(page) {
+  return <AdminLayout>{page}</AdminLayout>;
+};
+
+const ProtectedCreateCurrencyPage = withAuthProtection(CreateCurrencyPage, [
+  "admin",
+  "superadmin",
+]);
+
+ProtectedCreateCurrencyPage.getLayout = CreateCurrencyPage.getLayout;
+
+export default ProtectedCreateCurrencyPage;
 
