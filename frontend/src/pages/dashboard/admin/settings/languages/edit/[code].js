@@ -5,6 +5,16 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 
+const fetchTranslations = async (code) => {
+  const data = {};
+  for (const ns of namespaces) {
+    const res = await fetch(`/api/translations/${code}/${ns}`);
+    if (res.ok) data[ns] = await res.json();
+    else data[ns] = {};
+  }
+  return data;
+};
+
 const namespaces = ["common", "website", "dashboard", "auth", "classes"];
 
 export default function EditLanguagePage() {
@@ -16,21 +26,19 @@ export default function EditLanguagePage() {
 
   useEffect(() => {
     if (!code) return;
-    // This useEffect will be used later to fetch data from backend or load static files.
-    // setLoading(true);
-    // fetch data logic here
-    // setLoading(false);
-
-    // Placeholder mock (for UI structure only)
-    const mock = {};
-    for (const ns of namespaces) {
-      mock[ns] = {
-        welcome: "Welcome",
-        logout: "Logout",
-        save: "Save",
-      };
-    }
-    setTranslations(mock);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchTranslations(code);
+        setTranslations(data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load translations");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [code]);
 
   const handleChange = (ns, key, value) => {
@@ -41,15 +49,22 @@ export default function EditLanguagePage() {
   };
 
   const handleSave = async () => {
-    // This function will send updated `translations` to your backend for file saving
-    // Example:
-    // await fetch('/api/languages/update', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ code, translations })
-    // });
-
-    alert("🔧 Save logic will be connected to backend API in production.");
+    setLoading(true);
+    try {
+      for (const ns of namespaces) {
+        await fetch(`/api/translations/${code}/${ns}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(translations[ns] || {}),
+        });
+      }
+      alert("Translations saved");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save translations");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
