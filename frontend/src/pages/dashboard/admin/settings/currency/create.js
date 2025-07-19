@@ -1,26 +1,31 @@
 // pages/dashboard/admin/settings/currencies/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
+import { useSWRConfig } from "swr";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
+import { createCurrency } from "@/services/admin/currencyService";
 
 export default function CreateCurrencyPage() {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [form, setForm] = useState({
     label: "",
     code: "",
     symbol: "",
-    exchangeRate: 1,
-    active: true,
-    autoUpdate: true,
-    default: false,
+    exchange_rate: 1,
+    is_active: true,
+    auto_update: true,
+    is_default: false,
   });
   const [preview, setPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const key = name;
     const newValue =
-      name === "code"
+      key === "code"
         ? value.toUpperCase()
         : type === "checkbox"
         ? checked
@@ -28,16 +33,23 @@ export default function CreateCurrencyPage() {
 
     setForm((prev) => ({
       ...prev,
-      [name]: newValue,
+      [key]: newValue,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: connect to backend to create currency
-    console.log("Submitting currency:", form);
-    alert("✅ Currency saved successfully.");
-    router.push("/dashboard/admin/settings/currencies");
+    const fd = new FormData();
+    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    if (logoFile) fd.append("logo", logoFile);
+    try {
+      await createCurrency(fd);
+      mutate("/currencies");
+      router.push("/dashboard/admin/settings/currency");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save currency.");
+    }
   };
 
   return (
@@ -107,8 +119,8 @@ export default function CreateCurrencyPage() {
             <label className="block font-semibold mb-1">Exchange Rate</label>
             <input
               type="number"
-              name="exchangeRate"
-              value={form.exchangeRate}
+              name="exchange_rate"
+              value={form.exchange_rate}
               onChange={handleChange}
               min="0.0001"
               step="0.0001"
@@ -134,15 +146,10 @@ export default function CreateCurrencyPage() {
                 alert("Max file size is 2MB.");
                 return;
               }
-              const img = new Image();
-                img.onload = () => {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  setPreview(ev.target.result);
-                };
-                reader.readAsDataURL(file);
-              };
-              img.src = URL.createObjectURL(file);
+              const reader = new FileReader();
+              reader.onload = (ev) => setPreview(ev.target.result);
+              reader.readAsDataURL(file);
+              setLogoFile(file);
             }}
             className="w-full border p-2 rounded"
           />
@@ -157,8 +164,8 @@ export default function CreateCurrencyPage() {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                name="active"
-                checked={form.active}
+                name="is_active"
+                checked={form.is_active}
                 onChange={handleChange}
               />
               <span className="text-sm font-medium">Active</span>
@@ -167,8 +174,8 @@ export default function CreateCurrencyPage() {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                name="autoUpdate"
-                checked={form.autoUpdate}
+                name="auto_update"
+                checked={form.auto_update}
                 onChange={handleChange}
               />
               <span className="text-sm font-medium">Auto Update Rate</span>
@@ -177,8 +184,8 @@ export default function CreateCurrencyPage() {
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
-                name="default"
-                checked={form.default}
+                name="is_default"
+                checked={form.is_default}
                 onChange={handleChange}
               />
               <span className="text-sm font-medium">Set as Default</span>
@@ -196,3 +203,4 @@ export default function CreateCurrencyPage() {
     </AdminLayout>
   );
 }
+
