@@ -3,12 +3,14 @@ import { useRouter } from 'next/router';
 import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { getFullProfile } from '@/services/profile/profileService';
+import { useTranslation } from 'react-i18next';
 
 export default function SocialSuccess() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const { t } = useTranslation('auth');
 
   useEffect(() => {
     const { token } = router.query;
@@ -27,5 +29,5 @@ export default function SocialSuccess() {
     finalize();
   }, [router, setToken, setUser, fetchNotifications]);
 
-  return <p className="text-center mt-20">Signing you in...</p>;
+  return <p className="text-center mt-20">{t('signing_you_in')}</p>;
 }
