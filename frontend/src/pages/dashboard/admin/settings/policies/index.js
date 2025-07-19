@@ -13,6 +13,7 @@ const initialPolicies = {
   "Privacy Policy": { title: "Privacy Policy", content: "" },
   "Terms of Service": { title: "Terms of Service", content: "" },
   "Delete Account": { title: "Delete Account", content: "" },
+  Legal: { title: "Legal", content: "" },
 };
 
 export default function AdminPoliciesPage() {
