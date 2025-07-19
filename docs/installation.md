@@ -20,11 +20,16 @@ Follow these steps to run SkillBridge on your local machine.
 2. Configure environment variables for the backend:
 
    ```bash
-   cp backend/.env.example backend/.env
-   # edit backend/.env and set your secrets
-   # FRONTEND_URL defaults to http://localhost:3000
-   # change it if your frontend uses a different domain
-   ```
+  cp backend/.env.example backend/.env
+  # edit backend/.env and set your secrets
+  # FRONTEND_URL defaults to http://localhost:3000
+  # change it if your frontend uses a different domain
+  ```
+
+   The backend determines cookie security based on `NODE_ENV`. When running
+   locally leave `NODE_ENV` unset (defaults to `development`) so the refresh
+   token cookie is delivered over plain HTTP. Using `NODE_ENV=production` without
+   HTTPS will result in `401` errors when refreshing the session.
 
 3. (Optional) Install dependencies for manual development:
 
