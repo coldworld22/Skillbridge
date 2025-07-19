@@ -1,7 +1,9 @@
 // pages/dashboard/admin/settings/contact.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { fetchContactConfig, updateContactConfig } from "@/services/admin/contactConfigService";
 
 const initialConfig = {
     "email": "support@skillbridge.com",
@@ -16,14 +18,37 @@ const initialConfig = {
 
 export default function AdminContactSettings() {
     const [config, setConfig] = useState(initialConfig);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            try {
+                const data = await fetchContactConfig();
+                if (data) setConfig({ ...initialConfig, ...data });
+            } catch (err) {
+                toast.error("Failed to load settings");
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, []);
 
     const handleChange = (field, value) => {
         setConfig((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSave = () => {
-        // Replace with actual API call later
-        alert("Contact settings saved!");
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            await updateContactConfig(config);
+            toast.success("Contact settings saved!");
+        } catch (err) {
+            toast.error("Failed to save settings");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -101,9 +126,10 @@ export default function AdminContactSettings() {
                     <div className="text-right">
                         <button
                             onClick={handleSave}
-                            className="inline-flex items-center gap-2 bg-yellow-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+                            disabled={loading}
+                            className={`inline-flex items-center gap-2 px-6 py-2 rounded-lg shadow transition ${loading ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-600 text-white hover:bg-yellow-700"}`}
                         >
-                            <FaSave /> Save Settings
+                            <FaSave /> {loading ? "Saving..." : "Save Settings"}
                         </button>
                     </div>
                 </div>
