@@ -1,48 +1,98 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaTrash, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import {
+  fetchPosts,
+  createPost,
+  updatePost,
+  deletePost,
+} from "@/services/admin/blogService";
+import { toast } from "react-toastify";
 
 export default function AdminBlogManager() {
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      title: "10 Tips to Improve Online Learning",
-      image: "https://source.unsplash.com/random/400x200?education",
-      excerpt: "Discover how to stay motivated and succeed in online education.",
-      date: "2025-05-14",
-    },
-  ]);
+  const [posts, setPosts] = useState([]);
 
   const [newPost, setNewPost] = useState({
     title: "",
     excerpt: "",
-    image: "",
     date: new Date().toISOString().split("T")[0],
+    imageFile: null,
+    preview: null,
   });
 
   const [editId, setEditId] = useState(null);
 
-  const handleAdd = () => {
-    if (!newPost.title || !newPost.excerpt || !newPost.image) return;
-    setPosts((prev) => [...prev, { ...newPost, id: Date.now() }]);
-    resetForm();
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      const list = await fetchPosts();
+      setPosts(list);
+    } catch (err) {
+      console.error('Failed to load posts', err);
+      toast.error('Failed to load posts');
+    }
   };
 
-  const handleDelete = (id) => {
-    setPosts((prev) => prev.filter((post) => post.id !== id));
+  const handleAdd = async () => {
+    if (!newPost.title || !newPost.excerpt || !newPost.imageFile) return;
+    try {
+      const form = new FormData();
+      form.append("title", newPost.title);
+      form.append("excerpt", newPost.excerpt);
+      form.append("published_at", newPost.date);
+      form.append("image", newPost.imageFile);
+      const saved = await createPost(form);
+      setPosts((prev) => [...prev, saved]);
+      resetForm();
+      toast.success("Post created");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to create post");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this post?")) return;
+    try {
+      await deletePost(id);
+      setPosts((prev) => prev.filter((post) => post.id !== id));
+      toast.success("Post deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete post");
+    }
   };
 
   const handleEdit = (id) => {
     const post = posts.find((p) => p.id === id);
     setEditId(id);
-    setNewPost({ ...post });
+    setNewPost({
+      title: post.title,
+      excerpt: post.excerpt,
+      date: post.published_at ? post.published_at.split("T")[0] : new Date().toISOString().split("T")[0],
+      imageFile: null,
+      preview: post.image_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${post.image_url}` : null,
+    });
   };
 
-  const handleSave = () => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === editId ? { ...newPost, id: editId } : p))
-    );
-    resetForm();
+  const handleSave = async () => {
+    try {
+      const form = new FormData();
+      form.append("title", newPost.title);
+      form.append("excerpt", newPost.excerpt);
+      form.append("published_at", newPost.date);
+      if (newPost.imageFile) form.append("image", newPost.imageFile);
+      const updated = await updatePost(editId, form);
+      setPosts((prev) => prev.map((p) => (p.id === editId ? updated : p)));
+      resetForm();
+      toast.success("Post updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update post");
+    }
   };
 
   const handleCancel = () => {
@@ -51,7 +101,13 @@ export default function AdminBlogManager() {
 
   const resetForm = () => {
     setEditId(null);
-    setNewPost({ title: "", excerpt: "", image: "", date: new Date().toISOString().split("T")[0] });
+    setNewPost({
+      title: "",
+      excerpt: "",
+      date: new Date().toISOString().split("T")[0],
+      imageFile: null,
+      preview: null,
+    });
   };
 
   return (
@@ -78,14 +134,14 @@ export default function AdminBlogManager() {
                 const file = e.target.files[0];
                 if (file) {
                   const imageUrl = URL.createObjectURL(file);
-                  setNewPost((prev) => ({ ...prev, image: imageUrl }));
+                  setNewPost((prev) => ({ ...prev, imageFile: file, preview: imageUrl }));
                 }
               }}
               className="w-full border p-2 rounded"
             />
-            {newPost.image && (
+            {newPost.preview && (
               <div className="mt-2">
-                <img src={newPost.image} alt="Preview" className="rounded max-h-48 object-cover border" />
+                <img src={newPost.preview} alt="Preview" className="rounded max-h-48 object-cover border" />
               </div>
             )}
           </div>
@@ -124,10 +180,18 @@ export default function AdminBlogManager() {
         <div className="grid md:grid-cols-2 gap-6">
           {posts.map((post) => (
             <div key={post.id} className="bg-gray-100 rounded shadow overflow-hidden">
-              <img src={post.image} alt={post.title} className="w-full h-40 object-cover" />
+              {post.image_url && (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${post.image_url}`}
+                  alt={post.title}
+                  className="w-full h-40 object-cover"
+                />
+              )}
               <div className="p-4">
                 <h3 className="font-semibold text-lg">{post.title}</h3>
-                <p className="text-sm text-gray-600 mb-2">{post.date}</p>
+                {post.published_at && (
+                  <p className="text-sm text-gray-600 mb-2">{post.published_at.split('T')[0]}</p>
+                )}
                 <p className="text-gray-700 text-sm mb-4">{post.excerpt}</p>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(post.id)} className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1">

@@ -2,27 +2,23 @@ import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import Link from 'next/link';
-
-const mockPosts = [
-  {
-    id: 1,
-    title: '10 Tips to Improve Online Learning',
-    slug: '10-tips-to-improve-online-learning',
-    date: 'May 14, 2025',
-    excerpt: 'Discover how to stay motivated and succeed in online education with these 10 practical tips.',
-    image: 'https://source.unsplash.com/random/800x500?education',
-  },
-  {
-    id: 2,
-    title: 'How SkillBridge Uses AI for Smarter Tutoring',
-    slug: 'ai-powered-tutoring-skillbridge',
-    date: 'May 12, 2025',
-    excerpt: 'Learn how our AI-driven tools create adaptive learning experiences tailored to every student.',
-    image: 'https://source.unsplash.com/random/800x501?ai,learning',
-  },
-];
+import { useEffect, useState } from 'react';
+import { fetchBlogPosts } from '@/services/blogService';
 
 export default function BlogPage() {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await fetchBlogPosts();
+        setPosts(list);
+      } catch (err) {
+        console.error('Failed to load posts', err);
+      }
+    };
+    load();
+  }, []);
   return (
     <>
       <PageHead title="Blog" />
@@ -36,12 +32,16 @@ export default function BlogPage() {
         </section>
 
         <section className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-10 px-6 pb-24">
-          {mockPosts.map((post) => (
+          {posts.map((post) => (
             <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-400/20 transition">
-              <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
+              {post.image && (
+                <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
+              )}
               <div className="p-6">
                 <h2 className="text-2xl font-semibold text-yellow-300">{post.title}</h2>
-                <p className="text-sm text-gray-400 mt-1">{post.date}</p>
+                {post.published_at && (
+                  <p className="text-sm text-gray-400 mt-1">{new Date(post.published_at).toLocaleDateString()}</p>
+                )}
                 <p className="text-gray-300 mt-3">{post.excerpt}</p>
                 <Link href={`/blog/${post.slug}`}>
                   <span className="text-indigo-400 hover:underline mt-4 inline-block">Read More →</span>
