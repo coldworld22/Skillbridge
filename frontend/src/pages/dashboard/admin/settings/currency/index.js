@@ -1,6 +1,12 @@
 // pages/dashboard/admin/settings/currencies/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo } from "react";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import Link from "next/link";
 import useSWR from "swr";
 
@@ -18,6 +24,9 @@ function CurrencyManagerPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
 
   const filteredCurrencies = useMemo(() => {
     return currencies.filter((c) => {
@@ -36,29 +45,96 @@ function CurrencyManagerPage() {
   const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
-    await updateCurrency(id, { is_active: !currency.is_active });
-    mutate();
+    try {
+      await updateCurrency(id, { is_active: !currency.is_active });
+      mutate();
+      const status = currency.is_active ? "Inactive" : "Active";
+      toast.success(`Status updated to ${status}`);
+      const message = `Currency "${currency.label}" status changed to ${status}.`;
+      await createNotification({
+        user_id: user.id,
+        type: "currency_status_changed",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to update status";
+      toast.error(msg);
+    }
   };
 
   const setDefault = async (id) => {
-    await updateCurrency(id, { is_default: true });
-    mutate();
+    try {
+      const currency = currencies.find((c) => c.id === id);
+      await updateCurrency(id, { is_default: true });
+      mutate();
+      toast.success("Set as default");
+      const message = `Currency "${currency?.label || id}" set as default.`;
+      await createNotification({
+        user_id: user.id,
+        type: "currency_set_default",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to set default";
+      toast.error(msg);
+    }
   };
 
   const toggleAutoUpdate = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
-    await updateCurrency(id, { auto_update: !currency.auto_update });
-    mutate();
+    try {
+      await updateCurrency(id, { auto_update: !currency.auto_update });
+      mutate();
+      const status = currency.auto_update ? "disabled" : "enabled";
+      toast.success(`Auto update ${status}`);
+      const message = `Currency "${currency.label}" auto update ${status}.`;
+      await createNotification({
+        user_id: user.id,
+        type: "currency_auto_update_changed",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to update";
+      toast.error(msg);
+    }
   };
 
   const deleteCurrency = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (currency?.is_default) return alert("Cannot delete default currency.");
     if (confirm(`Delete currency: ${currency.label}?`)) {
-      await deleteCurrencyApi(id);
-      mutate();
-      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      try {
+        await deleteCurrencyApi(id);
+        mutate();
+        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+        toast.success("Currency deleted");
+        const message = `Currency "${currency.label}" deleted.`;
+        await createNotification({
+          user_id: user.id,
+          type: "currency_deleted",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (err) {
+        console.error(err);
+        const msg = err.response?.data?.message || "Failed to delete";
+        toast.error(msg);
+      }
     }
   };
 
@@ -74,13 +150,30 @@ function CurrencyManagerPage() {
     const deletables = selectedIds.filter(
       (id) => !currencies.find((c) => c.id === id)?.is_default
     );
-    await Promise.all(deletables.map((id) => deleteCurrencyApi(id)));
-    clearAll();
-    mutate();
+    try {
+      await Promise.all(deletables.map((id) => deleteCurrencyApi(id)));
+      clearAll();
+      mutate();
+      if (deletables.length) {
+        toast.success("Currencies deleted");
+        const message = `Deleted ${deletables.length} currencies.`;
+        await createNotification({
+          user_id: user.id,
+          type: "currency_bulk_deleted",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      }
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Bulk delete failed";
+      toast.error(msg);
+    }
   };
 
   return (
-    <AdminLayout>
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">💱 Currency Manager</h1>
@@ -230,7 +323,6 @@ function CurrencyManagerPage() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
   );
 }
 
