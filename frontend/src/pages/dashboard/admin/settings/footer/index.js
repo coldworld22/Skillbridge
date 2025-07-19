@@ -1,32 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaTrash } from "react-icons/fa";
+import { fetchAppConfig, updateAppConfig } from "@/services/admin/appConfigService";
+import useAppConfigStore from "@/store/appConfigStore";
+import { toast } from "react-toastify";
 
-export default function FooterSettingsPage() {
-  const [about, setAbout] = useState("SkillBridge connects learners with expert instructors worldwide.");
-  const [socialLinks, setSocialLinks] = useState([
+const defaultFooter = {
+  about: "SkillBridge connects learners with expert instructors worldwide.",
+  socialLinks: [
     { platform: "Facebook", url: "https://facebook.com" },
-    { platform: "Twitter", url: "https://twitter.com" }
-  ]);
-  const [quickLinks, setQuickLinks] = useState(["about", "contact", "FAQs", "Blog", "Support"]);
-  const [sitemap, setSitemap] = useState(["Courses", "Instructors", "Community", "Careers"]);
-  const [contact, setContact] = useState({
+    { platform: "Twitter", url: "https://twitter.com" },
+  ],
+  quickLinks: ["about", "contact", "FAQs", "Blog", "Support"],
+  sitemap: ["Courses", "Instructors", "Community", "Careers"],
+  contact: {
     email: "support@skillbridge.com",
     phone: "+1 (555) 123-4567",
-    address: "123 Learning St, New York, USA"
-  });
-  const [whatsapp, setWhatsapp] = useState("15551234567");
-  const [showNewsletter, setShowNewsletter] = useState(true);
-  const [footerNote, setFooterNote] = useState("All rights reserved.");
-  const [adsEnabled, setAdsEnabled] = useState(false);
-  const [adsClientId, setAdsClientId] = useState("ca-pub-xxxxxxxxxxxxxxxx");
-  const [paymentMethods, setPaymentMethods] = useState({
+    address: "123 Learning St, New York, USA",
+  },
+  whatsapp: "15551234567",
+  showNewsletter: true,
+  footerNote: "All rights reserved.",
+  adsEnabled: false,
+  adsClientId: "ca-pub-xxxxxxxxxxxxxxxx",
+  paymentMethods: {
     visa: true,
     mastercard: true,
     paypal: true,
     applepay: true,
-    amazonpay: false
-  });
+    amazonpay: false,
+  },
+};
+
+export default function FooterSettingsPage() {
+  const updateStore = useAppConfigStore((state) => state.update);
+  const fetchConfig = useAppConfigStore((state) => state.fetch);
+  const [config, setConfig] = useState({});
+  const [about, setAbout] = useState(defaultFooter.about);
+  const [socialLinks, setSocialLinks] = useState(defaultFooter.socialLinks);
+  const [quickLinks, setQuickLinks] = useState(defaultFooter.quickLinks);
+  const [sitemap, setSitemap] = useState(defaultFooter.sitemap);
+  const [contact, setContact] = useState(defaultFooter.contact);
+  const [whatsapp, setWhatsapp] = useState(defaultFooter.whatsapp);
+  const [showNewsletter, setShowNewsletter] = useState(defaultFooter.showNewsletter);
+  const [footerNote, setFooterNote] = useState(defaultFooter.footerNote);
+  const [adsEnabled, setAdsEnabled] = useState(defaultFooter.adsEnabled);
+  const [adsClientId, setAdsClientId] = useState(defaultFooter.adsClientId);
+  const [paymentMethods, setPaymentMethods] = useState(defaultFooter.paymentMethods);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchAppConfig();
+        setConfig(data);
+        const footer = data.footer || {};
+        setAbout(footer.about ?? defaultFooter.about);
+        setSocialLinks(footer.socialLinks ?? defaultFooter.socialLinks);
+        setQuickLinks(footer.quickLinks ?? defaultFooter.quickLinks);
+        setSitemap(footer.sitemap ?? defaultFooter.sitemap);
+        setContact({ ...defaultFooter.contact, ...footer.contact });
+        setWhatsapp(footer.whatsapp ?? defaultFooter.whatsapp);
+        setShowNewsletter(
+          footer.showNewsletter !== undefined ? footer.showNewsletter : defaultFooter.showNewsletter
+        );
+        setFooterNote(footer.footerNote ?? defaultFooter.footerNote);
+        setAdsEnabled(footer.adsEnabled ?? defaultFooter.adsEnabled);
+        setAdsClientId(footer.adsClientId ?? defaultFooter.adsClientId);
+        setPaymentMethods({ ...defaultFooter.paymentMethods, ...footer.paymentMethods });
+        updateStore(data);
+      } catch (_err) {
+        toast.error("Failed to load settings");
+      }
+    };
+    load();
+  }, [updateStore]);
 
   const handleSocialChange = (index, key, value) => {
     const updated = [...socialLinks];
@@ -40,6 +87,35 @@ export default function FooterSettingsPage() {
 
   const handleRemoveSocial = (index) => {
     setSocialLinks(socialLinks.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async () => {
+    const payload = {
+      ...config,
+      footer: {
+        about,
+        socialLinks,
+        quickLinks,
+        sitemap,
+        contact,
+        whatsapp,
+        showNewsletter,
+        footerNote,
+        adsEnabled,
+        adsClientId,
+        paymentMethods,
+      },
+    };
+    try {
+      const updated = await updateAppConfig(payload);
+      setConfig(updated);
+      updateStore(updated);
+
+      await fetchConfig();
+      toast.success("Settings saved");
+    } catch (_err) {
+      toast.error("Failed to save settings");
+    }
   };
 
   return (
@@ -194,7 +270,11 @@ export default function FooterSettingsPage() {
 
         {/* Save Button */}
         <div className="pt-4">
-          <button className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+          >
             Save Settings
           </button>
         </div>
