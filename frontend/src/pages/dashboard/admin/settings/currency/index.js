@@ -3,6 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import useSWR from "swr";
+
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   fetchCurrencies,
@@ -12,7 +13,6 @@ import {
 import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
 
 const fetcher = () => fetchCurrencies();
-
 function CurrencyManagerPage() {
   const { data: currencies = [], mutate } = useSWR("/currencies", fetcher);
   const [search, setSearch] = useState("");
@@ -246,4 +246,3 @@ const ProtectedCurrencyManagerPage = withAuthProtection(CurrencyManagerPage, [
 ProtectedCurrencyManagerPage.getLayout = CurrencyManagerPage.getLayout;
 
 export default ProtectedCurrencyManagerPage;
-
