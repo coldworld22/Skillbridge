@@ -1,6 +1,12 @@
 // pages/dashboard/admin/settings/currencies/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
@@ -10,6 +16,9 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 function CreateCurrencyPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
   const [form, setForm] = useState({
     label: "",
     code: "",
@@ -46,10 +55,20 @@ function CreateCurrencyPage() {
     try {
       await createCurrency(fd);
       mutate("/currencies");
+      toast.success("Currency saved!");
+      const message = `Currency "${form.label}" created.`;
+      await createNotification({
+        user_id: user.id,
+        type: "currency_created",
+        message,
+      });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
       router.push("/dashboard/admin/settings/currency");
     } catch (err) {
       console.error(err);
-      alert("Failed to save currency.");
+      toast.error("Failed to save currency.");
     }
   };
 
