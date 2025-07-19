@@ -26,7 +26,6 @@ export default function EditLanguagePage() {
   const [error, setError] = useState("");
   const [language, setLanguage] = useState(null);
   const [iconFile, setIconFile] = useState(null);
-
   const [iconUploading, setIconUploading] = useState(false);
   const [newKeys, setNewKeys] = useState({});
 

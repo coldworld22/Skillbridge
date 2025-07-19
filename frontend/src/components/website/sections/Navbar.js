@@ -1,5 +1,6 @@
 // 📁 components/website/sections/Navbar.js
 import { useState, useEffect, useRef } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -30,6 +31,9 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
+import api from "@/services/api/api";
+
+const fetcher = (url) => api.get(url).then((res) => res.data.data);
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -70,6 +74,8 @@ const Navbar = () => {
   const unreadMessages = messages.filter((m) => !m.read);
 
   const { i18n } = useTranslation();
+  const { data: langs } = useSWR("/languages", fetcher);
+  const currentLang = langs?.find((l) => l.code === i18n.language);
   const changeLang = (lng) => {
     i18n.changeLanguage(lng);
     setLanguageOpen(false);
@@ -311,9 +317,17 @@ const Navbar = () => {
         <motion.button
           whileHover={{ scale: 1.1 }}
           onClick={() => setLanguageOpen(!languageOpen)}
-          className="text-2xl"
+          className="w-8 h-8 rounded-full overflow-hidden border border-gray-300 flex items-center justify-center"
         >
-          <FaLanguage />
+          {currentLang?.icon_url ? (
+            <img
+              src={`${API_BASE_URL}${currentLang.icon_url}`}
+              alt={currentLang.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <FaLanguage className="text-xl" />
+          )}
         </motion.button>
 
         {user && (
@@ -427,7 +441,7 @@ const Navbar = () => {
             )}
 
             {languageOpen && (
-              <div className="absolute top-20 right-24 bg-white text-gray-800 w-40 rounded-xl shadow-xl border border-gray-200 p-3 z-50">
+              <div className="absolute top-20 right-24 bg-white text-gray-800 w-48 rounded-xl shadow-xl border border-gray-200 p-2 z-50">
                 <LanguageSwitcher changeLang={changeLang} />
               </div>
             )}
