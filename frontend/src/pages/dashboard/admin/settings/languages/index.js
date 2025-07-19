@@ -38,6 +38,7 @@ export default function LanguagesPage() {
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">Icon</th>
+
               <th className="p-3">Name</th>
               <th className="p-3">Code</th>
               <th className="p-3">Default</th>

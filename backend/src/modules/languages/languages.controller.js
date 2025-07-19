@@ -11,6 +11,7 @@ exports.createLanguage = catchAsync(async (req, res) => {
     data.icon_url = `/uploads/languages/${req.file.filename}`;
   }
   const lang = await service.create(data);
+
   sendSuccess(res, lang, "Language created");
 });
 
