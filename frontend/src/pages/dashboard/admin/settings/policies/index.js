@@ -21,6 +21,10 @@ const initialPolicies = {
     title: "Refund Policy",
     content: "<p>Refunds are only applicable...</p>",
   },
+  "Delete Account": {
+    title: "Delete Account",
+    content: "<p>Instructions on permanently removing a user account.</p>",
+  },
 };
 
 export default function AdminPoliciesPage() {
