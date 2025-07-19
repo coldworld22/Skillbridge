@@ -1,23 +1,26 @@
 import { useState } from "react";
+import useSWR from "swr";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaTrash, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import api from "@/services/api/api";
+
+const fetcher = (url) => api.get(url).then((res) => res.data.data);
 
 export default function AdminFaqsPage() {
-  const [faqs, setFaqs] = useState([
-    { id: 1, question: "What is SkillBridge?", answer: "SkillBridge is an online learning platform." },
-    { id: 2, question: "Do I receive a certificate?", answer: "Yes, certificates are issued automatically upon course completion." },
-  ]);
+  const { data: faqs = [], mutate } = useSWR("/faqs", fetcher);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [editId, setEditId] = useState(null);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
-    setFaqs((prev) => [...prev, { ...newFaq, id: Date.now() }]);
+    await api.post("/faqs", newFaq);
+    mutate();
     setNewFaq({ question: "", answer: "" });
   };
 
-  const handleDelete = (id) => {
-    setFaqs((prev) => prev.filter((f) => f.id !== id));
+  const handleDelete = async (id) => {
+    await api.delete(`/faqs/${id}`);
+    mutate();
   };
 
   const handleEdit = (id) => {
@@ -26,10 +29,9 @@ export default function AdminFaqsPage() {
     setNewFaq({ question: faq.question, answer: faq.answer });
   };
 
-  const handleSave = () => {
-    setFaqs((prev) =>
-      prev.map((faq) => (faq.id === editId ? { ...faq, ...newFaq } : faq))
-    );
+  const handleSave = async () => {
+    await api.put(`/faqs/${editId}`, newFaq);
+    mutate();
     setEditId(null);
     setNewFaq({ question: "", answer: "" });
   };
