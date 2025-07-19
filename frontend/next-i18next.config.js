@@ -14,3 +14,4 @@ module.exports = {
   // Explicitly point next-i18next to the translation files
   localePath: path.resolve("./public/locales"),
 };
+

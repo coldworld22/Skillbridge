@@ -78,6 +78,7 @@ app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.r
 app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
 app.use("/api/app-config", require("./modules/appConfig/appConfig.routes"));
 app.use("/api/email-config", require("./modules/emailConfig/emailConfig.routes"));
+app.use("/api/policies", require("./modules/policies/policies.routes"));
 app.use("/api/payouts/admin", require("./modules/payouts/payouts.routes"));
 app.use("/api/ads", require("./modules/ads/ads.routes"));
 app.use("/api/groups", require("./modules/groups/groups.routes"));
