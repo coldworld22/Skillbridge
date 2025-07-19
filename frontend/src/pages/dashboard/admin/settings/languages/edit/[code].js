@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getLanguages, updateLanguage } from "@/services/languageService";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import { FaArrowLeft, FaSave } from "react-icons/fa";
+import { FaArrowLeft, FaSave, FaUpload } from "react-icons/fa";
 
 const fetchTranslations = async (code) => {
   const data = {};
@@ -16,7 +16,6 @@ const fetchTranslations = async (code) => {
   return data;
 };
 
-
 const namespaces = ["common", "website", "dashboard", "auth"];
 
 export default function EditLanguagePage() {
@@ -27,6 +26,8 @@ export default function EditLanguagePage() {
   const [error, setError] = useState("");
   const [language, setLanguage] = useState(null);
   const [iconFile, setIconFile] = useState(null);
+
+  const [iconUploading, setIconUploading] = useState(false);
   const [newKeys, setNewKeys] = useState({});
 
   useEffect(() => {
@@ -73,20 +74,33 @@ export default function EditLanguagePage() {
     });
   };
 
-  const handleIconChange = (file) => {
-    if (file && file.type.startsWith("image/")) {
-      setIconFile(file);
+const handleIconChange = (file) => {
+  if (file && file.type.startsWith("image/")) {
+    setIconFile(file);
+  }
+};
+
+  const handleIconUpload = async () => {
+    if (!language?.id || !iconFile) return;
+    setIconUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("icon", iconFile);
+      const updated = await updateLanguage(language.id, fd);
+      setLanguage(updated);
+      setIconFile(null);
+      alert("Icon uploaded");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload icon");
+    } finally {
+      setIconUploading(false);
     }
   };
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      if (language?.id && iconFile) {
-        const fd = new FormData();
-        fd.append("icon", iconFile);
-        await updateLanguage(language.id, fd);
-      }
       for (const ns of namespaces) {
         await fetch(`/api/translations/${code}/${ns}`, {
           method: "PUT",
@@ -143,6 +157,14 @@ export default function EditLanguagePage() {
                     className="mt-2 w-6 h-6 rounded"
                   />
                 )}
+                <button
+                  type="button"
+                  onClick={handleIconUpload}
+                  disabled={iconUploading || !iconFile}
+                  className="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1 disabled:opacity-50"
+                >
+                  <FaUpload /> {iconUploading ? "Uploading..." : "Upload"}
+                </button>
               </div>
             )}
             {namespaces.map((ns) => (
