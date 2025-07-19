@@ -42,6 +42,7 @@ export default function CreateCurrencyPage() {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (logoFile) fd.append("logo", logoFile);
+
     try {
       await createCurrency(fd);
       mutate("/currencies");
