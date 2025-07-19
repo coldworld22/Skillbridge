@@ -37,6 +37,8 @@ export default function LanguagesPage() {
         <table className="min-w-full bg-white border rounded">
           <thead className="bg-gray-100 text-left">
             <tr>
+              <th className="p-3">Icon</th>
+
               <th className="p-3">Name</th>
               <th className="p-3">Code</th>
               <th className="p-3">Default</th>
@@ -47,6 +49,15 @@ export default function LanguagesPage() {
           <tbody>
             {languages?.map((lang) => (
               <tr key={lang.id} className="border-t">
+                <td className="p-3">
+                  {lang.icon_url && (
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${lang.icon_url}`}
+                      alt="icon"
+                      className="w-6 h-6 rounded"
+                    />
+                  )}
+                </td>
                 <td className="p-3">{lang.name}</td>
                 <td className="p-3">{lang.code}</td>
                 <td className="p-3 text-center">

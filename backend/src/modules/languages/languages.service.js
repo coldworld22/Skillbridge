@@ -14,6 +14,10 @@ exports.list = () => {
   return db("languages").select("*").orderBy("name");
 };
 
+exports.getById = (id) => {
+  return db("languages").where({ id }).first();
+};
+
 exports.update = async (id, data) => {
   return db.transaction(async (trx) => {
     if (data.is_default) {

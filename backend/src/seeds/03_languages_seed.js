@@ -7,6 +7,7 @@ exports.seed = async function (knex) {
       name: 'English',
       is_default: true,
       is_active: true,
+      icon_url: null,
     },
     {
       id: knex.raw('gen_random_uuid()'),
@@ -14,6 +15,7 @@ exports.seed = async function (knex) {
       name: 'العربية',
       is_default: false,
       is_active: true,
+      icon_url: null,
     },
   ]);
 };
