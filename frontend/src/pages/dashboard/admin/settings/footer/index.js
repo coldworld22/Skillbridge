@@ -34,6 +34,7 @@ const defaultFooter = {
 
 export default function FooterSettingsPage() {
   const updateStore = useAppConfigStore((state) => state.update);
+  const fetchConfig = useAppConfigStore((state) => state.fetch);
   const [config, setConfig] = useState({});
   const [about, setAbout] = useState(defaultFooter.about);
   const [socialLinks, setSocialLinks] = useState(defaultFooter.socialLinks);
@@ -109,6 +110,8 @@ export default function FooterSettingsPage() {
       const updated = await updateAppConfig(payload);
       setConfig(updated);
       updateStore(updated);
+
+      await fetchConfig();
       toast.success("Settings saved");
     } catch (_err) {
       toast.error("Failed to save settings");
