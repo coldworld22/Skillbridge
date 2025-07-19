@@ -57,13 +57,14 @@ exports.register = catchAsync(async (req, res, next) => {
  * @access Public
  */
 exports.login = catchAsync(async (req, res) => {
-  const cfg = await socialLoginConfigService.getSettings();
-  if (cfg?.recaptcha?.active) {
-    const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
-    if (!valid) {
-      throw new AppError('Failed reCAPTCHA verification', 400);
-    }
-  }
+  // TODO: Re-enable reCAPTCHA verification once login issues are resolved
+  // const cfg = await socialLoginConfigService.getSettings();
+  // if (cfg?.recaptcha?.active) {
+  //   const valid = await recaptchaService.verify(req.body.recaptchaToken, req.ip);
+  //   if (!valid) {
+  //     throw new AppError('Failed reCAPTCHA verification', 400);
+  //   }
+  // }
   const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)

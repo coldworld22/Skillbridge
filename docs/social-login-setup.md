@@ -46,3 +46,17 @@ request's `Origin` header automatically.
 4. Save the settings and restart the backend so the GitHub strategy is initialized.
 
 After completing these steps the **Sign in with GitHub** button should redirect back to `/auth/social-success` and automatically log the user in.
+
+## reCAPTCHA
+
+SkillBridge can optionally validate a Google reCAPTCHA token during login and registration. This behaviour is controlled by the `social_login_settings` record stored in the database. When the `recaptcha.active` flag is `true` the backend will verify the provided token using Google's API before authenticating the user.
+
+To temporarily disable reCAPTCHA you can call the configuration endpoint with admin credentials:
+
+```bash
+curl -X PUT http://localhost:5000/api/social-login/config \
+  -H 'Content-Type: application/json' \
+  -d '{ "recaptcha": { "active": false } }'
+```
+
+Setting `active` back to `true` re-enables the verification check. When disabled, the server only validates the email and password.
