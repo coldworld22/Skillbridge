@@ -81,7 +81,8 @@ exports.findById = (id) => {
  * 📧 Find one user by email (used for login, registration, and OTP)
  */
 exports.findByEmail = (email) => {
-  return db("users").where({ email }).first();
+  const normalized = email.trim().toLowerCase();
+  return db("users").whereRaw("LOWER(email) = ?", [normalized]).first();
 };
 
 exports.findByPhone = async (phone) => {
