@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { getLanguages, updateLanguage } from "@/services/languageService";
+import { toast } from "react-toastify";
 import { mutate } from "swr";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
@@ -28,7 +29,21 @@ export default function EditLanguagePage() {
   const [language, setLanguage] = useState(null);
   const [iconFile, setIconFile] = useState(null);
   const [iconUploading, setIconUploading] = useState(false);
+  const [langForm, setLangForm] = useState({
+    name: "",
+    code: "",
+    is_default: false,
+    is_active: true,
+  });
   const [newKeys, setNewKeys] = useState({});
+
+  const handleLangFormChange = (e) => {
+    const { name, type, value, checked } = e.target;
+    setLangForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
   useEffect(() => {
     if (!code) return;
@@ -38,6 +53,14 @@ export default function EditLanguagePage() {
         const langs = await getLanguages();
         const lang = langs.find((l) => l.code === code);
         setLanguage(lang);
+        if (lang) {
+          setLangForm({
+            name: lang.name,
+            code: lang.code,
+            is_default: lang.is_default,
+            is_active: lang.is_active,
+          });
+        }
         const data = await fetchTranslations(code);
         setTranslations(data);
       } catch (err) {
@@ -89,11 +112,11 @@ const handleIconChange = (file) => {
       const updated = await updateLanguage(language.id, fd);
       setLanguage(updated);
       setIconFile(null);
-      alert("Icon uploaded");
+      toast.success("Icon uploaded");
       mutate("/languages");
     } catch (err) {
       console.error(err);
-      alert("Failed to upload icon");
+      toast.error("Failed to upload icon");
     } finally {
       setIconUploading(false);
     }
@@ -102,6 +125,9 @@ const handleIconChange = (file) => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      if (language?.id) {
+        await updateLanguage(language.id, langForm);
+      }
       for (const ns of namespaces) {
         await fetch(`/api/translations/${code}/${ns}`, {
           method: "PUT",
@@ -109,11 +135,11 @@ const handleIconChange = (file) => {
           body: JSON.stringify(translations[ns] || {}),
         });
       }
-      alert("Translations saved");
+      toast.success("Language updated");
       mutate("/languages");
     } catch (err) {
       console.error(err);
-      alert("Failed to save translations");
+      toast.error("Failed to save language");
     } finally {
       setLoading(false);
     }
@@ -141,17 +167,58 @@ const handleIconChange = (file) => {
               e.preventDefault();
               handleSave();
             }}
-            className="space-y-8"
+            className="space-y-8 md:space-y-0 md:grid md:grid-cols-2 md:gap-6"
           >
             {language && (
-              <div className="bg-white shadow rounded p-4">
-                <label className="block font-semibold mb-1">Language Icon</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleIconChange(e.target.files[0])}
-                  className="border p-2 rounded w-full"
-                />
+              <>
+                <div className="bg-white shadow rounded p-4 flex flex-col gap-4">
+                  <div>
+                    <label className="block font-semibold mb-1">Language Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={langForm.name}
+                      onChange={handleLangFormChange}
+                      className="border p-2 rounded w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Language Code</label>
+                    <input
+                      type="text"
+                      name="code"
+                      value={langForm.code}
+                      onChange={handleLangFormChange}
+                      className="border p-2 rounded w-full"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="is_default"
+                      checked={langForm.is_default}
+                      onChange={handleLangFormChange}
+                    />
+                    <span className="text-sm">Set as Default</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={langForm.is_active}
+                      onChange={handleLangFormChange}
+                    />
+                    <span className="text-sm">Active</span>
+                  </label>
+                </div>
+                <div className="bg-white shadow rounded p-4">
+                  <label className="block font-semibold mb-1">Language Icon</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleIconChange(e.target.files[0])}
+                    className="border p-2 rounded w-full"
+                  />
                 {(iconFile || language.icon_url) && (
                   <img
                     src={iconFile ? URL.createObjectURL(iconFile) : `${process.env.NEXT_PUBLIC_API_BASE_URL}${language.icon_url}`}
@@ -167,7 +234,8 @@ const handleIconChange = (file) => {
                 >
                   <FaUpload /> {iconUploading ? "Uploading..." : "Upload"}
                 </button>
-              </div>
+                </div>
+              </>
             )}
             {namespaces.map((ns) => (
               <div key={ns} className="bg-white shadow rounded p-4">

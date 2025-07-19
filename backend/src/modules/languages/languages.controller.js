@@ -4,6 +4,9 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const fs = require("fs");
 const path = require("path");
+const userModel = require("../users/user.model");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 exports.createLanguage = catchAsync(async (req, res) => {
   const data = { ...req.body };
@@ -34,6 +37,25 @@ exports.updateLanguage = catchAsync(async (req, res) => {
   }
 
   const lang = await service.update(req.params.id, data);
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "language_updated",
+        message: `Language ${lang.name} was updated`,
+      })
+    )
+  );
+  await Promise.all(
+    admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: admin.id,
+        message: `Language ${lang.name} was updated`,
+      })
+    )
+  );
   sendSuccess(res, lang, "Language updated");
 });
 
