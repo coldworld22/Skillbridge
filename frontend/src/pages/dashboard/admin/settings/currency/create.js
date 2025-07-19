@@ -54,7 +54,6 @@ function CreateCurrencyPage() {
   };
 
   return (
-    <AdminLayout>
       <div className="p-6 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -201,7 +200,6 @@ function CreateCurrencyPage() {
           </button>
         </form>
       </div>
-    </AdminLayout>
   );
 }
 
