@@ -6,6 +6,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import { resetPassword } from "@/services/auth/authService";
+import { useTranslation } from "react-i18next";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");
@@ -16,6 +17,7 @@ export default function ResetPassword() {
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const { t } = useTranslation("auth");
 
   useEffect(() => {
 
@@ -78,19 +80,19 @@ export default function ResetPassword() {
         animate={{ opacity: 1, y: 0 }}
         className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
       >
-        <h2 className="text-2xl font-bold text-yellow-400 mb-6">Reset Password</h2>
+        <h2 className="text-2xl font-bold text-yellow-400 mb-6">{t('reset_password')}</h2>
         <p className="text-gray-400 text-sm text-center mb-4">
-          Enter a new password for <span className="text-yellow-300 font-medium">{email}</span>
+          {t('reset_password_for')} <span className="text-yellow-300 font-medium">{email}</span>
         </p>
 
         {/* ✅ New Password Input */}
         <div className="w-full mb-4">
-          <label className="block text-gray-400">New Password</label>
+          <label className="block text-gray-400">{t('new_password')}</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               className="w-full px-3 py-2 mt-2 border rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-yellow-500"
-              placeholder="Enter new password"
+              placeholder={t('enter_new_password')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
@@ -102,20 +104,20 @@ export default function ResetPassword() {
             </span>
           </div>
           <ul className="text-xs text-yellow-500 mt-2">
-            <li>{newPassword.length >= 8 ? "✔ At least 8 characters" : "❌ At least 8 characters"}</li>
-            <li>{/[A-Z]/.test(newPassword) ? "✔ One uppercase letter" : "❌ One uppercase letter"}</li>
-            <li>{/[\W_]/.test(newPassword) ? "✔ One special character" : "❌ One special character"}</li>
+            <li>{newPassword.length >= 8 ? `✔ ${t('at_least_8_characters')}` : `❌ ${t('at_least_8_characters')}`}</li>
+            <li>{/[A-Z]/.test(newPassword) ? `✔ ${t('one_uppercase_letter')}` : `❌ ${t('one_uppercase_letter')}`}</li>
+            <li>{/[\W_]/.test(newPassword) ? `✔ ${t('one_special_character')}` : `❌ ${t('one_special_character')}`}</li>
           </ul>
         </div>
 
         {/* ✅ Confirm Password Input */}
         <div className="w-full mb-4">
-          <label className="block text-gray-400">Confirm Password</label>
+          <label className="block text-gray-400">{t('confirm_new_password')}</label>
           <div className="relative">
             <input
               type={showConfirm ? "text" : "password"}
               className="w-full px-3 py-2 mt-2 border rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-yellow-500"
-              placeholder="Confirm new password"
+              placeholder={t('confirm_new_password')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
@@ -134,7 +136,7 @@ export default function ResetPassword() {
           onClick={handleResetPassword}
           className="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold"
         >
-          Reset Password
+          {t('reset_password')}
         </motion.button>
       </motion.div>
     </div>
