@@ -2,46 +2,18 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import useSWR from "swr";
+import {
+  fetchCurrencies,
+  updateCurrency,
+  deleteCurrency as deleteCurrencyApi,
+} from "@/services/admin/currencyService";
 import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
 
-const mockCurrencies = [
-  {
-    id: 1,
-    label: "US Dollar",
-    code: "USD",
-    symbol: "$",
-    exchangeRate: 1,
-    active: true,
-    default: true,
-    autoUpdate: true,
-    lastUpdated: "2025-05-13",
-  },
-  {
-    id: 2,
-    label: "Euro",
-    code: "EUR",
-    symbol: "€",
-    exchangeRate: 0.93,
-    active: true,
-    default: false,
-    autoUpdate: true,
-    lastUpdated: "2025-05-13",
-  },
-  {
-    id: 3,
-    label: "Saudi Riyal",
-    code: "SAR",
-    symbol: "﷼",
-    exchangeRate: 3.75,
-    active: false,
-    default: false,
-    autoUpdate: false,
-    lastUpdated: "2025-05-01",
-  },
-];
+const fetcher = () => fetchCurrencies();
 
 export default function CurrencyManagerPage() {
-  const [currencies, setCurrencies] = useState(mockCurrencies);
+  const { data: currencies = [], mutate } = useSWR("/currencies", fetcher);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
@@ -53,36 +25,38 @@ export default function CurrencyManagerPage() {
         c.code.toLowerCase().includes(search.toLowerCase());
       const matchFilter =
         filter === "all" ||
-        (filter === "active" && c.active) ||
-        (filter === "inactive" && !c.active) ||
-        (filter === "auto" && c.autoUpdate);
+        (filter === "active" && c.is_active) ||
+        (filter === "inactive" && !c.is_active) ||
+        (filter === "auto" && c.auto_update);
       return matchSearch && matchFilter;
     });
   }, [currencies, search, filter]);
 
-  const toggleActive = (id) => {
-    setCurrencies((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
-    );
-  };
-
-  const setDefault = (id) => {
-    setCurrencies((prev) =>
-      prev.map((c) => ({ ...c, default: c.id === id }))
-    );
-  };
-
-  const toggleAutoUpdate = (id) => {
-    setCurrencies((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, autoUpdate: !c.autoUpdate } : c))
-    );
-  };
-
-  const deleteCurrency = (id) => {
+  const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
-    if (currency.default) return alert("Cannot delete default currency.");
+    if (!currency) return;
+    await updateCurrency(id, { is_active: !currency.is_active });
+    mutate();
+  };
+
+  const setDefault = async (id) => {
+    await updateCurrency(id, { is_default: true });
+    mutate();
+  };
+
+  const toggleAutoUpdate = async (id) => {
+    const currency = currencies.find((c) => c.id === id);
+    if (!currency) return;
+    await updateCurrency(id, { auto_update: !currency.auto_update });
+    mutate();
+  };
+
+  const deleteCurrency = async (id) => {
+    const currency = currencies.find((c) => c.id === id);
+    if (currency?.is_default) return alert("Cannot delete default currency.");
     if (confirm(`Delete currency: ${currency.label}?`)) {
-      setCurrencies((prev) => prev.filter((c) => c.id !== id));
+      await deleteCurrencyApi(id);
+      mutate();
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
     }
   };
@@ -95,12 +69,13 @@ export default function CurrencyManagerPage() {
 
   const selectAll = () => setSelectedIds(filteredCurrencies.map((c) => c.id));
   const clearAll = () => setSelectedIds([]);
-  const bulkDelete = () => {
+  const bulkDelete = async () => {
     const deletables = selectedIds.filter(
-      (id) => !currencies.find((c) => c.id === id)?.default
+      (id) => !currencies.find((c) => c.id === id)?.is_default
     );
-    setCurrencies((prev) => prev.filter((c) => !deletables.includes(c.id)));
+    await Promise.all(deletables.map((id) => deleteCurrencyApi(id)));
     clearAll();
+    mutate();
   };
 
   return (
@@ -182,7 +157,7 @@ export default function CurrencyManagerPage() {
             {filteredCurrencies.map((c) => (
               <tr
                 key={c.id}
-                className={`border-t hover:bg-gray-50 transition ${!c.active ? "bg-red-50" : ""}`}
+                className={`border-t hover:bg-gray-50 transition ${!c.is_active ? "bg-red-50" : ""}`}
               >
                 <td className="p-3 text-center">
                   <input
@@ -202,35 +177,35 @@ export default function CurrencyManagerPage() {
                 </td>
                 <td className="p-3">{c.code}</td>
                 <td className="p-3">{c.symbol}</td>
-                <td className="p-3">{c.exchangeRate.toFixed(2)}</td>
+                <td className="p-3">{c.exchange_rate.toFixed(2)}</td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => toggleAutoUpdate(c.id)}
                     title="Toggle Auto Update"
-                    className={c.autoUpdate ? "text-green-600" : "text-gray-400"}
+                    className={c.auto_update ? "text-green-600" : "text-gray-400"}
                   >
-                    {c.autoUpdate ? <FaToggleOn /> : <FaToggleOff />}
+                    {c.auto_update ? <FaToggleOn /> : <FaToggleOff />}
                   </button>
                 </td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => toggleActive(c.id)}
                     title="Toggle Status"
-                    className={c.active ? "text-green-600" : "text-red-500"}
+                    className={c.is_active ? "text-green-600" : "text-red-500"}
                   >
-                    {c.active ? "Active" : "Inactive"}
+                    {c.is_active ? "Active" : "Inactive"}
                   </button>
                 </td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => setDefault(c.id)}
                     title="Set as Default"
-                    className={c.default ? "text-yellow-500" : "text-gray-400"}
+                    className={c.is_default ? "text-yellow-500" : "text-gray-400"}
                   >
                     <FaStar />
                   </button>
                 </td>
-                <td className="p-3">{c.lastUpdated}</td>
+                <td className="p-3">{c.last_updated?.slice(0,10) || ''}</td>
                 <td className="p-3 text-center">
                   <div className="flex gap-2 justify-center">
                     <button
@@ -257,3 +232,4 @@ export default function CurrencyManagerPage() {
     </AdminLayout>
   );
 }
+
