@@ -10,6 +10,7 @@ import { FaCheckCircle } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import { verifyOtpCode, requestPasswordReset } from "@/services/auth/authService";
+import { useTranslation } from "react-i18next";
 
 // ✅ OTP Schema
 const otpSchema = z.object({
@@ -25,6 +26,7 @@ export default function VerifyOTP() {
   const [resendTimer, setResendTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const { t } = useTranslation("auth");
 
   const {
     register,
@@ -107,19 +109,19 @@ export default function VerifyOTP() {
       >
         {!isVerified ? (
           <>
-            <h2 className="text-2xl font-bold text-yellow-400 mb-6">Verify OTP</h2>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-6">{t('verify_otp')}</h2>
             <p className="text-gray-400 text-sm text-center mb-4">
-              Enter the OTP sent to <span className="text-yellow-400 font-medium">{email}</span>
+              {t('enter_otp_sent')} <span className="text-yellow-400 font-medium">{email}</span>
             </p>
 
             {/* OTP Input */}
             <form onSubmit={handleSubmit(onSubmit)} className="w-full">
               <div className="mb-4">
-                <label className="block text-gray-400">OTP Code</label>
+                <label className="block text-gray-400">{t('otp_code')}</label>
                 <motion.input
                   type="text"
                   maxLength="6"
-                  placeholder="Enter OTP"
+                  placeholder={t('enter_otp')}
                   className="w-full px-3 py-2 mt-2 border rounded-lg bg-gray-700 text-white text-center tracking-widest focus:ring-2 focus:ring-yellow-500"
                   {...register("code")}
                 />
@@ -133,7 +135,7 @@ export default function VerifyOTP() {
                 whileHover={{ scale: 1.05 }}
                 className="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold"
               >
-                Verify OTP
+                {t('verify_otp')}
               </motion.button>
             </form>
 
@@ -145,10 +147,10 @@ export default function VerifyOTP() {
                   className="text-yellow-400 hover:underline"
                   onClick={handleResendOTP}
                 >
-                  Resend OTP
+                  {t('resend_otp')}
                 </motion.button>
               ) : (
-                <p className="text-gray-400 text-sm">Resend OTP in {resendTimer}s</p>
+                <p className="text-gray-400 text-sm">{t('resend_otp_in', { count: resendTimer })}</p>
               )}
             </div>
           </>
@@ -160,8 +162,8 @@ export default function VerifyOTP() {
             className="flex flex-col items-center justify-center h-48"
           >
             <FaCheckCircle className="text-yellow-500 text-6xl mb-4 animate-bounce" />
-            <h2 className="text-2xl font-bold text-yellow-400 mb-2">OTP Verified!</h2>
-            <p className="text-gray-400 text-center">Redirecting to reset your password...</p>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-2">{t('otp_verified')}</h2>
+            <p className="text-gray-400 text-center">{t('redirecting')}</p>
           </motion.div>
         )}
       </motion.div>
