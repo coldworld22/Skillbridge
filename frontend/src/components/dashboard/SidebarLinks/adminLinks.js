@@ -58,6 +58,7 @@ export const adminNavLinks = [
         isDropdown: true,
         dropdown: [
           { label: 'Language Manager', href: '/dashboard/admin/settings/languages', icon: Globe },
+          { label: 'Language Config', href: '/dashboard/admin/settings/language-config', icon: Globe },
           { label: 'Currency Manager ', href: '/dashboard/admin/settings/currency', icon: DollarSign },
           { label: 'Social Logins', href: '/dashboard/admin/settings/social_login', icon: Network },
           { label: 'Email Config', href: '/dashboard/admin/settings/email-config', icon: Mail },
