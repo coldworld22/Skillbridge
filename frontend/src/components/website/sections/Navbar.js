@@ -39,6 +39,7 @@ const fetcher = (url) => api.get(url).then((res) => res.data.data);
 import logo from "@/shared/assets/images/login/logo.png";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
+import { mutate } from "swr";
 
 const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -78,6 +79,10 @@ const Navbar = () => {
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const changeLang = (lng) => {
     i18n.changeLanguage(lng);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lng", lng);
+    }
+    mutate("/languages");
     setLanguageOpen(false);
   };
 

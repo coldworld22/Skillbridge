@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { getLanguages, updateLanguage } from "@/services/languageService";
+import { mutate } from "swr";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { FaArrowLeft, FaSave, FaUpload } from "react-icons/fa";
@@ -89,6 +90,7 @@ const handleIconChange = (file) => {
       setLanguage(updated);
       setIconFile(null);
       alert("Icon uploaded");
+      mutate("/languages");
     } catch (err) {
       console.error(err);
       alert("Failed to upload icon");
@@ -108,6 +110,7 @@ const handleIconChange = (file) => {
         });
       }
       alert("Translations saved");
+      mutate("/languages");
     } catch (err) {
       console.error(err);
       alert("Failed to save translations");
