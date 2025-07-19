@@ -19,9 +19,11 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
 import ReCAPTCHA from "react-google-recaptcha";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
+import { useTranslation } from "react-i18next";
 
 export default function Register() {
   const router = useRouter();
+  const { t } = useTranslation("auth");
   const { register: registerUser, user, hasHydrated } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
@@ -127,7 +129,7 @@ export default function Register() {
         </div>
 
         <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          Create an Account at {settings.appName || 'SkillBridge'} 🎓
+          {t('create_account', { appName: settings.appName || 'SkillBridge' })}
         </h2>
 
         <div className="flex justify-between bg-gray-700 rounded-lg p-2 mb-4 w-full">
@@ -141,28 +143,28 @@ export default function Register() {
                 : "text-gray-400 hover:bg-gray-600"
                 }`}
             >
-              {type}
+              {t(type.toLowerCase())}
             </motion.button>
           ))}
         </div>
 
-        <InputField label="Full Name" type="text" placeholder="Enter your name" {...register("full_name")} />
+        <InputField label={t('full_name')} type="text" placeholder={t('full_name')} {...register("full_name")} />
         {errors.full_name && <p className="text-xs text-left w-full text-red-400">{errors.full_name.message}</p>}
 
-        <InputField label="Email" type="email" placeholder="Enter your email" {...register("email")} />
+        <InputField label={t('email')} type="email" placeholder={t('email')} {...register("email")} />
         {errors.email && <p className="text-xs text-left w-full text-red-400">{errors.email.message}</p>}
 
         {/* ✅ Styled Phone Input */}
 
         <div className="w-full mb-3">
-          <label className="block text-sm text-gray-400 mb-1">Phone</label>
+          <label className="block text-sm text-gray-400 mb-1">{t('phone')}</label>
           <div className="phone-input-container border border-gray-600 rounded-md bg-gray-700 overflow-hidden">
             <PhoneInput
               international
               value={watch("phone")}
               onChange={(value) => setValue("phone", value)}
               defaultCountry="SA"
-              placeholder="Enter phone number"
+              placeholder={t('phone')}
               className="w-full"
             />
           </div>
@@ -171,12 +173,12 @@ export default function Register() {
 
         {/* ✅ Password */}
         <div className="w-full mb-3">
-          <label className="block text-sm text-gray-400 mb-1">Password</label>
+          <label className="block text-sm text-gray-400 mb-1">{t('password')}</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
-              placeholder="Create a password"
+              placeholder={t('password')}
               {...register("password")}
             />
             <span className="absolute right-3 top-3 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
@@ -188,12 +190,12 @@ export default function Register() {
 
         {/* ✅ Confirm Password */}
         <div className="w-full mb-3">
-          <label className="block text-sm text-gray-400 mb-1">Confirm Password</label>
+          <label className="block text-sm text-gray-400 mb-1">{t('confirm_password')}</label>
           <div className="relative">
             <input
               type={showConfirmPassword ? "text" : "password"}
               className="w-full px-3 py-2 border rounded-md bg-gray-700 text-white placeholder-gray-400"
-              placeholder="Confirm password"
+              placeholder={t('confirm_password')}
               {...register("confirmPassword")}
             />
             <span className="absolute right-3 top-3 cursor-pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
@@ -214,16 +216,16 @@ export default function Register() {
               : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
           }`}
         >
-          {isSubmitting ? "Registering..." : "Register"}
+          {isSubmitting ? t('registering') : t('register')}
         </motion.button>
 
         {/* ✅ Social Login + Footer */}
         <SocialRegister />
 
         <p className="text-center mt-6 text-gray-400 text-sm">
-          Already have an account?{" "}
+          {t('already_have_account')} {" "}
           <a href="/auth/login" className="text-yellow-400 hover:underline">
-            Login
+            {t('login')}
           </a>
         </p>
       </motion.div>
