@@ -38,7 +38,7 @@ const fetcher = (url) => api.get(url).then((res) => res.data.data);
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 import { mutate } from "swr";
 
 const Navbar = () => {

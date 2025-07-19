@@ -18,7 +18,7 @@ import SocialLogin from "@/shared/components/auth/SocialLogin";
 // import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 // ─────────────────────
 // 🔐 Validation schema
