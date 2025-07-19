@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
+import { useTranslation } from "react-i18next";
 
 export default function SuccessReset() {
   const router = useRouter();
+  const { t } = useTranslation("auth");
 
   useEffect(() => {
     localStorage.removeItem("otp_verified_email");
@@ -41,10 +43,10 @@ export default function SuccessReset() {
         </motion.div>
 
         <h2 className="text-2xl font-bold text-yellow-400 mb-4">
-          Password Reset Successful!
+          {t('password_reset_successful')}
         </h2>
         <p className="text-gray-400 text-center mb-4">
-          Your password has been updated. You can now log in with your new credentials.
+          {t('password_reset_desc')}
         </p>
 
         <motion.button
@@ -52,7 +54,7 @@ export default function SuccessReset() {
           className="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition font-semibold mt-6"
           onClick={() => router.push("/auth/login")}
         >
-          Go to Login
+          {t('go_to_login')}
         </motion.button>
       </motion.div>
     </div>

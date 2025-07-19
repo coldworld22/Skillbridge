@@ -1,4 +1,7 @@
 import { useEffect } from "react";
+import { appWithTranslation } from "next-i18next";
+import { useTranslation } from "react-i18next";
+import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // ✅ Toast notifications
@@ -29,6 +32,7 @@ function MyApp({ Component, pageProps, router }) {
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const configLoaded = useAppConfigStore((state) => state.loaded);
   const settings = useAppConfigStore((state) => state.settings);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -61,6 +65,15 @@ function MyApp({ Component, pageProps, router }) {
   useEffect(() => {
     if (!configLoaded) fetchConfig();
   }, [configLoaded, fetchConfig]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const lng = localStorage.getItem("lng");
+      if (lng && i18n.language !== lng) {
+        i18n.changeLanguage(lng);
+      }
+    }
+  }, [i18n]);
 
   const getPageTitle = () => {
     const slug = router.pathname.split('/').pop();
@@ -114,4 +127,4 @@ function MyApp({ Component, pageProps, router }) {
   );
 }
 
-export default MyApp;
+export default appWithTranslation(MyApp, nextI18NextConfig);
