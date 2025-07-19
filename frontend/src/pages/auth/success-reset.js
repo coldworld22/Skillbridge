@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 export default function SuccessReset() {
   const router = useRouter();

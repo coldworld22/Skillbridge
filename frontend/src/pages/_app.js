@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { appWithTranslation } from "next-i18next";
-import { useTranslation } from "react-i18next";
+import { appWithTranslation, useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";

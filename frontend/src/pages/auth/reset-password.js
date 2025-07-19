@@ -6,7 +6,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import { resetPassword } from "@/services/auth/authService";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");

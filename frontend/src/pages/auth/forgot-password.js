@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import * as authService from "@/services/auth/authService";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "next-i18next";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
