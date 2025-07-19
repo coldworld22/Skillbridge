@@ -80,7 +80,6 @@ function CurrencyManagerPage() {
   };
 
   return (
-    <AdminLayout>
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">💱 Currency Manager</h1>
@@ -230,7 +229,6 @@ function CurrencyManagerPage() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
   );
 }
 
