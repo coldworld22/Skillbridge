@@ -123,3 +123,71 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ error: "Failed to update profile" });
   }
 };
+
+/**
+ * GET /users/me/full-profile
+ * Returns the authenticated user's full profile with role-specific data
+ */
+exports.getFullProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const role = (req.user.role || '').toLowerCase();
+
+    const [user] = await db('users')
+      .where({ id: userId })
+      .select(
+        'id',
+        'full_name',
+        'email',
+        'phone',
+        'gender',
+        'date_of_birth',
+        'avatar_url',
+        'is_email_verified',
+        'is_phone_verified',
+        'profile_complete',
+        'created_at',
+        'updated_at'
+      );
+
+    let roleData = {};
+
+    if (role === 'student') {
+      const [student] = await db('student_profiles')
+        .where({ user_id: userId })
+        .select('education_level', 'topics', 'learning_goals', 'identity_doc_url');
+      roleData.student = student || null;
+    } else if (role === 'instructor') {
+      const [instructor] = await db('instructor_profiles')
+        .where({ user_id: userId })
+        .select(
+          'expertise',
+          'experience',
+          'certifications',
+          'availability',
+          'pricing',
+          'demo_video_url',
+          'bio'
+        );
+      const certificates = await db('instructor_certificates')
+        .where({ user_id: userId })
+        .select('id', 'title', 'file_url', 'created_at');
+      roleData.instructor = instructor || null;
+      roleData.certificates = certificates;
+    } else if (role === 'admin') {
+      const [adminProfile] = await db('admin_profiles')
+        .where({ user_id: userId })
+        .select('job_title', 'department', 'identity_doc_url', 'created_at', 'updated_at');
+      roleData.admin_profile = adminProfile || null;
+    }
+
+    const socialLinks = await db('user_social_links')
+      .where({ user_id: userId })
+      .select('platform', 'url');
+
+    res.json({ ...user, ...roleData, social_links: socialLinks });
+  } catch (err) {
+    console.error('Full profile fetch error:', err);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+};

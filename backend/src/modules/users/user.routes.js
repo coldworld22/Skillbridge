@@ -6,6 +6,8 @@
 
 const express = require("express");
 const router = express.Router();
+const profileController = require("./profile.controller");
+const { verifyToken } = require("../../middleware/auth/authMiddleware");
 
 // ==============================================
 // 🔁 GLOBAL FEATURES (public or shared access)
@@ -34,6 +36,11 @@ router.use("/tutorials", tutorialRoutes);
  */
 const classRoutes = require("../classes/class.routes");
 router.use("/classes", classRoutes);
+
+// ---------------------------------------------------------------------------
+// Profile helpers for current authenticated user
+// ---------------------------------------------------------------------------
+router.get("/me/full-profile", verifyToken, profileController.getFullProfile);
 
 
 // ==============================================
