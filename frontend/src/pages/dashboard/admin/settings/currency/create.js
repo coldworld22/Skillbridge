@@ -1,12 +1,14 @@
 // pages/dashboard/admin/settings/currencies/create.js
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
+import { useSWRConfig } from "swr";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import { createCurrency } from "@/services/admin/currencyService";
 
 export default function CreateCurrencyPage() {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [form, setForm] = useState({
     label: "",
     code: "",
@@ -40,8 +42,15 @@ export default function CreateCurrencyPage() {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (logoFile) fd.append("logo", logoFile);
-    await createCurrency(fd);
-    router.push("/dashboard/admin/settings/currency");
+
+    try {
+      await createCurrency(fd);
+      mutate("/currencies");
+      router.push("/dashboard/admin/settings/currency");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save currency.");
+    }
   };
 
   return (
