@@ -13,12 +13,29 @@ import { FaArrowLeft, FaSave } from "react-icons/fa";
 import { createCurrency } from "@/services/admin/currencyService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 
-function CreateCurrencyPage() {
-  const router = useRouter();
-  const { mutate } = useSWRConfig();
+const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to send notification";
+      toast.error(msg);
+    }
+  };
+};
+
+function CreateCurrencyPage() {
+  const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const notify = useAdminNotice();
   const [form, setForm] = useState({
     label: "",
     code: "",
@@ -57,14 +74,7 @@ function CreateCurrencyPage() {
       mutate("/currencies");
       toast.success("Currency saved!");
       const message = `Currency "${form.label}" created.`;
-      await createNotification({
-        user_id: user.id,
-        type: "currency_created",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
+      notify("currency_created", message);
       router.push("/dashboard/admin/settings/currency");
     } catch (err) {
       console.error(err);
