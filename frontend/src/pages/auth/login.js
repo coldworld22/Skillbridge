@@ -18,6 +18,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
+import { useTranslation } from "react-i18next";
 
 // ─────────────────────
 // 🔐 Validation schema
@@ -30,6 +31,7 @@ const loginSchema = z.object({
 
 export default function Login() {
   const router = useRouter();
+  const { t } = useTranslation("auth");
   const user = useAuthStore((state) => state.user);
   const login = useAuthStore((state) => state.login);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
@@ -175,15 +177,15 @@ export default function Login() {
           />
         </div>
         <h2 className="text-2xl font-bold text-center text-yellow-400 mb-6">
-          Welcome to {settings.appName || 'SkillBridge'} 🎓
+          {t('welcome', { appName: settings.appName || 'SkillBridge' })}
         </h2>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="w-full">
           <InputField
-            label="Email"
+            label={t('email')}
             type="email"
-            placeholder="Enter your email"
+            placeholder={t('email')}
             {...register("email")}
           />
           {errors.email && (
@@ -193,9 +195,9 @@ export default function Login() {
           )}
 
           <InputField
-            label="Password"
+            label={t('password')}
             type="password"
-            placeholder="Enter your password"
+            placeholder={t('password')}
             {...register("password")}
           />
           {errors.password && (
@@ -207,10 +209,10 @@ export default function Login() {
           <div className="mt-4 flex items-center justify-between w-full text-sm text-gray-400">
             <label className="flex items-center">
               <input type="checkbox" className="mr-2" {...register("remember")} />
-              Remember Me
+              {t('remember_me')}
             </label>
             <a href="/auth/forgot-password" className="text-yellow-400 hover:underline">
-              Forgot Password?
+              {t('forgot_password')}
             </a>
           </div>
 
@@ -224,7 +226,7 @@ export default function Login() {
                 : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
             }`}
           >
-            {isSubmitting ? "Logging in..." : "Login"}
+            {isSubmitting ? t('logging_in') : t('login')}
           </motion.button>
         </form>
 
@@ -232,9 +234,9 @@ export default function Login() {
 
 
         <p className="text-center mt-6 text-gray-400 text-sm">
-          Don't have an account?{" "}
+          {t('dont_have_account')} {" "}
           <a href="/auth/register" className="text-yellow-400 hover:underline">
-            Sign Up
+            {t('sign_up')}
           </a>
         </p>
       </motion.div>
