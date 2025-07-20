@@ -41,7 +41,7 @@ export default function CreateLanguagePage() {
         } catch (err) {
           setError(`Invalid JSON for ${namespace}. Must be a flat key-value object.`);
         }
-      };
+      }; // <-- Close the onload function here
       reader.readAsText(file);
     } else {
       setError(`Only .json files allowed for ${namespace}.`);
@@ -154,32 +154,32 @@ export default function CreateLanguagePage() {
               placeholder="e.g. ar"
               required
               className="w-full border p-2 rounded"
-          />
-          {form.code && (
-            <img
-              src={`https://flagcdn.com/24x18/${form.code === 'en' ? 'gb' : form.code}.png`}
-              alt="Flag preview"
-              className="mt-2 w-6 h-4 rounded border"
             />
-          )}
-        </div>
+            {form.code && (
+              <img
+                src={`https://flagcdn.com/24x18/${form.code === 'en' ? 'gb' : form.code}.png`}
+                alt="Flag preview"
+                className="mt-2 w-6 h-4 rounded border"
+              />
+            )}
+          </div>
 
-        <div>
-          <label className="block font-semibold mb-1">Language Icon</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleIconChange(e.target.files[0])}
-            className="w-full border p-2 rounded"
-          />
-          {form.icon && (
-            <img
-              src={URL.createObjectURL(form.icon)}
-              alt="icon preview"
-              className="mt-2 w-6 h-6 rounded"
+          <div>
+            <label className="block font-semibold mb-1">Language Icon</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleIconChange(e.target.files[0])}
+              className="w-full border p-2 rounded"
             />
-          )}
-        </div>
+            {form.icon && (
+              <img
+                src={URL.createObjectURL(form.icon)}
+                alt="icon preview"
+                className="mt-2 w-6 h-6 rounded"
+              />
+            )}
+          </div>
 
           <div>
             <label className="block font-semibold mb-1">Text Direction</label>
@@ -263,5 +263,4 @@ export default function CreateLanguagePage() {
       </div>
     </AdminLayout>
   );
-}
 }
