@@ -3,9 +3,11 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
-import { createLanguage } from "@/services/languageService";
+import { toast } from "react-toastify";
+import { createLanguage, getLanguages } from "@/services/languageService";
 
-const predefinedNamespaces = ["auth", "website", "dashboard"];
+// Include the common namespace since it's used across the site
+const predefinedNamespaces = ["common", "auth", "website", "dashboard"];
 
 export default function CreateLanguagePage() {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function CreateLanguagePage() {
   });
   const [error, setError] = useState("");
   const [jsonPreviews, setJsonPreviews] = useState({});
+  const [existingCodes, setExistingCodes] = useState([]);
 
   const handleFileUpload = (namespace, file) => {
     if (file && file.type === "application/json") {
@@ -64,12 +67,24 @@ export default function CreateLanguagePage() {
     }
   }, [form.code]);
 
-  const existingCodes = ["en", "ar", "fr"];
+  // Load existing language codes to prevent duplicates
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const langs = await getLanguages();
+        setExistingCodes(langs.map((l) => l.code.toLowerCase()));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
+  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (existingCodes.includes(form.code.toLowerCase())) {
-      alert("Language code already exists.");
+      toast.error("Language code already exists.");
       return;
     }
     const fd = new FormData();
@@ -78,9 +93,25 @@ export default function CreateLanguagePage() {
     fd.append("is_active", form.active);
     fd.append("is_default", form.default);
     if (form.icon) fd.append("icon", form.icon);
-
-    await createLanguage(fd);
-    router.push("/dashboard/admin/settings/languages");
+    try {
+      await createLanguage(fd);
+      for (const ns of predefinedNamespaces) {
+        await fetch(`/api/translations/${form.code}/${ns}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jsonPreviews[ns] || {}),
+        });
+      }
+      toast.success("Language added");
+      router.push("/dashboard/admin/settings/languages");
+    } catch (err) {
+      console.error(err);
+      if (err.response?.data?.message?.toLowerCase().includes("duplicate")) {
+        toast.error("Language code already exists.");
+      } else {
+        toast.error("Failed to add language");
+      }
+    }
   };
 
   return (
@@ -96,7 +127,10 @@ export default function CreateLanguagePage() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 shadow rounded">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 bg-white p-6 shadow rounded md:grid md:grid-cols-2 md:gap-6 md:space-y-0"
+        >
           <div>
             <label className="block font-semibold mb-1">Language Name</label>
             <input
@@ -160,7 +194,7 @@ export default function CreateLanguagePage() {
             </select>
           </div>
 
-          <div>
+          <div className="col-span-2">
             <label className="block font-semibold mb-1">Description (optional)</label>
             <textarea
               name="description"
@@ -171,7 +205,7 @@ export default function CreateLanguagePage() {
             />
           </div>
 
-          <div>
+          <div className="col-span-2">
             <p className="font-semibold mb-2">Upload Translations by Namespace</p>
             {predefinedNamespaces.map((ns) => (
               <div key={ns} className="mb-4">
@@ -197,7 +231,7 @@ export default function CreateLanguagePage() {
             {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 col-span-2">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -221,7 +255,7 @@ export default function CreateLanguagePage() {
 
           <button
             type="submit"
-            className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2"
+            className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2 col-span-2 justify-center"
           >
             <FaSave /> Save Language
           </button>
