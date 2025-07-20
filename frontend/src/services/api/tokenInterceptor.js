@@ -93,6 +93,14 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    } else if (error.response?.status === 401 && originalRequest._retry && !isAuthRoute) {
+      authStore.logout();
+      toast.info("You have been logged out.");
+      toast.error("Session expired. Please log in again.");
+      if (typeof window !== "undefined") {
+        Router.push("/auth/login");
+      }
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
