@@ -3,7 +3,6 @@
 //  ──────────────────────────────────────
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
@@ -23,11 +22,7 @@ import { useTranslation } from "next-i18next";
 // ─────────────────────
 // 🔐 Validation schema
 // ─────────────────────
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password is required" }),
-  remember: z.boolean().optional(),
-});
+import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
 
 export default function Login() {
   const router = useRouter();
@@ -52,7 +47,7 @@ export default function Login() {
     setValue,
     reset
   } = useForm({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(createLoginSchema(t)),
     defaultValues: {
       email: "",
       password: "",
@@ -106,7 +101,7 @@ export default function Login() {
     //   recaptchaRef.current.reset();
     // }
     const loggedInUser = await login({ ...data });
-    toast.success("Login successful");
+    toast.success(t("login_successful"));
     fetchNotifications();
 
     const profilePaths = {
@@ -131,11 +126,10 @@ export default function Login() {
       err?.response?.data?.message ||
       err?.response?.data?.error ||
       err?.message ||
-      "Login failed. Please try again.";
+      t("login_failed");
 
     if (err.code === "ERR_NETWORK") {
-      msg =
-        "Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.";
+      msg = t("network_error_check_config");
     }
 
     toast.error(msg);

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { FaCheckCircle } from "react-icons/fa";
@@ -13,12 +12,7 @@ import { verifyOtpCode, requestPasswordReset } from "@/services/auth/authService
 import { useTranslation } from "next-i18next";
 
 // ✅ OTP Schema
-const otpSchema = z.object({
-  code: z
-    .string()
-    .length(6, "OTP must be exactly 6 digits")
-    .regex(/^\d{6}$/, "OTP must be numeric"),
-});
+import { otpSchema as createOtpSchema } from "@/utils/auth/validationSchemas";
 
 export default function VerifyOTP() {
   const router = useRouter();
@@ -34,7 +28,7 @@ export default function VerifyOTP() {
     formState: { errors },
     setValue,
   } = useForm({
-    resolver: zodResolver(otpSchema),
+    resolver: zodResolver(createOtpSchema(t)),
     defaultValues: { code: "" },
   });
 
@@ -55,7 +49,7 @@ export default function VerifyOTP() {
     if (fromQuery) setEmail(fromQuery);
     else if (fromStorage) setEmail(fromStorage);
     else {
-      toast.error("Email not found. Please start the reset process again.");
+      toast.error(t("email_not_found_start_reset"));
       router.push("/auth/forgot-password");
     }
   }, [router.query.email]);
@@ -65,7 +59,7 @@ export default function VerifyOTP() {
     try {
       const result = await verifyOtpCode({ email, code });
       if (result.valid) {
-        toast.success("OTP verified! Redirecting...");
+        toast.success(t("otp_verified_redirecting"));
         localStorage.setItem("otp_verified_email", email);
         localStorage.setItem("otp_verified_code", code);
 
@@ -77,10 +71,10 @@ export default function VerifyOTP() {
           });
         }, 500);
       } else {
-        toast.error("Wrong OTP code.");
+        toast.error(t("wrong_otp_code"));
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || "Verification failed.";
+      const msg = err?.response?.data?.message || t("verification_failed");
       toast.error(msg);
     }
   };
@@ -89,11 +83,11 @@ export default function VerifyOTP() {
   const handleResendOTP = async () => {
     try {
       await requestPasswordReset(email);
-      toast.success("A new OTP has been sent.");
+      toast.success(t("new_otp_sent"));
       setCanResend(false);
       setResendTimer(30);
     } catch (err) {
-      toast.error("Failed to resend OTP.");
+      toast.error(t("failed_to_resend_otp"));
     }
   };
 
