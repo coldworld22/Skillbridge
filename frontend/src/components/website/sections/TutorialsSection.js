@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
 import {
   FaStar,
@@ -30,6 +31,7 @@ const getStars = (rating) => {
 };
 
 const LandingTutorialsSection = () => {
+  const { t } = useTranslation('website');
   const [activeTab, setActiveTab] = useState("All");
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -90,11 +92,11 @@ const LandingTutorialsSection = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        📚 Featured Tutorials
+        📚 {t('featured_tutorials_heading')}
       </motion.h2>
 
       <p className="text-center text-gray-300 mb-10">
-        Jumpstart your learning with handpicked tutorials from top instructors.
+        {t('featured_tutorials_text')}
       </p>
 
       {/* Category Tabs */}
@@ -215,7 +217,7 @@ const LandingTutorialsSection = () => {
                   }}
                   className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 rounded"
                 >
-                  View Details
+                  {t('view_details')}
                 </button>
                 <button
 
@@ -233,7 +235,7 @@ const LandingTutorialsSection = () => {
                   }}
                   className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black py-1 rounded"
                 >
-                  Add to Cart
+                  {t('add_to_cart')}
                 </button>
               </div>
             </div>
@@ -249,7 +251,7 @@ const LandingTutorialsSection = () => {
           whileTap={{ scale: 0.95 }}
           className="inline-block bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-full font-semibold transition"
         >
-          Explore All Tutorials
+          {t('explore_all_tutorials')}
         </motion.a>
       </div>
     </section>

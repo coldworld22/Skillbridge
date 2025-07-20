@@ -1,9 +1,30 @@
 {
-    "home": "Home",
-    "about": "About Us",
-    "courses": "Courses",
-    "contact": "Contact Us",
-    "login": "Login",
-    "register": "Register"
-  }
+  "home": "Home",
+  "about": "About Us",
+  "courses": "Courses",
+  "contact": "Contact Us",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "dashboard": "Dashboard",
+  "edit_profile": "Edit Profile",
+  "change_password": "Change Password",
+  "wishlist": "Wishlist",
+  "messages": "Messages",
+  "notifications": "Notifications",
+  "no_messages": "No messages",
+  "no_notifications": "No notifications",
+  "view_all": "View All",
+  "your_cart": "Your Cart",
+  "view_cart": "View Cart",
+  "loading": "Loading...",
+  "language_changed": "Language changed",
+  "language_changed_to": "Language changed to {{name}}",
+  "language_change_failed": "Failed to change language",
+  "logged_out": "Logged out successfully",
+  "logout_failed": "Logout failed. Please try again.",
+  "please_complete_profile": "Please complete your profile to continue.",
+  "visit_website": "Visit Website",
+  "new": "new"
+}
   

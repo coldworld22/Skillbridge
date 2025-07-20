@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { FaStar } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 // Dummy Course Data
 const courses = [
@@ -31,6 +32,7 @@ const courses = [
 ];
 
 const FeaturedCourses = () => {
+  const { t } = useTranslation("website");
   return (
 
     <motion.section
@@ -40,10 +42,8 @@ const FeaturedCourses = () => {
       viewport={{ once: true }}
     >
       <section className="py-16 bg-gray-100 text-gray-900 text-center">
-        <h2 className="text-4xl font-bold mb-8">Featured Courses</h2>
-        <p className="text-lg text-gray-600 mb-10">
-          Explore trending courses and boost your skills today!
-        </p>
+        <h2 className="text-4xl font-bold mb-8">{t("featured_courses_heading")}</h2>
+        <p className="text-lg text-gray-600 mb-10">{t("featured_courses_text")}</p>
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -69,7 +69,7 @@ const FeaturedCourses = () => {
                 </div>
                 <p className="mt-2 font-bold text-gray-800">{course.price}</p>
                 <button className="mt-4 w-full bg-yellow-500 text-gray-900 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition">
-                  Enroll Now
+                  {t("featured_courses_enroll")}
                 </button>
               </div>
             </motion.div>

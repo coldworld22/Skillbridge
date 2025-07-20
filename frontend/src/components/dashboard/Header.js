@@ -14,6 +14,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 import { FaCog } from "react-icons/fa";
 import { toggleInstructorStatus } from "@/services/instructor/instructorService";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -25,6 +26,7 @@ export default function Header() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const userRole = user?.role?.toLowerCase();
+  const { t } = useTranslation("common");
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -68,14 +70,14 @@ export default function Header() {
         useNotificationStore.getState().poller,
         useMessageStore.getState().poller
       );
-      toast.success("You’ve been logged out. See you soon!");
+      toast.success(t('logged_out'));
 
       // ⏳ Delay before redirecting to login
       setTimeout(() => {
         router.push("/auth/login");
       }, 1200);
     } catch (err) {
-      toast.error("Logout failed. Please try again.");
+      toast.error(t('logout_failed'));
     }
   };
 
@@ -354,7 +356,7 @@ export default function Header() {
                     onClick={() => router.push("/website")}
                   >
                     <Home className="w-4 h-4 text-gray-500" />
-                    <span>visit Website</span>
+                    <span>{t('visit_website')}</span>
                   </li>
                   <li>
                     <Link
@@ -362,7 +364,7 @@ export default function Header() {
                       className="flex items-center gap-3 px-3 py-2 hover:bg-yellow-50 dark:hover:bg-yellow-700 transition rounded-md"
                     >
                       <FaCog className="text-gray-500" />
-                      <span>Edit Profile</span>
+                      <span>{t('edit_profile')}</span>
                     </Link>
                   </li>
                   <li
@@ -370,7 +372,7 @@ export default function Header() {
                     onClick={handleLogout}
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
+                    <span>{t('logout')}</span>
                   </li>
                 </ul>
               </motion.div>

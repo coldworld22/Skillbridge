@@ -16,14 +16,14 @@ export default function ForgotPassword() {
 
   const handleSendOTP = async () => {
     if (!isValidEmail) {
-      toast.error("Please enter a valid email address.");
+      toast.error(t("please_enter_valid_email"));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await authService.requestPasswordReset(email);
-      toast.success("OTP sent successfully!");
+      toast.success(t("otp_sent_success"));
       localStorage.setItem("otp_email", email);
       router.push({ pathname: "/auth/verify-otp", query: { email } });
     } catch (err) {
@@ -31,12 +31,12 @@ export default function ForgotPassword() {
       const message = err?.response?.data?.message || "";
 
       if (status === 404 || message.toLowerCase().includes("not found")) {
-        toast.error("Account not found. Please register first.");
+        toast.error(t("account_not_found_register"));
       } else {
         const msg =
           err?.response?.data?.message ||
           err?.response?.data?.error ||
-          "Failed to send OTP.";
+          t("failed_to_send_otp");
         toast.error(msg);
       }
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { FaEthereum, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 const nftData = [
   { id: 1, title: "AI-Generated Study Guide", category: "Study Guide", price: 0.12, image: "/shared/assets/images/nft/nft1.jpg" },
@@ -17,6 +18,7 @@ const nftData = [
 const categories = ["All", "Study Guide", "Certificates", "Research Papers", "Data Science", "Medicine", "Cybersecurity"];
 
 const NFTMarketplace = () => {
+  const { t } = useTranslation("website");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(6); // Show first 6 NFTs
@@ -37,20 +39,27 @@ const NFTMarketplace = () => {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Section Heading */}
-          <motion.h2 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}
-            className="text-4xl md:text-5xl font-extrabold text-yellow-400 mb-6">
-            Own & Trade Unique Educational Content with NFTs
-          </motion.h2>
-          <p className="text-lg text-gray-300 mb-6">
-            Mint, buy, and sell educational NFTs, including study guides, verified certificates, and research papers.
-          </p>
+            <motion.h2
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+              className="text-4xl md:text-5xl font-extrabold text-yellow-400 mb-6"
+            >
+              {t('nft_heading')}
+            </motion.h2>
+            <p className="text-lg text-gray-300 mb-6">
+              {t('nft_text')}
+            </p>
 
           {/* Search & Filters */}
           <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
 
             {/* Search Bar */}
             <div className="relative w-full max-w-lg">
-              <input type="text" placeholder="Search NFTs..." value={searchQuery}
+              <input
+                type="text"
+                placeholder={t('search_nfts_placeholder')}
+                value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full p-3 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-500 focus:outline-none text-gray-900 shadow-lg" />
               <FaSearch className="absolute left-3 top-4 text-gray-600 text-xl" />
@@ -72,7 +81,7 @@ const NFTMarketplace = () => {
             <motion.button whileHover={{ scale: 1.05 }}
               className="mt-8 px-8 py-3 bg-yellow-500 text-gray-900 text-lg font-bold rounded-lg shadow-lg hover:bg-yellow-600 transition"
               onClick={() => setVisibleCount(visibleCount + 6)}>
-              Show More NFTs
+              {t('show_more_nfts')}
             </motion.button>
           )}
 
@@ -85,4 +94,4 @@ const NFTMarketplace = () => {
   );
 };
 
-export default NFT ;
+export default NFTMarketplace;

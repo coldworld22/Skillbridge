@@ -9,6 +9,7 @@ import {
   FaThumbsUp,
 } from "react-icons/fa";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import {
   fetchPublishedClasses,
   addClassToWishlist,
@@ -46,6 +47,7 @@ const OnlineClasses = () => {
   const user = useAuthStore((state) => state.user);
   const isStudent = user?.role?.toLowerCase() === 'student';
   const router = useRouter();
+  const { t } = useTranslation('website');
 
   useEffect(() => {
     const load = async () => {
@@ -112,11 +114,10 @@ const OnlineClasses = () => {
       >
         <div className="max-w-7xl mx-auto px-6">
           <motion.h2 className="text-5xl font-extrabold mb-6 text-yellow-500">
-            🚀 Learn Anytime, Anywhere!
+            🚀 {t('online_classes_heading')}
           </motion.h2>
           <motion.p className="text-lg text-gray-300 mb-8">
-            Find expert-led courses and join live sessions. Choose from{" "}
-            <span className="text-yellow-400 font-semibold">Trending, Free, or Best-Selling</span> classes today!
+            {t('online_classes_description')}
           </motion.p>
 
           {/* 🔍 Search & Filters */}
@@ -124,7 +125,7 @@ const OnlineClasses = () => {
             <div className="relative w-full max-w-lg">
               <input
                 type="text"
-                placeholder="Search for a class..."
+                placeholder={t('search_classes_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full p-3 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-500 focus:outline-none text-gray-900 shadow-lg"
@@ -148,7 +149,7 @@ const OnlineClasses = () => {
                 showLiveClasses ? "bg-yellow-500 text-gray-900" : "bg-gray-800 text-white"
               }`}
             >
-              {showLiveClasses ? "📹 Show All Classes" : "🎥 Show Only Live Classes"}
+              {showLiveClasses ? `📹 ${t('show_all_classes')}` : `🎥 ${t('show_only_live')}`}
             </button>
           </div>
 
@@ -239,7 +240,7 @@ const OnlineClasses = () => {
                   className="mt-4 bg-yellow-500 text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-yellow-600 transition w-full"
                   onClick={() => router.push(`/online-classes/${classItem.id}`)}
                 >
-                  {classItem.status === "Live" ? "🎥 Join Live" : "📘 View Class"}
+                  {classItem.status === "Live" ? `🎥 ${t('join_live')}` : `📘 ${t('view_class')}`}
                 </button>
               </motion.div>
             ))}
@@ -247,7 +248,10 @@ const OnlineClasses = () => {
 
           {/* 📊 Class Count */}
           <p className="mt-6 text-sm text-gray-400">
-            Showing {Math.min(visibleCount, filteredClasses.length)} of {filteredClasses.length} classes
+            {t('showing_classes', {
+              current: Math.min(visibleCount, filteredClasses.length),
+              total: filteredClasses.length,
+            })}
           </p>
 
           {/* 📍 Load More */}
@@ -257,7 +261,7 @@ const OnlineClasses = () => {
               whileHover={{ scale: 1.05 }}
               className="mt-8 px-6 py-3 bg-yellow-500 text-gray-900 text-lg font-bold rounded-lg shadow-lg hover:bg-yellow-600 transition"
             >
-              Load More
+              {t('load_more_classes')}
             </motion.button>
           )}
         </div>

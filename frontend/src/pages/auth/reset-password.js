@@ -38,7 +38,7 @@ export default function ResetPassword() {
       setEmail(storedEmail);
       setCode(storedCode);
     } else {
-      toast.error("Missing OTP verification. Please try again.");
+      toast.error(t("missing_otp_verification"));
       router.replace("/auth/forgot-password");
     }
 
@@ -52,21 +52,21 @@ export default function ResetPassword() {
 
   const handleResetPassword = async () => {
     if (!isStrongPassword) {
-      toast.error("Password must be at least 8 characters with uppercase and special character.");
+      toast.error(t("password_strength_error"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match!");
+      toast.error(t("passwords_not_match"));
       return;
     }
 
     try {
       await resetPassword({ email, code, new_password: newPassword });
-      toast.success("Password reset successful!");
+      toast.success(t("password_reset_successful"));
       router.push("/auth/success-reset");
     } catch (err) {
-      const msg = err?.response?.data?.message || "Password reset failed.";
+      const msg = err?.response?.data?.message || t("password_reset_failed");
       toast.error(msg);
     }
   };
