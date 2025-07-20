@@ -39,7 +39,7 @@ export default function Register() {
     formState: { errors, isSubmitting },
     watch,
   } = useForm({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema(t)),
     defaultValues: {
       full_name: "",
       email: "",
@@ -91,14 +91,14 @@ export default function Register() {
         role,
         recaptchaToken: token,
       });
-      toast.success("Registration successful");
+      toast.success(t("registration_successful"));
       fetchNotifications();
       router.push("/auth/login");
     } catch (err) {
       const msg =
         err?.response?.data?.error ||
         err?.message ||
-        "Registration failed. Please try again.";
+        t("registration_failed");
       toast.error(msg);
     }
   };
