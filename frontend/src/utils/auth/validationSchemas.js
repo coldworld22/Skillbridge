@@ -2,6 +2,8 @@
 import { z } from "zod";
 
 // These helpers generate validation schemas using i18n translations
+
+// 🔐 Login Schema
 export const loginSchema = (t) =>
   z.object({
     email: z.string().email({ message: t("invalid_email_address") }),
@@ -10,13 +12,6 @@ export const loginSchema = (t) =>
       .min(6, { message: t("password_min_6_characters") }),
     recaptchaToken: z.string().optional(),
   });
-
-// 🔐 Login Schema
-export const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  recaptchaToken: z.string().optional(),
-});
 
 // 🧾 Register Schema
 export const registerSchema = (t) =>
