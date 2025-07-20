@@ -1,43 +1,51 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaDownload, FaBookmark, FaFilePdf } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 // Dummy Resource Data
 const resources = [
   {
     id: 1,
     title: "AI & Machine Learning Basics",
-    category: "Artificial Intelligence",
+    category: "category_ai",
     file: "/resources/ai-guide.pdf",
   },
   {
     id: 2,
     title: "Mastering Web Development",
-    category: "Web Development",
+    category: "category_webdev",
     file: "/resources/web-dev.pdf",
   },
   {
     id: 3,
     title: "Data Science Essentials",
-    category: "Data Science",
+    category: "category_datascience",
     file: "/resources/data-science.pdf",
   },
   {
     id: 4,
     title: "Cybersecurity Fundamentals",
-    category: "Cybersecurity",
+    category: "category_cybersecurity",
     file: "/resources/cybersecurity.pdf",
   },
 ];
 
-const categories = ["All Categories", "Artificial Intelligence", "Web Development", "Data Science", "Cybersecurity"];
+const categoriesKeys = [
+  "category_all",
+  "category_ai",
+  "category_webdev",
+  "category_datascience",
+  "category_cybersecurity",
+];
 
 const EducationalResources = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const { t } = useTranslation("website");
+  const [selectedCategory, setSelectedCategory] = useState("category_all");
 
   // Filter Resources by Category
   const filteredResources =
-    selectedCategory === "All Categories"
+    selectedCategory === "category_all"
       ? resources
       : resources.filter((resource) => resource.category === selectedCategory);
 
@@ -49,20 +57,20 @@ const EducationalResources = () => {
       viewport={{ once: true }}
     >
       <section className="py-16 bg-gray-900 text-white text-center">
-        <h2 className="text-4xl font-bold mb-6">Educational Resources 📚</h2>
-        <p className="text-lg text-gray-400 mb-10">Download learning materials to enhance your skills.</p>
+        <h2 className="text-4xl font-bold mb-6">{t("resources_heading")} 📚</h2>
+        <p className="text-lg text-gray-400 mb-10">{t("resources_text")}</p>
 
         {/* Category Filter */}
         <div className="flex justify-center gap-4 mb-8">
-          {categories.map((category) => (
+          {categoriesKeys.map((key) => (
             <motion.button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-lg transition ${selectedCategory === category ? "bg-yellow-500 text-gray-900" : "bg-gray-800 text-white hover:bg-gray-700"
+              key={key}
+              onClick={() => setSelectedCategory(key)}
+              className={`px-4 py-2 rounded-lg transition ${selectedCategory === key ? "bg-yellow-500 text-gray-900" : "bg-gray-800 text-white hover:bg-gray-700"
                 }`}
               whileHover={{ scale: 1.05 }}
             >
-              {category}
+              {t(key)}
             </motion.button>
           ))}
         </div>
@@ -79,17 +87,17 @@ const EducationalResources = () => {
                 <FaFilePdf />
               </div>
               <h3 className="text-xl font-semibold">{resource.title}</h3>
-              <p className="text-gray-400 mb-4">{resource.category}</p>
+              <p className="text-gray-400 mb-4">{t(resource.category)}</p>
               <div className="flex justify-center gap-4">
                 <a
                   href={resource.file}
                   download
                   className="px-4 py-2 bg-yellow-500 text-gray-900 rounded-lg font-semibold hover:bg-yellow-600 transition shadow-lg flex items-center gap-2"
                 >
-                  <FaDownload /> Download
+                  <FaDownload /> {t("resources_download")}
                 </a>
                 <button className="px-4 py-2 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition shadow-lg flex items-center gap-2">
-                  <FaBookmark /> Save
+                  <FaBookmark /> {t("resources_save")}
                 </button>
               </div>
             </motion.div>

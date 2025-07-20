@@ -86,10 +86,10 @@ const Navbar = () => {
       mutate("/languages");
       const selected = langs?.find((l) => l.code === lng);
       toast.success(
-        `Language changed${selected ? ` to ${selected.name}` : ""}`
+        selected ? t('language_changed_to', { name: selected.name }) : t('language_changed')
       );
     } catch (_) {
-      toast.error("Failed to change language");
+      toast.error(t('language_change_failed'));
     } finally {
       setLanguageOpen(false);
     }
@@ -114,7 +114,7 @@ const Navbar = () => {
       const rolePath = profilePaths[userRole] || "/website";
       if (router.pathname !== rolePath) {
         router.replace(rolePath);
-        toast.info("Please complete your profile to continue.");
+        toast.info(t('please_complete_profile'));
       }
     }
   }, [user, userRole, router]);
@@ -223,7 +223,7 @@ const Navbar = () => {
                   className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
-                    Messages
+                    {t('messages')}
                   </h4>
                   <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
                     {messages.slice(0, 10).map((msg) => (
@@ -236,13 +236,13 @@ const Navbar = () => {
                       >
                         <span>{msg.message}</span>
                         {!msg.read && (
-                          <span className="ml-2 text-xs text-red-500">new</span>
+                          <span className="ml-2 text-xs text-red-500">{t('new')}</span>
                         )}
                       </li>
                     ))}
                     {messages.length === 0 && (
                       <li className="text-center text-sm text-gray-500 py-2">
-                        No messages
+                        {t('no_messages')}
                       </li>
                     )}
                   </ul>
@@ -251,7 +251,7 @@ const Navbar = () => {
                       href="/messages"
                       className="text-blue-600 hover:underline text-sm"
                     >
-                      View All
+                      {t('view_all')}
                     </Link>
                   </div>
                 </div>
@@ -277,7 +277,7 @@ const Navbar = () => {
                   className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
-                    Notifications
+                    {t('notifications')}
                   </h4>
                   <ul className="space-y-3 text-sm max-h-60 overflow-y-auto">
                     {notifications.slice(0, 10).map((note) => (
@@ -292,13 +292,13 @@ const Navbar = () => {
                       >
                         <span><LinkText text={note.message} /></span>
                         {!note.read && (
-                          <span className="ml-2 text-xs text-red-500">new</span>
+                          <span className="ml-2 text-xs text-red-500">{t('new')}</span>
                         )}
                       </li>
                     ))}
                     {notifications.length === 0 && (
                       <li className="text-center text-sm text-gray-500 py-2">
-                        No notifications
+                        {t('no_notifications')}
                       </li>
                     )}
                   </ul>
@@ -313,7 +313,7 @@ const Navbar = () => {
                       }
                       className="text-blue-600 hover:underline text-sm"
                     >
-                      View All
+                      {t('view_all')}
                     </Link>
                   </div>
                 </div>
@@ -353,7 +353,7 @@ const Navbar = () => {
             }
             className="flex items-center gap-2 font-semibold hover:underline"
           >
-            <FaTachometerAlt /> Dashboard
+            <FaTachometerAlt /> {t('dashboard')}
           </Link>
         )}
 
@@ -402,7 +402,7 @@ const Navbar = () => {
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
                     >
                       <FaCog className="text-gray-500" />
-                      <span>Edit Profile</span>
+                      <span>{t('edit_profile')}</span>
                     </Link>
                   </li>
                   <li>
@@ -411,7 +411,7 @@ const Navbar = () => {
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
                     >
                       <FaLock className="text-gray-500" />
-                      <span>Change Password</span>
+                      <span>{t('change_password')}</span>
                     </Link>
                   </li>
                   <li>
@@ -420,7 +420,7 @@ const Navbar = () => {
                       className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
                     >
                       <FaHeart className="text-gray-500" />
-                      <span>Wishlist</span>
+                      <span>{t('wishlist')}</span>
                     </Link>
                   </li>
                   {userRole === "superadmin" && profile?.job_title && (
@@ -434,20 +434,20 @@ const Navbar = () => {
                         try {
                           await logout();
                           clearAdmin?.(); // optional safety if clearAdmin is undefined
-                          toast.success("Logged out successfully");
+                          toast.success(t('logged_out'));
 
                           // ⏳ Delay before redirect
                           setTimeout(() => {
                             router.push("/auth/login");
                           }, 1200);
                         } catch (err) {
-                          toast.error("Logout failed. Please try again.");
+                          toast.error(t('logout_failed'));
                         }
                       }}
                       className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 transition rounded-md w-full text-left"
                     >
                       <FaSignOutAlt className="text-red-500" />
-                      <span>Logout</span>
+                      <span>{t('logout')}</span>
                     </button>
                   </li>
                 </ul>
@@ -463,7 +463,7 @@ const Navbar = () => {
             {cartOpen && (
               <div className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50">
                 <h4 className="text-base font-semibold mb-2 border-b pb-1">
-                  Your Cart
+                  {t('your_cart')}
                 </h4>
                 <ul className="space-y-3 text-sm">
                   {cartItems.map((item) => (
@@ -481,7 +481,7 @@ const Navbar = () => {
                     href="/cart"
                     className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded-md transition"
                   >
-                    View Cart
+                    {t('view_cart')}
                   </Link>
                 </div>
               </div>

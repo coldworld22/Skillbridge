@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaCheck, FaCreditCard, FaMoneyBillWave, FaWallet, FaEthereum } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 const plans = [
   {
     id: 1,
-    name: "Basic Plan",
+    name: "plan_basic",
     price: "$10/month",
     features: [
       "Access to selected free tutorials",
@@ -16,7 +17,7 @@ const plans = [
   },
   {
     id: 2,
-    name: "Regular Plan",
+    name: "plan_regular",
     price: "$20/month",
     features: [
       "Full course access",
@@ -29,7 +30,7 @@ const plans = [
   },
   {
     id: 3,
-    name: "Premium Plan",
+    name: "plan_premium",
     price: "$30/month",
     features: [
       "Everything in Regular Plan",
@@ -47,6 +48,7 @@ const plans = [
 
 
 const SubscriptionPlans = () => {
+  const { t } = useTranslation("website");
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   return (
@@ -58,16 +60,16 @@ const SubscriptionPlans = () => {
       viewport={{ once: true }}
     >
       <section className="py-16 bg-gray-900 text-white text-center">
-        <h2 className="text-4xl font-bold mb-6 text-yellow-500">Choose the Right Plan for Your Learning Journey 🚀</h2>
+        <h2 className="text-4xl font-bold mb-6 text-yellow-500">{t("subscription_heading")} 🚀</h2>
         <p className="text-lg text-gray-300 mb-10">
-          Unlock powerful features like live classes, 1-on-1 instructor access, AI tutoring, and certification – all tailored to your plan.
+          {t("subscription_description")}
 
         </p>
 
         {/* Subscription Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto relative z-10">
           {plans.map((plan, index) => {
-            const isPremium = plan.name === "Premium Plan";
+            const isPremium = plan.name === "plan_premium";
             const isMiddle = index === 1;
 
             return (
@@ -79,11 +81,11 @@ const SubscriptionPlans = () => {
                 {/* Glow Effect for Premium */}
                 {isPremium && (
                   <div className="absolute -top-4 right-4 bg-white text-yellow-500 font-bold px-3 py-1 rounded-full text-xs shadow-md animate-pulse z-20">
-                    Most Popular
+                    {t("subscription_most_popular")}
                   </div>
                 )}
 
-                <h3 className="text-2xl font-extrabold mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-extrabold mb-2">{t(plan.name)}</h3>
                 <p className="text-3xl font-bold mb-4">{plan.price}</p>
 
                 <ul className={`space-y-2 ${isPremium ? "text-gray-800" : "text-gray-300"}`}>
@@ -100,7 +102,7 @@ const SubscriptionPlans = () => {
           `}
                   onClick={() => setSelectedPlan(plan)}
                 >
-                  Select Plan
+                  {t("subscription_select_plan")}
                 </button>
               </motion.div>
             );
@@ -116,19 +118,21 @@ const SubscriptionPlans = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="bg-gray-900 p-6 rounded-lg text-white shadow-xl max-w-lg text-center"
             >
-              <h3 className="text-xl font-bold mb-4">Complete Payment for {selectedPlan.name}</h3>
+              <h3 className="text-xl font-bold mb-4">
+                {t("payment_complete_for", { plan: t(selectedPlan.name) })}
+              </h3>
               <p className="text-gray-300">{selectedPlan.price}</p>
 
               {/* Payment Methods */}
               <div className="mt-4 flex flex-col gap-4">
                 <button className="bg-blue-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-blue-600 transition">
-                  <FaCreditCard /> Pay with Credit Card
+                  <FaCreditCard /> {t("pay_with_credit_card")}
                 </button>
                 <button className="bg-green-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-green-600 transition">
-                  <FaMoneyBillWave /> Pay with PayPal
+                  <FaMoneyBillWave /> {t("pay_with_paypal")}
                 </button>
                 <button className="bg-purple-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-purple-600 transition">
-                  <FaEthereum /> Pay with Crypto
+                  <FaEthereum /> {t("pay_with_crypto")}
                 </button>
               </div>
 
@@ -136,7 +140,7 @@ const SubscriptionPlans = () => {
                 className="mt-6 bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition"
                 onClick={() => setSelectedPlan(null)}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </motion.div>
           </div>
