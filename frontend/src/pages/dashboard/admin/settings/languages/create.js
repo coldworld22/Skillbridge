@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { createLanguage } from "@/services/languageService";
+import { createLanguage, getLanguages } from "@/services/languageService";
 
 // Include the common namespace since it's used across the site
 const predefinedNamespaces = ["common", "auth", "website", "dashboard"];
@@ -23,6 +23,7 @@ export default function CreateLanguagePage() {
   });
   const [error, setError] = useState("");
   const [jsonPreviews, setJsonPreviews] = useState({});
+  const [existingCodes, setExistingCodes] = useState([]);
 
   const handleFileUpload = (namespace, file) => {
     if (file && file.type === "application/json") {
@@ -66,7 +67,19 @@ export default function CreateLanguagePage() {
     }
   }, [form.code]);
 
-  const existingCodes = ["en", "ar", "fr"];
+  // Load existing language codes to prevent duplicates
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const langs = await getLanguages();
+        setExistingCodes(langs.map((l) => l.code.toLowerCase()));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
+  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,7 +106,10 @@ export default function CreateLanguagePage() {
       router.push("/dashboard/admin/settings/languages");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to add language");
+      if (err.response?.data?.message?.toLowerCase().includes("duplicate")) {
+        toast.error("Language code already exists.");
+      } else {
+        toast.error("Failed to add language");
     }
   };
 
