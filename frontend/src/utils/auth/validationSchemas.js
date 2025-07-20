@@ -43,6 +43,31 @@ export const registerSchema = (t) =>
       path: ["confirmPassword"],
     });
 
+// 🧾 Register Schema
+export const registerSchema = (t) =>
+  z
+    .object({
+      full_name: z.string().min(3, t("name_min_3_characters")),
+      email: z.string().email(t("invalid_email_address")),
+      phone: z
+        .string()
+        .min(12, t("phone_min_12_digits"))
+        .max(20, t("phone_max_20_digits")),
+
+      password: z
+        .string()
+        .min(8, t("password_min_8_characters"))
+        .regex(/[A-Z]/, t("password_must_contain_uppercase"))
+        .regex(/[\W_]/, t("password_must_contain_special")),
+      confirmPassword: z.string().min(1, t("confirm_password_required")),
+      role: z.enum(["Student", "Instructor", "Admin"]),
+      recaptchaToken: z.string().optional(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("passwords_do_not_match"),
+      path: ["confirmPassword"],
+    });
+
 // 🔢 OTP Verification Schema
 export const otpSchema = (t) =>
   z.object({
