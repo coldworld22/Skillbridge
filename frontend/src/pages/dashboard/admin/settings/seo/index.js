@@ -1,6 +1,8 @@
 // pages/dashboard/admin/settings/seo/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { fetchSEOConfig, updateSEOConfig } from "@/services/admin/seoConfigService";
 import { Tab } from "@headlessui/react";
 import { FaTags, FaSitemap, FaRobot, FaCog, FaTwitter, FaGlobe, FaEdit } from "react-icons/fa";
 
@@ -641,6 +643,32 @@ function AdvancedSEOSettings() {
     setRedirects(updated);
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchSEOConfig();
+        if (data) {
+          if (data.globalSEO) setGlobalSEO((prev) => ({ ...prev, ...data.globalSEO }));
+          if (data.redirects) setRedirects(data.redirects);
+          if (data.jsonSchema) setJsonSchema(data.jsonSchema);
+        }
+      } catch (err) {
+        toast.error("Failed to load settings");
+      }
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await updateSEOConfig({ globalSEO, redirects, jsonSchema });
+      toast.success("SEO settings saved!");
+    } catch (err) {
+      toast.error("Failed to save settings");
+    }
+  };
+
   return (
     <div className="space-y-10">
       {/* GLOBAL SEO CONTROLS */}
@@ -735,7 +763,10 @@ function AdvancedSEOSettings() {
 
       {/* SAVE BUTTONS */}
       <div>
-        <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow">
+        <button
+          onClick={handleSave}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow"
+        >
           💾 Save All Advanced Settings
         </button>
       </div>
