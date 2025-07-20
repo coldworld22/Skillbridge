@@ -1,8 +1,10 @@
 import Navbar from "@/components/website/sections/Navbar";
 import { FaCog, FaLock } from "react-icons/fa";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 
 const ProfilePage = () => {
+  const { t } = useTranslation("common");
   return (
     <div>
       <Navbar />
@@ -13,13 +15,13 @@ const ProfilePage = () => {
         <div className="mt-4">
           <Link href="/profile/edit">
             <button className="bg-yellow-500 px-4 py-2 rounded-lg flex items-center gap-2">
-              <FaCog /> Edit Profile
+              <FaCog /> {t('edit_profile')}
             </button>
           </Link>
           
           <Link href="/profile/change-password">
             <button className="ml-4 bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <FaLock /> Change Password
+              <FaLock /> {t('change_password')}
             </button>
           </Link>
         </div>
