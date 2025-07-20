@@ -31,6 +31,10 @@ Follow these steps to run SkillBridge on your local machine.
    token cookie is delivered over plain HTTP. Using `NODE_ENV=production` without
    HTTPS will result in `401` errors when refreshing the session.
 
+   If you need `SameSite=None` for cross-subdomain cookies while still using
+   plain HTTP (e.g. staging environments), set `COOKIE_SECURE=false` and
+   `COOKIE_SAMESITE=None` in `backend/.env`.
+
 3. (Optional) Install dependencies for manual development:
 
    ```bash

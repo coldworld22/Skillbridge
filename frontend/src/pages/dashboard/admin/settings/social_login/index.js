@@ -222,8 +222,11 @@ export default function SocialLoginSettingsPage() {
 
 
   const getDefaultRedirectUrl = (key) => {
-    let base = process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
-    base = base.replace(/\/$/, '');
+    let base = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!base && typeof window !== 'undefined') {
+      base = window.location.origin;
+    }
+    base = (base || '').replace(/\/$/, '');
     if (base.endsWith('/api')) {
       base = base.slice(0, -4);
     }
