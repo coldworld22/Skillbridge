@@ -12,6 +12,9 @@ module.exports = {
   // Fallback to English if a translation is missing
   fallbackLng: "en",
   // Explicitly point next-i18next to the translation files
-  localePath: path.resolve("./public/locales"),
+  // Resolve the locale path relative to this config file so that
+  // translations load correctly when the app is started from the
+  // frontend directory or the repository root.
+  localePath: path.resolve(__dirname, "public", "locales"),
 };
 
