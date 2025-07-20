@@ -10,8 +10,15 @@
 
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+  // Allow overriding cookie security via environment variables. This makes
+  // local HTTPS-less development possible even when NODE_ENV is "production".
+  secure:
+    typeof process.env.COOKIE_SECURE !== 'undefined'
+      ? process.env.COOKIE_SECURE === 'true'
+      : process.env.NODE_ENV === 'production',
+  sameSite:
+    process.env.COOKIE_SAMESITE ||
+    (process.env.NODE_ENV === 'production' ? 'None' : 'Lax'),
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 

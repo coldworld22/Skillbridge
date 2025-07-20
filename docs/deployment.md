@@ -20,8 +20,16 @@ Follow these steps to run SkillBridge on a server or production host.
     `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
 
     ```bash
-    COOKIE_DOMAIN=.eduskillbridge.net
-    ```
+   COOKIE_DOMAIN=.eduskillbridge.net
+   ```
+
+   When running over plain HTTP but using different subdomains (e.g. staging
+   environments), also add:
+
+   ```bash
+   COOKIE_SECURE=false
+   COOKIE_SAMESITE=None
+   ```
 
     To enable password recovery via email, provide SMTP settings or
     configure them later through the `/api/email-config` endpoint or the admin
@@ -149,5 +157,12 @@ matches the deployed domain exactly and restart the backend.  The
 backend including the `/api` prefix. When the frontend and API are on
 different subdomains, set `COOKIE_DOMAIN` in `backend/.env` to the shared
 base domain (e.g. `.eduskillbridge.net`) so the authentication cookie is
-available to both sites.
+available to both sites. If the site uses HTTP, also set:
+
+```bash
+COOKIE_SECURE=false
+COOKIE_SAMESITE=None
+```
+
+This ensures the refresh token cookie is sent across subdomains without HTTPS.
 
