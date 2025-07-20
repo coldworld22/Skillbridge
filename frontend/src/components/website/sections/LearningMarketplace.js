@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import {
   FaUserGraduate,
   FaChalkboardTeacher,
@@ -27,6 +28,7 @@ const OffersIndex = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useTranslation('website');
 
   useEffect(() => {
     fetchOffers()
@@ -81,16 +83,16 @@ const OffersIndex = () => {
         {/* Title & CTA */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-400 mb-4">
-            🎓 Browse Student Requests & Instructor Offers
+            🎓 {t('browse_offers_heading')}
           </h1>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-6">
-            Students post help requests. Instructors offer courses. Engage and learn on your terms.
+            {t('browse_offers_text')}
           </p>
           <button
             onClick={() => handleNavigate("post")}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold flex items-center gap-2 mx-auto shadow-lg transition"
           >
-            <FaPlus /> Post an Offer
+            <FaPlus /> {t('post_an_offer')}
           </button>
         </div>
 
@@ -141,14 +143,14 @@ const OffersIndex = () => {
               onClick={() => handleNavigate("dashboard")}
               className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-lg transition"
             >
-              Go to Dashboard
+              {t('go_to_dashboard')}
             </button>
           ) : (
             <button
               onClick={() => setVisibleCount((prev) => prev + 6)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md transition"
             >
-              Load More Offers
+              {t('load_more_offers')}
             </button>
           )}
         </div>

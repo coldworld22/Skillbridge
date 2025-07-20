@@ -49,7 +49,11 @@ const Hero = () => {
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const { t } = useTranslation("website");
 
-  const typewriterText = ["Empower Learning", "Connect Minds", "Master New Skills"];
+  const typewriterText = [
+    t("hero_slogan_1"),
+    t("hero_slogan_2"),
+    t("hero_slogan_3"),
+  ];
 
   useEffect(() => {
     const fetchAds = async () => {
@@ -204,7 +208,7 @@ const Hero = () => {
                   href={ads[currentAd].link}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-semibold shadow-md"
                 >
-                  Learn More <FaArrowRight />
+                  {t('learn_more')} <FaArrowRight />
                 </a>
               </div>
             </div>

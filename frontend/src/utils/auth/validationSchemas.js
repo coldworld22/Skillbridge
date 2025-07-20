@@ -20,6 +20,16 @@ export const loginSchema = (t) =>
     recaptchaToken: z.string().optional(),
   });
 
+// These helpers generate validation schemas using i18n translations
+export const loginSchema = (t) =>
+  z.object({
+    email: z.string().email({ message: t("invalid_email_address") }),
+    password: z
+      .string()
+      .min(6, { message: t("password_min_6_characters") }),
+    recaptchaToken: z.string().optional(),
+  });
+
 // 🔐 Login Schema
 export const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -51,7 +61,6 @@ export const registerSchema = (t) =>
       message: t("passwords_do_not_match"),
       path: ["confirmPassword"],
     });
-
 
 // 🔢 OTP Verification Schema
 export const otpSchema = (t) =>

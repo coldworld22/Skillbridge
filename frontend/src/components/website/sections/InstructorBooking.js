@@ -208,7 +208,9 @@ export default function InstructorBooking() {
                 </span>
               ))}
             </div>
-            <p className="text-gray-400 text-sm mt-1">{'experience : '}{i.experience}{' Years'}</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {t('experience_years', { count: i.experience })}
+            </p>
             <div className="flex items-center justify-center gap-1 mt-2">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <FaStar
