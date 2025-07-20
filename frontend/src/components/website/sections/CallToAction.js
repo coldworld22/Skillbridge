@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { FaRocket, FaBookOpen } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 const CallToAction = () => {
+  const { t } = useTranslation("website");
   return (
 
     <motion.section
@@ -27,10 +29,8 @@ const CallToAction = () => {
 
         {/* CTA Content */}
         <div className="relative z-10 max-w-3xl mx-auto px-6">
-          <h2 className="text-4xl font-bold mb-4">🚀 Join the Learning Revolution!</h2>
-          <p className="text-lg text-gray-800 mb-8">
-            Connect with top instructors, explore thousands of courses, and take your skills to the next level.
-          </p>
+          <h2 className="text-4xl font-bold mb-4">{t("cta_heading")}</h2>
+          <p className="text-lg text-gray-800 mb-8">{t("cta_text")}</p>
 
           {/* CTA Buttons */}
           <div className="flex justify-center gap-6">
@@ -38,13 +38,13 @@ const CallToAction = () => {
               whileHover={{ scale: 1.05 }}
               className="px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-lg flex items-center gap-2"
             >
-              <FaRocket /> Sign Up Now
+              <FaRocket /> {t("cta_sign_up")}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               className="px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition shadow-lg flex items-center gap-2"
             >
-              <FaBookOpen /> Explore Courses
+              <FaBookOpen /> {t("cta_explore_courses")}
             </motion.button>
           </div>
         </div>

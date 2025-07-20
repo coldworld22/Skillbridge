@@ -16,6 +16,7 @@ import {
   FaCircleCheck,
 } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 // Use a relative API base URL by default so deployments work on any domain
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
@@ -26,6 +27,7 @@ const sortOptions = ["Highest Rated", "Most Experienced"];
 export default function InstructorBooking() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useTranslation("website");
 
   const [instructors, setInstructors] = useState([]);
   const [categories, setCategories] = useState(defaultCategories);
@@ -114,15 +116,15 @@ export default function InstructorBooking() {
       viewport={{ once: true }}
       className="py-16 bg-gray-900 text-white text-center"
     >
-      <h2 className="text-4xl font-bold mb-6 text-yellow-500">Book or Chat with Instructors</h2>
-      <p className="text-lg text-gray-300 mb-8">Request tutorials or private lessons directly.</p>
+      <h2 className="text-4xl font-bold mb-6 text-yellow-500">{t("instructor_heading")}</h2>
+      <p className="text-lg text-gray-300 mb-8">{t("instructor_text")}</p>
 
       {/* Search & Filter */}
       <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
         <div className="relative w-full max-w-xs">
           <input
             type="text"
-            placeholder="Search instructors..."
+            placeholder={t("search_instructors_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full p-3 pl-10 rounded-lg border border-gray-500 text-gray-900"
@@ -156,7 +158,7 @@ export default function InstructorBooking() {
             checked={onlyAvailable}
             onChange={(e) => setOnlyAvailable(e.target.checked)}
           />
-          Only Available Now
+          {t("instructor_only_available")}
         </label>
 
         <label className="flex items-center gap-2 text-sm text-gray-300">
@@ -165,14 +167,14 @@ export default function InstructorBooking() {
             checked={showFavoritesOnly}
             onChange={(e) => setShowFavoritesOnly(e.target.checked)}
           />
-          Show Favorites Only
+          {t("instructor_show_favorites")}
         </label>
       </div>
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {filtered.length === 0 ? (
-          <p className="col-span-full text-gray-400">No instructors found.</p>
+          <p className="col-span-full text-gray-400">{t("instructor_no_results")}</p>
         ) : (
           filtered.map((i) => (
             <motion.div
@@ -185,11 +187,11 @@ export default function InstructorBooking() {
                 i.availableNow ? 'bg-green-500' : 'bg-gray-600'
               }`}
             >
-              {i.availableNow ? 'Online' : 'Offline'}
+              {i.availableNow ? t('instructor_online') : t('instructor_offline')}
             </span>
             {i.verified && (
               <span className="absolute top-2 left-2 text-green-400 text-sm flex items-center gap-1">
-                <FaCircleCheck /> Verified
+                <FaCircleCheck /> {t("instructor_verified")}
               </span>
             )}
             <img src={i.avatar} className="w-20 h-20 rounded-full border-2 border-yellow-500 mb-3" alt={i.name} />
@@ -206,7 +208,9 @@ export default function InstructorBooking() {
                 </span>
               ))}
             </div>
-            <p className="text-gray-400 text-sm mt-1">{'experience : '}{i.experience}{' Years'}</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {t('experience_years', { count: i.experience })}
+            </p>
             <div className="flex items-center justify-center gap-1 mt-2">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <FaStar
@@ -221,13 +225,13 @@ export default function InstructorBooking() {
                 onClick={() => handleRequest(i)}
                 className="bg-yellow-500 text-black px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-600"
               >
-                <FaUserCheck /> Request Lesson
+                <FaUserCheck /> {t("instructor_request_lesson")}
               </button>
               <button
                 onClick={() => setChatWithInstructor(i.id)}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
               >
-                <FaComments /> Chat
+                <FaComments /> {t("instructor_chat")}
               </button>
               <button
                 onClick={() => toggleFavorite(i.id)}
@@ -258,8 +262,8 @@ export default function InstructorBooking() {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-gray-900 p-6 rounded-xl max-w-md text-center"
           >
-            <h3 className="text-xl font-bold mb-3">Open Chat</h3>
-            <p className="text-gray-300">Start chatting with this instructor now.</p>
+            <h3 className="text-xl font-bold mb-3">{t("instructor_open_chat")}</h3>
+            <p className="text-gray-300">{t("instructor_start_chat")}</p>
             <button
               onClick={() => {
                 setChatWithInstructor(null);
@@ -267,7 +271,7 @@ export default function InstructorBooking() {
               }}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2"
             >
-              <FaComments /> Go to Chat
+              <FaComments /> {t("instructor_go_to_chat")}
             </button>
           </motion.div>
         </div>

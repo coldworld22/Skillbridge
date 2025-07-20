@@ -6,11 +6,11 @@ import { API_BASE_URL } from "@/config/config";
 const fetcher = url => api.get(url).then(res => res.data.data);
 
 export default function LanguageSwitcher({ changeLang }) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
 
   if (!langs) {
-    return <p className="text-sm px-2">Loading...</p>;
+    return <p className="text-sm px-2">{t('loading')}</p>;
   }
 
   return (
