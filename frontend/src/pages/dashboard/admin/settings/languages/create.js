@@ -110,6 +110,7 @@ export default function CreateLanguagePage() {
         toast.error("Language code already exists.");
       } else {
         toast.error("Failed to add language");
+      }
     }
   };
 
