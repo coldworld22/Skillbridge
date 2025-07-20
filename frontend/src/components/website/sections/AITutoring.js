@@ -10,51 +10,50 @@ import {
   FaCog,
 } from "react-icons/fa";
 import aiIllustration from "@/shared/assets/images/home/ai-tutor.png";
-
-const features = [
-  {
-    title: "Adaptive Learning Paths",
-    icon: FaBrain,
-    description:
-      "AI analyzes your strengths & weaknesses to create a customized learning roadmap.",
-    link: "/ai-tutoring/lesson-planner",
-  },
-  {
-    title: "AI-Generated Quizzes",
-    icon: FaLightbulb,
-    description:
-      "Practice with AI-generated quizzes based on your learning progress.",
-    link: "/ai-tutoring/practice",
-  },
-  {
-    title: "24/7 AI Chat Tutor",
-    icon: FaRobot,
-    description:
-      "Ask AI-powered tutors any question and receive instant, real-time answers.",
-    link: "/ai-tutoring/chat",
-  },
-  {
-    title: "Real-Time Feedback",
-    icon: FaChalkboardTeacher,
-    description:
-      "AI reviews assignments, coding exercises, and essays, giving detailed feedback.",
-    link: "/ai-tutoring/feedback",
-  },
-  {
-    title: "AI Research Assistant",
-    icon: FaBookOpen,
-    description: "AI helps summarize research papers and academic content.",
-    link: "/ai-tutoring/research",
-  },
-  {
-    title: "AI Transcript",
-    description: "View a personalized log of your AI interactions, learning goals, and study preferences.",
-    icon: FaBookOpen,
-    link: "/ai-tutoring/transcript"
-  }
-];
+import { useTranslation } from "next-i18next";
 
 const AITutoring = () => {
+  const { t } = useTranslation("website");
+
+  const features = [
+    {
+      title: t("ai_feature_adaptive_title"),
+      icon: FaBrain,
+      description: t("ai_feature_adaptive_description"),
+      link: "/ai-tutoring/lesson-planner",
+    },
+    {
+      title: t("ai_feature_quizzes_title"),
+      icon: FaLightbulb,
+      description: t("ai_feature_quizzes_description"),
+      link: "/ai-tutoring/practice",
+    },
+    {
+      title: t("ai_feature_chat_title"),
+      icon: FaRobot,
+      description: t("ai_feature_chat_description"),
+      link: "/ai-tutoring/chat",
+    },
+    {
+      title: t("ai_feature_feedback_title"),
+      icon: FaChalkboardTeacher,
+      description: t("ai_feature_feedback_description"),
+      link: "/ai-tutoring/feedback",
+    },
+    {
+      title: t("ai_feature_research_title"),
+      icon: FaBookOpen,
+      description: t("ai_feature_research_description"),
+      link: "/ai-tutoring/research",
+    },
+    {
+      title: t("ai_feature_transcript_title"),
+      icon: FaBookOpen,
+      description: t("ai_feature_transcript_description"),
+      link: "/ai-tutoring/transcript",
+    },
+  ];
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 50 }}
@@ -76,12 +75,10 @@ const AITutoring = () => {
             transition={{ duration: 1 }}
             className="text-5xl font-extrabold mb-6 text-yellow-400"
           >
-            🚀 AI-Powered Tutoring for Smarter Learning
+            {t("ai_heading")}
           </motion.h2>
           <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
-            Experience <strong>personalized, AI-driven learning</strong> with real-time
-            feedback, intelligent quiz generation, and adaptive study plans tailored to
-            your progress.
+            {t("ai_description")}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,14 +119,12 @@ const AITutoring = () => {
                 transition: { repeat: Infinity, duration: 1.5 },
               }}
             >
-              🔥 Start Learning with AI Now
+              {t("ai_start_learning")}
             </motion.div>
           </Link>
 
 
-          <p className="mt-4 text-sm text-gray-400">
-            Join over <strong>50,000 learners</strong> already leveling up with AI 💡
-          </p>
+          <p className="mt-4 text-sm text-gray-400">{t("ai_join_text")}</p>
         </div>
       </section>
     </motion.section>
