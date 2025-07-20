@@ -1,4 +1,8 @@
 {
   "title": "Welcome to our site",
-  "description": "Learn with us"
+  "description": "Learn with us",
+  "ask_question": "Ask a Question",
+  "browse_online_classes": "Browse Online Classes",
+  "explore_tutorials": "Explore Tutorials",
+  "scroll_down": "Scroll Down"
 }

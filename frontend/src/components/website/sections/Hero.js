@@ -13,6 +13,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
 import { getAds } from "@/services/adsService";
+import { useTranslation } from "next-i18next";
 
 const defaultAds = [
   {
@@ -46,6 +47,7 @@ const Hero = () => {
   const [currentAd, setCurrentAd] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const { t } = useTranslation("website");
 
   const typewriterText = ["Empower Learning", "Connect Minds", "Master New Skills"];
 
@@ -153,19 +155,19 @@ const Hero = () => {
 
             <Link href="/community">
               <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
-                <FaQuestionCircle /> Ask a Question
+                <FaQuestionCircle /> {t('ask_question')}
               </button>
             </Link>
 
             <Link href="/online-classes">
               <button className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
-                <FaChalkboardTeacher /> Browse Online Classes
+                <FaChalkboardTeacher /> {t('browse_online_classes')}
               </button>
             </Link>
 
             <Link href="/tutorials">
               <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
-                <FaBookOpen /> Explore Tutorials
+                <FaBookOpen /> {t('explore_tutorials')}
               </button>
             </Link>
           </motion.div>
@@ -238,7 +240,7 @@ const Hero = () => {
         {/* ✅ Mouse Scroll Indicator (ADDED) */}
         <motion.div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
           <FaMouse className="text-white text-3xl animate-bounce" />
-          <p className="text-white text-sm mt-2">Scroll Down</p>
+          <p className="text-white text-sm mt-2">{t('scroll_down')}</p>
         </motion.div>
       </section>
     </motion.section>

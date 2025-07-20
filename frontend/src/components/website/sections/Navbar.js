@@ -74,7 +74,7 @@ const Navbar = () => {
   const markMessageRead = useMessageStore((state) => state.markRead);
   const unreadMessages = messages.filter((m) => !m.read);
 
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const changeLang = async (lng) => {
@@ -493,13 +493,13 @@ const Navbar = () => {
               href="/auth/login"
               className="flex items-center gap-2 font-semibold hover:underline"
             >
-              <FaSignInAlt /> Login
+              <FaSignInAlt /> {t('login')}
             </Link>
             <Link
               href="/auth/register"
               className="flex items-center gap-2 font-semibold hover:underline"
             >
-              <FaUserPlus /> Register
+              <FaUserPlus /> {t('register')}
             </Link>
           </>
         )}
