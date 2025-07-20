@@ -4,7 +4,7 @@ module.exports = {
   i18n: {
     // Supported languages with available translations
     locales: ["en", "fr", "ar", "de", "es"],
-    defaultLocale: "en",
+    defaultLocale: "ar",
     localeDetection: false,
   },
   // Fallback to English if a translation is missing
