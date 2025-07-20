@@ -1,5 +1,24 @@
 // 📁 src/utils/validationSchemas.js
 import { z } from "zod";
+// These helpers generate validation schemas using i18n translations
+export const loginSchema = (t) =>
+  z.object({
+    email: z.string().email({ message: t("invalid_email_address") }),
+    password: z
+      .string()
+      .min(6, { message: t("password_min_6_characters") }),
+    recaptchaToken: z.string().optional(),
+  });
+
+// These helpers generate validation schemas using i18n translations
+export const loginSchema = (t) =>
+  z.object({
+    email: z.string().email({ message: t("invalid_email_address") }),
+    password: z
+      .string()
+      .min(6, { message: t("password_min_6_characters") }),
+    recaptchaToken: z.string().optional(),
+  });
 
 // These helpers generate validation schemas using i18n translations
 export const loginSchema = (t) =>
