@@ -6,7 +6,8 @@ import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { createLanguage } from "@/services/languageService";
 
-const predefinedNamespaces = ["auth", "website", "dashboard"];
+// Include the common namespace since it's used across the site
+const predefinedNamespaces = ["common", "auth", "website", "dashboard"];
 
 export default function CreateLanguagePage() {
   const router = useRouter();
