@@ -3,12 +3,35 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { toast } from "react-toastify";
 import { FaToggleOn, FaToggleOff, FaGoogle, FaFacebookF, FaApple, FaGithub } from "react-icons/fa";
 import { fetchSocialLoginConfig, updateSocialLoginConfig } from "@/services/admin/socialLoginConfigService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 const availableIcons = {
   google: <FaGoogle />,
   facebook: <FaFacebookF />,
   apple: <FaApple />,
   github: <FaGithub />,
+};
+
+const useAdminNotice = () => {
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to send notification";
+      toast.error(msg);
+    }
+  };
 };
 
 const initialProviders = [
@@ -70,6 +93,7 @@ export default function SocialLoginSettingsPage() {
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState("");
   const [recaptchaSecretKey, setRecaptchaSecretKey] = useState("");
   const [customIcons, setCustomIcons] = useState({});
+  const notify = useAdminNotice();
 
   useEffect(() => {
     const load = async () => {
@@ -109,24 +133,92 @@ export default function SocialLoginSettingsPage() {
     load();
   }, []);
 
-  const toggleGlobal = () => {
+  const toggleGlobal = async () => {
     const newState = !globalActive;
+    const updatedProviders = providers.map((p) => ({
+      ...p,
+      active: newState && providerHasCredentials(p),
+    }));
     setGlobalActive(newState);
-    setProviders((prev) =>
-      prev.map((p) => ({
-        ...p,
-        active: newState && providerHasCredentials(p),
-      }))
-    );
+    setProviders(updatedProviders);
+    const payload = {
+      enabled: newState,
+      providers: updatedProviders.reduce((acc, p) => {
+        acc[p.key] = {
+          active: p.active,
+          clientId: p.clientId,
+          clientSecret: p.clientSecret,
+          teamId: p.teamId,
+          keyId: p.keyId,
+          privateKey: p.privateKey,
+          redirectUrl: p.redirectUrl,
+          label: p.label,
+          icon: p.icon,
+        };
+        return acc;
+      }, {}),
+      recaptcha: {
+        active: recaptchaActive,
+        siteKey: recaptchaSiteKey,
+        secretKey: recaptchaSecretKey,
+      },
+    };
+    try {
+      await updateSocialLoginConfig(payload);
+      toast.success(`Social login ${newState ? "enabled" : "disabled"}`);
+      notify(
+        "social_login_settings_updated",
+        `Social login ${newState ? "enabled" : "disabled"}`
+      );
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update settings");
+    }
   };
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
-  const toggleProvider = (index) => {
-    setProviders((prev) => {
-      const updated = [...prev];
-      updated[index].active = !updated[index].active;
-      return updated;
-    });
+  const toggleProvider = async (index) => {
+    const updated = providers.map((p, i) =>
+      i === index ? { ...p, active: !p.active } : p
+    );
+    setProviders(updated);
+    const adjusted = updated.map((p) => ({
+      ...p,
+      active: p.active || providerHasCredentials(p),
+    }));
+    const payload = {
+      enabled: globalActive,
+      providers: adjusted.reduce((acc, p) => {
+        acc[p.key] = {
+          active: p.active,
+          clientId: p.clientId,
+          clientSecret: p.clientSecret,
+          teamId: p.teamId,
+          keyId: p.keyId,
+          privateKey: p.privateKey,
+          redirectUrl: p.redirectUrl,
+          label: p.label,
+          icon: p.icon,
+        };
+        return acc;
+      }, {}),
+      recaptcha: {
+        active: recaptchaActive,
+        siteKey: recaptchaSiteKey,
+        secretKey: recaptchaSecretKey,
+      },
+    };
+    try {
+      await updateSocialLoginConfig(payload);
+      setProviders(adjusted);
+      const status = adjusted[index].active ? "enabled" : "disabled";
+      toast.success(`${adjusted[index].name} ${status}`);
+      notify(
+        "social_provider_updated",
+        `${adjusted[index].name} ${status}`
+      );
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update settings");
+    }
   };
 
   const handleChange = (index, field, value) => {
@@ -179,6 +271,7 @@ export default function SocialLoginSettingsPage() {
       await updateSocialLoginConfig(payload);
       setProviders(adjusted);
       toast.success("Settings saved");
+      notify("social_login_settings_updated", "Social login settings updated");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save settings");
     }
@@ -215,6 +308,10 @@ export default function SocialLoginSettingsPage() {
       await updateSocialLoginConfig(payload);
       setProviders(adjusted);
       toast.success(`${providers[index].name} settings saved`);
+      notify(
+        "social_provider_updated",
+        `${providers[index].name} settings updated`
+      );
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save settings");
     }
@@ -370,16 +467,6 @@ export default function SocialLoginSettingsPage() {
                     onChange={(e) => handleChange(index, "redirectUrl", e.target.value)}
                     placeholder={getDefaultRedirectUrl(provider.key)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Default: <code>{getDefaultRedirectUrl(provider.key)}</code>{" "}
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(getRedirectUrl(provider))}
-                      className="ml-2 text-blue-600 underline"
-                    >
-                      Copy
-                    </button>
-                  </p>
                 </div>
               </div>
 

@@ -81,6 +81,7 @@ app.use("/api/app-config", require("./modules/appConfig/appConfig.routes"));
 app.use("/api/email-config", require("./modules/emailConfig/emailConfig.routes"));
 app.use("/api/contact-config", require("./modules/contactConfig/contactConfig.routes"));
 app.use("/api/seo-config", require("./modules/seoConfig/seoConfig.routes"));
+app.use("/api/popup-announcements", require("./modules/popupAnnouncements/popupAnnouncements.routes"));
 app.use("/api/policies", require("./modules/policies/policies.routes"));
 app.use("/api/payouts/admin", require("./modules/payouts/payouts.routes"));
 app.use("/api/ads", require("./modules/ads/ads.routes"));
