@@ -6,6 +6,8 @@ import { FaCheckCircle } from "react-icons/fa";
 
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function SuccessReset() {
   const router = useRouter();
@@ -59,4 +61,12 @@ export default function SuccessReset() {
       </motion.div>
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
+    },
+  };
 }

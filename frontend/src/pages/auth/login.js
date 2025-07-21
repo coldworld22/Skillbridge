@@ -18,6 +18,8 @@ import SocialLogin from "@/shared/components/auth/SocialLogin";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 // ─────────────────────
 // 🔐 Validation schema
@@ -250,4 +252,12 @@ export default function Login() {
       */}
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
+    },
+  };
 }
