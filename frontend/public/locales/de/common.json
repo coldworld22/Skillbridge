@@ -21,6 +21,7 @@
   "language_changed": "Sprache geändert",
   "language_changed_to": "Sprache geändert zu {{name}}",
   "language_change_failed": "Sprache konnte nicht geändert werden",
+  "language_load_error": "Fehler beim Laden der Sprachen",
   "logged_out": "Erfolgreich abgemeldet",
   "logout_failed": "Abmeldung fehlgeschlagen. Bitte versuche es erneut.",
   "please_complete_profile": "Bitte vervollständigen Sie Ihr Profil, um fortzufahren.",

@@ -20,6 +20,8 @@ import { registerSchema } from "@/utils/auth/validationSchemas";
 import ReCAPTCHA from "react-google-recaptcha";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function Register() {
   const router = useRouter();
@@ -241,4 +243,12 @@ export default function Register() {
       )}
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
+    },
+  };
 }

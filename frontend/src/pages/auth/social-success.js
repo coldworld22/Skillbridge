@@ -4,6 +4,8 @@ import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { getFullProfile } from '@/services/profile/profileService';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function SocialSuccess() {
   const router = useRouter();
@@ -30,4 +32,12 @@ export default function SocialSuccess() {
   }, [router, setToken, setUser, fetchNotifications]);
 
   return <p className="text-center mt-20">{t('signing_you_in')}</p>;
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
+    },
+  };
 }
