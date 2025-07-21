@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import * as authService from "@/services/auth/authService";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -83,4 +85,12 @@ export default function ForgotPassword() {
       </motion.div>
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
+    },
+  };
 }
