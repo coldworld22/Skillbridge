@@ -21,6 +21,7 @@
   "language_changed": "Idioma cambiado",
   "language_changed_to": "Idioma cambiado a {{name}}",
   "language_change_failed": "Error al cambiar el idioma",
+  "language_load_error": "Error al cargar los idiomas",
   "logged_out": "Cierre de sesión exitoso",
   "logout_failed": "Error al cerrar sesión. Inténtalo de nuevo.",
   "please_complete_profile": "Por favor completa tu perfil para continuar.",
