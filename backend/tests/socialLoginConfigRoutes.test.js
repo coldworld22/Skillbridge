@@ -6,13 +6,28 @@ jest.mock('../src/modules/socialLoginConfig/socialLoginConfig.service', () => ({
   updateSettings: jest.fn(),
 }));
 
+jest.mock('../src/modules/users/user.model', () => ({
+  findAdmins: jest.fn(() => [{ id: 'admin1' }]),
+}));
+
+jest.mock('../src/modules/notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+
+jest.mock('../src/modules/messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+
 jest.mock('../src/config/passport', () => ({
   initStrategies: jest.fn(),
   passport: {},
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (_req, _res, next) => next(),
+  verifyToken: (req, _res, next) => {
+    req.user = { id: 'admin1' };
+    next();
+  },
   isAdmin: (_req, _res, next) => next(),
 }));
 

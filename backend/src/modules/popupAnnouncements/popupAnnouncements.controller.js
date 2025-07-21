@@ -29,6 +29,7 @@ exports.create = catchAsync(async (req, res) => {
     title,
     message,
     audience,
+
     pages,
     start_date,
     end_date,
