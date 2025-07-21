@@ -2,10 +2,36 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { FaSave, FaEye } from "react-icons/fa";
+import { useRouter } from "next/router";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
+import { createPopupAnnouncement } from "@/services/admin/popupAnnouncementService";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
+const useAdminNotice = () => {
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+};
+
 export default function CreateAnnouncementForm() {
+  const router = useRouter();
+  const notify = useAdminNotice();
   const [form, setForm] = useState({
     title: "",
     message: "",
@@ -32,12 +58,30 @@ export default function CreateAnnouncementForm() {
     handleChange("pages", updated);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || !form.message || !form.start || !form.end) return;
-    alert("✅ Announcement saved!");
-    console.log("📤 Submitted:", form);
-    // POST to API here
+    const payload = {
+      title: form.title,
+      message: form.message,
+      audience: form.audience,
+      pages: form.pages,
+      start_date: form.start,
+      end_date: form.end,
+      position: form.position,
+      theme: form.theme,
+      once_per_session: form.oncePerSession,
+      active: form.active,
+    };
+    try {
+      await createPopupAnnouncement(payload);
+      toast.success("Announcement saved!");
+      notify("popup_created", `Popup announcement "${form.title}" created.`);
+      router.push("/dashboard/admin/settings/popup-announcement");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to save");
+    }
   };
 
   return (
