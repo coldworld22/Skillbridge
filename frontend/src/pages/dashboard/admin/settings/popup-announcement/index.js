@@ -1,42 +1,56 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaToggleOn, FaToggleOff } from "react-icons/fa";
-import { useState } from "react";
-
-const mockAnnouncements = [
-  {
-    id: 1,
-    title: "🚧 Maintenance Tonight",
-    status: true,
-    audience: "All Visitors",
-    pages: "All Pages",
-    start: "2025-05-16 20:00",
-    end: "2025-05-17 02:00",
-  },
-  {
-    id: 2,
-    title: "🎉 Promo for Students",
-    status: false,
-    audience: "Students Only",
-    pages: "/courses",
-    start: "2025-05-18 00:00",
-    end: "2025-05-20 23:59",
-  },
-];
+import { useState, useEffect } from "react";
+import {
+  fetchPopupAnnouncements,
+  updatePopupAnnouncement,
+  deletePopupAnnouncement,
+} from "@/services/admin/popupAnnouncementService";
 
 export default function PopupAnnouncementsIndex() {
-  const [announcements, setAnnouncements] = useState(mockAnnouncements);
+  const [announcements, setAnnouncements] = useState([]);
 
-  const toggleStatus = (id) => {
-    setAnnouncements((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, status: !a.status } : a
-      )
-    );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchPopupAnnouncements();
+        const formatted = (data || []).map((a) => ({
+          ...a,
+          status: a.active,
+          audience: a.audience,
+          pages: Array.isArray(a.pages) ? a.pages.join(', ') : a.pages,
+          start: a.start_date,
+          end: a.end_date,
+        }));
+        setAnnouncements(formatted);
+      } catch (err) {
+        console.error('Failed to load announcements', err);
+      }
+    };
+    load();
+  }, []);
+
+  const toggleStatus = async (id) => {
+    const ann = announcements.find((a) => a.id === id);
+    if (!ann) return;
+    try {
+      const updated = await updatePopupAnnouncement(id, { active: !ann.status });
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: updated.active } : a))
+      );
+    } catch (err) {
+      console.error('Failed to update', err);
+    }
   };
 
-  const deleteAnnouncement = (id) => {
+  const deleteAnnouncement = async (id) => {
     if (confirm("Are you sure you want to delete this announcement?")) {
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await deletePopupAnnouncement(id);
+        setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+      } catch (err) {
+        console.error('Failed to delete', err);
+      }
     }
   };
 
