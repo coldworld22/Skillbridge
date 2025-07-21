@@ -2,6 +2,8 @@ import Navbar from "@/components/website/sections/Navbar";
 import { FaCog, FaLock } from "react-icons/fa";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 const ProfilePage = () => {
   const { t } = useTranslation("common");
@@ -31,3 +33,11 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+    },
+  };
+}
