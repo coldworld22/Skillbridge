@@ -29,7 +29,8 @@ exports.create = catchAsync(async (req, res) => {
     title,
     message,
     audience,
-    pages: JSON.stringify(pages),
+
+    pages,
     start_date,
     end_date,
     position,
