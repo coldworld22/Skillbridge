@@ -5,11 +5,23 @@ import AIRecommendations from "@/components/dashboard/AIRecommendations";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { getRecommendedCourses } from "@/services/aiCourseRecommendation";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 
 const allCourses = [
   { id: 1, title: "Mastering React.js", category: "JavaScript", progress: 80 },
-  { id: 2, title: "Full Stack with Node.js", category: "JavaScript", progress: 50 },
-  { id: 3, title: "AI & Machine Learning Basics", category: "AI", progress: 20 },
+  {
+    id: 2,
+    title: "Full Stack with Node.js",
+    category: "JavaScript",
+    progress: 50,
+  },
+  {
+    id: 3,
+    title: "AI & Machine Learning Basics",
+    category: "AI",
+    progress: 20,
+  },
   { id: 4, title: "Advanced JavaScript", category: "JavaScript" },
   { id: 5, title: "Python for Data Science", category: "Data Science" },
   { id: 6, title: "Blockchain & NFTs", category: "Blockchain" },
@@ -40,7 +52,9 @@ const DashboardPage = () => {
               className="bg-gray-800 p-4 rounded-lg shadow-lg"
               whileHover={{ scale: 1.05 }}
             >
-              <h3 className="text-xl font-semibold text-yellow-400">{course.title}</h3>
+              <h3 className="text-xl font-semibold text-yellow-400">
+                {course.title}
+              </h3>
               <p className="text-gray-300">Progress: {course.progress}%</p>
               <div className="w-full bg-gray-700 rounded-lg overflow-hidden mt-2">
                 <motion.div
@@ -69,3 +83,11 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["common"], nextI18NextConfig)),
+    },
+  };
+}
