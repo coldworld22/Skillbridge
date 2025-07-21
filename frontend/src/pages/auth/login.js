@@ -128,6 +128,10 @@ export default function Login() {
       err?.message ||
       t("login_failed");
 
+    if (msg === "Invalid credentials") {
+      msg = t("invalid_credentials");
+    }
+
     if (err.code === "ERR_NETWORK") {
       msg = t("network_error_check_config");
     }
