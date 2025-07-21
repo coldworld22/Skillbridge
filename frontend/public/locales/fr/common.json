@@ -21,6 +21,7 @@
   "language_changed": "Langue changée",
   "language_changed_to": "Langue changée en {{name}}",
   "language_change_failed": "Échec du changement de langue",
+  "language_load_error": "Échec du chargement des langues",
   "logged_out": "Déconnexion réussie",
   "logout_failed": "Échec de la déconnexion. Veuillez réessayer.",
   "please_complete_profile": "Veuillez compléter votre profil pour continuer.",

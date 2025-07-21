@@ -7,7 +7,13 @@ const fetcher = url => api.get(url).then(res => res.data.data);
 
 export default function LanguageSwitcher({ changeLang }) {
   const { i18n, t } = useTranslation("common");
-  const { data: langs } = useSWR("/languages", fetcher);
+  const { data: langs, error } = useSWR("/languages", fetcher);
+
+  if (error) {
+    return (
+      <p className="text-sm px-2 text-red-500">{t('language_load_error')}</p>
+    );
+  }
 
   if (!langs) {
     return <p className="text-sm px-2">{t('loading')}</p>;
