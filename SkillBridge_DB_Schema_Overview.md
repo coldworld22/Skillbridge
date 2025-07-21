@@ -338,6 +338,11 @@
 - **Primary Key**: `page (PK)`
 - **Foreign Keys**: `—`
 
+### `popup_announcements`
+- **Purpose**: Time-based pop-up messages
+- **Primary Key**: `id`
+- **Foreign Keys**: `author_id`
+
 
 ## Plans Tables
 
