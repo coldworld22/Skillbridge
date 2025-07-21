@@ -15,6 +15,8 @@ import Footer from "@/components/website/sections/Footer";
 import AITutoring from "@/components/website/sections/AITutoring";
 import IncompleteAlertModal from "@/components/auth/IncompleteAlertModal";
 import useAuthStore from "@/store/auth/authStore";
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../next-i18next.config.js';
 
 
 export default function Home() {
@@ -94,4 +96,12 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'website'], nextI18NextConfig)),
+    },
+  };
 }
