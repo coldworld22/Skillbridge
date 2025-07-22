@@ -81,6 +81,10 @@ function MyApp({ Component, pageProps, router }) {
 
   useEffect(() => {
     document.documentElement.dir = currentLang?.direction || 'ltr';
+    document.documentElement.classList.toggle(
+      'rtl',
+      currentLang?.direction === 'rtl'
+    );
   }, [currentLang]);
 
   const getPageTitle = () => {
