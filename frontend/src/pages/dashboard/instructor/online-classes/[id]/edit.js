@@ -382,7 +382,7 @@ function EditInstructorClass() {
                     <>
                       <FaUpload className="text-gray-400 text-3xl" />
                       <p className="text-sm text-gray-600">Upload Demo Video</p>
-                      <p className="text-xs text-gray-500">(Max 50MB, MP4 recommended)</p>
+                      <p className="text-xs text-gray-500">(Max 100MB, MP4 recommended)</p>
                     </>
                   )}
                   <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
