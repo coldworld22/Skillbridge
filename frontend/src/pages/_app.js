@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
+import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
@@ -13,7 +14,9 @@ import useAppConfigStore from "@/store/appConfigStore";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
-import "@/styles/globals.css"; // or whatever your path is
+import { getLanguages } from "@/services/languageService";
+
+const langFetcher = () => getLanguages();
 
 
            // ✅ Global styles
@@ -32,6 +35,8 @@ function MyApp({ Component, pageProps, router }) {
   const configLoaded = useAppConfigStore((state) => state.loaded);
   const settings = useAppConfigStore((state) => state.settings);
   const { i18n } = useTranslation();
+  const { data: langs } = useSWR("/languages", langFetcher);
+  const currentLang = langs?.find((l) => l.code === i18n.language);
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -73,6 +78,12 @@ function MyApp({ Component, pageProps, router }) {
       }
     }
   }, [i18n]);
+
+  useEffect(() => {
+    const dir = currentLang?.direction || 'ltr';
+    document.documentElement.dir = dir;
+    document.body.dir = dir;
+  }, [currentLang]);
 
   const getPageTitle = () => {
     const slug = router.pathname.split('/').pop();

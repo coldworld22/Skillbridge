@@ -32,8 +32,10 @@ import useMessageStore from "@/store/messages/messageStore";
 import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
 import api from "@/services/api/api";
+import { getCurrencies } from "@/services/currencyService";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
+const currencyFetcher = () => getCurrencies();
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -76,7 +78,10 @@ const Navbar = () => {
 
   const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
+  const { data: currencies } = useSWR("/currencies", currencyFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
+  const isRTL = currentLang?.direction === 'rtl';
+  const currentCurrency = currencies?.find((c) => c.is_default) || currencies?.[0];
   const changeLang = async (lng) => {
     try {
       await i18n.changeLanguage(lng);
@@ -181,7 +186,9 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 w-full px-6 py-3 flex justify-between items-center shadow-lg z-50 bg-yellow-500 text-gray-900">
+    <nav
+      className={`fixed top-0 w-full px-6 py-3 flex justify-between items-center shadow-lg z-50 bg-yellow-500 text-gray-900 ${isRTL ? 'flex-row-reverse' : ''}`}
+    >
       {loading && (
         <motion.div
           initial={{ width: "0%" }}
@@ -191,7 +198,7 @@ const Navbar = () => {
         />
       )}
 
-      <div className="flex items-center space-x-6">
+      <div className={`flex items-center space-x-6 ${isRTL ? 'space-x-reverse' : ''}`}>
         <Link href="/">
           <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer overflow-hidden">
             <img
@@ -223,7 +230,7 @@ const Navbar = () => {
               {messageOpen && (
                 <div
                   ref={dropdownRef}
-                  className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+                  className={`absolute mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50 ${isRTL ? 'right-0' : 'left-0'}`}
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
                     {t('messages')}
@@ -277,7 +284,7 @@ const Navbar = () => {
               {notificationOpen && (
                 <div
                   ref={dropdownRef}
-                  className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+                  className={`absolute mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50 ${isRTL ? 'right-0' : 'left-0'}`}
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
                     {t('notifications')}
@@ -324,13 +331,13 @@ const Navbar = () => {
             </div>
 
             <span className="text-sm font-semibold hidden md:inline">
-              Welcome, {user.full_name?.split(" ")[0]}
+              {t('welcome_user', { name: user.full_name?.split(' ')[0] })}
             </span>
           </>
         )}
       </div>
 
-      <div className="flex items-center space-x-6">
+      <div className={`flex items-center space-x-6 ${isRTL ? 'space-x-reverse' : ''}`}>
         <motion.button
           whileHover={{ scale: 1.1 }}
           onClick={() => setLanguageOpen(!languageOpen)}
@@ -346,6 +353,20 @@ const Navbar = () => {
             <FaLanguage className="text-xl" />
           )}
         </motion.button>
+
+        {currentCurrency && (
+          <div className="flex items-center gap-1 text-sm">
+            <img
+              src={`https://flagcdn.com/24x18/${currentCurrency.code
+                .slice(0, 2)
+                .toLowerCase()}.png`}
+              onError={(e) => (e.target.src = "/flags/default.png")}
+              alt={currentCurrency.code}
+              className="w-5 h-3 border rounded"
+            />
+            <span className="font-semibold">{currentCurrency.code}</span>
+          </div>
+        )}
 
         {user && (
           <Link
@@ -396,7 +417,7 @@ const Navbar = () => {
             {dropdownOpen && (
               <div
                 ref={dropdownRef}
-                className="absolute right-6 top-20 bg-white text-gray-800 w-60 rounded-2xl shadow-xl p-4 z-50 border border-gray-200"
+                className={`absolute top-20 bg-white text-gray-800 w-60 rounded-2xl shadow-xl p-4 z-50 border border-gray-200 ${isRTL ? 'left-6' : 'right-6'}`}
               >
                 <ul className="space-y-2 text-sm">
                   <li>
@@ -458,13 +479,16 @@ const Navbar = () => {
             )}
 
             {languageOpen && (
-              <div className="absolute top-20 right-24 bg-white text-gray-800 w-48 rounded-xl shadow-xl border border-gray-200 p-2 z-50">
+              <div className={`absolute top-20 bg-white text-gray-800 w-48 rounded-xl shadow-xl border border-gray-200 p-2 z-50 ${isRTL ? 'left-24' : 'right-24'}`}
+              >
                 <LanguageSwitcher changeLang={changeLang} />
               </div>
             )}
 
             {cartOpen && (
-              <div className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+              <div
+                className={`absolute top-20 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50 ${isRTL ? 'left-36' : 'right-36'}`}
+              >
                 <h4 className="text-base font-semibold mb-2 border-b pb-1">
                   {t('your_cart')}
                 </h4>

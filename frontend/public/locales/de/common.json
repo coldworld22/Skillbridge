@@ -26,5 +26,6 @@
   "logout_failed": "Abmeldung fehlgeschlagen. Bitte versuche es erneut.",
   "please_complete_profile": "Bitte vervollständigen Sie Ihr Profil, um fortzufahren.",
   "visit_website": "Webseite besuchen",
-  "new": "neu"
+  "new": "neu",
+  "welcome_user": "Willkommen, {{name}}"
 }

@@ -110,10 +110,51 @@ function CurrencyManagerPage() {
     }
   };
 
+  const refreshRate = async (id) => {
+    const currency = currencies.find((c) => c.id === id);
+    if (!currency) return;
+    try {
+      const res = await fetch(
+        `https://api.exchangerate.host/latest?base=USD&symbols=${currency.code}`
+      );
+      const data = await res.json();
+      const rate = data?.rates?.[currency.code];
+      if (!rate) throw new Error("Rate not found");
+      await updateCurrency(id, { exchange_rate: rate, last_updated: new Date().toISOString() });
+      mutate();
+      toast.success("Rate refreshed");
+      const message = `Currency "${currency.label}" rate refreshed.`;
+      notify("currency_rate_refreshed", message);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to refresh rate");
+    }
+  };
+
+  const changeRate = async (id) => {
+    const currency = currencies.find((c) => c.id === id);
+    if (!currency) return;
+    const input = prompt("Enter new exchange rate", currency.exchange_rate);
+    if (!input) return;
+    const value = parseFloat(input);
+    if (isNaN(value) || value <= 0) return alert("Invalid rate");
+    try {
+      await updateCurrency(id, { exchange_rate: value });
+      mutate();
+      toast.success("Exchange rate updated");
+      const message = `Currency "${currency.label}" rate set to ${value}.`;
+      notify("currency_rate_updated", message);
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to update";
+      toast.error(msg);
+    }
+  };
+
   const deleteCurrency = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (currency?.is_default) return alert("Cannot delete default currency.");
-    if (confirm(`Delete currency: ${currency.label}?`)) {
+    if (window.confirm(`Delete currency: ${currency.label}?`)) {
       try {
         await deleteCurrencyApi(id);
         mutate();
@@ -266,7 +307,13 @@ function CurrencyManagerPage() {
                 </td>
                 <td className="p-3">{c.code}</td>
                 <td className="p-3">{c.symbol}</td>
-                <td className="p-3">{Number(c.exchange_rate).toFixed(2)}</td>
+                <td
+                  className="p-3 cursor-pointer"
+                  onClick={() => changeRate(c.id)}
+                  title="Click to edit"
+                >
+                  {Number(c.exchange_rate).toFixed(2)}
+                </td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => toggleAutoUpdate(c.id)}
@@ -300,7 +347,7 @@ function CurrencyManagerPage() {
                     <button
                       title="Refresh Rate"
                       className="text-blue-500"
-                      onClick={() => alert(`Refresh rate for ${c.code}`)}
+                      onClick={() => refreshRate(c.id)}
                     >
                       <FaSync />
                     </button>

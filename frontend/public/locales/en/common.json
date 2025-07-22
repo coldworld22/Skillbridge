@@ -26,6 +26,7 @@
   "logout_failed": "Logout failed. Please try again.",
   "please_complete_profile": "Please complete your profile to continue.",
   "visit_website": "Visit Website",
-  "new": "new"
+  "new": "new",
+  "welcome_user": "Welcome, {{name}}"
 }
   

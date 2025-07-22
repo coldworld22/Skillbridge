@@ -26,5 +26,6 @@
   "logout_failed": "Error al cerrar sesión. Inténtalo de nuevo.",
   "please_complete_profile": "Por favor completa tu perfil para continuar.",
   "visit_website": "Visitar sitio web",
-  "new": "nuevo"
+  "new": "nuevo",
+  "welcome_user": "Bienvenido, {{name}}"
 }
