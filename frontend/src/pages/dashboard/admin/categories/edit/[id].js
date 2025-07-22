@@ -7,6 +7,8 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "@/config/config";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
   fetchCategoryTree,
   fetchCategoryById,
@@ -213,4 +215,12 @@ const ProtectedEditCategory = withAuthProtection(EditCategory, [
 ProtectedEditCategory.getLayout = EditCategory.getLayout;
 
 export default ProtectedEditCategory;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
 

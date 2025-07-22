@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
@@ -255,4 +257,12 @@ const ProtectedAdminCategoryIndex = withAuthProtection(AdminCategoryIndex, [
 ProtectedAdminCategoryIndex.getLayout = AdminCategoryIndex.getLayout;
 
 export default ProtectedAdminCategoryIndex;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
 

@@ -6,6 +6,9 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
+
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import {
   fetchCategoryTree,
   createCategory,
@@ -197,4 +200,12 @@ const ProtectedCreateCategory = withAuthProtection(CreateCategory, [
 ProtectedCreateCategory.getLayout = CreateCategory.getLayout;
 
 export default ProtectedCreateCategory;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
 
