@@ -161,7 +161,7 @@ export default function Header() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
+            placeholder={t('search_placeholder')}
             className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500 dark:text-gray-300" />
@@ -186,16 +186,16 @@ export default function Header() {
                 setUser({ ...user, is_online: newStatus });
                 toast.success(
                   newStatus
-                    ? "You are now available"
-                    : "You are now unavailable",
+                    ? t('available_now')
+                    : t('unavailable_now')
                 );
               } catch (err) {
-                toast.error("Failed to update availability");
+                toast.error(t('availability_update_failed'));
               }
             }}
             className={`px-3 py-1 rounded-full text-sm font-medium ${available ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}
           >
-            {available ? "Available" : "Unavailable"}
+            {available ? t('available') : t('unavailable')}
           </button>
         )}
 
@@ -217,7 +217,7 @@ export default function Header() {
                 transition={{ duration: 0.2 }}
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50"
               >
-                <h4 className="text-base font-semibold mb-2 border-b pb-1 px-4">Messages</h4>
+                <h4 className="text-base font-semibold mb-2 border-b pb-1 px-4">{t('messages')}</h4>
                 <ul className="text-sm text-gray-700 dark:text-gray-200 max-h-60 overflow-y-auto divide-y">
                   {messages.slice(0, 10).map((m) => (
                     <li
@@ -234,7 +234,7 @@ export default function Header() {
                   ))}
                   {messages.length === 0 && (
                     <li className="px-4 py-2 text-center text-sm text-gray-500">
-                      No messages
+                      {t('no_messages')}
                     </li>
                   )}
                 </ul>
@@ -243,7 +243,7 @@ export default function Header() {
                     href="/messages"
                     className="text-blue-600 hover:underline text-sm"
                   >
-                    View All
+                    {t('view_all')}
                   </Link>
                 </div>
               </motion.div>
@@ -286,7 +286,7 @@ export default function Header() {
                   ))}
                   {notifications.length === 0 && (
                     <li className="px-4 py-2 text-center text-sm text-gray-500">
-                      No notifications
+                      {t('no_notifications')}
                     </li>
                   )}
                 </ul>
@@ -301,7 +301,7 @@ export default function Header() {
                     }
                     className="text-blue-600 hover:underline text-sm"
                   >
-                    View All
+                    {t('view_all')}
                   </Link>
                 </div>
               </motion.div>
