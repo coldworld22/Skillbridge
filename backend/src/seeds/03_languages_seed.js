@@ -17,5 +17,29 @@ exports.seed = async function (knex) {
       is_active: true,
       icon_url: null,
     },
+    {
+      id: knex.raw('gen_random_uuid()'),
+      code: 'fr',
+      name: 'Français',
+      is_default: false,
+      is_active: true,
+      icon_url: null,
+    },
+    {
+      id: knex.raw('gen_random_uuid()'),
+      code: 'de',
+      name: 'Deutsch',
+      is_default: false,
+      is_active: true,
+      icon_url: null,
+    },
+    {
+      id: knex.raw('gen_random_uuid()'),
+      code: 'es',
+      name: 'Español',
+      is_default: false,
+      is_active: true,
+      icon_url: null,
+    },
   ]);
 };
