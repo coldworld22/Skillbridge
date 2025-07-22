@@ -215,12 +215,7 @@ const ProtectedEditCategory = withAuthProtection(EditCategory, [
 ProtectedEditCategory.getLayout = EditCategory.getLayout;
 
 export default ProtectedEditCategory;
-
-export async function getStaticProps({ locale }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
-    },
-  };
+export async function getServerSideProps() {
+  return { props: {} };
 }
 
