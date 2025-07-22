@@ -28,6 +28,28 @@ const useAuthStore = create(
         return user;
       },
 
+      /**
+       * Log in using an already issued access token.
+       * Stores the token, fetches the profile and notifications.
+       */
+      loginWithToken: async (token) => {
+        set({ accessToken: token });
+        try {
+          const res = await getFullProfile();
+          let user = res.data;
+          if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
+            user.avatar_url = null;
+          }
+          set({ user });
+          const fetchNotifications = useNotificationStore.getState().fetch;
+          fetchNotifications?.();
+          return user;
+        } catch (err) {
+          console.error("❌ loginWithToken error", err);
+          set({ accessToken: null, user: null });
+        }
+      },
+
       refreshUser: async () => {
         try {
           const res = await getFullProfile();
