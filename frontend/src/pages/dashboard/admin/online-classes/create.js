@@ -1,11 +1,20 @@
 'use client';
 
+// ─────────────────────────────────────────────────────
+// code explanation
+// This page allows admins to create online classes.
+// It handles form state, uploads assets and saves data
+// to the backend via service functions.
+// Notifications and translations are also integrated.
+// ─────────────────────────────────────────────────────
+
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
 import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'next-i18next';
 
 import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -16,6 +25,8 @@ import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -28,6 +39,9 @@ function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
   const addEvents = useScheduleStore((state) => state.addEvents);
+  const { t } = useTranslation('dashboard');
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -252,11 +266,13 @@ function CreateOnlineClass() {
         ];
         addEvents(events);
 
-        toast.success('Class created successfully');
+        toast.success(t('class_created'));
+        fetchNotifications();
+        fetchMessages();
         router.push('/dashboard/admin/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || 'Failed to create class');
+        toast.error(error.response?.data?.message || t('class_create_failed'));
       } finally {
         setIsSubmitting(false);
       }
@@ -270,7 +286,7 @@ function CreateOnlineClass() {
         {/* Header */}
         <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
           <h1 className="text-2xl font-bold text-white">
-            {currentStep === 1 ? 'Create New Class' : 'Add Lesson Plan'}
+            {currentStep === 1 ? t('create_class') : t('add_lesson_plan')}
           </h1>
           <p className="text-yellow-100 text-sm">
             Step {currentStep} of 2
@@ -701,7 +717,7 @@ function CreateOnlineClass() {
                   onClick={() => setCurrentStep(currentStep - 1)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                 >
-                  Back
+                  {t('back')}
                 </button>
               ) : (
                 <div></div>
@@ -715,12 +731,12 @@ function CreateOnlineClass() {
                 {isSubmitting ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
-                    {currentStep === 1 ? 'Processing...' : 'Submitting...'}
+                    {currentStep === 1 ? t('processing') : t('submitting')}
                   </>
                 ) : currentStep === 1 ? (
-                  'Continue to Lessons'
+                  t('continue_lessons')
                 ) : (
-                  'Submit Class'
+                  t('submit_class')
                 )}
               </button>
             </div>
