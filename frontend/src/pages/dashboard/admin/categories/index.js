@@ -26,7 +26,11 @@ function AdminCategoryIndex() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAllCategories({ search, status: statusFilter });
+      const result = await fetchAllCategories({
+        search,
+        status: statusFilter,
+        limit: 100,
+      });
       setCategories(result.data || []);
     } catch (err) {
       console.error("Failed to fetch categories", err);
