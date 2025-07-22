@@ -13,6 +13,8 @@ module.exports = {
   // Resolve the locale path relative to this config file so that
   // translations load correctly when the app is started from the
   // frontend directory or the repository root.
-  localePath: path.resolve(__dirname, "public", "locales"),
+  // Use process.cwd() so the path resolves correctly when the app
+  // is run from different directories (e.g. with Docker)
+  localePath: path.resolve(process.cwd(), "public", "locales"),
 };
 
