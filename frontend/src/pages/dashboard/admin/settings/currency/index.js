@@ -37,7 +37,11 @@ const useAdminNotice = () => {
   };
 };
 function CurrencyManagerPage() {
-  const { data: currencies = [], mutate } = useSWR("/currencies", fetcher);
+  const {
+    data: currencies = [],
+    error,
+    mutate,
+  } = useSWR("/currencies", fetcher);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
@@ -152,6 +156,17 @@ function CurrencyManagerPage() {
       toast.error(msg);
     }
   };
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <h1 className="text-2xl font-bold mb-4">💱 Currency Manager</h1>
+          <p className="text-red-600">Failed to load currencies.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
       <div className="p-6">
