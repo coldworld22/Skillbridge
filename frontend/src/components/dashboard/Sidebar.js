@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
+import { useTranslation } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
@@ -19,6 +20,7 @@ const navMap = {
 
 export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
+  const { t } = useTranslation('dashboard');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const settings = useAppConfigStore((state) => state.settings);
@@ -56,7 +58,7 @@ export default function Sidebar({ role = 'admin' }) {
           {navLinks.map(({ title, items }) => (
             <div key={title} className="mb-4">
               <h3 className="text-xs font-semibold text-yellow-500 dark:text-yellow-400 uppercase tracking-wide px-4 mb-1 flex items-center gap-1">
-                {title} <Plus size={14} />
+                {t(title)} <Plus size={14} />
               </h3>
               <div className="space-y-1">
                 {items.map(({ label, href, icon: Icon, isDropdown, dropdown }) => {
@@ -72,7 +74,7 @@ export default function Sidebar({ role = 'admin' }) {
                         >
                           <div className="flex items-center gap-3">
                             <Icon className="w-4 h-4" />
-                            {label}
+                            {t(label)}
                           </div>
                           <ChevronDown className={`w-4 h-4 transform transition-transform ${activeDropdown === label ? 'rotate-180' : ''}`} />
                         </div>
@@ -88,7 +90,7 @@ export default function Sidebar({ role = 'admin' }) {
                                     }`}
                                 >
                                   <SubIcon className="w-4 h-4" />
-                                  {label}
+                                  {t(label)}
                                 </a>
                               </Link>
                             ))}
@@ -105,7 +107,7 @@ export default function Sidebar({ role = 'admin' }) {
                           }`}
                       >
                         <Icon className="w-4 h-4" />
-                        {label}
+                        {t(label)}
                       </a>
                     </Link>
                   );
