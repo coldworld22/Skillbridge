@@ -328,7 +328,7 @@ const Navbar = () => {
             </div>
 
             <span className="text-sm font-semibold hidden md:inline">
-              Welcome, {user.full_name?.split(" ")[0]}
+              {t('welcome_user', { name: user.full_name?.split(' ')[0] })}
             </span>
           </>
         )}

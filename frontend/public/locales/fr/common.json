@@ -26,5 +26,6 @@
   "logout_failed": "Échec de la déconnexion. Veuillez réessayer.",
   "please_complete_profile": "Veuillez compléter votre profil pour continuer.",
   "visit_website": "Visiter le site",
-  "new": "nouveau"
+  "new": "nouveau",
+  "welcome_user": "Bienvenue, {{name}}"
 }
