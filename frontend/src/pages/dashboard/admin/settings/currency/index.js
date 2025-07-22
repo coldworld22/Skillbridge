@@ -251,7 +251,7 @@ function CurrencyManagerPage() {
                 </td>
                 <td className="p-3">{c.code}</td>
                 <td className="p-3">{c.symbol}</td>
-                <td className="p-3">{c.exchange_rate.toFixed(2)}</td>
+                <td className="p-3">{Number(c.exchange_rate).toFixed(2)}</td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => toggleAutoUpdate(c.id)}
