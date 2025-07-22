@@ -1,11 +1,20 @@
 'use client';
 
+// ─────────────────────────────────────────────────────
+// code explanation
+// This page allows admins to create online classes.
+// It handles form state, uploads assets and saves data
+// to the backend via service functions.
+// Notifications and translations are also integrated.
+// ─────────────────────────────────────────────────────
+
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
 import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'next-i18next';
 
 import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -16,6 +25,8 @@ import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -28,6 +39,9 @@ function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
   const addEvents = useScheduleStore((state) => state.addEvents);
+  const { t } = useTranslation('dashboard');
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -252,11 +266,13 @@ function CreateOnlineClass() {
         ];
         addEvents(events);
 
-        toast.success('Class created successfully');
+        toast.success(t('class_created'));
+        fetchNotifications();
+        fetchMessages();
         router.push('/dashboard/admin/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || 'Failed to create class');
+        toast.error(error.response?.data?.message || t('class_create_failed'));
       } finally {
         setIsSubmitting(false);
       }
@@ -270,7 +286,7 @@ function CreateOnlineClass() {
         {/* Header */}
         <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
           <h1 className="text-2xl font-bold text-white">
-            {currentStep === 1 ? 'Create New Class' : 'Add Lesson Plan'}
+            {currentStep === 1 ? t('create_class') : t('add_lesson_plan')}
           </h1>
           <p className="text-yellow-100 text-sm">
             Step {currentStep} of 2
@@ -303,13 +319,13 @@ function CreateOnlineClass() {
                     {/* Basic Info */}
                     <div className="space-y-4">
                       <FloatingInput
-                        label="Class Title *"
+                        label={t('class_title_label')}
                         name="title"
                         value={formData.title}
                         onChange={handleChange}
                       />
                       <FloatingInput
-                        label="Instructor Name"
+                        label={t('instructor_name_label')}
                         name="instructor"
                         value={formData.instructor}
                         onChange={handleChange}
@@ -318,7 +334,7 @@ function CreateOnlineClass() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Category
+                          {t('category_label')}
                         </label>
                         <select
                           name="category"
@@ -326,7 +342,7 @@ function CreateOnlineClass() {
                           onChange={handleChange}
                           className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                         >
-                          <option value="">Select Category</option>
+                          <option value="">{t('select_category')}</option>
                           {categories.map((cat) => (
                             <option key={cat.id} value={cat.id}>
                               {cat.name}
@@ -337,7 +353,7 @@ function CreateOnlineClass() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Tags
+                          {t('tags_label')}
                         </label>
                         <div className="relative">
                           <div className="flex flex-wrap gap-2 mb-2">
@@ -367,7 +383,7 @@ function CreateOnlineClass() {
                                 addTag(tagInput);
                               }
                             }}
-                            placeholder="Add tags..."
+                            placeholder={t('add_tags_placeholder')}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                           />
                           {filteredTagSuggestions.length > 0 && tagInput && (
@@ -391,7 +407,7 @@ function CreateOnlineClass() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Level
+                          {t('level_label')}
                         </label>
                         <select
                           name="level"
@@ -399,22 +415,22 @@ function CreateOnlineClass() {
                           onChange={handleChange}
                           className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
                         >
-                          <option value="">Select Level</option>
-                          <option value="Beginner">Beginner</option>
-                          <option value="Intermediate">Intermediate</option>
-                          <option value="Advanced">Advanced</option>
+                          <option value="">{t('select_level')}</option>
+                          <option value="Beginner">{t('level_beginner')}</option>
+                          <option value="Intermediate">{t('level_intermediate')}</option>
+                          <option value="Advanced">{t('level_advanced')}</option>
                         </select>
                       </div>
 
                       <FloatingInput
-                        label="Language"
+                        label={t('language_label')}
                         name="language"
                         value={formData.language}
                         onChange={handleChange}
                       />
 
                       <FloatingInput
-                        label="Start Date *"
+                        label={t('start_date_label')}
                         type="date"
                         name="startDate"
                         value={formData.startDate}
@@ -422,7 +438,7 @@ function CreateOnlineClass() {
                       />
 
                       <FloatingInput
-                        label="End Date"
+                        label={t('end_date_label')}
                         type="date"
                         name="endDate"
                         value={formData.endDate}
@@ -431,7 +447,7 @@ function CreateOnlineClass() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <FloatingInput
-                          label="Price"
+                          label={t('price_label')}
                           type="number"
                           name="price"
                           value={formData.price}
@@ -439,7 +455,7 @@ function CreateOnlineClass() {
                           disabled={formData.isFree}
                         />
                         <FloatingInput
-                          label="Max Students"
+                          label={t('max_students_label')}
                           type="number"
                           name="maxStudents"
                           value={formData.maxStudents}
@@ -448,7 +464,7 @@ function CreateOnlineClass() {
                       </div>
 
                       <FloatingInput
-                        label="Number of Lessons *"
+                        label={t('lesson_count_label')}
                         type="number"
                         name="lessonCount"
                         value={formData.lessonCount}
@@ -464,7 +480,7 @@ function CreateOnlineClass() {
                             onChange={handleChange}
                             className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">Free Class</span>
+                          <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
                         </label>
                         <label className="inline-flex items-center">
                           <input
@@ -474,7 +490,7 @@ function CreateOnlineClass() {
                             onChange={handleChange}
                             className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">Allow Installments</span>
+                          <span className="ml-2 text-sm text-gray-700">{t('allow_installments')}</span>
                         </label>
                         <label className="inline-flex items-center">
                           <input
@@ -484,22 +500,22 @@ function CreateOnlineClass() {
                             onChange={handleChange}
                             className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">Publish Immediately</span>
+                          <span className="ml-2 text-sm text-gray-700">{t('publish_immediately')}</span>
                         </label>
                       </div>
                     </div>
 
                     {/* Full-width fields */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description
-                      </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('description_label')}
+                        </label>
                       <ReactQuill
                         theme="snow"
                         value={formData.description}
                         onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
                         className="bg-white rounded-md border-gray-300"
-                        placeholder="Describe your class..."
+                        placeholder={t('describe_class_placeholder')}
                       />
                     </div>
 
@@ -512,7 +528,7 @@ function CreateOnlineClass() {
                             {imageUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
-                                <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+                                <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
                                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                                   <div
                                     className="bg-yellow-500 h-2.5 rounded-full"
@@ -528,17 +544,17 @@ function CreateOnlineClass() {
                                   className="h-40 w-full object-contain rounded-md mb-2"
                                 />
                                 <span className="text-sm text-yellow-600 font-medium">
-                                  Change Cover Image
+                                  {t('change_cover_image')}
                                 </span>
                               </>
                             ) : (
                               <>
                                 <FaUpload className="text-gray-400 text-3xl" />
                                 <p className="text-sm text-gray-600">
-                                  Upload Cover Image
+                                  {t('upload_cover_image')}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  (Recommended: 1280x720px, max 5MB)
+                                  {t('recommended_image_size')}
                                 </p>
                               </>
                             )}
@@ -559,7 +575,7 @@ function CreateOnlineClass() {
                             {videoUploading ? (
                               <>
                                 <FaSpinner className="animate-spin text-yellow-500 text-2xl" />
-                                <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+                                <p className="text-sm text-gray-600">{t('uploading_progress', { progress: uploadProgress })}</p>
                                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                                   <div
                                     className="bg-yellow-500 h-2.5 rounded-full"
@@ -575,17 +591,17 @@ function CreateOnlineClass() {
                                   controls
                                 />
                                 <span className="text-sm text-yellow-600 font-medium">
-                                  Change Demo Video
+                                  {t('change_demo_video')}
                                 </span>
                               </>
                             ) : (
                               <>
                                 <FaUpload className="text-gray-400 text-3xl" />
                                 <p className="text-sm text-gray-600">
-                                  Upload Demo Video
+                                  {t('upload_demo_video')}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  (Max 50MB, MP4 recommended)
+                                  {t('max_video_size')}
                                 </p>
                               </>
                             )}
@@ -603,7 +619,7 @@ function CreateOnlineClass() {
                 ) : (
                   <div className="space-y-6">
                     <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                      Lesson Plan
+                      {t('lesson_plan')}
                     </h2>
 
                     {formData.lessons.map((lesson, index) => (
@@ -613,9 +629,9 @@ function CreateOnlineClass() {
                       >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Lesson {index + 1} Title *
-                            </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t('lesson_title_label', { number: index + 1 })}
+                              </label>
                             <input
                               type="text"
                               value={lesson.title}
@@ -625,14 +641,14 @@ function CreateOnlineClass() {
                                 setFormData(prev => ({ ...prev, lessons: updated }));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
-                              placeholder="Introduction to..."
+                              placeholder={t('lesson_title_placeholder')}
                             />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Duration
-                            </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t('duration_label')}
+                              </label>
                             <input
                               type="text"
                               value={lesson.duration}
@@ -642,14 +658,14 @@ function CreateOnlineClass() {
                                 setFormData(prev => ({ ...prev, lessons: updated }));
                               }}
                               className="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 text-sm"
-                              placeholder="e.g. 45 min"
+                              placeholder={t('duration_placeholder')}
                             />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Start Time *
-                            </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t('start_time_label')}
+                              </label>
                             <input
                               type="datetime-local"
                               value={lesson.start_time}
@@ -663,9 +679,9 @@ function CreateOnlineClass() {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Resource File
-                            </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t('resource_file_label')}
+                              </label>
                             <div className="relative">
                               <input
                                 type="file"
@@ -679,7 +695,7 @@ function CreateOnlineClass() {
                               />
                               <div className="flex items-center justify-between px-3 py-2 bg-white rounded-md border border-gray-300 text-sm">
                                 <span className="truncate">
-                                  {lesson.resource?.name || 'Choose file...'}
+                                  {lesson.resource?.name || t('choose_file_placeholder')}
                                 </span>
                                 <FaUpload className="text-gray-400" />
                               </div>
@@ -701,7 +717,7 @@ function CreateOnlineClass() {
                   onClick={() => setCurrentStep(currentStep - 1)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                 >
-                  Back
+                  {t('back')}
                 </button>
               ) : (
                 <div></div>
@@ -715,12 +731,12 @@ function CreateOnlineClass() {
                 {isSubmitting ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
-                    {currentStep === 1 ? 'Processing...' : 'Submitting...'}
+                    {currentStep === 1 ? t('processing') : t('submitting')}
                   </>
                 ) : currentStep === 1 ? (
-                  'Continue to Lessons'
+                  t('continue_lessons')
                 ) : (
-                  'Submit Class'
+                  t('submit_class')
                 )}
               </button>
             </div>
