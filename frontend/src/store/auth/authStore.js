@@ -77,11 +77,6 @@ const useAuthStore = create(
         const msgStop = useMessageStore.getState().stopPolling;
         notifStop?.();
         msgStop?.();
-        console.log(
-          'Polling after logout:',
-          useNotificationStore.getState().poller,
-          useMessageStore.getState().poller
-        );
         localStorage.removeItem("auth");
         set({ accessToken: null, user: null });
       },
