@@ -19,7 +19,7 @@ const refreshCookieOptions = {
   sameSite:
     process.env.COOKIE_SAMESITE ||
     (process.env.NODE_ENV === 'production' ? 'None' : 'Lax'),
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
 if (process.env.COOKIE_DOMAIN) {
