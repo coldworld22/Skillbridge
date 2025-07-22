@@ -20,7 +20,7 @@ const navMap = {
 
 export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
-  const { t } = useTranslation('dashboard');
+  const { t } = useTranslation('dashboard', { keyPrefix: 'sidebar' });
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const settings = useAppConfigStore((state) => state.settings);
