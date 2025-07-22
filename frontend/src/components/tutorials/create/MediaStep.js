@@ -35,7 +35,7 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
         });
       }, 100);
     } else {
-      alert("❌ Please upload an MP4/WebM video less than 50MB.");
+      alert("❌ Please upload an MP4/WebM video less than 100MB.");
     }
   };
 

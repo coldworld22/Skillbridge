@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
  * @returns {string} - The generated JWT access token
  */
 exports.generateAccessToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "60m" });
 };
 
 /**
@@ -15,7 +15,7 @@ exports.generateAccessToken = (payload) => {
  * @returns {string} - The generated JWT refresh token
  */
 exports.generateRefreshToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 /**

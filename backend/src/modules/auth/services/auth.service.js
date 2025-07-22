@@ -19,8 +19,8 @@ const messageService = require("../../messages/messages.service");
 // 🔧 Config Constants
 // ─────────────────────────────────────────────────────────────
 const SALT_ROUNDS = 12;
-const ACCESS_EXPIRES_IN = "15m";
-const REFRESH_EXPIRES_IN = "7d";
+const ACCESS_EXPIRES_IN = "60m";
+const REFRESH_EXPIRES_IN = "30d";
 const OTP_EXPIRY_MINUTES = 15;
 
 /**
