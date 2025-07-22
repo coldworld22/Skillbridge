@@ -112,7 +112,7 @@ function CreateOnlineClass() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+      toast.error(t('image_size_exceeded'));
       return;
     }
 
@@ -135,7 +135,7 @@ function CreateOnlineClass() {
       setImageUploading(false);
     };
     reader.onerror = () => {
-      toast.error('Failed to load image preview.');
+      toast.error(t('image_preview_failed'));
       setImageUploading(false);
     };
     reader.readAsDataURL(file);
@@ -146,7 +146,7 @@ function CreateOnlineClass() {
     if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error('Video must be less than 50MB');
+      toast.error(t('video_size_exceeded'));
       return;
     }
 
@@ -187,7 +187,7 @@ function CreateOnlineClass() {
     if (currentStep === 1) {
       const count = parseInt(formData.lessonCount, 10);
       if (!formData.title || !formData.startDate || !count || count <= 0) {
-        toast.error('Please fill in all required fields');
+        toast.error(t('fill_required_fields'));
         return;
       }
       setFormData(prev => ({
@@ -203,11 +203,11 @@ function CreateOnlineClass() {
     } else {
       // Step 2 validation and submission
       if (formData.lessons.some(l => !l.title || !l.start_time)) {
-        toast.error('Please complete all lesson details');
+        toast.error(t('complete_lesson_details'));
         return;
       }
       if (!user?.id) {
-        toast.error('User information unavailable');
+        toast.error(t('user_info_unavailable'));
         return;
       }
       try {
@@ -289,7 +289,7 @@ function CreateOnlineClass() {
             {currentStep === 1 ? t('create_class') : t('add_lesson_plan')}
           </h1>
           <p className="text-yellow-100 text-sm">
-            Step {currentStep} of 2
+            {t('step_of_total', { current: currentStep, total: 2 })}
           </p>
         </div>
 
@@ -540,7 +540,7 @@ function CreateOnlineClass() {
                               <>
                                 <img
                                   src={formData.imagePreview}
-                                  alt="Preview"
+                                  alt={t('preview_alt')}
                                   className="h-40 w-full object-contain rounded-md mb-2"
                                 />
                                 <span className="text-sm text-yellow-600 font-medium">
