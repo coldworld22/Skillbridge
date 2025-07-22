@@ -27,5 +27,15 @@
   "legal": "Légal",
   "privacy_policy": "Politique de confidentialité",
   "terms_of_service": "Conditions d'utilisation",
-  "delete_account": "Supprimer le compte"
+  "delete_account": "Supprimer le compte",
+  "create_class": "Create New Class",
+  "manage_online_classes": "Manage Online Classes",
+  "add_lesson_plan": "Add Lesson Plan",
+  "class_created": "Class created successfully",
+  "class_create_failed": "Failed to create class",
+  "continue_lessons": "Continue to Lessons",
+  "submit_class": "Submit Class"
+  "back": "Back",
+  "processing": "Processing...",
+  "submitting": "Submitting..."
 }
