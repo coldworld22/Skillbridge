@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { toast } from 'react-toastify';
 import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { getFullProfile } from '@/services/profile/profileService';
@@ -23,13 +24,15 @@ export default function SocialSuccess() {
         const res = await getFullProfile();
         setUser(res.data);
         fetchNotifications();
+        toast.success(t('login_successful'));
       } catch (err) {
         console.error('Failed to fetch profile after social login', err);
+        toast.error(t('login_failed'));
       }
       router.replace('/website');
     }
     finalize();
-  }, [router, setToken, setUser, fetchNotifications]);
+  }, [router, setToken, setUser, fetchNotifications, t]);
 
   return <p className="text-center mt-20">{t('signing_you_in')}</p>;
 }
