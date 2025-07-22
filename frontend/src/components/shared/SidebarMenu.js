@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 import {
   FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers,
   FaCalendarAlt, FaPlus, FaChartLine, FaTimes, FaUserShield,
@@ -13,6 +14,7 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const sidebarRef = useRef(null);
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useTranslation("common");
   const userRole = user?.role?.toLowerCase();
 
   console.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user)
@@ -56,22 +58,22 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const dashboardConfig = {
     admin: {
       href: "/dashboard/admin",
-      label: "Admin Dashboard",
+      label: t("admin_dashboard"),
       icon: <FaUserShield />,
     },
     superadmin: {
       href: "/dashboard/admin",
-      label: "Admin Dashboard",
+      label: t("admin_dashboard"),
       icon: <FaUserShield />,
     },
     instructor: {
       href: "/dashboard/instructor",
-      label: "Instructor Dashboard",
+      label: t("instructor_dashboard"),
       icon: <FaChalkboardTeacher />,
     },
     student: {
       href: "/dashboard/student",
-      label: "Student Dashboard",
+      label: t("student_dashboard"),
       icon: <FaGraduationCap />,
     },
   };
@@ -109,7 +111,7 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
               <FaTimes className="text-2xl" />
             </button>
 
-            <h3 className="text-xl font-bold mb-4">Dashboard Navigation</h3>
+            <h3 className="text-xl font-bold mb-4">{t('dashboard_navigation')}</h3>
             <div className="space-y-4">
 
               {/* Dashboard Link */}
@@ -124,31 +126,31 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
 
               {/* Useful Links */}
               <div>
-                <h4 className="font-bold text-lg mt-6 mb-2">Useful Links</h4>
+                <h4 className="font-bold text-lg mt-6 mb-2">{t('useful_links')}</h4>
                 <ul className="space-y-2">
                   <li>
                     <Link href="/courses" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaBookOpen /> Explore Courses
+                      <FaBookOpen /> {t('explore_courses')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/community" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaUsers /> Community Forum
+                      <FaUsers /> {t('community_forum')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/blog" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaFileAlt /> Blog & News
+                      <FaFileAlt /> {t('blog_news')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/support" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaQuestionCircle /> Help & Support
+                      <FaQuestionCircle /> {t('help_support')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/contact" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaEnvelope /> Contact Us
+                      <FaEnvelope /> {t('contact')}
                     </Link>
                   </li>
                 </ul>
@@ -157,16 +159,16 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
               {/* Student Section */}
               {userRole === "student" && (
                 <div>
-                  <h4 className="font-bold text-lg mt-6 mb-2">Learning</h4>
+                  <h4 className="font-bold text-lg mt-6 mb-2">{t('learning')}</h4>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaBookOpen /> My Courses
+                      <FaBookOpen /> {t('my_courses')}
                     </li>
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaChalkboardTeacher /> My Instructors
+                      <FaChalkboardTeacher /> {t('my_instructors')}
                     </li>
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaGraduationCap /> Certificates
+                      <FaGraduationCap /> {t('certificates')}
                     </li>
                   </ul>
                 </div>
@@ -175,16 +177,16 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
               {/* Instructor Section */}
               {userRole === "instructor" && (
                 <div>
-                  <h4 className="font-bold text-lg mt-6 mb-2">Instructor Tools</h4>
+                  <h4 className="font-bold text-lg mt-6 mb-2">{t('instructor_tools')}</h4>
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaCalendarAlt /> Scheduled Classes
+                      <FaCalendarAlt /> {t('scheduled_classes')}
                     </li>
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaPlus /> Create Course
+                      <FaPlus /> {t('create_course')}
                     </li>
                     <li className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaChartLine /> Earnings & Reports
+                      <FaChartLine /> {t('earnings_reports')}
                     </li>
                   </ul>
                 </div>
@@ -194,7 +196,7 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
               {showAds && (
                 <div className="mt-6 p-3 bg-white text-gray-900 shadow-lg rounded-lg">
                   <h4 className="text-lg font-bold mb-2 flex items-center gap-2">
-                    <FaBullhorn /> Sponsored Ads
+                    <FaBullhorn /> {t('sponsored_ads')}
                   </h4>
                   <div className="text-center">
                     <ins className="adsbygoogle"
