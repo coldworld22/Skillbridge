@@ -34,7 +34,7 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-module.exports = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } }).fields([
+module.exports = multer({ storage, fileFilter, limits: { fileSize: 100 * 1024 * 1024 } }).fields([
   { name: 'cover_image', maxCount: 1 },
   { name: 'demo_video', maxCount: 1 },
 ]);

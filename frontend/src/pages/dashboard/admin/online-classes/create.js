@@ -145,7 +145,7 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024 * 1024) {
+    if (file.size > 100 * 1024 * 1024) {
       toast.error(t('video_size_exceeded'));
       return;
     }

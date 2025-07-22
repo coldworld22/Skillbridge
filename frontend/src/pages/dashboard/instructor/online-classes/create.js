@@ -140,8 +140,8 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error('Video must be less than 50MB');
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('Video must be less than 100MB');
       return;
     }
 
@@ -607,7 +607,7 @@ function CreateOnlineClass() {
                                   Upload Demo Video
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  (Max 50MB, MP4 recommended)
+                                  (Max 100MB, MP4 recommended)
                                 </p>
                               </>
                             )}
