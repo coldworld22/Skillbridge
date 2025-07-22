@@ -39,7 +39,7 @@ function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
   const addEvents = useScheduleStore((state) => state.addEvents);
-  const { t } = useTranslation('dashboard');
+  const { t, i18n } = useTranslation('dashboard');
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
   const [currentStep, setCurrentStep] = useState(1);
@@ -281,7 +281,7 @@ function CreateOnlineClass() {
 
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div dir={i18n.dir()} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-4">
@@ -755,4 +755,15 @@ const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['admin
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
+
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
+}
 
