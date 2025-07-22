@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
@@ -12,6 +13,7 @@ import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 
 function AdminCategoryIndex() {
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'categoriesPage' });
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -34,12 +36,12 @@ function AdminCategoryIndex() {
       setCategories(result.data || []);
     } catch (err) {
       console.error("Failed to fetch categories", err);
-      setError("Failed to load categories.");
+      setError(t('error'));
       toast.error(
         err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
-          "Failed to load categories"
+          t('error')
       );
     } finally {
       setLoading(false);
@@ -56,14 +58,14 @@ function AdminCategoryIndex() {
         cat.id === id ? { ...cat, status: newStatus } : cat
       );
       setCategories(updated);
-      toast.success("Status updated");
+      toast.success(t('status_updated'));
     } catch (err) {
       console.error("Failed to update status", err);
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        "Failed to update status";
+        t('update_failed');
       toast.error(msg);
     }
   };
@@ -73,14 +75,14 @@ function AdminCategoryIndex() {
     try {
       await deleteCategory(id);
       setCategories(categories.filter((cat) => cat.id !== id));
-      toast.success("Category deleted!");
+      toast.success(t('category_deleted'));
     } catch (err) {
       console.error("Failed to delete category", err);
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        "Failed to delete category";
+        t('delete_failed');
       toast.error(msg);
     }
   };
@@ -111,7 +113,7 @@ function AdminCategoryIndex() {
             {node.name}
             {level > 0 && (
               <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">
-                Subcategory
+                {t('subcategory')}
               </span>
             )}
           </td>
@@ -154,15 +156,15 @@ function AdminCategoryIndex() {
     ]);
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6" dir={i18n.dir()}>
+      <div className="flex items-center justify-between mb-6" dir={i18n.dir()}>
         <div className="flex items-center gap-2">
           <FolderKanban className="text-primary" />
-          <h2 className="text-2xl font-semibold">Categories</h2>
+          <h2 className="text-2xl font-semibold">{t('title')}</h2>
         </div>
         <Link href="/dashboard/admin/categories/create">
           <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90">
-            <Plus size={16} /> New Category
+            <Plus size={16} /> {t('new_category')}
           </button>
         </Link>
       </div>
@@ -171,7 +173,7 @@ function AdminCategoryIndex() {
         <div className="relative w-1/3">
           <input
             type="text"
-            placeholder="Search categories..."
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full border px-3 py-2 rounded pl-9"
@@ -184,33 +186,33 @@ function AdminCategoryIndex() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border rounded px-3 py-2"
         >
-          <option value="all">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">{t('all_statuses')}</option>
+          <option value="active">{t('active')}</option>
+          <option value="inactive">{t('inactive')}</option>
         </select>
 
         <Link href="/dashboard/admin/categories/create">
           <button className="ml-auto border px-4 py-2 rounded text-sm bg-yellow-400 text-white hover:bg-yellow-500">
-            + Create Category
+            + {t('create_category')}
           </button>
         </Link>
       </div>
 
       <div className="overflow-x-auto border rounded">
-        <table className="min-w-full text-left">
+        <table className="min-w-full text-left" dir={i18n.dir()}>
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Image</th>
-              <th className="px-4 py-3">Classes</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t('name')}</th>
+              <th className="px-4 py-3">{t('image')}</th>
+              <th className="px-4 py-3">{t('classes')}</th>
+              <th className="px-4 py-3">{t('status')}</th>
+              <th className="px-4 py-3 text-right">{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-6 text-gray-500">Loading categories...</td>
+                <td colSpan="5" className="text-center py-6 text-gray-500">{t('loading')}</td>
               </tr>
             ) : error ? (
               <tr>
@@ -219,7 +221,7 @@ function AdminCategoryIndex() {
             ) : categoryTree.length === 0 ? (
               <tr>
                 <td colSpan="5" className="text-center py-6 text-gray-500">
-                  No categories found. <Link href="/dashboard/admin/categories/create" className="text-blue-600 underline">Create one now</Link>
+                  {t('no_categories')} <Link href="/dashboard/admin/categories/create" className="text-blue-600 underline">{t('create_one_now')}</Link>
                 </td>
               </tr>
             ) : (
@@ -232,8 +234,8 @@ function AdminCategoryIndex() {
       <div className="flex justify-between mt-4 text-sm text-gray-500">
         <span>Showing 1–{categories.length} of {categories.length} categories</span>
         <div className="space-x-2">
-          <button className="px-3 py-1 border rounded">Prev</button>
-          <button className="px-3 py-1 border rounded">Next</button>
+          <button className="px-3 py-1 border rounded">{t('prev')}</button>
+          <button className="px-3 py-1 border rounded">{t('next')}</button>
         </div>
       </div>
     </div>

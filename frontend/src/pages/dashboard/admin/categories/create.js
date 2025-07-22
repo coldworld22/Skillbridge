@@ -5,12 +5,14 @@ import { ArrowLeftCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import {
   fetchCategoryTree,
   createCategory,
 } from "@/services/admin/categoryService";
 
 function CreateCategory() {
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'categoriesPage' });
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [status, setStatus] = useState("active");
@@ -92,17 +94,17 @@ function CreateCategory() {
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto" dir={i18n.dir()}>
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard/admin/categories">
           <ArrowLeftCircle className="text-gray-600 hover:text-primary" size={28} />
         </Link>
-        <h2 className="text-2xl font-semibold">Create New Category</h2>
+        <h2 className="text-2xl font-semibold">{t('create_title')}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded shadow-sm border">
         <div>
-          <label htmlFor="name" className="block mb-1 font-medium">Category Name <span className="text-red-500">*</span></label>
+          <label htmlFor="name" className="block mb-1 font-medium">{t('category_name')} <span className="text-red-500">*</span></label>
           <input
             id="name"
             type="text"
@@ -117,14 +119,14 @@ function CreateCategory() {
         </div>
 
         <div>
-          <label htmlFor="parentId" className="block mb-1 font-medium">Parent Category</label>
+          <label htmlFor="parentId" className="block mb-1 font-medium">{t('parent_category')}</label>
           <select
             id="parentId"
             value={parentId}
             onChange={(e) => setParentId(e.target.value)}
             className="w-full border px-4 py-2 rounded focus:ring focus:border-primary"
           >
-            <option value="">None (Top-Level)</option>
+            <option value="">{t('none_top_level')}</option>
             {parentCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
@@ -132,23 +134,23 @@ function CreateCategory() {
         </div>
 
         <div>
-          <label htmlFor="status" className="block mb-1 font-medium">Status</label>
+          <label htmlFor="status" className="block mb-1 font-medium">{t('status_label')}</label>
           <select
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="w-full border px-4 py-2 rounded focus:ring focus:border-primary"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="active">{t('active')}</option>
+            <option value="inactive">{t('inactive')}</option>
           </select>
         </div>
 
         <div>
-          <label htmlFor="image" className="block mb-1 font-medium">Category Image <span className="text-xs text-gray-500">(Max 2MB)</span></label>
+          <label htmlFor="image" className="block mb-1 font-medium">{t('category_image')} <span className="text-xs text-gray-500">(Max 2MB)</span></label>
           <div className="flex items-center gap-4">
             <label className="inline-flex items-center gap-2 cursor-pointer text-sm bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">
-              <Upload size={16} /> Upload Image
+              <Upload size={16} /> {t('upload_image')}
               <input id="image" type="file" accept="image/*" onChange={handleImageChange} hidden />
             </label>
             {preview && (
@@ -170,10 +172,10 @@ function CreateCategory() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
-                Saving...
+                {t('processing')}
               </>
             ) : (
-              <>Save Category</>
+              <>{t('save_category')}</>
             )}
           </button>
         </div>
