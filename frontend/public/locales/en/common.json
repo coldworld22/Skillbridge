@@ -26,6 +26,12 @@
   "logout_failed": "Logout failed. Please try again.",
   "please_complete_profile": "Please complete your profile to continue.",
   "visit_website": "Visit Website",
+  "search_placeholder": "Search...",
+  "available": "Available",
+  "unavailable": "Unavailable",
+  "available_now": "You are now available",
+  "unavailable_now": "You are now unavailable",
+  "availability_update_failed": "Failed to update availability",
   "new": "new",
   "welcome_user": "Welcome, {{name}}"
   ,
