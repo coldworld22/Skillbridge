@@ -53,6 +53,8 @@ function MyApp({ Component, pageProps, router }) {
   }, []);
 
   useEffect(() => {
+    if (router.pathname.startsWith('/auth')) return;
+
     const init = async () => {
       try {
         const { accessToken } = await authService.refreshAccessToken();
@@ -64,7 +66,7 @@ function MyApp({ Component, pageProps, router }) {
       }
     };
     init();
-  }, []);
+  }, [router.pathname]);
 
   useEffect(() => {
     if (!configLoaded) fetchConfig();
