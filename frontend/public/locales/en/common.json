@@ -28,5 +28,24 @@
   "visit_website": "Visit Website",
   "new": "new",
   "welcome_user": "Welcome, {{name}}"
+  ,
+  "dashboard_navigation": "Dashboard Navigation",
+  "useful_links": "Useful Links",
+  "explore_courses": "Explore Courses",
+  "community_forum": "Community Forum",
+  "blog_news": "Blog & News",
+  "help_support": "Help & Support",
+  "learning": "Learning",
+  "my_courses": "My Courses",
+  "my_instructors": "My Instructors",
+  "certificates": "Certificates",
+  "instructor_tools": "Instructor Tools",
+  "scheduled_classes": "Scheduled Classes",
+  "create_course": "Create Course",
+  "earnings_reports": "Earnings & Reports",
+  "sponsored_ads": "Sponsored Ads",
+  "admin_dashboard": "Admin Dashboard",
+  "instructor_dashboard": "Instructor Dashboard",
+  "student_dashboard": "Student Dashboard"
 }
   
