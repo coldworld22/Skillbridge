@@ -32,8 +32,10 @@ import useMessageStore from "@/store/messages/messageStore";
 import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
 import api from "@/services/api/api";
+import { getCurrencies } from "@/services/currencyService";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
+const currencyFetcher = () => getCurrencies();
 
 // ✅ Assets
 import logo from "@/shared/assets/images/login/logo.png";
@@ -76,7 +78,9 @@ const Navbar = () => {
 
   const { i18n, t } = useTranslation("common");
   const { data: langs } = useSWR("/languages", fetcher);
+  const { data: currencies } = useSWR("/currencies", currencyFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
+  const currentCurrency = currencies?.find((c) => c.is_default) || currencies?.[0];
   const changeLang = async (lng) => {
     try {
       await i18n.changeLanguage(lng);
@@ -346,6 +350,20 @@ const Navbar = () => {
             <FaLanguage className="text-xl" />
           )}
         </motion.button>
+
+        {currentCurrency && (
+          <div className="flex items-center gap-1 text-sm">
+            <img
+              src={`https://flagcdn.com/24x18/${currentCurrency.code
+                .slice(0, 2)
+                .toLowerCase()}.png`}
+              onError={(e) => (e.target.src = "/flags/default.png")}
+              alt={currentCurrency.code}
+              className="w-5 h-3 border rounded"
+            />
+            <span className="font-semibold">{currentCurrency.code}</span>
+          </div>
+        )}
 
         {user && (
           <Link
