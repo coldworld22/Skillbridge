@@ -83,6 +83,9 @@ const Navbar = () => {
       if (typeof window !== "undefined") {
         localStorage.setItem("lng", lng);
       }
+      // Reload the current route with the selected locale so that
+      // server-side translations are properly loaded
+      await router.push(router.asPath, router.asPath, { locale: lng });
       mutate("/languages");
       const selected = langs?.find((l) => l.code === lng);
       toast.success(
