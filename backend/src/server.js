@@ -34,14 +34,21 @@ const ALLOWED_ORIGINS = Array.from(
   ])
 );
 
-
 app.disable("etag");
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+// 🌐 CORS must run before body parsing so even 4xx responses include the header
+app.use(
+  cors({
+    origin: ALLOWED_ORIGINS,
+    credentials: true,
+  })
+);
+// Increase body parser limits for large class uploads
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(session({
@@ -51,15 +58,6 @@ app.use(session({
 }));
 
 app.use(passport.initialize());
-
-// 🌐 CORS Middleware
-// Use the cors package so credentials like cookies are allowed
-app.use(
-  cors({
-    origin: ALLOWED_ORIGINS,
-    credentials: true,
-  })
-);
 
 
 
