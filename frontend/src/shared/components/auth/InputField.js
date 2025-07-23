@@ -34,4 +34,6 @@ const InputField = forwardRef(({ label, type, placeholder, ...rest }, ref) => {
   );
 });
 
+InputField.displayName = 'InputField';
+
 export default InputField;
