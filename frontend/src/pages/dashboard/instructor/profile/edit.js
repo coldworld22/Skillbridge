@@ -27,6 +27,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -150,8 +151,8 @@ export default function InstructorProfileEdit() {
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
-          avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
-          demoPreview: instructor?.demo_video_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${instructor.demo_video_url}` : null,
+          avatarPreview: avatar_url ? `${API_BASE_URL}${avatar_url}` : null,
+          demoPreview: instructor?.demo_video_url ? `${API_BASE_URL}${instructor.demo_video_url}` : null,
         }));
       } catch (err) {
         toast.error("Failed to load profile");
@@ -259,7 +260,7 @@ export default function InstructorProfileEdit() {
       setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+        avatarPreview: `${API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
@@ -445,7 +446,7 @@ export default function InstructorProfileEdit() {
                       const res = await uploadInstructorDemo(user.id, file);
                       setFormData(prev => ({
                         ...prev,
-                        demoPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.demo_video_url}`
+                        demoPreview: `${API_BASE_URL}${res.demo_video_url}`
                       }));
                     } catch (error) {
                       toast.error("Failed to upload demo video");
@@ -692,7 +693,7 @@ export default function InstructorProfileEdit() {
                     <div>
                       <h4 className="font-medium">{certificate.title}</h4>
                       <a
-                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL}${certificate.file_url}`}
+                        href={`${API_BASE_URL}${certificate.file_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
