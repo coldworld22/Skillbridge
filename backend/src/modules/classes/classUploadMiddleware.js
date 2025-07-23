@@ -37,8 +37,8 @@ const fileFilter = (_req, file, cb) => {
 module.exports = multer({
   storage,
   fileFilter,
-  // Allow larger video uploads for demo videos
-  limits: { fileSize: 500 * 1024 * 1024 },
+  // Allow larger video uploads for demo videos and bigger text fields
+  limits: { fileSize: 500 * 1024 * 1024, fieldSize: 25 * 1024 * 1024 },
 }).fields([
   { name: 'cover_image', maxCount: 1 },
   { name: 'demo_video', maxCount: 1 },
