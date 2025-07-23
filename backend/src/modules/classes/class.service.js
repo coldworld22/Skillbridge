@@ -1,8 +1,8 @@
 const db = require("../../config/database");
+const ClassModel = require("./class.model");
 
 exports.createClass = async (data) => {
-  const [created] = await db("online_classes").insert(data).returning("*");
-  return created;
+  return ClassModel.create(data);
 };
 
 exports.getAllClasses = async () => {
@@ -74,12 +74,11 @@ exports.getClassesByInstructor = async (instructorId) => {
 };
 
 exports.updateClass = async (id, data) => {
-  const [updated] = await db("online_classes").where({ id }).update(data).returning("*");
-  return updated;
+  return ClassModel.update(id, data);
 };
 
 exports.deleteClass = async (id) => {
-  return db("online_classes").where({ id }).del();
+  return ClassModel.remove(id);
 };
 
 exports.togglePublishStatus = async (id) => {
