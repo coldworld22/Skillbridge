@@ -26,7 +26,7 @@ const Verification = ({ onBack = () => {} }) => {
   useEffect(() => {
     if (emailVerified && phoneVerified) {
       toast.success("Both email and phone verified. Redirecting to dashboard...");
-      const t = setTimeout(() => router.push("/dashboard"), 1500);
+      const t = setTimeout(() => router.push("/dashboard/instructor"), 1500);
       return () => clearTimeout(t);
     }
   }, []);
@@ -72,7 +72,7 @@ const Verification = ({ onBack = () => {} }) => {
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {
         toast.success("Both email and phone verified. Redirecting to dashboard...");
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push("/dashboard/instructor"), 1500);
       }
       setShowOtpModal(null);
       toast.success(`${type === "email" ? "Email" : "Phone"} verified`);
