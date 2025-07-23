@@ -131,7 +131,7 @@ picked up.
 If the browser console shows messages like `No 'Access-Control-Allow-Origin'` or
 `ERR_NETWORK` during login, your backend is rejecting the frontend's origin.
 Edit `backend/.env` and ensure the `FRONTEND_URL` variable lists the exact
-domain of your deployed site, for example:
+domain of your deployed site without a trailing slash, for example:
 
 ```bash
 FRONTEND_URL=https://eduskillbridge.net

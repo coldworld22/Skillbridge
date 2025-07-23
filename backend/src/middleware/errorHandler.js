@@ -2,7 +2,7 @@
 module.exports = (err, req, res, next) => {
   let origins = process.env.FRONTEND_URL || "http://localhost:3000";
   if (origins.startsWith("FRONTEND_URL=")) origins = origins.replace(/^FRONTEND_URL=/, "");
-  const ALLOWED_ORIGINS = origins.split(',').map(o => o.trim());
+  const ALLOWED_ORIGINS = origins.split(',').map(o => o.trim().replace(/\/$/, ""));
 
   const origin = req.headers.origin;
   if (ALLOWED_ORIGINS.includes(origin)) {

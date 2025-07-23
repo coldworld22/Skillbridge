@@ -10,7 +10,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    cp backend/.env.example backend/.env
    # edit backend/.env and set your secrets
    # FRONTEND_URL defaults to http://localhost:3000
-   # set it to your frontend's domain if different
+   # set it to your frontend's domain if different and omit any trailing slash
    # When using docker-compose make sure the value does
    # not include an extra "FRONTEND_URL=" prefix.
    ```
