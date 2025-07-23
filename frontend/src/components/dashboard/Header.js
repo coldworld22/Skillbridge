@@ -65,11 +65,6 @@ export default function Header() {
       await logout();
       stopPolling();
       stopMessagePolling();
-      console.log(
-        'Polling after logout:',
-        useNotificationStore.getState().poller,
-        useMessageStore.getState().poller
-      );
       toast.success(t('logged_out'));
 
       // ⏳ Delay before redirecting to login
@@ -124,11 +119,6 @@ export default function Header() {
     return () => {
       stopPolling();
       stopMessagePolling();
-      console.log(
-        'Polling after unmount:',
-        useNotificationStore.getState().poller,
-        useMessageStore.getState().poller
-      );
     };
   }, []);
 
