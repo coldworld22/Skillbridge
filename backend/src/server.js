@@ -23,8 +23,16 @@ let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
   FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
 }
-const ALLOWED_ORIGINS = FRONTEND_URL.split(',')
-  .map(o => o.trim().replace(/\/$/, ""));
+const defaultOrigins = [
+  "https://eduskillbridge.net",
+  "https://www.eduskillbridge.net",
+];
+const ALLOWED_ORIGINS = Array.from(
+  new Set([
+    ...defaultOrigins,
+    ...FRONTEND_URL.split(",").map((o) => o.trim().replace(/\/$/, "")),
+  ])
+);
 
 
 app.disable("etag");
