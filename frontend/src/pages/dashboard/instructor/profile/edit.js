@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
+import { API_BASE_URL } from "@/config/config";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -150,8 +151,12 @@ export default function InstructorProfileEdit() {
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
-          avatarPreview: avatar_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}` : null,
-          demoPreview: instructor?.demo_video_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${instructor.demo_video_url}` : null,
+          avatarPreview: avatar_url
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${avatar_url}`
+            : null,
+          demoPreview: instructor?.demo_video_url
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${instructor.demo_video_url}`
+            : null,
         }));
       } catch (err) {
         toast.error("Failed to load profile");
@@ -259,7 +264,7 @@ export default function InstructorProfileEdit() {
       setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
@@ -445,7 +450,7 @@ export default function InstructorProfileEdit() {
                       const res = await uploadInstructorDemo(user.id, file);
                       setFormData(prev => ({
                         ...prev,
-                        demoPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.demo_video_url}`
+                        demoPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${res.demo_video_url}`
                       }));
                     } catch (error) {
                       toast.error("Failed to upload demo video");
@@ -692,7 +697,7 @@ export default function InstructorProfileEdit() {
                     <div>
                       <h4 className="font-medium">{certificate.title}</h4>
                       <a
-                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL}${certificate.file_url}`}
+                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${certificate.file_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
