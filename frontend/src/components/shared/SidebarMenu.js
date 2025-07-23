@@ -6,7 +6,8 @@ import { useTranslation } from "next-i18next";
 import {
   FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers,
   FaCalendarAlt, FaPlus, FaChartLine, FaTimes, FaUserShield,
-  FaBullhorn, FaQuestionCircle, FaFileAlt, FaEnvelope
+  FaBullhorn, FaQuestionCircle, FaFileAlt, FaEnvelope,
+  FaTachometerAlt
 } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 
@@ -78,7 +79,13 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
     },
   };
 
-  const currentDashboard = dashboardConfig[userRole];
+  const defaultDashboard = {
+    href: "/dashboard",
+    label: t("dashboard"),
+    icon: <FaTachometerAlt />,
+  };
+
+  const currentDashboard = dashboardConfig[userRole] || defaultDashboard;
 
   return (
     <AnimatePresence>
@@ -115,7 +122,7 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
             <div className="space-y-4">
 
               {/* Dashboard Link */}
-              {currentDashboard && (
+              {user && (
                 <Link
                   href={currentDashboard.href}
                   className="flex items-center gap-3 p-2 w-full text-left text-gray-900 bg-yellow-600 hover:bg-yellow-700 rounded-lg cursor-pointer transition"

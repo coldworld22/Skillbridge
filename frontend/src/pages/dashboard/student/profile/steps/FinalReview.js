@@ -41,7 +41,7 @@ const FinalReview = ({ formData = {} }) => {
       }
 
       toast.success("Profile completed successfully!");
-      router.push("/dashboard");
+      router.push("/dashboard/student");
     } catch (err) {
       console.error("Profile submission failed:", err);
       toast.error(err.message || "Failed to complete profile");
