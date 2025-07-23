@@ -365,7 +365,7 @@ const Navbar = () => {
           </div>
         )}
 
-        {user && (
+        {user && userRole && (
           <Link
             href={
               userRole === "superadmin" || userRole === "admin"
