@@ -40,8 +40,9 @@ app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+// Increase body parser limits for large class uploads
+app.use(express.json({ limit: "250mb" }));
+app.use(express.urlencoded({ extended: true, limit: "250mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(session({
