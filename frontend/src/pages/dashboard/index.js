@@ -1,10 +1,11 @@
-import React from "react";
-import { useTranslation } from "next-i18next";
+import React, { useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import AIRecommendations from "@/components/dashboard/AIRecommendations";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import useAuthStore from "@/store/auth/authStore";
 import { getRecommendedCourses } from "@/services/aiCourseRecommendation";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../next-i18next.config.js";
@@ -32,7 +33,15 @@ const enrolledCourses = allCourses.slice(0, 3); // Mocked enrolled courses
 const recommendedCourses = getRecommendedCourses(enrolledCourses, allCourses);
 
 const DashboardPage = () => {
-  const { t } = useTranslation('dashboard');
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    const role = user?.role?.toLowerCase();
+    if (!role) return;
+    if (role === "admin" || role === "superadmin") router.replace("/dashboard/admin");
+    else router.replace(`/dashboard/${role}`);
+  }, [user, router]);
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <Navbar />

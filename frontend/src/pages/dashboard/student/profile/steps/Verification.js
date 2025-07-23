@@ -28,7 +28,7 @@ const Verification = ({ prevStep = () => {} }) => {
   useEffect(() => {
     if (emailVerified && phoneVerified) {
       toast.success("Both email and phone verified. Redirecting to dashboard...");
-      const t = setTimeout(() => router.push("/dashboard"), 1500);
+      const t = setTimeout(() => router.push("/dashboard/student"), 1500);
       return () => clearTimeout(t);
     }
   }, []);
@@ -69,7 +69,7 @@ const Verification = ({ prevStep = () => {} }) => {
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {
         toast.success("Both email and phone verified. Redirecting to dashboard...");
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push("/dashboard/student"), 1500);
       }
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid or expired OTP";
