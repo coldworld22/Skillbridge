@@ -8,7 +8,7 @@
 // Notifications and translations are also integrated.
 // ─────────────────────────────────────────────────────
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -72,6 +72,7 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const videoIntervalRef = useRef(null);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -91,6 +92,12 @@ function CreateOnlineClass() {
     fetchClassTags()
       .then(setAllTags)
       .catch(() => setAllTags([]));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -154,15 +161,17 @@ function CreateOnlineClass() {
     setUploadProgress(0);
 
     // Simulate upload progress (replace with actual upload logic)
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
+    if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
+    videoIntervalRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
         if (prev >= 100) {
-          clearInterval(interval);
+          if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
+          videoIntervalRef.current = null;
           setVideoUploading(false);
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             demoVideo: file,
-            demoPreview: URL.createObjectURL(file)
+            demoPreview: URL.createObjectURL(file),
           }));
           return 100;
         }
