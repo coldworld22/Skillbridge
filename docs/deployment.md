@@ -131,10 +131,11 @@ picked up.
 If the browser console shows messages like `No 'Access-Control-Allow-Origin'` or
 `ERR_NETWORK` during login, your backend is rejecting the frontend's origin.
 Edit `backend/.env` and ensure the `FRONTEND_URL` variable lists the exact
-domain of your deployed site without a trailing slash, for example:
+domain of your deployed site without a trailing slash. Include both the
+`www` and non-`www` variants if you use them. For example:
 
 ```bash
-FRONTEND_URL=https://eduskillbridge.net
+FRONTEND_URL=https://eduskillbridge.net,https://www.eduskillbridge.net
 ```
 
 Restart the backend so the updated CORS settings take effect.
