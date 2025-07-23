@@ -7,12 +7,18 @@ module.exports = (err, req, res, next) => {
   const ALLOWED_ORIGINS = origins.split(',').map(o => o.trim().replace(/\/$/, ""));
 
   const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  if (ALLOWED_ORIGINS.includes(origin) && !res.getHeader("Access-Control-Allow-Origin")) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (!res.getHeader("Access-Control-Allow-Credentials")) {
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  if (!res.getHeader("Access-Control-Allow-Methods")) {
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  }
+  if (!res.getHeader("Access-Control-Allow-Headers")) {
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
 
   let status =
     typeof err.statusCode === "number"
