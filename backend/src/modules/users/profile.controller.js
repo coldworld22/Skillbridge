@@ -140,6 +140,7 @@ exports.getFullProfile = async (req, res) => {
         'full_name',
         'email',
         'phone',
+        'role',
         'gender',
         'date_of_birth',
         'avatar_url',
@@ -185,7 +186,12 @@ exports.getFullProfile = async (req, res) => {
       .where({ user_id: userId })
       .select('platform', 'url');
 
-    res.json({ ...user, ...roleData, social_links: socialLinks });
+    res.json({
+      ...user,
+      roles: req.user.roles,
+      ...roleData,
+      social_links: socialLinks,
+    });
   } catch (err) {
     console.error('Full profile fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch profile' });
