@@ -20,17 +20,34 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import {
-  FaUpload, FaTrash, FaSpinner, FaUserCircle, FaVideo,
-  FaLinkedin, FaGithub, FaGlobe, FaTwitter, FaYoutube,
-  FaFacebook, FaInstagram, FaDollarSign, FaCertificate,
-  FaBriefcase, FaCalendarAlt, FaPhone, FaVenusMars, FaUser,
-  FaPlus, FaFilePdf, FaFileImage, FaCheck
+  FaUpload,
+  FaTrash,
+  FaSpinner,
+  FaUserCircle,
+  FaVideo,
+  FaLinkedin,
+  FaGithub,
+  FaGlobe,
+  FaTwitter,
+  FaYoutube,
+  FaFacebook,
+  FaInstagram,
+  FaDollarSign,
+  FaCertificate,
+  FaBriefcase,
+  FaCalendarAlt,
+  FaPhone,
+  FaVenusMars,
+  FaUser,
+  FaPlus,
+  FaFilePdf,
+  FaFileImage,
+  FaCheck,
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z.string().min(8, "Phone number must be at least 8 digits"),
