@@ -42,7 +42,6 @@ const DashboardPage = () => {
     if (role === "admin" || role === "superadmin") router.replace("/dashboard/admin");
     else router.replace(`/dashboard/${role}`);
   }, [user, router]);
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <Navbar />
@@ -53,7 +52,7 @@ const DashboardPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          📊 Student Dashboard
+          📊 {t('student_dashboard_title')}
         </motion.h1>
 
         {/* Enrolled Courses */}
