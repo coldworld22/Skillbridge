@@ -368,10 +368,10 @@ const Navbar = () => {
         {userRole && (
           <Link
             href={
-              userRole === "superadmin" || userRole === "admin"
-                ? "/dashboard/admin"
-                : userRole
-                ? `/dashboard/${userRole}`
+              userRole
+                ? userRole === "superadmin" || userRole === "admin"
+                  ? "/dashboard/admin"
+                  : `/dashboard/${userRole}`
                 : "/dashboard"
             }
             className="flex items-center gap-2 font-semibold hover:underline"
