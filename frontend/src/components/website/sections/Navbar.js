@@ -365,7 +365,6 @@ const Navbar = () => {
           </div>
         )}
 
-        {user && userRole && (
           <Link
             href={
               userRole === "superadmin" || userRole === "admin"
@@ -378,8 +377,6 @@ const Navbar = () => {
           >
             <FaTachometerAlt /> {t('dashboard')}
           </Link>
-        )}
-
         {user ? (
           <>
             <motion.button
