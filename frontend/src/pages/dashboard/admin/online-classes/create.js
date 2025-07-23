@@ -28,6 +28,7 @@ import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
+import { toDateTimeISO } from '@/utils/date';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -229,8 +230,10 @@ function CreateOnlineClass() {
         if (formData.description) payload.append('description', formData.description);
         if (formData.level) payload.append('level', formData.level);
         if (formData.language) payload.append('language', formData.language);
-        if (formData.startDate) payload.append('start_date', formData.startDate);
-        if (formData.endDate) payload.append('end_date', formData.endDate);
+        if (formData.startDate)
+          payload.append('start_date', toDateTimeISO(formData.startDate));
+        if (formData.endDate)
+          payload.append('end_date', toDateTimeISO(formData.endDate));
 
         if (formData.isFree) {
           payload.append('price', '0');
@@ -256,7 +259,7 @@ function CreateOnlineClass() {
             lessonData.append('title', lesson.title);
             if (lesson.duration) lessonData.append('duration', lesson.duration);
             if (lesson.resource) lessonData.append('resource', lesson.resource);
-            lessonData.append('start_time', lesson.start_time);
+            lessonData.append('start_time', toDateTimeISO(lesson.start_time));
             return createClassLesson(newClass.id, lessonData).catch(() => null);
           })
         );
@@ -265,12 +268,12 @@ function CreateOnlineClass() {
           {
             id: `class-${newClass.id}`,
             title: `Class: ${newClass.title}`,
-            start: formData.startDate || newClass.start_date,
+            start: toDateTimeISO(formData.startDate || newClass.start_date),
           },
           ...formData.lessons.map((l, idx) => ({
             id: `lesson-${newClass.id}-${idx}`,
             title: `Lesson: ${l.title}`,
-            start: l.start_time,
+            start: toDateTimeISO(l.start_time),
           })),
         ];
         addEvents(events);
