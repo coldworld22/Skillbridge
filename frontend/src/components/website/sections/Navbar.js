@@ -365,19 +365,18 @@ const Navbar = () => {
           </div>
         )}
 
-        {user && (
           <Link
             href={
               userRole === "superadmin" || userRole === "admin"
                 ? "/dashboard/admin"
-                : `/dashboard/${userRole}`
+                : userRole
+                ? `/dashboard/${userRole}`
+                : "/dashboard"
             }
             className="flex items-center gap-2 font-semibold hover:underline"
           >
             <FaTachometerAlt /> {t('dashboard')}
           </Link>
-        )}
-
         {user ? (
           <>
             <motion.button
