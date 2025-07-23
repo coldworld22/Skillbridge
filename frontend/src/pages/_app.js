@@ -79,6 +79,9 @@ function MyApp({ Component, pageProps, router }) {
       if (targetLang && i18n.language !== targetLang) {
         i18n.changeLanguage(targetLang);
       }
+      if (router.locale && router.locale !== stored) {
+        localStorage.setItem("lng", router.locale);
+      }
     }
   }, [router.locale, i18n]);
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import AIRecommendations from "@/components/dashboard/AIRecommendations";
@@ -31,6 +32,7 @@ const enrolledCourses = allCourses.slice(0, 3); // Mocked enrolled courses
 const recommendedCourses = getRecommendedCourses(enrolledCourses, allCourses);
 
 const DashboardPage = () => {
+  const { t } = useTranslation('dashboard');
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <Navbar />
@@ -41,7 +43,7 @@ const DashboardPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          📊 Student Dashboard
+          📊 {t('student_dashboard_title')}
         </motion.h1>
 
         {/* Enrolled Courses */}
