@@ -38,7 +38,7 @@ module.exports = multer({
   storage,
   fileFilter,
   // Allow larger video uploads for demo videos
-  limits: { fileSize: 250 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 },
 }).fields([
   { name: 'cover_image', maxCount: 1 },
   { name: 'demo_video', maxCount: 1 },
