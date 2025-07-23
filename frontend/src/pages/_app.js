@@ -74,12 +74,16 @@ function MyApp({ Component, pageProps, router }) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const lng = localStorage.getItem("lng");
-      if (lng && i18n.language !== lng) {
-        i18n.changeLanguage(lng);
+      const stored = localStorage.getItem("lng");
+      const targetLang = router.locale || stored;
+      if (targetLang && i18n.language !== targetLang) {
+        i18n.changeLanguage(targetLang);
+      }
+      if (router.locale && router.locale !== stored) {
+        localStorage.setItem("lng", router.locale);
       }
     }
-  }, [i18n]);
+  }, [router.locale, i18n]);
 
   useEffect(() => {
     document.documentElement.dir = currentLang?.direction || 'ltr';
