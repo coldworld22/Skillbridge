@@ -47,11 +47,7 @@ import {
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
-import { API_BASE_URL } from "@/config/config";
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-
-
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z.string().min(8, "Phone number must be at least 8 digits"),
@@ -174,8 +170,12 @@ export default function InstructorProfileEdit() {
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
-          avatarPreview: avatar_url ? `${BASE_URL}${avatar_url}` : null,
-          demoPreview: instructor?.demo_video_url ? `${BASE_URL}${instructor.demo_video_url}` : null,
+          avatarPreview: avatar_url
+            ? `${BASE_URL}${avatar_url}`
+            : null,
+          demoPreview: instructor?.demo_video_url
+            ? `${BASE_URL}${instructor.demo_video_url}`
+            : null,
         }));
       } catch (err) {
         toast.error("Failed to load profile");
@@ -469,7 +469,7 @@ export default function InstructorProfileEdit() {
                       const res = await uploadInstructorDemo(user.id, file);
                       setFormData(prev => ({
                         ...prev,
-                        demoPreview: `${BASE_URL}${res.demo_video_url}`,
+                        demoPreview: `${BASE_URL}${res.demo_video_url}`
                       }));
                     } catch (error) {
                       toast.error("Failed to upload demo video");
