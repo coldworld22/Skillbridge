@@ -28,6 +28,14 @@ If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 
 
 If requests to `/api/*` still return a Next.js 404 page, confirm your reverse proxy forwards the `/api` path to the backend container. The provided `nginx/conf.d` configs use `location ^~ /api/` to proxy to `backend:5002` without rewriting the prefix. Restart nginx after updating the configuration.
 
+After editing the files you can verify that nginx picked up the change by running:
+
+```bash
+sudo nginx -T | grep '/api'
+```
+
+The output should list the `/api` location pointing at the backend. If the block is missing, reload nginx (for example `sudo systemctl reload nginx`) and try the login flow again.
+
 
 
 If the authentication completes but you land on a 404 page, check that the backend's
@@ -41,9 +49,12 @@ request's `Origin` header automatically.
 1. On GitHub open **Settings → Developer settings → OAuth Apps** and create a new OAuth App.
 2. Set the **Authorization callback URL** to:
    ```
-   http://localhost:5000/api/auth/github/callback
+   http://localhost:5002/api/auth/github/callback
    ```
-   Replace `http://localhost:5000` with your backend URL when deployed.
+   Replace `http://localhost:5002` with your backend URL when deployed. For example:
+   ```
+   https://eduskillbridge.net/api/auth/github/callback
+   ```
 3. Enter the generated **Client ID** and **Client Secret** in the admin panel under **Social Login Settings**. These values will be stored in `backend/.env` automatically.
 4. Save the settings and restart the backend so the GitHub strategy is initialized.
 
