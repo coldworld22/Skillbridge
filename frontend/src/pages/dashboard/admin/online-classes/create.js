@@ -762,7 +762,7 @@ import nextI18NextConfig from '../../../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
     },
   };
 }
