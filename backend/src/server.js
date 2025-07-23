@@ -42,10 +42,19 @@ app.use((req, res, next) => {
 // 🌐 CORS must run before body parsing so even 4xx responses include the header
 app.use(
   cors({
-    origin: ALLOWED_ORIGINS,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, origin);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
+
 // Increase body parser limits for large class uploads
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ extended: true, limit: "500mb" }));
