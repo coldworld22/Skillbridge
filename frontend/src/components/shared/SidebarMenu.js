@@ -79,11 +79,13 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
     },
   };
 
+
   const currentDashboard = dashboardConfig[userRole] || {
     href: "/dashboard",
     label: t("dashboard"),
     icon: <FaTachometerAlt />,
   };
+
 
   return (
     <AnimatePresence>
