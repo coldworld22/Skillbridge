@@ -5,15 +5,23 @@
 
 const db = require("../../../config/database");
 
-// ✅ Utility to validate URL (basic)
-const isValidUrl = (url) => {
+// Utility to safely parse JSON fields
+const parseArrayField = (val) => {
+  if (!val) return [];
   try {
-    new URL(url);
-    return true;
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (_) {
-    return false;
+    if (typeof val === "string") {
+      return val
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+    return [];
   }
 };
+
 
 // 🔹 Get full instructor profile (user + instructor + social + certificates)
 const getInstructorProfile = async (userId) => {
@@ -50,6 +58,11 @@ const getInstructorProfile = async (userId) => {
     .where({ user_id: userId })
     .select("id", "title", "file_url", "created_at");
 
+  if (instructor) {
+    instructor.expertise = parseArrayField(instructor.expertise);
+    instructor.availability = parseArrayField(instructor.availability);
+  }
+
   return {
     ...user,
     instructor,
@@ -69,16 +82,22 @@ const updateInstructorProfile = async (userId, userData, instructorData, socialL
 
     // ✅ Upsert instructor profile
     const existing = await trx("instructor_profiles").where({ user_id: userId }).first();
+    const data = {
+      ...instructorData,
+      expertise: instructorData.expertise
+        ? JSON.stringify(instructorData.expertise)
+        : null,
+    };
     if (existing) {
-      await trx("instructor_profiles").where({ user_id: userId }).update(instructorData);
+      await trx("instructor_profiles").where({ user_id: userId }).update(data);
     } else {
-      await trx("instructor_profiles").insert({ user_id: userId, ...instructorData });
+      await trx("instructor_profiles").insert({ user_id: userId, ...data });
     }
 
     // ✅ Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
     for (const link of socialLinks) {
-      if (link.url && isValidUrl(link.url)) {
+      if (link.url) {
         await trx("user_social_links").insert({
           user_id: userId,
           platform: link.platform,
