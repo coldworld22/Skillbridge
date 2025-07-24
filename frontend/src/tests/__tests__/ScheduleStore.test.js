@@ -16,6 +16,9 @@ test('addEvents deduplicates and sorts by start date', () => {
     { id: 'a', title: 'first updated', start: '2025-01-02T00:00:00Z' },
     { id: 'c', title: 'third', start: '2025-01-03T00:00:00Z' },
   ]);
-  const ids = useScheduleStore.getState().events.map((e) => e.id);
-  expect(ids).toEqual(['b', 'a', 'c']);
+
+  const events = useScheduleStore.getState().events;
+  expect(events.map((e) => e.id)).toEqual(['b', 'a', 'c']);
+  expect(events[1].title).toBe('first updated');
+
 });
