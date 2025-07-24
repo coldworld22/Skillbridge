@@ -70,7 +70,7 @@ const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("url_invalid"))
+    .record(z.string())
     .optional(),
 });
 
