@@ -409,7 +409,7 @@ export default function InstructorProfileEdit() {
 
         toast.success(t('profile_update_success'));
       await fetchNotifications();
-      router.push("/dashboard/instructor");
+      router.push("/dashboard/instructor/profile/steps/Verification");
     } catch (err) {
         toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
