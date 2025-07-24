@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
@@ -86,12 +87,13 @@ const Verification = ({ onBack = () => {} }) => {
   // No identity document upload required
 
   return (
-    <motion.div
-      className="p-6 bg-gray-800 text-white rounded-lg shadow-lg"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
+    <InstructorLayout>
+      <motion.div
+        className="p-6 bg-gray-800 text-white rounded-lg shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
     >
       <h2 className="text-2xl font-bold mb-4 text-yellow-500">Verification</h2>
 
@@ -141,6 +143,7 @@ const Verification = ({ onBack = () => {} }) => {
         </button>
       </div>
     </motion.div>
+    </InstructorLayout>
   );
 };
 
