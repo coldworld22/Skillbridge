@@ -467,7 +467,7 @@ export default function InstructorProfileEdit() {
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 100 * 1024 * 1024) return toast.error("Max size 100MB");
+                    if (file.size > 3 * 1024 * 1024) return toast.error("Max size 3MB");
                     setIsSubmitting(true);
                     try {
                       const res = await uploadInstructorDemo(user.id, file);
