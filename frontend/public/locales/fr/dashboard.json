@@ -33,6 +33,7 @@
   "add_lesson_plan": "Add Lesson Plan",
   "class_created": "Class created successfully",
   "class_create_failed": "Failed to create class",
+  "classes_load_failed": "Failed to load classes",
   "student_dashboard_title": "Tableau de bord \u00e9tudiant",
   "continue_lessons": "Continue to Lessons",
   "submit_class": "Submit Class",

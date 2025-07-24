@@ -33,6 +33,7 @@
     "add_lesson_plan": "Lektionsplan hinzufügen",
     "class_created": "Kurs erfolgreich erstellt",
     "class_create_failed": "Fehler beim Erstellen des Kurses",
+    "classes_load_failed": "Fehler beim Laden der Kurse",
     "student_dashboard_title": "Studenten-Dashboard",
     "continue_lessons": "Zu den Lektionen fortfahren",
     "submit_class": "Kurs einreichen",
