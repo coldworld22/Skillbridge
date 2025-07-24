@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaEnvelope, FaPhone, FaTimes } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
@@ -128,6 +128,46 @@ const Verification = ({ onNext, onBack }) => {
           Next <FaArrowRight />
         </button>
       </div>
+
+      {showOtpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-800">
+                Enter {showOtpModal === "email" ? "Email" : "Phone"} OTP
+              </h3>
+              <button onClick={() => setShowOtpModal(null)} className="text-gray-500 hover:text-gray-700">
+                <FaTimes />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={showOtpModal === "email" ? emailOTP : phoneOTP}
+              onChange={(e) =>
+                showOtpModal === "email"
+                  ? setEmailOTP(e.target.value)
+                  : setPhoneOTP(e.target.value)
+              }
+              className="w-full px-3 py-2 border rounded mb-4"
+              placeholder="Enter OTP"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowOtpModal(null)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => verifyOtp(showOtpModal)}
+                className="px-4 py-2 bg-yellow-500 text-gray-900 rounded hover:bg-yellow-600"
+              >
+                Verify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
