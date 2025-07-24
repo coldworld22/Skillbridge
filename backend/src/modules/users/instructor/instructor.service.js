@@ -5,15 +5,6 @@
 
 const db = require("../../../config/database");
 
-// ✅ Utility to validate URL (basic)
-const isValidUrl = (url) => {
-  try {
-    new URL(url);
-    return true;
-  } catch (_) {
-    return false;
-  }
-};
 
 // 🔹 Get full instructor profile (user + instructor + social + certificates)
 const getInstructorProfile = async (userId) => {
@@ -78,7 +69,7 @@ const updateInstructorProfile = async (userId, userData, instructorData, socialL
     // ✅ Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
     for (const link of socialLinks) {
-      if (link.url && isValidUrl(link.url)) {
+      if (link.url) {
         await trx("user_social_links").insert({
           user_id: userId,
           platform: link.platform,
