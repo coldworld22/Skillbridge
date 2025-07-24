@@ -52,25 +52,25 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 const instructorProfileSchema = z.object({
-  full_name: z.string().min(3, "Full name must be at least 3 characters"),
-  phone: z.string().min(8, "Phone number must be at least 8 digits"),
+  full_name: z.string().min(3, "full_name_min"),
+  phone: z.string().min(8, "phone_min"),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: "Invalid date format",
+    message: "invalid_date",
   }),
-  experience: z.number().min(0, "Experience must be a positive number"),
+  experience: z.number().min(0, "experience_positive"),
   availability: z.boolean().optional(),
-  pricing_amount: z.number().min(0, "Amount must be positive").optional(),
+  pricing_amount: z.number().min(0, "amount_positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
   bio: z
     .string()
     .optional()
     .refine((val) => !val || val.split(/\s+/).filter(Boolean).length <= 150, {
-      message: "Bio must be 150 words or fewer",
+      message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("Must be a valid URL"))
+    .record(z.string().url("url_invalid"))
     .optional(),
 });
 
@@ -203,10 +203,10 @@ export default function InstructorProfileEdit() {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach(e => { errs[e.path[0]] = e.message });
+      err.errors.forEach(e => { errs[e.path[0]] = t(e.message); });
       setErrors(errs);
       if (err.errors?.length) {
-        toast.error(err.errors[0].message);
+        toast.error(t(err.errors[0].message));
       } else {
           toast.error(t('fix_errors'));
       }
