@@ -182,7 +182,7 @@ export default function InstructorProfileEdit() {
             : null,
         }));
       } catch (err) {
-        toast.error("Failed to load profile");
+        toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       }
     };
@@ -208,7 +208,7 @@ export default function InstructorProfileEdit() {
       if (err.errors?.length) {
         toast.error(err.errors[0].message);
       } else {
-        toast.error("Please fix the errors in the form");
+          toast.error(t('fix_errors'));
       }
       return false;
     }
@@ -216,7 +216,7 @@ export default function InstructorProfileEdit() {
 
   const handleCertificateUpload = async () => {
     if (!newCertificate.title || !newCertificate.file) {
-      toast.error("Please provide a title and select a file");
+      toast.error(t('provide_title_and_file'));
       return;
     }
 
@@ -238,9 +238,9 @@ export default function InstructorProfileEdit() {
       }));
 
       setNewCertificate({ title: "", file: null, preview: null });
-      toast.success("Certificate uploaded successfully!");
+        toast.success(t('certificate_upload_success'));
     } catch (error) {
-      toast.error("Failed to upload certificate");
+        toast.error(t('certificate_upload_failed'));
       console.error("Certificate upload error:", error);
     } finally {
       setCertificateUploading(false);
@@ -254,9 +254,9 @@ export default function InstructorProfileEdit() {
         ...prev,
         certificates: prev.certificates.filter(cert => cert.id !== certificateId)
       }));
-      toast.success("Certificate removed successfully");
+        toast.success(t('certificate_removed'));
     } catch (error) {
-      toast.error("Failed to remove certificate");
+        toast.error(t('certificate_remove_failed'));
       console.error("Certificate removal error:", error);
     }
   };
@@ -268,7 +268,7 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error("Max size 2MB");
+    if (file.size > 2 * 1024 * 1024) return toast.error(t('avatar_max_size'));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
     setShowCropper(true);
@@ -293,7 +293,7 @@ export default function InstructorProfileEdit() {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      toast.error("Failed to upload avatar");
+        toast.error(t('avatar_upload_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -363,11 +363,11 @@ export default function InstructorProfileEdit() {
         }, {}),
       }));
 
-      toast.success("Profile updated successfully!");
+        toast.success(t('profile_update_success'));
       await fetchNotifications();
       router.push("/dashboard/instructor");
     } catch (err) {
-      toast.error(err.message || "Failed to update profile");
+        toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
@@ -467,7 +467,7 @@ export default function InstructorProfileEdit() {
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 100 * 1024 * 1024) return toast.error("Max size 100MB");
+                    if (file.size > 3 * 1024 * 1024) return toast.error(t('demo_max_size'));
                     setIsSubmitting(true);
                     try {
                       const res = await uploadInstructorDemo(user.id, file);
@@ -476,7 +476,7 @@ export default function InstructorProfileEdit() {
                         demoPreview: `${BASE_URL}${res.demo_video_url}`
                       }));
                     } catch (error) {
-                      toast.error("Failed to upload demo video");
+                      toast.error(t('demo_upload_failed'));
                     } finally {
                       setIsSubmitting(false);
                     }
