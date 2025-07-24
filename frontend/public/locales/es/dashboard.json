@@ -33,6 +33,7 @@
   "add_lesson_plan": "Agregar plan de lección",
   "class_created": "Clase creada exitosamente",
   "class_create_failed": "No se pudo crear la clase",
+  "classes_load_failed": "Error al cargar las clases",
   "student_dashboard_title": "Panel del estudiante",
   "continue_lessons": "Continuar a lecciones",
   "submit_class": "Enviar clase",
