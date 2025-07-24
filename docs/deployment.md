@@ -140,6 +140,9 @@ FRONTEND_URL=https://eduskillbridge.net,https://www.eduskillbridge.net
 
 Restart the backend so the updated CORS settings take effect.
 If CORS errors occur when requesting a password reset, ensure the FRONTEND_URL contains your frontend's domain. The API only sends CORS headers for domains listed there.
+If you use Nginx or another reverse proxy, ensure it does **not** add its own
+`Access-Control-Allow-Origin` header. Duplicates will cause browsers to reject
+the response even if both values are identical.
 
 ### Home page shows "Failed to load tutorials" or "Failed to load categories"
 
