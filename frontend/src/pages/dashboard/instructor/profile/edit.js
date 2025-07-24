@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { API_BASE_URL } from "@/config/config";
@@ -67,7 +70,7 @@ const instructorProfileSchema = z.object({
       message: "Bio must be 150 words or fewer",
     }),
   socialLinks: z
-    .record(z.union([z.literal(""), z.string().url("Must be a valid URL")]))
+    .record(z.string().url("Must be a valid URL"))
     .optional(),
 });
 
@@ -92,6 +95,7 @@ const currencyOptions = [
 
 export default function InstructorProfileEdit() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorProfilePage' });
   const { user, hasHydrated } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
@@ -189,11 +193,11 @@ export default function InstructorProfileEdit() {
   const validateForm = () => {
     try {
       const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks).filter(([, url]) => url.trim() !== "")
+        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
       );
       instructorProfileSchema.parse({
         ...formData,
-        socialLinks: sanitizedLinks,
+        socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
       setErrors({});
       return true;
@@ -382,14 +386,14 @@ export default function InstructorProfileEdit() {
     <InstructorLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Edit Instructor Profile</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">{t('title')}</h1>
         </div>
 
         {/* Avatar and Demo Upload Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaUserCircle className="text-yellow-600" /> Profile Picture
+              <FaUserCircle className="text-yellow-600" /> {t('profile_picture')}
             </h2>
             <div className="flex flex-col items-center">
               {formData.avatarPreview ? (
@@ -425,7 +429,7 @@ export default function InstructorProfileEdit() {
                   ) : (
                     <FaUpload />
                   )}
-                  {formData.avatarPreview ? "Change Photo" : "Upload Photo"}
+                  {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
             </div>
@@ -433,7 +437,7 @@ export default function InstructorProfileEdit() {
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaVideo className="text-purple-600" /> Demo Video
+              <FaVideo className="text-purple-600" /> {t('demo_video')}
             </h2>
             <div className="flex flex-col items-center">
               {formData.demoPreview ? (
@@ -453,7 +457,7 @@ export default function InstructorProfileEdit() {
               ) : (
                 <div className="w-full h-40 bg-gray-100 flex flex-col items-center justify-center rounded-lg mb-4 border-2 border-dashed border-gray-300">
                   <FaVideo className="text-3xl text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">Upload a demo video</p>
+                  <p className="text-sm text-gray-500">{t('upload_video')}</p>
                 </div>
               )}
               <label className="cursor-pointer">
@@ -485,7 +489,7 @@ export default function InstructorProfileEdit() {
                   ) : (
                     <FaUpload />
                   )}
-                  {formData.demoPreview ? "Change Video" : "Upload Video"}
+                  {formData.demoPreview ? t('change_video') : t('upload_video')}
                 </div>
               </label>
             </div>
@@ -495,13 +499,13 @@ export default function InstructorProfileEdit() {
         {/* Personal and Professional Info */}
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
           <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
-            Personal Information
+            {t('personal_information')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaUser className="text-gray-500" /> Full Name *
+                <FaUser className="text-gray-500" /> {t('full_name')} *
               </label>
               <input
                 name="full_name"
@@ -514,7 +518,7 @@ export default function InstructorProfileEdit() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaPhone className="text-gray-500" /> Phone *
+                <FaPhone className="text-gray-500" /> {t('phone')} *
               </label>
               <input
                 name="phone"
@@ -530,7 +534,7 @@ export default function InstructorProfileEdit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaVenusMars className="text-gray-500" /> Gender *
+                <FaVenusMars className="text-gray-500" /> {t('gender')} *
               </label>
               <select
                 name="gender"
@@ -538,15 +542,15 @@ export default function InstructorProfileEdit() {
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
               >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="prefer-not-to-say">Prefer not to say</option>
+                <option value="male">{t('male')}</option>
+                <option value="female">{t('female')}</option>
+                <option value="other">{t('other')}</option>
+                <option value="prefer-not-to-say">{t('prefer_not_to_say')}</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaCalendarAlt className="text-gray-500" /> Date of Birth *
+                <FaCalendarAlt className="text-gray-500" /> {t('date_of_birth')} *
               </label>
               <input
                 type="date"
@@ -560,7 +564,7 @@ export default function InstructorProfileEdit() {
       </div>
 
       <div className="mt-6">
-        <label className="block text-sm font-medium mb-1">Bio (max 150 words)</label>
+        <label className="block text-sm font-medium mb-1">{t('bio_max')}</label>
         <textarea
           name="bio"
           value={formData.bio}
@@ -572,13 +576,13 @@ export default function InstructorProfileEdit() {
       </div>
 
       <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mt-8">
-        Professional Information
+        {t('professional_information')}
       </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <MdOutlineWorkOutline className="text-gray-500" /> Years of Experience *
+                <MdOutlineWorkOutline className="text-gray-500" /> {t('years_of_experience')} *
               </label>
               <input
                 type="number"
@@ -592,14 +596,14 @@ export default function InstructorProfileEdit() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaCalendarAlt className="text-gray-500" /> Availability
+                <FaCalendarAlt className="text-gray-500" /> {t('availability')}
               </label>
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, availability: !prev.availability }))}
                 className={`px-4 py-2 rounded-md ${formData.availability ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                {formData.availability ? 'Available' : 'Unavailable'}
+                {formData.availability ? t('available') : t('unavailable')}
               </button>
             </div>
           </div>
@@ -607,7 +611,7 @@ export default function InstructorProfileEdit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                <FaDollarSign className="text-gray-500" /> Pricing (per hour)
+                <FaDollarSign className="text-gray-500" /> {t('pricing_per_hour')}
               </label>
               <div className="flex gap-2">
                 <input
@@ -624,7 +628,7 @@ export default function InstructorProfileEdit() {
                     })
                   }
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  placeholder="Amount (e.g., 100)"
+                  placeholder={t('amount_placeholder')}
                 />
                 <select
                   name="pricing_currency"
@@ -644,7 +648,7 @@ export default function InstructorProfileEdit() {
           {/* Expertise List */}
           <div>
             <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-              <FaBriefcase className="text-gray-500" /> Expertise
+              <FaBriefcase className="text-gray-500" /> {t('expertise')}
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {formData.expertise.map((tag, i) => (
@@ -677,7 +681,7 @@ export default function InstructorProfileEdit() {
                     setNewExpertise("");
                   }
                 }}
-                placeholder="Add new expertise (e.g. Yoga, Fitness, Nutrition)"
+                placeholder={t('add_expertise_placeholder')}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
               />
               <button
@@ -692,7 +696,7 @@ export default function InstructorProfileEdit() {
                 }}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 flex items-center gap-2"
               >
-                <FaPlus size={14} /> Add
+                <FaPlus size={14} /> {t('add')}
               </button>
             </div>
           </div>
@@ -700,7 +704,7 @@ export default function InstructorProfileEdit() {
           {/* Certificates Section */}
           <div>
             <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-              <FaCertificate className="text-gray-500" /> Certificates
+              <FaCertificate className="text-gray-500" /> {t('certificates')}
             </label>
 
             {/* Existing Certificates */}
@@ -721,7 +725,7 @@ export default function InstructorProfileEdit() {
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
                       >
-                        View Certificate
+                        {t('view_certificate')}
                       </a>
                     </div>
                   </div>
@@ -738,12 +742,12 @@ export default function InstructorProfileEdit() {
             {/* Add New Certificate */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
               <h4 className="font-medium mb-3 flex items-center gap-2">
-                <FaPlus className="text-gray-500" /> Add New Certificate
+                <FaPlus className="text-gray-500" /> {t('add_new_certificate')}
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Certificate Title *</label>
+                  <label className="block text-sm font-medium mb-1">{t('certificate_title')} *</label>
                   <input
                     type="text"
                     value={newCertificate.title}
@@ -754,7 +758,7 @@ export default function InstructorProfileEdit() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Certificate File *</label>
+                  <label className="block text-sm font-medium mb-1">{t('certificate_file')} *</label>
                   <label className="cursor-pointer">
                     <input
                       type="file"
@@ -779,7 +783,7 @@ export default function InstructorProfileEdit() {
                     />
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-md flex items-center justify-between">
                       <span className="truncate">
-                        {newCertificate.file ? newCertificate.file.name : "Choose file (PDF or Image)"}
+                        {newCertificate.file ? newCertificate.file.name : t('choose_file')}
                       </span>
                       <FaUpload className="text-gray-500" />
                     </div>
@@ -790,7 +794,7 @@ export default function InstructorProfileEdit() {
               {/* Preview for image certificates */}
               {newCertificate.preview && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium mb-1">Preview</label>
+                  <label className="block text-sm font-medium mb-1">{t('preview')}</label>
                   <img
                     src={newCertificate.preview}
                     alt="Certificate preview"
@@ -809,14 +813,14 @@ export default function InstructorProfileEdit() {
                 ) : (
                   <FaUpload />
                 )}
-                Upload Certificate
+                {t('upload_certificate')}
               </button>
             </div>
           </div>
 
           {/* Social Links */}
           <div>
-            <label className="block text-sm font-medium mb-2">Social Links</label>
+            <label className="block text-sm font-medium mb-2">{t('social_links')}</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {socialPlatforms.map((platform) => (
                 <div key={platform.name} className="bg-gray-50 p-3 rounded-lg">
@@ -848,10 +852,10 @@ export default function InstructorProfileEdit() {
             >
               {isSubmitting ? (
                 <>
-                  <FaSpinner className="animate-spin" /> Saving...
+                  <FaSpinner className="animate-spin" /> {t('upload') + '...'}
                 </>
               ) : (
-                "Save Changes"
+                t('save_changes')
               )}
             </button>
           </div>
@@ -880,14 +884,14 @@ export default function InstructorProfileEdit() {
                 }}
                 className="px-4 py-2 bg-gray-200 rounded"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
                 {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                Upload
+                {t('upload')}
               </button>
             </div>
           </div>
@@ -895,4 +899,12 @@ export default function InstructorProfileEdit() {
       )}
     </InstructorLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
