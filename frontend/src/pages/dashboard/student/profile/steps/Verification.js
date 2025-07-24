@@ -41,9 +41,8 @@ const Verification = ({ prevStep = () => {} }) => {
         toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
         return;
       }
-      const { code } = res;
       setOtpSent((prev) => ({ ...prev, [type]: true }));
-      toast.success(`OTP sent: ${code}`);
+      toast.success("OTP sent");
     } catch (err) {
       toast.error("Failed to send OTP");
     }

@@ -31,7 +31,6 @@ const updateInstructorProfileSchema = z.object({
 
   demo_video_url: z
     .string()
-    .url("Must be a valid URL")
     .optional()
     .nullable(),
 
@@ -39,7 +38,7 @@ const updateInstructorProfileSchema = z.object({
     .array(
       z.object({
         platform: z.string().min(2),
-        url: z.string().url("Must be a valid URL"),
+        url: z.string(),
       })
     )
     .optional()
