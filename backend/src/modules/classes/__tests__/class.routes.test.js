@@ -13,7 +13,9 @@ jest.mock('../../../config/database', () => {
 jest.mock('../class.service', () => ({
   createClass: jest.fn(),
   getAllClasses: jest.fn(),
-  getClassesByInstructor: jest.fn()
+  getClassesByInstructor: jest.fn(),
+  togglePublishStatus: jest.fn(),
+  updateModeration: jest.fn()
 }));
 const service = require('../class.service');
 jest.mock('../../notifications/notifications.service', () => ({
@@ -106,5 +108,23 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(list);
     expect(service.getClassesByInstructor).toHaveBeenCalled();
+  });
+
+  test('toggle class status', async () => {
+    const updated = { id: '1', status: 'published', moderation_status: 'Pending' };
+    service.togglePublishStatus.mockResolvedValue(updated);
+    const res = await request(app).patch('/classes/admin/1/status');
+    expect(res.statusCode).toBe(200);
+    expect(service.togglePublishStatus).toHaveBeenCalledWith('1');
+    expect(res.body.data).toEqual(updated);
+  });
+
+  test('approve class', async () => {
+    const approved = { id: '1', status: 'published', moderation_status: 'Approved' };
+    service.updateModeration.mockResolvedValue(approved);
+    const res = await request(app).patch('/classes/admin/1/approve');
+    expect(res.statusCode).toBe(200);
+    expect(service.updateModeration).toHaveBeenCalledWith('1', 'Approved');
+    expect(res.body.data).toEqual(approved);
   });
 });
