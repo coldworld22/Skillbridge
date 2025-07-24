@@ -254,3 +254,132 @@ exports.sendNewUserAdminEmail = async (to, user) => {
     console.error("Error sending admin new user email: ", error);
   }
 };
+
+// Notify instructor when a lesson is scheduled
+exports.sendLessonScheduledEmail = async (
+  to,
+  lessonTitle,
+  dateTime,
+  classTitle
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Lesson scheduled notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const formatted = new Date(dateTime).toLocaleString("en-US", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Lesson scheduled for ${classTitle}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>A new lesson <strong>${lessonTitle}</strong> for your class <strong>${classTitle}</strong> has been scheduled.</p>
+        <p><strong>Date & Time:</strong> ${formatted}</p>
+        <p>We will remind you 24 hours before it begins.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Lesson scheduled notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending lesson scheduled email: ", error);
+  }
+};
+
+// Reminder email 24h before a lesson starts
+exports.sendLessonReminderEmail = async (
+  to,
+  lessonTitle,
+  dateTime,
+  classTitle
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Lesson reminder for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const formatted = new Date(dateTime).toLocaleString("en-US", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Upcoming lesson reminder for ${classTitle}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>This is a reminder that your lesson <strong>${lessonTitle}</strong> for the class <strong>${classTitle}</strong> is scheduled to begin in 24 hours.</p>
+        <p><strong>Start Time:</strong> ${formatted}</p>
+
+        <p>Please be prepared and ensure all materials are ready.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Lesson reminder sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending lesson reminder email: ", error);
+  }
+};

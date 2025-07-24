@@ -24,6 +24,20 @@ jest.mock('../../class.service', () => ({
 }));
 const classService = require('../../class.service');
 
+jest.mock('../../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(() => Promise.resolve({})),
+}));
+jest.mock('../../../messages/messages.service', () => ({
+  createMessage: jest.fn(() => Promise.resolve({})),
+}));
+jest.mock('../../../users/user.model', () => ({
+  findAdmins: jest.fn(() => [{ id: 'admin1' }]),
+  findById: jest.fn(() => ({ id: 'instr1', email: 'i@test.com' })),
+}));
+jest.mock('../../../../utils/email', () => ({
+  sendLessonScheduledEmail: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'test-user' };
