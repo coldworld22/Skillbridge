@@ -173,7 +173,14 @@
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
     "demo_max_size": "Max size 3MB",
-    "demo_upload_failed": "Failed to upload demo video"
+    "demo_upload_failed": "Failed to upload demo video",
+    "full_name_min": "Full name must be at least 3 characters",
+    "phone_min": "Phone number must be at least 8 digits",
+    "invalid_date": "Invalid date format",
+    "experience_positive": "Experience must be a positive number",
+    "amount_positive": "Amount must be positive",
+    "bio_max_words": "Bio must be 150 words or fewer",
+    "url_invalid": "Must be a valid URL"
   },
   "sidebar": {
     "Account": "Account",
