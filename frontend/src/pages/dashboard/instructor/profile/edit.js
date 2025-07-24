@@ -9,6 +9,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { API_BASE_URL } from "@/config/config";
+import { getCurrencies } from "@/services/currencyService";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -70,7 +71,7 @@ const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("url_invalid"))
+    .record(z.string())
     .optional(),
 });
 
@@ -84,14 +85,7 @@ const socialPlatforms = [
   { name: "website", icon: <FaGlobe className="text-green-600" /> },
 ];
 
-const currencyOptions = [
-  { value: "USD", label: "US Dollar ($)" },
-  { value: "EUR", label: "Euro (€)" },
-  { value: "GBP", label: "British Pound (£)" },
-  { value: "JPY", label: "Japanese Yen (¥)" },
-  { value: "CAD", label: "Canadian Dollar (C$)" },
-  { value: "AUD", label: "Australian Dollar (A$)" },
-];
+// Currency options will be loaded from the backend configuration
 
 export default function InstructorProfileEdit() {
   const router = useRouter();
@@ -107,7 +101,7 @@ export default function InstructorProfileEdit() {
     experience: 0,
     availability: false,
     pricing_amount: undefined,
-    pricing_currency: "USD",
+    pricing_currency: "",
     expertise: [],
     bio: "",
     socialLinks: {},
@@ -132,6 +126,26 @@ export default function InstructorProfileEdit() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
+  const [currencyOptions, setCurrencyOptions] = useState([]);
+
+  useEffect(() => {
+    const loadCurrencies = async () => {
+      try {
+        const list = await getCurrencies();
+        setCurrencyOptions(list);
+        const def = list.find((c) => c.is_default) || list[0];
+        if (def) {
+          setFormData((prev) => ({
+            ...prev,
+            pricing_currency: prev.pricing_currency || def.code,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load currencies", err);
+      }
+    };
+    loadCurrencies();
+  }, []);
 
   useEffect(() => {
     if (!user || user.role?.toLowerCase() !== "instructor") return;
@@ -148,17 +162,31 @@ export default function InstructorProfileEdit() {
 
         // Split pricing if it exists in format "100 USD"
         let pricing_amount;
-        let pricing_currency = "USD";
+        let pricing_currency = "";
         if (instructor?.pricing) {
           const pricingParts = instructor.pricing.split(" ");
           if (pricingParts.length === 2) {
             const amount = parseFloat(pricingParts[0]);
             pricing_amount = isNaN(amount) ? undefined : amount;
-            pricing_currency = pricingParts[1] || "USD";
+            pricing_currency = pricingParts[1] || "";
           }
         }
 
         const availability = instructor?.availability === "available";
+
+        let expertiseList = [];
+        if (Array.isArray(instructor?.expertise)) {
+          expertiseList = instructor.expertise;
+        } else if (typeof instructor?.expertise === "string") {
+          try {
+            expertiseList = JSON.parse(instructor.expertise);
+          } catch (_) {
+            expertiseList = instructor.expertise
+              .split(',')
+              .map((e) => e.trim())
+              .filter(Boolean);
+          }
+        }
 
         setFormData(prev => ({
           ...prev,
@@ -170,7 +198,7 @@ export default function InstructorProfileEdit() {
           availability,
           pricing_amount,
           pricing_currency,
-          expertise: instructor?.expertise || [],
+          expertise: expertiseList,
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
@@ -342,9 +370,25 @@ export default function InstructorProfileEdit() {
       });
 
       // Reflect updates locally
+      let freshExpertise = [];
+      if (Array.isArray(fresh.instructor?.expertise)) {
+        freshExpertise = fresh.instructor.expertise;
+      } else if (typeof fresh.instructor?.expertise === "string") {
+        try {
+          freshExpertise = JSON.parse(fresh.instructor.expertise);
+        } catch (_) {
+          freshExpertise = fresh.instructor.expertise
+            .split(',')
+            .map((e) => e.trim())
+            .filter(Boolean);
+        }
+      }
+
+      const defCur = currencyOptions.find((c) => c.is_default) || currencyOptions[0];
+
       setFormData((prev) => ({
         ...prev,
-        expertise: fresh.instructor?.expertise || [],
+        expertise: freshExpertise,
         experience: fresh.instructor?.experience || 0,
         bio: fresh.instructor?.bio || "",
         availability: fresh.instructor?.availability === "available",
@@ -356,7 +400,7 @@ export default function InstructorProfileEdit() {
           : undefined,
         pricing_currency: fresh.instructor?.pricing
           ? fresh.instructor.pricing.split(" ")[1]
-          : "USD",
+          : defCur?.code || "",
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
           acc[cur.platform] = cur.url;
           return acc;
@@ -365,7 +409,7 @@ export default function InstructorProfileEdit() {
 
         toast.success(t('profile_update_success'));
       await fetchNotifications();
-      router.push("/dashboard/instructor");
+      router.push("/dashboard/instructor/profile/steps/Verification");
     } catch (err) {
         toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
@@ -636,8 +680,10 @@ export default function InstructorProfileEdit() {
                   onChange={(e) => setFormData({ ...formData, pricing_currency: e.target.value })}
                   className="w-32 px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                 >
-                  {currencyOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                  {currencyOptions.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label} {option.symbol ? `(${option.symbol})` : ""}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -828,7 +874,7 @@ export default function InstructorProfileEdit() {
                     {platform.icon} {platform.name.charAt(0).toUpperCase() + platform.name.slice(1)}
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     name={platform.name}
                     value={formData.socialLinks[platform.name] || ""}
                     onChange={(e) => setFormData(prev => ({
