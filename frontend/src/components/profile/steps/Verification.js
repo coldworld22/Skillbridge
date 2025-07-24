@@ -28,10 +28,9 @@ const Verification = ({ onNext, onBack }) => {
         toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
         return;
       }
-      const { code } = res;
       setOtpSent((prev) => ({ ...prev, [type]: true }));
       setShowOtpModal(type);
-      toast.success(`OTP sent: ${code}`);
+      toast.success("OTP sent");
     } catch (err) {
       toast.error("Failed to send OTP");
     }
@@ -73,7 +72,7 @@ const Verification = ({ onNext, onBack }) => {
 
   return (
     <motion.div
-      className="p-6 bg-gray-800 text-white rounded-lg shadow-lg"
+      className="p-6 bg-white text-gray-800 rounded-3xl shadow-xl border border-gray-200"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -82,7 +81,7 @@ const Verification = ({ onNext, onBack }) => {
       <h2 className="text-2xl font-bold mb-4 text-yellow-500">Verification</h2>
 
       {/* ✅ Email Verification Section */}
-      <div className="mb-4 flex items-center gap-3 bg-gray-700 p-3 rounded-lg">
+      <div className="mb-4 flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
         <FaEnvelope className="text-yellow-400 text-lg" />
         <span>Email Verification:</span>
         {emailVerified ? (
@@ -101,7 +100,7 @@ const Verification = ({ onNext, onBack }) => {
       </div>
 
       {/* ✅ Phone Verification Section */}
-      <div className="mb-4 flex items-center gap-3 bg-gray-700 p-3 rounded-lg">
+      <div className="mb-4 flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
         <FaPhone className="text-yellow-400 text-lg" />
         <span>Phone Verification:</span>
         {phoneVerified ? (
@@ -122,7 +121,7 @@ const Verification = ({ onNext, onBack }) => {
 
       {/* ✅ Navigation Buttons */}
       <div className="flex justify-between mt-6">
-        <button className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2" onClick={onBack}>
+        <button className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center gap-2" onClick={onBack}>
           <FaArrowLeft /> Back
         </button>
         <button className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition flex items-center gap-2" onClick={onNext} disabled={!emailVerified || !phoneVerified}>

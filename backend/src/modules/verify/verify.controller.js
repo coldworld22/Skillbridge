@@ -5,7 +5,7 @@ exports.sendEmailOtp = async (req, res) => {
   if (result.alreadyVerified) {
     res.json({ message: "Email already verified", verified: true });
   } else {
-    res.json({ message: "Email OTP sent", code: result.code });
+    res.json({ message: "Email OTP sent" });
   }
 };
 
@@ -14,7 +14,7 @@ exports.sendPhoneOtp = async (req, res) => {
   if (result.alreadyVerified) {
     res.json({ message: "Phone already verified", verified: true });
   } else {
-    res.json({ message: "Phone OTP sent", code: result.code });
+    res.json({ message: "Phone OTP sent" });
   }
 };
 
