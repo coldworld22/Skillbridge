@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import {
   sendEmailOtp,
@@ -41,10 +42,9 @@ const Verification = ({ onBack = () => {} }) => {
         toast.info(`${type === "email" ? "Email" : "Phone"} already verified`);
         return;
       }
-      const { code } = res;
       setOtpSent((prev) => ({ ...prev, [type]: true }));
       setShowOtpModal(type);
-      toast.success(`OTP sent: ${code}`);
+      toast.success("OTP sent");
     } catch (err) {
       toast.error("Failed to send OTP");
     }
@@ -86,17 +86,18 @@ const Verification = ({ onBack = () => {} }) => {
   // No identity document upload required
 
   return (
-    <motion.div
-      className="p-6 bg-gray-800 text-white rounded-lg shadow-lg"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
-    >
+    <InstructorLayout>
+      <motion.div
+        className="p-6 bg-white text-gray-800 rounded-3xl shadow-xl border border-gray-200"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+      >
       <h2 className="text-2xl font-bold mb-4 text-yellow-500">Verification</h2>
 
       {/* ✅ Email Verification Section */}
-      <div className="mb-4 flex items-center gap-3 bg-gray-700 p-3 rounded-lg">
+      <div className="mb-4 flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
         <FaEnvelope className="text-yellow-400 text-lg" />
         <span>Email Verification:</span>
         {emailVerified ? (
@@ -115,7 +116,7 @@ const Verification = ({ onBack = () => {} }) => {
       </div>
 
       {/* ✅ Phone Verification Section */}
-      <div className="mb-4 flex items-center gap-3 bg-gray-700 p-3 rounded-lg">
+      <div className="mb-4 flex items-center gap-3 bg-gray-100 p-3 rounded-lg border border-gray-200">
         <FaPhone className="text-yellow-400 text-lg" />
         <span>Phone Verification:</span>
         {phoneVerified ? (
@@ -136,11 +137,12 @@ const Verification = ({ onBack = () => {} }) => {
 
       {/* Navigation */}
       <div className="flex justify-start mt-6">
-        <button className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2" onClick={onBack}>
+        <button className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center gap-2" onClick={onBack}>
           <FaArrowLeft /> Back
         </button>
       </div>
     </motion.div>
+    </InstructorLayout>
   );
 };
 
