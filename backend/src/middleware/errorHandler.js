@@ -2,23 +2,11 @@
 const multer = require('multer');
 
 module.exports = (err, req, res, next) => {
-  let origins = process.env.FRONTEND_URL || "http://localhost:3000";
-  if (origins.startsWith("FRONTEND_URL=")) origins = origins.replace(/^FRONTEND_URL=/, "");
-  const ALLOWED_ORIGINS = origins.split(',').map(o => o.trim().replace(/\/$/, ""));
-
-  const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.includes(origin) && !res.getHeader("Access-Control-Allow-Origin")) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  if (!res.getHeader("Access-Control-Allow-Credentials")) {
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  if (!res.getHeader("Access-Control-Allow-Methods")) {
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  }
-  if (!res.getHeader("Access-Control-Allow-Headers")) {
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  }
+  // The CORS middleware defined in `src/server.js` already sets
+  // all necessary CORS headers.  Adding them here can result in
+  // duplicate `Access-Control-Allow-Origin` values which cause
+  // browsers to reject the response.  This error handler simply
+  // formats the error response without modifying CORS headers.
 
   let status =
     typeof err.statusCode === "number"
