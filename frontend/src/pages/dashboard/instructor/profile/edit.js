@@ -174,6 +174,20 @@ export default function InstructorProfileEdit() {
 
         const availability = instructor?.availability === "available";
 
+        let expertiseList = [];
+        if (Array.isArray(instructor?.expertise)) {
+          expertiseList = instructor.expertise;
+        } else if (typeof instructor?.expertise === "string") {
+          try {
+            expertiseList = JSON.parse(instructor.expertise);
+          } catch (_) {
+            expertiseList = instructor.expertise
+              .split(',')
+              .map((e) => e.trim())
+              .filter(Boolean);
+          }
+        }
+
         setFormData(prev => ({
           ...prev,
           full_name,
@@ -184,7 +198,7 @@ export default function InstructorProfileEdit() {
           availability,
           pricing_amount,
           pricing_currency,
-          expertise: instructor?.expertise || [],
+          expertise: expertiseList,
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
@@ -356,9 +370,25 @@ export default function InstructorProfileEdit() {
       });
 
       // Reflect updates locally
+      let freshExpertise = [];
+      if (Array.isArray(fresh.instructor?.expertise)) {
+        freshExpertise = fresh.instructor.expertise;
+      } else if (typeof fresh.instructor?.expertise === "string") {
+        try {
+          freshExpertise = JSON.parse(fresh.instructor.expertise);
+        } catch (_) {
+          freshExpertise = fresh.instructor.expertise
+            .split(',')
+            .map((e) => e.trim())
+            .filter(Boolean);
+        }
+      }
+
+      const defCur = currencyOptions.find((c) => c.is_default) || currencyOptions[0];
+
       setFormData((prev) => ({
         ...prev,
-        expertise: fresh.instructor?.expertise || [],
+        expertise: freshExpertise,
         experience: fresh.instructor?.experience || 0,
         bio: fresh.instructor?.bio || "",
         availability: fresh.instructor?.availability === "available",
@@ -370,7 +400,7 @@ export default function InstructorProfileEdit() {
           : undefined,
         pricing_currency: fresh.instructor?.pricing
           ? fresh.instructor.pricing.split(" ")[1]
-          : "USD",
+          : defCur?.code || "",
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
           acc[cur.platform] = cur.url;
           return acc;
