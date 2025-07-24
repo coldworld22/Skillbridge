@@ -67,6 +67,29 @@ describe('Class routes', () => {
     expect(notifications.createNotification).toHaveBeenCalledTimes(2);
   });
 
+  test('create class with options', async () => {
+    const payload = {
+      id: '2',
+      instructor_id: '2',
+      title: 'Free Class',
+      status: 'published',
+      price: 0,
+      allow_installments: true
+    };
+    service.createClass.mockResolvedValue(payload);
+    const res = await request(app)
+      .post('/classes/admin')
+      .send(payload);
+    expect(res.statusCode).toBe(200);
+    expect(service.createClass).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'published',
+        price: 0,
+        allow_installments: true
+      })
+    );
+  });
+
   test('get classes', async () => {
     const list = [{ id: '1', instructor_id: '2', title: 'Test Class' }];
     service.getAllClasses.mockResolvedValue(list);
