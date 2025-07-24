@@ -4,7 +4,6 @@
  */
 
 const db = require("../../../config/database");
-
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];
