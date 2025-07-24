@@ -160,7 +160,20 @@
     "social_links": "Soziale Links",
     "save_changes": "Änderungen speichern",
     "cancel": "Abbrechen",
-    "upload": "Hochladen"
+    "upload": "Hochladen",
+    "load_profile_failed": "Profil konnte nicht geladen werden",
+    "fix_errors": "Bitte behebe die Fehler im Formular",
+    "provide_title_and_file": "Bitte gib einen Titel an und wähle eine Datei aus",
+    "certificate_upload_success": "Zertifikat erfolgreich hochgeladen!",
+    "certificate_upload_failed": "Fehler beim Hochladen des Zertifikats",
+    "certificate_removed": "Zertifikat erfolgreich entfernt",
+    "certificate_remove_failed": "Fehler beim Entfernen des Zertifikats",
+    "avatar_max_size": "Maximalgröße 2MB",
+    "avatar_upload_failed": "Fehler beim Hochladen des Bildes",
+    "profile_update_success": "Profil erfolgreich aktualisiert!",
+    "profile_update_failed": "Fehler beim Aktualisieren des Profils",
+    "demo_max_size": "Maximalgröße 3MB",
+    "demo_upload_failed": "Fehler beim Hochladen des Demo-Videos"
   },
   "sidebar": {
       "Account": "Konto",
