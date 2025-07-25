@@ -1,7 +1,21 @@
 const db = require("../../config/database");
 
+// Convert comma separated or JSON strings to arrays
+const parseArrayField = (val) => {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return String(val)
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+};
+
 exports.getPublicInstructors = async () => {
-  return db("users")
+  const rows = await db("users")
     .join("instructor_profiles", "users.id", "instructor_profiles.user_id")
     .whereRaw("LOWER(users.role) = ?", ["instructor"])
     .andWhere({ "users.status": "active" })
@@ -17,10 +31,12 @@ exports.getPublicInstructors = async () => {
       "instructor_profiles.demo_video_url"
     )
     .orderBy("users.created_at", "desc");
+
+  return rows.map((r) => ({ ...r, expertise: parseArrayField(r.expertise) }));
 };
 
 exports.getPublicInstructor = async (id) => {
-  return db("users")
+  const row = await db("users")
     .join("instructor_profiles", "users.id", "instructor_profiles.user_id")
     .where({ "users.id": id })
     .andWhereRaw("LOWER(users.role) = ?", ["instructor"])
@@ -38,6 +54,9 @@ exports.getPublicInstructor = async (id) => {
       "instructor_profiles.pricing",
       "instructor_profiles.demo_video_url"
     );
+
+  if (row) row.expertise = parseArrayField(row.expertise);
+  return row;
 };
 
 exports.getInstructorAvailability = async (id) => {
