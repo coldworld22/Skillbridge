@@ -3,23 +3,29 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { createMethod } from "@/services/admin/paymentMethodService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function CreatePaymentMethodPage() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard');
   const [form, setForm] = useState({
     name: "",
     type: "Gateway",
-    icon: "",
     active: true,
     is_default: false,
     settings: {},
     settingsText: "{}",
   });
+  const [iconFile, setIconFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === "settings") {
       setForm((prev) => ({ ...prev, settingsText: value }));
+    } else if (name === "icon") {
+      setIconFile(e.target.files[0] || null);
     } else {
       setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
     }
@@ -35,14 +41,25 @@ export default function CreatePaymentMethodPage() {
         alert("Invalid JSON in settings");
         return;
       }
-      await createMethod({
-        name: form.name,
-        type: form.type,
-        icon: form.icon,
-        active: form.active,
-        is_default: form.is_default,
-        settings,
-      });
+      let payload;
+      if (iconFile) {
+        payload = new FormData();
+        payload.append('name', form.name);
+        payload.append('type', form.type);
+        payload.append('icon', iconFile);
+        payload.append('active', form.active);
+        payload.append('is_default', form.is_default);
+        payload.append('settings', JSON.stringify(settings));
+      } else {
+        payload = {
+          name: form.name,
+          type: form.type,
+          active: form.active,
+          is_default: form.is_default,
+          settings,
+        };
+      }
+      await createMethod(payload);
       router.push("/dashboard/admin/payments");
     } catch (err) {
       console.error("Failed to create method", err);
@@ -51,20 +68,20 @@ export default function CreatePaymentMethodPage() {
   };
 
   return (
-    <AdminLayout title="Add Payment Method">
+    <AdminLayout title={t('add_payment_method')}>
       <div className="max-w-xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Add New Payment Method</h1>
+          <h1 className="text-2xl font-bold">{t('add_payment_method')}</h1>
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-black"
           >
-            <FaArrowLeft /> Back
+            <FaArrowLeft /> {t('back')}
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded shadow">
           <div>
-            <label className="block font-semibold mb-1">Name</label>
+            <label className="block font-semibold mb-1">{t('name')}</label>
             <input
               type="text"
               name="name"
@@ -76,7 +93,7 @@ export default function CreatePaymentMethodPage() {
             />
           </div>
           <div>
-            <label className="block font-semibold mb-1">Type</label>
+            <label className="block font-semibold mb-1">{t('type')}</label>
             <select
               name="type"
               value={form.type}
@@ -89,17 +106,17 @@ export default function CreatePaymentMethodPage() {
             </select>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Icon URL (optional)</label>
+            <label className="block font-semibold mb-1">{t('icon')}</label>
             <input
-              type="text"
+              type="file"
               name="icon"
-              value={form.icon}
+              accept="image/*"
               onChange={handleChange}
               className="w-full border p-2 rounded"
             />
           </div>
           <div>
-            <label className="block font-semibold mb-1">Settings (JSON)</label>
+            <label className="block font-semibold mb-1">{t('settings')}</label>
             <textarea
               name="settings"
               rows={5}
@@ -115,7 +132,7 @@ export default function CreatePaymentMethodPage() {
               checked={form.active}
               onChange={handleChange}
             />
-            <span className="text-sm font-medium">Active</span>
+            <span className="text-sm font-medium">{t('active')}</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -124,16 +141,24 @@ export default function CreatePaymentMethodPage() {
               checked={form.is_default}
               onChange={handleChange}
             />
-            <span className="text-sm font-medium">Default Method</span>
+            <span className="text-sm font-medium">{t('default_method')}</span>
           </label>
           <button
             type="submit"
             className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2"
           >
-            <FaSave /> Save Method
+            <FaSave /> {t('save_method')}
           </button>
         </form>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
+    },
+  };
 }
