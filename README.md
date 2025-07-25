@@ -34,6 +34,7 @@ For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.
 New users can follow the [Student Registration Guide](docs/student-registration-guide.md) to learn how to sign up and enroll in classes.
 If Google sign-in fails with `redirect_uri_mismatch`, see [docs/social-login-setup.md](docs/social-login-setup.md) for the required OAuth callback URL.
+Admins can review how class updates trigger notifications in [docs/admin-edit-class.md](docs/admin-edit-class.md).
 
 ## Booking API
 

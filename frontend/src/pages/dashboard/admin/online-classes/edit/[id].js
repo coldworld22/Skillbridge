@@ -1,12 +1,26 @@
-// pages/dashboard/admin/online-classes/edit/[id].js
+// ─────────────────────────────────────────────────────────────────────────────
+// 📄 frontend/src/pages/dashboard/admin/online-classes/edit/[id].js
+// ─────────────────────────────────────────────────────────────────────────────
+// This page allows admins to edit an existing class. Details are fetched on
+// mount and used to pre-fill the form. After submitting updates, success or
+// error messages are shown via toast notifications and both the instructor and
+// admins receive refreshed notifications/messages.
+// ─────────────────────────────────────────────────────────────────────────────
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { useTranslation } from 'next-i18next';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
 
 export default function EditClassPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { t, i18n } = useTranslation('dashboard');
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -63,28 +77,32 @@ export default function EditClassPage() {
         max_students: formData.max_students,
         status: formData.status,
       });
+      toast.success(t('class_updated'));
+      fetchNotifications();
+      fetchMessages();
       router.push('/dashboard/admin/online-classes');
     } catch (err) {
       console.error('Failed to update class', err);
+      toast.error(err.response?.data?.message || t('class_update_failed'));
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-xl mt-6">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">✏️ Edit Class</h1>
+    <div dir={i18n.dir()} className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-xl mt-6">
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">✏️ {t('edit_class')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           name="title"
           value={formData.title}
           onChange={handleChange}
-          placeholder="Class Title"
+          placeholder={t('class_title_label')}
           className="w-full border rounded px-4 py-2"
         />
         <input
           name="instructor"
           value={formData.instructor}
           onChange={handleChange}
-          placeholder="Instructor"
+          placeholder={t('instructor_name_label')}
           className="w-full border rounded px-4 py-2"
         />
         <div className="flex gap-4">
@@ -107,7 +125,7 @@ export default function EditClassPage() {
           name="category"
           value={formData.category}
           onChange={handleChange}
-          placeholder="Category"
+          placeholder={t('category_label')}
           className="w-full border rounded px-4 py-2"
         />
         <input
@@ -115,7 +133,7 @@ export default function EditClassPage() {
           type="number"
           value={formData.price}
           onChange={handleChange}
-          placeholder="Price"
+          placeholder={t('price_label')}
           className="w-full border rounded px-4 py-2"
         />
         <input
@@ -123,14 +141,14 @@ export default function EditClassPage() {
           type="number"
           value={formData.max_students}
           onChange={handleChange}
-          placeholder="Max Students"
+          placeholder={t('max_students_label')}
           className="w-full border rounded px-4 py-2"
         />
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
-          placeholder="Class Description"
+          placeholder={t('description_label')}
           className="w-full border rounded px-4 py-2 h-24"
         />
         <select
@@ -139,14 +157,14 @@ export default function EditClassPage() {
           onChange={handleChange}
           className="w-full border rounded px-4 py-2"
         >
-          <option value="">Select Status</option>
-          <option value="draft">Pending</option>
-          <option value="published">Approved</option>
-          <option value="archived">Rejected</option>
+          <option value="">{t('select_status')}</option>
+          <option value="draft">{t('pending')}</option>
+          <option value="published">{t('approved')}</option>
+          <option value="archived">{t('rejected')}</option>
         </select>
 
         <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded shadow">
-          Save Changes
+          {t('save_changes')}
         </button>
       </form>
     </div>
