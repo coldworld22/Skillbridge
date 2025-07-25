@@ -33,7 +33,7 @@ function ManageStudentInClassPage() {
   }, [id, studentId]);
 
   if (loading) {
-    return <div className="p-6">{t('loading')}</div>;
+    return <div className="p-6">{t('common:loading')}</div>;
   }
 
   if (!student) {
@@ -132,7 +132,7 @@ ProtectedManageStudentInClassPage.getLayout = ManageStudentInClassPage.getLayout
 
 export default ProtectedManageStudentInClassPage;
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),

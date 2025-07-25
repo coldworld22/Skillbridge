@@ -50,7 +50,7 @@ function ClassStudentsPage() {
         </Link>
       </div>
       {loading ? (
-        <p>{t('loading')}</p>
+        <p>{t('common:loading')}</p>
       ) : error ? (
         <p className="text-red-600">{error}</p>
       ) : students.length === 0 ? (
@@ -108,7 +108,7 @@ ProtectedClassStudentsPage.getLayout = ClassStudentsPage.getLayout;
 
 export default ProtectedClassStudentsPage;
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),

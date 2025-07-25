@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   try {
     const { data } = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/admin/${classId}/students/${studentId}`
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/classes/admin/${classId}/students/${studentId}`
     );
     return res.status(200).json(data.data || data);
   } catch (err) {
