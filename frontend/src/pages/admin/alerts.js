@@ -1,5 +1,7 @@
 // pages/admin/alerts.js
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import useErrorLogStore from "@/store/errorLogs/errorLogStore";
@@ -9,7 +11,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../next-i18next.config.js";
 
 function AdminAlertsPage() {
-  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'alertsPage' });
+  const { t, i18n } = useTranslation('dashboard');
   const logs = useErrorLogStore((state) => state.logs);
   const fetchLogs = useErrorLogStore((state) => state.fetch);
   const startPolling = useErrorLogStore((state) => state.startPolling);
@@ -29,23 +31,29 @@ function AdminAlertsPage() {
   return (
     <AdminLayout>
       <div dir={i18n.dir()}>
-        <h1 className="text-2xl font-bold mb-6">🚨 {t('title')}</h1>
+        <Link
+          href="/dashboard/admin"
+          className="mb-4 inline-flex items-center text-sm text-yellow-600 hover:underline"
+        >
+          <FaArrowLeft className="mr-1" /> {t('back')}
+        </Link>
+        <h1 className="text-2xl font-bold mb-6">🚨 {t('alertsPage.title')}</h1>
 
       <div className="bg-white shadow rounded-xl overflow-x-auto">
         <table className="w-full table-auto text-sm text-left">
           <thead className="bg-gray-100 text-gray-600">
             <tr>
-              <th className="px-4 py-2">{t('type')}</th>
-              <th className="px-4 py-2">{t('message')}</th>
-              <th className="px-4 py-2">{t('time')}</th>
-              <th className="px-4 py-2">{t('level')}</th>
+              <th className="px-4 py-2">{t('alertsPage.type')}</th>
+              <th className="px-4 py-2">{t('alertsPage.message')}</th>
+              <th className="px-4 py-2">{t('alertsPage.time')}</th>
+              <th className="px-4 py-2">{t('alertsPage.level')}</th>
             </tr>
           </thead>
           <tbody>
             {paginatedLogs.length === 0 && (
               <tr>
                 <td colSpan={4} className="p-4 text-center text-gray-500">
-                  {t('no_alerts')}
+                  {t('alertsPage.no_alerts')}
                 </td>
               </tr>
             )}
@@ -87,7 +95,7 @@ function AdminAlertsPage() {
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page === 1}
             >
-              {t('prev')}
+              {t('alertsPage.prev')}
             </button>
             <span>
               {page} / {pageCount}
@@ -97,7 +105,7 @@ function AdminAlertsPage() {
               onClick={() => setPage((p) => Math.min(p + 1, pageCount))}
               disabled={page === pageCount}
             >
-              {t('next')}
+              {t('alertsPage.next')}
             </button>
           </div>
         )}
