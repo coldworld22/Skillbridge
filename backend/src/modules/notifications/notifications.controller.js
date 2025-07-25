@@ -22,3 +22,9 @@ exports.create = catchAsync(async (req, res) => {
   const note = await service.createNotification({ user_id, type, message });
   sendSuccess(res, note, "Notification created");
 });
+
+exports.remove = catchAsync(async (req, res) => {
+  const note = await service.deleteNotification(req.params.id, req.user.id);
+  if (!note) throw new AppError("Notification not found", 404);
+  sendSuccess(res, note, "Notification deleted");
+});

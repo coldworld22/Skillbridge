@@ -25,3 +25,11 @@ exports.markAsRead = async (id, userId) => {
     .returning("*");
   return row;
 };
+
+exports.deleteNotification = async (id, userId) => {
+  const [row] = await db("notifications")
+    .where({ id, user_id: userId })
+    .del()
+    .returning("*");
+  return row;
+};

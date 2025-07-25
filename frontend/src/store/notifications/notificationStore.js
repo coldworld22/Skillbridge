@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
 import LinkText from "@/components/shared/LinkText";
-import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
+import { getNotifications, markNotificationAsRead, deleteNotification } from "@/services/notificationService";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -37,6 +37,13 @@ const useNotificationStore = create((set, get) => ({
 
   markRead: async (id) => {
     await markNotificationAsRead(id);
+    set((state) => ({
+      items: state.items.filter((n) => n.id !== id),
+    }));
+  },
+
+  remove: async (id) => {
+    await deleteNotification(id);
     set((state) => ({
       items: state.items.filter((n) => n.id !== id),
     }));
