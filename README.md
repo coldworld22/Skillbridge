@@ -73,3 +73,7 @@ payment record.
 
 
 For a walkthrough of creating a class, managing assignments, calculating final scores and issuing certificates see [docs/class-lifecycle-workflow.md](docs/class-lifecycle-workflow.md).
+
+## Admin alerts
+
+Administrators can monitor runtime warnings and errors from the dashboard. The alerts page fetches the last entries in `logs/error.log` via `/api/system-errors` and displays them with pagination. See [docs/admin-alerts.md](docs/admin-alerts.md) for details.

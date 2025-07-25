@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { getSystemErrors } from "@/services/errorLogService";
 
-
+// how often to refresh the error log list
 const POLL_INTERVAL_MS = 60000;
+
+// Zustand store that keeps the latest error logs and polls the API
 
 const useErrorLogStore = create((set, get) => ({
   logs: [],
@@ -15,6 +17,7 @@ const useErrorLogStore = create((set, get) => ({
       const data = await getSystemErrors();
       set({ logs: data, loading: false });
     } catch (err) {
+      console.error('Failed to load system errors', err);
       set({ loading: false });
     }
   },

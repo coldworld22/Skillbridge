@@ -1,6 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Read the error log file and return the most recent entries.
+ * Each line should follow the format:
+ *   `timestamp [LEVEL] message`
+ *
+ * @param {number} limit Number of log lines to return
+ * @returns {Promise<Array>} Parsed log objects ordered newest first
+ */
+
 const LOG_FILE = path.join(__dirname, '../../../logs/error.log');
 
 exports.getRecentErrors = async (limit = 50) => {
