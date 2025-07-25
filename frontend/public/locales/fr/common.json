@@ -33,6 +33,7 @@
   "unavailable_now": "Vous êtes maintenant indisponible",
   "availability_update_failed": "Échec de la mise à jour de la disponibilité",
   "new": "nouveau",
+  "mark_as_read": "Marquer comme lu",
   "welcome_user": "Bienvenue, {{name}}",
   "dashboard_navigation": "Navigation du tableau de bord",
   "useful_links": "Liens utiles",
