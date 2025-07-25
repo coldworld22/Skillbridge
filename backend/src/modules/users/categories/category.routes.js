@@ -1,6 +1,7 @@
 /**
  * Category Routes
  * @file category.routes.js
+ * @see docs/admin-category-management.md
  */
 const express = require("express");
 const router = express.Router();

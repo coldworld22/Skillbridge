@@ -1,3 +1,7 @@
+/**
+ * Admin Category Management controller
+ * See docs/admin-category-management.md
+ */
 const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const service = require("./category.service");

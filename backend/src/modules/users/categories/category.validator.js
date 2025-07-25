@@ -1,3 +1,7 @@
+/**
+ * Validation schemas for admin categories
+ * See docs/admin-category-management.md
+ */
 const { z } = require("zod");
 
 exports.createCategorySchema = z.object({

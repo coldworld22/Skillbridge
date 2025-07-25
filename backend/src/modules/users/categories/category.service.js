@@ -1,3 +1,7 @@
+/**
+ * Admin Category Management service
+ * See docs/admin-category-management.md
+ */
 const db = require("../../../config/database");
 
 exports.create = async (data) => db("categories").insert(data).returning("*").then(rows => rows[0]);

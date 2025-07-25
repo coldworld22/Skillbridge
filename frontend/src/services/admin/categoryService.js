@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────
+// Admin Category Management API helpers
+// See docs/admin-category-management.md
+// ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
 
 export const fetchAllCategories = async (params = {}) => {
