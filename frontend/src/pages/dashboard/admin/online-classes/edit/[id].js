@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { FaArrowLeft } from 'react-icons/fa';
 import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
@@ -92,6 +93,12 @@ export default function EditClassPage() {
 
   return (
     <div dir={i18n.dir()} className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-xl mt-6">
+      <button
+        onClick={() => router.back()}
+        className="text-sm text-gray-600 hover:text-black flex items-center mb-4"
+      >
+        <FaArrowLeft className="mr-2" /> {t('back')}
+      </button>
       <h1 className="text-2xl font-bold mb-4 text-gray-800">✏️ {t('edit_class')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
