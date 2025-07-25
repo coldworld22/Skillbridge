@@ -350,6 +350,16 @@
     "invalid_date": "Invalid date format",
     "url_invalid": "Must be a valid URL"
   },
+  "adminCertificatesPage": {
+    "title": "Certificates",
+    "search_placeholder": "Search students or classes",
+    "all_status": "All Status",
+    "issued": "Issued",
+    "pending": "Pending",
+    "revoked": "Revoked",
+    "refresh": "Refresh",
+    "no_certificates": "No certificates found."
+  },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",
     "total_tutorials": "Total Tutorials",
