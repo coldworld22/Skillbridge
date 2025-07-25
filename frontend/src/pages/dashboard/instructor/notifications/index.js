@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'next-i18next';
 import formatRelativeTime from '@/utils/relativeTime';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaBell, FaCalendarAlt, FaChalkboardTeacher, FaCheckCircle, FaTimes } from 'react-icons/fa';
@@ -7,6 +8,7 @@ import LinkText from '@/components/shared/LinkText';
 
 export default function InstructorNotificationsPage() {
   const [filter, setFilter] = useState('all');
+  const { t } = useTranslation('common');
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const startPolling = useNotificationStore((state) => state.startPolling);
@@ -45,7 +47,7 @@ export default function InstructorNotificationsPage() {
             onClick={handleMarkAllRead}
             className="text-sm text-blue-600 hover:underline"
           >
-            Mark All as Read
+            {t('mark_all_as_read', 'Mark All as Read')}
           </button>
         </div>
 
@@ -93,7 +95,7 @@ export default function InstructorNotificationsPage() {
                       onClick={() => handleMarkRead(note.id)}
                       className="text-xs text-blue-600 hover:underline"
                     >
-                      Mark as Read
+                      {t('mark_as_read', 'Mark as Read')}
                     </button>
                   )}
                   <button

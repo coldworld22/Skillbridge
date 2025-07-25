@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -17,11 +18,13 @@ const MessagesPage = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const searchInputRef = useRef(null);
+  const { t } = useTranslation("common");
 
   const messages = useMessageStore((state) => state.items);
   const fetchMessagesStore = useMessageStore((state) => state.fetch);
   const startPollingStore = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
+  const deleteSystemMessage = useMessageStore((state) => state.delete);
 
   const fetchMessages = useCallback(() => {
     fetchMessagesStore();
@@ -123,17 +126,26 @@ const MessagesPage = () => {
                         user || { id: msg.sender_id, name: msg.sender_name }
                       );
                     }}
-                    className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between ${msg.read ? "opacity-70" : ""}`}
+                    className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between items-start ${msg.read ? "opacity-70" : ""}`}
                   >
-                    <span>
+                    <div className="flex-1">
                       <span className="font-semibold mr-1">
                         {msg.sender_name || "System"}:
                       </span>
                       {msg.message}
-                    </span>
-                    {!msg.read && (
-                      <span className="text-xs text-red-400 ml-2">new</span>
-                    )}
+                      {!msg.read && (
+                        <span className="text-xs text-red-400 ml-2">{t('new')}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSystemMessage(msg.id);
+                      }}
+                      className="ml-2 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                    >
+                      {t('delete', 'Delete')}
+                    </button>
                   </li>
                 ))}
               </ul>

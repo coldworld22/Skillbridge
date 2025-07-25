@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
-import { getMessages, markMessageAsRead } from "@/services/messageService";
+import {
+  getMessages,
+  markMessageAsRead,
+  deleteSystemMessage,
+} from "@/services/messageService";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -56,6 +60,16 @@ const useMessageStore = create((set, get) => ({
         ),
       }));
     }, HOUR_MS);
+  },
+
+  delete: async (id) => {
+    try {
+      await deleteSystemMessage(id);
+      set((state) => ({ items: state.items.filter((m) => m.id !== id) }));
+      toast.info("Message deleted");
+    } catch (_) {
+      toast.error("Failed to delete message");
+    }
   },
 
   startPolling: () => {

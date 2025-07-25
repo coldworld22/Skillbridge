@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Smooth animations
 import { FaCheckCircle, FaTimesCircle, FaClock, FaBell, FaTrash } from "react-icons/fa";
@@ -6,6 +7,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 
 const NotificationsPage = () => {
   const notifications = useNotificationStore((state) => state.items);
+  const { t } = useTranslation('common');
   const loading = useNotificationStore((state) => state.loading);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const startPolling = useNotificationStore((state) => state.startPolling);
@@ -88,7 +90,7 @@ const NotificationsPage = () => {
                         onClick={() => markRead(notif.id)}
                         className="px-3 py-1 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-bold"
                       >
-                        Mark as Read
+                        {t('mark_as_read', 'Mark as Read')}
                       </motion.button>
                     )}
                   </motion.li>

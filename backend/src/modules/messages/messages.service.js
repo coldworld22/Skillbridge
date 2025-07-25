@@ -28,3 +28,14 @@ exports.markAsRead = async (id, userId) => {
     .returning("*");
   return row;
 };
+
+exports.deleteMessage = async (id, userId) => {
+  const [row] = await db("messages")
+    .where({ id })
+    .andWhere(function () {
+      this.where({ receiver_id: userId }).orWhere({ sender_id: userId });
+    })
+    .del()
+    .returning("*");
+  return row;
+};
