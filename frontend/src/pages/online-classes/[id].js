@@ -5,7 +5,7 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import CustomVideoPlayer from '@/components/shared/CustomVideoPlayer';
 import { safeEncodeURI } from '@/utils/url';
-import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart, FaRegHeart, FaCalendarAlt, FaClock, FaTag, FaInfoCircle, FaUsers, FaDollarSign } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaHeart, FaRegHeart, FaCalendarAlt, FaClock, FaTag, FaInfoCircle, FaUsers, FaDollarSign, FaStar } from 'react-icons/fa';
 import {
   enrollInClass,
   fetchClassDetails,
@@ -13,6 +13,7 @@ import {
   addClassToWishlist,
   removeClassFromWishlist,
   getMyClassWishlist,
+  fetchClassReviews,
 } from '@/services/classService';
 import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
@@ -54,6 +55,7 @@ export default function ClassDetailsPage() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
+  const [instructorRating, setInstructorRating] = useState(null);
   const { user, isAuthenticated } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
 
@@ -155,6 +157,14 @@ export default function ClassDetailsPage() {
       try {
         const details = await fetchClassDetails(id);
         setClassInfo(details?.data ?? details);
+        const revs = await fetchClassReviews(id);
+        if (revs.length) {
+          const avg =
+            revs.reduce((sum, r) => sum + (r.rating || 0), 0) / revs.length;
+          setInstructorRating(avg);
+        } else {
+          setInstructorRating(null);
+        }
         if (isAuthenticated()) {
           const enrolled = await fetchMyEnrolledClasses();
           const record = enrolled.find((c) => String(c.id) === String(id));
@@ -218,6 +228,15 @@ export default function ClassDetailsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white font-sans">
       <Navbar />
 
+      <div className="max-w-6xl mx-auto pt-2 px-4 sm:px-6 lg:px-20">
+        <button
+          onClick={() => router.back()}
+          className="text-yellow-400 hover:underline text-sm"
+        >
+          &larr; Back to Classes
+        </button>
+      </div>
+
       <main className="max-w-6xl mx-auto pt-[88px] pb-8 px-4 sm:px-6 lg:px-20">
 
         {/* Class Header Section */}
@@ -275,7 +294,20 @@ export default function ClassDetailsPage() {
                     </a>
                   </p>
                   {classInfo.instructorBio && (
-                    <p className="text-xs text-gray-400 mt-1">{classInfo.instructorBio}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Experience: {classInfo.instructorBio} years of experience
+                    </p>
+                  )}
+                  {instructorRating !== null && (
+                    <div className="flex items-center text-yellow-400 text-xs mt-1">
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <FaStar
+                          key={idx}
+                          className={idx < Math.round(instructorRating) ? '' : 'text-gray-500'}
+                        />
+                      ))}
+                      <span className="ml-1 text-gray-300">{instructorRating.toFixed(1)}</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -284,17 +316,17 @@ export default function ClassDetailsPage() {
         </div>
 
         {/* Video/Image Preview Section */}
-        <div className="mb-10 rounded-xl overflow-hidden shadow-2xl border border-gray-700">
+        <div className="mb-10 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black aspect-video">
           {classInfo.demo_video_url ? (
             <CustomVideoPlayer
               videos={[{ src: safeEncodeURI(classInfo.demo_video_url) }]}
-              className="w-full"
+              className="w-full h-full"
             />
           ) : (
             <img
               src={classInfo.cover_image}
               alt={classInfo.title}
-              className="w-full h-auto max-h-[500px] object-cover"
+              className="w-full h-full object-cover"
             />
           )}
         </div>
