@@ -110,6 +110,7 @@ app.use("/api/instructors", require("./modules/instructors/instructor.routes"));
 app.use("/api/students", require("./modules/students/student.routes"));
 app.use("/api/cart", require("./modules/cart/cart.routes"));
 app.use("/api/notifications", require("./modules/notifications/notifications.routes"));
+app.use("/api/system-errors", require("./modules/errorLogs/errorLogs.routes"));
 app.use("/api/messages", require("./modules/messages/messages.routes"));
 app.use("/api/chat", require("./modules/chat/chat.routes"));
 app.use("/api/languages", require("./modules/languages/languages.routes"));
