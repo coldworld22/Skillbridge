@@ -92,3 +92,10 @@ export const fetchInstructorDashboardStats = async () => {
   const res = await api.get("/users/instructor/dashboard-stats");
   return res.data?.data;
 };
+
+export const fetchInstructorTutorialViews = async (weeks = 4) => {
+  const res = await api.get("/users/instructor/tutorial-views", {
+    params: { weeks },
+  });
+  return res.data?.data ?? [];
+};

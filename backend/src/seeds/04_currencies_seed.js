@@ -28,7 +28,6 @@ exports.seed = async function (knex) {
       auto_update: true,
       created_at: now,
       updated_at: now,
-      last_updated: now,
     }))
   );
 };
