@@ -3,8 +3,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchClassStudent } from "@/services/admin/classService";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function ManageStudentInClassPage() {
+function ManageStudentInClassPage() {
   const { id, studentId } = useRouter().query;
 
   const [student, setStudent] = useState(null);
@@ -104,3 +105,12 @@ export default function ManageStudentInClassPage() {
 ManageStudentInClassPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedManageStudentInClassPage = withAuthProtection(
+  ManageStudentInClassPage,
+  ["admin", "superadmin", "instructor"]
+);
+
+ProtectedManageStudentInClassPage.getLayout = ManageStudentInClassPage.getLayout;
+
+export default ProtectedManageStudentInClassPage;
