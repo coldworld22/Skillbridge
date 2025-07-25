@@ -6,6 +6,7 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { FaUserCheck, FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 import { IoMdTime } from "react-icons/io";
 import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
 import { fetchPublicInstructorById } from "@/services/public/instructorService";
@@ -15,6 +16,7 @@ import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 
 export default function InstructorProfilePage({ initialInstructor, initialStats }) {
+  const { t } = useTranslation("website");
   const router = useRouter();
   const { id } = router.query;
   const [instructor, setInstructor] = useState(initialInstructor);
@@ -109,6 +111,12 @@ export default function InstructorProfilePage({ initialInstructor, initialStats 
                   <FaVideo className="mr-2 text-yellow-500" />
                   <span>{stats.tutorials} Tutorials</span>
                 </div>
+                {typeof instructor.rating === "number" && (
+                  <div className="flex items-center text-gray-600">
+                    <FaStar className="mr-2 text-yellow-500" />
+                    <span>{t('instructor_rating', { count: instructor.rating.toFixed(1) })}</span>
+                  </div>
+                )}
                 {joinDate && (
                   <div className="flex items-center text-gray-600">
                     <IoMdTime className="mr-2 text-yellow-500" />

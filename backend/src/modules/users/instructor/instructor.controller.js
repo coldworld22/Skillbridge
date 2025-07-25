@@ -338,3 +338,16 @@ exports.getDashboardStats = async (req, res) => {
     const data = await require('./instructor.service').getDashboardStats(userId);
     res.json({ data });
 };
+
+/**
+ * @desc Get tutorial views grouped by week for instructor
+ * @route GET /api/users/instructor/tutorial-views
+ * @access Instructor
+ */
+exports.getTutorialViews = async (req, res) => {
+    const userId = req.user.id;
+    const weeks = parseInt(req.query.weeks, 10) || 4;
+    const service = require('./instructor.service');
+    const data = await service.getTutorialViewsByWeek(userId, weeks);
+    res.json({ data });
+};
