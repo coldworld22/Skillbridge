@@ -1,3 +1,4 @@
+// Controller for class enrollment operations
 const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../../utils/catchAsync");
 const { sendSuccess } = require("../../../utils/response");
