@@ -97,11 +97,13 @@ export const rejectAdminClass = async (id, reason) => {
   return data?.data;
 };
 
+// Retrieve all students registered for a class
 export const fetchClassStudents = async (id) => {
   const { data } = await api.get(`/users/classes/admin/${id}/students`);
   return data?.data ?? [];
 };
 
+// Get enrollment details for a specific student
 export const fetchClassStudent = async (classId, studentId) => {
   const { data } = await api.get(
     `/users/classes/admin/${classId}/students/${studentId}`
