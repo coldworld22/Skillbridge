@@ -1,4 +1,7 @@
-// pages/dashboard/admin/settings/currencies/index.js
+/**
+ * Admin currency manager page.
+ * Lists currencies with pagination and allows editing.
+ */
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";

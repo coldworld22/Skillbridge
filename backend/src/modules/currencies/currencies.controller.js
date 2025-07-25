@@ -1,3 +1,7 @@
+/**
+ * Controller for currency management. Handles CRUD operations and notifies
+ * administrators when currency data changes.
+ */
 const service = require('./currencies.service');
 const catchAsync = require('../../utils/catchAsync');
 const { sendSuccess } = require('../../utils/response');
@@ -8,6 +12,11 @@ const userModel = require('../users/user.model');
 const notificationService = require('../notifications/notifications.service');
 const messageService = require('../messages/messages.service');
 
+/**
+ * Create a new currency.
+ * Expects label, code and symbol in the request body.
+ * Notifies all admins on success.
+ */
 exports.createCurrency = catchAsync(async (req, res) => {
   const { label, code, symbol, exchange_rate } = req.body;
   if (!label || !code || !symbol)
@@ -61,6 +70,10 @@ exports.listCurrencies = catchAsync(async (_req, res) => {
   sendSuccess(res, list);
 });
 
+/**
+ * Update an existing currency by ID.
+ * Validates input and notifies administrators when changes occur.
+ */
 exports.updateCurrency = catchAsync(async (req, res) => {
   const existing = await service.getById(req.params.id);
   if (!existing) throw new AppError('Currency not found', 404);
@@ -122,6 +135,9 @@ exports.updateCurrency = catchAsync(async (req, res) => {
   }
 });
 
+/**
+ * Delete a currency by ID and notify administrators.
+ */
 exports.deleteCurrency = catchAsync(async (req, res) => {
   const existing = await service.getById(req.params.id);
   if (existing?.logo_url) {

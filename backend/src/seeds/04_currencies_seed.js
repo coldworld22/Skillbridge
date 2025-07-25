@@ -1,3 +1,7 @@
+
+/**
+ * Seed default currencies with exchange rates and timestamps.
+ */
 exports.seed = async function (knex) {
   await knex('currencies').del();
   const now = new Date();

@@ -1,3 +1,7 @@
+
+/**
+ * Edit currency details. Restricted to admins and super admins.
+ */
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
