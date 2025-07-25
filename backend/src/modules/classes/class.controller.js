@@ -121,6 +121,12 @@ exports.getMyClasses = catchAsync(async (req, res) => {
   sendSuccess(res, classes);
 });
 
+/**
+ * Update an existing class
+ * - Handles slug regeneration and file cleanup
+ * - Updates tags if provided
+ * - Sends notifications/messages to both admins and instructor
+ */
 exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
   const { tags: rawTags, ...body } = req.body;
@@ -171,6 +177,39 @@ exports.updateClass = catchAsync(async (req, res) => {
       type: "class_updated",
       message: `Your class "${cls.title}" was updated by an admin`,
     });
+
+    const admins = await userModel.findAdmins();
+    const instructor = await userModel.findById(existing.instructor_id);
+
+    const adminMessage = `Class "${cls.title}" was updated by ${req.user.full_name}`;
+    await Promise.all(
+      admins.map((admin) =>
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "class_updated",
+          message: adminMessage,
+        })
+      )
+    );
+
+    const instructorMessage = `Your class "${cls.title}" was updated by an admin.`;
+    const sender = admins[0];
+    if (sender) {
+      await messageService.createMessage({
+        sender_id: sender.id,
+        receiver_id: instructor.id,
+        message: instructorMessage,
+      });
+    }
+    await Promise.all(
+      admins.map((admin) =>
+        messageService.createMessage({
+          sender_id: instructor.id,
+          receiver_id: admin.id,
+          message: adminMessage,
+        })
+      )
+    );
   }
   sendSuccess(res, cls);
 });
