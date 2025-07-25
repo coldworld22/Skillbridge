@@ -18,6 +18,11 @@ import {
 import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 
+
+// ─────────────────────────────────────────────────────────
+// Admin Category Index Component
+// ─────────────────────────────────────────────────────────
+
 function AdminCategoryIndex() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'categoriesPage' });
   const [categories, setCategories] = useState([]);
@@ -53,6 +58,10 @@ function AdminCategoryIndex() {
       setLoading(false);
     }
   };
+
+  // Toggle category status
+  // This function toggles the status of a category between "active" and "inactive"
+  // It prompts the user for confirmation before making the change
 
   const toggleStatus = async (id, currentStatus, name) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";

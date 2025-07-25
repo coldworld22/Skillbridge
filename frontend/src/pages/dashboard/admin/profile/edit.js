@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -18,6 +21,7 @@ import {
 } from "react-icons/fa";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useAuthStore from "@/store/auth/authStore";
+import useMessageStore from "@/store/messages/messageStore";
 import {
   getAdminProfile,
   updateAdminProfile,
@@ -41,6 +45,7 @@ const profileSchema = z.object({
 
 function ProfileEditTemplate() {
   const router = useRouter();
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminProfilePage' });
   const { user, hasHydrated, setUser } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
@@ -65,6 +70,15 @@ function ProfileEditTemplate() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
+
+  useEffect(() => {
+    const local = localStorage.getItem("auth");
+    const parsed = JSON.parse(local)?.state;
+    if (hasHydrated && !user && parsed?.user) {
+      setUser(parsed.user);
+    }
+  }, [hasHydrated]);
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -120,7 +134,7 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        toast.error("Failed to load profile");
+        toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
         setLoadingProfile(false);
@@ -146,7 +160,7 @@ function ProfileEditTemplate() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Max size 2MB");
+      toast.error(t('avatar_max_size'));
       return;
     }
     setTempFileName(file.name);
@@ -175,7 +189,7 @@ function ProfileEditTemplate() {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      toast.error("Failed to upload avatar");
+      toast.error(t('avatar_upload_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -203,7 +217,7 @@ function ProfileEditTemplate() {
           newErrors[error.path[0]] = error.message;
         });
         setErrors(newErrors);
-        if (err.errors[0]) toast.error(err.errors[0].message);
+        if (err.errors[0]) toast.error(t(err.errors[0].message));
       }
       return false;
     }
@@ -254,11 +268,12 @@ function ProfileEditTemplate() {
         }, {}),
       }));
 
-      toast.success("Profile updated successfully!");
+      toast.success(t('profile_update_success'));
       await fetchNotifications();
+      fetchMessages();
       router.push("/dashboard/admin");
     } catch (err) {
-      toast.error(err.message || "Failed to update profile");
+      toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
     } finally {
       setIsSubmitting(false);
@@ -277,13 +292,13 @@ function ProfileEditTemplate() {
   return (
 
     <>
-      <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Profile Edit</h1>
+      <div className="max-w-5xl mx-auto p-6" dir={i18n.dir()}>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('title')}</h1>
         <div className="space-y-6">
           {/* Avatar Upload */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaUserCircle className="text-yellow-600" /> Profile Picture
+              <FaUserCircle className="text-yellow-600" /> {t('profile_picture')}
             </h2>
             <div className="flex flex-col items-center">
               {formData.avatarPreview ? (
@@ -320,7 +335,7 @@ function ProfileEditTemplate() {
                   ) : (
                     <FaUpload />
                   )}
-                  {formData.avatarPreview ? "Change Photo" : "Upload Photo"}
+                  {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
             </div>
@@ -332,13 +347,13 @@ function ProfileEditTemplate() {
               className="flex justify-between items-center p-4 border-b cursor-pointer"
               onClick={() => setExpanded((prev) => ({ ...prev, personal: !prev.personal }))}
             >
-              <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{t('personal_information')}</h2>
               {expanded.personal ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expanded.personal && (
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <label className="block text-sm font-medium mb-1">{t('full_name')} *</label>
                   <input
                     name="full_name"
                     value={formData.full_name}
@@ -348,7 +363,7 @@ function ProfileEditTemplate() {
                   {errors.full_name && <p className="text-sm text-red-500 mt-1">{errors.full_name}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email *</label>
+                  <label className="block text-sm font-medium mb-1">{t('email')} *</label>
                   <input
                     type="email"
                     name="email"
@@ -359,7 +374,7 @@ function ProfileEditTemplate() {
                   {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone *</label>
+                  <label className="block text-sm font-medium mb-1">{t('phone')} *</label>
                   <input
                     name="phone"
                     value={formData.phone}
@@ -369,7 +384,7 @@ function ProfileEditTemplate() {
                   {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Job Title *</label>
+                  <label className="block text-sm font-medium mb-1">{t('job_title')} *</label>
                   <input
                     name="job_title"
                     value={formData.job_title}
@@ -381,7 +396,7 @@ function ProfileEditTemplate() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Department *</label>
+                  <label className="block text-sm font-medium mb-1">{t('department')} *</label>
                   <input
                     name="department"
                     value={formData.department}
@@ -394,21 +409,21 @@ function ProfileEditTemplate() {
                 </div>
                 {/* Gender and DOB */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Gender *</label>
+                  <label className="block text-sm font-medium mb-1">{t('gender')} *</label>
                   <select
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="prefer-not-to-say">Prefer not to say</option>
+                    <option value="male">{t('male')}</option>
+                    <option value="female">{t('female')}</option>
+                    <option value="other">{t('other')}</option>
+                    <option value="prefer-not-to-say">{t('prefer_not_to_say')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Date of Birth *</label>
+                  <label className="block text-sm font-medium mb-1">{t('date_of_birth')} *</label>
                   <input
                     type="date"
                     name="date_of_birth"
@@ -428,7 +443,7 @@ function ProfileEditTemplate() {
               className="flex justify-between items-center p-4 border-b cursor-pointer"
               onClick={() => setExpanded((prev) => ({ ...prev, social: !prev.social }))}
             >
-              <h2 className="text-lg font-semibold text-gray-800">Social Links</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{t('social_links')}</h2>
               {expanded.social ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expanded.social && (
@@ -461,10 +476,10 @@ function ProfileEditTemplate() {
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
-                  <FaSpinner className="animate-spin mr-2" /> Saving...
+                  <FaSpinner className="animate-spin mr-2" /> {t('processing')}
                 </span>
               ) : (
-                'Save Changes'
+                {t('save_changes')}
               )}
             </button>
           </div>
@@ -491,14 +506,14 @@ function ProfileEditTemplate() {
 
                 className="px-4 py-2 bg-gray-200 rounded"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
                 {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                Upload
+                {t('upload')}
               </button>
             </div>
           </div>
@@ -520,3 +535,11 @@ const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
 ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 
 export default ProtectedProfileEdit;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
+}
