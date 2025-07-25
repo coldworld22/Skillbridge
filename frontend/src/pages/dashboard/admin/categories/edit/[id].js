@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────
+// Admin Category Management
+// See docs/admin-category-management.md
+// ─────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";

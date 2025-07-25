@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────
+// Admin Category Management
+// See docs/admin-category-management.md
+// ─────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
 import { Plus, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";

@@ -1,3 +1,7 @@
+/**
+ * Admin Category image upload middleware
+ * See docs/admin-category-management.md
+ */
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
