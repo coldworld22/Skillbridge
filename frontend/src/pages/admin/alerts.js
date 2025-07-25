@@ -7,10 +7,15 @@ import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
   const logs = useErrorLogStore((state) => state.logs);
+  const loading = useErrorLogStore((state) => state.loading);
   const fetchLogs = useErrorLogStore((state) => state.fetch);
 
   useEffect(() => {
     fetchLogs();
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 5000);
+    return () => clearInterval(interval);
   }, [fetchLogs]);
 
   return (
@@ -28,7 +33,22 @@ function AdminAlertsPage() {
             </tr>
           </thead>
           <tbody>
-            {logs.map((log) => (
+            {loading && (
+              <tr>
+                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            )}
+            {!loading && logs.length === 0 && (
+              <tr>
+                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
+                  No recent errors
+                </td>
+              </tr>
+            )}
+            {!loading &&
+              logs.map((log) => (
               <tr key={log.id} className="border-b">
                 <td className="px-4 py-2 font-medium">{log.type}</td>
                 <td className="px-4 py-2 text-gray-700">{log.message}</td>
