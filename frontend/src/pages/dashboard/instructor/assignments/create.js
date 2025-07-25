@@ -1,6 +1,7 @@
 // pages/dashboard/instructor/assignments/[classId]/create.js
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchInstructorClasses, createClassAssignment } from '@/services/instructor/classService';
@@ -54,7 +55,7 @@ export default function CreateAssignmentPage() {
 
   const handleSubmit = async () => {
     if (!title || !description || !classId || !dueDate) {
-      alert('⚠️ Please fill all fields.');
+      toast.error('⚠️ Please fill all fields.');
       return;
     }
 
@@ -67,10 +68,11 @@ export default function CreateAssignmentPage() {
 
     try {
       await createClassAssignment(classId, payload);
+      toast.success('Assignment created successfully');
       router.push(`/dashboard/instructor/assignments/${classId}`);
     } catch (err) {
       console.error('Failed to create assignment', err);
-      alert('Failed to create assignment');
+      toast.error('Failed to create assignment');
     }
   };
 

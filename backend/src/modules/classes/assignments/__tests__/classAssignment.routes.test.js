@@ -19,6 +19,18 @@ jest.mock('../classAssignment.service', () => ({
 }));
 const service = require('../classAssignment.service');
 
+jest.mock('../../class.service', () => ({
+  getClassById: jest.fn(() => Promise.resolve({ id: 'c1', title: 'Class' })),
+}));
+
+jest.mock('../../enrollments/classEnrollment.service', () => ({
+  getByClass: jest.fn(() => Promise.resolve([])),
+}));
+
+jest.mock('../../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(() => Promise.resolve({})),
+}));
+
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'test-user' }; next(); },
   isInstructorOrAdmin: (_req, _res, next) => next(),
