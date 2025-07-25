@@ -82,7 +82,6 @@ function CurrencyManagerPage() {
 
   const pageCount = Math.ceil(filteredCurrencies.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
-
   const paginatedCurrencies = filteredCurrencies.slice(
     startIndex,
     startIndex + itemsPerPage
@@ -91,7 +90,6 @@ function CurrencyManagerPage() {
   // ─────────────────────
   // Actions: toggle status, set default and update rates
   // ─────────────────────
-
   const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
