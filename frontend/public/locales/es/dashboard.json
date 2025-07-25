@@ -132,6 +132,8 @@
     "selected": "Seleccionado",
     "delete_selected": "Eliminar seleccionadas",
     "clear": "Limpiar",
+    "prev": "Anterior",
+    "next": "Siguiente",
     "currency": "Divisa",
     "code": "Código",
     "symbol": "Símbolo",
@@ -167,9 +169,9 @@
     "update_currency": "Actualizar divisa",
     "processing": "Guardando...",
     "currency_saved": "Divisa guardada!",
-    "currency_updated": "Divisa actualizada!",
-    "failed_to_save": "Error al guardar la divisa",
-    "showing": "Mostrando {{from}}–{{to}} de {{total}} divisas"
+    "currency_updated": "Divisa actualizada!
+    "failed_to_save": "Error al guardar la divisa"
+    ,"showing": "Mostrando {{from}}–{{to}} de {{total}} divisas"
   },
   "instructorProfilePage": {
     "title": "Editar perfil del instructor",

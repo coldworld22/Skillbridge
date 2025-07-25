@@ -13,7 +13,7 @@ import Link from "next/link";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { useTranslation } from "next-i18next";
-import nextI18NextConfig from "../../../../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { API_BASE_URL } from "@/config/config";
 
@@ -238,7 +238,7 @@ const ProtectedEditCurrencyPage = withAuthProtection(EditCurrencyPage, ["admin",
 ProtectedEditCurrencyPage.getLayout = EditCurrencyPage.getLayout;
 export default ProtectedEditCurrencyPage;
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
