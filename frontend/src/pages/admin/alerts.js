@@ -6,17 +6,16 @@ import useErrorLogStore from "@/store/errorLogs/errorLogStore";
 import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
-  const logs = useErrorLogStore((state) => state.logs);
-  const loading = useErrorLogStore((state) => state.loading);
+  const logs = useErrorLogStore((state) => s
   const fetchLogs = useErrorLogStore((state) => state.fetch);
+  const startPolling = useErrorLogStore((state) => state.startPolling);
+  const stopPolling = useErrorLogStore((state) => state.stopPolling);
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(() => {
-      fetchLogs();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [fetchLogs]);
+    startPolling();
+    return () => stopPolling();
+  }, [fetchLogs, startPolling, stopPolling]);
 
   return (
     <div className="p-6">
@@ -33,22 +32,8 @@ function AdminAlertsPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
-                  Loading...
-                </td>
-              </tr>
-            )}
-            {!loading && logs.length === 0 && (
-              <tr>
-                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
-                  No recent errors
-                </td>
-              </tr>
-            )}
-            {!loading &&
-              logs.map((log) => (
+
+            {logs.map((log) => (
               <tr key={log.id} className="border-b">
                 <td className="px-4 py-2 font-medium">{log.type}</td>
                 <td className="px-4 py-2 text-gray-700">{log.message}</td>
