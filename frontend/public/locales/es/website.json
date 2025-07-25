@@ -120,5 +120,6 @@
   "nft_text": "Crea, compra y vende NFTs educativos, incluyendo guías de estudio, certificados verificados y trabajos de investigación.",
   "search_nfts_placeholder": "Buscar NFTs...",
   "show_more_nfts": "Mostrar más NFTs",
-  "experience_years": "experiencia : {{count}} años"
+  "experience_years": "experiencia : {{count}} años",
+  "instructor_rating": "Calificación: {{count}} de 5"
 }
