@@ -81,3 +81,7 @@ For a walkthrough of creating a class, managing assignments, calculating final s
 ## Admin alerts
 
 Administrators can monitor runtime warnings and errors from the dashboard. The alerts page fetches the last entries in `logs/error.log` via `/api/system-errors` and displays them with pagination. See [docs/admin-alerts.md](docs/admin-alerts.md) for details.
+
+## Admin category management
+
+Admins can build a nested list of course categories. CRUD endpoints live under `/api/users/admin/categories`. See [docs/admin-category-management.md](docs/admin-category-management.md) for an overview of the routes and frontend pages.

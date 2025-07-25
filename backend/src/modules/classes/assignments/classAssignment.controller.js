@@ -50,3 +50,8 @@ exports.deleteAssignment = catchAsync(async (req, res) => {
   await service.deleteAssignment(req.params.assignmentId);
   sendSuccess(res, null, "Assignment deleted");
 });
+
+exports.getAllAssignments = catchAsync(async (_req, res) => {
+  const assignments = await service.getAllAssignments();
+  sendSuccess(res, assignments);
+});

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaSearch, FaSync, FaEye, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit } from 'react-icons/fa';
+import { fetchAllAssignments } from '@/services/admin/assignmentService';
 
 export default function AdminAssignmentsPage() {
   const [assignments, setAssignments] = useState([]);
@@ -10,27 +11,25 @@ export default function AdminAssignmentsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    // Mocked Data
-    setAssignments([
-      {
-        id: 'a1',
-        title: 'React Basics',
-        instructor: 'Ayman Khalid',
-        className: 'React Bootcamp',
-        type: 'MCQ',
-        dueDate: '2025-05-25T23:59:00Z',
-        status: 'Pending'
-      },
-      {
-        id: 'a2',
-        title: 'CSS Challenge',
-        instructor: 'Sara Ali',
-        className: 'Frontend Mastery',
-        type: 'Text',
-        dueDate: '2025-06-01T23:59:00Z',
-        status: 'Approved'
-      },
-    ]);
+    const load = async () => {
+      try {
+        const list = await fetchAllAssignments();
+        setAssignments(
+          list.map((a) => ({
+            id: a.id,
+            title: a.title,
+            instructor: a.instructor,
+            className: a.class_title,
+            type: a.type || 'N/A',
+            dueDate: a.due_date,
+            status: a.status || 'Pending',
+          }))
+        );
+      } catch (err) {
+        console.error('Failed to load assignments', err);
+      }
+    };
+    load();
   }, []);
 
   const filteredAssignments = assignments.filter(a => {

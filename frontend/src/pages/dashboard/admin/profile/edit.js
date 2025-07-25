@@ -81,6 +81,14 @@ function ProfileEditTemplate() {
   }, [hasHydrated]);
 
   useEffect(() => {
+    const local = localStorage.getItem("auth");
+    const parsed = JSON.parse(local)?.state;
+    if (hasHydrated && !user && parsed?.user) {
+      setUser(parsed.user);
+    }
+  }, [hasHydrated]);
+
+  useEffect(() => {
 
     if (!hasHydrated) return;
     if (!user || user.role?.toLowerCase() !== "admin") {
