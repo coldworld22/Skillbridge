@@ -61,6 +61,11 @@ Endpoints for creating and managing live classes are served under `/api/users/cl
 
 For an overview of the student purchase and enrollment process see [docs/student-enrollment-workflow.md](docs/student-enrollment-workflow.md).
 
+## Media streaming
+
+Large videos under `/uploads` can be streamed efficiently using `GET /api/media/:filename`.
+This endpoint supports HTTP range requests so media plays smoothly even for big files.
+
 ## Student helper class
 
 The backend contains a small utility class `Student` located at
