@@ -27,7 +27,8 @@ function AdminAlertsPage() {
   }, [fetchLogs, startPolling, stopPolling]);
 
   return (
-    <div className="p-6" dir={i18n.dir()}>
+    <div dir={i18n.dir()}>
+
       <h1 className="text-2xl font-bold mb-6">🚨 {t('title')}</h1>
 
       <div className="bg-white shadow rounded-xl overflow-x-auto">
