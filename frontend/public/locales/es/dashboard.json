@@ -309,6 +309,16 @@
     "invalid_date": "Formato de fecha inválido",
     "url_invalid": "Debe ser una URL válida"
   },
+  "adminCertificatesPage": {
+    "title": "Certificados",
+    "search_placeholder": "Buscar estudiantes o clases",
+    "all_status": "Todos los estados",
+    "issued": "Emitido",
+    "pending": "Pendiente",
+    "revoked": "Revocado",
+    "refresh": "Refrescar",
+    "no_certificates": "No se encontraron certificados."
+  },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",
     "total_tutorials": "Total Tutorials",
