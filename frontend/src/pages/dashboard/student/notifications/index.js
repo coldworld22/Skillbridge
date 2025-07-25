@@ -11,6 +11,7 @@ export default function StudentNotificationsPage() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const startPolling = useNotificationStore((state) => state.startPolling);
   const markRead = useNotificationStore((state) => state.markRead);
+  const remove = useNotificationStore((state) => state.remove);
 
   useEffect(() => {
     fetchNotifications();
@@ -28,9 +29,7 @@ export default function StudentNotificationsPage() {
   };
 
   const handleDelete = (id) => {
-    // No backend endpoint for deletion; remove locally
-    // Deleted notifications will automatically be cleaned up after an hour
-    markRead(id);
+    remove(id);
   };
 
   const filtered = notifications.filter((n) =>
@@ -84,7 +83,7 @@ export default function StudentNotificationsPage() {
                   <div>
                     <p className="text-sm mb-1 leading-relaxed font-medium"><LinkText text={note.message} /></p>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <FaCalendarAlt /> {formatRelativeTime(note.date)}
+                      <FaCalendarAlt /> {formatRelativeTime(note.created_at)}
                     </p>
                   </div>
                 </div>

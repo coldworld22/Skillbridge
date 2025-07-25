@@ -10,6 +10,11 @@ export const markNotificationAsRead = async (id) => {
   return res.data.data || res.data;
 };
 
+export const deleteNotification = async (id) => {
+  const res = await api.delete(`/notifications/${id}`);
+  return res.data.data || res.data;
+};
+
 export const createNotification = async (payload) => {
   const res = await api.post('/notifications', payload);
   return res.data.data || res.data;

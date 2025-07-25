@@ -5,6 +5,7 @@ jest.mock('../src/modules/notifications/notifications.service', () => ({
   getUserNotifications: jest.fn(),
   markAsRead: jest.fn(),
   createNotification: jest.fn(),
+  deleteNotification: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -49,5 +50,16 @@ describe('POST /api/notifications', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockNote);
     expect(service.createNotification).toHaveBeenCalledWith(payload);
+  });
+});
+
+describe('DELETE /api/notifications/:id', () => {
+  it('deletes notification', async () => {
+    const mockNote = { id: '1' };
+    service.deleteNotification.mockResolvedValue(mockNote);
+    const res = await request(app).delete('/api/notifications/1');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mockNote);
+    expect(service.deleteNotification).toHaveBeenCalledWith('1', 'user1');
   });
 });
