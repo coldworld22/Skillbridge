@@ -168,7 +168,8 @@
     "processing": "Guardando...",
     "currency_saved": "Divisa guardada!",
     "currency_updated": "Divisa actualizada!",
-    "failed_to_save": "Error al guardar la divisa"
+    "failed_to_save": "Error al guardar la divisa",
+    "showing": "Mostrando {{from}}–{{to}} de {{total}} divisas"
   },
   "instructorProfilePage": {
     "title": "Editar perfil del instructor",

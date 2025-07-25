@@ -132,6 +132,8 @@
     "selected": "Ausgewählt",
     "delete_selected": "Ausgewählte löschen",
     "clear": "Leeren",
+    "prev": "Zurück",
+    "next": "Weiter",
     "currency": "Währung",
     "code": "Code",
     "symbol": "Symbol",
@@ -168,7 +170,8 @@
     "processing": "Speichern...",
     "currency_saved": "Währung gespeichert!",
     "currency_updated": "Währung aktualisiert!",
-    "failed_to_save": "Speichern der Währung fehlgeschlagen"
+    "failed_to_save": "Speichern der Währung fehlgeschlagen",
+    "showing": "Zeige {{from}}–{{to}} von {{total}} W\u00e4hrungen"
   },
   "instructorProfilePage": {
     "title": "Instruktorprofil bearbeiten",

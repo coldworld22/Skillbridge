@@ -132,6 +132,8 @@
     "selected": "Sélectionné",
     "delete_selected": "Supprimer la sélection",
     "clear": "Effacer",
+    "prev": "Précédent",
+    "next": "Suivant",
     "currency": "Devise",
     "code": "Code",
     "symbol": "Symbole",
@@ -168,7 +170,8 @@
     "processing": "Enregistrement...",
     "currency_saved": "Devise enregistrée !",
     "currency_updated": "Devise mise à jour !",
-    "failed_to_save": "Échec de l'enregistrement de la devise"
+    "failed_to_save": "Échec de l'enregistrement de la devise",
+    "showing": "Affichage de {{from}} à {{to}} sur {{total}} devises"
   },
   "instructorProfilePage": {
     "title": "Modifier le profil de l'instructeur",

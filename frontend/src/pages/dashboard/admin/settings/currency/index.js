@@ -1,6 +1,6 @@
 // pages/dashboard/admin/settings/currencies/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -49,6 +49,8 @@ function CurrencyManagerPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
   const notify = useAdminNotice();
 
   const filteredCurrencies = useMemo(() => {
@@ -64,6 +66,17 @@ function CurrencyManagerPage() {
       return matchSearch && matchFilter;
     });
   }, [currencies, search, filter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
+
+  const pageCount = Math.ceil(filteredCurrencies.length / itemsPerPage) || 1;
+  const startIndex = (page - 1) * itemsPerPage;
+  const paginatedCurrencies = filteredCurrencies.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
@@ -288,7 +301,7 @@ function CurrencyManagerPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredCurrencies.map((c) => (
+            {paginatedCurrencies.map((c) => (
               <tr
                 key={c.id}
                 className={`border-t hover:bg-gray-50 transition ${!c.is_active ? "bg-red-50" : ""}`}
@@ -345,7 +358,7 @@ function CurrencyManagerPage() {
                     <FaStar />
                   </button>
                 </td>
-                <td className="p-3">{c.last_updated?.slice(0,10) || ''}</td>
+                <td className="p-3">{c.last_updated ? new Date(c.last_updated).toLocaleDateString() : ''}</td>
                 <td className="p-3 text-center">
                   <div className="flex gap-2 justify-center">
                     <button
@@ -373,6 +386,27 @@ function CurrencyManagerPage() {
             ))}
           </tbody>
         </table>
+        <div className="flex justify-between mt-4 text-sm text-gray-500">
+          <span>
+            {t('showing', { from: startIndex + 1, to: Math.min(startIndex + itemsPerPage, filteredCurrencies.length), total: filteredCurrencies.length })}
+          </span>
+          <div className="space-x-2">
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+            >
+              {t('prev')}
+            </button>
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setPage((p) => Math.min(p + 1, pageCount))}
+              disabled={page === pageCount}
+            >
+              {t('next')}
+            </button>
+          </div>
+        </div>
       </div>
   );
 }
