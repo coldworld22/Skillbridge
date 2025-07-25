@@ -218,7 +218,7 @@ export default function InstructorBooking() {
                   className={idx < Math.floor(i.rating) ? "text-yellow-400" : "text-gray-500"}
                 />
               ))}
-              <span className="text-sm text-gray-300">({i.rating})</span>
+              <span className="text-sm text-gray-300">{t('instructor_rating', { count: i.rating })}</span>
             </div>
             <div className="flex gap-3 mt-4">
               <button

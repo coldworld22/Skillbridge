@@ -120,5 +120,6 @@
   "nft_text": "اصنع واشترِ وبِع NFT التعليمية، بما في ذلك أدلة الدراسة والشهادات الموثقة والأبحاث.",
   "search_nfts_placeholder": "ابحث عن NFT...",
   "show_more_nfts": "عرض المزيد من الـNFT",
-  "experience_years": "الخبرة: {{count}} سنة"
+  "experience_years": "الخبرة: {{count}} سنة",
+  "instructor_rating": "التقييم: {{count}} من 5"
 }
