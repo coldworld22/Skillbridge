@@ -11,7 +11,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
@@ -19,7 +19,7 @@ import {
   updateCurrency,
   deleteCurrency as deleteCurrencyApi,
 } from "@/services/admin/currencyService";
-import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff, FaEdit } from "react-icons/fa";
 
 const fetcher = () => fetchCurrencies();
 const useAdminNotice = () => {
@@ -355,6 +355,11 @@ function CurrencyManagerPage() {
                     >
                       <FaSync />
                     </button>
+                    <Link href={`/dashboard/admin/settings/currency/edit/${c.id}`}>
+                      <button title="Edit" className="text-yellow-600">
+                        <FaEdit />
+                      </button>
+                    </Link>
                     <button
                       title="Delete"
                       className="text-red-600"

@@ -156,6 +156,7 @@
     "rate_updated": "Tipo de cambio actualizado",
     "confirm_delete": "¿Eliminar divisa: {{name}}?",
     "create_title": "Agregar divisa",
+    "edit_title": "Editar divisa",
     "currency_name": "Nombre de la divisa",
     "currency_code": "Código de la divisa",
     "symbol_label": "Símbolo",
@@ -163,8 +164,10 @@
     "auto_update_rate": "Actualizar tasa automáticamente",
     "set_as_default": "Establecer como predeterminada",
     "save_currency": "Guardar divisa",
+    "update_currency": "Actualizar divisa",
     "processing": "Guardando...",
     "currency_saved": "Divisa guardada!",
+    "currency_updated": "Divisa actualizada!",
     "failed_to_save": "Error al guardar la divisa"
   },
   "instructorProfilePage": {

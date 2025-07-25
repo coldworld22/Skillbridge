@@ -156,6 +156,7 @@
     "rate_updated": "Exchange rate updated",
     "confirm_delete": "Delete currency: {{name}}?",
     "create_title": "Add Currency",
+    "edit_title": "Edit Currency",
     "currency_name": "Currency Name",
     "currency_code": "Currency Code",
     "symbol_label": "Symbol",
@@ -163,8 +164,10 @@
     "auto_update_rate": "Auto Update Rate",
     "set_as_default": "Set as Default",
     "save_currency": "Save Currency",
+    "update_currency": "Update Currency",
     "processing": "Saving...",
     "currency_saved": "Currency saved!",
+    "currency_updated": "Currency updated!",
     "failed_to_save": "Failed to save currency."
   },
   "instructorProfilePage": {

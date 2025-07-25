@@ -156,6 +156,7 @@
     "rate_updated": "Wechselkurs aktualisiert",
     "confirm_delete": "Währung löschen: {{name}}?",
     "create_title": "Währung hinzufügen",
+    "edit_title": "Währung bearbeiten",
     "currency_name": "Währungsname",
     "currency_code": "Währungscode",
     "symbol_label": "Symbol",
@@ -163,8 +164,10 @@
     "auto_update_rate": "Kurs automatisch aktualisieren",
     "set_as_default": "Als Standard setzen",
     "save_currency": "Währung speichern",
+    "update_currency": "Währung aktualisieren",
     "processing": "Speichern...",
     "currency_saved": "Währung gespeichert!",
+    "currency_updated": "Währung aktualisiert!",
     "failed_to_save": "Speichern der Währung fehlgeschlagen"
   },
   "instructorProfilePage": {

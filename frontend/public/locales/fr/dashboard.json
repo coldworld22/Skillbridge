@@ -156,6 +156,7 @@
     "rate_updated": "Taux de change mis à jour",
     "confirm_delete": "Supprimer la devise : {{name}}?",
     "create_title": "Ajouter une devise",
+    "edit_title": "Modifier la devise",
     "currency_name": "Nom de la devise",
     "currency_code": "Code de la devise",
     "symbol_label": "Symbole",
@@ -163,8 +164,10 @@
     "auto_update_rate": "Taux mis à jour auto",
     "set_as_default": "Définir par défaut",
     "save_currency": "Enregistrer la devise",
+    "update_currency": "Mettre à jour la devise",
     "processing": "Enregistrement...",
     "currency_saved": "Devise enregistrée !",
+    "currency_updated": "Devise mise à jour !",
     "failed_to_save": "Échec de l'enregistrement de la devise"
   },
   "instructorProfilePage": {
