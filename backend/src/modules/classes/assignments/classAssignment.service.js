@@ -17,3 +17,19 @@ exports.updateAssignment = async (id, data) => {
 exports.deleteAssignment = async (id) => {
   return db("class_assignments").where({ id }).del();
 };
+
+exports.getAllAssignments = async () => {
+  return db("class_assignments as a")
+    .leftJoin("online_classes as c", "a.class_id", "c.id")
+    .leftJoin("users as u", "c.instructor_id", "u.id")
+    .select(
+      "a.id",
+      "a.title",
+      "a.description",
+      "a.due_date",
+      "a.class_id",
+      "c.title as class_title",
+      "u.full_name as instructor"
+    )
+    .orderBy("a.created_at", "desc");
+};

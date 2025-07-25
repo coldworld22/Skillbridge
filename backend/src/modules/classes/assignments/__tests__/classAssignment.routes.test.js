@@ -13,6 +13,7 @@ jest.mock('../../../../config/database', () => {
 
 jest.mock('../classAssignment.service', () => ({
   getByClass: jest.fn(),
+  getAllAssignments: jest.fn(),
   createAssignment: jest.fn(),
   updateAssignment: jest.fn(),
   deleteAssignment: jest.fn(),
@@ -51,6 +52,14 @@ describe('Class assignment routes', () => {
     const list = [{ id: '1' }];
     service.getByClass.mockResolvedValue(list);
     const res = await request(app).get('/classes/assignments/class/abc');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toEqual(list);
+  });
+
+  test('get all assignments', async () => {
+    const list = [{ id: '1' }];
+    service.getAllAssignments.mockResolvedValue(list);
+    const res = await request(app).get('/classes/assignments/admin');
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(list);
   });
