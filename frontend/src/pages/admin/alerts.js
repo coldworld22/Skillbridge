@@ -1,31 +1,22 @@
 // pages/admin/alerts.js
+import { useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-
-const alerts = [
-  {
-    id: 1,
-    type: "License Violation",
-    message: "Unauthorized domain attempted to use the platform.",
-    time: "2025-04-14 08:15",
-    level: "Critical"
-  },
-  {
-    id: 2,
-    type: "Chat Flag",
-    message: "User 'guest123' used inappropriate language in class.",
-    time: "2025-04-14 10:42",
-    level: "Warning"
-  },
-  {
-    id: 3,
-    type: "System Notice",
-    message: "API key for payment gateway expiring soon.",
-    time: "2025-04-14 09:00",
-    level: "Info"
-  }
-];
+import withAuthProtection from "@/hooks/withAuthProtection";
+import useErrorLogStore from "@/store/errorLogs/errorLogStore";
+import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
+  const logs = useErrorLogStore((state) => state.logs);
+  const fetchLogs = useErrorLogStore((state) => state.fetch);
+  const startPolling = useErrorLogStore((state) => state.startPolling);
+  const stopPolling = useErrorLogStore((state) => state.stopPolling);
+
+  useEffect(() => {
+    fetchLogs();
+    startPolling();
+    return () => stopPolling();
+  }, [fetchLogs, startPolling, stopPolling]);
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">🚨 Real-Time Alerts</h1>
@@ -41,18 +32,25 @@ function AdminAlertsPage() {
             </tr>
           </thead>
           <tbody>
-            {alerts.map((alert) => (
-              <tr key={alert.id} className="border-b">
-                <td className="px-4 py-2 font-medium">{alert.type}</td>
-                <td className="px-4 py-2 text-gray-700">{alert.message}</td>
-                <td className="px-4 py-2">{alert.time}</td>
+
+            {logs.map((log) => (
+              <tr key={log.id} className="border-b">
+                <td className="px-4 py-2 font-medium">{log.type}</td>
+                <td className="px-4 py-2 text-gray-700">{log.message}</td>
                 <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    alert.level === 'Critical' ? 'bg-red-100 text-red-600' :
-                    alert.level === 'Warning' ? 'bg-yellow-100 text-yellow-600' :
-                    'bg-blue-100 text-blue-600'
-                  }`}>
-                    {alert.level}
+                  {formatRelativeTime(log.time)}
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      log.level === 'ERROR'
+                        ? 'bg-red-100 text-red-600'
+                        : log.level === 'WARN'
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : 'bg-blue-100 text-blue-600'
+                    }`}
+                  >
+                    {log.level}
                   </span>
                 </td>
               </tr>
@@ -68,4 +66,4 @@ AdminAlertsPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export default AdminAlertsPage;
+export default withAuthProtection(AdminAlertsPage, ["admin", "superadmin"]);

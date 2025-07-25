@@ -23,6 +23,7 @@ exports.seed = async function (knex) {
     { label: 'South Korean Won', code: 'KRW', symbol: '₩', exchange_rate: 1350, tax_rate: 0 },
     { label: 'Singapore Dollar', code: 'SGD', symbol: 'S$', exchange_rate: 1.35, tax_rate: 0 },
     { label: 'Russian Ruble', code: 'RUB', symbol: '₽', exchange_rate: 90, tax_rate: 0 },
+
   ];
   await knex('currencies').insert(
     currencies.map((c) => ({

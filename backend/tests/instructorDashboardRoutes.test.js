@@ -6,6 +6,7 @@ jest.mock('../src/config/database', () => ({
 }));
 jest.mock('../src/modules/users/instructor/instructor.service', () => ({
   getDashboardStats: jest.fn(),
+  getTutorialViewsByWeek: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -28,6 +29,18 @@ describe('GET /api/users/instructor/dashboard-stats', () => {
     const res = await request(app).get('/api/users/instructor/dashboard-stats');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockStats);
-    expect(service.getDashboardStats).toHaveBeenCalled();
+  expect(service.getDashboardStats).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/users/instructor/tutorial-views', () => {
+  it('returns tutorial view history', async () => {
+    const mockData = [{ week: '2024-01-01', views: 5 }];
+    service.getTutorialViewsByWeek.mockResolvedValue(mockData);
+
+    const res = await request(app).get('/api/users/instructor/tutorial-views');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mockData);
+    expect(service.getTutorialViewsByWeek).toHaveBeenCalled();
   });
 });

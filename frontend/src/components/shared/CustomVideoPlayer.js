@@ -2,7 +2,15 @@ import { useRef, useState, useEffect } from "react";
 import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaVolumeUp, FaVolumeMute, FaDownload, FaExpand } from "react-icons/fa";
 import { MdSpeed, MdReplay10, MdForward10 } from "react-icons/md";
 
-export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUpdate, onEnded, locked = false }) {
+export default function CustomVideoPlayer({
+  videos = [],
+  startTime = 0,
+  onTimeUpdate,
+  onEnded,
+  locked = false,
+  className = '',
+  videoClassName = '',
+}) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -15,6 +23,14 @@ export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUp
   const playerRef = useRef(null);
 
   const currentVideo = videos[currentIndex]?.src;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.load();
+    setIsPlaying(false);
+    setProgress(0);
+  }, [currentVideo]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -133,16 +149,18 @@ export default function CustomVideoPlayer({ videos = [], startTime = 0, onTimeUp
   return (
     <div
       ref={playerRef}
-      className="relative bg-black rounded-lg border-2 border-yellow-500 overflow-hidden shadow-lg"
+      className={`relative bg-black rounded-lg border-2 border-yellow-500 overflow-hidden shadow-lg ${className}`}
     >
       <video
         key={currentIndex}
         ref={videoRef}
-        className="w-full"
+        className={`w-full ${videoClassName}`}
         src={currentVideo}
         onClick={togglePlay}
         autoPlay={isPlaying}
         muted={isMuted}
+        preload="metadata"
+        crossOrigin="anonymous"
       />
 
       {locked && (
