@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -14,12 +14,11 @@ import { fetchPublishedTutorials } from "@/services/tutorialService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 
-export default function InstructorProfilePage() {
+export default function InstructorProfilePage({ initialInstructor, initialStats }) {
   const router = useRouter();
   const { id } = router.query;
-  const [instructor, setInstructor] = useState(null);
-  const [stats, setStats] = useState({ classes: 0, tutorials: 0 });
-  const [loading, setLoading] = useState(true);
+  const [instructor, setInstructor] = useState(initialInstructor);
+  const [stats, setStats] = useState(initialStats);
   const [showBooking, setShowBooking] = useState(false);
   const { user } = useAuthStore();
 
@@ -36,50 +35,6 @@ export default function InstructorProfilePage() {
     setShowBooking(true);
   };
 
-  useEffect(() => {
-    if (!id) return;
-    const load = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchPublicInstructorById(id);
-        const formatted = {
-          ...data,
-          avatar_url: data?.avatar_url
-            ? `${API_BASE_URL}${data.avatar_url}`
-            : "/images/profile/user.png",
-          demo_video_url: data?.demo_video_url
-            ? `${API_BASE_URL}${data.demo_video_url}`
-            : null,
-        };
-        setInstructor(formatted);
-
-        const classRes = await fetchPublishedClasses();
-        const classList = classRes?.data ?? classRes ?? [];
-        const classCount = classList.filter(
-          (c) => String(c.instructor_id) === String(id)
-        ).length;
-
-        const tutRes = await fetchPublishedTutorials();
-        const tutList = tutRes?.data ?? tutRes ?? [];
-        const tutCount = tutList.filter(
-          (t) => String(t.creator_id) === String(id)
-        ).length;
-
-        setStats({ classes: classCount, tutorials: tutCount });
-      } catch (err) {
-        console.error("Failed to load instructor", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
-
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
-    </div>
-  );
 
   if (!instructor) return (
     <div className="text-center py-10">
@@ -240,4 +195,38 @@ export default function InstructorProfilePage() {
       </section>
     </Layout>
   );
+}
+
+export async function getServerSideProps({ params }) {
+  const { id } = params;
+  try {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+    const data = await fetchPublicInstructorById(id);
+    if (!data) {
+      return { props: { initialInstructor: null, initialStats: { classes: 0, tutorials: 0 } } };
+    }
+    const formatted = {
+      ...data,
+      avatar_url: data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png",
+      demo_video_url: data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null,
+    };
+
+    const classRes = await fetchPublishedClasses();
+    const classList = classRes?.data ?? classRes ?? [];
+    const classCount = classList.filter((c) => String(c.instructor_id) === String(id)).length;
+
+    const tutRes = await fetchPublishedTutorials();
+    const tutList = tutRes?.data ?? tutRes ?? [];
+    const tutCount = tutList.filter((t) => String(t.creator_id) === String(id)).length;
+
+    return {
+      props: {
+        initialInstructor: formatted,
+        initialStats: { classes: classCount, tutorials: tutCount },
+      },
+    };
+  } catch (err) {
+    console.error("Failed to load instructor", err);
+    return { props: { initialInstructor: null, initialStats: { classes: 0, tutorials: 0 } } };
+  }
 }
