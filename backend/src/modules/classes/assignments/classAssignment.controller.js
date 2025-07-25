@@ -2,6 +2,9 @@ const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../../utils/catchAsync");
 const { sendSuccess } = require("../../../utils/response");
 const service = require("./classAssignment.service");
+const classService = require("../class.service");
+const enrollmentService = require("../enrollments/classEnrollment.service");
+const notificationService = require("../../notifications/notifications.service");
 
 exports.getAssignmentsByClass = catchAsync(async (req, res) => {
   const assignments = await service.getByClass(req.params.classId);
@@ -15,6 +18,26 @@ exports.createAssignment = catchAsync(async (req, res) => {
     class_id: req.params.classId,
   };
   const assignment = await service.createAssignment(data);
+
+  try {
+    const cls = await classService.getClassById(req.params.classId);
+    const students = await enrollmentService.getByClass(req.params.classId);
+    if (cls && students.length) {
+      const message = `New assignment "${assignment.title}" posted for class "${cls.title}".`;
+      await Promise.all(
+        students.map((s) =>
+          notificationService.createNotification({
+            user_id: s.id,
+            type: "new_assignment",
+            message,
+          })
+        )
+      );
+    }
+  } catch (err) {
+    console.error("Error sending assignment notifications:", err.message);
+  }
+
   sendSuccess(res, assignment, "Assignment created");
 });
 
