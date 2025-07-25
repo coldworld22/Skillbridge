@@ -1,4 +1,3 @@
-
 /**
  * Seed default currencies with exchange rates and timestamps.
  */

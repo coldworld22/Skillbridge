@@ -1,7 +1,6 @@
-
-/**
- * Edit currency details. Restricted to admins and super admins.
- */
+// ─────────────────────
+// Edit currency details. Restricted to admins and super admins.
+// ─────────────────────
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -21,6 +20,10 @@ import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { API_BASE_URL } from "@/config/config";
 
+// ─────────────────────
+// Helper to notify admins of currency changes
+// ─────────────────────
+
 const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -39,6 +42,9 @@ const useAdminNotice = () => {
   };
 };
 
+// ─────────────────────
+// React component: edit an existing currency
+// ─────────────────────
 function EditCurrencyPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -83,6 +89,9 @@ function EditCurrencyPage() {
     load();
   }, [id]);
 
+  // ─────────────────────
+  // Handle form field changes
+  // ─────────────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const key = name;
@@ -99,6 +108,9 @@ function EditCurrencyPage() {
     }));
   };
 
+  // ─────────────────────
+  // Submit the updated currency to the backend
+  // ─────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData();
