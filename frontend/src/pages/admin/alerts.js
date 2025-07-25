@@ -6,7 +6,7 @@ import useErrorLogStore from "@/store/errorLogs/errorLogStore";
 import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
-  const logs = useErrorLogStore((state) => s
+  const logs = useErrorLogStore((state) => state.logs);
   const fetchLogs = useErrorLogStore((state) => state.fetch);
   const startPolling = useErrorLogStore((state) => state.startPolling);
   const stopPolling = useErrorLogStore((state) => state.stopPolling);
