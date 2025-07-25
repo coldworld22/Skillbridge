@@ -120,6 +120,7 @@
   "nft_text": "Mint, kaufe und verkaufe Bildungs-NFTs wie Studienführer, Zertifikate und Forschungsarbeiten.",
   "search_nfts_placeholder": "NFTs durchsuchen...",
   "show_more_nfts": "Mehr NFTs anzeigen",
-  "experience_years": "Erfahrung: {{count}} Jahre"
+  "experience_years": "Erfahrung: {{count}} Jahre",
+  "instructor_rating": "Bewertung: {{count}} von 5"
 
 }
