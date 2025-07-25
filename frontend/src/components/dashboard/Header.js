@@ -264,14 +264,21 @@ export default function Header() {
                   {notifications.slice(0, 10).map((n) => (
                     <li
                       key={n.id}
-                      onClick={() => markRead(n.id)}
-                      className={`px-4 py-2 cursor-pointer transition ${
+                      className={`flex justify-between items-center px-4 py-2 transition ${
                         n.read
                           ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
                           : "bg-yellow-50 dark:bg-gray-600"
                       }`}
                     >
                       <LinkText text={n.message} />
+                      {!n.read && (
+                        <button
+                          onClick={() => markRead(n.id)}
+                          className="text-xs text-blue-600 hover:underline ml-2"
+                        >
+                          Mark as Read
+                        </button>
+                      )}
                     </li>
                   ))}
                   {notifications.length === 0 && (

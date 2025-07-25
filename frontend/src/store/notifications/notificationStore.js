@@ -36,27 +36,10 @@ const useNotificationStore = create((set, get) => ({
   },
 
   markRead: async (id) => {
-    const res = await markNotificationAsRead(id);
-    const readAt = res.read_at || new Date().toISOString();
+    await markNotificationAsRead(id);
     set((state) => ({
-      items: state.items.map((n) =>
-        n.id === id ? { ...n, read: true, read_at: readAt } : n
-      ),
+      items: state.items.filter((n) => n.id !== id),
     }));
-
-    setTimeout(() => {
-      set((state) => ({
-        items: state.items.filter(
-          (n) =>
-            !(
-              n.id === id &&
-              n.read &&
-              n.read_at &&
-              new Date() - new Date(n.read_at) >= HOUR_MS
-            )
-        ),
-      }));
-    }, HOUR_MS);
   },
 
   startPolling: () => {

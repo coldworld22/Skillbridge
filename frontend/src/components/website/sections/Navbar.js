@@ -290,8 +290,7 @@ const Navbar = () => {
                     {notifications.slice(0, 10).map((note) => (
                       <li
                         key={note.id}
-                        onClick={() => markRead(note.id)}
-                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
+                        className={`flex justify-between items-center p-2 rounded-md transition ${
                           note.read
                             ? "text-gray-400 bg-gray-50"
                             : "bg-yellow-50"
@@ -299,7 +298,12 @@ const Navbar = () => {
                       >
                         <span><LinkText text={note.message} /></span>
                         {!note.read && (
-                          <span className="ml-2 text-xs text-red-500">{t('new')}</span>
+                          <button
+                            onClick={() => markRead(note.id)}
+                            className="ml-2 text-xs text-blue-600 hover:underline"
+                          >
+                            {t('mark_as_read', 'Mark as Read')}
+                          </button>
                         )}
                       </li>
                     ))}
