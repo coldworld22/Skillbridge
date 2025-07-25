@@ -138,6 +138,7 @@
     "code": "Code",
     "symbol": "Symbol",
     "exchange_rate": "Wechselkurs",
+    "tax_rate": "Steuersatz (%)",
     "auto_update": "Automatisch aktualisieren",
     "status": "Status",
     "default": "Standard",

@@ -54,6 +54,7 @@ function CreateCurrencyPage() {
     code: "",
     symbol: "",
     exchange_rate: 1,
+    tax_rate: 0,
     is_active: true,
     auto_update: true,
     is_default: false,
@@ -173,6 +174,20 @@ function CreateCurrencyPage() {
               onChange={handleChange}
               min="0.0001"
               step="0.0001"
+              required
+              className="w-full border p-2 rounded"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">{t('tax_rate')}</label>
+            <input
+              type="number"
+              name="tax_rate"
+              value={form.tax_rate}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
               required
               className="w-full border p-2 rounded"
             />

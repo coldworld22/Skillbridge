@@ -149,6 +149,7 @@
     "code": "Code",
     "symbol": "Symbol",
     "exchange_rate": "Exchange Rate",
+    "tax_rate": "Tax Rate (%)",
     "auto_update": "Auto Update",
     "status": "Status",
     "default": "Default",

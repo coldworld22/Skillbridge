@@ -138,6 +138,7 @@
     "code": "Code",
     "symbol": "Symbole",
     "exchange_rate": "Taux de change",
+    "tax_rate": "Taux de taxe (%)",
     "auto_update": "Mise à jour auto",
     "status": "Statut",
     "default": "Par défaut",

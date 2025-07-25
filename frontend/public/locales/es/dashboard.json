@@ -138,6 +138,7 @@
     "code": "Código",
     "symbol": "Símbolo",
     "exchange_rate": "Tipo de cambio",
+    "tax_rate": "Impuesto (%)",
     "auto_update": "Actualización automática",
     "status": "Estado",
     "default": "Predeterminada",

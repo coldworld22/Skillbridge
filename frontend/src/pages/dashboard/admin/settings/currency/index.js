@@ -82,6 +82,7 @@ function CurrencyManagerPage() {
 
   const pageCount = Math.ceil(filteredCurrencies.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
+
   const paginatedCurrencies = filteredCurrencies.slice(
     startIndex,
     startIndex + itemsPerPage
@@ -90,6 +91,7 @@ function CurrencyManagerPage() {
   // ─────────────────────
   // Actions: toggle status, set default and update rates
   // ─────────────────────
+
   const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
@@ -305,6 +307,7 @@ function CurrencyManagerPage() {
               <th className="p-3 text-left">{t('code')}</th>
               <th className="p-3 text-left">{t('symbol')}</th>
               <th className="p-3 text-left">{t('exchange_rate')}</th>
+              <th className="p-3 text-left">{t('tax_rate')}</th>
               <th className="p-3 text-center">{t('auto_update')}</th>
               <th className="p-3 text-center">{t('status')}</th>
               <th className="p-3 text-center">{t('default')}</th>
@@ -343,6 +346,7 @@ function CurrencyManagerPage() {
                 >
                   {Number(c.exchange_rate).toFixed(2)}
                 </td>
+                <td className="p-3">{Number(c.tax_rate).toFixed(2)}</td>
                 <td className="p-3 text-center">
                   <button
                     onClick={() => toggleAutoUpdate(c.id)}

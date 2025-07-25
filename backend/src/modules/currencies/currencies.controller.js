@@ -18,11 +18,14 @@ const messageService = require('../messages/messages.service');
  * Notifies all admins on success.
  */
 exports.createCurrency = catchAsync(async (req, res) => {
-  const { label, code, symbol, exchange_rate } = req.body;
+  const { label, code, symbol, exchange_rate, tax_rate } = req.body;
   if (!label || !code || !symbol)
     throw new AppError('Label, code and symbol are required', 400);
   if (exchange_rate && isNaN(Number(exchange_rate))) {
     throw new AppError('Invalid exchange rate', 400);
+  }
+  if (tax_rate && isNaN(Number(tax_rate))) {
+    throw new AppError('Invalid tax rate', 400);
   }
 
   const data = { ...req.body };
@@ -31,6 +34,7 @@ exports.createCurrency = catchAsync(async (req, res) => {
   }
   // Coerce numeric and boolean values from multipart/form-data
   if (data.exchange_rate) data.exchange_rate = Number(data.exchange_rate);
+  if (data.tax_rate) data.tax_rate = Number(data.tax_rate);
   ['is_active', 'is_default', 'auto_update'].forEach((k) => {
     if (data[k] !== undefined) data[k] = data[k] === 'true' || data[k] === true;
   });
@@ -78,7 +82,7 @@ exports.updateCurrency = catchAsync(async (req, res) => {
   const existing = await service.getById(req.params.id);
   if (!existing) throw new AppError('Currency not found', 404);
 
-  const { label, code, symbol, exchange_rate } = req.body;
+  const { label, code, symbol, exchange_rate, tax_rate } = req.body;
   if (label !== undefined && !label) {
     throw new AppError('Label is required', 400);
   }
@@ -91,6 +95,9 @@ exports.updateCurrency = catchAsync(async (req, res) => {
   if (exchange_rate && isNaN(Number(exchange_rate))) {
     throw new AppError('Invalid exchange rate', 400);
   }
+  if (tax_rate && isNaN(Number(tax_rate))) {
+    throw new AppError('Invalid tax rate', 400);
+  }
 
   const data = { ...req.body };
   if (req.file) {
@@ -102,6 +109,7 @@ exports.updateCurrency = catchAsync(async (req, res) => {
   }
 
   if (data.exchange_rate) data.exchange_rate = Number(data.exchange_rate);
+  if (data.tax_rate) data.tax_rate = Number(data.tax_rate);
   ['is_active', 'is_default', 'auto_update'].forEach((k) => {
     if (data[k] !== undefined) data[k] = data[k] === 'true' || data[k] === true;
   });
