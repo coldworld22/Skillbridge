@@ -4,6 +4,12 @@ const { sendSuccess } = require("../../../utils/response");
 const service = require("./classLesson.service");
 const classService = require("../class.service");
 const AppError = require("../../../utils/AppError");
+const notificationService = require("../../notifications/notifications.service");
+const messageService = require("../../messages/messages.service");
+const userModel = require("../../users/user.model");
+const {
+  sendLessonScheduledEmail,
+} = require("../../../utils/email");
 const fs = require("fs");
 const path = require("path");
 
@@ -33,6 +39,34 @@ exports.createLesson = catchAsync(async (req, res) => {
     data.topic_file_url = `/uploads/lessons/${req.file.filename}`;
   }
   const lesson = await service.createLesson(data);
+  const message = `Lesson "${lesson.title}" scheduled for ${lesson.start_time}`;
+  await notificationService.createNotification({
+    user_id: cls.instructor_id,
+    type: "lesson_scheduled",
+    message,
+  });
+  const admins = await userModel.findAdmins();
+  const sender = admins[0];
+  if (sender) {
+    await messageService.createMessage({
+      sender_id: sender.id,
+      receiver_id: cls.instructor_id,
+      message,
+    });
+  }
+  try {
+    const instructor = await userModel.findById(cls.instructor_id);
+    if (instructor) {
+      await sendLessonScheduledEmail(
+        instructor.email,
+        lesson.title,
+        lesson.start_time,
+        cls.title
+      );
+    }
+  } catch (err) {
+    console.error("Error sending lesson scheduled email:", err.message);
+  }
   sendSuccess(res, lesson, "Lesson created");
 });
 

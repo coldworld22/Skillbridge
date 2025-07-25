@@ -4,7 +4,7 @@ const { sendSuccess } = require("../../utils/response");
 const service = require("./class.service");
 const tagService = require("./classTag.service");
 const notificationService = require("../notifications/notifications.service");
-
+const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
 
 const slugify = require("slugify");
@@ -60,17 +60,42 @@ exports.createClass = catchAsync(async (req, res) => {
     user_id: cls.instructor_id,
     type: "class_created",
     message:
-      "New class added successfully. It's under review and will be available after we approve it",
+      "Your class was created successfully and is now pending review. We'll notify you once it's published.",
   });
 
-  const instructor = await userModel.findById(cls.instructor_id);
   const admins = await userModel.findAdmins();
+  const instructor = await userModel.findById(cls.instructor_id);
+
+  const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
+    cls.start_date ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}` : ""
+  } that is awaiting your review.`;
   await Promise.all(
     admins.map((admin) =>
       notificationService.createNotification({
         user_id: admin.id,
         type: "new_class",
-        message: `Instructor ${instructor.full_name} added new class \"${cls.title}\" waiting for review`,
+        message: adminMessage,
+      })
+    )
+  );
+
+  const instructorMessage =
+    `Your class "${cls.title}" was created successfully and is pending admin approval. It will appear on your dashboard once published.`;
+
+  const sender = admins[0];
+  if (sender) {
+    await messageService.createMessage({
+      sender_id: sender.id,
+      receiver_id: cls.instructor_id,
+      message: instructorMessage,
+    });
+  }
+  await Promise.all(
+    admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: instructor.id,
+        receiver_id: admin.id,
+        message: adminMessage,
       })
     )
   );

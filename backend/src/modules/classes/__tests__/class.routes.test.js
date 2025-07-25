@@ -23,6 +23,10 @@ jest.mock('../../notifications/notifications.service', () => ({
 }));
 
 const notifications = require('../../notifications/notifications.service');
+jest.mock('../../messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+const messages = require('../../messages/messages.service');
 jest.mock('../../users/user.model', () => ({
   findAdmins: jest.fn(() => [{ id: 'admin1' }]),
   findById: jest.fn(() => ({ id: '2', full_name: 'Test Instructor' })),
@@ -67,6 +71,7 @@ describe('Class routes', () => {
       expect.objectContaining({ status: 'published' })
     );
     expect(notifications.createNotification).toHaveBeenCalledTimes(2);
+    expect(messages.createMessage).toHaveBeenCalledTimes(2);
   });
 
   test('create class with options', async () => {

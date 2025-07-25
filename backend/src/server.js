@@ -10,6 +10,7 @@ const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const path = require("path");
+const startLessonReminderJob = require("./jobs/lessonReminderJob");
 require("dotenv").config();
 
 
@@ -180,6 +181,7 @@ async function startServer() {
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
+    startLessonReminderJob();
   } catch (err) {
     console.error("❌ Failed to start server:", err.message);
     process.exit(1);
