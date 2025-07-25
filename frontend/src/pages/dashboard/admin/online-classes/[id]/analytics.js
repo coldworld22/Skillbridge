@@ -19,6 +19,24 @@ import {
 
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#f87171"];
 
+// ─────────────────────
+// Fallback analytics when API fails
+// ─────────────────────
+const EMPTY_STATS = {
+  totalStudents: 0,
+  totalRevenue: 0,
+  totalAttendance: 0,
+  completed: 0,
+  revenueBreakdown: {
+    full: 0,
+    installments: 0,
+    free: 0,
+  },
+  locations: [],
+  devices: [],
+  registrationTrend: [],
+};
+
 export default function AnalyticsDashboard() {
   const router = useRouter();
   const { id } = router.query;
@@ -30,7 +48,7 @@ export default function AnalyticsDashboard() {
       .then((data) => setStats(data))
       .catch((err) => {
         console.error("Failed to load analytics", err);
-        setStats(null);
+        setStats(EMPTY_STATS);
       });
   }, [id]);
 

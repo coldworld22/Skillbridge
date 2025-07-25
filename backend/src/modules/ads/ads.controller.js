@@ -65,6 +65,9 @@ exports.deleteAd = catchAsync(async (req, res) => {
 
 exports.getAdAnalytics = catchAsync(async (req, res) => {
   const data = await service.getAdAnalytics(req.params.id);
+  /**
+   * Default analytics values used when no data exists
+   */
   const base = {
     views: 0,
     ctr: 0,
