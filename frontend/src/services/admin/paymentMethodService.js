@@ -11,12 +11,14 @@ export const fetchMethodById = async (id) => {
 };
 
 export const createMethod = async (payload) => {
-  const { data } = await api.post("/payment-methods/admin", payload);
+  const headers = payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
+  const { data } = await api.post("/payment-methods/admin", payload, { headers });
   return data?.data;
 };
 
 export const updateMethod = async (id, payload) => {
-  const { data } = await api.patch(`/payment-methods/admin/${id}`, payload);
+  const headers = payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
+  const { data } = await api.patch(`/payment-methods/admin/${id}`, payload, { headers });
   return data?.data;
 };
 
