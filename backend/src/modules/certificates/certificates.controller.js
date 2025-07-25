@@ -1,3 +1,6 @@
+/**
+ * Certificate admin controller
+ */
 const service = require("./certificates.service");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");

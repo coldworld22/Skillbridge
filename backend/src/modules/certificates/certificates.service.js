@@ -1,3 +1,6 @@
+/**
+ * Certificate admin service
+ */
 const db = require("../../config/database");
 
 /**

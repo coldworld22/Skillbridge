@@ -351,14 +351,14 @@
     "url_invalid": "\u064a\u062c\u0628 \u0623\u0646 \u064a\u0643\u0648\u0646 \u0631\u0627\u0628\u0637\u0627\u064b \u0635\u0627\u0644\u062d\u0627ً"
   },
   "adminCertificatesPage": {
-    "title": "Certificates",
-    "search_placeholder": "Search students or classes",
-    "all_status": "All Status",
-    "issued": "Issued",
-    "pending": "Pending",
-    "revoked": "Revoked",
-    "refresh": "Refresh",
-    "no_certificates": "No certificates found."
+    "title": "الشهادات",
+    "search_placeholder": "ابحث عن الطلاب أو الفصول الدراسية",
+    "all_status": "جميع الحالات",
+    "issued": "صادر",
+    "pending": "قيد الانتظار",
+    "revoked": "ألغى",
+    "refresh": "ينعش",
+    "no_certificates": "لم يتم العثور على شهادات."
   },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",

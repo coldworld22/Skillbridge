@@ -310,14 +310,14 @@
     "url_invalid": "Debe ser una URL válida"
   },
   "adminCertificatesPage": {
-    "title": "Certificates",
-    "search_placeholder": "Search students or classes",
-    "all_status": "All Status",
-    "issued": "Issued",
-    "pending": "Pending",
-    "revoked": "Revoked",
-    "refresh": "Refresh",
-    "no_certificates": "No certificates found."
+    "title": "Certificados",
+    "search_placeholder": "Buscar estudiantes o clases",
+    "all_status": "Todos los estados",
+    "issued": "Emitido",
+    "pending": "Pendiente",
+    "revoked": "Revocado",
+    "refresh": "Refrescar",
+    "no_certificates": "No se encontraron certificados."
   },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",
