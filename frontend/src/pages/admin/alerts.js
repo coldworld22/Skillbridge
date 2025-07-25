@@ -27,6 +27,7 @@ function AdminAlertsPage() {
   }, [fetchLogs, startPolling, stopPolling]);
 
   return (
+
     <AdminLayout>
       <div dir={i18n.dir()}>
         <h1 className="text-2xl font-bold mb-6">🚨 {t('title')}</h1>
@@ -108,6 +109,7 @@ function AdminAlertsPage() {
 }
 
 export default withAuthProtection(AdminAlertsPage, ["admin", "superadmin"]);
+
 
 export async function getStaticProps({ locale }) {
   return {
