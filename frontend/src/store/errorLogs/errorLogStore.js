@@ -15,6 +15,7 @@ const useErrorLogStore = create((set, get) => ({
       const data = await getSystemErrors();
       set({ logs: data, loading: false });
     } catch (err) {
+      console.error('Failed to load system errors', err);
       set({ loading: false });
     }
   },
