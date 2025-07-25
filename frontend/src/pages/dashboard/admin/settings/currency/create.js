@@ -1,4 +1,7 @@
-// pages/dashboard/admin/settings/currencies/create.js
+/**
+ * Page for creating a new currency entry.
+ * Only accessible to admins and super admins.
+ */
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -12,6 +15,9 @@ import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 import { createCurrency } from "@/services/admin/currencyService";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
@@ -36,6 +42,7 @@ function CreateCurrencyPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const notify = useAdminNotice();
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'currenciesPage' });
   const [form, setForm] = useState({
     label: "",
     code: "",
@@ -72,34 +79,34 @@ function CreateCurrencyPage() {
     try {
       await createCurrency(fd);
       mutate("/currencies");
-      toast.success("Currency saved!");
+      toast.success(t('currency_saved'));
       const message = `Currency "${form.label}" created.`;
       notify("currency_created", message);
       router.push("/dashboard/admin/settings/currency");
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Failed to save currency.";
+      const msg = err.response?.data?.message || t('failed_to_save');
       toast.error(msg);
     }
   };
 
   return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="p-6 max-w-2xl mx-auto" dir={i18n.dir()}>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-  <img src="/logo-icon.png" alt="Logo" className="w-6 h-6" /> Add Currency
+  <img src="/logo-icon.png" alt="Logo" className="w-6 h-6" /> {t('create_title')}
 </h1>
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 hover:text-black"
           >
-            <FaArrowLeft /> Back
+            <FaArrowLeft /> {t('back')}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 shadow rounded">
           <div>
-            <label className="block font-semibold mb-1">Currency Name</label>
+            <label className="block font-semibold mb-1">{t('currency_name')}</label>
             <input
               type="text"
               name="label"
@@ -112,7 +119,7 @@ function CreateCurrencyPage() {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Currency Code</label>
+            <label className="block font-semibold mb-1">{t('currency_code')}</label>
             <input
               type="text"
               name="code"
@@ -133,7 +140,7 @@ function CreateCurrencyPage() {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Symbol</label>
+            <label className="block font-semibold mb-1">{t('symbol_label')}</label>
             <input
               type="text"
               name="symbol"
@@ -146,7 +153,7 @@ function CreateCurrencyPage() {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Exchange Rate</label>
+            <label className="block font-semibold mb-1">{t('exchange_rate')}</label>
             <input
               type="number"
               name="exchange_rate"
@@ -160,7 +167,7 @@ function CreateCurrencyPage() {
           </div>
 
           <div>
-          <label className="block font-semibold mb-1">Currency Logo (optional)</label>
+          <label className="block font-semibold mb-1">{t('currency_logo')}</label>
           <input
             type="file"
             name="logo"
@@ -198,7 +205,7 @@ function CreateCurrencyPage() {
                 checked={form.is_active}
                 onChange={handleChange}
               />
-              <span className="text-sm font-medium">Active</span>
+              <span className="text-sm font-medium">{t('active')}</span>
             </label>
 
             <label className="flex items-center gap-2">
@@ -208,7 +215,7 @@ function CreateCurrencyPage() {
                 checked={form.auto_update}
                 onChange={handleChange}
               />
-              <span className="text-sm font-medium">Auto Update Rate</span>
+              <span className="text-sm font-medium">{t('auto_update_rate')}</span>
             </label>
 
             <label className="flex items-center gap-2">
@@ -218,7 +225,7 @@ function CreateCurrencyPage() {
                 checked={form.is_default}
                 onChange={handleChange}
               />
-              <span className="text-sm font-medium">Set as Default</span>
+              <span className="text-sm font-medium">{t('set_as_default')}</span>
             </label>
           </div>
 
@@ -226,7 +233,7 @@ function CreateCurrencyPage() {
             type="submit"
             className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2"
           >
-            <FaSave /> Save Currency
+            <FaSave /> {t('save_currency')}
           </button>
         </form>
       </div>
@@ -245,4 +252,12 @@ const ProtectedCreateCurrencyPage = withAuthProtection(CreateCurrencyPage, [
 ProtectedCreateCurrencyPage.getLayout = CreateCurrencyPage.getLayout;
 
 export default ProtectedCreateCurrencyPage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
 
