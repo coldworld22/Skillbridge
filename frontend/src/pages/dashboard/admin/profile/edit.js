@@ -41,7 +41,7 @@ const profileSchema = z.object({
 
 function ProfileEditTemplate() {
   const router = useRouter();
-  const { user, hasHydrated } = useAuthStore();
+  const { user, hasHydrated, setUser } = useAuthStore();
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -65,6 +65,14 @@ function ProfileEditTemplate() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
   const fetchNotifications = useNotificationStore((state) => state.fetch);
+
+  useEffect(() => {
+    const local = localStorage.getItem("auth");
+    const parsed = JSON.parse(local)?.state;
+    if (hasHydrated && !user && parsed?.user) {
+      setUser(parsed.user);
+    }
+  }, [hasHydrated]);
 
   useEffect(() => {
 
@@ -221,7 +229,6 @@ function ProfileEditTemplate() {
       });
 
       const fresh = await getAdminProfile();
-      const setUser = useAuthStore.getState().setUser;
       setUser({
         ...user,
         full_name: fresh.full_name,
