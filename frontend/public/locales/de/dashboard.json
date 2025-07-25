@@ -313,6 +313,21 @@
     "preview": "Preview",
     "download": "Download"
   },
+  "classStudentsPage": {
+    "title": "Enrolled Students",
+    "no_students": "No students enrolled.",
+    "status": "Status",
+    "date_joined": "Date Joined",
+    "back_to_class": "Back to Class"
+  },
+  "studentDetailPage": {
+    "title": "Student Overview",
+    "issue_certificate": "Issue Certificate",
+    "add_note": "Add Note",
+    "edit_attendance": "Edit Attendance",
+    "back_to_list": "Back to Student List",
+    "student_not_found": "Student not found"
+  },
   "sidebar": {
       "Account": "Konto",
       "Bookings": "Buchungen",

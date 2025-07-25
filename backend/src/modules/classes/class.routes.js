@@ -60,12 +60,14 @@ router.get(
   isInstructorOrAdmin,
   controller.getClassAnalytics
 );
+// List students enrolled in a specific class
 router.get(
   "/admin/:id/students",
   verifyToken,
   isInstructorOrAdmin,
   enrollmentCtrl.getStudentsByClass
 );
+// Fetch details for a single student's enrollment
 router.get(
   "/admin/:classId/students/:studentId",
   verifyToken,
