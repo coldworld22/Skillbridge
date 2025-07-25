@@ -4,14 +4,56 @@ const { sendSuccess } = require('../../utils/response');
 const AppError = require('../../utils/AppError');
 const path = require('path');
 const fs = require('fs');
+const userModel = require('../users/user.model');
+const notificationService = require('../notifications/notifications.service');
+const messageService = require('../messages/messages.service');
 
 exports.createCurrency = catchAsync(async (req, res) => {
+  const { label, code, symbol, exchange_rate } = req.body;
+  if (!label || !code || !symbol)
+    throw new AppError('Label, code and symbol are required', 400);
+  if (exchange_rate && isNaN(Number(exchange_rate))) {
+    throw new AppError('Invalid exchange rate', 400);
+  }
+
   const data = { ...req.body };
   if (req.file) {
     data.logo_url = `/uploads/currencies/${req.file.filename}`;
   }
-  const currency = await service.create(data);
-  sendSuccess(res, currency, 'Currency created');
+  // Coerce numeric and boolean values from multipart/form-data
+  if (data.exchange_rate) data.exchange_rate = Number(data.exchange_rate);
+  ['is_active', 'is_default', 'auto_update'].forEach((k) => {
+    if (data[k] !== undefined) data[k] = data[k] === 'true' || data[k] === true;
+  });
+
+  try {
+    const currency = await service.create(data);
+    sendSuccess(res, currency, 'Currency created');
+    const admins = await userModel.findAdmins();
+    const senderId = req.user?.id;
+    await Promise.all(
+      admins.map((admin) =>
+        Promise.all([
+          notificationService.createNotification({
+            user_id: admin.id,
+            type: 'currency_created',
+            message: `Currency "${currency.label}" created`,
+          }),
+          messageService.createMessage({
+            sender_id: senderId || admin.id,
+            receiver_id: admin.id,
+            message: `Currency "${currency.label}" created`,
+          }),
+        ])
+      )
+    );
+  } catch (err) {
+    if (err.code === '23505') {
+      // duplicate currency code
+      return res.status(400).json({ message: 'Currency code already exists' });
+    }
+    throw err;
+  }
 });
 
 exports.listCurrencies = catchAsync(async (_req, res) => {
@@ -22,6 +64,21 @@ exports.listCurrencies = catchAsync(async (_req, res) => {
 exports.updateCurrency = catchAsync(async (req, res) => {
   const existing = await service.getById(req.params.id);
   if (!existing) throw new AppError('Currency not found', 404);
+
+  const { label, code, symbol, exchange_rate } = req.body;
+  if (label !== undefined && !label) {
+    throw new AppError('Label is required', 400);
+  }
+  if (code !== undefined && !code) {
+    throw new AppError('Code is required', 400);
+  }
+  if (symbol !== undefined && !symbol) {
+    throw new AppError('Symbol is required', 400);
+  }
+  if (exchange_rate && isNaN(Number(exchange_rate))) {
+    throw new AppError('Invalid exchange rate', 400);
+  }
+
   const data = { ...req.body };
   if (req.file) {
     if (existing.logo_url) {
@@ -30,8 +87,39 @@ exports.updateCurrency = catchAsync(async (req, res) => {
     }
     data.logo_url = `/uploads/currencies/${req.file.filename}`;
   }
-  const updated = await service.update(req.params.id, data);
-  sendSuccess(res, updated, 'Currency updated');
+
+  if (data.exchange_rate) data.exchange_rate = Number(data.exchange_rate);
+  ['is_active', 'is_default', 'auto_update'].forEach((k) => {
+    if (data[k] !== undefined) data[k] = data[k] === 'true' || data[k] === true;
+  });
+
+  try {
+    const updated = await service.update(req.params.id, data);
+    sendSuccess(res, updated, 'Currency updated');
+    const admins = await userModel.findAdmins();
+    const senderId = req.user?.id;
+    await Promise.all(
+      admins.map((admin) =>
+        Promise.all([
+          notificationService.createNotification({
+            user_id: admin.id,
+            type: 'currency_updated',
+            message: `Currency "${updated.label}" updated`,
+          }),
+          messageService.createMessage({
+            sender_id: senderId || admin.id,
+            receiver_id: admin.id,
+            message: `Currency "${updated.label}" updated`,
+          }),
+        ])
+      )
+    );
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ message: 'Currency code already exists' });
+    }
+    throw err;
+  }
 });
 
 exports.deleteCurrency = catchAsync(async (req, res) => {
@@ -42,4 +130,22 @@ exports.deleteCurrency = catchAsync(async (req, res) => {
   }
   await service.remove(req.params.id);
   sendSuccess(res, null, 'Currency deleted');
+  const admins = await userModel.findAdmins();
+  const senderId = req.user?.id;
+  await Promise.all(
+    admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: 'currency_deleted',
+          message: `Currency "${existing?.label || req.params.id}" deleted`,
+        }),
+        messageService.createMessage({
+          sender_id: senderId || admin.id,
+          receiver_id: admin.id,
+          message: `Currency "${existing?.label || req.params.id}" deleted`,
+        }),
+      ])
+    )
+  );
 });
