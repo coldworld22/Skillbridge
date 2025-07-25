@@ -185,6 +185,16 @@
     "failed_to_save": "Failed to save currency.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },
+  "alertsPage": {
+    "title": "Real-Time Alerts",
+    "type": "Type",
+    "message": "Message",
+    "time": "Time",
+    "level": "Level",
+    "prev": "Prev",
+    "next": "Next",
+    "no_alerts": "No alerts found."
+  },
   "instructorProfilePage": {
     "title": "Edit Instructor Profile",
     "profile_picture": "Profile Picture",
