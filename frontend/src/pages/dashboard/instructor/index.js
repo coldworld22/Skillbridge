@@ -23,17 +23,14 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "tailwindcss/tailwind.css";
-import { fetchInstructorDashboardStats } from "@/services/instructor/instructorService";
+import {
+  fetchInstructorDashboardStats,
+  fetchInstructorTutorialViews,
+} from "@/services/instructor/instructorService";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 
 const localizer = momentLocalizer(moment);
 
-const mockChartData = [
-  { name: 'Week 1', views: 420 },
-  { name: 'Week 2', views: 620 },
-  { name: 'Week 3', views: 580 },
-  { name: 'Week 4', views: 760 },
-];
 
 const mockTutorials = [
   { id: 1, title: "React Basics", status: "Draft" },
@@ -85,7 +82,16 @@ export default function InstructorDashboard() {
       } catch (err) {
         console.error('Failed to load dashboard stats', err);
       }
-      setChartData(mockChartData);
+      try {
+        const views = await fetchInstructorTutorialViews();
+        const formatted = views.map((v, idx) => ({
+          name: `Week ${idx + 1}`,
+          views: v.views,
+        }));
+        setChartData(formatted);
+      } catch (err) {
+        console.error('Failed to load tutorial views', err);
+      }
     }
     loadStats();
     async function loadEvents() {
