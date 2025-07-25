@@ -158,4 +158,11 @@ router.get(
   controller.getDashboardStats
 );
 
+router.get(
+  "/tutorial-views",
+  verifyToken,
+  isInstructor,
+  controller.getTutorialViews
+);
+
 module.exports = router;

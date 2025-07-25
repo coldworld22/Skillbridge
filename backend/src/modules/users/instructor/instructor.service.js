@@ -132,8 +132,29 @@ const getDashboardStats = async (userId) => {
   };
 };
 
+// 📊 Tutorial views grouped by week for the instructor
+const getTutorialViewsByWeek = async (userId, weeks = 4) => {
+  const rows = await db('tutorial_views as v')
+    .join('tutorials as t', 'v.tutorial_id', 't.id')
+    .where('t.instructor_id', userId)
+    .where('v.created_at', '>=', db.raw(`CURRENT_DATE - INTERVAL '${weeks} weeks'`))
+    .select(
+      db.raw("DATE_TRUNC('week', v.created_at) as week"),
+      db.raw('COUNT(*) as views')
+    )
+    .groupBy('week')
+    .orderBy('week');
+
+  return rows.map((r) => ({
+    week:
+      r.week instanceof Date ? r.week.toISOString().split('T')[0] : r.week,
+    views: parseInt(r.views, 10) || 0,
+  }));
+};
+
 module.exports = {
   getInstructorProfile,
   updateInstructorProfile,
   getDashboardStats,
+  getTutorialViewsByWeek,
 };

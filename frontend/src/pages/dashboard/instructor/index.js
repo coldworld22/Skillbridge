@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import {
   FaChalkboardTeacher,
@@ -23,17 +26,14 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "tailwindcss/tailwind.css";
-import { fetchInstructorDashboardStats } from "@/services/instructor/instructorService";
+import {
+  fetchInstructorDashboardStats,
+  fetchInstructorTutorialViews,
+} from "@/services/instructor/instructorService";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 
 const localizer = momentLocalizer(moment);
 
-const mockChartData = [
-  { name: 'Week 1', views: 420 },
-  { name: 'Week 2', views: 620 },
-  { name: 'Week 3', views: 580 },
-  { name: 'Week 4', views: 760 },
-];
 
 const mockTutorials = [
   { id: 1, title: "React Basics", status: "Draft" },
@@ -72,6 +72,7 @@ const mockDashboardCounts = {
 const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
 export default function InstructorDashboard() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorDashboardPage' });
   const [activeTab, setActiveTab] = useState("tutorials");
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
@@ -85,7 +86,16 @@ export default function InstructorDashboard() {
       } catch (err) {
         console.error('Failed to load dashboard stats', err);
       }
-      setChartData(mockChartData);
+      try {
+        const views = await fetchInstructorTutorialViews();
+        const formatted = views.map((v, idx) => ({
+          name: `Week ${idx + 1}`,
+          views: v.views,
+        }));
+        setChartData(formatted);
+      } catch (err) {
+        console.error('Failed to load tutorial views', err);
+      }
     }
     loadStats();
     async function loadEvents() {
@@ -126,33 +136,33 @@ export default function InstructorDashboard() {
   return (
     <InstructorLayout>
       <div className="bg-gray-50 min-h-screen rounded-xl p-6 space-y-6 text-gray-800">
-        <h1 className="text-3xl font-bold tracking-tight">Instructor Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className={cardStyle}>
             <FaChalkboardTeacher className="text-2xl mb-2 text-sky-600" />
-            <p>Total Tutorials</p>
+            <p>{t('total_tutorials')}</p>
             <h2 className="text-xl font-semibold">{counts.totalTutorials ?? '...'}</h2>
           </div>
           <div className={cardStyle}>
             <FaVideo className="text-2xl mb-2 text-rose-600" />
-            <p>Online Classes</p>
+            <p>{t('online_classes')}</p>
             <h2 className="text-xl font-semibold">{counts.totalClasses ?? '...'}</h2>
           </div>
           <div className={cardStyle}>
             <FaUserGraduate className="text-2xl mb-2 text-emerald-600" />
-            <p>Enrolled Students</p>
+            <p>{t('enrolled_students')}</p>
             <h2 className="text-xl font-semibold">{counts.totalStudents ?? '...'}</h2>
           </div>
           <div className={cardStyle}>
             <FaCalendarAlt className="text-2xl mb-2 text-indigo-600" />
-            <p>Upcoming Sessions</p>
+            <p>{t('upcoming_sessions')}</p>
             <h2 className="text-xl font-semibold">{counts.upcomingSessions ?? '...'}</h2>
           </div>
         </div>
 
         <div className={cardStyle}>
-          <h2 className="text-xl font-bold border-b pb-2 mb-4">Tutorial Views (Last 4 Weeks)</h2>
+          <h2 className="text-xl font-bold border-b pb-2 mb-4">{t('tutorial_views_title')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -165,7 +175,7 @@ export default function InstructorDashboard() {
         </div>
 
         <div className={cardStyle}>
-          <h2 className="text-xl font-bold border-b pb-2 mb-4">Calendar</h2>
+          <h2 className="text-xl font-bold border-b pb-2 mb-4">{t('calendar')}</h2>
           <div className="h-[500px]">
             <Calendar
               localizer={localizer}
@@ -188,7 +198,7 @@ export default function InstructorDashboard() {
                 onClick={() => setActiveTab(tab)}
                 className={tabButtonStyle(tab)}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1).replace(/([A-Z])/g, ' $1')}
+                {t(`tabs.${tab}`)}
               </button>
             ))}
           </div>
@@ -196,9 +206,9 @@ export default function InstructorDashboard() {
          {/* Tab Content */}
 {activeTab === "tutorials" && (
   <div className={cardStyle}>
-    <h3 className="font-semibold text-lg mb-2">My Tutorials</h3>
+    <h3 className="font-semibold text-lg mb-2">{t('my_tutorials')}</h3>
     <button className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-2 rounded mb-4">
-      Create New Tutorial
+      {t('create_tutorial')}
     </button>
     <ul className="space-y-2">
       {mockTutorials.map((tutorial) => (
@@ -208,8 +218,8 @@ export default function InstructorDashboard() {
             <p className="text-sm text-gray-500">Status: {tutorial.status}</p>
           </div>
           <div className="space-x-2">
-            <button className="text-sky-600 hover:underline">Edit</button>
-            <button className="text-green-600 hover:underline">View</button>
+            <button className="text-sky-600 hover:underline">{t('edit')}</button>
+            <button className="text-green-600 hover:underline">{t('view')}</button>
           </div>
         </li>
       ))}
@@ -219,9 +229,9 @@ export default function InstructorDashboard() {
 
 {activeTab === "classes" && (
   <div className={cardStyle}>
-    <h3 className="font-semibold text-lg mb-2">My Online Classes</h3>
+    <h3 className="font-semibold text-lg mb-2">{t('my_online_classes')}</h3>
     <button className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-2 rounded mb-4">
-      Schedule New Class
+      {t('schedule_class')}
     </button>
     <ul className="space-y-3">
       {mockClasses.map((cls) => (
@@ -231,8 +241,8 @@ export default function InstructorDashboard() {
             <p className="text-sm text-gray-500">{cls.date} @ {cls.time}</p>
           </div>
           <div className="space-x-2">
-            <button className="text-sky-600 hover:underline">Edit</button>
-            <button className="text-rose-600 hover:underline">Cancel</button>
+            <button className="text-sky-600 hover:underline">{t('edit')}</button>
+            <button className="text-rose-600 hover:underline">{t('cancel')}</button>
           </div>
         </li>
       ))}
@@ -242,14 +252,14 @@ export default function InstructorDashboard() {
 
 {activeTab === "students" && (
   <div className={cardStyle}>
-    <h3 className="font-semibold text-lg mb-2">Enrolled Students</h3>
+    <h3 className="font-semibold text-lg mb-2">{t('enrolled_students_tab')}</h3>
     <table className="w-full mt-4 table-auto">
       <thead>
         <tr className="text-left border-b">
-          <th className="py-2">Name</th>
-          <th>Email</th>
-          <th>Class</th>
-          <th>Actions</th>
+          <th className="py-2">{t('name')}</th>
+          <th>{t('email')}</th>
+          <th>{t('class')}</th>
+          <th>{t('actions')}</th>
         </tr>
       </thead>
       <tbody>
@@ -259,7 +269,7 @@ export default function InstructorDashboard() {
             <td>{student.email}</td>
             <td>{student.classTitle}</td>
             <td>
-              <button className="text-sky-600 hover:underline">View</button>
+              <button className="text-sky-600 hover:underline">{t('view')}</button>
             </td>
           </tr>
         ))}
@@ -270,9 +280,9 @@ export default function InstructorDashboard() {
 
 {activeTab === "assignments" && (
   <div className={cardStyle}>
-    <h3 className="font-semibold text-lg mb-2">Assignments</h3>
+    <h3 className="font-semibold text-lg mb-2">{t('assignments_title')}</h3>
     <button className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-2 rounded mb-4">
-      Create Assignment
+      {t('create_assignment')}
     </button>
     <ul className="space-y-2">
       {mockAssignments.map((assignment) => (
@@ -282,8 +292,8 @@ export default function InstructorDashboard() {
             <p className="text-sm text-gray-500">Due: {assignment.dueDate}</p>
           </div>
           <div className="space-x-2">
-            <button className="text-sky-600 hover:underline">Submissions</button>
-            <button className="text-rose-600 hover:underline">Edit</button>
+            <button className="text-sky-600 hover:underline">{t('submissions')}</button>
+            <button className="text-rose-600 hover:underline">{t('edit')}</button>
           </div>
         </li>
       ))}
@@ -293,10 +303,10 @@ export default function InstructorDashboard() {
 
 {activeTab === "certificates" && (
   <div className={cardStyle}>
-    <h3 className="font-semibold text-lg mb-2">Certificates</h3>
+    <h3 className="font-semibold text-lg mb-2">{t('certificates_title')}</h3>
     <input
       type="text"
-      placeholder="Search students or classes"
+      placeholder={t('search_placeholder')}
       className="border px-3 py-2 rounded w-full mb-4"
     />
     <ul className="space-y-2">
@@ -307,8 +317,8 @@ export default function InstructorDashboard() {
             <p className="text-sm text-gray-500">Class: {cert.classTitle} | Issued: {cert.issueDate}</p>
           </div>
           <div className="space-x-2">
-            <button className="text-green-600 hover:underline">Preview</button>
-            <button className="text-sky-600 hover:underline">Download</button>
+            <button className="text-green-600 hover:underline">{t('preview')}</button>
+            <button className="text-sky-600 hover:underline">{t('download')}</button>
           </div>
         </li>
       ))}
@@ -320,4 +330,12 @@ export default function InstructorDashboard() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
