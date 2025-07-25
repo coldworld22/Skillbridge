@@ -27,8 +27,10 @@ function AdminAlertsPage() {
   }, [fetchLogs, startPolling, stopPolling]);
 
   return (
-    <div dir={i18n.dir()}>
-      <h1 className="text-2xl font-bold mb-6">🚨 {t('title')}</h1>
+
+    <AdminLayout>
+      <div dir={i18n.dir()}>
+        <h1 className="text-2xl font-bold mb-6">🚨 {t('title')}</h1>
 
       <div className="bg-white shadow rounded-xl overflow-x-auto">
         <table className="w-full table-auto text-sm text-left">
@@ -102,21 +104,12 @@ function AdminAlertsPage() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }
 
-AdminAlertsPage.getLayout = function getLayout(page) {
-  return <AdminLayout>{page}</AdminLayout>;
-};
+export default withAuthProtection(AdminAlertsPage, ["admin", "superadmin"]);
 
-const ProtectedAdminAlertsPage = withAuthProtection(AdminAlertsPage, [
-  "admin",
-  "superadmin",
-]);
-
-ProtectedAdminAlertsPage.getLayout = AdminAlertsPage.getLayout;
-
-export default ProtectedAdminAlertsPage;
 
 export async function getStaticProps({ locale }) {
   return {
