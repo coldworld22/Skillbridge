@@ -765,7 +765,7 @@ CreateOnlineClass.getLayout = function getLayout(page) {
 
 const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['admin', 'superadmin']);
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
-export default ProtectedCreateOnlineClass;
+export default dynamic(() => Promise.resolve(ProtectedCreateOnlineClass), { ssr: false });
 export { CreateOnlineClass };
 
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
