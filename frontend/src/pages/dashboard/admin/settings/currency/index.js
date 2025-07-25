@@ -11,7 +11,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
