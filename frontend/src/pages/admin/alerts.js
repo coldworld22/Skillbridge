@@ -2,18 +2,21 @@
 import { useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import useNotificationStore from "@/store/notifications/notificationStore";
+import useErrorLogStore from "@/store/errorLogs/errorLogStore";
 import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
-  const alerts = useNotificationStore((state) => state.items);
-  const fetchAlerts = useNotificationStore((state) => state.fetch);
-  const startPolling = useNotificationStore((state) => state.startPolling);
+  const logs = useErrorLogStore((state) => state.logs);
+  const loading = useErrorLogStore((state) => state.loading);
+  const fetchLogs = useErrorLogStore((state) => state.fetch);
 
   useEffect(() => {
-    fetchAlerts();
-    startPolling();
-  }, [fetchAlerts, startPolling]);
+    fetchLogs();
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchLogs]);
 
   return (
     <div className="p-6">
@@ -30,24 +33,39 @@ function AdminAlertsPage() {
             </tr>
           </thead>
           <tbody>
-            {alerts.map((alert) => (
-              <tr key={alert.id} className="border-b">
-                <td className="px-4 py-2 font-medium">{alert.type}</td>
-                <td className="px-4 py-2 text-gray-700">{alert.message}</td>
+            {loading && (
+              <tr>
+                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            )}
+            {!loading && logs.length === 0 && (
+              <tr>
+                <td colSpan="4" className="px-4 py-2 text-center text-gray-500">
+                  No recent errors
+                </td>
+              </tr>
+            )}
+            {!loading &&
+              logs.map((log) => (
+              <tr key={log.id} className="border-b">
+                <td className="px-4 py-2 font-medium">{log.type}</td>
+                <td className="px-4 py-2 text-gray-700">{log.message}</td>
                 <td className="px-4 py-2">
-                  {formatRelativeTime(alert.created_at || alert.time)}
+                  {formatRelativeTime(log.time)}
                 </td>
                 <td className="px-4 py-2">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
-                      alert.level === 'Critical'
+                      log.level === 'ERROR'
                         ? 'bg-red-100 text-red-600'
-                        : alert.level === 'Warning'
+                        : log.level === 'WARN'
                         ? 'bg-yellow-100 text-yellow-600'
                         : 'bg-blue-100 text-blue-600'
                     }`}
                   >
-                    {alert.level || 'Info'}
+                    {log.level}
                   </span>
                 </td>
               </tr>

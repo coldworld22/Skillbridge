@@ -1,4 +1,7 @@
-// pages/dashboard/admin/settings/currencies/create.js
+// ─────────────────────
+// Page for creating a new currency entry.
+// Only accessible to admins and super admins.
+// ─────────────────────
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -14,9 +17,11 @@ import { createCurrency } from "@/services/admin/currencyService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
+// ─────────────────────
+// Helper to notify all admins via notifications and chat
+// ─────────────────────
 const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -36,6 +41,9 @@ const useAdminNotice = () => {
   };
 };
 
+// ─────────────────────
+// React component: form to create a currency
+// ─────────────────────
 function CreateCurrencyPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -53,6 +61,9 @@ function CreateCurrencyPage() {
   const [preview, setPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
 
+  // ─────────────────────
+  // Handle form field changes
+  // ─────────────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const key = name;
@@ -69,6 +80,9 @@ function CreateCurrencyPage() {
     }));
   };
 
+  // ─────────────────────
+  // Submit the form and create the currency
+  // ─────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData();

@@ -1,4 +1,7 @@
-// pages/dashboard/admin/settings/currencies/index.js
+// ─────────────────────
+// Admin currency manager page.
+// Lists currencies with pagination and allows editing.
+// ─────────────────────
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
@@ -22,6 +25,9 @@ import {
 import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff, FaEdit } from "react-icons/fa";
 
 const fetcher = () => fetchCurrencies();
+// ─────────────────────
+// Helper to send notifications and messages to admins
+// ─────────────────────
 const useAdminNotice = () => {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -39,6 +45,9 @@ const useAdminNotice = () => {
     }
   };
 };
+// ─────────────────────
+// React component: manage currencies with pagination
+// ─────────────────────
 function CurrencyManagerPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'currenciesPage' });
   const {
@@ -78,6 +87,9 @@ function CurrencyManagerPage() {
     startIndex + itemsPerPage
   );
 
+  // ─────────────────────
+  // Actions: toggle status, set default and update rates
+  // ─────────────────────
   const toggleActive = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;

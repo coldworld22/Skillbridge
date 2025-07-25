@@ -236,14 +236,20 @@ const Navbar = () => {
                     {messages.slice(0, 10).map((msg) => (
                       <li
                         key={msg.id}
-                        onClick={() => markMessageRead(msg.id)}
-                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition ${
+                        className={`flex justify-between items-center p-2 rounded-md transition ${
                           msg.read ? "text-gray-400 bg-gray-50" : "bg-yellow-50"
                         }`}
                       >
-                        <span>{msg.message}</span>
-                        {!msg.read && (
-                          <span className="ml-2 text-xs text-red-500">{t('new')}</span>
+                        <span className="mr-2 flex-1">{msg.message}</span>
+                        {!msg.read ? (
+                          <button
+                            onClick={() => markMessageRead(msg.id)}
+                            className="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                          >
+                            {t('mark_as_read', 'Mark as Read')}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Read</span>
                         )}
                       </li>
                     ))}
@@ -300,7 +306,7 @@ const Navbar = () => {
                         {!note.read && (
                           <button
                             onClick={() => markRead(note.id)}
-                            className="ml-2 text-xs text-blue-600 hover:underline"
+                            className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                           >
                             {t('mark_as_read', 'Mark as Read')}
                           </button>
