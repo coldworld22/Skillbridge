@@ -479,7 +479,7 @@ function ProfileEditTemplate() {
                   <FaSpinner className="animate-spin mr-2" /> {t('processing')}
                 </span>
               ) : (
-                {t('save_changes')}
+                t('save_changes')
               )}
             </button>
           </div>

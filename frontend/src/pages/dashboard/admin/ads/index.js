@@ -6,8 +6,16 @@ import { CSVLink } from "react-csv";
 import AdCard from "@/components/admin/ads/AdCard"; // Extract AdCard for maintainability
 import PreviewModal from "@/components/admin/ads/PreviewModal"; // Extract modal too
 import { fetchAds, deleteAd, updateAd } from "@/services/admin/adService";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function AdminAdsPage() {
+    // ─────────────────────
+    // State Management
+    // ─────────────────────
+    const { t } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
     const [ads, setAds] = useState([]);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
@@ -18,10 +26,16 @@ export default function AdminAdsPage() {
     const [previewAd, setPreviewAd] = useState(null);
     const ITEMS_PER_PAGE = 6;
 
+    // ─────────────────────
+    // Fetch ads on mount
+    // ─────────────────────
     useEffect(() => {
         fetchAds().then(setAds).catch(() => setAds([]));
     }, []);
 
+    // ─────────────────────
+    // Handlers
+    // ─────────────────────
     const toggleAdStatus = async (id) => {
         setAds((prev) =>
             prev.map((ad) =>
@@ -30,7 +44,12 @@ export default function AdminAdsPage() {
         );
         const ad = ads.find((a) => a.id === id);
         if (ad) {
-            await updateAd(id, { is_active: !ad.isActive }).catch(() => {});
+            try {
+                await updateAd(id, { is_active: !ad.isActive });
+                toast.success(t('status_updated'));
+            } catch {
+                toast.error('Error');
+            }
         }
     };
 
@@ -39,9 +58,14 @@ export default function AdminAdsPage() {
       };
       
     const handleDelete = async (ad) => {
-        if (confirm(`Delete "${ad.title}"?`)) {
-            await deleteAd(ad.id).catch(() => {});
-            setAds((prev) => prev.filter((a) => a.id !== ad.id));
+        if (confirm(t('confirm_delete', { title: ad.title }))) {
+            try {
+                await deleteAd(ad.id);
+                setAds((prev) => prev.filter((a) => a.id !== ad.id));
+                toast.success(t('deleted'));
+            } catch {
+                toast.error('Error');
+            }
         }
     };
 
@@ -86,6 +110,10 @@ export default function AdminAdsPage() {
         currentPage * ITEMS_PER_PAGE
     );
 
+    // ─────────────────────
+    // Render
+    // ─────────────────────
+
     return (
         <AdminLayout>
             <div className="p-6">
@@ -96,14 +124,14 @@ export default function AdminAdsPage() {
                             filename="ads_export.csv"
                             className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 text-sm"
                         >
-                            📤 Export CSV
+                            📤 {t('export_csv')}
                         </CSVLink>
 
                     </div>
-                    <h1 className="text-3xl font-bold">Manage Ads</h1>
+                    <h1 className="text-3xl font-bold">{t('title')}</h1>
                     <Link href="/dashboard/admin/ads/create">
                         <button className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 flex items-center gap-2">
-                            <FaPlus /> New Ad
+                            <FaPlus /> {t('new_ad')}
                         </button>
                     </Link>
 
@@ -111,42 +139,42 @@ export default function AdminAdsPage() {
 
                 <section className="flex flex-wrap gap-4 mb-6">
                     <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-4 py-2 border rounded">
-                        <option value="all">All Types</option>
-                        <option value="promotion">Promotion</option>
-                        <option value="event">Event</option>
-                        <option value="announcement">Announcement</option>
-                        <option value="internal">Internal</option>
+                        <option value="all">{t('all_types')}</option>
+                        <option value="promotion">{t('promotion')}</option>
+                        <option value="event">{t('event')}</option>
+                        <option value="announcement">{t('announcement')}</option>
+                        <option value="internal">{t('internal')}</option>
                     </select>
                     <input
                         type="search"
-                        placeholder="Search ads..."
+                        placeholder={t('search_placeholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="px-4 py-2 border rounded w-full md:w-1/3"
                     />
                     <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2 border rounded">
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="all">{t('all_status')}</option>
+                        <option value="active">{t('active')}</option>
+                        <option value="inactive">{t('inactive')}</option>
                     </select>
                     <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-4 py-2 border rounded">
-                        <option value="all">All Roles</option>
-                        <option value="student">Student</option>
-                        <option value="instructor">Instructor</option>
+                        <option value="all">{t('all_roles')}</option>
+                        <option value="student">{t('student')}</option>
+                        <option value="instructor">{t('instructor')}</option>
                     </select>
                 </section>
 
                 {selectedAds.length > 0 && (
                     <div className="mb-4 bg-yellow-50 border border-yellow-200 p-4 rounded flex justify-between items-center">
-                        <span>{selectedAds.length} selected</span>
+                        <span>{selectedAds.length} {t('selected')}</span>
                         <button onClick={bulkDelete} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
-                            Delete Selected
+                            {t('delete_selected')}
                         </button>
                     </div>
                 )}
 
                 {paginatedAds.length === 0 ? (
-                    <p className="text-gray-500 text-center mt-10">No ads found.</p>
+                    <p className="text-gray-500 text-center mt-10">{t('no_ads')}</p>
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -185,5 +213,13 @@ export default function AdminAdsPage() {
             <PreviewModal ad={previewAd} onClose={() => setPreviewAd(null)} />
         </AdminLayout>
     );
+}
+
+export async function getStaticProps({ locale }) {
+    return {
+        props: {
+            ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+        },
+    };
 }
 

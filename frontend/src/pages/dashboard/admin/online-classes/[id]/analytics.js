@@ -19,6 +19,9 @@ import {
 
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#f87171"];
 
+// ─────────────────────
+// Fallback analytics when API fails
+// ─────────────────────
 const EMPTY_STATS = {
   totalStudents: 0,
   totalRevenue: 0,
