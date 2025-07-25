@@ -9,6 +9,9 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import Link from "next/link";
 import useSWR from "swr";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
@@ -37,6 +40,7 @@ const useAdminNotice = () => {
   };
 };
 function CurrencyManagerPage() {
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'currenciesPage' });
   const {
     data: currencies = [],
     error,
@@ -68,12 +72,12 @@ function CurrencyManagerPage() {
       await updateCurrency(id, { is_active: !currency.is_active });
       mutate();
       const status = currency.is_active ? "Inactive" : "Active";
-      toast.success(`Status updated to ${status}`);
+      toast.success(t('status_updated'));
       const message = `Currency "${currency.label}" status changed to ${status}.`;
       notify("currency_status_changed", message);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Failed to update status";
+      const msg = err.response?.data?.message || t('update_failed');
       toast.error(msg);
     }
   };
@@ -83,12 +87,12 @@ function CurrencyManagerPage() {
       const currency = currencies.find((c) => c.id === id);
       await updateCurrency(id, { is_default: true });
       mutate();
-      toast.success("Set as default");
+      toast.success(t('set_default_success'));
       const message = `Currency "${currency?.label || id}" set as default.`;
       notify("currency_set_default", message);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Failed to set default";
+      const msg = err.response?.data?.message || t('update_failed');
       toast.error(msg);
     }
   };
@@ -100,12 +104,12 @@ function CurrencyManagerPage() {
       await updateCurrency(id, { auto_update: !currency.auto_update });
       mutate();
       const status = currency.auto_update ? "disabled" : "enabled";
-      toast.success(`Auto update ${status}`);
+      toast.success(t('status_updated'));
       const message = `Currency "${currency.label}" auto update ${status}.`;
       notify("currency_auto_update_changed", message);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Failed to update";
+      const msg = err.response?.data?.message || t('update_failed');
       toast.error(msg);
     }
   };
@@ -122,12 +126,12 @@ function CurrencyManagerPage() {
       if (!rate) throw new Error("Rate not found");
       await updateCurrency(id, { exchange_rate: rate, last_updated: new Date().toISOString() });
       mutate();
-      toast.success("Rate refreshed");
+      toast.success(t('rate_refreshed'));
       const message = `Currency "${currency.label}" rate refreshed.`;
       notify("currency_rate_refreshed", message);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to refresh rate");
+      toast.error(t('failed_to_refresh'));
     }
   };
 
@@ -141,30 +145,30 @@ function CurrencyManagerPage() {
     try {
       await updateCurrency(id, { exchange_rate: value });
       mutate();
-      toast.success("Exchange rate updated");
+      toast.success(t('rate_updated'));
       const message = `Currency "${currency.label}" rate set to ${value}.`;
       notify("currency_rate_updated", message);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Failed to update";
+      const msg = err.response?.data?.message || t('update_failed');
       toast.error(msg);
     }
   };
 
   const deleteCurrency = async (id) => {
     const currency = currencies.find((c) => c.id === id);
-    if (currency?.is_default) return alert("Cannot delete default currency.");
-    if (window.confirm(`Delete currency: ${currency.label}?`)) {
+    if (currency?.is_default) return alert(t('cannot_delete_default'));
+    if (window.confirm(t('confirm_delete', { name: currency.label })) ) {
       try {
         await deleteCurrencyApi(id);
         mutate();
         setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-        toast.success("Currency deleted");
+        toast.success(t('currency_deleted'));
         const message = `Currency "${currency.label}" deleted.`;
         notify("currency_deleted", message);
       } catch (err) {
         console.error(err);
-        const msg = err.response?.data?.message || "Failed to delete";
+        const msg = err.response?.data?.message || t('delete_failed');
         toast.error(msg);
       }
     }
@@ -187,13 +191,13 @@ function CurrencyManagerPage() {
       clearAll();
       mutate();
       if (deletables.length) {
-        toast.success("Currencies deleted");
+        toast.success(t('currencies_deleted'));
         const message = `Deleted ${deletables.length} currencies.`;
         notify("currency_bulk_deleted", message);
       }
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.message || "Bulk delete failed";
+      const msg = err.response?.data?.message || t('bulk_delete_failed');
       toast.error(msg);
     }
   };
@@ -201,21 +205,21 @@ function CurrencyManagerPage() {
   if (error) {
     return (
       <AdminLayout>
-        <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">💱 Currency Manager</h1>
-          <p className="text-red-600">Failed to load currencies.</p>
+        <div className="p-6" dir={i18n.dir()}>
+          <h1 className="text-2xl font-bold mb-4">💱 {t('title')}</h1>
+          <p className="text-red-600">{t('error')}</p>
         </div>
       </AdminLayout>
     );
   }
 
   return (
-      <div className="p-6">
+      <div className="p-6" dir={i18n.dir()}>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">💱 Currency Manager</h1>
+          <h1 className="text-2xl font-bold">💱 {t('title')}</h1>
           <Link href="/dashboard/admin/settings/currency/create">
             <button className="bg-yellow-500 text-white px-4 py-2 rounded shadow flex items-center gap-2">
-              <FaPlus /> Add Currency
+              <FaPlus /> {t('add_currency')}
             </button>
           </Link>
         </div>
@@ -224,7 +228,7 @@ function CurrencyManagerPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search by name or code"
+              placeholder={t('search_placeholder')}
               className="border p-2 rounded"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -234,29 +238,29 @@ function CurrencyManagerPage() {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
-              <option value="all">All</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="auto">Auto-updated</option>
+              <option value="all">{t('all')}</option>
+              <option value="active">{t('active')}</option>
+              <option value="inactive">{t('inactive')}</option>
+              <option value="auto">{t('auto_updated')}</option>
             </select>
           </div>
 
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600">
-                Selected: {selectedIds.length}
+                {t('selected')}: {selectedIds.length}
               </span>
               <button
                 onClick={bulkDelete}
                 className="bg-red-500 text-white px-3 py-1 rounded text-sm"
               >
-                Delete Selected
+                {t('delete_selected')}
               </button>
               <button
                 onClick={clearAll}
                 className="text-sm text-gray-500 hover:text-black"
               >
-                Clear
+                {t('clear')}
               </button>
             </div>
           )}
@@ -272,15 +276,15 @@ function CurrencyManagerPage() {
                   checked={selectedIds.length === filteredCurrencies.length && filteredCurrencies.length > 0}
                 />
               </th>
-              <th className="p-3 text-left">Currency</th>
-              <th className="p-3 text-left">Code</th>
-              <th className="p-3 text-left">Symbol</th>
-              <th className="p-3 text-left">Exchange Rate</th>
-              <th className="p-3 text-center">Auto Update</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-center">Default</th>
-              <th className="p-3 text-left">Last Updated</th>
-              <th className="p-3 text-center">Actions</th>
+              <th className="p-3 text-left">{t('currency')}</th>
+              <th className="p-3 text-left">{t('code')}</th>
+              <th className="p-3 text-left">{t('symbol')}</th>
+              <th className="p-3 text-left">{t('exchange_rate')}</th>
+              <th className="p-3 text-center">{t('auto_update')}</th>
+              <th className="p-3 text-center">{t('status')}</th>
+              <th className="p-3 text-center">{t('default')}</th>
+              <th className="p-3 text-left">{t('last_updated')}</th>
+              <th className="p-3 text-center">{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -329,7 +333,7 @@ function CurrencyManagerPage() {
                     title="Toggle Status"
                     className={c.is_active ? "text-green-600" : "text-red-500"}
                   >
-                    {c.is_active ? "Active" : "Inactive"}
+                    {c.is_active ? t('active') : t('inactive')}
                   </button>
                 </td>
                 <td className="p-3 text-center">
@@ -380,3 +384,11 @@ const ProtectedCurrencyManagerPage = withAuthProtection(CurrencyManagerPage, [
 ProtectedCurrencyManagerPage.getLayout = CurrencyManagerPage.getLayout;
 
 export default ProtectedCurrencyManagerPage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
