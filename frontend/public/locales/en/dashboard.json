@@ -30,6 +30,8 @@
   "default_method": "Default Method",
   "icon": "Icon",
   "settings": "Settings (JSON)",
+  "method_saved": "Payment method saved!",
+  "failed_to_save_method": "Failed to save payment method.",
   "ads_manager": "Ads Manager",
   "offers": "Offers",
   "support": "Support",

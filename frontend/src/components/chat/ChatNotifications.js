@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { FaEnvelopeOpenText, FaUsers, FaBell } from "react-icons/fa";
-import { getNotifications } from "@/services/notificationService";
+import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
 import formatRelativeTime from "@/utils/relativeTime";
 import LinkText from "@/components/shared/LinkText";
 
 const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 1 }) => {
   const [systemNotifs, setSystemNotifs] = useState([]);
+
+  const handleMarkRead = (id) => {
+    markNotificationAsRead(id).catch(() => {});
+    setSystemNotifs((prev) => prev.filter((n) => n.id !== id));
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -42,9 +47,17 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
           <h4 className="text-yellow-400 font-semibold mt-4">System Alerts</h4>
           <ul className="space-y-2">
             {systemNotifs.map((n) => (
-              <li key={n.id} className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500">
-                <div className="text-sm"><LinkText text={n.message} /></div>
-                <div className="text-xs text-gray-400">{formatRelativeTime(n.timestamp)}</div>
+              <li key={n.id} className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500 flex justify-between items-start">
+                <div>
+                  <div className="text-sm"><LinkText text={n.message} /></div>
+                  <div className="text-xs text-gray-400">{formatRelativeTime(n.timestamp)}</div>
+                </div>
+                <button
+                  onClick={() => handleMarkRead(n.id)}
+                  className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                >
+                  Mark as Read
+                </button>
               </li>
             ))}
           </ul>

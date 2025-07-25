@@ -4,8 +4,32 @@ import { useState } from "react";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { createMethod } from "@/services/admin/paymentMethodService";
 import { useTranslation } from "next-i18next";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+
+const useAdminNotice = () => {
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to send notification";
+      toast.error(msg);
+    }
+  };
+};
 
 export default function CreatePaymentMethodPage() {
   const router = useRouter();
@@ -19,6 +43,7 @@ export default function CreatePaymentMethodPage() {
     settingsText: "{}",
   });
   const [iconFile, setIconFile] = useState(null);
+  const notify = useAdminNotice();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -38,7 +63,7 @@ export default function CreatePaymentMethodPage() {
       try {
         settings = form.settingsText ? JSON.parse(form.settingsText) : {};
       } catch (err) {
-        alert("Invalid JSON in settings");
+        toast.error("Invalid JSON in settings");
         return;
       }
       let payload;
@@ -60,10 +85,14 @@ export default function CreatePaymentMethodPage() {
         };
       }
       await createMethod(payload);
+      toast.success(t('method_saved'));
+      const message = `Payment method "${form.name}" created.`;
+      notify('payment_method_created', message);
       router.push("/dashboard/admin/payments");
     } catch (err) {
       console.error("Failed to create method", err);
-      alert("Failed to create method");
+      const msg = err.response?.data?.message || t('failed_to_save_method');
+      toast.error(msg);
     }
   };
 

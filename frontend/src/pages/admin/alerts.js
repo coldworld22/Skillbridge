@@ -6,7 +6,7 @@ import useErrorLogStore from "@/store/errorLogs/errorLogStore";
 import formatRelativeTime from "@/utils/relativeTime";
 
 function AdminAlertsPage() {
-  const logs = useErrorLogStore((state) => state.logs);
+  const logs = useErrorLogStore((state) => s
   const fetchLogs = useErrorLogStore((state) => state.fetch);
   const startPolling = useErrorLogStore((state) => state.startPolling);
   const stopPolling = useErrorLogStore((state) => state.stopPolling);
@@ -32,6 +32,7 @@ function AdminAlertsPage() {
             </tr>
           </thead>
           <tbody>
+
             {logs.map((log) => (
               <tr key={log.id} className="border-b">
                 <td className="px-4 py-2 font-medium">{log.type}</td>

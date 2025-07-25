@@ -212,14 +212,23 @@ export default function Header() {
                   {messages.slice(0, 10).map((m) => (
                     <li
                       key={m.id}
-                      onClick={() => markMessageRead(m.id)}
-                      className={`px-4 py-2 cursor-pointer transition ${
+                      className={`flex justify-between items-center px-4 py-2 transition ${
                         m.read
                           ? "text-gray-500 bg-gray-50 dark:bg-gray-700"
                           : "bg-yellow-50 dark:bg-gray-600"
                       }`}
                     >
-                      {m.message}
+                      <span className="mr-2 flex-1">{m.message}</span>
+                      {!m.read ? (
+                        <button
+                          onClick={() => markMessageRead(m.id)}
+                          className="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                        >
+                          {t('mark_as_read', 'Mark as Read')}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Read</span>
+                      )}
                     </li>
                   ))}
                   {messages.length === 0 && (
@@ -271,14 +280,14 @@ export default function Header() {
                       }`}
                     >
                       <LinkText text={n.message} />
-                      {!n.read && (
-                        <button
-                          onClick={() => markRead(n.id)}
-                          className="text-xs text-blue-600 hover:underline ml-2"
-                        >
-                          Mark as Read
-                        </button>
-                      )}
+                        {!n.read && (
+                          <button
+                            onClick={() => markRead(n.id)}
+                            className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                          >
+                            Mark as Read
+                          </button>
+                        )}
                     </li>
                   ))}
                   {notifications.length === 0 && (

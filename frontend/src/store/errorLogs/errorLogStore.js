@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getSystemErrors } from "@/services/errorLogService";
 
+
 const POLL_INTERVAL_MS = 60000;
 
 const useErrorLogStore = create((set, get) => ({
