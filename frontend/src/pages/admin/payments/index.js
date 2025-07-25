@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { fetchMethods } from '@/services/admin/paymentMethodService';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
+import nextI18NextConfig from '../../../../next-i18next.config.js';
 
 export default function AdminPaymentsPage() {
   const { t } = useTranslation('dashboard');
