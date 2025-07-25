@@ -11,6 +11,18 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   getAdAnalytics: jest.fn(),
 }));
 
+jest.mock('../src/modules/notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+
+jest.mock('../src/modules/messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+
+jest.mock('../src/modules/users/user.model', () => ({
+  findAdmins: jest.fn(() => [{ id: 'admin1' }]),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
