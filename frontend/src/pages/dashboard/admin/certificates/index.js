@@ -1,32 +1,32 @@
-// pages/dashboard/admin/certificates/index.js
+// ─────────────────────────────────────
+// 📁 dashboard/admin/certificates/index.js
+// ─────────────────────────────────────
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSearch, FaSync, FaEye, FaDownload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { fetchAllCertificates } from "@/services/admin/certificateService";
 
 export default function AdminCertificatesPage() {
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminCertificatesPage' });
+
   const [certificates, setCertificates] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    // Mock data (later replace with fetch from backend)
-    setCertificates([
-      {
-        id: 'c1',
-        studentName: 'Sara Ali',
-        className: 'React & Next.js Bootcamp',
-        issueDate: '2025-05-30T10:00:00Z',
-        status: 'Issued'
-      },
-      {
-        id: 'c2',
-        studentName: 'Mohammed Saleh',
-        className: 'UI/UX Design Basics',
-        issueDate: '2025-06-05T14:00:00Z',
-        status: 'Pending'
+    const load = async () => {
+      try {
+        const data = await fetchAllCertificates();
+        setCertificates(data);
+      } catch (err) {
+        console.error('Failed to load certificates', err);
       }
-    ]);
+    };
+    load();
   }, []);
 
   const filteredCertificates = certificates.filter(c => {
@@ -38,14 +38,14 @@ export default function AdminCertificatesPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
-        <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 Manage Certificates</h1>
+      <div className="min-h-screen px-6 py-10 bg-white text-gray-900" dir={i18n.dir()}> 
+        <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 {t('title')}</h1>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-6">
           <input
             type="text"
-            placeholder="Search student or class..."
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 p-2 border rounded bg-gray-100"
@@ -56,17 +56,17 @@ export default function AdminCertificatesPage() {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="p-2 border rounded bg-gray-100"
           >
-            <option value="all">All Status</option>
-            <option value="issued">Issued</option>
-            <option value="pending">Pending</option>
-            <option value="revoked">Revoked</option>
+            <option value="all">{t('all_status')}</option>
+            <option value="issued">{t('issued')}</option>
+            <option value="pending">{t('pending')}</option>
+            <option value="revoked">{t('revoked')}</option>
           </select>
 
           <button
             onClick={() => window.location.reload()}
             className="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 flex items-center gap-2"
           >
-            <FaSync /> Refresh
+            <FaSync /> {t('refresh')}
           </button>
         </div>
 
@@ -131,7 +131,7 @@ export default function AdminCertificatesPage() {
               {filteredCertificates.length === 0 && (
                 <tr>
                   <td colSpan="5" className="text-center p-6 text-gray-400">
-                    No certificates found.
+                    {t('no_certificates')}
                   </td>
                 </tr>
               )}
@@ -141,4 +141,12 @@ export default function AdminCertificatesPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
