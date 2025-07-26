@@ -69,6 +69,8 @@ const Verification = ({ prevStep = () => {} }) => {
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
 
       await refreshUser();
+      refreshNotifications?.();
+      refreshMessages?.();
 
       try {
         const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
