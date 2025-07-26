@@ -1,6 +1,6 @@
-# Installation
+# Installation Guide
 
-Follow these steps to run SkillBridge on your local machine.
+This document explains how to set up SkillBridge for local development.
 
 ## Prerequisites
 
@@ -8,66 +8,94 @@ Follow these steps to run SkillBridge on your local machine.
 - [Docker](https://www.docker.com/) and Docker Compose
 - Git
 
-## Setup
+## 1. Clone the repository
 
-1. Clone the repository:
+```bash
+git clone <repo-url>
+cd Skillbridge
+```
 
-   ```bash
-   git clone <repo-url>
-   cd Skillbridge
-   ```
+## 2. Configure environment variables
 
-2. Configure environment variables for the backend:
+### Backend
 
-   ```bash
-  cp backend/.env.example backend/.env
-  # edit backend/.env and set your secrets
-  # FRONTEND_URL defaults to http://localhost:3000
-  # change it if your frontend uses a different domain
-  ```
+Copy the example file and adjust values as needed:
 
-   The backend determines cookie security based on `NODE_ENV`. When running
-   locally leave `NODE_ENV` unset (defaults to `development`) so the refresh
-   token cookie is delivered over plain HTTP. Using `NODE_ENV=production` without
-   HTTPS will result in `401` errors when refreshing the session.
+```bash
+cp backend/.env.example backend/.env
+```
 
-   If you need `SameSite=None` for cross-subdomain cookies while still using
-   plain HTTP (e.g. staging environments), set `COOKIE_SECURE=false` and
-   `COOKIE_SAMESITE=None` in `backend/.env`.
+Edit `backend/.env` and provide your secrets. `FRONTEND_URL` should match the
+domain where the frontend will run (defaults to `http://localhost:3000`). Leave
+`NODE_ENV` unset so cookies work over HTTP. If you need cross-subdomain cookies
+without HTTPS, also set:
 
-3. (Optional) Install dependencies for manual development:
+```bash
+COOKIE_SECURE=false
+COOKIE_SAMESITE=None
+```
 
-   ```bash
-   cd backend && npm install
-   cd ../frontend && npm install
-   cd ..
-   ```
+### Frontend (optional)
 
-4. Initialize the PostgreSQL database:
+When using Docker Compose the frontend automatically points to the API on port
+`5002`. If you start the Next.js app separately, create `frontend/.env.local` and
+set:
 
-   ```bash
-   npx knex migrate:latest --knexfile backend/knexfile.js
-   npx knex seed:run --knexfile backend/knexfile.js
-   ```
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
+```
 
-5. Start all services using Docker Compose:
+## 3. Install dependencies (optional)
 
-   ```bash
-   docker-compose up --build
-   ```
+For manual development outside of Docker:
 
-   - Backend API: `http://localhost:5000/api`
-   - Frontend: `http://localhost:3000`
-   - PostgreSQL: `localhost:5432`
-   - pgAdmin: `http://localhost:5050`
+```bash
+cd backend && npm install
+cd ../frontend && npm install
+cd ..
+```
 
-6. Open the frontend URL in your browser and log in or create an account.
+## 4. Prepare the database
 
-## Running tests
+Run migrations and seed data:
 
-To run backend tests:
+```bash
+npx knex migrate:latest --knexfile backend/knexfile.js
+npx knex seed:run --knexfile backend/knexfile.js
+```
+
+## 5. Launch the stack
+
+Start all services with Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+The containers expose the following URLs:
+
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:5002/api`
+- PostgreSQL: `localhost:5432`
+- pgAdmin: `http://localhost:5050`
+
+Once running, open the frontend URL in your browser and create an account or log
+in.
+
+## 6. Running tests
+
+The project includes Jest suites for both the API and the frontend.
+
+### Backend
 
 ```bash
 cd backend
+npm test
+```
+
+### Frontend
+
+```bash
+cd frontend
 npm test
 ```
