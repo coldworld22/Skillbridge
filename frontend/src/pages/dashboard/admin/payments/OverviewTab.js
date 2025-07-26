@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from 'next-i18next';
 import dayjs from "dayjs";
 import { Line, Doughnut } from "react-chartjs-2";
 import {
@@ -23,20 +24,21 @@ ChartJS.register(
 );
 
 export default function OverviewTab({ transactions = [], methods = [], payouts = [], onViewAll }) {
+  const { t } = useTranslation('dashboard');
   const totalRevenue = transactions
     .filter((t) => t.status === "paid")
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
   const summaryCards = [
-    { label: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: "💰" },
-    { label: "Total Transactions", value: transactions.length.toString(), icon: "🔁" },
+    { label: t('paymentsPage.total_revenue'), value: `$${totalRevenue.toFixed(2)}`, icon: "💰" },
+    { label: t('paymentsPage.total_transactions'), value: transactions.length.toString(), icon: "🔁" },
     {
-      label: "Active Payment Methods",
+      label: t('paymentsPage.active_methods'),
       value: methods.filter((m) => m.active).length.toString(),
       icon: "💳",
     },
     {
-      label: "Pending Payouts",
+      label: t('paymentsPage.pending_payouts'),
       value: payouts.filter((p) => p.status === "Pending" || p.status === "pending").length.toString(),
       icon: "🕒",
     },
@@ -136,11 +138,11 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Revenue Over Time</h3>
+          <h3 className="font-semibold mb-2">{t('paymentsPage.revenue_over_time')}</h3>
           <Line data={revenueLineData} options={revenueLineOptions} className="w-full" />
         </div>
         <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Transactions by Status</h3>
+          <h3 className="font-semibold mb-2">{t('paymentsPage.transactions_by_status')}</h3>
           <Doughnut
             data={transactionStatusData}
             options={transactionStatusOptions}
@@ -152,21 +154,21 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
       {/* Recent Transactions */}
       <div className="bg-white shadow rounded">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-semibold">Recent Transactions</h3>
+          <h3 className="text-lg font-semibold">{t('paymentsPage.recent_transactions')}</h3>
           <button
             onClick={onViewAll}
             className="text-indigo-600 hover:underline text-sm"
           >
-            View All
+            {t('paymentsPage.view_all')}
           </button>
         </div>
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left">User</th>
-              <th className="px-4 py-2 text-left">Method</th>
-              <th className="px-4 py-2 text-left">Amount</th>
-              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">{t('paymentsPage.user')}</th>
+              <th className="px-4 py-2 text-left">{t('paymentsPage.method')}</th>
+              <th className="px-4 py-2 text-left">{t('paymentsPage.amount')}</th>
+              <th className="px-4 py-2 text-left">{t('paymentsPage.status')}</th>
             </tr>
           </thead>
           <tbody>
