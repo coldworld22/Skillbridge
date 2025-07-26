@@ -200,7 +200,7 @@ function EditTutorialPage() {
 
 export default withAuthProtection(EditTutorialPage, ["admin", "superadmin"]);
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
