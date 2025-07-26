@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import UserList from "@/components/admin/users/UserList";
 import { fetchAllUsers } from "@/services/admin/userService";
