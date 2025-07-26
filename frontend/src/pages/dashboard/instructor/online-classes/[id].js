@@ -10,6 +10,7 @@ import AssignmentManager from "@/components/instructors/AssignmentManager"; // â
 import StudentProgressPanel from "@/components/instructors/StudentProgressPanel";
 import { fetchClassManagementData } from "@/services/instructor/classService";
 import useAuthStore from "@/store/auth/authStore";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
 
 const isClassLive = (classData) => {
@@ -17,7 +18,7 @@ const isClassLive = (classData) => {
 
 };
 
-export default function InstructorClassRoom() {
+function InstructorClassRoom() {
   const router = useRouter();
   const { id } = router.query;
   const user = useAuthStore((state) => state.user);
@@ -130,3 +131,11 @@ export default function InstructorClassRoom() {
     </div>
   );
 }
+
+const ProtectedInstructorClassRoom = withAuthProtection(
+  InstructorClassRoom,
+  ['instructor']
+);
+ProtectedInstructorClassRoom.getLayout = InstructorClassRoom.getLayout;
+export default ProtectedInstructorClassRoom;
+export { InstructorClassRoom };

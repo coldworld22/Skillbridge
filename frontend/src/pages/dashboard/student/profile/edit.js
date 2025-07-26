@@ -198,6 +198,7 @@ export default function StudentProfileEdit() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    let success = false;
     try {
       setIsSubmitting(true);
       await updateStudentProfile({
@@ -251,6 +252,9 @@ export default function StudentProfileEdit() {
       }
     } finally {
       setIsSubmitting(false);
+      if (success) {
+        router.push("/dashboard/student/profile/steps/Verification");
+      }
     }
   };
 
