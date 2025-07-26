@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { useTranslation } from 'next-i18next';
 
 export default function InstructorDetailsModal({ instructor, onClose, onSave, useTabs }) {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const [activeTab, setActiveTab] = useState('profile');
   const [form, setForm] = useState({ ...instructor });
 
@@ -19,7 +21,7 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
           <FaTimes size={18} />
         </button>
 
-        <h2 className="text-xl font-bold mb-4">Instructor Details</h2>
+        <h2 className="text-xl font-bold mb-4">{t('details_title')}</h2>
 
         {useTabs && (
           <div className="flex border-b mb-4">
@@ -48,14 +50,14 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
               <p className="text-center font-semibold">{form.name}</p>
               <p className="text-center text-sm text-gray-500">{form.email}</p>
               <p className="text-sm text-gray-600 mt-2">{form.bio}</p>
-              <p className="text-sm text-gray-400 mt-1">Joined: {form.joinDate}</p>
-              <p className="text-sm mt-1">Status: {form.status ? 'Active' : 'Inactive'}</p>
+              <p className="text-sm text-gray-400 mt-1">{t('joined', { date: form.joinDate })}</p>
+              <p className="text-sm mt-1">{t('status_label')}: {form.status ? t('active') : t('inactive')}</p>
             </div>
           )}
 
           {activeTab === 'classes' && (
             <div>
-              <h3 className="text-sm font-semibold mb-2">Classes</h3>
+              <h3 className="text-sm font-semibold mb-2">{t('classes')}</h3>
               <ul className="list-disc list-inside text-sm text-gray-700">
                 {form.classes?.map((cls, idx) => (
                   <li key={idx}>{cls}</li>
@@ -99,13 +101,13 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
                   checked={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.checked })}
                 />
-                Active
+                {t('active')}
               </label>
               <button
                 onClick={handleSave}
                 className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Save Changes
+                {t('save_changes')}
               </button>
             </div>
           )}

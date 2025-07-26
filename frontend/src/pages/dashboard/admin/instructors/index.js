@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
@@ -11,6 +14,7 @@ import { toast } from 'react-toastify';
 
 
 export default function AdminInstructorsPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const [instructors, setInstructors] = useState([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('name');
@@ -55,7 +59,7 @@ export default function AdminInstructorsPage() {
         }));
         setInstructors(formatted);
       } catch (err) {
-        toast.error('Failed to load instructors');
+        toast.error(t('failed_to_load'));
         console.error('Instructor load error:', err);
       } finally {
         setLoading(false);
@@ -74,9 +78,9 @@ export default function AdminInstructorsPage() {
       setInstructors((prev) =>
         prev.map((i) => (i.id === id ? { ...i, status: !i.status } : i))
       );
-      toast.success('Status updated');
+      toast.success(t('status_updated'));
     } catch (err) {
-      toast.error('Failed to update status');
+      toast.error(t('update_failed'));
       console.error('Status update error:', err);
     }
   };
@@ -86,9 +90,9 @@ export default function AdminInstructorsPage() {
       await apiDeleteInstructor(id);
       setInstructors((prev) => prev.filter((i) => i.id !== id));
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-      toast.success('Instructor deleted');
+      toast.success(t('instructor_deleted'));
     } catch (err) {
-      toast.error('Failed to delete instructor');
+      toast.error(t('delete_failed'));
       console.error('Delete instructor error:', err);
     }
   };
@@ -98,9 +102,9 @@ export default function AdminInstructorsPage() {
       await Promise.all(selectedIds.map((id) => apiDeleteInstructor(id)));
       setInstructors((prev) => prev.filter((i) => !selectedIds.includes(i.id)));
       setSelectedIds([]);
-      toast.success('Selected instructors deleted');
+      toast.success(t('selected_deleted'));
     } catch (err) {
-      toast.error('Failed to delete selected');
+      toast.error(t('delete_selected_failed'));
       console.error('Bulk delete error:', err);
     }
   };
@@ -130,7 +134,7 @@ export default function AdminInstructorsPage() {
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-500 text-lg">Loading...</p>
+        <p className="text-gray-500 text-lg">{t('common:loading')}</p>
       </div>
     );
   }
@@ -138,7 +142,7 @@ export default function AdminInstructorsPage() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="p-8 text-center text-gray-500">Loading instructors...</div>
+        <div className="p-8 text-center text-gray-500">{t('loading')}</div>
       </AdminLayout>
     );
   }
@@ -146,7 +150,7 @@ export default function AdminInstructorsPage() {
   return (
     <AdminLayout>
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Instructors</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
 
         <FilterBar
           search={search}
@@ -200,4 +204,12 @@ export default function AdminInstructorsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
