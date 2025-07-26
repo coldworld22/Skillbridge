@@ -31,6 +31,8 @@ export const fetchAllTutorials = async () => {
     instructorId: t.instructor_id,
     thumbnail: t.thumbnail_url
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
+      : t.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.cover_image}`
       : null,
     createdAt: t.created_at,
     updatedAt: t.updated_at,
@@ -87,6 +89,8 @@ export const fetchTutorialById = async (id) => {
     tags: t.tags || [],
     thumbnail: t.thumbnail_url
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.thumbnail_url}`
+      : t.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.cover_image}`
       : null,
     preview: t.preview_video
       ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${t.preview_video}`
