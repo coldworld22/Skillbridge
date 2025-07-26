@@ -78,6 +78,7 @@ export default function AdminPaymentsPage() {
 
   const [transactions, setTransactions] = useState([]);
   const [methods, setMethods] = useState([]);
+  const notify = useAdminNotice();
 
   useEffect(() => {
     const loadData = async () => {
@@ -201,6 +202,7 @@ export default function AdminPaymentsPage() {
     try {
       await updatePaymentConfig(form);
       toast.success("Configuration saved successfully!");
+      notify("payment_config_updated", "Payment configuration updated");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save configuration");
     }
