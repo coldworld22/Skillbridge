@@ -24,6 +24,8 @@
   "manage_payment_gateways": "إدارة بوابات الدفع",
   "payment_methods": "طرق الدفع",
   "add_payment_method": "إضافة طريقة دفع جديدة",
+  "configure_payment_method": "تكوين طريقة الدفع",
+  "configure_payment_method_title": "تكوين {{id}}",
   "payment_enabled": "مفعل",
   "payment_disabled": "معطل",
   "save_method": "حفظ الطريقة",
