@@ -5,8 +5,9 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchInstructorClassById } from "@/services/instructor/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function InstructorClassDetailPage() {
+function InstructorClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -109,3 +110,11 @@ export default function InstructorClassDetailPage() {
 InstructorClassDetailPage.getLayout = function getLayout(page) {
   return <InstructorLayout>{page}</InstructorLayout>;
 };
+
+const ProtectedInstructorClassDetailPage = withAuthProtection(
+  InstructorClassDetailPage,
+  ['instructor']
+);
+ProtectedInstructorClassDetailPage.getLayout = InstructorClassDetailPage.getLayout;
+export default ProtectedInstructorClassDetailPage;
+export { InstructorClassDetailPage };
