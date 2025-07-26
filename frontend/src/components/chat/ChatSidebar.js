@@ -57,6 +57,10 @@ const ChatSidebar = ({
     return fields.some((f) => f && f.toLowerCase().includes(term));
   });
 
+  const filteredGroups = sortedGroups.filter((group) =>
+    group.name?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
+
   // ✅ Function to Pin/Unpin Chats
   const togglePinChat = (chat) => {
     setPinnedChats((prev) =>
@@ -201,6 +205,47 @@ const ChatSidebar = ({
         ))}
         {filteredUsers.length === 0 && (
           <p className="text-gray-400 text-center">No chats found.</p>
+        )}
+      </div>
+
+      {/* 👥 Groups */}
+      <h3 className="text-md font-bold text-yellow-400 mt-6">👥 Groups</h3>
+      <div className="space-y-3">
+        {filteredGroups.map((group) => (
+          <div
+            key={group.id}
+            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition ${
+              selectedChat?.id === group.id ? "bg-gray-700" : ""
+            }`}
+            onClick={() => setSelectedChat(group)}
+          >
+            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
+              {group.name ? group.name.charAt(0).toUpperCase() : "?"}
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-semibold">{group.name}</p>
+              <p className="text-gray-400 text-sm truncate w-40">
+                {group.lastMessage ? group.lastMessage : "No messages yet"}
+              </p>
+            </div>
+            {group.unreadMessages > 0 && (
+              <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <FaEnvelope /> {group.unreadMessages}
+              </div>
+            )}
+            <button
+              className="text-gray-400 hover:text-yellow-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePinChat(group);
+              }}
+            >
+              <FaStar />
+            </button>
+          </div>
+        ))}
+        {filteredGroups.length === 0 && (
+          <p className="text-gray-400 text-center">No groups found.</p>
         )}
       </div>
 
