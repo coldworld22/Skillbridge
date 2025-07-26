@@ -23,7 +23,7 @@ import {
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z.string().min(8, "Phone number must be at least 8 digits"),
-  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
+  gender: z.enum(["male", "female"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
@@ -462,8 +462,6 @@ export default function StudentProfileEdit() {
                       >
                         <option value="male">Male</option>
                         <option value="female">Female</option>
-                        <option value="other">Other</option>
-                        <option value="prefer-not-to-say">Prefer not to say</option>
                       </select>
                     </div>
 
