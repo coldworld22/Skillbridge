@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useEffect, useState } from "react";
+import { useTranslation } from "next-i18next";
 import { fetchAdminClassAnalytics } from "@/services/admin/classService";
 import {
   BarChart,
@@ -40,6 +41,7 @@ const EMPTY_STATS = {
 export default function AnalyticsDashboard() {
   const router = useRouter();
   const { id } = router.query;
+  const { t, i18n } = useTranslation('dashboard');
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -54,7 +56,9 @@ export default function AnalyticsDashboard() {
 
   if (!stats) {
     return (
-      <div className="p-6 text-center text-sm text-muted-foreground">Loading...</div>
+      <div className="p-6 text-center text-sm text-muted-foreground" dir={i18n.dir()}>
+        {t('classAnalyticsPage.loading')}
+      </div>
     );
   }
 
@@ -72,50 +76,52 @@ export default function AnalyticsDashboard() {
       : "0";
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">📊 Analytics - Class ID: {id}</h1>
+    <div className="p-6 space-y-6" dir={i18n.dir()}>
+      <h1 className="text-2xl font-bold text-gray-800">
+        📊 {t('classAnalyticsPage.title')} - {t('classAnalyticsPage.class_id')} {id}
+      </h1>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 Total Enrolled Students</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 {t('classAnalyticsPage.total_enrolled_students')}</h2>
           <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 Total Revenue</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 {t('classAnalyticsPage.total_revenue')}</h2>
           <p className="text-3xl font-bold text-indigo-600">${stats.totalRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 Revenue Breakdown</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">💳 {t('classAnalyticsPage.revenue_breakdown')}</h2>
           <ul className="text-gray-700 space-y-1">
-            <li><strong>Full Payments:</strong> {stats.revenueBreakdown.full}</li>
-            <li><strong>Installments:</strong> {stats.revenueBreakdown.installments}</li>
-            <li><strong>Free Seats:</strong> {stats.revenueBreakdown.free}</li>
+            <li><strong>{t('classAnalyticsPage.full_payments')}:</strong> {stats.revenueBreakdown.full}</li>
+            <li><strong>{t('classAnalyticsPage.installments')}:</strong> {stats.revenueBreakdown.installments}</li>
+            <li><strong>{t('classAnalyticsPage.free_seats')}:</strong> {stats.revenueBreakdown.free}</li>
           </ul>
         </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">📊 Avg Revenue Per Student</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">📊 {t('classAnalyticsPage.avg_revenue_per_student')}</h2>
           <p className="text-3xl font-bold text-yellow-600">${avgRevenue}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">✅ Attendance Rate</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">✅ {t('classAnalyticsPage.attendance_rate')}</h2>
           <p className="text-3xl font-bold text-blue-600">{attendanceRate}%</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">🎯 Completion Rate</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">🎯 {t('classAnalyticsPage.completion_rate')}</h2>
           <p className="text-3xl font-bold text-purple-600">{completionRate}%</p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">🌍 Top Countries</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">🌍 {t('classAnalyticsPage.top_countries')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={stats.locations} dataKey="value" nameKey="name" outerRadius={100}>
@@ -130,7 +136,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">📱 Devices Used</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">📱 {t('classAnalyticsPage.devices_used')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={stats.devices} dataKey="value" nameKey="name" outerRadius={100}>
@@ -146,7 +152,7 @@ export default function AnalyticsDashboard() {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow border">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 Registration Trend</h2>
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 {t('classAnalyticsPage.registration_trend')}</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={stats.registrationTrend}>
             <CartesianGrid strokeDasharray="3 3" />
