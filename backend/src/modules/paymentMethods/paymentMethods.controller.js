@@ -4,6 +4,9 @@ const { sendSuccess } = require("../../utils/response");
 const service = require("./paymentMethods.service");
 const path = require("path");
 const fs = require("fs");
+const userModel = require("../users/user.model");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 exports.createMethod = catchAsync(async (req, res) => {
   const { name, type } = req.body;
@@ -14,6 +17,26 @@ exports.createMethod = catchAsync(async (req, res) => {
   }
   const method = await service.create(data);
   sendSuccess(res, method, "Method created");
+
+  const admins = await userModel.findAdmins();
+  const senderId = req.user?.id;
+  const message = `Payment method "${method.name}" created`;
+  await Promise.all(
+    admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "payment_method_created",
+          message,
+        }),
+        messageService.createMessage({
+          sender_id: senderId || admin.id,
+          receiver_id: admin.id,
+          message,
+        }),
+      ])
+    )
+  );
 });
 
 exports.getMethods = catchAsync(async (_req, res) => {
@@ -47,9 +70,50 @@ exports.updateMethod = catchAsync(async (req, res) => {
 
   const method = await service.update(req.params.id, data);
   sendSuccess(res, method, "Method updated");
+
+  const admins = await userModel.findAdmins();
+  const senderId = req.user?.id;
+  const message = `Payment method "${method.name}" updated`;
+  await Promise.all(
+    admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "payment_method_updated",
+          message,
+        }),
+        messageService.createMessage({
+          sender_id: senderId || admin.id,
+          receiver_id: admin.id,
+          message,
+        }),
+      ])
+    )
+  );
 });
 
 exports.deleteMethod = catchAsync(async (req, res) => {
+  const existing = await service.getById(req.params.id);
   await service.delete(req.params.id);
   sendSuccess(res, null, "Method deleted");
+
+  const admins = await userModel.findAdmins();
+  const senderId = req.user?.id;
+  const message = `Payment method "${existing?.name || req.params.id}" deleted`;
+  await Promise.all(
+    admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "payment_method_deleted",
+          message,
+        }),
+        messageService.createMessage({
+          sender_id: senderId || admin.id,
+          receiver_id: admin.id,
+          message,
+        }),
+      ])
+    )
+  );
 });
