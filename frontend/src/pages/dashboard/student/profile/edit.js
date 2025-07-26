@@ -10,6 +10,10 @@ import {
   uploadStudentIdentity
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -32,6 +36,8 @@ const studentProfileSchema = z.object({
 export default function StudentProfileEdit() {
   const router = useRouter();
   const { user, logout, hasHydrated, setUser } = useAuthStore();
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -218,6 +224,20 @@ export default function StudentProfileEdit() {
       });
 
       toast.success("Profile updated successfully!");
+
+      try {
+        const message = "Your student profile was updated.";
+        await createNotification({
+          user_id: user.id,
+          type: "profile_update",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (err) {
+        console.error(err);
+      }
 
       // 🚀 Direct new users to email/phone verification
       router.push("/dashboard/student/profile/steps/Verification");
