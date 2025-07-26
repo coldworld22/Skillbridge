@@ -7,6 +7,8 @@ import { FaArrowLeft, FaCheckCircle, FaEnvelope, FaPhone } from "react-icons/fa"
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
 import {
   sendEmailOtp,
   sendPhoneOtp,
@@ -69,6 +71,20 @@ const Verification = ({ prevStep = () => {} }) => {
       await refreshUser();
       refreshNotifications?.();
       refreshMessages?.();
+
+      try {
+        const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
+        await createNotification({
+          user_id: user.id,
+          type: "verification",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (notifyErr) {
+        console.error(notifyErr);
+      }
 
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;
