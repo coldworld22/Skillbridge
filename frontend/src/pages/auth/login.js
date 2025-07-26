@@ -161,7 +161,7 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.03 }}
         transition={{ duration: 0.3 }}
-        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
+        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md border border-gray-700 text-white flex flex-col items-center"
       >
         <div className="w-24 h-24 rounded-full border-4 border-yellow-500 bg-gray-900 flex items-center justify-center mb-4 shadow-lg overflow-hidden">
 
