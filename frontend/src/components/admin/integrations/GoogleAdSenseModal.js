@@ -1,4 +1,22 @@
-export default function GoogleAdSenseModal({ onClose }) {
+import { useState } from "react";
+import { FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
+
+export default function GoogleAdSenseModal({ initialData = {}, onClose, onSave }) {
+  const [form, setForm] = useState({ publisherId: "", adSlots: "", autoAds: "enabled", ...initialData });
+
+  const handleSubmit = async () => {
+    if (!onSave) return onClose();
+    try {
+      await onSave(form);
+      toast.success("Settings saved");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save settings");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -17,6 +35,8 @@ export default function GoogleAdSenseModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700">Publisher ID</label>
             <input
               type="text"
+              value={form.publisherId}
+              onChange={(e) => setForm({ ...form, publisherId: e.target.value })}
               placeholder="e.g., ca-pub-1234567890123456"
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
@@ -25,6 +45,8 @@ export default function GoogleAdSenseModal({ onClose }) {
           <div>
             <label className="block text-sm font-medium text-gray-700">Ad Slot IDs</label>
             <textarea
+              value={form.adSlots}
+              onChange={(e) => setForm({ ...form, adSlots: e.target.value })}
               placeholder="e.g., 1234567890, 9876543210 (comma-separated)"
               className="w-full border border-gray-300 rounded px-3 py-2"
               rows={3}
@@ -33,7 +55,11 @@ export default function GoogleAdSenseModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Auto Ads</label>
-            <select className="w-full border border-gray-300 rounded px-3 py-2">
+            <select
+              value={form.autoAds}
+              onChange={(e) => setForm({ ...form, autoAds: e.target.value })}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            >
               <option value="enabled">Enabled</option>
               <option value="disabled">Disabled</option>
             </select>
@@ -48,9 +74,10 @@ export default function GoogleAdSenseModal({ onClose }) {
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-2"
           >
-            Save
+            <FaSave /> Save
           </button>
         </div>
       </div>

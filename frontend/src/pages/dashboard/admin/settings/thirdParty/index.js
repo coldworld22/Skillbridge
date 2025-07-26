@@ -1,6 +1,11 @@
 // pages/dashboard/admin/settings/thirdParty.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { fetchThirdPartyConfig, updateThirdPartyConfig } from "@/services/admin/thirdPartyService";
+import { toast } from "react-toastify";
 import {
   FaRobot,
   FaWrench,
@@ -25,6 +30,9 @@ import GoogleAdSenseModal from "@/components/admin/integrations/GoogleAdSenseMod
 import ReCAPTCHAModal from "@/components/admin/integrations/reCAPTCHAmodal";
 
 export default function ThirdPartyIntegrationsPage() {
+  const { t } = useTranslation('dashboard');
+  const [settings, setSettings] = useState({});
+  const [loading, setLoading] = useState(false);
   const [showChatGPTModal, setShowChatGPTModal] = useState(false);
   const [showDeepSeekModal, setShowDeepSeekModal] = useState(false);
   const [showClaudeModal, setShowClaudeModal] = useState(false);
@@ -34,6 +42,33 @@ export default function ThirdPartyIntegrationsPage() {
   const [showGoogleAnalyticsModal, setShowGoogleAnalyticsModal] = useState(false);
   const [showGoogleAdSenseModal, setShowGoogleAdSenseModal] = useState(false);
   const [showReCAPTCHAModal, setShowReCAPTCHAModal] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchThirdPartyConfig();
+        if (data) setSettings(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const saveSection = async (key, data) => {
+    try {
+      const updated = await updateThirdPartyConfig({ ...settings, [key]: data });
+      setSettings(updated);
+      toast.success(t('settings_saved'));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('settings_save_failed'));
+    }
+  };
 
   const integrations = [
     {
@@ -95,7 +130,7 @@ export default function ThirdPartyIntegrationsPage() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Third-Party Integrations</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('third_party_integrations')}</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((item, index) => (
             <div
@@ -116,15 +151,77 @@ export default function ThirdPartyIntegrationsPage() {
       </div>
 
       {/* Pop Modals */}
-      {showChatGPTModal && <ChatGPTModal onClose={() => setShowChatGPTModal(false)} />}
-      {showDeepSeekModal && <DeepSeekModal onClose={() => setShowDeepSeekModal(false)} />}
-      {showClaudeModal && <ClaudeModal onClose={() => setShowClaudeModal(false)} />}
-      {showGeminiModal && <GeminiModal onClose={() => setShowGeminiModal(false)} />}
-      {showHuggingFaceModal && <HuggingFaceModal onClose={() => setShowHuggingFaceModal(false)} />}
-      {showGoogleCalendarModal && <GoogleCalendarModal onClose={() => setShowGoogleCalendarModal(false)} />}
-      {showGoogleAnalyticsModal && <GoogleAnalyticsModal onClose={() => setShowGoogleAnalyticsModal(false)} />}
-      {showGoogleAdSenseModal && <GoogleAdSenseModal onClose={() => setShowGoogleAdSenseModal(false)} />}
-      {showReCAPTCHAModal && <ReCAPTCHAModal onClose={() => setShowReCAPTCHAModal(false)} />}
+      {showChatGPTModal && (
+        <ChatGPTModal
+          initialData={settings.chatgpt}
+          onSave={(data) => saveSection('chatgpt', data)}
+          onClose={() => setShowChatGPTModal(false)}
+        />
+      )}
+      {showDeepSeekModal && (
+        <DeepSeekModal
+          initialData={settings.deepseek}
+          onSave={(data) => saveSection('deepseek', data)}
+          onClose={() => setShowDeepSeekModal(false)}
+        />
+      )}
+      {showClaudeModal && (
+        <ClaudeModal
+          initialData={settings.claude}
+          onSave={(data) => saveSection('claude', data)}
+          onClose={() => setShowClaudeModal(false)}
+        />
+      )}
+      {showGeminiModal && (
+        <GeminiModal
+          initialData={settings.gemini}
+          onSave={(data) => saveSection('gemini', data)}
+          onClose={() => setShowGeminiModal(false)}
+        />
+      )}
+      {showHuggingFaceModal && (
+        <HuggingFaceModal
+          initialData={settings.huggingface}
+          onSave={(data) => saveSection('huggingface', data)}
+          onClose={() => setShowHuggingFaceModal(false)}
+        />
+      )}
+      {showGoogleCalendarModal && (
+        <GoogleCalendarModal
+          initialData={settings.googleCalendar}
+          onSave={(data) => saveSection('googleCalendar', data)}
+          onClose={() => setShowGoogleCalendarModal(false)}
+        />
+      )}
+      {showGoogleAnalyticsModal && (
+        <GoogleAnalyticsModal
+          initialData={settings.googleAnalytics}
+          onSave={(data) => saveSection('googleAnalytics', data)}
+          onClose={() => setShowGoogleAnalyticsModal(false)}
+        />
+      )}
+      {showGoogleAdSenseModal && (
+        <GoogleAdSenseModal
+          initialData={settings.googleAdSense}
+          onSave={(data) => saveSection('googleAdSense', data)}
+          onClose={() => setShowGoogleAdSenseModal(false)}
+        />
+      )}
+      {showReCAPTCHAModal && (
+        <ReCAPTCHAModal
+          initialData={settings.recaptcha}
+          onSave={(data) => saveSection('recaptcha', data)}
+          onClose={() => setShowReCAPTCHAModal(false)}
+        />
+      )}
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }

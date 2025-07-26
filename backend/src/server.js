@@ -97,6 +97,7 @@ app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.r
 app.use("/api/messages/config", require("./modules/messagesConfig/messagesConfig.routes"));
 app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
 app.use("/api/app-config", require("./modules/appConfig/appConfig.routes"));
+app.use("/api/third-party-config", require("./modules/thirdPartyConfig/thirdPartyConfig.routes"));
 app.use("/api/email-config", require("./modules/emailConfig/emailConfig.routes"));
 app.use("/api/contact-config", require("./modules/contactConfig/contactConfig.routes"));
 app.use("/api/seo-config", require("./modules/seoConfig/seoConfig.routes"));
