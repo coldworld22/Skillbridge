@@ -217,7 +217,8 @@ const ChatSidebar = ({
             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition ${
               selectedChat?.id === group.id ? "bg-gray-700" : ""
             }`}
-            onClick={() => setSelectedChat(group)}
+
+            onClick={() => setSelectedChat({ ...group, isGroup: true })}
           >
             <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
               {group.name ? group.name.charAt(0).toUpperCase() : "?"}
@@ -237,7 +238,7 @@ const ChatSidebar = ({
               className="text-gray-400 hover:text-yellow-500"
               onClick={(e) => {
                 e.stopPropagation();
-                togglePinChat(group);
+                togglePinChat({ ...group, isGroup: true });
               }}
             >
               <FaStar />

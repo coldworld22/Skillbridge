@@ -8,7 +8,7 @@ export const getUsers = async () => {
 };
 
 export const getGroups = async () => {
-  const res = await api.get("/chat/groups");
+  const res = await api.get("/groups/my");
   return res.data.data || res.data;
 };
 

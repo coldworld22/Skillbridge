@@ -6,8 +6,8 @@ import ChatImage from "../shared/ChatImage";
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
 
-  const getAvatarUrl = (url) => {
-    if (!url) return "/images/default-avatar.png";
+  const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
+    if (!url) return fallback;
     if (url.startsWith("http") || url.startsWith("blob:")) return url;
     return `${API_BASE_URL}${url}`;
   };
@@ -15,6 +15,10 @@ const ChatHeader = ({ selectedChat }) => {
   if (!selectedChat) {
     return <div className="text-gray-400 text-center p-4">No chat selected</div>;
   }
+
+  const avatar = selectedChat.isGroup
+    ? selectedChat.cover_image || selectedChat.image
+    : selectedChat.profileImage;
 
  
   const handleVideoCall = () => {
@@ -48,7 +52,10 @@ const ChatHeader = ({ selectedChat }) => {
       {/* Chat Name */}
       <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
         <ChatImage
-          src={getAvatarUrl(selectedChat.profileImage)}
+          src={getAvatarUrl(
+            avatar,
+            selectedChat.isGroup ? "/images/group-placeholder.jpg" : undefined
+          )}
           alt="avatar"
           className="w-8 h-8 rounded-full border border-gray-500"
           width={32}
