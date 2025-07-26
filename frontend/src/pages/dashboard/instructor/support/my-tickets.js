@@ -1,27 +1,28 @@
 import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
-import StudentLayout from "@/components/layouts/StudentLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import { useEffect, useState } from "react";
+import { fetchMyTickets } from "@/services/supportService";
 
-const mockTickets = [
-  {
-    id: "TCK-1001",
-    subject: "Refund not processed",
-    status: "Open",
-    createdAt: "2025-05-01",
-    lastUpdated: "2025-05-03",
-  },
-  {
-    id: "TCK-1002",
-    subject: "Unable to join live class",
-    status: "Resolved",
-    createdAt: "2025-04-28",
-    lastUpdated: "2025-04-30",
-  },
-];
+export default function MyTicketsPage() {
+  const [tickets, setTickets] = useState([]);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const load = async () => {
+    try {
+      const data = await fetchMyTickets();
+      setTickets(data);
+    } catch (err) {
+      console.error("Failed to load tickets", err);
+    }
+  };
 
 export default function MyTicketsPage() {
   return (
-    <StudentLayout>
+    <InstructorLayout>
       <PageHead title="My Tickets - Dashboard" />
       <div className="px-6 py-10">
         <div className="flex items-center justify-between mb-6">
@@ -34,7 +35,7 @@ export default function MyTicketsPage() {
           </Link>
         </div>
 
-        {mockTickets.length === 0 ? (
+        {tickets.length === 0 ? (
           <p className="text-gray-500 text-center">You haven’t submitted any tickets yet.</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded shadow-sm">
@@ -45,12 +46,11 @@ export default function MyTicketsPage() {
                   <th className="text-left px-4 py-3">Subject</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Created</th>
-                  <th className="text-left px-4 py-3">Last Updated</th>
                   <th className="text-left px-4 py-3">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {mockTickets.map((ticket) => (
+                {tickets.map((ticket) => (
                   <tr key={ticket.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-sm">{ticket.id}</td>
                     <td className="px-4 py-3 text-sm">{ticket.subject}</td>
@@ -65,8 +65,7 @@ export default function MyTicketsPage() {
                         {ticket.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{ticket.createdAt}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{ticket.lastUpdated}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{new Date(ticket.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/support/tickets/${ticket.id}`}
@@ -82,6 +81,6 @@ export default function MyTicketsPage() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </InstructorLayout>
   );
 }

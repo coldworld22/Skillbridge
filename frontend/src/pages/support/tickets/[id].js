@@ -2,39 +2,37 @@ import { useRouter } from "next/router";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
-import { useState } from "react";
-
-// Mocked ticket and message thread
-const mockThread = {
-  id: "TCK-1001",
-  subject: "Refund not processed",
-  status: "Open",
-  messages: [
-    {
-      sender: "user",
-      name: "Ayman Osman",
-      timestamp: "2025-05-01 10:15",
-      content: "I requested a refund 3 days ago but haven't received it yet."
-    },
-    {
-      sender: "support",
-      name: "Support Agent",
-      timestamp: "2025-05-02 09:00",
-      content: "Thank you for your message. We are reviewing your refund request."
-    }
-  ]
-};
+import { useEffect, useState } from "react";
+import { fetchTicketById, addMessage } from "@/services/supportService";
 
 export default function TicketDetailPage() {
   const router = useRouter();
   const { id } = router.query;
+  const [ticket, setTicket] = useState(null);
   const [reply, setReply] = useState("");
 
-  const handleReply = (e) => {
+  useEffect(() => {
+    if (id) load();
+  }, [id]);
+
+  const load = async () => {
+    try {
+      const data = await fetchTicketById(id);
+      setTicket(data);
+    } catch (err) {
+      console.error("Failed to fetch ticket", err);
+    }
+  };
+
+  const handleReply = async (e) => {
     e.preventDefault();
-    alert("Reply sent: " + reply);
-    setReply("");
-    // TODO: Integrate reply with backend
+    try {
+      await addMessage(id, reply);
+      setReply("");
+      load();
+    } catch (err) {
+      console.error("Failed to send reply", err);
+    }
   };
 
   return (
@@ -42,11 +40,11 @@ export default function TicketDetailPage() {
       <PageHead title={`Ticket ${id} - Support`} />
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-20">
-        <h1 className="text-2xl font-bold text-yellow-500 mb-4">{mockThread.subject}</h1>
-        <p className="text-sm text-gray-400 mb-8">Status: <span className="font-semibold text-yellow-300">{mockThread.status}</span></p>
+        <h1 className="text-2xl font-bold text-yellow-500 mb-4">{ticket?.subject}</h1>
+        <p className="text-sm text-gray-400 mb-8">Status: <span className="font-semibold text-yellow-300">{ticket?.status}</span></p>
 
         <div className="space-y-6 mb-12">
-          {mockThread.messages.map((msg, index) => (
+          {ticket?.messages?.map((msg, index) => (
             <div
               key={index}
               className={`p-4 rounded-lg ${msg.sender === "user" ? "bg-gray-800" : "bg-gray-700"}`}
@@ -55,7 +53,7 @@ export default function TicketDetailPage() {
                 <span className="font-semibold text-yellow-400">{msg.name}</span>
                 <span className="text-gray-400">{msg.timestamp}</span>
               </div>
-              <p className="text-gray-200 whitespace-pre-line">{msg.content}</p>
+              <p className="text-gray-200 whitespace-pre-line">{msg.message}</p>
             </div>
           ))}
         </div>
