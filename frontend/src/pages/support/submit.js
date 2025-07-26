@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createTicket } from "@/services/supportService";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -16,11 +17,15 @@ export default function SubmitTicketPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted ticket:", form);
-    // TODO: Integrate with backend API
-    alert("Support ticket submitted!");
+    try {
+      await createTicket({ subject: form.subject, message: form.message });
+      alert("Support ticket submitted!");
+      setForm({ subject: "", category: "", priority: "Medium", message: "", attachment: null });
+    } catch (err) {
+      console.error("Failed to submit ticket", err);
+    }
   };
 
   return (

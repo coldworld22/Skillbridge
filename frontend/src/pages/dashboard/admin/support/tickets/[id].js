@@ -1,57 +1,63 @@
 import { useRouter } from "next/router";
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchTicketById, addMessage, updateStatus } from "@/services/supportService";
 
-const mockThread = {
-  id: "TCK-1001",
-  subject: "Refund not processed",
-  user: "ayman@example.com",
-  status: "Open",
-  messages: [
-    {
-      sender: "user",
-      name: "Ayman Osman",
-      timestamp: "2025-05-01 10:15",
-      content: "I requested a refund 3 days ago but haven't received it yet."
-    },
-    {
-      sender: "support",
-      name: "Support Agent",
-      timestamp: "2025-05-02 09:00",
-      content: "Thank you for your message. We are reviewing your refund request."
-    }
-  ]
-};
 
 export default function AdminTicketDetail() {
   const router = useRouter();
   const { id } = router.query;
+  const [ticket, setTicket] = useState(null);
   const [reply, setReply] = useState("");
-  const [status, setStatus] = useState(mockThread.status);
+  const [status, setStatus] = useState("open");
 
-  const handleReply = (e) => {
-    e.preventDefault();
-    alert("Reply sent: " + reply);
-    setReply("");
-    // TODO: Integrate reply with backend
-  };
+  useEffect(() => {
+    if (id) load();
+  }, [id]);
 
-  const handleClose = () => {
-    const confirmed = confirm("Are you sure you want to close this ticket?");
-    if (confirmed) {
-      setStatus("Resolved");
-      alert("Ticket marked as resolved.");
-      // TODO: Update backend
+  const load = async () => {
+    try {
+      const data = await fetchTicketById(id);
+      setTicket(data);
+      setStatus(data.status);
+    } catch (err) {
+      console.error("Failed to fetch ticket", err);
     }
   };
 
-  const handleReopen = () => {
+  const handleReply = async (e) => {
+    e.preventDefault();
+    try {
+      await addMessage(id, reply);
+      setReply("");
+      load();
+    } catch (err) {
+      console.error("Failed to send reply", err);
+    }
+  };
+
+  const handleClose = async () => {
+    const confirmed = confirm("Are you sure you want to close this ticket?");
+    if (confirmed) {
+      try {
+        await updateStatus(id, "resolved");
+        setStatus("resolved");
+      } catch (err) {
+        console.error("Failed to close ticket", err);
+      }
+    }
+  };
+
+  const handleReopen = async () => {
     const confirmed = confirm("Reopen this ticket?");
     if (confirmed) {
-      setStatus("Open");
-      alert("Ticket reopened.");
-      // TODO: Update backend
+      try {
+        await updateStatus(id, "open");
+        setStatus("open");
+      } catch (err) {
+        console.error("Failed to reopen ticket", err);
+      }
     }
   };
 
@@ -60,7 +66,7 @@ export default function AdminTicketDetail() {
       <PageHead title={`Ticket ${id} - Admin`} />
       <div className="px-6 py-10">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">{mockThread.subject}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{ticket?.subject}</h1>
           {status === "Resolved" ? (
             <button
               onClick={handleReopen}
@@ -77,10 +83,10 @@ export default function AdminTicketDetail() {
             </button>
           )}
         </div>
-        <p className="text-sm text-gray-500 mb-8">From: <strong>{mockThread.user}</strong> | Status: <span className="font-semibold text-yellow-600">{status}</span></p>
+        <p className="text-sm text-gray-500 mb-8">From: <strong>{ticket?.user}</strong> | Status: <span className="font-semibold text-yellow-600">{status}</span></p>
 
         <div className="space-y-6 mb-12">
-          {mockThread.messages.map((msg, index) => (
+          {ticket?.messages?.map((msg, index) => (
             <div
               key={index}
               className={`p-4 rounded-lg border ${msg.sender === "user" ? "bg-white border-gray-200" : "bg-yellow-50 border-yellow-200"}`}
