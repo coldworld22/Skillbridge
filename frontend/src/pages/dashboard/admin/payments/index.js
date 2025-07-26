@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 import {
   FaChartBar,
   FaList,
@@ -29,7 +32,6 @@ import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 
-// Helper hook for sending admin notifications and chat messages
 const useAdminNotice = () => {
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
@@ -47,14 +49,6 @@ const useAdminNotice = () => {
     }
   };
 };
-
-const tabs = [
-  { key: "overview", label: "Overview", icon: <FaChartBar /> },
-  { key: "transactions", label: "Transactions", icon: <FaList /> },
-  { key: "methods", label: "Payment Methods", icon: <FaMoneyCheckAlt /> },
-  { key: "configuration", label: "Configuration", icon: <FaCog /> },
-  { key: "payouts", label: "Payouts", icon: <FaWallet /> },
-];
 
 
 const defaultConfig = {
@@ -77,9 +71,18 @@ const defaultConfig = {
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
+  const { t, i18n } = useTranslation('dashboard');
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+
+  const tabs = [
+    { key: 'overview', label: t('paymentsPage.tabs.overview'), icon: <FaChartBar /> },
+    { key: 'transactions', label: t('paymentsPage.tabs.transactions'), icon: <FaList /> },
+    { key: 'methods', label: t('paymentsPage.tabs.methods'), icon: <FaMoneyCheckAlt /> },
+    { key: 'configuration', label: t('paymentsPage.tabs.configuration'), icon: <FaCog /> },
+    { key: 'payouts', label: t('paymentsPage.tabs.payouts'), icon: <FaWallet /> },
+  ];
 
   const notifyUser = async (userId, type, message) => {
     try {
@@ -162,8 +165,12 @@ export default function AdminPaymentsPage() {
       setMethods((prev) =>
         prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
       );
+      toast.success(t('paymentsPage.status_updated'));
+      const msg = `Payment method "${method.name}" status changed`;
+      notify('payment_method_status_changed', msg);
     } catch (err) {
       console.error('Failed to update method', err);
+      toast.error(t('update_failed'));
     }
   };
 
@@ -182,8 +189,12 @@ export default function AdminPaymentsPage() {
             : m
         )
       );
+      toast.success(t('paymentsPage.default_updated'));
+      const msg = `Payment method "${method.name}" set as default`;
+      notify('payment_method_default_changed', msg);
     } catch (err) {
       console.error('Failed to update default method', err);
+      toast.error(t('update_failed'));
     }
   };
 
@@ -191,8 +202,12 @@ export default function AdminPaymentsPage() {
     try {
       await deleteMethod(id);
       setMethods((prev) => prev.filter((m) => m.id !== id));
+      toast.success(t('paymentsPage.method_deleted'));
+      const msg = `Payment method "${methods.find(m=>m.id===id)?.name}" deleted.`;
+      notify('payment_method_deleted', msg);
     } catch (err) {
       console.error('Failed to delete method', err);
+      toast.error(t('paymentsPage.delete_failed'));
     }
   };
 
@@ -220,10 +235,10 @@ export default function AdminPaymentsPage() {
   const handleSave = async () => {
     try {
       await updatePaymentConfig(form);
-      toast.success("Configuration saved successfully!");
+      toast.success(t('paymentsPage.config_saved'));
       notify("payment_config_updated", "Payment configuration updated");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to save configuration");
+      toast.error(err?.response?.data?.message || t('paymentsPage.config_save_failed'));
     }
   };
 
@@ -237,7 +252,7 @@ export default function AdminPaymentsPage() {
       setPayouts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, status: updated.status } : p))
       );
-      toast.success("Payout status updated");
+      toast.success(t('paymentsPage.payout_status_updated'));
       notifyUser(
         user.id,
         "payout_status_changed",
@@ -252,7 +267,7 @@ export default function AdminPaymentsPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update payout status");
+      toast.error(t('paymentsPage.payout_status_failed'));
     }
   };
 
@@ -275,38 +290,38 @@ export default function AdminPaymentsPage() {
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <input
                 type="text"
-                placeholder="Search by user or ID..."
+                placeholder={t('paymentsPage.search_placeholder')}
                 className="border px-3 py-2 rounded w-60"
               />
               <select className="border px-3 py-2 rounded">
-                <option>All Methods</option>
+                <option>{t('paymentsPage.all_methods')}</option>
                 <option>PayPal</option>
                 <option>Stripe</option>
                 <option>Bank Transfer</option>
                 <option>Crypto Wallet</option>
               </select>
               <select className="border px-3 py-2 rounded">
-                <option>All Statuses</option>
-                <option>Success</option>
-                <option>Pending</option>
-                <option>Failed</option>
-                <option>Refunded</option>
+                <option>{t('paymentsPage.all_status')}</option>
+                <option>{t('paymentsPage.success')}</option>
+                <option>{t('paymentsPage.pending')}</option>
+                <option>{t('paymentsPage.failed')}</option>
+                <option>{t('paymentsPage.refunded')}</option>
               </select>
-              <button className="bg-indigo-600 text-white px-4 py-2 rounded shadow">Export CSV</button>
+              <button className="bg-indigo-600 text-white px-4 py-2 rounded shadow">{t('paymentsPage.export_csv')}</button>
             </div>
 
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm border">
                 <thead className="bg-gray-100 text-left">
                   <tr>
-                    <th className="px-4 py-2">Transaction ID</th>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">User</th>
-                    <th className="px-4 py-2">Type</th>
-                    <th className="px-4 py-2">Method</th>
-                    <th className="px-4 py-2">Amount</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
+                    <th className="px-4 py-2">{t('paymentsPage.transaction_id')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.date')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.user')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.type')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.method')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.status')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -336,8 +351,8 @@ export default function AdminPaymentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2 space-x-2">
-                        <button className="text-blue-600 hover:underline text-xs">View</button>
-                        <button className="text-red-600 hover:underline text-xs">Refund</button>
+                        <button className="text-blue-600 hover:underline text-xs">{t('paymentsPage.view')}</button>
+                        <button className="text-red-600 hover:underline text-xs">{t('paymentsPage.refund')}</button>
                       </td>
                     </tr>
                   ))}
@@ -351,12 +366,12 @@ export default function AdminPaymentsPage() {
         return (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Payment Methods</h2>
+              <h2 className="text-xl font-semibold">{t('paymentsPage.tabs.methods')}</h2>
               <button
                 onClick={() => router.push("/dashboard/admin/payments/methods/create")}
                 className="bg-yellow-500 text-white px-4 py-2 rounded shadow flex items-center gap-2"
               >
-                <FaPlus /> Add New
+                <FaPlus /> {t('paymentsPage.add_new')}
               </button>
             </div>
 
@@ -407,7 +422,7 @@ export default function AdminPaymentsPage() {
                             onClick={() => router.push(method.configPath)}
                             className="px-3 py-1 bg-indigo-600 text-white rounded shadow text-xs hover:bg-indigo-700 transition"
                           >
-                            Configure
+                            {t('paymentsPage.configure')}
                           </button>
                         )}
 
@@ -415,7 +430,7 @@ export default function AdminPaymentsPage() {
                           onClick={() => handleDelete(method.id)}
                           className="px-3 py-1 bg-red-500 text-white rounded shadow text-xs hover:bg-red-600 transition"
                         >
-                          Delete
+                          {t('delete')}
                         </button>
                       </td>
                     </tr>
@@ -430,10 +445,10 @@ export default function AdminPaymentsPage() {
       case "configuration":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Platform Payment Configuration</h2>
+            <h2 className="text-xl font-semibold">{t('paymentsPage.configuration_title')}</h2>
 
             <div>
-              <label className="block font-medium mb-1">Default Currency</label>
+              <label className="block font-medium mb-1">{t('paymentsPage.default_currency')}</label>
               <select
                 name="currency"
                 value={form.currency}
@@ -447,7 +462,7 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div>
-              <label className="block font-medium mb-2">Platform Commission (%)</label>
+              <label className="block font-medium mb-2">{t('paymentsPage.platform_commission')}</label>
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(form.platformCut).map(([key, val]) => (
                   <div key={key}>
@@ -467,17 +482,17 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="block font-medium">Invoice Settings</label>
+              <label className="block font-medium">{t('paymentsPage.invoice_settings')}</label>
               <input
                 type="text"
-                placeholder="Logo URL"
+                placeholder={t('paymentsPage.logo_url')}
                 name="invoice.logoUrl"
                 value={form.invoice.logoUrl}
                 onChange={handleChange}
                 className="border px-3 py-2 rounded w-full"
               />
               <textarea
-                placeholder="Invoice Footer Text"
+                placeholder={t('paymentsPage.invoice_footer_text')}
                 name="invoice.footerText"
                 value={form.invoice.footerText}
                 onChange={handleChange}
@@ -491,12 +506,12 @@ export default function AdminPaymentsPage() {
                   checked={form.invoice.autoEmail}
                   onChange={handleChange}
                 />
-                Auto-send receipt email to users
+                {t('paymentsPage.auto_send_receipt')}
               </label>
             </div>
 
             <div>
-              <label className="block font-medium mb-1">Refund Policy</label>
+              <label className="block font-medium mb-1">{t('paymentsPage.refund_policy')}</label>
               <textarea
                 name="refundPolicy"
                 value={form.refundPolicy}
@@ -506,7 +521,7 @@ export default function AdminPaymentsPage() {
               />
             </div>
 
-            <button onClick={handleSave} className="bg-indigo-600 text-white px-6 py-2 rounded shadow">Save Configuration</button>
+            <button onClick={handleSave} className="bg-indigo-600 text-white px-6 py-2 rounded shadow">{t('paymentsPage.save_configuration')}</button>
           </div>
         );
 
@@ -514,21 +529,21 @@ export default function AdminPaymentsPage() {
         return (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Instructor Payouts</h2>
-              <button className="bg-indigo-600 text-white px-4 py-2 rounded shadow">Export CSV</button>
+              <h2 className="text-xl font-semibold">{t('paymentsPage.instructor_payouts')}</h2>
+              <button className="bg-indigo-600 text-white px-4 py-2 rounded shadow">{t('paymentsPage.export_csv')}</button>
             </div>
 
             <div className="overflow-x-auto bg-white shadow rounded">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-100 text-left">
                   <tr>
-                    <th className="px-4 py-2">Payout ID</th>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Instructor</th>
-                    <th className="px-4 py-2">Amount</th>
-                    <th className="px-4 py-2">Method</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
+                    <th className="px-4 py-2">{t('paymentsPage.payout_id')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.date')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.instructor')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.method')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.status')}</th>
+                    <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -558,13 +573,13 @@ export default function AdminPaymentsPage() {
                               onClick={() => updateStatus(p.id, "Paid")}
                               className="text-green-600 hover:underline text-xs"
                             >
-                              Mark as Paid
+                              {t('paymentsPage.mark_paid')}
                             </button>
                             <button
                               onClick={() => updateStatus(p.id, "Rejected")}
                               className="text-red-600 hover:underline text-xs"
                             >
-                              Reject
+                              {t('paymentsPage.reject')}
                             </button>
                           </>
                         )}
@@ -573,7 +588,7 @@ export default function AdminPaymentsPage() {
                             onClick={() => updateStatus(p.id, "Pending")}
                             className="text-gray-500 hover:underline text-xs"
                           >
-                            Reopen
+                            {t('paymentsPage.reopen')}
                           </button>
                         )}
                       </td>
@@ -591,7 +606,7 @@ export default function AdminPaymentsPage() {
   };
 
   return (
-    <AdminLayout title="Payments Dashboard">
+    <AdminLayout title={t('paymentsPage.title')}>
       <div className="flex flex-col space-y-4">
         <div className="flex space-x-2 border-b pb-2">
           {tabs.map((tab) => (
@@ -612,4 +627,12 @@ export default function AdminPaymentsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
