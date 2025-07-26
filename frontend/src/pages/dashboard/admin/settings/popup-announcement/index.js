@@ -1,6 +1,10 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
   fetchPopupAnnouncements,
   updatePopupAnnouncement,
@@ -8,6 +12,7 @@ import {
 } from "@/services/admin/popupAnnouncementService";
 
 export default function PopupAnnouncementsIndex() {
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
   const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
@@ -25,6 +30,7 @@ export default function PopupAnnouncementsIndex() {
         setAnnouncements(formatted);
       } catch (err) {
         console.error('Failed to load announcements', err);
+        toast.error(t('loading_failed'));
       }
     };
     load();
@@ -38,44 +44,48 @@ export default function PopupAnnouncementsIndex() {
       setAnnouncements((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: updated.active } : a))
       );
+      toast.success(t('status_updated'));
     } catch (err) {
       console.error('Failed to update', err);
+      toast.error(t('update_failed'));
     }
   };
 
   const deleteAnnouncement = async (id) => {
-    if (confirm("Are you sure you want to delete this announcement?")) {
+    if (confirm(t('confirm_delete'))) {
       try {
         await deletePopupAnnouncement(id);
         setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+        toast.success(t('announcement_deleted'));
       } catch (err) {
         console.error('Failed to delete', err);
+        toast.error(t('delete_failed'));
       }
     }
   };
 
   return (
-    <AdminLayout title="Popup Announcements">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">📢 Popup Announcements</h1>
+    <AdminLayout title={t('title')}>
+      <div className="flex justify-between items-center mb-6" dir={i18n.dir()}>
+        <h1 className="text-2xl font-bold text-gray-800">📢 {t('title')}</h1>
         <a
           href="/dashboard/admin/settings/popup-announcement/create"
           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow flex items-center gap-2"
         >
-          <FaPlus /> Add New
+          <FaPlus /> {t('add_new')}
         </a>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" dir={i18n.dir()}>
         <table className="w-full text-sm border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="p-3 text-left">Title</th>
-              <th className="p-3 text-left">Audience</th>
-              <th className="p-3 text-left">Pages</th>
-              <th className="p-3 text-left">Schedule</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-center">Actions</th>
+              <th className="p-3 text-left">{t('title_label')}</th>
+              <th className="p-3 text-left">{t('audience')}</th>
+              <th className="p-3 text-left">{t('pages')}</th>
+              <th className="p-3 text-left">{t('schedule')}</th>
+              <th className="p-3 text-center">{t('status')}</th>
+              <th className="p-3 text-center">{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -97,13 +107,13 @@ export default function PopupAnnouncementsIndex() {
                   </button>
                 </td>
                 <td className="p-3 text-center flex justify-center gap-3">
-                  <button title="Preview">
+                  <button title={t('preview')}>
                     <FaEye className="text-blue-500" />
                   </button>
                   <a href={`/dashboard/admin/announcements/edit/${a.id}`}>
                     <FaEdit className="text-yellow-500" />
                   </a>
-                  <button onClick={() => deleteAnnouncement(a.id)} title="Delete">
+                  <button onClick={() => deleteAnnouncement(a.id)} title={t('delete')}>
                     <FaTrash className="text-red-500" />
                   </button>
                 </td>
@@ -114,4 +124,12 @@ export default function PopupAnnouncementsIndex() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
