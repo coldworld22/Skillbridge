@@ -530,6 +530,12 @@
     "update_success": "Tutorial updated successfully!",
     "update_failed": "Failed to update tutorial"
   },
+  "usersPage": {
+    "title": "User Management",
+    "add_user": "Add User",
+    "user_added": "User added successfully.",
+    "user_add_failed": "Failed to add user."
+  },
   "sidebar": {
     "Account": "Account",
     "Bookings": "Bookings",
