@@ -10,6 +10,10 @@ import {
   uploadStudentIdentity
 } from "@/services/student/studentService";
 import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -19,7 +23,7 @@ import {
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z.string().min(8, "Phone number must be at least 8 digits"),
-  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
+  gender: z.enum(["male", "female"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
@@ -32,6 +36,8 @@ const studentProfileSchema = z.object({
 export default function StudentProfileEdit() {
   const router = useRouter();
   const { user, logout, hasHydrated, setUser } = useAuthStore();
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -219,8 +225,23 @@ export default function StudentProfileEdit() {
 
       toast.success("Profile updated successfully!");
 
-      // 🚀 Direct new users to email/phone verification
       router.push("/dashboard/student/profile/steps/Verification");
+
+      (async () => {
+        try {
+          const message = "Your student profile was updated.";
+          await createNotification({
+            user_id: user.id,
+            type: "profile_update",
+            message,
+          });
+          await sendChatMessage(user.id, { text: message });
+          refreshNotifications?.();
+          refreshMessages?.();
+        } catch (err) {
+          console.error(err);
+        }
+      })();
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
@@ -437,8 +458,6 @@ export default function StudentProfileEdit() {
                       >
                         <option value="male">Male</option>
                         <option value="female">Female</option>
-                        <option value="other">Other</option>
-                        <option value="prefer-not-to-say">Prefer not to say</option>
                       </select>
                     </div>
 
