@@ -67,7 +67,16 @@ export default function AdminPaymentsPage() {
           fetchPaymentConfig(),
           fetchPayouts(),
         ]);
-        setTransactions(txns);
+        setTransactions(
+          txns.map((t) => ({
+            ...t,
+            date: t.paid_at || t.created_at,
+            user: t.user_name,
+            role: t.user_role,
+            method: t.method_name,
+            type: t.item_type,
+          }))
+        );
         setMethods(
           mths.map((m) => ({
             ...m,
