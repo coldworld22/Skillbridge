@@ -205,6 +205,7 @@ export default function StudentProfileEdit() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    let success = false;
     try {
       setIsSubmitting(true);
 
@@ -250,6 +251,7 @@ export default function StudentProfileEdit() {
       }
 
       await router.push("/dashboard/student/profile/steps/Verification");
+
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
@@ -259,6 +261,9 @@ export default function StudentProfileEdit() {
       }
     } finally {
       setIsSubmitting(false);
+      if (success) {
+        router.push("/dashboard/student/profile/steps/Verification");
+      }
     }
   };
 

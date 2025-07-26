@@ -92,7 +92,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
-    thumbnail_url: thumbnailFile
+    cover_image: thumbnailFile
       ? `/uploads/tutorials/${roleDir}/${thumbnailFile.filename}`
       : null,
     preview_video: previewFile
@@ -204,7 +204,7 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   }
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
-    data.thumbnail_url = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
+    data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
   }
   if (req.files?.preview) {
     data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
