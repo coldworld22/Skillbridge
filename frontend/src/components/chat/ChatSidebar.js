@@ -217,6 +217,7 @@ const ChatSidebar = ({
             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition ${
               selectedChat?.id === group.id ? "bg-gray-700" : ""
             }`}
+
             onClick={() => setSelectedChat({ ...group, isGroup: true })}
           >
             <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
