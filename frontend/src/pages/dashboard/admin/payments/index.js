@@ -56,7 +56,7 @@ const defaultConfig = {
 };
 
 
-export default function AdminPaymentsPage() {
+export default function AdminPaymentsPage({ initialTab = "overview" } = {}) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
@@ -74,7 +74,7 @@ export default function AdminPaymentsPage() {
       toast.error(msg);
     }
   };
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [transactions, setTransactions] = useState([]);
   const [methods, setMethods] = useState([]);
