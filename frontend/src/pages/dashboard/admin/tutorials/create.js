@@ -40,6 +40,7 @@ function CreateTutorialPage() {
         ...draft,
         thumbnail: null,
         preview: null,
+        language: draft.language || "",
         lessonCount: draft.lessonCount || draft.chapters?.length || 1,
       });
     }
@@ -64,11 +65,17 @@ function CreateTutorialPage() {
 
 
   const submitTutorial = async (status) => {
+    if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
+      toast.error("Please upload a video for each lesson before submitting.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", tutorialData.title);
     formData.append("description", tutorialData.shortDescription);
     formData.append("category_id", tutorialData.category);
     formData.append("level", tutorialData.level);
+    formData.append("language", tutorialData.language);
     formData.append("status", status);
     formData.append("is_paid", (!tutorialData.isFree).toString());
     if (!tutorialData.isFree) {
@@ -95,7 +102,7 @@ function CreateTutorialPage() {
       toast.success(
         status === "draft"
           ? "Tutorial saved as draft!"
-          : "Tutorial submitted for approval!"
+          : "Tutorial submitted successfully! Waiting for admin approval."
       );
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
