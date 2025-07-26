@@ -23,6 +23,29 @@ import {
 import { fetchPaymentConfig, updatePaymentConfig } from '@/services/admin/paymentConfigService';
 import { fetchPayouts, updatePayout } from '@/services/admin/payoutService';
 import { toast } from 'react-toastify';
+import { createNotification } from '@/services/notificationService';
+import { sendChatMessage } from '@/services/messageService';
+import useAuthStore from '@/store/auth/authStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
+
+const useAdminNotice = () => {
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || 'Failed to send notification';
+      toast.error(msg);
+    }
+  };
+};
 
 const tabs = [
   { key: "overview", label: "Overview", icon: <FaChartBar /> },
@@ -57,6 +80,7 @@ export default function AdminPaymentsPage() {
 
   const [transactions, setTransactions] = useState([]);
   const [methods, setMethods] = useState([]);
+  const notify = useAdminNotice();
 
   useEffect(() => {
     const loadData = async () => {
@@ -180,6 +204,7 @@ export default function AdminPaymentsPage() {
     try {
       await updatePaymentConfig(form);
       toast.success("Configuration saved successfully!");
+      notify("payment_config_updated", "Payment configuration updated");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to save configuration");
     }
