@@ -244,10 +244,7 @@ const MessagesPage = () => {
               selectedChat={selectedChat}
             />
             {selectedChat.isGroup ? (
-              <GroupChat
-                groupId={selectedChat.id}
-                groupName={selectedChat.name}
-              />
+              <GroupChat group={selectedChat} />
             ) : (
               <ChatWindow selectedChat={selectedChat} refreshUsers={fetchUsersList} />
             )}

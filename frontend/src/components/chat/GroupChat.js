@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
-import MessageInput from './MessageInput';
-import MessageList from './MessageList';
-import TypingIndicator from './TypingIndicator';
-import ChatGroupHeader from './ChatGroupHeader';
-import groupService from '@/services/groupService';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import MessageInput from "./MessageInput";
+import MessageList from "./MessageList";
+import TypingIndicator from "./TypingIndicator";
+import ChatHeader from "./ChatHeader";
+import groupService from "@/services/groupService";
+import toast from "react-hot-toast";
 
 
-export default function GroupChat({ groupId, groupName }) {
+export default function GroupChat({ group }) {
+  const groupId = group?.id;
+  const groupName = group?.name;
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
@@ -89,29 +91,35 @@ export default function GroupChat({ groupId, groupName }) {
   };
 
   return (
-    <div className="space-y-4">
-      <ChatGroupHeader groupId={groupId} groupName={groupName} />
+    <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
+      <div className="border-b border-gray-700">
+        <ChatHeader selectedChat={{ ...group, isGroup: true }} />
+      </div>
 
-      <div className="h-64 overflow-y-auto bg-gray-100 dark:bg-gray-800 border rounded p-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-700" style={{ minHeight: 0 }}>
+        {messages.length === 0 && (
+          <p className="text-center text-gray-300 mt-4">No messages yet.</p>
+        )}
         <MessageList
           messages={messages}
           onDelete={handleDelete}
           onPin={handlePin}
           onReply={handleReply}
         />
+        <TypingIndicator names={typingUsers} />
       </div>
 
-      <TypingIndicator names={typingUsers} />
-
-      <MessageInput
-        sendMessage={sendMessage}
-        replyTo={replyTo}
-        onCancelReply={() => setReplyTo(null)}
-        onTyping={(isTyping) => {
-          setTyping(isTyping);
-          groupService.setTypingStatus(groupId, isTyping).catch(() => {});
-        }}
-      />
+      <div className="border-t border-gray-700 bg-gray-800 p-3">
+        <MessageInput
+          sendMessage={sendMessage}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          onTyping={(isTyping) => {
+            setTyping(isTyping);
+            groupService.setTypingStatus(groupId, isTyping).catch(() => {});
+          }}
+        />
+      </div>
     </div>
   );
 }
