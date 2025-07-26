@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
@@ -21,6 +24,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
 function EditTutorialPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
   const router = useRouter();
   const { id } = router.query;
 
@@ -159,7 +163,7 @@ function EditTutorialPage() {
 
               try {
                 await updateTutorial(id, formData);
-                toast.success("Tutorial updated successfully!");
+                toast.success(t('update_success'));
                 await createNotification({
                   user_id: user.id,
                   type: "tutorial_updated",
@@ -184,7 +188,7 @@ function EditTutorialPage() {
                 router.push("/dashboard/admin/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error("Failed to update tutorial");
+                toast.error(t('update_failed'));
               }
             }}
           />
@@ -195,3 +199,11 @@ function EditTutorialPage() {
 }
 
 export default withAuthProtection(EditTutorialPage, ["admin", "superadmin"]);
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
