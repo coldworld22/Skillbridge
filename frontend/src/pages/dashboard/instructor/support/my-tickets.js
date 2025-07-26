@@ -20,7 +20,6 @@ export default function MyTicketsPage() {
     }
   };
 
-export default function MyTicketsPage() {
   return (
     <InstructorLayout>
       <PageHead title="My Tickets - Dashboard" />
