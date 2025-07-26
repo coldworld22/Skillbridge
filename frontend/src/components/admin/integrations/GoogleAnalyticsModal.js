@@ -1,4 +1,22 @@
-export default function GoogleAnalyticsModal({ onClose }) {
+import { useState } from "react";
+import { FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
+
+export default function GoogleAnalyticsModal({ initialData = {}, onClose, onSave }) {
+  const [form, setForm] = useState({ measurementId: "", enabled: true, ...initialData });
+
+  const handleSubmit = async () => {
+    if (!onSave) return onClose();
+    try {
+      await onSave(form);
+      toast.success("Settings saved");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save settings");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -17,6 +35,8 @@ export default function GoogleAnalyticsModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700">GA4 Measurement ID</label>
             <input
               type="text"
+              value={form.measurementId}
+              onChange={(e) => setForm({ ...form, measurementId: e.target.value })}
               placeholder="e.g., G-XXXXXXX"
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
@@ -24,7 +44,11 @@ export default function GoogleAnalyticsModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Enable Tracking</label>
-            <select className="w-full border border-gray-300 rounded px-3 py-2">
+            <select
+              value={form.enabled}
+              onChange={(e) => setForm({ ...form, enabled: e.target.value === 'true' })}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            >
               <option value="true">Yes</option>
               <option value="false">No</option>
             </select>
@@ -39,9 +63,10 @@ export default function GoogleAnalyticsModal({ onClose }) {
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-2"
           >
-            Save
+            <FaSave /> Save
           </button>
         </div>
       </div>

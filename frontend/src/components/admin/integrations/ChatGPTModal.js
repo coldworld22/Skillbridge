@@ -1,21 +1,30 @@
 // components/admin/integrations/ChatGPTModal.js
 import { useState } from "react";
 import { FaTimes, FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
 
-export default function ChatGPTModal({ onClose }) {
+export default function ChatGPTModal({ initialData = {}, onClose, onSave }) {
   const [form, setForm] = useState({
     apiKey: "",
     model: "gpt-4",
     temperature: 0.7,
+    ...initialData,
   });
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log("Saving ChatGPT config:", form);
-    onClose();
+  const handleSubmit = async () => {
+    if (!onSave) return onClose();
+    try {
+      await onSave(form);
+      toast.success("Settings saved");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save settings");
+    }
   };
 
   return (

@@ -1,4 +1,22 @@
-export default function HuggingFaceModal({ onClose }) {
+import { useState } from "react";
+import { FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
+
+export default function HuggingFaceModal({ initialData = {}, onClose, onSave }) {
+  const [form, setForm] = useState({ token: "", model: "", ...initialData });
+
+  const handleSubmit = async () => {
+    if (!onSave) return onClose();
+    try {
+      await onSave(form);
+      toast.success("Settings saved");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save settings");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -17,6 +35,8 @@ export default function HuggingFaceModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700">Access Token</label>
             <input
               type="text"
+              value={form.token}
+              onChange={(e) => setForm({ ...form, token: e.target.value })}
               placeholder="hf_xxxxxxxxxxxxxx"
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
@@ -26,6 +46,8 @@ export default function HuggingFaceModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700">Model Endpoint</label>
             <input
               type="text"
+              value={form.model}
+              onChange={(e) => setForm({ ...form, model: e.target.value })}
               placeholder="e.g., bert-base-uncased, gpt2, sentiment-analysis"
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
@@ -40,9 +62,10 @@ export default function HuggingFaceModal({ onClose }) {
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-2"
           >
-            Save
+            <FaSave /> Save
           </button>
         </div>
       </div>

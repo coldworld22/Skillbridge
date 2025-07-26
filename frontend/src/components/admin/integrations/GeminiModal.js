@@ -1,4 +1,22 @@
-export default function GeminiModal({ onClose }) {
+import { useState } from "react";
+import { FaSave } from "react-icons/fa";
+import { toast } from "react-toastify";
+
+export default function GeminiModal({ initialData = {}, onClose, onSave }) {
+  const [form, setForm] = useState({ apiKey: "", model: "gemini-pro", ...initialData });
+
+  const handleSubmit = async () => {
+    if (!onSave) return onClose();
+    try {
+      await onSave(form);
+      toast.success("Settings saved");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save settings");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -17,6 +35,8 @@ export default function GeminiModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700">API Key</label>
             <input
               type="text"
+              value={form.apiKey}
+              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
               placeholder="AIzaSy..."
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
@@ -24,7 +44,11 @@ export default function GeminiModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Model</label>
-            <select className="w-full border border-gray-300 rounded px-3 py-2">
+            <select
+              value={form.model}
+              onChange={(e) => setForm({ ...form, model: e.target.value })}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            >
               <option value="gemini-pro">Gemini Pro</option>
               <option value="gemini-pro-vision">Gemini Pro Vision</option>
               <option value="gemini-ultra">Gemini Ultra</option>
@@ -40,9 +64,10 @@ export default function GeminiModal({ onClose }) {
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-2"
           >
-            Save
+            <FaSave /> Save
           </button>
         </div>
       </div>
