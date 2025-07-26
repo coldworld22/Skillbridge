@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "next-i18next";
 import {
   fetchMethodById,
   updateMethod,
@@ -32,6 +33,7 @@ export default function PaymentProviderConfig({ providerId }) {
   const [settings, setSettings] = useState("{}");
   const [loading, setLoading] = useState(true);
   const notify = useAdminNotice();
+  const { t } = useTranslation('dashboard');
 
   useEffect(() => {
     if (!providerId) return;
@@ -53,22 +55,22 @@ export default function PaymentProviderConfig({ providerId }) {
     try {
       const parsed = settings ? JSON.parse(settings) : {};
       await updateMethod(providerId, { settings: parsed });
-      toast.success("Configuration saved");
+      toast.success(t('paymentsPage.config_saved'));
       notify("payment_method_updated", `Payment method \"${providerId}\" configuration updated`);
     } catch (err) {
       console.error("Failed to save settings", err);
-      toast.error("Failed to save configuration");
+      toast.error(t('paymentsPage.config_save_failed'));
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>{t('common:loading')}</p>;
 
   return (
     <form
       onSubmit={handleSave}
       className="space-y-4 bg-white p-6 rounded-xl shadow"
     >
-      <label className="block text-sm font-medium">Settings (JSON)</label>
+      <label className="block text-sm font-medium">{t('settings')}</label>
       <textarea
         className="w-full border rounded p-2 font-mono text-sm"
         rows={10}
@@ -79,7 +81,7 @@ export default function PaymentProviderConfig({ providerId }) {
         type="submit"
         className="bg-yellow-400 px-6 py-2 rounded-full text-white"
       >
-        Save Configuration
+        {t('paymentsPage.save_configuration')}
       </button>
     </form>
   );

@@ -24,6 +24,8 @@
   "manage_payment_gateways": "Manage Payment Gateways",
   "payment_methods": "Payment Methods",
   "add_payment_method": "Add New Payment Method",
+  "configure_payment_method": "Configure Payment Method",
+  "configure_payment_method_title": "Configure {{id}}",
   "payment_enabled": "Enabled",
   "payment_disabled": "Disabled",
   "save_method": "Save Method",

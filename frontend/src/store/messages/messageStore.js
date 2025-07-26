@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { toast } from "react-toastify";
-import { getMessages, markMessageAsRead } from "@/services/messageService";
+import {
+  getMessages,
+  markMessageAsRead,
+  deleteMessage as apiDeleteMessage,
+} from "@/services/messageService";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -56,6 +60,15 @@ const useMessageStore = create((set, get) => ({
         ),
       }));
     }, HOUR_MS);
+  },
+
+  delete: async (id) => {
+    try {
+      await apiDeleteMessage(id);
+      set((state) => ({
+        items: state.items.filter((m) => m.id !== id),
+      }));
+    } catch (_) {}
   },
 
   startPolling: () => {
