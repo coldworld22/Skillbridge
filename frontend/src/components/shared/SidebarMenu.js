@@ -6,7 +6,7 @@ import { useTranslation } from "next-i18next";
 import {
   FaBookOpen, FaChalkboardTeacher, FaGraduationCap, FaUsers,
   FaCalendarAlt, FaPlus, FaChartLine, FaTimes, FaUserShield,
-  FaBullhorn, FaQuestionCircle, FaFileAlt, FaEnvelope,
+  FaBullhorn, FaQuestionCircle, FaFileAlt, FaEnvelope, FaInfoCircle,
   FaTachometerAlt
 } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
@@ -146,15 +146,25 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/blog" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaFileAlt /> {t('blog_news')}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/support" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
-                      <FaQuestionCircle /> {t('help_support')}
-                    </Link>
-                  </li>
+                  <Link href="/blog" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                    <FaFileAlt /> {t('blog_news')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                    <FaInfoCircle /> {t('about')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faqs" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                    <FaQuestionCircle /> {t('faqs')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/support" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
+                    <FaQuestionCircle /> {t('help_support')}
+                  </Link>
+                </li>
                   <li>
                     <Link href="/contact" className="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded-lg cursor-pointer transition">
                       <FaEnvelope /> {t('contact')}
