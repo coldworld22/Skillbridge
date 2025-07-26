@@ -13,3 +13,9 @@ exports.markRead = catchAsync(async (req, res) => {
   if (!msg) throw new AppError("Message not found", 404);
   sendSuccess(res, msg, "Message marked as read");
 });
+
+exports.deleteMessage = catchAsync(async (req, res) => {
+  const msg = await service.deleteMessage(req.user.id, req.params.id);
+  if (!msg) throw new AppError("Message not found", 404);
+  sendSuccess(res, msg, "Message deleted");
+});

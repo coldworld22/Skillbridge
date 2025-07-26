@@ -4,6 +4,7 @@ const express = require('express');
 jest.mock('../src/modules/messages/messages.service', () => ({
   getUserMessages: jest.fn(),
   markAsRead: jest.fn(),
+  deleteMessage: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -36,5 +37,15 @@ describe('PATCH /api/messages/:id/read', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(msg);
     expect(service.markAsRead).toHaveBeenCalledWith('1', 'user1');
+  });
+});
+
+describe('DELETE /api/messages/:id', () => {
+  it('deletes message', async () => {
+    const msg = { id: '1' };
+    service.deleteMessage.mockResolvedValue(msg);
+    const res = await request(app).delete('/api/messages/1');
+    expect(res.status).toBe(200);
+    expect(service.deleteMessage).toHaveBeenCalledWith('user1', '1');
   });
 });
