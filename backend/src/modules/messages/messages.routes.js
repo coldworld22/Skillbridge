@@ -7,5 +7,6 @@ router.use(verifyToken);
 
 router.get("/", controller.getMyMessages);
 router.patch("/:id/read", controller.markRead);
+router.delete("/:id", controller.deleteMessage);
 
 module.exports = router;

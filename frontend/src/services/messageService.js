@@ -23,6 +23,11 @@ export const markMessageAsRead = async (id) => {
 
 };
 
+export const deleteMessage = async (id) => {
+  const res = await api.delete(`/messages/${id}`);
+  return res.data.data || res.data;
+};
+
 export const getConversation = async (userId) => {
   const res = await api.get(`/chat/${userId}`);
   return res.data.data || res.data;
