@@ -367,7 +367,24 @@
     "add_note": "Add Note",
     "edit_attendance": "Edit Attendance",
     "back_to_list": "Back to Student List",
-    "student_not_found": "Student not found"
+  "student_not_found": "Student not found"
+  },
+  "classAnalyticsPage": {
+    "title": "Class Analytics",
+    "class_id": "Class ID:",
+    "loading": "Loading analytics...",
+    "total_enrolled_students": "Total Enrolled Students",
+    "total_revenue": "Total Revenue",
+    "revenue_breakdown": "Revenue Breakdown",
+    "full_payments": "Full Payments",
+    "installments": "Installments",
+    "free_seats": "Free Seats",
+    "avg_revenue_per_student": "Avg Revenue Per Student",
+    "attendance_rate": "Attendance Rate",
+    "completion_rate": "Completion Rate",
+    "top_countries": "Top Countries",
+    "devices_used": "Devices Used",
+    "registration_trend": "Registration Trend"
   },
   "sidebar": {
       "Account": "Konto",
