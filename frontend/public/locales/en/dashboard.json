@@ -488,7 +488,47 @@
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
-    "configure": "Configure"
+  "configure": "Configure"
+  },
+  "tutorialsPage": {
+    "title": "Manage Tutorials",
+    "description": "Create, edit, and manage all tutorials in the system",
+    "create_tutorial": "Create New Tutorial",
+    "status_updated": "Tutorial status updated!",
+    "update_failed": "Failed to update status",
+    "deleted": "Tutorial deleted!",
+    "delete_failed": "Failed to delete tutorial",
+    "rejected": "Tutorial rejected with reason!",
+    "reject_failed": "Failed to reject tutorial",
+    "approved": "Tutorial approved successfully!",
+    "approval_failed": "Failed to update tutorial",
+    "bulk_deleted": "Selected tutorials deleted!",
+    "bulk_delete_failed": "Failed to delete tutorials",
+    "bulk_approved": "Selected tutorials approved!",
+    "bulk_approve_failed": "Failed to approve tutorials",
+    "load_error": "Failed to load tutorials",
+    "confirm_title": "Confirm Deletion",
+    "confirm_delete": "Are you sure you want to permanently delete this tutorial? This action cannot be undone.",
+    "reject_title": "Reject Tutorial"
+  },
+  "tutorialCreatePage": {
+    "title": "Create New Tutorial",
+    "basic_info": "Basic Info",
+    "curriculum": "Curriculum",
+    "media": "Media",
+    "pricing_publish": "Pricing & Publish",
+    "save_draft": "Save Draft",
+    "next": "Next",
+    "back": "Back",
+    "draft_success": "Tutorial saved as draft!",
+    "submit_success": "Tutorial submitted successfully! Waiting for admin approval.",
+    "video_required": "Please upload a video for each lesson before submitting.",
+    "creation_failed": "Failed to create tutorial",
+    "load_categories_failed": "Failed to load categories"
+  },
+  "tutorialEditPage": {
+    "update_success": "Tutorial updated successfully!",
+    "update_failed": "Failed to update tutorial"
   },
   "sidebar": {
     "Account": "Account",

@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
@@ -10,8 +13,29 @@ import ReviewStep from "@/components/tutorials/create/ReviewStep";
 import { createTutorial } from "@/services/admin/tutorialService";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 function CreateTutorialPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+  const notify = async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || t('creation_failed');
+      toast.error(msg);
+    }
+  };
   const [step, setStep] = useState(1);
   const router = useRouter();
   const [tutorialData, setTutorialData] = useState({
@@ -54,6 +78,7 @@ function CreateTutorialPage() {
       
       } catch (err) {
         console.error("Failed to load categories", err);
+        toast.error(t('load_categories_failed'));
       }
     };
 
@@ -66,7 +91,7 @@ function CreateTutorialPage() {
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error("Please upload a video for each lesson before submitting.");
+      toast.error(t('video_required'));
       return;
     }
 
@@ -100,10 +125,13 @@ function CreateTutorialPage() {
     try {
       await createTutorial(formData);
       toast.success(
-        status === "draft"
-          ? "Tutorial saved as draft!"
-          : "Tutorial submitted successfully! Waiting for admin approval."
+        status === "draft" ? t('draft_success') : t('submit_success')
       );
+      const msg =
+        status === "draft"
+          ? `Tutorial "${tutorialData.title}" saved as draft.`
+          : `Tutorial "${tutorialData.title}" submitted for approval.`;
+      notify('tutorial_created', msg);
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/admin/tutorials");
     } catch (err) {
@@ -111,7 +139,7 @@ function CreateTutorialPage() {
       if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else {
-        toast.error("Failed to create tutorial");
+        toast.error(t('creation_failed'));
       }
     }
   };
@@ -122,11 +150,16 @@ function CreateTutorialPage() {
   return (
     <AdminLayout>
       <div className="p-8 bg-gray-100 min-h-screen max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 {t('title')}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
-          steps={["Basic Info", "Curriculum", "Media", "Pricing & Publish"]}
+          steps={[
+            t('basic_info'),
+            t('curriculum'),
+            t('media'),
+            t('pricing_publish'),
+          ]}
           currentStep={step}
           onStepClick={(s) => {
             if (s < step) setStep(s);
@@ -176,14 +209,14 @@ function CreateTutorialPage() {
                 onClick={prevStep}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-full font-bold"
               >
-                ⬅️ Back
+                ⬅️ {t('back')}
               </button>
             )}
             <button
               onClick={saveDraft}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              💾 Save Draft
+              💾 {t('save_draft')}
             </button>
           </div>
           {step < 4 && (
@@ -191,7 +224,7 @@ function CreateTutorialPage() {
               onClick={nextStep}
               className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              Next ➡️
+              {t('next')} ➡️
             </button>
           )}
         </div>
@@ -201,3 +234,11 @@ function CreateTutorialPage() {
 }
 
 export default withAuthProtection(CreateTutorialPage, ["admin", "superadmin"]);
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}

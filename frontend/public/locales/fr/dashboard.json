@@ -452,7 +452,47 @@
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
-    "configure": "Configure"
+  "configure": "Configure"
+  },
+  "tutorialsPage": {
+    "title": "Gérer les tutoriels",
+    "description": "Créer, éditer et gérer tous les tutoriels du système",
+    "create_tutorial": "Créer un nouveau tutoriel",
+    "status_updated": "Statut du tutoriel mis à jour !",
+    "update_failed": "Échec de la mise à jour du statut",
+    "deleted": "Tutoriel supprimé !",
+    "delete_failed": "Échec de la suppression du tutoriel",
+    "rejected": "Tutoriel rejeté avec raison !",
+    "reject_failed": "Échec du rejet du tutoriel",
+    "approved": "Tutoriel approuvé avec succès !",
+    "approval_failed": "Échec de la mise à jour du tutoriel",
+    "bulk_deleted": "Tutoriels sélectionnés supprimés !",
+    "bulk_delete_failed": "Échec de la suppression des tutoriels",
+    "bulk_approved": "Tutoriels sélectionnés approuvés !",
+    "bulk_approve_failed": "Échec de l'approbation des tutoriels",
+    "load_error": "Échec du chargement des tutoriels",
+    "confirm_title": "Confirmer la suppression",
+    "confirm_delete": "Supprimer définitivement ce tutoriel ? Cette action est irréversible.",
+    "reject_title": "Rejeter le tutoriel"
+  },
+  "tutorialCreatePage": {
+    "title": "Créer un nouveau tutoriel",
+    "basic_info": "Informations de base",
+    "curriculum": "Programme",
+    "media": "Média",
+    "pricing_publish": "Tarification et publication",
+    "save_draft": "Enregistrer le brouillon",
+    "next": "Suivant",
+    "back": "Retour",
+    "draft_success": "Tutoriel enregistré en brouillon !",
+    "submit_success": "Tutoriel soumis avec succès ! En attente de l'approbation de l'admin.",
+    "video_required": "Veuillez télécharger une vidéo pour chaque leçon avant de soumettre.",
+    "creation_failed": "Échec de la création du tutoriel",
+    "load_categories_failed": "Échec du chargement des catégories"
+  },
+  "tutorialEditPage": {
+    "update_success": "Tutoriel mis à jour avec succès !",
+    "update_failed": "Échec de la mise à jour du tutoriel"
   },
   "sidebar": {
     "Account": "Compte",

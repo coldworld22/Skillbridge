@@ -488,7 +488,47 @@
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
-    "configure": "Configure"
+  "configure": "Configure"
+  },
+  "tutorialsPage": {
+    "title": "إدارة الدروس",
+    "description": "إنشاء وتحرير وإدارة جميع الدروس في النظام",
+    "create_tutorial": "إنشاء درس جديد",
+    "status_updated": "تم تحديث حالة الدرس!",
+    "update_failed": "فشل تحديث الحالة",
+    "deleted": "تم حذف الدرس!",
+    "delete_failed": "فشل حذف الدرس",
+    "rejected": "تم رفض الدرس مع ذكر السبب!",
+    "reject_failed": "فشل رفض الدرس",
+    "approved": "تمت الموافقة على الدرس بنجاح!",
+    "approval_failed": "فشل تحديث الدرس",
+    "bulk_deleted": "تم حذف الدروس المحددة!",
+    "bulk_delete_failed": "فشل حذف الدروس",
+    "bulk_approved": "تمت الموافقة على الدروس المحددة!",
+    "bulk_approve_failed": "فشل الموافقة على الدروس",
+    "load_error": "فشل تحميل الدروس",
+    "confirm_title": "تأكيد الحذف",
+    "confirm_delete": "هل أنت متأكد من حذف هذا الدرس نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.",
+    "reject_title": "رفض الدرس"
+  },
+  "tutorialCreatePage": {
+    "title": "إنشاء درس جديد",
+    "basic_info": "معلومات أساسية",
+    "curriculum": "المنهج",
+    "media": "الوسائط",
+    "pricing_publish": "التسعير والنشر",
+    "save_draft": "حفظ المسودة",
+    "next": "التالي",
+    "back": "عودة",
+    "draft_success": "تم حفظ الدرس كمسودة!",
+    "submit_success": "تم إرسال الدرس بنجاح! بانتظار موافقة المسؤول.",
+    "video_required": "يرجى تحميل فيديو لكل درس قبل الإرسال.",
+    "creation_failed": "فشل إنشاء الدرس",
+    "load_categories_failed": "فشل تحميل التصنيفات"
+  },
+  "tutorialEditPage": {
+    "update_success": "تم تحديث الدرس بنجاح!",
+    "update_failed": "فشل تحديث الدرس"
   },
   "sidebar": {
     "Account": "\u0627\u0644\u062d\u0633\u0627\u0628",

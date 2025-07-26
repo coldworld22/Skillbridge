@@ -4,6 +4,9 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
@@ -24,6 +27,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
 function AdminTutorialsPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialsPage' });
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +63,7 @@ function AdminTutorialsPage() {
         setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load tutorials");
+        toast.error(t('load_error'));
       } finally {
         setLoading(false);
       }
@@ -128,7 +132,7 @@ function AdminTutorialsPage() {
         })
       );
       const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
-      toast.success("Tutorial status updated!");
+      toast.success(t('status_updated'));
       await createNotification({
         user_id: user.id,
         type: "tutorial_status_changed",
@@ -149,7 +153,7 @@ function AdminTutorialsPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update status");
+      toast.error(t('update_failed'));
     }
   };
 
@@ -168,10 +172,10 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
-      toast.success("Tutorial deleted!");
+      toast.success(t('deleted'));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete tutorial");
+      toast.error(t('delete_failed'));
     } finally {
       setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
       setTutorialToDelete(null);
@@ -192,7 +196,7 @@ function AdminTutorialsPage() {
           return tut;
         })
       );
-      toast.success("Tutorial rejected with reason!");
+      toast.success(t('rejected'));
       const message = `Tutorial "${target.title}" was rejected.`;
       await createNotification({
         user_id: user.id,
@@ -214,7 +218,7 @@ function AdminTutorialsPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to reject tutorial");
+      toast.error(t('reject_failed'));
     } finally {
       setIsRejectionModalOpen(false);
       setTutorialToReject(null);
@@ -234,7 +238,7 @@ function AdminTutorialsPage() {
           return tut;
         })
       );
-      toast.success("Tutorial approved successfully!");
+      toast.success(t('approved'));
       const message = `Tutorial "${target.title}" approved.`;
       await createNotification({
         user_id: user.id,
@@ -256,7 +260,7 @@ function AdminTutorialsPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update tutorial");
+      toast.error(t('approval_failed'));
     }
   };
 
@@ -265,10 +269,10 @@ function AdminTutorialsPage() {
     try {
       await bulkDeleteTutorials(selectedTutorials);
       setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
-      toast.success("Selected tutorials deleted!");
+      toast.success(t('bulk_deleted'));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete tutorials");
+      toast.error(t('bulk_delete_failed'));
     } finally {
       setSelectedTutorials([]);
     }
@@ -285,10 +289,10 @@ function AdminTutorialsPage() {
             : tut
         )
       );
-      toast.success("Selected tutorials approved!");
+      toast.success(t('bulk_approved'));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to approve tutorials");
+      toast.error(t('bulk_approve_failed'));
     }
     setSelectedTutorials([]);
   };
@@ -351,16 +355,14 @@ function AdminTutorialsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">📚 Manage Tutorials</h1>
-            <p className="text-gray-600 mt-1">
-              Create, edit, and manage all tutorials in the system
-            </p>
+            <h1 className="text-3xl font-bold text-gray-800">📚 {t('title')}</h1>
+            <p className="text-gray-600 mt-1">{t('description')}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
             className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-2.5 px-6 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
           >
-            <FaPlus className="mr-2" /> Create New Tutorial
+            <FaPlus className="mr-2" /> {t('create_tutorial')}
           </Button>
         </div>
 
@@ -703,15 +705,15 @@ function AdminTutorialsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          title="Confirm Deletion"
-          message="Are you sure you want to permanently delete this tutorial? This action cannot be undone."
+          title={t('confirm_title')}
+          message={t('confirm_delete')}
         />
         
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
-          title="Reject Tutorial"
+          title={t('reject_title')}
         />
       </div>
     </AdminLayout>
@@ -719,3 +721,11 @@ function AdminTutorialsPage() {
 }
 
 export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
