@@ -69,6 +69,22 @@ const Verification = ({ prevStep = () => {} }) => {
       type === "email" ? setEmailVerified(true) : setPhoneVerified(true);
 
       await refreshUser();
+      refreshNotifications?.();
+      refreshMessages?.();
+
+      try {
+        const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
+        await createNotification({
+          user_id: user.id,
+          type: "verification",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (notifyErr) {
+        console.error(notifyErr);
+      }
 
       try {
         const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
