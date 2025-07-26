@@ -184,11 +184,18 @@ export default function StudentProfileEdit() {
 
   const validateForm = () => {
     try {
-      studentProfileSchema.parse({ ...formData, socialLinks: formData.socialLinks });
+      const sanitizedLinks = Object.fromEntries(
+        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
+      );
+
+      studentProfileSchema.parse({
+        ...formData,
+        socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
+      });
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach(e => {
+      err.errors.forEach((e) => {
         errs[e.path[0]] = e.message;
       });
       setErrors(errs);
@@ -201,6 +208,11 @@ export default function StudentProfileEdit() {
     let success = false;
     try {
       setIsSubmitting(true);
+
+      const social_links = Object.entries(formData.socialLinks || {})
+        .filter(([, url]) => url.trim() !== "")
+        .map(([platform, url]) => ({ platform, url }));
+
       await updateStudentProfile({
         full_name: formData.full_name,
         phone: formData.phone,
@@ -209,7 +221,7 @@ export default function StudentProfileEdit() {
         education_level: formData.education_level,
         topics: formData.topics,
         learning_goals: formData.learning_goals,
-        social_links: Object.entries(formData.socialLinks || {}).map(([platform, url]) => ({ platform, url }))
+        social_links,
       });
 
       const fresh = await getStudentProfile();
@@ -226,23 +238,20 @@ export default function StudentProfileEdit() {
 
       toast.success("Profile updated successfully!");
 
-      router.push("/dashboard/student/profile/steps/Verification");
+      try {
+        const message = "Your student profile was updated.";
+        await Promise.all([
+          createNotification({ user_id: user.id, type: "profile_update", message }),
+          sendChatMessage(user.id, { text: message }),
+        ]);
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (err) {
+        console.error(err);
+      }
 
-      (async () => {
-        try {
-          const message = "Your student profile was updated.";
-          await createNotification({
-            user_id: user.id,
-            type: "profile_update",
-            message,
-          });
-          await sendChatMessage(user.id, { text: message });
-          refreshNotifications?.();
-          refreshMessages?.();
-        } catch (err) {
-          console.error(err);
-        }
-      })();
+      await router.push("/dashboard/student/profile/steps/Verification");
+
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
