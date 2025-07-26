@@ -100,6 +100,20 @@ const Verification = ({ prevStep = () => {} }) => {
         console.error(notifyErr);
       }
 
+      try {
+        const message = `${type === "email" ? "Email" : "Phone"} verified successfully.`;
+        await createNotification({
+          user_id: user.id,
+          type: "verification",
+          message,
+        });
+        await sendChatMessage(user.id, { text: message });
+        refreshNotifications?.();
+        refreshMessages?.();
+      } catch (notifyErr) {
+        console.error(notifyErr);
+      }
+
       const emailNow = type === "email" ? true : emailVerified;
       const phoneNow = type === "phone" ? true : phoneVerified;
       if (emailNow && phoneNow) {

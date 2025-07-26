@@ -226,21 +226,23 @@ export default function StudentProfileEdit() {
 
       toast.success("Profile updated successfully!");
 
-      try {
-        const message = "Your student profile was updated.";
-        await createNotification({
-          user_id: user.id,
-          type: "profile_update",
-          message,
-        });
-        await sendChatMessage(user.id, { text: message });
-        refreshNotifications?.();
-        refreshMessages?.();
-      } catch (err) {
-        console.error(err);
-      }
+      router.push("/dashboard/student/profile/steps/Verification");
 
-      success = true;
+      (async () => {
+        try {
+          const message = "Your student profile was updated.";
+          await createNotification({
+            user_id: user.id,
+            type: "profile_update",
+            message,
+          });
+          await sendChatMessage(user.id, { text: message });
+          refreshNotifications?.();
+          refreshMessages?.();
+        } catch (err) {
+          console.error(err);
+        }
+      })();
     } catch (err) {
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
