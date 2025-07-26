@@ -1,13 +1,15 @@
 import { FaSearch, FaSortAlphaDown } from 'react-icons/fa';
+import { useTranslation } from 'next-i18next';
 
 export default function FilterBar({ search, onSearchChange, sort, onSortChange, statusFilter, onStatusFilter }) {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   return (
     <div className="flex flex-wrap items-center gap-4 mb-6">
       <div className="flex items-center gap-2">
         <FaSearch className="text-gray-400" />
         <input
           type="text"
-          placeholder="Search instructors..."
+          placeholder={t('search_placeholder')}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="border px-4 py-2 rounded w-full max-w-xs"
@@ -21,21 +23,21 @@ export default function FilterBar({ search, onSearchChange, sort, onSortChange, 
           onChange={(e) => onSortChange(e.target.value)}
           className="border px-3 py-2 rounded"
         >
-          <option value="name">Sort by Name</option>
-          <option value="date">Sort by Join Date</option>
+          <option value="name">{t('sort_name')}</option>
+          <option value="date">{t('sort_date')}</option>
         </select>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm">Status:</span>
+        <span className="text-sm">{t('status_label')}:</span>
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilter(e.target.value)}
           className="border px-3 py-2 rounded"
         >
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">{t('all')}</option>
+          <option value="active">{t('active')}</option>
+          <option value="inactive">{t('inactive')}</option>
         </select>
       </div>
     </div>

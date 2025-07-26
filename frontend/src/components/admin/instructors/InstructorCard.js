@@ -1,6 +1,8 @@
 import { FaToggleOn, FaToggleOff, FaTrash } from 'react-icons/fa';
+import { useTranslation } from 'next-i18next';
 
 export default function InstructorCard({ instructor, onToggle, onDelete }) {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   return (
     <div className="bg-white rounded shadow p-4 flex flex-col items-center text-center">
       <img
@@ -10,7 +12,7 @@ export default function InstructorCard({ instructor, onToggle, onDelete }) {
       />
       <h2 className="font-semibold text-lg">{instructor.name}</h2>
       <p className="text-sm text-gray-500 mb-1">{instructor.email}</p>
-      <p className="text-xs text-gray-400">Joined: {instructor.joinDate}</p>
+      <p className="text-xs text-gray-400">{t('joined', { date: instructor.joinDate })}</p>
 
       <div className="mt-3 flex gap-4">
         <button

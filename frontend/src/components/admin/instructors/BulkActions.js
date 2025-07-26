@@ -1,4 +1,7 @@
+import { useTranslation } from 'next-i18next';
+
 export default function BulkActions({ selectedIds, onSelectAll, onDeleteSelected, allVisibleIds }) {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const allSelected = selectedIds.length === allVisibleIds.length;
 
   const handleToggleAll = () => {
@@ -18,7 +21,7 @@ export default function BulkActions({ selectedIds, onSelectAll, onDeleteSelected
           onChange={handleToggleAll}
         />
         <span className="text-sm text-gray-700">
-          {allSelected ? 'Deselect All' : 'Select All'} ({allVisibleIds.length})
+          {allSelected ? t('deselect_all') : t('select_all')} ({allVisibleIds.length})
         </span>
       </div>
 
@@ -27,7 +30,7 @@ export default function BulkActions({ selectedIds, onSelectAll, onDeleteSelected
           onClick={onDeleteSelected}
           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
         >
-          Delete Selected ({selectedIds.length})
+          {t('delete_selected')} ({selectedIds.length})
         </button>
       )}
     </div>
