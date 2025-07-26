@@ -23,6 +23,11 @@ import {
 import { fetchPaymentConfig, updatePaymentConfig } from '@/services/admin/paymentConfigService';
 import { fetchPayouts, updatePayout } from '@/services/admin/payoutService';
 import { toast } from 'react-toastify';
+import { createNotification } from '@/services/notificationService';
+import { sendChatMessage } from '@/services/messageService';
+import useAuthStore from '@/store/auth/authStore';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
 
 const tabs = [
   { key: "overview", label: "Overview", icon: <FaChartBar /> },
@@ -53,6 +58,22 @@ const defaultConfig = {
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+
+  const notifyUser = async (userId, type, message) => {
+    try {
+      await createNotification({ user_id: userId, type, message });
+      await sendChatMessage(userId, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to send notification";
+      toast.error(msg);
+    }
+  };
   const [activeTab, setActiveTab] = useState("overview");
 
   const [transactions, setTransactions] = useState([]);
@@ -190,11 +211,26 @@ export default function AdminPaymentsPage() {
 
   const updateStatus = async (id, newStatus) => {
     try {
+      const payout = payouts.find((p) => p.id === id);
       const updated = await updatePayout(id, { status: newStatus });
       setPayouts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, status: updated.status } : p))
       );
+      toast.success("Payout status updated");
+      notifyUser(
+        user.id,
+        "payout_status_changed",
+        `Payout ${id} marked as ${updated.status}.`
+      );
+      if (payout?.instructor_id && payout.instructor_id !== user.id) {
+        notifyUser(
+          payout.instructor_id,
+          "payout_status_changed",
+          `Your payout request ${id} was ${updated.status.toLowerCase()}.`
+        );
+      }
     } catch (err) {
+      console.error(err);
       toast.error("Failed to update payout status");
     }
   };
