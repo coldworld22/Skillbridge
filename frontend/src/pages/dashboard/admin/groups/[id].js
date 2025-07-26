@@ -29,6 +29,7 @@ export default function AdminGroupDetailsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [members, setMembers] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -53,8 +54,10 @@ export default function AdminGroupDetailsPage() {
       try {
         const reqs = await groupService.getJoinRequestsForGroup(id);
         setRequests(reqs);
+        setPendingCount(Array.isArray(reqs) ? reqs.length : 0);
       } catch {
         setRequests([]);
+        setPendingCount(0);
       }
     };
     load();
@@ -158,7 +161,18 @@ export default function AdminGroupDetailsPage() {
                   : 'text-gray-600 hover:text-yellow-600'
                 }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'requests' ? (
+                <>
+                  Requests
+                  {pendingCount > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-600 text-white">
+                      {pendingCount}
+                    </span>
+                  )}
+                </>
+              ) : (
+                tab.charAt(0).toUpperCase() + tab.slice(1)
+              )}
             </button>
           ))}
         </div>
@@ -375,7 +389,9 @@ export default function AdminGroupDetailsPage() {
                                   ...members,
                                   { id: req.userId, name: req.name, role: 'member' },
                                 ]);
-                                setRequests(requests.filter((r) => r.id !== req.id));
+                                const next = requests.filter((r) => r.id !== req.id);
+                                setRequests(next);
+                                setPendingCount(next.length);
                               } catch {
                                 // ignore
                               }
@@ -390,7 +406,9 @@ export default function AdminGroupDetailsPage() {
                             if (confirm(`Reject ${req.name}?`)) {
                               try {
                                 await groupService.rejectRequest(req.id);
-                                setRequests(requests.filter((r) => r.id !== req.id));
+                                const next = requests.filter((r) => r.id !== req.id);
+                                setRequests(next);
+                                setPendingCount(next.length);
                               } catch {
                                 // ignore
                               }

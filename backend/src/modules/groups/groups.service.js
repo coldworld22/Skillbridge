@@ -209,6 +209,15 @@ exports.listMembers = (groupId) => {
     .where("gm.group_id", groupId);
 };
 
+// List user IDs of admins and moderators for a group
+exports.listAdminIds = async (groupId) => {
+  const rows = await db("group_members")
+    .where({ group_id: groupId })
+    .whereIn("role", ["admin", "moderator"])
+    .select("user_id");
+  return rows.map((r) => r.user_id);
+};
+
 // Update member role or remove
 exports.manageMember = async (groupId, userId, action) => {
   if (action === "kick") {
