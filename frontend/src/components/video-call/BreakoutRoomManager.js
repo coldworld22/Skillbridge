@@ -27,8 +27,10 @@ const useBreakoutRoomManager = (userName, userRole) => {
     }
   };
 
-  const joinRoom = () => {
-    if (assignedRoom) {
+  const joinRoom = (roomName) => {
+    if (roomName) {
+      setCurrentRoom(roomName);
+    } else if (assignedRoom) {
       setCurrentRoom(assignedRoom);
     }
   };
