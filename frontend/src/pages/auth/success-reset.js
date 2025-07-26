@@ -32,7 +32,7 @@ export default function SuccessReset() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-96 border border-gray-700 text-white flex flex-col items-center"
+        className="relative bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md border border-gray-700 text-white flex flex-col items-center"
       >
         {/* Success Icon */}
         <motion.div
