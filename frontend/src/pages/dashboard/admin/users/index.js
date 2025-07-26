@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import UserList from "@/components/admin/users/UserList";
 import { fetchAllUsers } from "@/services/admin/userService";
 import useAuthStore from "@/store/auth/authStore";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { toast } from "react-toastify";
 
-export default function UsersPage() {
+function UsersPage() {
+  const { t } = useTranslation("dashboard");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editUser, setEditUser] = useState(null);
@@ -68,12 +73,12 @@ export default function UsersPage() {
     <AdminLayout>
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{t("usersPage.title")}</h1>
           <button
             onClick={() => router.push("/dashboard/admin/users/create")}
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
           >
-            + Add User
+            + {t("usersPage.add_user")}
           </button>
         </div>
 
@@ -105,4 +110,16 @@ export default function UsersPage() {
       </div>
     </AdminLayout>
   );
+}
+
+const ProtectedUsersPage = withAuthProtection(UsersPage, ["admin", "superadmin"]);
+
+export default ProtectedUsersPage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard", "auth"], nextI18NextConfig)),
+    },
+  };
 }

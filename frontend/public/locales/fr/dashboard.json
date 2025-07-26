@@ -494,6 +494,12 @@
     "update_success": "Tutoriel mis à jour avec succès !",
     "update_failed": "Échec de la mise à jour du tutoriel"
   },
+  "usersPage": {
+    "title": "Gestion des utilisateurs",
+    "add_user": "Ajouter un utilisateur",
+    "user_added": "Utilisateur ajouté avec succès.",
+    "user_add_failed": "Échec de l'ajout de l'utilisateur."
+  },
   "sidebar": {
     "Account": "Compte",
     "Bookings": "Réservations",

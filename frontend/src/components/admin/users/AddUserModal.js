@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AddUserModal({ isOpen, onClose, onSubmit }) {
+  const { t } = useTranslation("dashboard");
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
+    phone: "",
+    password: "",
     role: "student",
     status: "active",
     avatar: null,
@@ -20,6 +24,8 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
       setFormData({
         full_name: "",
         email: "",
+        phone: "",
+        password: "",
         role: "student",
         status: "active",
         avatar: null,
@@ -48,24 +54,29 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    if (!formData.full_name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.phone.trim()) {
-      toast.error("Please fill in all required fields.");
+    if (
+      !formData.full_name.trim() ||
+      !formData.email.trim() ||
+      !formData.password.trim() ||
+      !formData.phone.trim()
+    ) {
+      toast.error(t("fill_required_fields"));
       return;
     }
 
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address.");
+      toast.error(t("please_enter_valid_email", { ns: "auth" }));
       return;
     }
 
     setLoading(true);
     try {
       await onSubmit(formData);
-      toast.success("User added successfully.");
+      toast.success(t("usersPage.user_added"));
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong.");
+      toast.error(err.response?.data?.message || t("usersPage.user_add_failed"));
     } finally {
       setLoading(false);
     }
@@ -81,7 +92,9 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }) {
       className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center"
     >
       <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
-        <h2 id="modal-title" className="text-xl font-bold mb-4">Add New User</h2>
+        <h2 id="modal-title" className="text-xl font-bold mb-4">
+          {t("usersPage.add_user")}
+        </h2>
 
         <input
           type="text"
