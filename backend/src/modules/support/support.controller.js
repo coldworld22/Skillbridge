@@ -140,3 +140,11 @@ exports.getAnalytics = catchAsync(async (_req, res) => {
   const data = await service.getAnalytics();
   sendSuccess(res, data);
 });
+
+exports.deleteTicket = catchAsync(async (req, res) => {
+  const result = await service.deleteTicket(req.params.id, req.user.id);
+  if (result === null) throw new AppError('Ticket not found', 404);
+  if (result === false)
+    throw new AppError('Only resolved or closed tickets can be deleted', 400);
+  sendSuccess(res, null, 'Ticket deleted');
+});

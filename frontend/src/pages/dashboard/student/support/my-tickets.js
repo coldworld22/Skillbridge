@@ -2,7 +2,7 @@ import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { useEffect, useState } from "react";
-import { fetchMyTickets } from "@/services/supportService";
+import { fetchMyTickets, deleteTicket } from "@/services/supportService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
@@ -25,6 +25,18 @@ export default function MyTicketsPage() {
     } catch (err) {
       toast.error(t("tickets_load_failed"));
       console.error("Failed to load tickets", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm(t("confirm_delete_ticket"))) return;
+    try {
+      await deleteTicket(id);
+      setTickets(tickets.filter((t) => t.id !== id));
+      toast.success(t("ticket_deleted"));
+    } catch (err) {
+      toast.error(t("delete_failed"));
+      console.error("Failed to delete ticket", err);
     }
   };
 
@@ -105,6 +117,14 @@ export default function MyTicketsPage() {
                       >
                         {t("view_details")}
                       </Link>
+                      {(["Resolved", "Closed"].includes(ticket.status)) && (
+                        <button
+                          onClick={() => handleDelete(ticket.id)}
+                          className="text-red-600 hover:underline ml-2"
+                        >
+                          {t("delete")}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

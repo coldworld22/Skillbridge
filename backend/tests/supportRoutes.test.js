@@ -5,10 +5,14 @@ jest.mock('../src/config/database', () => ({ raw: jest.fn(() => Promise.resolve(
 
 jest.mock('../src/modules/support/support.service', () => ({
   getAnalytics: jest.fn(),
+  deleteTicket: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (_req, _res, next) => next(),
+  verifyToken: (req, _res, next) => {
+    req.user = { id: 'user1' };
+    next();
+  },
   isAdmin: (_req, _res, next) => next(),
 }));
 
@@ -27,5 +31,14 @@ describe('GET /api/support/admin/analytics', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(service.getAnalytics).toHaveBeenCalled();
+  });
+});
+
+describe('DELETE /api/support/tickets/:id', () => {
+  it('deletes ticket', async () => {
+    service.deleteTicket.mockResolvedValue(true);
+    const res = await request(app).delete('/api/support/tickets/123');
+    expect(res.status).toBe(200);
+    expect(service.deleteTicket).toHaveBeenCalledWith('123', 'user1');
   });
 });
