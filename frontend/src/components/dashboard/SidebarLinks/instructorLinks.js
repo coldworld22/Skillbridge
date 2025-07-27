@@ -50,7 +50,7 @@ export const instructorNavLinks = [
       { label: 'Schedule', href: '/dashboard/instructor/schedule', icon: CalendarCheck2 },
       { label: 'Bookings', href: '/dashboard/instructor/bookings', icon: CalendarCheck2 },
       { label: 'Availability', href: '/dashboard/instructor/availability', icon: CalendarRange },
-      { label: 'Messages', href: '/dashboard/instructor/messages/messages', icon: MessageCircle },
+      { label: 'Messages', href: '/messages', icon: MessageCircle },
       { label: 'Reviews', href: '/dashboard/instructor/reviews', icon: Star },
       { label: 'Help Center', href: '/dashboard/instructor/help', icon: LifeBuoy },
     ]

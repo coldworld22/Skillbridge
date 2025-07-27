@@ -43,7 +43,7 @@ export const studentNavLinks = [
     items: [
       { label: 'Instructors', href: '/dashboard/student/instructors', icon: User },
       { label: 'My Bookings', href: '/dashboard/student/bookings', icon: CalendarCheck2 },
-      { label: 'Messages', href: '/dashboard/student/messages/messages', icon: MessageSquareMore },
+      { label: 'Messages', href: '/messages', icon: MessageSquareMore },
     ]
   },
   {
