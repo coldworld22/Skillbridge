@@ -51,6 +51,25 @@ exports.createTicket = catchAsync(async (req, res) => {
       ticket.subject,
       ticket.ticket_number
     );
+    // Create notifications/messages for admins
+    await Promise.all(
+      admins.map((admin) =>
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "new_support_ticket",
+          message: `New support ticket from ${req.user.full_name}: '${ticket.subject}'`,
+        })
+      )
+    );
+    await Promise.all(
+      admins.map((admin) =>
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: admin.id,
+          message: `New support ticket '${ticket.subject}' submitted`,
+        })
+      )
+    );
   } catch (err) {
     console.error("Error sending support ticket emails:", err.message);
   }
