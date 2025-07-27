@@ -206,9 +206,13 @@ const MessagesPage = () => {
                           className="flex items-center justify-between gap-3 p-3 hover:bg-gray-700 rounded-lg cursor-pointer transition"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-500 text-black flex items-center justify-center rounded-full font-bold">
-                              {group.name ? group.name.charAt(0).toUpperCase() : "?"}
-                            </div>
+                            <ChatImage
+                              src={group.cover_image || group.image || "/images/group-placeholder.jpg"}
+                              alt={group.name}
+                              className="w-10 h-10 rounded-full border border-gray-500"
+                              width={40}
+                              height={40}
+                            />
                             <p className="text-white font-semibold">{group.name || "Unnamed Group"}</p>
                           </div>
                           <button

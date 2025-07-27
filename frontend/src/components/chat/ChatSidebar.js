@@ -31,6 +31,11 @@ const ChatSidebar = ({
     return `${API_BASE_URL}${url}`;
   };
 
+  const getGroupAvatar = (g) => {
+    const src = g.cover_image || g.image;
+    return getAvatarUrl(src);
+  };
+
   // ✅ Sort users by online status & last active
   useEffect(() => {
     const sortedUsers = [...users].sort((a, b) => {
@@ -219,9 +224,13 @@ const ChatSidebar = ({
             }`}
             onClick={() => setSelectedChat({ ...group, isGroup: true })}
           >
-            <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold">
-              {group.name ? group.name.charAt(0).toUpperCase() : "?"}
-            </div>
+            <ChatImage
+              src={getGroupAvatar(group)}
+              alt={group.name}
+              className="w-10 h-10 rounded-full border-2 border-gray-500"
+              width={40}
+              height={40}
+            />
             <div className="flex-1">
               <p className="text-white font-semibold">{group.name}</p>
               <p className="text-gray-400 text-sm truncate w-40">

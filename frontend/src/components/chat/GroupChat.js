@@ -26,6 +26,7 @@ export default function GroupChat({ group }) {
       } catch (_) {}
     };
 
+    setMessages([]);
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000);
     const typingPoll = setInterval(async () => {

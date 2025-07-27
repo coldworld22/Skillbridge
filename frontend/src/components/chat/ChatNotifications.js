@@ -115,7 +115,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
               <li
                 key={group.id}
                 className="p-3 bg-gray-700 rounded-lg cursor-pointer flex items-center gap-3 hover:bg-gray-600 transition"
-                onClick={() => setSelectedChat(group)}
+                onClick={() => setSelectedChat({ ...group, isGroup: true })}
               >
                 <FaUsers className="text-yellow-500" />
                 {group.name || group.groupName}
