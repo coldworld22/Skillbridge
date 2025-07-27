@@ -3,6 +3,8 @@ import Link from "next/link";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { useEffect, useState } from "react";
 import { fetchMyTickets, deleteTicket } from "@/services/supportService";
+import StatusBadge from "@/components/support/StatusBadge";
+import { FaEye } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
@@ -11,6 +13,7 @@ import { toast } from "react-toastify";
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [numberFilter, setNumberFilter] = useState("");
   const { t } = useTranslation("dashboard");
 
   useEffect(() => {
@@ -41,7 +44,10 @@ export default function MyTicketsPage() {
   };
 
   const filteredTickets = tickets.filter(
-    (ticket) => statusFilter === "All" || ticket.status === statusFilter
+    (ticket) =>
+      (statusFilter === "All" || ticket.status === statusFilter) &&
+      (numberFilter === "" ||
+        ticket.ticket_number?.toString().includes(numberFilter))
   );
 
   return (
@@ -52,6 +58,13 @@ export default function MyTicketsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">{t("my_tickets")}</h1>
           <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={numberFilter}
+              onChange={(e) => setNumberFilter(e.target.value)}
+              placeholder="Ticket #"
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -92,20 +105,10 @@ export default function MyTicketsPage() {
                     key={ticket.id}
                     className="border-t border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="px-4 py-3 font-mono text-sm text-gray-700">{ticket.id}</td>
+                    <td className="px-4 py-3 font-mono text-sm text-gray-700">{ticket.ticket_number}</td>
                     <td className="px-4 py-3 text-sm text-gray-800">{ticket.subject}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          ticket.status === "Resolved"
-                            ? "bg-green-100 text-green-700"
-                            : ticket.status === "Open"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {ticket.status}
-                      </span>
+                      <StatusBadge status={ticket.status} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {new Date(ticket.created_at).toLocaleDateString()}
@@ -113,9 +116,9 @@ export default function MyTicketsPage() {
                     <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/support/tickets/${ticket.id}`}
-                        className="text-blue-600 hover:underline"
+                        className="bg-blue-500 text-white px-3 py-1 rounded inline-flex items-center gap-1 hover:bg-blue-600"
                       >
-                        {t("view_details")}
+                        <FaEye /> {t("view_details")}
                       </Link>
                       {(["Resolved", "Closed"].includes(ticket.status)) && (
                         <button
