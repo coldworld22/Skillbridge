@@ -48,6 +48,11 @@ export const addMessage = async (id, message) => {
   return data?.data;
 };
 
+export const deleteTicket = async (id) => {
+  const { data } = await api.delete(`/support/tickets/${id}`);
+  return data?.data;
+};
+
 export const updateStatus = async (id, status) => {
   const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status });
   return data?.data;

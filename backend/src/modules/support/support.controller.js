@@ -131,6 +131,11 @@ exports.updateStatus = catchAsync(async (req, res) => {
   sendSuccess(res, ticket, "Status updated");
 });
 
+exports.deleteTicket = catchAsync(async (req, res) => {
+  await service.removeTicket(req.params.id);
+  sendSuccess(res, null, "Ticket deleted");
+});
+
 exports.listRecentActivity = catchAsync(async (_req, res) => {
   const data = await service.getRecentActivity();
   sendSuccess(res, data);
