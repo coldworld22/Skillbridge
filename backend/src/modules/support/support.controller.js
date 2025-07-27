@@ -89,3 +89,8 @@ exports.listRecentActivity = catchAsync(async (_req, res) => {
   const data = await service.getRecentActivity();
   sendSuccess(res, data);
 });
+
+exports.getAnalytics = catchAsync(async (_req, res) => {
+  const data = await service.getAnalytics();
+  sendSuccess(res, data);
+});

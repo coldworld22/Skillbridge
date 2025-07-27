@@ -12,5 +12,6 @@ router.post("/tickets/:id/messages", controller.addMessage);
 router.get("/admin/tickets", isAdmin, controller.listAllTickets);
 router.patch("/admin/tickets/:id/status", isAdmin, controller.updateStatus);
 router.get("/admin/recent-activity", isAdmin, controller.listRecentActivity);
+router.get("/admin/analytics", isAdmin, controller.getAnalytics);
 
 module.exports = router;

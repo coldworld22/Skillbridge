@@ -5,28 +5,28 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContai
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { fetchSupportAnalytics } from "@/services/supportService";
 
 export default function AdminSupportAnalytics() {
   const { t } = useTranslation('dashboard');
-  const [stats, setStats] = useState({ open: 0, pending: 0, resolved: 0, avg: '0h' });
+  const [stats, setStats] = useState({ open: 0, pending: 0, resolved: 0, closed: 0, avg: '0h' });
   const [chart, setChart] = useState([]);
 
   useEffect(() => {
-    const generate = () => {
-      setStats({
-        open: Math.floor(Math.random() * 20) + 5,
-        pending: Math.floor(Math.random() * 10) + 2,
-        resolved: Math.floor(Math.random() * 30) + 10,
-        avg: `${Math.floor(Math.random() * 4) + 1}h`,
+    fetchSupportAnalytics()
+      .then((data) => {
+        setStats({
+          open: data.open,
+          pending: data.pending,
+          resolved: data.resolved,
+          closed: data.closed,
+          avg: `${data.avgHours?.toFixed ? data.avgHours.toFixed(1) : data.avgHours}h`,
+        });
+        setChart(data.chart);
+      })
+      .catch((err) => {
+        console.error("Failed to load analytics", err);
       });
-      setChart(
-        Array.from({ length: 7 }).map((_, i) => ({
-          day: `Day ${i + 1}`,
-          tickets: Math.floor(Math.random() * 20) + 5,
-        }))
-      );
-    };
-    generate();
   }, []);
 
   return (
@@ -35,11 +35,12 @@ export default function AdminSupportAnalytics() {
       <div className="p-6 space-y-8">
         <h1 className="text-2xl font-bold">{t('support_analytics')}</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: 'Open', value: stats.open },
             { label: 'Pending', value: stats.pending },
             { label: 'Resolved', value: stats.resolved },
+            { label: 'Closed', value: stats.closed },
             { label: 'Avg. Response', value: stats.avg },
           ].map((m) => (
             <div key={m.label} className="bg-white rounded shadow p-4 text-center">
