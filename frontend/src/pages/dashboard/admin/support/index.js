@@ -1,13 +1,30 @@
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import { FiFilter, FiInbox, FiUsers, FiBarChart2, FiHelpCircle, FiSettings } from "react-icons/fi";
+import { FiInbox, FiBarChart2 } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
+import { useEffect, useState } from "react";
+import { fetchRecentActivity } from "@/services/supportService";
+import formatRelativeTime from "@/utils/relativeTime";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function AdminSupportHome() {
   const { t } = useTranslation('dashboard');
+  const [activity, setActivity] = useState([]);
+
+  useEffect(() => {
+    loadActivity();
+  }, []);
+
+  const loadActivity = async () => {
+    try {
+      const data = await fetchRecentActivity();
+      setActivity(data);
+    } catch (err) {
+      console.error('Failed to load activity', err);
+    }
+  };
   return (
     <AdminLayout>
       <PageHead title={t('support_dashboard')} />
@@ -18,26 +35,7 @@ export default function AdminSupportHome() {
             <p className="text-gray-600 mt-2">{t('manage_support')}</p>
           </div>
           
-          <div className="mt-4 md:mt-0 flex space-x-3">
-            <div className="relative">
-              <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-                <option>Last 90 days</option>
-              </select>
-              <FiFilter className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
-            
-            <div className="relative">
-              <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>All Status</option>
-                <option>Open</option>
-                <option>Pending</option>
-                <option>Resolved</option>
-              </select>
-              <FiFilter className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
-          </div>
+          <div></div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -60,24 +58,6 @@ export default function AdminSupportHome() {
             </div>
           </Link>
 
-          <Link
-            href="/dashboard/admin/support/customers"
-            className="group block border border-gray-200 bg-white hover:border-purple-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg bg-purple-50 text-purple-600 mr-4">
-                <FiUsers size={20} />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600">{t('customer_management')}</h2>
-            </div>
-            <p className="text-gray-600 text-sm">View customer profiles and support history.</p>
-            <div className="mt-4 text-sm text-purple-600 font-medium flex items-center">
-              {t('view_all')}
-              <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
 
           <Link
             href="/dashboard/admin/support/analytics"
@@ -98,24 +78,6 @@ export default function AdminSupportHome() {
             </div>
           </Link>
 
-          <Link
-            href="/dashboard/admin/support/knowledge"
-            className="group block border border-gray-200 bg-white hover:border-yellow-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg bg-yellow-50 text-yellow-600 mr-4">
-                <FiHelpCircle size={20} />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-yellow-600">{t('knowledge_base')}</h2>
-            </div>
-            <p className="text-gray-600 text-sm">Manage help articles and documentation.</p>
-            <div className="mt-4 text-sm text-yellow-600 font-medium flex items-center">
-              {t('manage_content')}
-              <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
         </div>
 
         {/* Recent Activity Section */}
@@ -124,15 +86,15 @@ export default function AdminSupportHome() {
             <h3 className="text-lg font-semibold text-gray-900">{t('recent_activity')}</h3>
           </div>
           <div className="divide-y divide-gray-200">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="px-6 py-4 flex items-start hover:bg-gray-50 transition">
+            {activity.map((item) => (
+              <div key={item.id} className="px-6 py-4 flex items-start hover:bg-gray-50 transition">
                 <div className="flex-shrink-0 mt-1">
                   <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-900">New ticket #123{item} created</p>
-                  <p className="text-sm text-gray-500">Customer reported issue with login</p>
-                  <p className="text-xs text-gray-400 mt-1">2{item} minutes ago</p>
+                  <p className="text-sm font-medium text-gray-900">New ticket #{item.id} created</p>
+                  <p className="text-sm text-gray-500">{item.subject}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(item.created_at)}</p>
                 </div>
               </div>
             ))}
