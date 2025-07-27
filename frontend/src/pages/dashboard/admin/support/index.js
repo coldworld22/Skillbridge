@@ -2,16 +2,20 @@ import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { FiFilter, FiInbox, FiUsers, FiBarChart2, FiHelpCircle, FiSettings } from "react-icons/fi";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminSupportHome() {
+  const { t } = useTranslation('dashboard');
   return (
     <AdminLayout>
-      <PageHead title="Support - Admin Dashboard" />
+      <PageHead title={t('support_dashboard')} />
       <div className="px-6 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Support Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage all support activities from one place</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('support_dashboard')}</h1>
+            <p className="text-gray-600 mt-2">{t('manage_support')}</p>
           </div>
           
           <div className="mt-4 md:mt-0 flex space-x-3">
@@ -45,11 +49,11 @@ export default function AdminSupportHome() {
               <div className="p-3 rounded-lg bg-blue-50 text-blue-600 mr-4">
                 <FiInbox size={20} />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600">Manage Tickets</h2>
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600">{t('manage_tickets')}</h2>
             </div>
             <p className="text-gray-600 text-sm">View, filter, and respond to all support requests.</p>
             <div className="mt-4 text-sm text-blue-600 font-medium flex items-center">
-              View all
+              {t('view_all')}
               <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -57,18 +61,18 @@ export default function AdminSupportHome() {
           </Link>
 
           <Link
-            href="#"
+            href="/dashboard/admin/support/customers"
             className="group block border border-gray-200 bg-white hover:border-purple-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
           >
             <div className="flex items-center mb-4">
               <div className="p-3 rounded-lg bg-purple-50 text-purple-600 mr-4">
                 <FiUsers size={20} />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600">Customer Management</h2>
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600">{t('customer_management')}</h2>
             </div>
             <p className="text-gray-600 text-sm">View customer profiles and support history.</p>
             <div className="mt-4 text-sm text-purple-600 font-medium flex items-center">
-              View all
+              {t('view_all')}
               <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -76,18 +80,18 @@ export default function AdminSupportHome() {
           </Link>
 
           <Link
-            href="#"
+            href="/dashboard/admin/support/analytics"
             className="group block border border-gray-200 bg-white hover:border-green-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
           >
             <div className="flex items-center mb-4">
               <div className="p-3 rounded-lg bg-green-50 text-green-600 mr-4">
                 <FiBarChart2 size={20} />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-green-600">Support Analytics</h2>
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-green-600">{t('support_analytics')}</h2>
             </div>
             <p className="text-gray-600 text-sm">View metrics and reports on support performance.</p>
             <div className="mt-4 text-sm text-green-600 font-medium flex items-center">
-              View reports
+              {t('view_reports')}
               <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -95,18 +99,18 @@ export default function AdminSupportHome() {
           </Link>
 
           <Link
-            href="#"
+            href="/dashboard/admin/support/knowledge"
             className="group block border border-gray-200 bg-white hover:border-yellow-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
           >
             <div className="flex items-center mb-4">
               <div className="p-3 rounded-lg bg-yellow-50 text-yellow-600 mr-4">
                 <FiHelpCircle size={20} />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-yellow-600">Knowledge Base</h2>
+              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-yellow-600">{t('knowledge_base')}</h2>
             </div>
             <p className="text-gray-600 text-sm">Manage help articles and documentation.</p>
             <div className="mt-4 text-sm text-yellow-600 font-medium flex items-center">
-              Manage content
+              {t('manage_content')}
               <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -117,7 +121,7 @@ export default function AdminSupportHome() {
         {/* Recent Activity Section */}
         <div className="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('recent_activity')}</h3>
           </div>
           <div className="divide-y divide-gray-200">
             {[1, 2, 3, 4].map((item) => (
@@ -135,11 +139,19 @@ export default function AdminSupportHome() {
           </div>
           <div className="px-6 py-3 bg-gray-50 text-right">
             <Link href="/dashboard/admin/support/tickets" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-              View all activity →
+              {t('view_all')} →
             </Link>
           </div>
         </div>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
