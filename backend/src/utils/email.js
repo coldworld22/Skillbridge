@@ -384,8 +384,19 @@ exports.sendLessonReminderEmail = async (
   }
 };
 
-// Notify admins when a user submits a support ticket
-exports.sendSupportTicketAdminEmail = async (to, userName, subjectTitle) => {
+/**
+ * Notify admins when a user submits a support ticket
+ * @param {string} to - Admin email address
+ * @param {string} userName - Name of the user who created the ticket
+ * @param {string} subjectTitle - Ticket subject
+ * @param {string} ticketNumber - Generated ticket number
+ */
+exports.sendSupportTicketAdminEmail = async (
+  to,
+  userName,
+  subjectTitle,
+  ticketNumber
+) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
@@ -423,6 +434,7 @@ exports.sendSupportTicketAdminEmail = async (to, userName, subjectTitle) => {
         <p>Hello,</p>
         <p>User <strong>${userName}</strong> created a new support ticket.</p>
         <p><strong>Subject:</strong> ${subjectTitle}</p>
+        <p><strong>Ticket #:</strong> ${ticketNumber}</p>
         <p>Please sign in to the admin panel to respond.</p>
         <p>Thank you,<br/>The ${fromName} Team</p>
         ${EMAIL_FOOTER}
@@ -437,8 +449,19 @@ exports.sendSupportTicketAdminEmail = async (to, userName, subjectTitle) => {
   }
 };
 
-// Acknowledge ticket submission to the user
-exports.sendSupportTicketUserEmail = async (to, name, subjectTitle) => {
+/**
+ * Acknowledge ticket submission to the user
+ * @param {string} to - User email address
+ * @param {string} name - User full name
+ * @param {string} subjectTitle - Ticket subject
+ * @param {string} ticketNumber - Generated ticket number
+ */
+exports.sendSupportTicketUserEmail = async (
+  to,
+  name,
+  subjectTitle,
+  ticketNumber
+) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
@@ -475,6 +498,7 @@ exports.sendSupportTicketUserEmail = async (to, name, subjectTitle) => {
         <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
         <p>Hello${name ? ` ${name}` : ''},</p>
         <p>We have received your support ticket titled "${subjectTitle}".</p>
+        <p>Your ticket number is <strong>#${ticketNumber}</strong>.</p>
         <p>Our team will respond within 24 hours. If you do not hear from us by then, please submit your ticket again.</p>
         <p>Thank you,<br/>The ${fromName} Team</p>
         ${EMAIL_FOOTER}

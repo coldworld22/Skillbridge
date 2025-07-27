@@ -10,8 +10,11 @@ const formatAvatar = (url) => {
   return `${apiBase}${url}`;
 };
 
+// ─────────────────────
+// 📨 Create a support ticket
+// ─────────────────────
 export const createTicket = async ({ subject, message }) => {
-  const { data } = await api.post("/support/tickets", { subject, message });
+  const { data } = await api.post('/support/tickets', { subject, message });
   return data?.data;
 };
 
