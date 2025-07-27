@@ -4,7 +4,7 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import { useEffect, useState } from "react";
 import { fetchMyTickets, deleteTicket } from "@/services/supportService";
 import StatusBadge from "@/components/support/StatusBadge";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaTrashAlt } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
@@ -123,9 +123,9 @@ export default function MyTicketsPage() {
                       {(["Resolved", "Closed"].includes(ticket.status)) && (
                         <button
                           onClick={() => handleDelete(ticket.id)}
-                          className="text-red-600 hover:underline ml-2"
+                          className="text-red-600 hover:underline ml-2 inline-flex items-center gap-1"
                         >
-                          {t("delete")}
+                          <FaTrashAlt /> {t("delete_ticket")}
                         </button>
                       )}
                     </td>
