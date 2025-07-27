@@ -3,9 +3,13 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
 import { fetchMyTickets } from "@/services/supportService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
+  const { t } = useTranslation('dashboard');
 
   useEffect(() => {
     load();
@@ -22,20 +26,20 @@ export default function MyTicketsPage() {
 
   return (
     <InstructorLayout>
-      <PageHead title="My Tickets - Dashboard" />
+      <PageHead title={t('my_tickets')} />
       <div className="px-6 py-10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">My Support Tickets</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('my_tickets')}</h1>
           <Link
             href="/support/submit"
             className="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 transition"
           >
-            + New Ticket
+            {t('new_ticket')}
           </Link>
         </div>
 
         {tickets.length === 0 ? (
-          <p className="text-gray-500 text-center">You haven’t submitted any tickets yet.</p>
+          <p className="text-gray-500 text-center">{t('no_tickets')}</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded shadow-sm">
             <table className="min-w-full table-auto bg-white">
@@ -70,7 +74,7 @@ export default function MyTicketsPage() {
                         href={`/support/tickets/${ticket.id}`}
                         className="text-blue-600 hover:underline"
                       >
-                        View Details
+                        {t('view_details')}
                       </Link>
                     </td>
                   </tr>
@@ -82,4 +86,12 @@ export default function MyTicketsPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
