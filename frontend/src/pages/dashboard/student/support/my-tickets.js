@@ -6,9 +6,11 @@ import { fetchMyTickets } from "@/services/supportService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { toast } from "react-toastify";
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("All");
   const { t } = useTranslation("dashboard");
 
   useEffect(() => {
@@ -19,27 +21,46 @@ export default function MyTicketsPage() {
     try {
       const data = await fetchMyTickets();
       setTickets(data);
+      toast.success(t("tickets_loaded"));
     } catch (err) {
+      toast.error(t("tickets_load_failed"));
       console.error("Failed to load tickets", err);
     }
   };
+
+  const filteredTickets = tickets.filter(
+    (ticket) => statusFilter === "All" || ticket.status === statusFilter
+  );
 
   return (
     <StudentLayout>
       <PageHead title={t("my_tickets")} />
 
       <div className="px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">{t("my_tickets")}</h1>
-          <Link
-            href="/support/submit"
-            className="bg-yellow-500 text-black text-sm px-4 py-2 rounded hover:bg-yellow-600 transition font-semibold"
-          >
-            {t("new_ticket")}
-          </Link>
+          <div className="flex items-center gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="All">{t("all_statuses")}</option>
+              <option value="Open">Open</option>
+              <option value="Pending">Pending</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
+            </select>
+            <Link
+              href="/support/submit"
+              className="bg-yellow-500 text-black text-sm px-4 py-2 rounded hover:bg-yellow-600 transition font-semibold"
+            >
+              {t("new_ticket")}
+            </Link>
+          </div>
         </div>
 
-        {tickets.length === 0 ? (
+        {filteredTickets.length === 0 ? (
           <p className="text-center text-gray-500">{t("no_tickets")}</p>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
@@ -54,7 +75,7 @@ export default function MyTicketsPage() {
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((ticket) => (
+                {filteredTickets.map((ticket) => (
                   <tr
                     key={ticket.id}
                     className="border-t border-gray-100 hover:bg-gray-50"
