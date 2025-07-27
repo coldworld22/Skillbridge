@@ -42,30 +42,20 @@ export default function AdminTicketDetail() {
       toast.success(t('reply_sent'));
     } catch (err) {
       console.error("Failed to send reply", err);
+      toast.error(t('update_failed'));
     }
   };
 
-  const handleClose = async () => {
-    const confirmed = confirm("Are you sure you want to close this ticket?");
-    if (confirmed) {
-      try {
-        await updateStatus(id, "resolved");
-        setStatus("resolved");
-      } catch (err) {
-        console.error("Failed to close ticket", err);
-      }
-    }
-  };
-
-  const handleReopen = async () => {
-    const confirmed = confirm("Reopen this ticket?");
-    if (confirmed) {
-      try {
-        await updateStatus(id, "open");
-        setStatus("open");
-      } catch (err) {
-        console.error("Failed to reopen ticket", err);
-      }
+  const handleStatusChange = async (newStatus) => {
+    const confirmMsg = newStatus === 'resolved' ? t('confirm_close_ticket') : t('confirm_reopen_ticket');
+    if (!confirm(confirmMsg)) return;
+    try {
+      await updateStatus(id, newStatus);
+      setStatus(newStatus);
+      toast.success(newStatus === 'resolved' ? t('ticket_closed') : t('ticket_reopened'));
+    } catch (err) {
+      console.error("Failed to update status", err);
+      toast.error(t('update_failed'));
     }
   };
 
@@ -77,7 +67,7 @@ export default function AdminTicketDetail() {
           <TicketDetailPanel ticket={ticket} />
           <TicketReplyBox onSend={handleReply} />
         </div>
-        <TicketMetaSidebar ticket={ticket} onStatusChange={handleClose} onPriorityChange={() => {}} />
+        <TicketMetaSidebar ticket={{ ...ticket, status }} onStatusChange={handleStatusChange} onPriorityChange={() => {}} />
       </div>
     </AdminLayout>
   );
