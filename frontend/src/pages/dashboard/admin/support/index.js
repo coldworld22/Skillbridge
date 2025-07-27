@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FiFilter, FiInbox, FiUsers, FiBarChart2, FiHelpCircle, FiSettings } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function AdminSupportHome() {
   const { t } = useTranslation('dashboard');
