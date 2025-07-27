@@ -177,6 +177,20 @@ exports.updateStatus = catchAsync(async (req, res) => {
 });
 
 exports.deleteTicket = catchAsync(async (req, res) => {
+  const ticket = await service.getTicketById(req.params.id);
+  if (!ticket) throw new AppError("Ticket not found", 404);
+  if (
+    ticket.user_id !== req.user.id &&
+    !isAdminRole(req.user.roles || req.user.role)
+  ) {
+    throw new AppError("Access denied", 403);
+  }
+  if (!["resolved", "closed"].includes(ticket.status.toLowerCase())) {
+    throw new AppError(
+      "Only resolved or closed tickets can be deleted",
+      400
+    );
+  }
   await service.removeTicket(req.params.id);
   sendSuccess(res, null, "Ticket deleted");
 });
