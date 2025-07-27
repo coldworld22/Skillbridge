@@ -111,6 +111,10 @@ exports.getAnalytics = async () => {
     .where({ status: "Resolved" })
     .count();
 
+  const [closedRow] = await db("support_tickets")
+    .where({ status: "Closed" })
+    .count();
+
   const [avgRow] = await db("support_tickets")
     .whereNotNull("updated_at")
     .select(
@@ -126,15 +130,26 @@ exports.getAnalytics = async () => {
     .groupByRaw("DATE(created_at)")
     .orderBy("day");
 
+  const lastWeek = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    lastWeek.push(d.toISOString().split("T")[0]);
+  }
+  const chartData = lastWeek.map((day) => {
+    const row = chartRows.find((r) => {
+      const rd = r.day instanceof Date ? r.day.toISOString().split("T")[0] : r.day;
+      return rd === day;
+    });
+    return { day, tickets: row ? parseInt(row.tickets, 10) : 0 };
+  });
+
   return {
     open: parseInt(openRow.count, 10) || 0,
     pending: parseInt(pendingRow.count, 10) || 0,
     resolved: parseInt(resolvedRow.count, 10) || 0,
+    closed: parseInt(closedRow.count, 10) || 0,
     avgHours: parseFloat(avgRow.avg_hours) || 0,
-    chart: chartRows.map((r) => ({
-      day:
-        r.day instanceof Date ? r.day.toISOString().split("T")[0] : r.day,
-      tickets: parseInt(r.tickets, 10),
-    })),
+    chart: chartData,
   };
 };

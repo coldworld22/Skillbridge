@@ -9,7 +9,7 @@ import { fetchSupportAnalytics } from "@/services/supportService";
 
 export default function AdminSupportAnalytics() {
   const { t } = useTranslation('dashboard');
-  const [stats, setStats] = useState({ open: 0, pending: 0, resolved: 0, avg: '0h' });
+  const [stats, setStats] = useState({ open: 0, pending: 0, resolved: 0, closed: 0, avg: '0h' });
   const [chart, setChart] = useState([]);
 
   useEffect(() => {
@@ -19,6 +19,9 @@ export default function AdminSupportAnalytics() {
           open: data.open,
           pending: data.pending,
           resolved: data.resolved,
+
+          closed: data.closed,
+
           avg: `${data.avgHours?.toFixed ? data.avgHours.toFixed(1) : data.avgHours}h`,
         });
         setChart(data.chart);
@@ -34,11 +37,12 @@ export default function AdminSupportAnalytics() {
       <div className="p-6 space-y-8">
         <h1 className="text-2xl font-bold">{t('support_analytics')}</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: 'Open', value: stats.open },
             { label: 'Pending', value: stats.pending },
             { label: 'Resolved', value: stats.resolved },
+            { label: 'Closed', value: stats.closed },
             { label: 'Avg. Response', value: stats.avg },
           ].map((m) => (
             <div key={m.label} className="bg-white rounded shadow p-4 text-center">

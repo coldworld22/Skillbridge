@@ -69,6 +69,8 @@ export const fetchSupportAnalytics = async () => {
     open: 0,
     pending: 0,
     resolved: 0,
+
+    closed: 0,
     avgHours: 0,
     chart: [],
   };
