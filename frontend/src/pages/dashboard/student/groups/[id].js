@@ -143,6 +143,11 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
+            {pendingCount > 0 && (
+              <div className="bg-red-100 text-red-800 px-3 py-1 rounded mt-2">
+                {pendingCount} pending join request{pendingCount > 1 ? 's' : ''}
+              </div>
+            )}
             {["admin", "moderator"].includes(currentUserRole) && !editingName && (
               <button
                 onClick={() => {

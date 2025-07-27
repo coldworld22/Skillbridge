@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import groupService from "@/services/groupService";
+import { toast } from "react-toastify";
 import { FaUserSlash, FaVolumeMute, FaUserShield, FaBan } from "react-icons/fa";
 
 export default function GroupMembersList({
@@ -14,15 +15,42 @@ export default function GroupMembersList({
   }, [groupId]);
 
   const handleAction = async (memberId, action) => {
-    const success = await groupService.manageMember(groupId, memberId, action);
-    if (success) {
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === memberId
-            ? { ...m, ...getUpdatedRoleOrStatus(m, action) }
-            : m,
-        ),
-      );
+    try {
+      const success = await groupService.manageMember(groupId, memberId, action);
+      if (success) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === memberId
+              ? { ...m, ...getUpdatedRoleOrStatus(m, action) }
+              : m,
+          ),
+        );
+
+        toast.success(actionMessage(action));
+      }
+    } catch (_) {
+      toast.error("Failed to update member");
+    }
+  };
+
+  const actionMessage = (action) => {
+    switch (action) {
+      case "kick":
+        return "Member removed";
+      case "mute":
+        return "Member muted";
+      case "unmute":
+        return "Member unmuted";
+      case "promote":
+        return "Member promoted";
+      case "demote":
+        return "Member demoted";
+      case "disable":
+        return "Member disabled";
+      case "enable":
+        return "Member enabled";
+      default:
+        return "Action completed";
     }
   };
 
