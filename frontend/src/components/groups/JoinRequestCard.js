@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
+import { toast } from 'react-toastify';
 
 export default function JoinRequestCard({ groupId, onCountChange }) {
   const [requests, setRequests] = useState([]);
@@ -16,14 +17,23 @@ export default function JoinRequestCard({ groupId, onCountChange }) {
   }, [groupId]);
 
   const handleAction = async (id, action) => {
-    if (action === 'approve') await groupService.approveRequest(id);
-    else await groupService.rejectRequest(id);
+    try {
+      if (action === 'approve') {
+        await groupService.approveRequest(id);
+        toast.success('Request approved');
+      } else {
+        await groupService.rejectRequest(id);
+        toast.info('Request rejected');
+      }
 
-    setRequests(prev => {
-      const next = prev.filter(r => r.id !== id);
-      if (onCountChange) onCountChange(next.length);
-      return next;
-    });
+      setRequests(prev => {
+        const next = prev.filter(r => r.id !== id);
+        if (onCountChange) onCountChange(next.length);
+        return next;
+      });
+    } catch (_) {
+      toast.error('Failed to process request');
+    }
   };
 
   if (loading) return <p>Loading join requests...</p>;

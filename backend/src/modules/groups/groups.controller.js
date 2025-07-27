@@ -216,7 +216,33 @@ exports.getMyGroups = catchAsync(async (req, res) => {
 });
 
 exports.joinGroup = catchAsync(async (req, res) => {
-  const reqRow = await service.requestJoin(req.params.id, req.user.id);
+  const groupId = req.params.id;
+  const reqRow = await service.requestJoin(groupId, req.user.id);
+
+  const group = await service.getGroupById(groupId);
+  const adminIds = await service.listAdminIds(groupId);
+  const note = `${req.user.full_name} requested to join the group "${group.name}"`;
+
+  const recipients = adminIds.filter((uid) => uid !== req.user.id);
+  await Promise.all(
+    recipients.map((uid) =>
+      notificationService.createNotification({
+        user_id: uid,
+        type: "join_request",
+        message: note,
+      })
+    )
+  );
+  await Promise.all(
+    recipients.map((uid) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: uid,
+        message: note,
+      })
+    )
+  );
+
   sendSuccess(res, reqRow, "Request sent");
 });
 
@@ -262,6 +288,23 @@ exports.manageJoinRequest = catchAsync(async (req, res) => {
     throw new AppError("Invalid action", 400);
   }
   const result = await service.manageJoinRequest(requestId, action);
+  if (result) {
+    const group = await service.getGroupById(result.group_id);
+    const note =
+      action === "approve"
+        ? `Your request to join "${group.name}" was approved`
+        : `Your request to join "${group.name}" was rejected`;
+    await notificationService.createNotification({
+      user_id: result.user_id,
+      type: "join_request_" + action,
+      message: note,
+    });
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: result.user_id,
+      message: note,
+    });
+  }
   sendSuccess(res, result);
 });
 
