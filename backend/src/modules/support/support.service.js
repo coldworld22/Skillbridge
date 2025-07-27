@@ -1,14 +1,38 @@
 const db = require("../../config/database");
 
+/**
+ * Create a new support ticket and initial message
+ * @param {Object} params
+ * @param {string} params.user_id - ID of the user creating the ticket
+ * @param {string} params.subject - Ticket subject
+ * @param {string} params.message - Initial message content
+ */
 exports.createTicket = async ({ user_id, subject, message }) => {
+  // ─────────────────────
+  // 🔢 Generate unique ticket number
+  // ─────────────────────
+  let ticketNumber;
+  do {
+    ticketNumber = Math.floor(100000 + Math.random() * 900000).toString();
+  } while (
+    await db("support_tickets")
+      .where({ ticket_number: ticketNumber })
+      .first()
+  );
+
+  // ─────────────────────
+  // 💾 Save the ticket
+  // ─────────────────────
   const [ticket] = await db("support_tickets")
-    .insert({ user_id, subject })
+    .insert({ user_id, subject, ticket_number: ticketNumber })
     .returning("*");
+
   await db("support_messages").insert({
     ticket_id: ticket.id,
     sender_id: user_id,
     message,
   });
+
   return ticket;
 };
 

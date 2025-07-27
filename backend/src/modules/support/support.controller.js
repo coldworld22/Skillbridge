@@ -19,27 +19,53 @@ const isAdminRole = (roles = []) => {
     .some((r) => ["admin", "superadmin"].includes(r));
 };
 
+/**
+ * Create a support ticket for the current user
+ * Sends email notifications to the user and admins
+ */
 exports.createTicket = catchAsync(async (req, res) => {
   const ticket = await service.createTicket({
     user_id: req.user.id,
     subject: req.body.subject,
     message: req.body.message,
   });
+
+  // ─────────────────────
+  // 📣 Notify admins and user
+  // ─────────────────────
   try {
     const admins = await userModel.findAdmins();
     await Promise.all(
       admins.map((a) =>
-        sendSupportTicketAdminEmail(a.email, req.user.full_name, ticket.subject)
+        sendSupportTicketAdminEmail(
+          a.email,
+          req.user.full_name,
+          ticket.subject,
+          ticket.ticket_number
+        )
       )
     );
     await sendSupportTicketUserEmail(
       req.user.email,
       req.user.full_name,
-      ticket.subject
+      ticket.subject,
+      ticket.ticket_number
     );
   } catch (err) {
     console.error("Error sending support ticket emails:", err.message);
   }
+
+  await notificationService.createNotification({
+    user_id: req.user.id,
+    type: "ticket_submitted",
+    message: `Ticket #${ticket.ticket_number} created`,
+  });
+  await messageService.createMessage({
+    sender_id: req.user.id,
+    receiver_id: req.user.id,
+    message: `We received your support ticket #${ticket.ticket_number}`,
+  });
+
   sendSuccess(res, ticket, "Ticket created");
 });
 
