@@ -82,3 +82,18 @@ exports.updateStatus = async (id, status) => {
     .returning("*");
   return row;
 };
+
+// Fetch recent support ticket activity for admin dashboard
+exports.getRecentActivity = async (limit = 10) => {
+  return db("support_tickets")
+    .leftJoin("users", "support_tickets.user_id", "users.id")
+    .select(
+      "support_tickets.id",
+      "support_tickets.subject",
+      "support_tickets.status",
+      "support_tickets.created_at",
+      "users.full_name as user_name"
+    )
+    .orderBy("support_tickets.created_at", "desc")
+    .limit(limit);
+};

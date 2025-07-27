@@ -1,13 +1,30 @@
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import { FiFilter, FiInbox, FiUsers, FiBarChart2, FiHelpCircle, FiSettings } from "react-icons/fi";
+import { FiInbox, FiUsers, FiBarChart2, FiHelpCircle } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
+import { useEffect, useState } from "react";
+import { fetchRecentActivity } from "@/services/supportService";
+import formatRelativeTime from "@/utils/relativeTime";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function AdminSupportHome() {
   const { t } = useTranslation('dashboard');
+  const [activity, setActivity] = useState([]);
+
+  useEffect(() => {
+    loadActivity();
+  }, []);
+
+  const loadActivity = async () => {
+    try {
+      const data = await fetchRecentActivity();
+      setActivity(data);
+    } catch (err) {
+      console.error('Failed to load activity', err);
+    }
+  };
   return (
     <AdminLayout>
       <PageHead title={t('support_dashboard')} />
@@ -18,26 +35,7 @@ export default function AdminSupportHome() {
             <p className="text-gray-600 mt-2">{t('manage_support')}</p>
           </div>
           
-          <div className="mt-4 md:mt-0 flex space-x-3">
-            <div className="relative">
-              <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-                <option>Last 90 days</option>
-              </select>
-              <FiFilter className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
-            
-            <div className="relative">
-              <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>All Status</option>
-                <option>Open</option>
-                <option>Pending</option>
-                <option>Resolved</option>
-              </select>
-              <FiFilter className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
-          </div>
+          <div></div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -124,15 +122,15 @@ export default function AdminSupportHome() {
             <h3 className="text-lg font-semibold text-gray-900">{t('recent_activity')}</h3>
           </div>
           <div className="divide-y divide-gray-200">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="px-6 py-4 flex items-start hover:bg-gray-50 transition">
+            {activity.map((item) => (
+              <div key={item.id} className="px-6 py-4 flex items-start hover:bg-gray-50 transition">
                 <div className="flex-shrink-0 mt-1">
                   <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-900">New ticket #123{item} created</p>
-                  <p className="text-sm text-gray-500">Customer reported issue with login</p>
-                  <p className="text-xs text-gray-400 mt-1">2{item} minutes ago</p>
+                  <p className="text-sm font-medium text-gray-900">New ticket #{item.id} created</p>
+                  <p className="text-sm text-gray-500">{item.subject}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(item.created_at)}</p>
                 </div>
               </div>
             ))}
