@@ -1,7 +1,7 @@
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import { FiInbox, FiUsers, FiBarChart2, FiHelpCircle } from "react-icons/fi";
+import { FiInbox, FiBarChart2 } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { useEffect, useState } from "react";
 import { fetchRecentActivity } from "@/services/supportService";
@@ -58,24 +58,6 @@ export default function AdminSupportHome() {
             </div>
           </Link>
 
-          <Link
-            href="/dashboard/admin/support/customers"
-            className="group block border border-gray-200 bg-white hover:border-purple-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg bg-purple-50 text-purple-600 mr-4">
-                <FiUsers size={20} />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-purple-600">{t('customer_management')}</h2>
-            </div>
-            <p className="text-gray-600 text-sm">View customer profiles and support history.</p>
-            <div className="mt-4 text-sm text-purple-600 font-medium flex items-center">
-              {t('view_all')}
-              <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
 
           <Link
             href="/dashboard/admin/support/analytics"
@@ -96,24 +78,6 @@ export default function AdminSupportHome() {
             </div>
           </Link>
 
-          <Link
-            href="/dashboard/admin/support/knowledge"
-            className="group block border border-gray-200 bg-white hover:border-yellow-500 rounded-xl p-6 transition-all shadow-sm hover:shadow-md"
-          >
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg bg-yellow-50 text-yellow-600 mr-4">
-                <FiHelpCircle size={20} />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 group-hover:text-yellow-600">{t('knowledge_base')}</h2>
-            </div>
-            <p className="text-gray-600 text-sm">Manage help articles and documentation.</p>
-            <div className="mt-4 text-sm text-yellow-600 font-medium flex items-center">
-              {t('manage_content')}
-              <svg className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
         </div>
 
         {/* Recent Activity Section */}
