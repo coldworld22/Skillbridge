@@ -1,5 +1,5 @@
 import StatusBadge from './StatusBadge';
-import { FiClock, FiUser, FiTag } from 'react-icons/fi';
+import { FiClock, FiTag } from 'react-icons/fi';
 
 export default function TicketCard({ ticket, onClick }) {
   return (
@@ -20,8 +20,12 @@ export default function TicketCard({ ticket, onClick }) {
           {ticket.priority}
         </span>
         <span className="flex items-center gap-1">
-          <FiUser className="text-blue-500" />
-          {ticket.user_name || 'Unknown'}
+          <img
+            src={ticket.user_avatar || '/images/default-avatar.png'}
+            alt="avatar"
+            className="w-4 h-4 rounded-full object-cover"
+          />
+          {ticket.user_name || ticket.user || 'Unknown'}
         </span>
         <span className="flex items-center gap-1">
           <FiClock className="text-gray-400" />
