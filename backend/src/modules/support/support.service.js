@@ -83,6 +83,9 @@ exports.updateStatus = async (id, status) => {
   return row;
 };
 
+exports.removeTicket = (id) =>
+  db("support_tickets").where({ id }).del();
+
 // Fetch recent support ticket activity for admin dashboard
 exports.getRecentActivity = async (limit = 10) => {
   return db("support_tickets")
