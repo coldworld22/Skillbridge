@@ -1,7 +1,7 @@
 import PageHead from "@/components/common/PageHead";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import { FiInbox, FiUsers, FiBarChart2, FiHelpCircle } from "react-icons/fi";
+import { FiInbox, FiBarChart2 } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { useEffect, useState } from "react";
 import { fetchRecentActivity } from "@/services/supportService";
