@@ -15,35 +15,11 @@ import heroImage from "@/shared/assets/images/home/hero.png";
 import { getAds } from "@/services/adsService";
 import { useTranslation } from "next-i18next";
 
-const defaultAds = [
-  {
-    id: 1,
-    title: "🔥 Black Friday Deal: 50% Off!",
-    description: "All courses now at half price!",
-    image: "/shared/assets/images/ads/black-friday.jpg",
-    link: "/promotions/1"
-  },
-  {
-    id: 2,
-    title: "📢 Python Bootcamp Enrollment Open!",
-    description: "Join our advanced Python bootcamp!",
-    image: "/shared/assets/images/ads/python-bootcamp.jpg",
-    link: "/promotions/2"
-  },
-  {
-    id: 3,
-    title: "🚀 AI Masterclass Discount!",
-    description: "Learn AI from top instructors!",
-    image: "/shared/assets/images/ads/ai-masterclass.jpg",
-    link: "/promotions/3"
-  },
-];
-
 
 const Hero = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [ads, setAds] = useState(defaultAds);
+  const [ads, setAds] = useState([]);
   const [currentAd, setCurrentAd] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -59,7 +35,7 @@ const Hero = () => {
     const fetchAds = async () => {
       try {
         const data = await getAds();
-        if (data.length) setAds(data);
+        setAds(data);
       } catch (err) {
         console.error("Failed to fetch ads", err);
       }
@@ -178,16 +154,17 @@ const Hero = () => {
         </div>
 
         {/* Right Side - Ads */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={ads[currentAd].id}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5 }}
-            className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500"
-            {...handlers}
-          >
+        {ads.length > 0 ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={ads[currentAd].id}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.5 }}
+              className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500"
+              {...handlers}
+            >
             <Image
               src={ads[currentAd].image}
               alt={ads[currentAd].title}
@@ -236,8 +213,13 @@ const Hero = () => {
                 />
               ))}
             </div>
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="relative w-full lg:w-1/2 h-[450px] flex items-center justify-center text-white text-xl">
+            {t('no_offers')}
+          </div>
+        )}
 
 
 

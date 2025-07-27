@@ -121,6 +121,7 @@
   "search_nfts_placeholder": "Search NFTs...",
   "show_more_nfts": "Show More NFTs",
   "experience_years": "experience : {{count}} Years",
-  "instructor_rating": "Rating: {{count}} / 5"
+  "instructor_rating": "Rating: {{count}} / 5",
+  "no_offers": "No offers right now"
 
 }
