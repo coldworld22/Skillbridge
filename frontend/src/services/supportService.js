@@ -57,3 +57,8 @@ export const updatePriority = async (id, priority) => {
   const { data } = await api.put(`/tickets/${id}/priority`, { priority });
   return data?.data;
 };
+
+export const fetchRecentActivity = async () => {
+  const { data } = await api.get("/support/admin/recent-activity");
+  return data?.data ?? [];
+};

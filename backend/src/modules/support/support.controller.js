@@ -84,3 +84,8 @@ exports.updateStatus = catchAsync(async (req, res) => {
   }
   sendSuccess(res, ticket, "Status updated");
 });
+
+exports.listRecentActivity = catchAsync(async (_req, res) => {
+  const data = await service.getRecentActivity();
+  sendSuccess(res, data);
+});
