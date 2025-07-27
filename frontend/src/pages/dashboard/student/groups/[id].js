@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import GroupChat from '@/components/chat/GroupChat';
 import GroupMembersList from '@/components/groups/GroupMembersList';
-import GroupPermissionSettings from '@/components/groups/GroupPermissionSettings';
 import groupService from '@/services/groupService';
 import JoinRequestCard from '@/components/groups/JoinRequestCard';
 import useAuthStore from '@/store/auth/authStore';
@@ -130,7 +129,7 @@ export default function GroupDetailsPage() {
   if (joinStatus === 'joined') {
     tabs.push('chat');
     tabs.push('members');
-    if (isAdmin) tabs.push('member-management');
+    if (isAdmin) tabs.push('requests');
   }
 
   return (
@@ -143,6 +142,11 @@ export default function GroupDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
+            {pendingCount > 0 && (
+              <div className="bg-red-100 text-red-800 px-3 py-1 rounded mt-2">
+                {pendingCount} pending join request{pendingCount > 1 ? 's' : ''}
+              </div>
+            )}
             {["admin", "moderator"].includes(currentUserRole) && !editingName && (
               <button
                 onClick={() => {
@@ -205,9 +209,9 @@ export default function GroupDetailsPage() {
                 activeTab === tab ? 'border-b-2 border-yellow-500 text-yellow-600' : 'text-gray-500'
               }`}
             >
-              {tab === 'member-management' ? (
+              {tab === 'requests' ? (
                 <>
-                  Member Management
+                  Requests
                   {pendingCount > 0 && (
                     <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-600 text-white">
                       {pendingCount}
@@ -311,7 +315,7 @@ export default function GroupDetailsPage() {
           </div>
         )}
 
-        {activeTab === 'member-management' && isAdmin && (
+        {activeTab === 'requests' && isAdmin && (
           <div className="space-y-4">
             <div className="pt-4">
               <h2 className="text-sm font-medium mb-1">Pending Requests</h2>
@@ -319,7 +323,6 @@ export default function GroupDetailsPage() {
               <JoinRequestCard groupId={group.id} onCountChange={setPendingCount} />
 
             </div>
-            <GroupPermissionSettings groupId={group.id} />
           </div>
         )}
       </div>

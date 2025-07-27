@@ -150,6 +150,11 @@ export default function AdminGroupDetailsPage() {
         </button>
 
         <h1 className="text-3xl font-bold text-gray-800">🔍 Group Overview: {group.name}</h1>
+        {pendingCount > 0 && (
+          <div className="bg-red-100 text-red-800 px-4 py-2 rounded mb-2">
+            {pendingCount} pending join request{pendingCount > 1 ? 's' : ''}
+          </div>
+        )}
 
         <div className="flex gap-2 border-b pb-3">
           {['overview', 'members', 'requests'].map((tab) => (
