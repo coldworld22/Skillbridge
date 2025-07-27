@@ -8,12 +8,41 @@ import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
 import { FaSpinner } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 const currentUserPlan = "basic";
 const { maxAdDuration } = plansConfig[currentUserPlan];
 
+const useAdminNotice = () => {
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+  return async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.message || "Failed to send notification";
+      toast.error(msg);
+    }
+  };
+};
+
 export default function CreateAdPage() {
   const router = useRouter();
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
+  const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
+  const notify = useAdminNotice();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -55,15 +84,15 @@ export default function CreateAdPage() {
     setError(null);
 
     if (!formData.title || !formData.image) {
-      setError("Title and image are required.");
+      setError(t('title_image_required'));
       return;
     }
     if (!formData.startAt || !formData.endAt) {
-      setError("Start and end dates are required.");
+      setError(t('dates_required'));
       return;
     }
     if (new Date(formData.endAt) < new Date(formData.startAt)) {
-      setError("End date cannot be before start date.");
+      setError(t('end_before_start'));
       return;
     }
 
@@ -79,10 +108,12 @@ export default function CreateAdPage() {
       payload.append("image", file);
 
       await createAd(payload);
-      toast.success("🎉 Advertisement created successfully!");
+      toast.success(t('success'));
+      const message = `Ad "${formData.title}" created.`;
+      notify('ad_created', message);
       router.push("/dashboard/admin/ads");
     } catch (err) {
-      const message = err?.response?.data?.message || "Failed to create ad.";
+      const message = err?.response?.data?.message || t('failed');
       if (message.toLowerCase().includes("title")) {
         setTitleError(message);
       } else {
@@ -97,8 +128,8 @@ export default function CreateAdPage() {
   return (
     <AdminLayout>
       <Toaster position="top-center" />
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">🛠️ Create Advertisement</h1>
+      <div className="max-w-4xl mx-auto p-6" dir={i18n.dir()}>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">🛠️ {t('title')}</h1>
 
         {error && (
           <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded mb-6">
@@ -110,11 +141,11 @@ export default function CreateAdPage() {
           {/* Ad Details */}
           <section className="bg-white rounded-2xl shadow border border-gray-200">
             <header className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">🎯 Ad Details</h2>
+              <h2 className="text-xl font-semibold text-gray-800">🎯 {t('ad_details')}</h2>
             </header>
             <div className="px-5 py-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
+                <label className="block text-sm font-medium mb-1">{t('title_label')} *</label>
                 <input
                   type="text"
                   name="title"
@@ -128,7 +159,7 @@ export default function CreateAdPage() {
                 {titleError && <p className="text-sm text-red-600 mt-1">{titleError}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium mb-1">{t('description_label')}</label>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -138,7 +169,7 @@ export default function CreateAdPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Banner Image *</label>
+                <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
                 <ImageCropUpload
                   value={formData.image}
                   onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
@@ -150,11 +181,11 @@ export default function CreateAdPage() {
           {/* Schedule */}
           <section className="bg-white rounded-2xl shadow border border-gray-200">
             <header className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">📅 Schedule</h2>
+              <h2 className="text-xl font-semibold text-gray-800">📅 {t('schedule')}</h2>
             </header>
             <div className="px-5 py-6 grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Start Date *</label>
+                <label className="block text-sm font-medium mb-1">{t('start_date')} *</label>
                 <input
                   type="date"
                   name="startAt"
@@ -164,7 +195,7 @@ export default function CreateAdPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">End Date *</label>
+                <label className="block text-sm font-medium mb-1">{t('end_date')} *</label>
                 <input
                   type="date"
                   name="endAt"
@@ -182,38 +213,38 @@ export default function CreateAdPage() {
           {/* Configuration */}
           <section className="bg-white rounded-2xl shadow border border-gray-200">
             <header className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">⚙️ Configuration</h2>
+              <h2 className="text-xl font-semibold text-gray-800">⚙️ {t('configuration')}</h2>
             </header>
             <div className="px-5 py-6 grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Ad Type *</label>
+                <label className="block text-sm font-medium mb-1">{t('ad_type')} *</label>
                 <select
                   name="adType"
                   value={formData.adType}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="promotion">Promotion</option>
-                  <option value="event">Event</option>
-                  <option value="announcement">Announcement</option>
-                  <option value="internal">Internal</option>
+                  <option value="promotion">{tp('promotion')}</option>
+                  <option value="event">{tp('event')}</option>
+                  <option value="announcement">{tp('announcement')}</option>
+                  <option value="internal">{tp('internal')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Priority *</label>
+                <label className="block text-sm font-medium mb-1">{t('priority')} *</label>
                 <select
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value={0}>Low (0)</option>
-                  <option value={1}>Medium (1)</option>
-                  <option value={2}>High (2)</option>
+                  <option value={0}>{tp('low')} (0)</option>
+                  <option value={1}>{tp('medium')} (1)</option>
+                  <option value={2}>{tp('high')} (2)</option>
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Optional Link</label>
+                <label className="block text-sm font-medium mb-1">{t('optional_link')}</label>
                 <input
                   type="url"
                   name="link"
@@ -226,11 +257,11 @@ export default function CreateAdPage() {
               <div className="col-span-2 space-y-3">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="allowBranding" checked={formData.allowBranding} onChange={handleChange} />
-                  Enable Custom Branding (Prime only)
+                  {t('allow_branding')}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} />
-                  Activate this ad immediately
+                  {t('activate_immediately')}
                 </label>
               </div>
             </div>
@@ -250,10 +281,10 @@ export default function CreateAdPage() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <FaSpinner className="animate-spin" />
-                  Creating...
+                  {t('creating')}
                 </span>
               ) : (
-                "➕ Create Advertisement"
+                <>➕ {t('create_ad')}</>
               )}
             </button>
           </div>
@@ -261,4 +292,12 @@ export default function CreateAdPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }

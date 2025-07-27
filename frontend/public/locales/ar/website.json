@@ -121,5 +121,6 @@
   "search_nfts_placeholder": "ابحث عن NFT...",
   "show_more_nfts": "عرض المزيد من الـNFT",
   "experience_years": "الخبرة: {{count}} سنة",
-  "instructor_rating": "التقييم: {{count}} من 5"
+  "instructor_rating": "التقييم: {{count}} من 5",
+  "no_offers": "لا توجد عروض حالياً"
 }
