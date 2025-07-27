@@ -5,7 +5,7 @@ import { fetchAllTickets } from "@/services/supportService";
 import TicketCard from "@/components/support/TicketCard";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminSupportTicketsPage() {
   const [tickets, setTickets] = useState([]);

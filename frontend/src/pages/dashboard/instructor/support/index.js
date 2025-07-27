@@ -3,7 +3,7 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function StudentSupportHome() {
   const { t } = useTranslation('dashboard');
