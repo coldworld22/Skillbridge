@@ -3,7 +3,7 @@ export default function StatusBadge({ status }) {
     Open: 'bg-blue-100 text-blue-700',
     Pending: 'bg-yellow-100 text-yellow-800',
     Resolved: 'bg-green-100 text-green-700',
-    Closed: 'bg-gray-200 text-gray-700',
+    Closed: 'bg-red-100 text-red-700',
   };
   return (
     <span className={`px-2 py-1 rounded text-xs font-medium capitalize ${colors[status] || ''}`}>{status}</span>
