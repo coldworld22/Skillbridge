@@ -21,7 +21,6 @@ export default function AdminTicketDetail() {
   const { id } = router.query;
 
   const [ticket, setTicket] = useState(null);
-  const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("open");
 
@@ -42,17 +41,15 @@ export default function AdminTicketDetail() {
     setLoading(false);
   };
 
-  const handleReply = async (e) => {
-    e.preventDefault();
-    if (!reply.trim()) return toast.warn(t("reply_required"));
+  const handleReply = async (msg) => {
+    if (!msg.trim()) return toast.warn(t("reply_required"));
     try {
-      await addMessage(id, reply);
-      setReply("");
+      await addMessage(id, msg);
       load();
       toast.success(t("reply_sent"));
     } catch (err) {
       console.error("Failed to send reply", err);
-      toast.error(t("update_failed"));
+      toast.error(t("reply_failed"));
     }
   };
 
@@ -88,12 +85,7 @@ export default function AdminTicketDetail() {
             <>
               <TicketDetailPanel ticket={ticket} />
               <div className="mt-6">
-                <TicketReplyBox
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  onSend={handleReply}
-                  disabled={!ticket}
-                />
+              <TicketReplyBox onSend={handleReply} disabled={!ticket} />
               </div>
             </>
           )}

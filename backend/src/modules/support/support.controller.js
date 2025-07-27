@@ -19,8 +19,12 @@ exports.listMyTickets = catchAsync(async (req, res) => {
   sendSuccess(res, tickets);
 });
 
-exports.listAllTickets = catchAsync(async (_req, res) => {
-  const tickets = await service.listAllTickets();
+exports.listAllTickets = catchAsync(async (req, res) => {
+  const filters = {
+    status: req.query.status,
+    search: req.query.search,
+  };
+  const tickets = await service.listAllTickets(filters);
   sendSuccess(res, tickets);
 });
 

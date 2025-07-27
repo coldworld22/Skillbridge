@@ -18,8 +18,8 @@ exports.listUserTickets = (user_id) => {
     .orderBy("created_at", "desc");
 };
 
-exports.listAllTickets = () => {
-  return db("support_tickets")
+exports.listAllTickets = ({ status, search } = {}) => {
+  const query = db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
     .select(
       "support_tickets.*",
@@ -28,6 +28,20 @@ exports.listAllTickets = () => {
       "users.avatar_url as user_avatar"
     )
     .orderBy("support_tickets.created_at", "desc");
+
+  if (status) {
+    query.where("support_tickets.status", status);
+  }
+
+  if (search) {
+    query.where(function () {
+      this.whereILike("support_tickets.subject", `%${search}%`)
+        .orWhereILike("users.full_name", `%${search}%`)
+        .orWhereILike("users.email", `%${search}%`);
+    });
+  }
+
+  return query;
 };
 
 exports.getTicketById = async (id) => {
