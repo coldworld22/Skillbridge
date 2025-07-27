@@ -97,3 +97,44 @@ exports.getRecentActivity = async (limit = 10) => {
     .orderBy("support_tickets.created_at", "desc")
     .limit(limit);
 };
+
+// ---------------------------------------------------------------------------
+// 📊 Analytics for admin support dashboard
+// ---------------------------------------------------------------------------
+
+exports.getAnalytics = async () => {
+  const [openRow] = await db("support_tickets").where({ status: "Open" }).count();
+  const [pendingRow] = await db("support_tickets")
+    .where({ status: "Pending" })
+    .count();
+  const [resolvedRow] = await db("support_tickets")
+    .where({ status: "Resolved" })
+    .count();
+
+  const [avgRow] = await db("support_tickets")
+    .whereNotNull("updated_at")
+    .select(
+      db.raw(
+        "AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/3600) as avg_hours"
+      )
+    );
+
+  const chartRows = await db("support_tickets")
+    .where("created_at", ">=", db.raw("CURRENT_DATE - INTERVAL '6 days'"))
+    .select(db.raw("DATE(created_at) as day"))
+    .count("* as tickets")
+    .groupByRaw("DATE(created_at)")
+    .orderBy("day");
+
+  return {
+    open: parseInt(openRow.count, 10) || 0,
+    pending: parseInt(pendingRow.count, 10) || 0,
+    resolved: parseInt(resolvedRow.count, 10) || 0,
+    avgHours: parseFloat(avgRow.avg_hours) || 0,
+    chart: chartRows.map((r) => ({
+      day:
+        r.day instanceof Date ? r.day.toISOString().split("T")[0] : r.day,
+      tickets: parseInt(r.tickets, 10),
+    })),
+  };
+};
