@@ -1,4 +1,14 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
+
+const formatAvatar = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:"))
+    return url;
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  const apiBase = base.replace(/\/?api\/?$/, "");
+  return `${apiBase}${url}`;
+};
 
 export const createTicket = async ({ subject, message }) => {
   const { data } = await api.post("/support/tickets", { subject, message });
@@ -10,14 +20,27 @@ export const fetchMyTickets = async () => {
   return data?.data ?? [];
 };
 
-export const fetchAllTickets = async () => {
-  const { data } = await api.get("/support/admin/tickets");
-  return data?.data ?? [];
+export const fetchAllTickets = async (filters = {}) => {
+  const { data } = await api.get("/support/admin/tickets", { params: filters });
+  const list = data?.data ?? [];
+  return list.map((t) => ({
+    ...t,
+    user_avatar: formatAvatar(t.user_avatar),
+  }));
 };
 
 export const fetchTicketById = async (id) => {
   const { data } = await api.get(`/support/tickets/${id}`);
-  return data?.data;
+  const ticket = data?.data;
+  if (!ticket) return null;
+  return {
+    ...ticket,
+    user_avatar: formatAvatar(ticket.user_avatar),
+    messages: (ticket.messages || []).map((m) => ({
+      ...m,
+      sender_avatar: formatAvatar(m.sender_avatar),
+    })),
+  };
 };
 
 export const addMessage = async (id, message) => {

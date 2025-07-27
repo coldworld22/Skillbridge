@@ -5,6 +5,13 @@ const service = require("./support.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 
+const isAdminRole = (roles = []) => {
+  const arr = Array.isArray(roles) ? roles : [roles];
+  return arr
+    .map((r) => r.toLowerCase().replace(/\s+/g, ""))
+    .some((r) => ["admin", "superadmin"].includes(r));
+};
+
 exports.createTicket = catchAsync(async (req, res) => {
   const ticket = await service.createTicket({
     user_id: req.user.id,
@@ -19,8 +26,12 @@ exports.listMyTickets = catchAsync(async (req, res) => {
   sendSuccess(res, tickets);
 });
 
-exports.listAllTickets = catchAsync(async (_req, res) => {
-  const tickets = await service.listAllTickets();
+exports.listAllTickets = catchAsync(async (req, res) => {
+  const filters = {
+    status: req.query.status,
+    search: req.query.search,
+  };
+  const tickets = await service.listAllTickets(filters);
   sendSuccess(res, tickets);
 });
 
@@ -33,7 +44,7 @@ exports.getTicket = catchAsync(async (req, res) => {
 exports.addMessage = catchAsync(async (req, res) => {
   const ticket = await service.getTicketById(req.params.id);
   if (!ticket) throw new AppError("Ticket not found", 404);
-  if (ticket.user_id !== req.user.id && !req.user.roles.includes("admin")) {
+  if (ticket.user_id !== req.user.id && !isAdminRole(req.user.roles || req.user.role)) {
     throw new AppError("Access denied", 403);
   }
   const msg = await service.addMessage({
@@ -41,7 +52,7 @@ exports.addMessage = catchAsync(async (req, res) => {
     sender_id: req.user.id,
     message: req.body.message,
   });
-  if (req.user.roles.includes("admin") && ticket.user_id !== req.user.id) {
+  if (isAdminRole(req.user.roles || req.user.role) && ticket.user_id !== req.user.id) {
     await notificationService.createNotification({
       user_id: ticket.user_id,
       type: "support_reply",
@@ -59,7 +70,7 @@ exports.addMessage = catchAsync(async (req, res) => {
 exports.updateStatus = catchAsync(async (req, res) => {
   const ticket = await service.updateStatus(req.params.id, req.body.status);
   if (!ticket) throw new AppError("Ticket not found", 404);
-  if (req.user.roles.includes("admin") && ticket.user_id !== req.user.id) {
+  if (isAdminRole(req.user.roles || req.user.role) && ticket.user_id !== req.user.id) {
     await notificationService.createNotification({
       user_id: ticket.user_id,
       type: "ticket_status",

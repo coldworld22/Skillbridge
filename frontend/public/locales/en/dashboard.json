@@ -702,6 +702,8 @@
     ,"view_details": "View Details"
     ,"ticket_submitted": "Support ticket submitted!"
     ,"reply_sent": "Reply sent"
+    ,"reply_required": "Reply cannot be empty"
+    ,"reply_failed": "Failed to send reply"
     ,"priority": "Priority"
     ,"close_ticket": "Close Ticket"
     ,"reopen_ticket": "Reopen Ticket"
@@ -709,6 +711,9 @@
     ,"ticket_reopened": "Ticket reopened"
     ,"confirm_close_ticket": "Are you sure you want to close this ticket?"
     ,"confirm_reopen_ticket": "Reopen this ticket?"
+    ,"search": "Search"
+    ,"apply": "Apply"
+    ,"no_tickets_found": "No tickets found"
   }
 
 }
