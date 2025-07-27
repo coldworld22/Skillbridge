@@ -97,6 +97,7 @@ exports.listAllTickets = catchAsync(async (req, res) => {
   const filters = {
     status: req.query.status,
     search: req.query.search,
+    ticketNumber: req.query.ticketNumber,
   };
   const tickets = await service.listAllTickets(filters);
   sendSuccess(res, tickets);
