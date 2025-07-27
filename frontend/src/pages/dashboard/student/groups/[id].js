@@ -8,11 +8,15 @@ import GroupMembersList from '@/components/groups/GroupMembersList';
 import groupService from '@/services/groupService';
 import JoinRequestCard from '@/components/groups/JoinRequestCard';
 import useAuthStore from '@/store/auth/authStore';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 
 export default function GroupDetailsPage() {
   const router = useRouter();
   const { id: groupId } = router.query;
+  const { t } = useTranslation('dashboard', { keyPrefix: 'groupsPage' });
 
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,12 @@ export default function GroupDetailsPage() {
   const [newName, setNewName] = useState("");
 
   const { user, hasHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (hasHydrated && !user) {
+      router.replace('/auth/login');
+    }
+  }, [hasHydrated, user, router]);
 
   useEffect(() => {
     // Avoid running when navigating away from this page. When the route
@@ -136,7 +146,7 @@ export default function GroupDetailsPage() {
     <StudentLayout>
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <Link href="/dashboard/student/groups/my-groups">
-          <button className="text-sm text-blue-600 hover:underline">&larr; Back to My Groups</button>
+          <button className="text-sm text-blue-600 hover:underline">&larr; {t('back_to_my_groups')}</button>
         </Link>
 
         <div className="flex items-center justify-between">
@@ -144,7 +154,7 @@ export default function GroupDetailsPage() {
             <h1 className="text-2xl font-bold">{group.name}</h1>
             {pendingCount > 0 && (
               <div className="bg-red-100 text-red-800 px-3 py-1 rounded mt-2">
-                {pendingCount} pending join request{pendingCount > 1 ? 's' : ''}
+                {pendingCount} {t('pending_requests')}
               </div>
             )}
             {["admin", "moderator"].includes(currentUserRole) && !editingName && (
@@ -251,14 +261,14 @@ export default function GroupDetailsPage() {
                 onClick={handleJoin}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg"
               >
-                Join Group
+                {t('join_group')}
               </button>
             )}
             {joinStatus === 'pending' && (
-              <div className="text-yellow-700 font-semibold">⏳ Join request pending approval</div>
+              <div className="text-yellow-700 font-semibold">{t('join_pending')}</div>
             )}
             {joinStatus === 'joined' && (
-              <div className="text-green-600 font-semibold">✅ You are a member of this group</div>
+              <div className="text-green-600 font-semibold">{t('joined')}</div>
             )}
 
 
@@ -328,4 +338,12 @@ export default function GroupDetailsPage() {
       </div>
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }

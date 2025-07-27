@@ -525,6 +525,24 @@
     "delete_failed": "Failed to delete method",
   "configure": "Configure"
   },
+  "groupsPage": {
+    "explore_title": "Explorer les groupes publics",
+    "join_group": "Rejoindre le groupe",
+    "request_sent": "Demande envoyée",
+    "your_group": "Votre groupe",
+    "member": "Membre",
+    "no_groups": "Aucun groupe trouvé.",
+    "create_one": "Créer un ?",
+    "search_placeholder": "Rechercher par nom ou étiquette...",
+    "sort_newest": "Les plus récents",
+    "sort_members": "Plus de membres",
+    "sort_az": "A-Z",
+    "view_group": "Voir le groupe",
+    "back_to_my_groups": "Retour à mes groupes",
+    "pending_requests": "demande en attente",
+    "join_pending": "⏳ Demande d'adhésion en attente",
+    "joined": "✅ Vous êtes membre de ce groupe"
+  },
   "tutorialsPage": {
     "title": "Gérer les tutoriels",
     "description": "Créer, éditer et gérer tous les tutoriels du système",

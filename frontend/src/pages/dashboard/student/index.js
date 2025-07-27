@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { FaBook, FaClipboardList, FaCertificate, FaCalendarAlt, FaBullhorn, FaBell } from "react-icons/fa";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-export default function StudentDashboardHome() {
+function StudentDashboardHome() {
   const [hasMounted, setHasMounted] = useState(false);
   const [studentName, setStudentName] = useState("Sara Ali");
   const [showNotifications, setShowNotifications] = useState(false);
@@ -166,3 +167,7 @@ export default function StudentDashboardHome() {
     </StudentLayout>
   );
 }
+
+const ProtectedStudentDashboardHome = withAuthProtection(StudentDashboardHome, ['student']);
+
+export default ProtectedStudentDashboardHome;

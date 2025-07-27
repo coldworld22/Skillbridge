@@ -607,6 +607,24 @@
     "user_added": "User added successfully.",
     "user_add_failed": "Failed to add user."
   },
+  "groupsPage": {
+    "explore_title": "Explore Public Groups",
+    "join_group": "Join Group",
+    "request_sent": "Request Sent",
+    "your_group": "Your Group",
+    "member": "Member",
+    "no_groups": "No groups found.",
+    "create_one": "Create one?",
+    "search_placeholder": "Search by name or tag...",
+    "sort_newest": "Newest",
+    "sort_members": "Most Members",
+    "sort_az": "A-Z",
+    "view_group": "View Group",
+    "back_to_my_groups": "Back to My Groups",
+    "pending_requests": "pending join request{{count}}",
+    "join_pending": "\u23F3 Join request pending approval",
+    "joined": "\u2705 You are a member of this group"
+  },
   "sidebar": {
     "Account": "Account",
     "Bookings": "Bookings",

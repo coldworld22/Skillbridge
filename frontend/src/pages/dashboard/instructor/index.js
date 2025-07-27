@@ -3,6 +3,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   FaChalkboardTeacher,
   FaCalendarAlt,
@@ -71,7 +72,7 @@ const mockDashboardCounts = {
 
 const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-export default function InstructorDashboard() {
+function InstructorDashboard() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorDashboardPage' });
   const [activeTab, setActiveTab] = useState("tutorials");
   const [chartData, setChartData] = useState([]);
@@ -331,6 +332,10 @@ export default function InstructorDashboard() {
     </InstructorLayout>
   );
 }
+
+const ProtectedInstructorDashboard = withAuthProtection(InstructorDashboard, ['instructor']);
+
+export default ProtectedInstructorDashboard;
 
 export async function getStaticProps({ locale }) {
   return {
