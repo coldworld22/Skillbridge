@@ -693,6 +693,15 @@
     "Third Parties Config": "Third Parties Config",
     "Users": "Users",
     "Wishlist": "Wishlist"
+    ,"support_center": "Support Center"
+    ,"help_center": "Help Center"
+    ,"submit_ticket": "Submit a Ticket"
+    ,"my_tickets": "My Tickets"
+    ,"new_ticket": "+ New Ticket"
+    ,"no_tickets": "You haven't submitted any tickets yet."
+    ,"view_details": "View Details"
+    ,"ticket_submitted": "Support ticket submitted!"
+    ,"reply_sent": "Reply sent"
   }
 
 }

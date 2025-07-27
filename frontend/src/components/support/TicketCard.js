@@ -4,7 +4,7 @@ export default function TicketCard({ ticket, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="border p-4 rounded shadow hover:bg-gray-50 cursor-pointer"
+      className="border p-4 rounded-lg bg-white shadow transition hover:shadow-lg hover:border-yellow-400 cursor-pointer"
     >
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-semibold">{ticket.subject}</h3>

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { createTicket } from "@/services/supportService";
+import { toast } from "react-toastify";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
+import { useTranslation } from "next-i18next";
 
 export default function SubmitTicketPage() {
+  const { t } = useTranslation('dashboard');
   const [form, setForm] = useState({
     subject: "",
     category: "",
@@ -21,7 +24,7 @@ export default function SubmitTicketPage() {
     e.preventDefault();
     try {
       await createTicket({ subject: form.subject, message: form.message });
-      alert("Support ticket submitted!");
+      toast.success(t('ticket_submitted'));
       setForm({ subject: "", category: "", priority: "Medium", message: "", attachment: null });
     } catch (err) {
       console.error("Failed to submit ticket", err);
@@ -30,10 +33,10 @@ export default function SubmitTicketPage() {
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <PageHead title="Submit a Support Ticket" />
+      <PageHead title={t('submit_ticket')} />
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-3xl font-bold text-yellow-500 mb-6">Submit a Support Ticket</h1>
+        <h1 className="text-3xl font-bold text-yellow-500 mb-6">{t('submit_ticket')}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block mb-1 text-sm">Subject</label>

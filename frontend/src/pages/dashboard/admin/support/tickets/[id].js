@@ -6,9 +6,13 @@ import { fetchTicketById, addMessage, updateStatus } from "@/services/supportSer
 import TicketDetailPanel from "@/components/support/TicketDetailPanel";
 import TicketReplyBox from "@/components/support/TicketReplyBox";
 import TicketMetaSidebar from "@/components/support/TicketMetaSidebar";
-
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminTicketDetail() {
+  const { t } = useTranslation('dashboard');
   const router = useRouter();
   const { id } = router.query;
   const [ticket, setTicket] = useState(null);
@@ -35,6 +39,7 @@ export default function AdminTicketDetail() {
       await addMessage(id, reply);
       setReply("");
       load();
+      toast.success(t('reply_sent'));
     } catch (err) {
       console.error("Failed to send reply", err);
     }
@@ -76,4 +81,12 @@ export default function AdminTicketDetail() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
