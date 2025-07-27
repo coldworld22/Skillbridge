@@ -6,7 +6,8 @@ const formatAvatar = (url) => {
   if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:"))
     return url;
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-  return `${base}${url}`;
+  const apiBase = base.replace(/\/?api\/?$/, "");
+  return `${apiBase}${url}`;
 };
 
 export const createTicket = async ({ subject, message }) => {

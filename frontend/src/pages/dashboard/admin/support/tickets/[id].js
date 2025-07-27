@@ -49,7 +49,7 @@ export default function AdminTicketDetail() {
       toast.success(t("reply_sent"));
     } catch (err) {
       console.error("Failed to send reply", err);
-      toast.error(t("update_failed"));
+      toast.error(t("reply_failed"));
     }
   };
 

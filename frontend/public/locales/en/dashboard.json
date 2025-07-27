@@ -702,6 +702,8 @@
     ,"view_details": "View Details"
     ,"ticket_submitted": "Support ticket submitted!"
     ,"reply_sent": "Reply sent"
+    ,"reply_required": "Reply cannot be empty"
+    ,"reply_failed": "Failed to send reply"
     ,"priority": "Priority"
     ,"close_ticket": "Close Ticket"
     ,"reopen_ticket": "Reopen Ticket"
