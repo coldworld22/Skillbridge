@@ -52,3 +52,8 @@ export const updateStatus = async (id, status) => {
   const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status });
   return data?.data;
 };
+
+export const updatePriority = async (id, priority) => {
+  const { data } = await api.put(`/tickets/${id}/priority`, { priority });
+  return data?.data;
+};
