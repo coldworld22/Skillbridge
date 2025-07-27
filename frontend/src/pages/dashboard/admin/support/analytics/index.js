@@ -19,7 +19,9 @@ export default function AdminSupportAnalytics() {
           open: data.open,
           pending: data.pending,
           resolved: data.resolved,
+
           closed: data.closed,
+
           avg: `${data.avgHours?.toFixed ? data.avgHours.toFixed(1) : data.avgHours}h`,
         });
         setChart(data.chart);

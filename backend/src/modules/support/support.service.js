@@ -110,6 +110,7 @@ exports.getAnalytics = async () => {
   const [resolvedRow] = await db("support_tickets")
     .where({ status: "Resolved" })
     .count();
+
   const [closedRow] = await db("support_tickets")
     .where({ status: "Closed" })
     .count();
