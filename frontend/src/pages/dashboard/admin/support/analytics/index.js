@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContai
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { fetchSupportAnalytics } from "@/services/supportService";
 
 export default function AdminSupportAnalytics() {
   const { t } = useTranslation('dashboard');
@@ -12,21 +13,19 @@ export default function AdminSupportAnalytics() {
   const [chart, setChart] = useState([]);
 
   useEffect(() => {
-    const generate = () => {
-      setStats({
-        open: Math.floor(Math.random() * 20) + 5,
-        pending: Math.floor(Math.random() * 10) + 2,
-        resolved: Math.floor(Math.random() * 30) + 10,
-        avg: `${Math.floor(Math.random() * 4) + 1}h`,
+    fetchSupportAnalytics()
+      .then((data) => {
+        setStats({
+          open: data.open,
+          pending: data.pending,
+          resolved: data.resolved,
+          avg: `${data.avgHours?.toFixed ? data.avgHours.toFixed(1) : data.avgHours}h`,
+        });
+        setChart(data.chart);
+      })
+      .catch((err) => {
+        console.error("Failed to load analytics", err);
       });
-      setChart(
-        Array.from({ length: 7 }).map((_, i) => ({
-          day: `Day ${i + 1}`,
-          tickets: Math.floor(Math.random() * 20) + 5,
-        }))
-      );
-    };
-    generate();
   }, []);
 
   return (
