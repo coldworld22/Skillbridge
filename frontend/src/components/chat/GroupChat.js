@@ -7,9 +7,9 @@ import groupService from "@/services/groupService";
 import toast from "react-hot-toast";
 
 
-export default function GroupChat({ group }) {
-  const groupId = group?.id;
-  const groupName = group?.name;
+export default function GroupChat({ group, groupId: idProp, groupName: nameProp }) {
+  const groupId = group?.id || idProp;
+  const groupName = group?.name || nameProp;
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
@@ -94,7 +94,11 @@ export default function GroupChat({ group }) {
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
       <div className="border-b border-gray-700">
-        <ChatHeader selectedChat={{ ...group, isGroup: true }} />
+        <ChatHeader
+          selectedChat={
+            group ? { ...group, isGroup: true } : { id: groupId, groupName, isGroup: true }
+          }
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-700" style={{ minHeight: 0 }}>
