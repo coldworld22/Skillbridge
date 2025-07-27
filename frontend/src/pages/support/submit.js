@@ -4,6 +4,10 @@ import { toast } from "react-toastify";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import StudentLayout from "@/components/layouts/StudentLayout";
+import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
 
 // ─────────────────────
@@ -11,6 +15,7 @@ import { useTranslation } from "next-i18next";
 // ─────────────────────
 export default function SubmitTicketPage() {
   const { t } = useTranslation('dashboard');
+  const user = useAuthStore((state) => state.user);
   const [form, setForm] = useState({
     subject: "",
     category: "",
@@ -18,6 +23,22 @@ export default function SubmitTicketPage() {
     message: "",
     attachment: null,
   });
+
+  const layoutMap = {
+    admin: AdminLayout,
+    instructor: InstructorLayout,
+    student: StudentLayout,
+  };
+
+  const DefaultLayout = ({ children }) => (
+    <div className="min-h-screen flex flex-col bg-white">
+      <Navbar />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
+
+  const Layout = layoutMap[user?.role?.toLowerCase?.()] || DefaultLayout;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -43,11 +64,10 @@ export default function SubmitTicketPage() {
   };
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
+    <Layout>
       <PageHead title={t('submit_ticket')} />
-      <Navbar />
-      <main className="max-w-3xl mx-auto px-4 pt-24 pb-20">
-        <h1 className="text-3xl font-bold text-yellow-500 mb-6">{t('submit_ticket')}</h1>
+      <div className="max-w-3xl mx-auto px-4 pt-6 pb-10">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('submit_ticket')}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block mb-1 text-sm">{t('subject')}</label>
@@ -56,7 +76,7 @@ export default function SubmitTicketPage() {
               value={form.subject}
               onChange={(e) => handleChange("subject", e.target.value)}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2"
+              className="w-full bg-white border border-gray-300 rounded px-4 py-2"
             />
           </div>
 
@@ -66,7 +86,7 @@ export default function SubmitTicketPage() {
               value={form.category}
               onChange={(e) => handleChange("category", e.target.value)}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2"
+              className="w-full bg-white border border-gray-300 rounded px-4 py-2"
             >
               <option value="">{t('select_category')}</option>
               <option value="billing">{t('billing_payments')}</option>
@@ -81,7 +101,7 @@ export default function SubmitTicketPage() {
             <select
               value={form.priority}
               onChange={(e) => handleChange("priority", e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2"
+              className="w-full bg-white border border-gray-300 rounded px-4 py-2"
             >
               <option value="Low">{t('low')}</option>
               <option value="Medium">{t('medium')}</option>
@@ -96,7 +116,7 @@ export default function SubmitTicketPage() {
               onChange={(e) => handleChange("message", e.target.value)}
               rows={6}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2"
+              className="w-full bg-white border border-gray-300 rounded px-4 py-2"
             ></textarea>
           </div>
 
@@ -105,7 +125,7 @@ export default function SubmitTicketPage() {
             <input
               type="file"
               onChange={(e) => handleChange("attachment", e.target.files[0])}
-              className="block w-full text-sm text-gray-300"
+              className="block w-full text-sm text-gray-700"
             />
           </div>
 
@@ -116,9 +136,8 @@ export default function SubmitTicketPage() {
             {t('submit_ticket')}
           </button>
         </form>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 }
 
