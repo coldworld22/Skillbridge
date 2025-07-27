@@ -4,6 +4,13 @@ const AppError = require("../../utils/AppError");
 const service = require("./support.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const userModel = require("../users/user.model");
+const {
+  sendSupportTicketAdminEmail,
+  sendSupportTicketUserEmail,
+  sendSupportTicketUpdateEmail,
+} = require("../../utils/email");
+
 
 const isAdminRole = (roles = []) => {
   const arr = Array.isArray(roles) ? roles : [roles];
@@ -18,6 +25,21 @@ exports.createTicket = catchAsync(async (req, res) => {
     subject: req.body.subject,
     message: req.body.message,
   });
+  try {
+    const admins = await userModel.findAdmins();
+    await Promise.all(
+      admins.map((a) =>
+        sendSupportTicketAdminEmail(a.email, req.user.full_name, ticket.subject)
+      )
+    );
+    await sendSupportTicketUserEmail(
+      req.user.email,
+      req.user.full_name,
+      ticket.subject
+    );
+  } catch (err) {
+    console.error("Error sending support ticket emails:", err.message);
+  }
   sendSuccess(res, ticket, "Ticket created");
 });
 
@@ -63,6 +85,18 @@ exports.addMessage = catchAsync(async (req, res) => {
       receiver_id: ticket.user_id,
       message: `Your ticket '${ticket.subject}' has a new reply`,
     });
+    try {
+      const user = await userModel.findById(ticket.user_id);
+      if (user)
+        await sendSupportTicketUpdateEmail(
+          user.email,
+          user.full_name,
+          ticket.subject,
+          "Your support ticket has a new reply."
+        );
+    } catch (err) {
+      console.error("Error sending ticket reply email:", err.message);
+    }
   }
   sendSuccess(res, msg, "Message added");
 });
@@ -81,6 +115,18 @@ exports.updateStatus = catchAsync(async (req, res) => {
       receiver_id: ticket.user_id,
       message: `Your ticket '${ticket.subject}' was ${req.body.status}`,
     });
+    try {
+      const user = await userModel.findById(ticket.user_id);
+      if (user)
+        await sendSupportTicketUpdateEmail(
+          user.email,
+          user.full_name,
+          ticket.subject,
+          `Your support ticket was ${req.body.status}.`
+        );
+    } catch (err) {
+      console.error("Error sending ticket status email:", err.message);
+    }
   }
   sendSuccess(res, ticket, "Status updated");
 });
@@ -94,3 +140,4 @@ exports.getAnalytics = catchAsync(async (_req, res) => {
   const data = await service.getAnalytics();
   sendSuccess(res, data);
 });
+

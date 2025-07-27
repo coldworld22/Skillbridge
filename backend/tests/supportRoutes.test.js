@@ -5,10 +5,12 @@ jest.mock('../src/config/database', () => ({ raw: jest.fn(() => Promise.resolve(
 
 jest.mock('../src/modules/support/support.service', () => ({
   getAnalytics: jest.fn(),
+
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
+
   isAdmin: (_req, _res, next) => next(),
 }));
 
@@ -29,3 +31,4 @@ describe('GET /api/support/admin/analytics', () => {
     expect(service.getAnalytics).toHaveBeenCalled();
   });
 });
+

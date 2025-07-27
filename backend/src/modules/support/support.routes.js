@@ -8,6 +8,7 @@ router.post("/tickets", controller.createTicket);
 router.get("/my-tickets", controller.listMyTickets);
 router.get("/tickets/:id", controller.getTicket);
 router.post("/tickets/:id/messages", controller.addMessage);
+router.delete("/tickets/:id", controller.deleteTicket);
 
 router.get("/admin/tickets", isAdmin, controller.listAllTickets);
 router.patch("/admin/tickets/:id/status", isAdmin, controller.updateStatus);

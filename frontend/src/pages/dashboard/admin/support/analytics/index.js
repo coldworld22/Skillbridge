@@ -34,7 +34,7 @@ export default function AdminSupportAnalytics() {
       <div className="p-6 space-y-8">
         <h1 className="text-2xl font-bold">{t('support_analytics')}</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: 'Open', value: stats.open },
             { label: 'Resolved', value: stats.resolved },

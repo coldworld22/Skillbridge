@@ -383,3 +383,166 @@ exports.sendLessonReminderEmail = async (
     console.error("Error sending lesson reminder email: ", error);
   }
 };
+
+// Notify admins when a user submits a support ticket
+exports.sendSupportTicketAdminEmail = async (to, userName, subjectTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Support ticket notice to ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New support ticket from ${userName}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>User <strong>${userName}</strong> created a new support ticket.</p>
+        <p><strong>Subject:</strong> ${subjectTitle}</p>
+        <p>Please sign in to the admin panel to respond.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Support ticket admin notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending admin ticket email: ", error);
+  }
+};
+
+// Acknowledge ticket submission to the user
+exports.sendSupportTicketUserEmail = async (to, name, subjectTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Support ticket receipt for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `We received your support ticket`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello${name ? ` ${name}` : ''},</p>
+        <p>We have received your support ticket titled "${subjectTitle}".</p>
+        <p>Our team will respond within 24 hours. If you do not hear from us by then, please submit your ticket again.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Support ticket receipt sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending ticket receipt email: ", error);
+  }
+};
+
+// Notify user about ticket updates like replies or status changes
+exports.sendSupportTicketUpdateEmail = async (
+  to,
+  name,
+  subjectTitle,
+  updateMessage
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Support ticket update for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Update on your support ticket`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello${name ? ` ${name}` : ''},</p>
+        <p>${updateMessage}</p>
+        <p><strong>Ticket:</strong> ${subjectTitle}</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Support ticket update sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending ticket update email: ", error);
+  }
+};
+

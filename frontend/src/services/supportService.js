@@ -73,3 +73,4 @@ export const fetchSupportAnalytics = async () => {
     chart: [],
   };
 };
+
