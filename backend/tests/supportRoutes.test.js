@@ -5,14 +5,12 @@ jest.mock('../src/config/database', () => ({ raw: jest.fn(() => Promise.resolve(
 
 jest.mock('../src/modules/support/support.service', () => ({
   getAnalytics: jest.fn(),
-  deleteTicket: jest.fn(),
+
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
-    req.user = { id: 'user1' };
-    next();
-  },
+  verifyToken: (_req, _res, next) => next(),
+
   isAdmin: (_req, _res, next) => next(),
 }));
 
@@ -25,7 +23,7 @@ app.use('/api/support', routes);
 
 describe('GET /api/support/admin/analytics', () => {
   it('returns analytics', async () => {
-    const mock = { open: 1 };
+    const mock = { open: 1, resolved: 2, closed: 3 };
     service.getAnalytics.mockResolvedValue(mock);
     const res = await request(app).get('/api/support/admin/analytics');
     expect(res.status).toBe(200);
@@ -34,11 +32,3 @@ describe('GET /api/support/admin/analytics', () => {
   });
 });
 
-describe('DELETE /api/support/tickets/:id', () => {
-  it('deletes ticket', async () => {
-    service.deleteTicket.mockResolvedValue(true);
-    const res = await request(app).delete('/api/support/tickets/123');
-    expect(res.status).toBe(200);
-    expect(service.deleteTicket).toHaveBeenCalledWith('123', 'user1');
-  });
-});

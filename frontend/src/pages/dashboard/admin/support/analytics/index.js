@@ -9,7 +9,7 @@ import { fetchSupportAnalytics } from "@/services/supportService";
 
 export default function AdminSupportAnalytics() {
   const { t } = useTranslation('dashboard');
-  const [stats, setStats] = useState({ open: 0, pending: 0, resolved: 0, closed: 0, avg: '0h' });
+  const [stats, setStats] = useState({ open: 0, resolved: 0, closed: 0, avg: '0h' });
   const [chart, setChart] = useState([]);
 
   useEffect(() => {
@@ -17,11 +17,8 @@ export default function AdminSupportAnalytics() {
       .then((data) => {
         setStats({
           open: data.open,
-          pending: data.pending,
           resolved: data.resolved,
-
           closed: data.closed,
-
           avg: `${data.avgHours?.toFixed ? data.avgHours.toFixed(1) : data.avgHours}h`,
         });
         setChart(data.chart);
@@ -40,7 +37,6 @@ export default function AdminSupportAnalytics() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { label: 'Open', value: stats.open },
-            { label: 'Pending', value: stats.pending },
             { label: 'Resolved', value: stats.resolved },
             { label: 'Closed', value: stats.closed },
             { label: 'Avg. Response', value: stats.avg },

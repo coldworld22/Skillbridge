@@ -67,16 +67,10 @@ export const fetchSupportAnalytics = async () => {
   const { data } = await api.get("/support/admin/analytics");
   return data?.data ?? {
     open: 0,
-    pending: 0,
     resolved: 0,
-
     closed: 0,
     avgHours: 0,
     chart: [],
   };
 };
 
-export const deleteTicket = async (id) => {
-  const { data } = await api.delete(`/support/tickets/${id}`);
-  return data?.data;
-};

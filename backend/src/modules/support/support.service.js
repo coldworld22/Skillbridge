@@ -103,16 +103,12 @@ exports.getRecentActivity = async (limit = 10) => {
 // ---------------------------------------------------------------------------
 
 exports.getAnalytics = async () => {
-  const [openRow] = await db("support_tickets").where({ status: "Open" }).count();
-  const [pendingRow] = await db("support_tickets")
-    .where({ status: "Pending" })
-    .count();
+  const [openRow] = await db("support_tickets").where({ status: "open" }).count();
   const [resolvedRow] = await db("support_tickets")
-    .where({ status: "Resolved" })
+    .where({ status: "resolved" })
     .count();
-
   const [closedRow] = await db("support_tickets")
-    .where({ status: "Closed" })
+    .where({ status: "closed" })
     .count();
 
   const [avgRow] = await db("support_tickets")
@@ -146,7 +142,6 @@ exports.getAnalytics = async () => {
 
   return {
     open: parseInt(openRow.count, 10) || 0,
-    pending: parseInt(pendingRow.count, 10) || 0,
     resolved: parseInt(resolvedRow.count, 10) || 0,
     closed: parseInt(closedRow.count, 10) || 0,
     avgHours: parseFloat(avgRow.avg_hours) || 0,
@@ -154,15 +149,3 @@ exports.getAnalytics = async () => {
   };
 };
 
-// ---------------------------------------------------------------------------
-// 🗑️ Delete ticket if owner and resolved/closed
-// ---------------------------------------------------------------------------
-exports.deleteTicket = async (id, user_id) => {
-  const ticket = await db('support_tickets')
-    .where({ id, user_id })
-    .first();
-  if (!ticket) return null;
-  if (!['Resolved', 'Closed'].includes(ticket.status)) return false;
-  await db('support_tickets').where({ id }).del();
-  return ticket;
-};
