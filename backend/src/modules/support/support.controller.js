@@ -2,6 +2,8 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./support.service");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 
 exports.createTicket = catchAsync(async (req, res) => {
   const ticket = await service.createTicket({
@@ -39,11 +41,35 @@ exports.addMessage = catchAsync(async (req, res) => {
     sender_id: req.user.id,
     message: req.body.message,
   });
+  if (req.user.roles.includes("admin") && ticket.user_id !== req.user.id) {
+    await notificationService.createNotification({
+      user_id: ticket.user_id,
+      type: "support_reply",
+      message: `Your ticket '${ticket.subject}' has a new reply`,
+    });
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: ticket.user_id,
+      message: `Your ticket '${ticket.subject}' has a new reply`,
+    });
+  }
   sendSuccess(res, msg, "Message added");
 });
 
 exports.updateStatus = catchAsync(async (req, res) => {
   const ticket = await service.updateStatus(req.params.id, req.body.status);
   if (!ticket) throw new AppError("Ticket not found", 404);
+  if (req.user.roles.includes("admin") && ticket.user_id !== req.user.id) {
+    await notificationService.createNotification({
+      user_id: ticket.user_id,
+      type: "ticket_status",
+      message: `Your ticket '${ticket.subject}' was ${req.body.status}`,
+    });
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: ticket.user_id,
+      message: `Your ticket '${ticket.subject}' was ${req.body.status}`,
+    });
+  }
   sendSuccess(res, ticket, "Status updated");
 });
