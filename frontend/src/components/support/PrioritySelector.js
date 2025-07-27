@@ -3,7 +3,7 @@ const options = ['Low', 'Medium', 'High', 'Urgent'];
 export default function PrioritySelector({ value, onChange }) {
   return (
     <select
-      className="border rounded px-2 py-1"
+      className="border rounded px-2 py-1 bg-gray-50"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

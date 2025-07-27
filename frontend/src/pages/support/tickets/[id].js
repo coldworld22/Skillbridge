@@ -4,8 +4,11 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { useEffect, useState } from "react";
 import { fetchTicketById, addMessage } from "@/services/supportService";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 export default function TicketDetailPage() {
+  const { t } = useTranslation('dashboard');
   const router = useRouter();
   const { id } = router.query;
   const [ticket, setTicket] = useState(null);
@@ -30,6 +33,7 @@ export default function TicketDetailPage() {
       await addMessage(id, reply);
       setReply("");
       load();
+      toast.success(t('reply_sent'));
     } catch (err) {
       console.error("Failed to send reply", err);
     }
