@@ -21,20 +21,36 @@ exports.listUserTickets = (user_id) => {
 exports.listAllTickets = () => {
   return db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
-    .select("support_tickets.*", "users.email as user")
+    .select(
+      "support_tickets.*",
+      "users.email as user",
+      "users.full_name as user_name",
+      "users.avatar_url as user_avatar"
+    )
     .orderBy("support_tickets.created_at", "desc");
 };
 
 exports.getTicketById = async (id) => {
   const ticket = await db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
-    .select("support_tickets.*", "users.email as user")
+    .select(
+      "support_tickets.*",
+      "users.email as user",
+      "users.full_name as user_name",
+      "users.avatar_url as user_avatar"
+    )
     .where({ "support_tickets.id": id })
     .first();
   if (!ticket) return null;
   const messages = await db("support_messages")
+    .leftJoin("users", "support_messages.sender_id", "users.id")
+    .select(
+      "support_messages.*",
+      "users.full_name as sender_name",
+      "users.avatar_url as sender_avatar"
+    )
     .where({ ticket_id: id })
-    .orderBy("created_at", "asc");
+    .orderBy("support_messages.created_at", "asc");
   return { ...ticket, messages };
 };
 
