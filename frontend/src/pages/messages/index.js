@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
+import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
 import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots } from "react-icons/fa";
@@ -85,7 +86,7 @@ const MessagesPage = () => {
     const { groupId, userId } = router.query;
     if (groupId) {
       const group = groups.find((g) => g.id === Number(groupId));
-      if (group) setSelectedChat(group);
+      if (group) setSelectedChat({ ...group, isGroup: true });
     } else if (userId) {
       const user = users.find((u) => u.id === Number(userId));
       if (user) setSelectedChat(user);
@@ -205,14 +206,18 @@ const MessagesPage = () => {
                           className="flex items-center justify-between gap-3 p-3 hover:bg-gray-700 rounded-lg cursor-pointer transition"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-500 text-black flex items-center justify-center rounded-full font-bold">
-                              {group.name ? group.name.charAt(0).toUpperCase() : "?"}
-                            </div>
+                            <ChatImage
+                              src={group.cover_image || group.image || "/images/group-placeholder.jpg"}
+                              alt={group.name}
+                              className="w-10 h-10 rounded-full border border-gray-500"
+                              width={40}
+                              height={40}
+                            />
                             <p className="text-white font-semibold">{group.name || "Unnamed Group"}</p>
                           </div>
                           <button
                             className="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1 rounded-md hover:bg-yellow-600 transition"
-                            onClick={() => setSelectedChat(group)}
+                            onClick={() => setSelectedChat({ ...group, isGroup: true })}
                           >
                             <FaCommentDots /> Join Group
                           </button>
@@ -242,7 +247,11 @@ const MessagesPage = () => {
               setSelectedChat={setSelectedChat}
               selectedChat={selectedChat}
             />
-            <ChatWindow selectedChat={selectedChat} refreshUsers={fetchUsersList} />
+            {selectedChat.isGroup ? (
+              <GroupChat group={selectedChat} />
+            ) : (
+              <ChatWindow selectedChat={selectedChat} refreshUsers={fetchUsersList} />
+            )}
           </main>
         )}
       </div>

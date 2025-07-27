@@ -31,6 +31,11 @@ const ChatSidebar = ({
     return `${API_BASE_URL}${url}`;
   };
 
+  const getGroupAvatar = (g) => {
+    const src = g.cover_image || g.image;
+    return getAvatarUrl(src);
+  };
+
   // ✅ Sort users by online status & last active
   useEffect(() => {
     const sortedUsers = [...users].sort((a, b) => {
@@ -56,6 +61,10 @@ const ChatSidebar = ({
 
     return fields.some((f) => f && f.toLowerCase().includes(term));
   });
+
+  const filteredGroups = sortedGroups.filter((group) =>
+    group.name?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
 
   // ✅ Function to Pin/Unpin Chats
   const togglePinChat = (chat) => {
@@ -201,6 +210,51 @@ const ChatSidebar = ({
         ))}
         {filteredUsers.length === 0 && (
           <p className="text-gray-400 text-center">No chats found.</p>
+        )}
+      </div>
+
+      {/* 👥 Groups */}
+      <h3 className="text-md font-bold text-yellow-400 mt-6">👥 Groups</h3>
+      <div className="space-y-3">
+        {filteredGroups.map((group) => (
+          <div
+            key={group.id}
+            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition ${
+              selectedChat?.id === group.id ? "bg-gray-700" : ""
+            }`}
+            onClick={() => setSelectedChat({ ...group, isGroup: true })}
+          >
+            <ChatImage
+              src={getGroupAvatar(group)}
+              alt={group.name}
+              className="w-10 h-10 rounded-full border-2 border-gray-500"
+              width={40}
+              height={40}
+            />
+            <div className="flex-1">
+              <p className="text-white font-semibold">{group.name}</p>
+              <p className="text-gray-400 text-sm truncate w-40">
+                {group.lastMessage ? group.lastMessage : "No messages yet"}
+              </p>
+            </div>
+            {group.unreadMessages > 0 && (
+              <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <FaEnvelope /> {group.unreadMessages}
+              </div>
+            )}
+            <button
+              className="text-gray-400 hover:text-yellow-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePinChat({ ...group, isGroup: true });
+              }}
+            >
+              <FaStar />
+            </button>
+          </div>
+        ))}
+        {filteredGroups.length === 0 && (
+          <p className="text-gray-400 text-center">No groups found.</p>
         )}
       </div>
 

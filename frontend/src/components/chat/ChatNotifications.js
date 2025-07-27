@@ -6,6 +6,7 @@ import LinkText from "@/components/shared/LinkText";
 
 const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 1 }) => {
   const [systemNotifs, setSystemNotifs] = useState([]);
+  const [showAlerts, setShowAlerts] = useState(false);
 
   const handleMarkRead = (id) => {
     markNotificationAsRead(id).catch(() => {});
@@ -44,23 +45,40 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
       {/* 🔔 System Alerts */}
       {systemNotifs.length > 0 && (
         <>
-          <h4 className="text-yellow-400 font-semibold mt-4">System Alerts</h4>
-          <ul className="space-y-2">
-            {systemNotifs.map((n) => (
-              <li key={n.id} className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500 flex justify-between items-start">
-                <div>
-                  <div className="text-sm"><LinkText text={n.message} /></div>
-                  <div className="text-xs text-gray-400">{formatRelativeTime(n.timestamp)}</div>
-                </div>
-                <button
-                  onClick={() => handleMarkRead(n.id)}
-                  className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+          <div className="flex justify-between items-center mt-4">
+            <h4 className="text-yellow-400 font-semibold">System Alerts</h4>
+            <button
+              className="text-xs text-blue-400 hover:underline"
+              onClick={() => setShowAlerts((s) => !s)}
+            >
+              {showAlerts ? "Hide" : "Show"}
+            </button>
+          </div>
+          {showAlerts && (
+            <ul className="space-y-2 max-h-40 overflow-y-auto mt-2 pr-1">
+              {systemNotifs.map((n) => (
+                <li
+                  key={n.id}
+                  className="bg-gray-700 p-3 rounded-lg border-l-4 border-yellow-500 flex justify-between items-start"
                 >
-                  Mark as Read
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <div>
+                    <div className="text-sm">
+                      <LinkText text={n.message} />
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {formatRelativeTime(n.timestamp)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleMarkRead(n.id)}
+                    className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                  >
+                    Mark as Read
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
 
@@ -97,7 +115,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
               <li
                 key={group.id}
                 className="p-3 bg-gray-700 rounded-lg cursor-pointer flex items-center gap-3 hover:bg-gray-600 transition"
-                onClick={() => setSelectedChat(group)}
+                onClick={() => setSelectedChat({ ...group, isGroup: true })}
               >
                 <FaUsers className="text-yellow-500" />
                 {group.name || group.groupName}
