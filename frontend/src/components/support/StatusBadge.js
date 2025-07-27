@@ -6,6 +6,6 @@ export default function StatusBadge({ status }) {
     Closed: 'bg-gray-200 text-gray-700',
   };
   return (
-    <span className={`px-2 py-1 rounded text-xs font-medium ${colors[status] || ''}`}>{status}</span>
+    <span className={`px-2 py-1 rounded text-xs font-medium capitalize ${colors[status] || ''}`}>{status}</span>
   );
 }

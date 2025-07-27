@@ -14,10 +14,10 @@ export default function TicketReplyBox({ onSend }) {
       <input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        className="flex-1 border rounded px-2 py-1"
+        className="flex-1 border rounded px-3 py-2"
         placeholder="Type a reply"
       />
-      <button className="bg-yellow-500 text-black px-3 rounded" type="submit">
+      <button className="bg-yellow-500 text-black px-4 rounded font-semibold" type="submit">
         Send
       </button>
     </form>
