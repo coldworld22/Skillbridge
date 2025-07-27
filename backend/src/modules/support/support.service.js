@@ -153,3 +153,16 @@ exports.getAnalytics = async () => {
     chart: chartData,
   };
 };
+
+// ---------------------------------------------------------------------------
+// 🗑️ Delete ticket if owner and resolved/closed
+// ---------------------------------------------------------------------------
+exports.deleteTicket = async (id, user_id) => {
+  const ticket = await db('support_tickets')
+    .where({ id, user_id })
+    .first();
+  if (!ticket) return null;
+  if (!['Resolved', 'Closed'].includes(ticket.status)) return false;
+  await db('support_tickets').where({ id }).del();
+  return ticket;
+};

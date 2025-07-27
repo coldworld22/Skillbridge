@@ -75,3 +75,8 @@ export const fetchSupportAnalytics = async () => {
     chart: [],
   };
 };
+
+export const deleteTicket = async (id) => {
+  const { data } = await api.delete(`/support/tickets/${id}`);
+  return data?.data;
+};
