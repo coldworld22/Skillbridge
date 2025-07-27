@@ -513,7 +513,25 @@
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
-    "configure": "Configure"
+  "configure": "Configure"
+  },
+  "groupsPage": {
+    "explore_title": "Explorar grupos públicos",
+    "join_group": "Unirse al grupo",
+    "request_sent": "Solicitud enviada",
+    "your_group": "Tu grupo",
+    "member": "Miembro",
+    "no_groups": "No se encontraron grupos.",
+    "create_one": "¿Crear uno?",
+    "search_placeholder": "Buscar por nombre o etiqueta...",
+    "sort_newest": "Más recientes",
+    "sort_members": "Más miembros",
+    "sort_az": "A-Z",
+    "view_group": "Ver grupo",
+    "back_to_my_groups": "Volver a mis grupos",
+    "pending_requests": "solicitud de unión pendiente",
+    "join_pending": "⏳ Solicitud de unión pendiente",
+    "joined": "✅ Eres miembro de este grupo"
   },
   "sidebar": {
     "Account": "Cuenta",

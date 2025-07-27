@@ -4,9 +4,13 @@ import { Search } from 'lucide-react';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 
 export default function ExploreGroupsPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'groupsPage' });
   const [groups, setGroups] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,7 +108,7 @@ export default function ExploreGroupsPage() {
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">🌐 Explore Public Groups</h1>
+          <h1 className="text-2xl font-bold">🌐 {t('explore_title')}</h1>
           <Link href="/dashboard/student/groups/create">
             <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded shadow">
               + Create Group
@@ -120,7 +124,7 @@ export default function ExploreGroupsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name or tag..."
+              placeholder={t('search_placeholder')}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
               aria-label="Search groups"
             />
@@ -134,9 +138,9 @@ export default function ExploreGroupsPage() {
             className="border px-3 py-2 rounded-lg"
             aria-label="Sort groups"
           >
-            <option value="newest">🆕 Newest</option>
-            <option value="members">👥 Most Members</option>
-            <option value="az">🔤 A-Z</option>
+            <option value="newest">🆕 {t('sort_newest')}</option>
+            <option value="members">👥 {t('sort_members')}</option>
+            <option value="az">🔤 {t('sort_az')}</option>
           </select>
         </div>
 
@@ -163,9 +167,9 @@ export default function ExploreGroupsPage() {
         {/* Group Cards */}
         {filteredGroups.length === 0 ? (
           <p className="text-gray-500">
-            No groups found.{' '}
+            {t('no_groups')}{" "}
             <Link href="/dashboard/student/groups/create" className="text-blue-600 underline">
-              Create one?
+              {t('create_one')}
             </Link>
           </p>
         ) : (
@@ -232,12 +236,12 @@ export default function ExploreGroupsPage() {
                     role === 'admin' || role === 'member' || requestSent;
                   const label =
                     role === 'admin'
-                      ? 'Your Group'
+                      ? t('your_group')
                       : role === 'member'
-                      ? 'Member'
+                      ? t('member')
                       : requestSent
-                      ? 'Request Sent'
-                      : 'Join Group';
+                      ? t('request_sent')
+                      : t('join_group');
                   return (
                     <button
                       onClick={() => handleJoin(group.id)}
@@ -254,7 +258,9 @@ export default function ExploreGroupsPage() {
                 })()}
 
                 <Link href={`/dashboard/student/groups/${group.id}`}>
-                  <button className="text-sm text-blue-600 underline w-full mt-1">View Group</button>
+                  <button className="text-sm text-blue-600 underline w-full mt-1">
+                    {t('view_group')}
+                  </button>
                 </Link>
               </div>
             ))}
@@ -263,4 +269,12 @@ export default function ExploreGroupsPage() {
       </div>
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
