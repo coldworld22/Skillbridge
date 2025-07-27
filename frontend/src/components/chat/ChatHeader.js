@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import ChatImage from "../shared/ChatImage";
+import useLastSeen from "@/hooks/useLastSeen";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
@@ -19,6 +20,8 @@ const ChatHeader = ({ selectedChat }) => {
   const avatar = selectedChat.isGroup
     ? selectedChat.cover_image || selectedChat.image
     : selectedChat.profileImage;
+
+  const { lastSeen } = useLastSeen(selectedChat.id);
 
  
   const handleVideoCall = () => {
@@ -50,7 +53,7 @@ const ChatHeader = ({ selectedChat }) => {
   return (
     <div className="flex justify-between items-center mb-4 border-b pb-2 border-gray-700">
       {/* Chat Name */}
-      <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <ChatImage
           src={getAvatarUrl(
             avatar,
@@ -61,8 +64,15 @@ const ChatHeader = ({ selectedChat }) => {
           width={32}
           height={32}
         />
-        {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
-      </h3>
+        <div>
+          <h3 className="text-lg font-bold text-yellow-500">
+            {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
+          </h3>
+          {!selectedChat.isGroup && (
+            <p className="text-sm text-gray-400">{lastSeen}</p>
+          )}
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-2">

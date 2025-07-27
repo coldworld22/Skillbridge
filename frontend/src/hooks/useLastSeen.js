@@ -9,8 +9,16 @@ const useLastSeen = (userId) => {
     // Simulate fetching user data (Replace with API Call)
     const user = mockUsers.find((user) => user.id === userId);
     if (user) {
-      setIsOnline(user.isOnline);
-      setLastSeen(user.isOnline ? "Online" : `Last seen ${user.lastSeen}`);
+      const online =
+        user.isOnline !== undefined ? user.isOnline : user.status === "online";
+      setIsOnline(online);
+      if (online) {
+        setLastSeen("Online");
+      } else if (user.lastSeen) {
+        setLastSeen(`Last seen ${user.lastSeen}`);
+      } else {
+        setLastSeen("Offline");
+      }
     }
   }, [userId]);
 
