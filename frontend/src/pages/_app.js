@@ -11,6 +11,8 @@ import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
 import useAppConfigStore from "@/store/appConfigStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
@@ -34,9 +36,14 @@ function MyApp({ Component, pageProps, router }) {
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const configLoaded = useAppConfigStore((state) => state.loaded);
   const settings = useAppConfigStore((state) => state.settings);
+  const startNotifPolling = useNotificationStore((s) => s.startPolling);
+  const fetchNotifs = useNotificationStore((s) => s.fetch);
+  const startMsgPolling = useMessageStore((s) => s.startPolling);
+  const fetchMsgs = useMessageStore((s) => s.fetch);
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -71,6 +78,15 @@ function MyApp({ Component, pageProps, router }) {
   useEffect(() => {
     if (!configLoaded) fetchConfig();
   }, [configLoaded, fetchConfig]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifs();
+      startNotifPolling();
+      fetchMsgs();
+      startMsgPolling();
+    }
+  }, [user, fetchNotifs, startNotifPolling, fetchMsgs, startMsgPolling]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

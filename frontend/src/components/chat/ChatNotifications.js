@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { FaEnvelopeOpenText, FaUsers, FaBell } from "react-icons/fa";
+import { toast } from "react-toastify";
 import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
 import formatRelativeTime from "@/utils/relativeTime";
 import LinkText from "@/components/shared/LinkText";
+import { useTranslation } from "next-i18next";
 
 const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 1 }) => {
+  const { t } = useTranslation("common");
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [showAlerts, setShowAlerts] = useState(false);
 
-  const handleMarkRead = (id) => {
-    markNotificationAsRead(id).catch(() => {});
+  const handleMarkRead = async (id) => {
+    try {
+      await markNotificationAsRead(id);
+      toast.success(t('mark_as_read'));
+    } catch (_) {}
     setSystemNotifs((prev) => prev.filter((n) => n.id !== id));
   };
 
@@ -37,21 +43,21 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
   }, [userId]);
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg text-white max-w-md w-full">
+    <div className="bg-gray-800 p-6 rounded-xl shadow-lg text-white max-w-md w-full border border-yellow-600">
       <h3 className="text-lg font-bold text-yellow-500 flex items-center gap-2 mb-2">
-        <FaBell /> Notifications Center
+        <FaBell /> {t('notifications_center')}
       </h3>
 
       {/* 🔔 System Alerts */}
       {systemNotifs.length > 0 && (
         <>
           <div className="flex justify-between items-center mt-4">
-            <h4 className="text-yellow-400 font-semibold">System Alerts</h4>
+            <h4 className="text-yellow-400 font-semibold">{t('system_alerts')}</h4>
             <button
               className="text-xs text-blue-400 hover:underline"
               onClick={() => setShowAlerts((s) => !s)}
             >
-              {showAlerts ? "Hide" : "Show"}
+              {showAlerts ? t('hide', 'Hide') : t('show', 'Show')}
             </button>
           </div>
           {showAlerts && (
@@ -73,7 +79,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
                     onClick={() => handleMarkRead(n.id)}
                     className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                   >
-                    Mark as Read
+                    {t('mark_as_read')}
                   </button>
                 </li>
               ))}
@@ -85,7 +91,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
       {/* 📩 Unread Direct Messages */}
       {users.length > 0 && (
         <>
-          <h4 className="text-yellow-400 font-semibold mt-4">Users</h4>
+          <h4 className="text-yellow-400 font-semibold mt-4">{t('users')}</h4>
           <ul className="space-y-2">
             {users.map((user) => (
               <li
@@ -97,7 +103,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
                 {user.name}
                 {user.unread > 0 && (
                   <span className="ml-auto bg-red-500 text-xs px-2 py-1 rounded-full">
-                    {user.unread} new
+                    {user.unread} {t('new')}
                   </span>
                 )}
               </li>
@@ -109,7 +115,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
       {/* 👥 Group Notifications */}
       {groups.length > 0 && (
         <>
-          <h4 className="text-yellow-400 font-semibold mt-4">Groups</h4>
+          <h4 className="text-yellow-400 font-semibold mt-4">{t('groups')}</h4>
           <ul className="space-y-2">
             {groups.map((group) => (
               <li
@@ -121,7 +127,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
                 {group.name || group.groupName}
                 {group.unread > 0 && (
                   <span className="ml-auto bg-red-500 text-xs px-2 py-1 rounded-full">
-                    {group.unread} new
+                    {group.unread} {t('new')}
                   </span>
                 )}
               </li>
@@ -132,7 +138,7 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
 
       {/* 💤 Fallback */}
       {users.length === 0 && groups.length === 0 && systemNotifs.length === 0 && (
-        <p className="text-gray-400 mt-4 text-sm text-center">No new notifications right now.</p>
+        <p className="text-gray-400 mt-4 text-sm text-center">{t('no_new_notifications')}</p>
       )}
     </div>
   );
