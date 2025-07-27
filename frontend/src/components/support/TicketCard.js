@@ -2,16 +2,25 @@ import StatusBadge from './StatusBadge';
 import { FiClock, FiTag } from 'react-icons/fi';
 
 export default function TicketCard({ ticket, onClick }) {
+  const bgColors = {
+    open: 'bg-blue-50',
+    pending: 'bg-yellow-50',
+    resolved: 'bg-green-50',
+    closed: 'bg-gray-50',
+  };
+
   return (
     <div
       onClick={onClick}
-      className="border p-4 rounded-xl bg-white shadow-sm transition hover:shadow-md hover:border-yellow-400 cursor-pointer"
+      className={`border p-4 rounded-xl shadow-sm transition hover:shadow-md hover:border-yellow-400 cursor-pointer ${bgColors[ticket.status] || 'bg-white'}`}
     >
       {/* Header: Subject & Status */}
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-semibold text-lg text-gray-800 truncate">{ticket.subject}</h3>
         <StatusBadge status={ticket.status} />
       </div>
+
+      <div className="text-xs text-gray-500 mb-2 font-mono">#{ticket.ticket_number}</div>
 
       {/* Metadata: Priority, User, Date */}
       <div className="flex items-center text-sm text-gray-500 gap-4 flex-wrap">

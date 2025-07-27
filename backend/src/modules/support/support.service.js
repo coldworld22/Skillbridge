@@ -42,7 +42,7 @@ exports.listUserTickets = (user_id) => {
     .orderBy("created_at", "desc");
 };
 
-exports.listAllTickets = ({ status, search } = {}) => {
+exports.listAllTickets = ({ status, search, ticketNumber } = {}) => {
   const query = db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
     .select(
@@ -63,6 +63,10 @@ exports.listAllTickets = ({ status, search } = {}) => {
         .orWhereILike("users.full_name", `%${search}%`)
         .orWhereILike("users.email", `%${search}%`);
     });
+  }
+
+  if (ticketNumber) {
+    query.whereILike("support_tickets.ticket_number", `%${ticketNumber}%`);
   }
 
   return query;

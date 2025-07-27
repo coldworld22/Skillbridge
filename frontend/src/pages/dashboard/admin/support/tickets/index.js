@@ -14,6 +14,7 @@ export default function AdminSupportTicketsPage() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [search, setSearch] = useState("");
+  const [ticketNumber, setTicketNumber] = useState("");
   const [dateRange, setDateRange] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation("dashboard");
@@ -29,6 +30,7 @@ export default function AdminSupportTicketsPage() {
         status: status || undefined,
         priority: priority || undefined,
         search: search || undefined,
+        ticketNumber: ticketNumber || undefined,
         dateRange: dateRange || undefined,
       });
       setTickets(data);
@@ -43,6 +45,7 @@ export default function AdminSupportTicketsPage() {
     setStatus("");
     setPriority("");
     setSearch("");
+    setTicketNumber("");
     setDateRange("");
     load();
   };
@@ -69,7 +72,7 @@ export default function AdminSupportTicketsPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-xs p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("status")}
@@ -128,6 +131,20 @@ export default function AdminSupportTicketsPage() {
                 </select>
                 <FiCalendar className="absolute right-3 top-2.5 text-gray-400" />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("ticket_id")}
+              </label>
+              <input
+                type="text"
+                value={ticketNumber}
+                onChange={(e) => setTicketNumber(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && load()}
+                className="block w-full border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="#"
+              />
             </div>
 
             <div className="lg:col-span-2">
