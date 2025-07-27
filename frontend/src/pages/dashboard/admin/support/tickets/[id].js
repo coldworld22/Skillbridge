@@ -7,7 +7,8 @@ import TicketDetailPanel from "@/components/support/TicketDetailPanel";
 import TicketReplyBox from "@/components/support/TicketReplyBox";
 import TicketMetaSidebar from "@/components/support/TicketMetaSidebar";
 import { toast } from "react-toastify";
-import { use
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminTicketDetail() {
