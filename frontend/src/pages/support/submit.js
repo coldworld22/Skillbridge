@@ -35,7 +35,7 @@ export default function SubmitTicketPage() {
     <div className="bg-gray-900 text-white min-h-screen">
       <PageHead title={t('submit_ticket')} />
       <Navbar />
-      <main className="max-w-3xl mx-auto px-4 py-20">
+      <main className="max-w-3xl mx-auto px-4 py-24">
         <h1 className="text-3xl font-bold text-yellow-500 mb-6">{t('submit_ticket')}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
