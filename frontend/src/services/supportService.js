@@ -62,3 +62,14 @@ export const fetchRecentActivity = async () => {
   const { data } = await api.get("/support/admin/recent-activity");
   return data?.data ?? [];
 };
+
+export const fetchSupportAnalytics = async () => {
+  const { data } = await api.get("/support/admin/analytics");
+  return data?.data ?? {
+    open: 0,
+    resolved: 0,
+    closed: 0,
+    avgHours: 0,
+    chart: [],
+  };
+};
