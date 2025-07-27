@@ -3,12 +3,17 @@ import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
 import { fetchMyTickets, deleteTicket } from "@/services/supportService";
+import StatusBadge from "@/components/support/StatusBadge";
+import { FaEye, FaTrashAlt } from "react-icons/fa";
+import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [numberFilter, setNumberFilter] = useState("");
   const { t } = useTranslation('dashboard');
 
   useEffect(() => {
@@ -19,7 +24,9 @@ export default function MyTicketsPage() {
     try {
       const data = await fetchMyTickets();
       setTickets(data);
+      toast.success(t("tickets_loaded"));
     } catch (err) {
+      toast.error(t("tickets_load_failed"));
       console.error("Failed to load tickets", err);
     }
   };
@@ -29,71 +36,95 @@ export default function MyTicketsPage() {
     try {
       await deleteTicket(id);
       setTickets(tickets.filter((t) => t.id !== id));
-      alert(t('ticket_deleted'));
+      toast.success(t('ticket_deleted'));
     } catch (err) {
       console.error('Failed to delete ticket', err);
-      alert(t('delete_failed'));
+      toast.error(t('delete_failed'));
     }
   };
+
+  const filteredTickets = tickets.filter(
+    (ticket) =>
+      (statusFilter === "All" || ticket.status === statusFilter) &&
+      (numberFilter === "" ||
+        ticket.ticket_number?.toString().includes(numberFilter))
+  );
 
   return (
     <InstructorLayout>
       <PageHead title={t('my_tickets')} />
       <div className="px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{t('my_tickets')}</h1>
-          <Link
-            href="/support/submit"
-            className="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600 transition"
-          >
-            {t('new_ticket')}
-          </Link>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">{t('my_tickets')}</h1>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={numberFilter}
+              onChange={(e) => setNumberFilter(e.target.value)}
+              placeholder="Ticket #"
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="All">{t('all_statuses')}</option>
+              <option value="Open">Open</option>
+              <option value="Pending">Pending</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
+            </select>
+            <Link
+              href="/support/submit"
+              className="bg-yellow-500 text-black text-sm px-4 py-2 rounded hover:bg-yellow-600 transition font-semibold"
+            >
+              {t('new_ticket')}
+            </Link>
+          </div>
         </div>
 
-        {tickets.length === 0 ? (
-          <p className="text-gray-500 text-center">{t('no_tickets')}</p>
+        {filteredTickets.length === 0 ? (
+          <p className="text-center text-gray-500">{t('no_tickets')}</p>
         ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded shadow-sm">
-            <table className="min-w-full table-auto bg-white">
-              <thead className="bg-gray-100 text-sm text-gray-600 uppercase">
+          <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+            <table className="min-w-full bg-white table-auto">
+              <thead className="bg-gray-100 text-xs text-gray-600 uppercase">
                 <tr>
-                  <th className="text-left px-4 py-3">Ticket ID</th>
-                  <th className="text-left px-4 py-3">Subject</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Created</th>
-                  <th className="text-left px-4 py-3">Action</th>
+                  <th className="text-left px-4 py-3">{t('ticket_id')}</th>
+                  <th className="text-left px-4 py-3">{t('subject')}</th>
+                  <th className="text-left px-4 py-3">{t('status')}</th>
+                  <th className="text-left px-4 py-3">{t('created')}</th>
+                  <th className="text-left px-4 py-3">{t('action')}</th>
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-sm">{ticket.id}</td>
-                    <td className="px-4 py-3 text-sm">{ticket.subject}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        ticket.status === "Resolved"
-                          ? "bg-green-100 text-green-700"
-                          : ticket.status === "Open"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-200 text-gray-600"
-                      }`}>
-                        {ticket.status}
-                      </span>
+                {filteredTickets.map((ticket) => (
+                  <tr
+                    key={ticket.id}
+                    className="border-t border-gray-100 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3 font-mono text-sm text-gray-700">{ticket.ticket_number}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{ticket.subject}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={ticket.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{new Date(ticket.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {new Date(ticket.created_at).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       <Link
                         href={`/support/tickets/${ticket.id}`}
-                        className="text-blue-600 hover:underline"
+                        className="bg-blue-500 text-white px-3 py-1 rounded inline-flex items-center gap-1 hover:bg-blue-600"
                       >
-                        {t('view_details')}
+                        <FaEye /> {t('view_details')}
                       </Link>
                       {(['Resolved', 'Closed'].includes(ticket.status)) && (
                         <button
                           onClick={() => handleDelete(ticket.id)}
-                          className="text-red-600 hover:underline ml-2"
+                          className="text-red-600 hover:underline ml-2 inline-flex items-center gap-1"
                         >
-                          {t('delete')}
+                          <FaTrashAlt /> {t('delete_ticket')}
                         </button>
                       )}
                     </td>
