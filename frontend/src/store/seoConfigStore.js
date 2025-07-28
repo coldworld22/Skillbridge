@@ -4,12 +4,14 @@ import {
   fetchSEOConfig,
   regenerateSitemap,
   scanMetaIssues,
+  fetchPageList,
 } from "@/services/admin/seoConfigService";
 
 const useSEOConfigStore = create(
   persist(
     (set, get) => ({
       settings: {},
+      pages: [],
       loading: false,
       loaded: false,
       fetch: async () => {
@@ -45,6 +47,14 @@ const useSEOConfigStore = create(
           }));
         }
         return result;
+      },
+      fetchPages: async () => {
+        try {
+          const list = await fetchPageList();
+          set({ pages: list });
+        } catch (_err) {
+          set({ pages: [] });
+        }
       },
       clear: () => set({ settings: {}, loaded: false })
     }),

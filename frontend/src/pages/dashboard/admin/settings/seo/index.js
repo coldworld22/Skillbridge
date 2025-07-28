@@ -60,10 +60,13 @@ export default function SEOSettingsPage() {
   const fetchConfig = useSEOConfigStore((state) => state.fetch);
   const seoConfig = useSEOConfigStore((state) => state.settings);
   const updateStore = useSEOConfigStore((state) => state.update);
+  const fetchPages = useSEOConfigStore((s) => s.fetchPages);
+  const pageList = useSEOConfigStore((s) => s.pages);
 
   useEffect(() => {
     fetchConfig();
-  }, [fetchConfig]);
+    fetchPages();
+  }, [fetchConfig, fetchPages]);
 
   const config = { ...defaultConfig, ...seoConfig };
 
@@ -91,19 +94,19 @@ export default function SEOSettingsPage() {
           <SEOOverview config={config} onChangeTab={setActiveTab} />
           </Tab.Panel>
           <Tab.Panel>
-            <MetaTagsManager config={config} update={updateStore} />
+            <MetaTagsManager config={config} update={updateStore} availablePages={pageList} />
           </Tab.Panel>
           <Tab.Panel>
-            <SitemapManager config={config} update={updateStore} />
+            <SitemapManager config={config} update={updateStore} availablePages={pageList} />
           </Tab.Panel>
           <Tab.Panel>
             <RobotsEditor config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <OpenGraphSettings config={config} update={updateStore} />
+            <OpenGraphSettings config={config} update={updateStore} availablePages={pageList} />
           </Tab.Panel>
           <Tab.Panel>
-            <TwitterCardSettings config={config} update={updateStore} />
+            <TwitterCardSettings config={config} update={updateStore} availablePages={pageList} />
           </Tab.Panel>
           <Tab.Panel>
             <AdvancedSEOSettings config={config} update={updateStore} />
@@ -306,11 +309,11 @@ function SEOOverview({ config, onChangeTab }) {
 }
 
 
-function MetaTagsManager({ config, update: updateConfig }) {
+function MetaTagsManager({ config, update: updateConfig, availablePages }) {
   const pages = useMemo(() => {
-    const list = collectPages(config);
+    const list = availablePages.length ? availablePages : collectPages(config);
     return list.length ? list : ["/"];
-  }, [config]);
+  }, [availablePages, config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyMeta = {
     title: "",
@@ -444,7 +447,7 @@ function MetaTagsManager({ config, update: updateConfig }) {
   );
 }
 
-function SitemapManager({ config, update }) {
+function SitemapManager({ config, update, availablePages }) {
   const [pages, setPages] = useState(
     config.sitemap.length
       ? config.sitemap
@@ -512,6 +515,7 @@ function SitemapManager({ config, update }) {
                   onChange={(e) => updatePage(index, "path", e.target.value)}
                   className="border rounded px-2 py-1 w-full"
                   placeholder="/path"
+                  list="sitemap-pages"
                 />
               </td>
               <td className="p-2 text-center">
@@ -556,6 +560,11 @@ function SitemapManager({ config, update }) {
         </tbody>
       </table>
 
+      <datalist id="sitemap-pages">
+        {availablePages.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
       <button
         onClick={addPage}
         className="mt-2 text-sm text-yellow-600 hover:underline"
@@ -639,12 +648,11 @@ Sitemap: https://yourdomain.com/sitemap.xml
   );
 }
 
-
-function OpenGraphSettings({ config, update }) {
+function OpenGraphSettings({ config, update, availablePages }) {
   const pages = useMemo(() => {
-    const list = collectPages(config);
+    const list = availablePages.length ? availablePages : collectPages(config);
     return list.length ? list : ["/"];
-  }, [config]);
+  }, [availablePages, config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyOg = { title: "", description: "", type: "website", image: "" };
   const [form, setForm] = useState(emptyOg);
@@ -760,11 +768,11 @@ function OpenGraphSettings({ config, update }) {
   );
 }
 
-function TwitterCardSettings({ config, update }) {
+function TwitterCardSettings({ config, update, availablePages }) {
   const pages = useMemo(() => {
-    const list = collectPages(config);
+    const list = availablePages.length ? availablePages : collectPages(config);
     return list.length ? list : ["/"];
-  }, [config]);
+  }, [availablePages, config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyTwitter = {
     title: "",
