@@ -43,3 +43,8 @@ exports.scanMetaIssues = catchAsync(async (_req, res) => {
   const result = await service.scanMetaIssues();
   sendSuccess(res, result, "Scan complete");
 });
+
+exports.listPages = catchAsync(async (_req, res) => {
+  const pages = await service.listPages();
+  sendSuccess(res, pages);
+});

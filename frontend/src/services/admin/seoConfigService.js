@@ -19,3 +19,8 @@ export const scanMetaIssues = async () => {
   const { data } = await api.get("/seo-config/meta-scan");
   return data?.data;
 };
+
+export const fetchPageList = async () => {
+  const { data } = await api.get("/seo-config/pages");
+  return data?.data ?? [];
+};

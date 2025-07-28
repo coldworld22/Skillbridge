@@ -85,3 +85,41 @@ exports.scanMetaIssues = async () => {
 
   return { stats, issues, scannedAt };
 };
+
+// Recursively scan the Next.js pages directory to collect available routes
+exports.listPages = async () => {
+  const fs = require("fs");
+  const path = require("path");
+
+  const rootDir = path.join(__dirname, "../../../..");
+  const pagesDir = path.join(rootDir, "frontend", "src", "pages");
+  const pages = new Set();
+
+  const walk = (dir, base = "") => {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name.startsWith("_")) continue;
+      const full = path.join(dir, entry.name);
+      const relBase = path.join(base, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "api") continue;
+        walk(full, relBase);
+      } else if (entry.isFile()) {
+        if (!/\.(js|jsx|ts|tsx)$/.test(entry.name)) continue;
+        if (entry.name.startsWith("[")) continue;
+        if (/^index\.(js|jsx|ts|tsx)$/.test(entry.name)) {
+          const p = base ? `/${base.replace(/\\/g, "/")}` : "/";
+          pages.add(p);
+        } else {
+          const name = entry.name.replace(/\.(js|jsx|ts|tsx)$/, "");
+          const p = `/${path.join(base, name).replace(/\\/g, "/")}`;
+          pages.add(p);
+        }
+      }
+    }
+  };
+
+  walk(pagesDir, "");
+  return Array.from(pages).sort();
+};
