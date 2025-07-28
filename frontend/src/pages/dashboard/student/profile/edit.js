@@ -205,15 +205,15 @@ export default function StudentProfileEdit() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    let success = false;
     try {
       setIsSubmitting(true);
+      console.log("[StudentProfileEdit] Submitting form", formData);
 
       const social_links = Object.entries(formData.socialLinks || {})
         .filter(([, url]) => url.trim() !== "")
         .map(([platform, url]) => ({ platform, url }));
 
-      await updateStudentProfile({
+      const payload = {
         full_name: formData.full_name,
         phone: formData.phone,
         gender: formData.gender,
@@ -222,9 +222,12 @@ export default function StudentProfileEdit() {
         topics: formData.topics,
         learning_goals: formData.learning_goals,
         social_links,
-      });
+      };
+      console.log("[StudentProfileEdit] Payload", payload);
+      await updateStudentProfile(payload);
 
       const fresh = await getStudentProfile();
+      console.log("[StudentProfileEdit] Updated profile", fresh);
 
       setUser({
         ...user,
@@ -247,12 +250,13 @@ export default function StudentProfileEdit() {
         refreshNotifications?.();
         refreshMessages?.();
       } catch (err) {
-        console.error(err);
+        console.error("[StudentProfileEdit] notification error", err);
       }
 
-      await router.push("/dashboard/student/profile/steps/Verification");
+      router.push("/dashboard/student/profile/steps/Verification");
 
     } catch (err) {
+      console.error("[StudentProfileEdit] update error", err);
       toast.error(err.message || "Failed to update profile");
       if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
@@ -261,9 +265,6 @@ export default function StudentProfileEdit() {
       }
     } finally {
       setIsSubmitting(false);
-      if (success) {
-        router.push("/dashboard/student/profile/steps/Verification");
-      }
     }
   };
 
