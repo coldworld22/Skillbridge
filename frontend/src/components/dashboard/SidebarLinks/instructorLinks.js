@@ -52,7 +52,6 @@ export const instructorNavLinks = [
       { label: 'Availability', href: '/dashboard/instructor/availability', icon: CalendarRange },
       { label: 'Messages', href: '/messages', icon: MessageCircle },
       { label: 'Reviews', href: '/dashboard/instructor/reviews', icon: Star },
-      { label: 'Help Center', href: '/dashboard/instructor/help', icon: LifeBuoy },
     ]
   },
   {

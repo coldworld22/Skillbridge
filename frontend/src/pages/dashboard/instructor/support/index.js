@@ -10,12 +10,6 @@ export default function InstructorSupportHome() {
 
   const cards = [
     {
-      href: '/support',
-      emoji: '📚',
-      title: t('help_center'),
-      description: t('help_center_desc'),
-    },
-    {
       href: '/support/submit',
       emoji: '📝',
       title: t('submit_ticket'),
