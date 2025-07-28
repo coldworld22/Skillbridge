@@ -33,3 +33,13 @@ exports.updateSettings = catchAsync(async (req, res) => {
     )
   );
 });
+
+exports.regenerateSitemap = catchAsync(async (_req, res) => {
+  const result = await service.generateSitemap();
+  sendSuccess(res, result, "Sitemap regenerated");
+});
+
+exports.scanMetaIssues = catchAsync(async (_req, res) => {
+  const result = await service.scanMetaIssues();
+  sendSuccess(res, result, "Scan complete");
+});

@@ -6,5 +6,7 @@ const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware")
 router.get("/", controller.getSettings);
 router.use(verifyToken, isAdmin);
 router.put("/", controller.updateSettings);
+router.post("/sitemap/regenerate", controller.regenerateSitemap);
+router.get("/meta-scan", controller.scanMetaIssues);
 
 module.exports = router;
