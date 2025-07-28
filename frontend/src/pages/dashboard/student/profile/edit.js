@@ -255,6 +255,7 @@ export default function StudentProfileEdit() {
 
       router.push("/dashboard/student/profile/steps/Verification");
 
+
     } catch (err) {
       console.error("[StudentProfileEdit] update error", err);
       toast.error(err.message || "Failed to update profile");
