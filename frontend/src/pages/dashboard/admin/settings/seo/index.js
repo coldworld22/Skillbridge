@@ -565,7 +565,6 @@ function SitemapManager({ config, update, availablePages }) {
           <option key={p} value={p} />
         ))}
       </datalist>
-
       <button
         onClick={addPage}
         className="mt-2 text-sm text-yellow-600 hover:underline"
@@ -648,7 +647,6 @@ Sitemap: https://yourdomain.com/sitemap.xml
     </div>
   );
 }
-
 
 function OpenGraphSettings({ config, update, availablePages }) {
   const pages = useMemo(() => {
