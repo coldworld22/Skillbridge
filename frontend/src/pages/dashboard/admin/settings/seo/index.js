@@ -445,9 +445,11 @@ function MetaTagsManager({ config, update: updateConfig }) {
 }
 
 function SitemapManager({ config, update }) {
-  const [pages, setPages] = useState(config.sitemap.length ? config.sitemap : [
-    { path: "/", include: true, priority: 1.0, freq: "daily" },
-  ]);
+  const [pages, setPages] = useState(
+    config.sitemap.length
+      ? config.sitemap
+      : [{ path: "/", include: true, priority: 1.0, freq: "daily" }]
+  );
 
   const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 
@@ -455,6 +457,17 @@ function SitemapManager({ config, update }) {
     const updated = [...pages];
     updated[index][key] = value;
     setPages(updated);
+  };
+
+  const addPage = () => {
+    setPages([
+      ...pages,
+      { path: "", include: true, priority: 0.5, freq: "weekly" },
+    ]);
+  };
+
+  const deletePage = (index) => {
+    setPages(pages.filter((_, i) => i !== index));
   };
 
   const regenerateSitemap = async () => {
@@ -487,12 +500,20 @@ function SitemapManager({ config, update }) {
             <th className="p-2">Include</th>
             <th className="p-2">Priority</th>
             <th className="p-2">Change Freq</th>
+            <th className="p-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {pages.map((page, index) => (
             <tr key={index} className="border-t">
-              <td className="p-2">{page.path}</td>
+              <td className="p-2">
+                <input
+                  value={page.path}
+                  onChange={(e) => updatePage(index, "path", e.target.value)}
+                  className="border rounded px-2 py-1 w-full"
+                  placeholder="/path"
+                />
+              </td>
               <td className="p-2 text-center">
                 <input
                   type="checkbox"
@@ -522,10 +543,25 @@ function SitemapManager({ config, update }) {
                   ))}
                 </select>
               </td>
+              <td className="p-2 text-center">
+                <button
+                  onClick={() => deletePage(index)}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <button
+        onClick={addPage}
+        className="mt-2 text-sm text-yellow-600 hover:underline"
+      >
+        ➕ Add Page
+      </button>
 
       {config.sitemapUpdated && (
         <div className="text-sm text-gray-500 italic">
