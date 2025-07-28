@@ -116,7 +116,6 @@ export default function SEOSettingsPage() {
 function SEOOverview({ config, onChangeTab }) {
   const regenerate = useSEOConfigStore((s) => s.regenerate);
   const scan = useSEOConfigStore((s) => s.scan);
-
   const [sitemapLoading, setSitemapLoading] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [sitemapAlert, setSitemapAlert] = useState(null);
@@ -167,6 +166,7 @@ function SEOOverview({ config, onChangeTab }) {
           icon: "📸",
           status: config.stats.openGraphReady > 0 ? "ok" : "warning",
         },
+
       ]
     : [];
 

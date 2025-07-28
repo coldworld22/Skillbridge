@@ -84,4 +84,5 @@ exports.scanMetaIssues = async () => {
   await exports.updateSettings(settings);
 
   return { stats, issues, scannedAt };
+
 };
