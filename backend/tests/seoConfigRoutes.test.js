@@ -6,6 +6,7 @@ jest.mock('../src/modules/seoConfig/seoConfig.service', () => ({
   updateSettings: jest.fn(),
   generateSitemap: jest.fn(),
   scanMetaIssues: jest.fn(),
+  listPages: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/user.model', () => ({
@@ -77,5 +78,17 @@ describe('GET /api/seo-config/meta-scan', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(scan);
     expect(service.scanMetaIssues).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/seo-config/pages', () => {
+  it('lists available pages', async () => {
+    const pages = ['/', '/about'];
+    service.listPages.mockResolvedValue(pages);
+
+    const res = await request(app).get('/api/seo-config/pages');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(pages);
+    expect(service.listPages).toHaveBeenCalled();
   });
 });

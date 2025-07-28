@@ -8,5 +8,6 @@ router.use(verifyToken, isAdmin);
 router.put("/", controller.updateSettings);
 router.post("/sitemap/regenerate", controller.regenerateSitemap);
 router.get("/meta-scan", controller.scanMetaIssues);
+router.get("/pages", controller.listPages);
 
 module.exports = router;
