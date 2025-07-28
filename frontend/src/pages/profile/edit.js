@@ -78,8 +78,21 @@ const ProfileEdit = () => {
           exit={{ opacity: 0, x: -30 }}
           transition={{ duration: 0.4 }}
         >
-          {step === 1 && <PersonalDetails formData={formData} setFormData={setFormData} />}
-          {step === 2 && <Verification formData={formData} setFormData={setFormData} />}
+          {step === 1 && (
+            <PersonalDetails
+              formData={formData}
+              setFormData={setFormData}
+              nextStep={nextStep}
+            />
+          )}
+          {step === 2 && (
+            <Verification
+              formData={formData}
+              setFormData={setFormData}
+              onNext={nextStep}
+              onBack={prevStep}
+            />
+          )}
           {step === 3 && <RoleSelection formData={formData} setFormData={setFormData} onNext={nextStep} />}
           {step === 4 && formData.role === "student" && <StudentDetails formData={formData} setFormData={setFormData} nextStep={nextStep} prevStep={prevStep} />}
           {step === 5 && formData.role === "instructor" && <InstructorDetails formData={formData} setFormData={setFormData} nextStep={nextStep} prevStep={prevStep} />}
