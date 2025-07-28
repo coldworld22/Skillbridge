@@ -205,6 +205,9 @@ function MetaTagsManager({ config, update: updateConfig }) {
     setForm((prev) => ({ ...prev, ...meta }));
   }, [selectedPage, config.metaTags]);
 
+  const pages = [
+    "/", "/about", "/courses", "/courses/[id]", "/community", "/contact",
+  ];
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
