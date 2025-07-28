@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /delete-account
+Disallow: /error/
+Allow: /
+
+Sitemap: https://yourdomain.com/sitemap.xml
