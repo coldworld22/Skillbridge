@@ -1,6 +1,6 @@
 // pages/dashboard/admin/settings/seo/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
 import { Tab } from "@headlessui/react";
@@ -21,6 +21,18 @@ const defaultConfig = {
   redirects: [],
   jsonSchema: "",
 };
+
+// Collect unique page paths from existing config sections
+function collectPages(cfg) {
+  const pages = new Set(["/"]);
+  if (Array.isArray(cfg?.sitemap)) {
+    cfg.sitemap.forEach((p) => p.path && pages.add(p.path));
+  }
+  [cfg?.metaTags, cfg?.openGraph, cfg?.twitter].forEach((section) => {
+    if (section) Object.keys(section).forEach((p) => pages.add(p));
+  });
+  return Array.from(pages);
+}
 
 const tabs = [
   { key: "overview", label: "Overview", icon: <FaGlobe /> },
@@ -91,8 +103,6 @@ export default function SEOSettingsPage() {
   );
 }
 
-// Placeholder components to be built next
-// Inside the SEOSettingsPage file, update this component
 function SEOOverview({ config, onChangeTab }) {
   const regenerate = useSEOConfigStore((s) => s.regenerate);
   const scan = useSEOConfigStore((s) => s.scan);
@@ -175,7 +185,8 @@ function SEOOverview({ config, onChangeTab }) {
 
 
 function MetaTagsManager({ config, update: updateConfig }) {
-  const [selectedPage, setSelectedPage] = useState("/");
+  const pages = useMemo(() => collectPages(config), [config]);
+  const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -184,6 +195,10 @@ function MetaTagsManager({ config, update: updateConfig }) {
     noindex: false,
     nofollow: false,
   });
+
+  useEffect(() => {
+    if (!pages.includes(selectedPage)) setSelectedPage(pages[0] || "/");
+  }, [pages, selectedPage]);
 
   useEffect(() => {
     const meta = config.metaTags?.[selectedPage] || {};
@@ -467,15 +482,14 @@ Sitemap: https://yourdomain.com/sitemap.xml
 
 
 function OpenGraphSettings({ config, update }) {
-  const [selectedPage, setSelectedPage] = useState("/");
+  const pages = useMemo(() => collectPages(config), [config]);
+  const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const [form, setForm] = useState({
     title: "",
     description: "",
     type: "website",
     image: "",
   });
-
-  const pages = ["/", "/about", "/courses", "/courses/[id]", "/community"];
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -487,6 +501,10 @@ function OpenGraphSettings({ config, update }) {
     const url = URL.createObjectURL(file);
     handleChange("image", url);
   };
+
+  useEffect(() => {
+    if (!pages.includes(selectedPage)) setSelectedPage(pages[0] || "/");
+  }, [pages, selectedPage]);
 
   useEffect(() => {
     const data = config.openGraph?.[selectedPage] || {};
@@ -585,7 +603,8 @@ function OpenGraphSettings({ config, update }) {
 }
 
 function TwitterCardSettings({ config, update }) {
-  const [selectedPage, setSelectedPage] = useState("/");
+  const pages = useMemo(() => collectPages(config), [config]);
+  const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -593,8 +612,6 @@ function TwitterCardSettings({ config, update }) {
     image: "",
     handle: "@yourhandle"
   });
-
-  const pages = ["/", "/about", "/courses", "/community"];
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -606,6 +623,10 @@ function TwitterCardSettings({ config, update }) {
     const url = URL.createObjectURL(file);
     handleChange("image", url);
   };
+
+  useEffect(() => {
+    if (!pages.includes(selectedPage)) setSelectedPage(pages[0] || "/");
+  }, [pages, selectedPage]);
 
   useEffect(() => {
     const data = config.twitter?.[selectedPage] || {};
