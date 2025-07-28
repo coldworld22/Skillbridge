@@ -307,16 +307,20 @@ function SEOOverview({ config, onChangeTab }) {
 
 
 function MetaTagsManager({ config, update: updateConfig }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
+  const emptyMeta = {
     title: "",
     description: "",
     keywords: "",
     canonical: "",
     noindex: false,
     nofollow: false,
-  });
+  };
+  const [form, setForm] = useState(emptyMeta);
 
   useEffect(() => {
     if (!pages.includes(selectedPage)) setSelectedPage(pages[0] || "/");
@@ -324,7 +328,7 @@ function MetaTagsManager({ config, update: updateConfig }) {
 
   useEffect(() => {
     const meta = config.metaTags?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...meta }));
+    setForm({ ...emptyMeta, ...meta });
   }, [selectedPage, config.metaTags]);
 
 
@@ -441,9 +445,11 @@ function MetaTagsManager({ config, update: updateConfig }) {
 }
 
 function SitemapManager({ config, update }) {
-  const [pages, setPages] = useState(config.sitemap.length ? config.sitemap : [
-    { path: "/", include: true, priority: 1.0, freq: "daily" },
-  ]);
+  const [pages, setPages] = useState(
+    config.sitemap.length
+      ? config.sitemap
+      : [{ path: "/", include: true, priority: 1.0, freq: "daily" }]
+  );
 
   const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 
@@ -451,6 +457,17 @@ function SitemapManager({ config, update }) {
     const updated = [...pages];
     updated[index][key] = value;
     setPages(updated);
+  };
+
+  const addPage = () => {
+    setPages([
+      ...pages,
+      { path: "", include: true, priority: 0.5, freq: "weekly" },
+    ]);
+  };
+
+  const deletePage = (index) => {
+    setPages(pages.filter((_, i) => i !== index));
   };
 
   const regenerateSitemap = async () => {
@@ -483,12 +500,20 @@ function SitemapManager({ config, update }) {
             <th className="p-2">Include</th>
             <th className="p-2">Priority</th>
             <th className="p-2">Change Freq</th>
+            <th className="p-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {pages.map((page, index) => (
             <tr key={index} className="border-t">
-              <td className="p-2">{page.path}</td>
+              <td className="p-2">
+                <input
+                  value={page.path}
+                  onChange={(e) => updatePage(index, "path", e.target.value)}
+                  className="border rounded px-2 py-1 w-full"
+                  placeholder="/path"
+                />
+              </td>
               <td className="p-2 text-center">
                 <input
                   type="checkbox"
@@ -518,10 +543,25 @@ function SitemapManager({ config, update }) {
                   ))}
                 </select>
               </td>
+              <td className="p-2 text-center">
+                <button
+                  onClick={() => deletePage(index)}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <button
+        onClick={addPage}
+        className="mt-2 text-sm text-yellow-600 hover:underline"
+      >
+        ➕ Add Page
+      </button>
 
       {config.sitemapUpdated && (
         <div className="text-sm text-gray-500 italic">
@@ -601,14 +641,13 @@ Sitemap: https://yourdomain.com/sitemap.xml
 
 
 function OpenGraphSettings({ config, update }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    type: "website",
-    image: "",
-  });
+  const emptyOg = { title: "", description: "", type: "website", image: "" };
+  const [form, setForm] = useState(emptyOg);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -627,7 +666,7 @@ function OpenGraphSettings({ config, update }) {
 
   useEffect(() => {
     const data = config.openGraph?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...data }));
+    setForm({ ...emptyOg, ...data });
   }, [selectedPage, config.openGraph]);
 
   const handleSave = async () => {
@@ -722,15 +761,19 @@ function OpenGraphSettings({ config, update }) {
 }
 
 function TwitterCardSettings({ config, update }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
+  const emptyTwitter = {
     title: "",
     description: "",
     cardType: "summary",
     image: "",
-    handle: "@yourhandle"
-  });
+    handle: "@yourhandle",
+  };
+  const [form, setForm] = useState(emptyTwitter);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -749,7 +792,7 @@ function TwitterCardSettings({ config, update }) {
 
   useEffect(() => {
     const data = config.twitter?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...data }));
+    setForm({ ...emptyTwitter, ...data });
   }, [selectedPage, config.twitter]);
 
   const handleSave = async () => {
@@ -855,11 +898,12 @@ function TwitterCardSettings({ config, update }) {
 
 
 function AdvancedSEOSettings({ config, update }) {
-  const [globalSEO, setGlobalSEO] = useState({
+  const defaultGlobal = {
     forceCanonical: true,
     noindexSitewide: false,
     autoPingSitemap: true,
-  });
+  };
+  const [globalSEO, setGlobalSEO] = useState(defaultGlobal);
 
   const [redirects, setRedirects] = useState([
     { from: "/old-page", to: "/new-page", code: 301 },
@@ -892,7 +936,7 @@ function AdvancedSEOSettings({ config, update }) {
   };
 
   useEffect(() => {
-    if (config.globalSEO) setGlobalSEO({ ...globalSEO, ...config.globalSEO });
+    if (config.globalSEO) setGlobalSEO({ ...defaultGlobal, ...config.globalSEO });
     if (config.redirects) setRedirects(config.redirects);
     if (config.jsonSchema) setJsonSchema(config.jsonSchema);
     // eslint-disable-next-line react-hooks/exhaustive-deps
