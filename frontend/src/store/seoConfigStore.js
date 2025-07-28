@@ -36,7 +36,13 @@ const useSEOConfigStore = create(
       scan: async () => {
         const result = await scanMetaIssues();
         if (result?.stats) {
-          set((state) => ({ settings: { ...state.settings, stats: result.stats } }));
+          set((state) => ({
+            settings: {
+              ...state.settings,
+              stats: result.stats,
+              lastChecked: result.scannedAt,
+            },
+          }));
         }
         return result;
       },

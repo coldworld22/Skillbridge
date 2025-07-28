@@ -76,8 +76,13 @@ exports.scanMetaIssues = async () => {
     openGraphReady: settings.openGraph ? Object.keys(settings.openGraph).length : 0,
   };
 
+  const scannedAt = new Date().toISOString();
+  stats.lastChecked = scannedAt;
+
   settings.stats = stats;
+  settings.lastChecked = scannedAt;
   await exports.updateSettings(settings);
 
-  return { stats, issues };
+  return { stats, issues, scannedAt };
+
 };

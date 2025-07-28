@@ -70,7 +70,7 @@ describe('POST /api/seo-config/sitemap/regenerate', () => {
 
 describe('GET /api/seo-config/meta-scan', () => {
   it('scans meta tags', async () => {
-    const scan = { stats: { indexedPages: 1 }, issues: [] };
+    const scan = { stats: { indexedPages: 1 }, issues: [], scannedAt: '2025-07-28T11:00:00Z' };
     service.scanMetaIssues.mockResolvedValue(scan);
 
     const res = await request(app).get('/api/seo-config/meta-scan');

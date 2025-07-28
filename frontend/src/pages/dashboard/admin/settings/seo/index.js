@@ -1,10 +1,20 @@
 // pages/dashboard/admin/settings/seo/index.js
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { toast } from "react-toastify";
 import { updateSEOConfig } from "@/services/admin/seoConfigService";
-import { Tab } from "@headlessui/react";
-import { FaTags, FaSitemap, FaRobot, FaCog, FaTwitter, FaGlobe, FaEdit } from "react-icons/fa";
+import { Tab, Dialog, Transition } from "@headlessui/react";
+import {
+  FaTags,
+  FaSitemap,
+  FaRobot,
+  FaCog,
+  FaTwitter,
+  FaGlobe,
+  FaEdit,
+  FaSpinner,
+  FaQuestionCircle,
+} from "react-icons/fa";
 import useSEOConfigStore from "@/store/seoConfigStore";
 
 const defaultConfig = {
@@ -106,14 +116,57 @@ export default function SEOSettingsPage() {
 function SEOOverview({ config, onChangeTab }) {
   const regenerate = useSEOConfigStore((s) => s.regenerate);
   const scan = useSEOConfigStore((s) => s.scan);
+  const [sitemapLoading, setSitemapLoading] = useState(false);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [sitemapAlert, setSitemapAlert] = useState(null);
+  const [scanAlert, setScanAlert] = useState(null);
+  const [issues, setIssues] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [scanTime, setScanTime] = useState(config.lastChecked);
+
+  useEffect(() => {
+    setScanTime(config.lastChecked);
+  }, [config.lastChecked]);
 
   const stats = config.stats
     ? [
-        { label: "Indexed Pages", value: config.stats.indexedPages, icon: "🧭" },
-        { label: "Pages Missing Meta Tags", value: config.stats.pagesMissingMeta, icon: "⚠️" },
-        { label: "Sitemap Last Updated", value: config.stats.sitemapUpdated || "-", icon: "📆" },
-        { label: "Robots.txt Status", value: config.stats.robotsStatus, icon: "🤖" },
-        { label: "Open Graph Ready Pages", value: config.stats.openGraphReady, icon: "📸" },
+        {
+          label: "Indexed Pages",
+          value: config.stats.indexedPages,
+          icon: "🧭",
+          status: Array.isArray(config.stats.indexedPages)
+            ? config.stats.indexedPages.length > 0
+              ? "ok"
+              : "warning"
+            : config.stats.indexedPages > 0
+            ? "ok"
+            : "warning",
+        },
+        {
+          label: "Pages Missing Meta Tags",
+          value: config.stats.pagesMissingMeta,
+          icon: "⚠️",
+          status: config.stats.pagesMissingMeta > 0 ? "warning" : "ok",
+        },
+        {
+          label: "Sitemap Last Updated",
+          value: config.stats.sitemapUpdated || "-",
+          icon: "📆",
+          status: config.stats.sitemapUpdated ? "ok" : "warning",
+        },
+        {
+          label: "Robots.txt Status",
+          value: config.stats.robotsStatus,
+          icon: "🤖",
+          status: config.stats.robotsStatus === "Active" ? "ok" : "error",
+        },
+        {
+          label: "Open Graph Ready Pages",
+          value: config.stats.openGraphReady,
+          icon: "📸",
+          status: config.stats.openGraphReady > 0 ? "ok" : "warning",
+        },
+
       ]
     : [];
 
@@ -121,29 +174,43 @@ function SEOOverview({ config, onChangeTab }) {
     {
       label: "Regenerate Sitemap",
       icon: "🔁",
+      tip: "Generate a fresh sitemap.xml file",
       onClick: async () => {
+        setSitemapLoading(true);
+        setSitemapAlert(null);
         try {
           await regenerate();
-          toast.success("Sitemap regenerated");
+          setSitemapAlert({ type: "success", text: "Sitemap regenerated" });
         } catch {
-          toast.error("Failed to regenerate");
+          setSitemapAlert({ type: "error", text: "Failed to regenerate" });
+        } finally {
+          setSitemapLoading(false);
         }
       },
     },
     {
       label: "Edit Robots.txt",
       icon: "✏️",
+      tip: "Manage crawler instructions",
       onClick: () => onChangeTab("robots"),
     },
     {
       label: "Scan for Meta Issues",
       icon: "🕵️",
+      tip: "Check pages for missing titles and descriptions",
       onClick: async () => {
+        setScanLoading(true);
+        setScanAlert(null);
         try {
           const res = await scan();
-          toast.info(`${res.issues.length} issues found`);
+          setIssues(res.issues || []);
+          setShowModal(true);
+          setScanTime(res.scannedAt);
+          setScanAlert({ type: "success", text: `${res.issues.length} issues found` });
         } catch {
-          toast.error("Failed to scan");
+          setScanAlert({ type: "error", text: "Failed to scan" });
+        } finally {
+          setScanLoading(false);
         }
       },
     },
@@ -153,32 +220,145 @@ function SEOOverview({ config, onChangeTab }) {
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold mb-4 text-gray-800">📊 SEO Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {stats.map((s, i) => (
             <div key={i} className="bg-gray-50 border rounded-lg p-4 shadow-sm">
-              <div className="text-2xl mb-1">{s.icon}</div>
-              <div className="text-sm text-gray-600">{s.label}</div>
-              <div className="text-xl font-bold text-yellow-600">{s.value}</div>
+              <div className="flex justify-between items-start">
+                <div className="text-2xl">{s.icon}</div>
+                {s.status && (
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      s.status === "ok"
+                        ? "bg-green-100 text-green-800"
+                        : s.status === "warning"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {s.status === "ok" ? "OK" : s.status === "warning" ? "Warning" : "Error"}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-gray-600 mt-1">{s.label}</div>
+              <div className="text-xl font-bold text-yellow-600">
+                {Array.isArray(s.value) ? s.value.length : s.value}
+              </div>
+              {Array.isArray(s.value) && s.value.length > 0 && (
+                <details className="mt-1 text-sm">
+                  <summary className="cursor-pointer text-blue-600">View pages</summary>
+                  <ul className="list-disc list-inside mt-1">
+                    {s.value.map((p) => (
+                      <li key={p}>
+                        <a href={p} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {p}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           ))}
         </div>
+        {scanTime && (
+          <div className="text-xs text-gray-500 mt-2 text-right">Last checked: {new Date(scanTime).toLocaleString()}</div>
+        )}
       </div>
 
       <div>
         <h2 className="text-lg font-semibold mb-4 text-gray-800">⚡ Quick Actions</h2>
         <div className="flex flex-wrap gap-4">
           {actions.map((a, i) => (
-            <button
-              key={i}
-              onClick={a.onClick}
-              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md shadow"
-            >
-              <span>{a.icon}</span>
-              <span>{a.label}</span>
-            </button>
+            <div key={i} className="flex flex-col items-start">
+              <button
+                onClick={a.onClick}
+                disabled={a.label.includes('Sitemap') ? sitemapLoading : scanLoading}
+                title={a.tip}
+                className="flex items-center gap-2 bg-yellow-500 disabled:opacity-50 hover:bg-yellow-600 text-white px-4 py-2 rounded-md shadow"
+              >
+                {a.label.includes('Sitemap') && sitemapLoading && <FaSpinner className="animate-spin" />}
+                {a.label.includes('Meta') && scanLoading && <FaSpinner className="animate-spin" />}
+                <span>{a.icon}</span>
+                <span>{a.label}</span>
+                <FaQuestionCircle className="ml-1 text-xs" />
+              </button>
+              {a.label.includes('Sitemap') && sitemapAlert && (
+                <span className={`mt-1 text-sm ${sitemapAlert.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{sitemapAlert.text}</span>
+              )}
+              {a.label.includes('Meta') && scanAlert && (
+                <span className={`mt-1 text-sm ${scanAlert.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{scanAlert.text}</span>
+              )}
+            </div>
           ))}
         </div>
       </div>
+
+      <Transition appear show={showModal} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => setShowModal(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl">
+                  <Dialog.Title className="text-lg font-medium text-gray-900">Meta Issues ({issues.length})</Dialog.Title>
+                  <div className="mt-2">
+                    {issues.length === 0 ? (
+                      <p className="text-sm text-gray-500">No issues found 🎉</p>
+                    ) : (
+                      <ul className="space-y-2 text-sm">
+                        {issues.map((iss, idx) => (
+                          <li key={idx} className="border-b pb-1">
+                            <div className="font-medium">{iss.path}</div>
+                            <div className="text-red-600">Missing: {iss.missing.join(', ')}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {scanTime && (
+                      <p className="mt-2 text-xs text-gray-500">Last checked: {new Date(scanTime).toLocaleString()}</p>
+                    )}
+                  </div>
+                  <div className="mt-4 flex justify-end gap-2">
+                    {issues.length > 0 && (
+                      <button
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
+                        onClick={() => {
+                          setShowModal(false);
+                          onChangeTab('meta');
+                        }}
+                      >
+                        Edit Meta
+                      </button>
+                    )}
+                    <button className="bg-gray-100 px-4 py-2 rounded" onClick={() => setShowModal(false)}>
+                      Close
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 }
