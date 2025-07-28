@@ -307,7 +307,10 @@ function SEOOverview({ config, onChangeTab }) {
 
 
 function MetaTagsManager({ config, update: updateConfig }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyMeta = {
     title: "",
@@ -602,7 +605,10 @@ Sitemap: https://yourdomain.com/sitemap.xml
 
 
 function OpenGraphSettings({ config, update }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyOg = { title: "", description: "", type: "website", image: "" };
   const [form, setForm] = useState(emptyOg);
@@ -719,7 +725,10 @@ function OpenGraphSettings({ config, update }) {
 }
 
 function TwitterCardSettings({ config, update }) {
-  const pages = useMemo(() => collectPages(config), [config]);
+  const pages = useMemo(() => {
+    const list = collectPages(config);
+    return list.length ? list : ["/"];
+  }, [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
   const emptyTwitter = {
     title: "",
