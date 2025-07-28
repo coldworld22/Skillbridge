@@ -2,9 +2,25 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { fetchSEOConfig, updateSEOConfig } from "@/services/admin/seoConfigService";
+import { updateSEOConfig } from "@/services/admin/seoConfigService";
 import { Tab } from "@headlessui/react";
 import { FaTags, FaSitemap, FaRobot, FaCog, FaTwitter, FaGlobe, FaEdit } from "react-icons/fa";
+import useSEOConfigStore from "@/store/seoConfigStore";
+
+const defaultConfig = {
+  metaTags: {},
+  sitemap: [],
+  robots: "",
+  openGraph: {},
+  twitter: {},
+  globalSEO: {
+    forceCanonical: true,
+    noindexSitewide: false,
+    autoPingSitemap: true,
+  },
+  redirects: [],
+  jsonSchema: "",
+};
 
 const tabs = [
   { key: "overview", label: "Overview", icon: <FaGlobe /> },
@@ -18,6 +34,15 @@ const tabs = [
 
 export default function SEOSettingsPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const fetchConfig = useSEOConfigStore((state) => state.fetch);
+  const seoConfig = useSEOConfigStore((state) => state.settings);
+  const updateStore = useSEOConfigStore((state) => state.update);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  const config = { ...defaultConfig, ...seoConfig };
 
   return (
     <AdminLayout title="SEO Settings">
@@ -40,25 +65,25 @@ export default function SEOSettingsPage() {
 
         <Tab.Panels className="bg-white p-6 rounded-md shadow">
           <Tab.Panel>
-            <SEOOverview />
+          <SEOOverview config={config} onChangeTab={setActiveTab} />
           </Tab.Panel>
           <Tab.Panel>
-            <MetaTagsManager />
+            <MetaTagsManager config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <SitemapManager />
+            <SitemapManager config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <RobotsEditor />
+            <RobotsEditor config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <OpenGraphSettings />
+            <OpenGraphSettings config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <TwitterCardSettings />
+            <TwitterCardSettings config={config} update={updateStore} />
           </Tab.Panel>
           <Tab.Panel>
-            <AdvancedSEOSettings />
+            <AdvancedSEOSettings config={config} update={updateStore} />
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
@@ -68,19 +93,50 @@ export default function SEOSettingsPage() {
 
 // Placeholder components to be built next
 // Inside the SEOSettingsPage file, update this component
-function SEOOverview() {
-  const stats = [
-    { label: "Indexed Pages", value: 124, icon: "🧭" },
-    { label: "Pages Missing Meta Tags", value: 16, icon: "⚠️" },
-    { label: "Sitemap Last Updated", value: "2025-05-14", icon: "📆" },
-    { label: "Robots.txt Status", value: "Active", icon: "🤖" },
-    { label: "Open Graph Ready Pages", value: 89, icon: "📸" },
-  ];
+function SEOOverview({ config, onChangeTab }) {
+  const regenerate = useSEOConfigStore((s) => s.regenerate);
+  const scan = useSEOConfigStore((s) => s.scan);
+
+  const stats = config.stats
+    ? [
+        { label: "Indexed Pages", value: config.stats.indexedPages, icon: "🧭" },
+        { label: "Pages Missing Meta Tags", value: config.stats.pagesMissingMeta, icon: "⚠️" },
+        { label: "Sitemap Last Updated", value: config.stats.sitemapUpdated || "-", icon: "📆" },
+        { label: "Robots.txt Status", value: config.stats.robotsStatus, icon: "🤖" },
+        { label: "Open Graph Ready Pages", value: config.stats.openGraphReady, icon: "📸" },
+      ]
+    : [];
 
   const actions = [
-    { label: "Regenerate Sitemap", icon: "🔁", onClick: () => alert("Sitemap regenerated!") },
-    { label: "Edit Robots.txt", icon: "✏️", onClick: () => alert("Redirecting to robots.txt...") },
-    { label: "Scan for Meta Issues", icon: "🕵️", onClick: () => alert("Scanning...") },
+    {
+      label: "Regenerate Sitemap",
+      icon: "🔁",
+      onClick: async () => {
+        try {
+          await regenerate();
+          toast.success("Sitemap regenerated");
+        } catch {
+          toast.error("Failed to regenerate");
+        }
+      },
+    },
+    {
+      label: "Edit Robots.txt",
+      icon: "✏️",
+      onClick: () => onChangeTab("robots"),
+    },
+    {
+      label: "Scan for Meta Issues",
+      icon: "🕵️",
+      onClick: async () => {
+        try {
+          const res = await scan();
+          toast.info(`${res.issues.length} issues found`);
+        } catch {
+          toast.error("Failed to scan");
+        }
+      },
+    },
   ];
 
   return (
@@ -118,7 +174,7 @@ function SEOOverview() {
 }
 
 
-function MetaTagsManager() {
+function MetaTagsManager({ config, update: updateConfig }) {
   const [selectedPage, setSelectedPage] = useState("/");
   const [form, setForm] = useState({
     title: "",
@@ -129,6 +185,11 @@ function MetaTagsManager() {
     nofollow: false,
   });
 
+  useEffect(() => {
+    const meta = config.metaTags?.[selectedPage] || {};
+    setForm((prev) => ({ ...prev, ...meta }));
+  }, [selectedPage, config.metaTags]);
+
   const pages = [
     "/", "/about", "/courses", "/courses/[id]", "/community", "/contact",
   ];
@@ -137,9 +198,18 @@ function MetaTagsManager() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    // TODO: Send to backend
-    alert(`Saved meta for ${selectedPage}`);
+  const handleSave = async () => {
+    const updated = {
+      ...config,
+      metaTags: { ...config.metaTags, [selectedPage]: form },
+    };
+    updateConfig(updated);
+    try {
+      await updateSEOConfig(updated);
+      toast.success("Meta tags saved");
+    } catch (_err) {
+      toast.error("Failed to save");
+    }
   };
 
   return (
@@ -236,13 +306,9 @@ function MetaTagsManager() {
   );
 }
 
-function SitemapManager() {
-  const [pages, setPages] = useState([
+function SitemapManager({ config, update }) {
+  const [pages, setPages] = useState(config.sitemap.length ? config.sitemap : [
     { path: "/", include: true, priority: 1.0, freq: "daily" },
-    { path: "/about", include: true, priority: 0.8, freq: "monthly" },
-    { path: "/courses", include: true, priority: 0.9, freq: "weekly" },
-    { path: "/community", include: false, priority: 0.7, freq: "monthly" },
-    { path: "/contact", include: true, priority: 0.6, freq: "yearly" },
   ]);
 
   const changeFreqOptions = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
@@ -253,9 +319,15 @@ function SitemapManager() {
     setPages(updated);
   };
 
-  const regenerateSitemap = () => {
-    // TODO: call backend or API
-    alert("🗺️ Sitemap regenerated!");
+  const regenerateSitemap = async () => {
+    const updated = { ...config, sitemap: pages };
+    update(updated);
+    try {
+      await updateSEOConfig(updated);
+      toast.success("Sitemap saved");
+    } catch (_err) {
+      toast.error("Failed to save");
+    }
   };
 
   return (
@@ -317,15 +389,17 @@ function SitemapManager() {
         </tbody>
       </table>
 
-      <div className="text-sm text-gray-500 italic">
-        Last updated: 2025-05-14 15:12 GMT+3 (mocked)
-      </div>
+      {config.sitemapUpdated && (
+        <div className="text-sm text-gray-500 italic">
+          Last updated: {config.sitemapUpdated}
+        </div>
+      )}
     </div>
   );
 }
 
 
-function RobotsEditor() {
+function RobotsEditor({ config, update }) {
   const defaultContent = `
 User-agent: *
 Disallow: /dashboard/
@@ -335,13 +409,19 @@ Allow: /
 Sitemap: https://yourdomain.com/sitemap.xml
   `.trim();
 
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState(config.robots || defaultContent);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    // TODO: Connect to backend API
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    const updated = { ...config, robots: content };
+    update(updated);
+    try {
+      await updateSEOConfig(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (_err) {
+      toast.error("Failed to save");
+    }
   };
 
   const restoreDefault = () => {
@@ -386,7 +466,7 @@ Sitemap: https://yourdomain.com/sitemap.xml
 }
 
 
-function OpenGraphSettings() {
+function OpenGraphSettings({ config, update }) {
   const [selectedPage, setSelectedPage] = useState("/");
   const [form, setForm] = useState({
     title: "",
@@ -408,9 +488,23 @@ function OpenGraphSettings() {
     handleChange("image", url);
   };
 
-  const handleSave = () => {
-    // TODO: POST to backend
-    alert(`✅ Open Graph settings saved for ${selectedPage}`);
+  useEffect(() => {
+    const data = config.openGraph?.[selectedPage] || {};
+    setForm((prev) => ({ ...prev, ...data }));
+  }, [selectedPage, config.openGraph]);
+
+  const handleSave = async () => {
+    const updated = {
+      ...config,
+      openGraph: { ...config.openGraph, [selectedPage]: form },
+    };
+    update(updated);
+    try {
+      await updateSEOConfig(updated);
+      toast.success("Open Graph saved");
+    } catch (_err) {
+      toast.error("Failed to save");
+    }
   };
 
   return (
@@ -490,7 +584,7 @@ function OpenGraphSettings() {
   );
 }
 
-function TwitterCardSettings() {
+function TwitterCardSettings({ config, update }) {
   const [selectedPage, setSelectedPage] = useState("/");
   const [form, setForm] = useState({
     title: "",
@@ -513,9 +607,23 @@ function TwitterCardSettings() {
     handleChange("image", url);
   };
 
-  const handleSave = () => {
-    // TODO: Send to backend
-    alert(`✅ Twitter Card settings saved for ${selectedPage}`);
+  useEffect(() => {
+    const data = config.twitter?.[selectedPage] || {};
+    setForm((prev) => ({ ...prev, ...data }));
+  }, [selectedPage, config.twitter]);
+
+  const handleSave = async () => {
+    const updated = {
+      ...config,
+      twitter: { ...config.twitter, [selectedPage]: form },
+    };
+    update(updated);
+    try {
+      await updateSEOConfig(updated);
+      toast.success("Twitter card saved");
+    } catch (_err) {
+      toast.error("Failed to save");
+    }
   };
 
   return (
@@ -606,7 +714,7 @@ function TwitterCardSettings() {
 }
 
 
-function AdvancedSEOSettings() {
+function AdvancedSEOSettings({ config, update }) {
   const [globalSEO, setGlobalSEO] = useState({
     forceCanonical: true,
     noindexSitewide: false,
@@ -644,25 +752,17 @@ function AdvancedSEOSettings() {
   };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchSEOConfig();
-        if (data) {
-          if (data.globalSEO) setGlobalSEO((prev) => ({ ...prev, ...data.globalSEO }));
-          if (data.redirects) setRedirects(data.redirects);
-          if (data.jsonSchema) setJsonSchema(data.jsonSchema);
-        }
-      } catch (err) {
-        toast.error("Failed to load settings");
-      }
-    };
-    load();
+    if (config.globalSEO) setGlobalSEO({ ...globalSEO, ...config.globalSEO });
+    if (config.redirects) setRedirects(config.redirects);
+    if (config.jsonSchema) setJsonSchema(config.jsonSchema);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [config]);
 
   const handleSave = async () => {
+    const updated = { ...config, globalSEO, redirects, jsonSchema };
+    update(updated);
     try {
-      await updateSEOConfig({ globalSEO, redirects, jsonSchema });
+      await updateSEOConfig(updated);
       toast.success("SEO settings saved!");
     } catch (err) {
       toast.error("Failed to save settings");
