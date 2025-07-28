@@ -309,14 +309,15 @@ function SEOOverview({ config, onChangeTab }) {
 function MetaTagsManager({ config, update: updateConfig }) {
   const pages = useMemo(() => collectPages(config), [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
+  const emptyMeta = {
     title: "",
     description: "",
     keywords: "",
     canonical: "",
     noindex: false,
     nofollow: false,
-  });
+  };
+  const [form, setForm] = useState(emptyMeta);
 
   useEffect(() => {
     if (!pages.includes(selectedPage)) setSelectedPage(pages[0] || "/");
@@ -324,7 +325,7 @@ function MetaTagsManager({ config, update: updateConfig }) {
 
   useEffect(() => {
     const meta = config.metaTags?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...meta }));
+    setForm({ ...emptyMeta, ...meta });
   }, [selectedPage, config.metaTags]);
 
 
@@ -603,12 +604,8 @@ Sitemap: https://yourdomain.com/sitemap.xml
 function OpenGraphSettings({ config, update }) {
   const pages = useMemo(() => collectPages(config), [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    type: "website",
-    image: "",
-  });
+  const emptyOg = { title: "", description: "", type: "website", image: "" };
+  const [form, setForm] = useState(emptyOg);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -627,7 +624,7 @@ function OpenGraphSettings({ config, update }) {
 
   useEffect(() => {
     const data = config.openGraph?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...data }));
+    setForm({ ...emptyOg, ...data });
   }, [selectedPage, config.openGraph]);
 
   const handleSave = async () => {
@@ -724,13 +721,14 @@ function OpenGraphSettings({ config, update }) {
 function TwitterCardSettings({ config, update }) {
   const pages = useMemo(() => collectPages(config), [config]);
   const [selectedPage, setSelectedPage] = useState(pages[0] || "/");
-  const [form, setForm] = useState({
+  const emptyTwitter = {
     title: "",
     description: "",
     cardType: "summary",
     image: "",
-    handle: "@yourhandle"
-  });
+    handle: "@yourhandle",
+  };
+  const [form, setForm] = useState(emptyTwitter);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -749,7 +747,7 @@ function TwitterCardSettings({ config, update }) {
 
   useEffect(() => {
     const data = config.twitter?.[selectedPage] || {};
-    setForm((prev) => ({ ...prev, ...data }));
+    setForm({ ...emptyTwitter, ...data });
   }, [selectedPage, config.twitter]);
 
   const handleSave = async () => {
@@ -855,11 +853,12 @@ function TwitterCardSettings({ config, update }) {
 
 
 function AdvancedSEOSettings({ config, update }) {
-  const [globalSEO, setGlobalSEO] = useState({
+  const defaultGlobal = {
     forceCanonical: true,
     noindexSitewide: false,
     autoPingSitemap: true,
-  });
+  };
+  const [globalSEO, setGlobalSEO] = useState(defaultGlobal);
 
   const [redirects, setRedirects] = useState([
     { from: "/old-page", to: "/new-page", code: 301 },
@@ -892,7 +891,7 @@ function AdvancedSEOSettings({ config, update }) {
   };
 
   useEffect(() => {
-    if (config.globalSEO) setGlobalSEO({ ...globalSEO, ...config.globalSEO });
+    if (config.globalSEO) setGlobalSEO({ ...defaultGlobal, ...config.globalSEO });
     if (config.redirects) setRedirects(config.redirects);
     if (config.jsonSchema) setJsonSchema(config.jsonSchema);
     // eslint-disable-next-line react-hooks/exhaustive-deps
