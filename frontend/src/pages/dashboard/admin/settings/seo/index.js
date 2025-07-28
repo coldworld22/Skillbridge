@@ -65,7 +65,7 @@ export default function SEOSettingsPage() {
 
         <Tab.Panels className="bg-white p-6 rounded-md shadow">
           <Tab.Panel>
-            <SEOOverview config={config} />
+          <SEOOverview config={config} onChangeTab={setActiveTab} />
           </Tab.Panel>
           <Tab.Panel>
             <MetaTagsManager config={config} update={updateStore} />
@@ -93,19 +93,50 @@ export default function SEOSettingsPage() {
 
 // Placeholder components to be built next
 // Inside the SEOSettingsPage file, update this component
-function SEOOverview({ config }) {
-  const stats = config.stats || [
-    { label: "Indexed Pages", value: 124, icon: "🧭" },
-    { label: "Pages Missing Meta Tags", value: 16, icon: "⚠️" },
-    { label: "Sitemap Last Updated", value: "2025-05-14", icon: "📆" },
-    { label: "Robots.txt Status", value: "Active", icon: "🤖" },
-    { label: "Open Graph Ready Pages", value: 89, icon: "📸" },
-  ];
+function SEOOverview({ config, onChangeTab }) {
+  const regenerate = useSEOConfigStore((s) => s.regenerate);
+  const scan = useSEOConfigStore((s) => s.scan);
+
+  const stats = config.stats
+    ? [
+        { label: "Indexed Pages", value: config.stats.indexedPages, icon: "🧭" },
+        { label: "Pages Missing Meta Tags", value: config.stats.pagesMissingMeta, icon: "⚠️" },
+        { label: "Sitemap Last Updated", value: config.stats.sitemapUpdated || "-", icon: "📆" },
+        { label: "Robots.txt Status", value: config.stats.robotsStatus, icon: "🤖" },
+        { label: "Open Graph Ready Pages", value: config.stats.openGraphReady, icon: "📸" },
+      ]
+    : [];
 
   const actions = [
-    { label: "Regenerate Sitemap", icon: "🔁", onClick: () => alert("Sitemap regenerated!") },
-    { label: "Edit Robots.txt", icon: "✏️", onClick: () => alert("Redirecting to robots.txt...") },
-    { label: "Scan for Meta Issues", icon: "🕵️", onClick: () => alert("Scanning...") },
+    {
+      label: "Regenerate Sitemap",
+      icon: "🔁",
+      onClick: async () => {
+        try {
+          await regenerate();
+          toast.success("Sitemap regenerated");
+        } catch {
+          toast.error("Failed to regenerate");
+        }
+      },
+    },
+    {
+      label: "Edit Robots.txt",
+      icon: "✏️",
+      onClick: () => onChangeTab("robots"),
+    },
+    {
+      label: "Scan for Meta Issues",
+      icon: "🕵️",
+      onClick: async () => {
+        try {
+          const res = await scan();
+          toast.info(`${res.issues.length} issues found`);
+        } catch {
+          toast.error("Failed to scan");
+        }
+      },
+    },
   ];
 
   return (

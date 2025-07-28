@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { fetchSEOConfig } from "@/services/admin/seoConfigService";
+import {
+  fetchSEOConfig,
+  regenerateSitemap,
+  scanMetaIssues,
+} from "@/services/admin/seoConfigService";
 
 const useSEOConfigStore = create(
   persist(
@@ -20,6 +24,22 @@ const useSEOConfigStore = create(
       },
       update: (newSettings) =>
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+      regenerate: async () => {
+        const result = await regenerateSitemap();
+        if (result?.updated) {
+          set((state) => ({
+            settings: { ...state.settings, sitemapUpdated: result.updated },
+          }));
+        }
+        return result;
+      },
+      scan: async () => {
+        const result = await scanMetaIssues();
+        if (result?.stats) {
+          set((state) => ({ settings: { ...state.settings, stats: result.stats } }));
+        }
+        return result;
+      },
       clear: () => set({ settings: {}, loaded: false })
     }),
     { name: "seo-config" }
