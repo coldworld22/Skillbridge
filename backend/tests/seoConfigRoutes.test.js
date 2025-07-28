@@ -4,6 +4,8 @@ const express = require('express');
 jest.mock('../src/modules/seoConfig/seoConfig.service', () => ({
   getSettings: jest.fn(),
   updateSettings: jest.fn(),
+  generateSitemap: jest.fn(),
+  scanMetaIssues: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/user.model', () => ({
@@ -51,5 +53,29 @@ describe('PUT /api/seo-config', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(payload);
     expect(service.updateSettings).toHaveBeenCalledWith(payload);
+  });
+});
+
+describe('POST /api/seo-config/sitemap/regenerate', () => {
+  it('regenerates sitemap', async () => {
+    const result = { url: '/uploads/seo/sitemap.xml', updated: 'now' };
+    service.generateSitemap.mockResolvedValue(result);
+
+    const res = await request(app).post('/api/seo-config/sitemap/regenerate');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(result);
+    expect(service.generateSitemap).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/seo-config/meta-scan', () => {
+  it('scans meta tags', async () => {
+    const scan = { stats: { indexedPages: 1 }, issues: [], scannedAt: '2025-07-28T11:00:00Z' };
+    service.scanMetaIssues.mockResolvedValue(scan);
+
+    const res = await request(app).get('/api/seo-config/meta-scan');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(scan);
+    expect(service.scanMetaIssues).toHaveBeenCalled();
   });
 });
