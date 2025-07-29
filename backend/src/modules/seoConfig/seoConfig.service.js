@@ -22,6 +22,21 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
+
+  // Also write robots.txt if robots content is provided
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const robotsPath = path.join(__dirname, "../../../../frontend/public/robots.txt");
+    if (settings.robots) {
+      fs.writeFileSync(robotsPath, settings.robots);
+    } else if (fs.existsSync(robotsPath)) {
+      fs.unlinkSync(robotsPath);
+    }
+  } catch (err) {
+    console.error("Failed to write robots.txt", err);
+  }
+
   return settings;
 };
 
