@@ -570,3 +570,219 @@ exports.sendSupportTicketUpdateEmail = async (
   }
 };
 
+// Notify admins when a new tutorial is created
+exports.sendTutorialCreatedAdminEmail = async (
+  to,
+  instructorName,
+  tutorialTitle
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Tutorial created notice to ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New tutorial awaiting review`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Instructor <strong>${instructorName}</strong> has submitted a new tutorial titled "${tutorialTitle}".</p>
+        <p>Please review it at your earliest convenience.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Tutorial created admin notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending tutorial created admin email: ", error);
+  }
+};
+
+// Confirm tutorial creation to the instructor
+exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Tutorial creation notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Your tutorial was submitted`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your tutorial "${tutorialTitle}" was created successfully and is awaiting admin review.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Tutorial created instructor notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending tutorial created instructor email: ", error);
+  }
+};
+
+// Notify instructor when a tutorial is approved
+exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Tutorial approved notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Your tutorial was approved`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your tutorial "${tutorialTitle}" has been approved and is now published on the platform.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Tutorial approved notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending tutorial approved email: ", error);
+  }
+};
+
+// Notify instructor when a tutorial is rejected
+exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Tutorial rejection notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const reasonLine = reason ? `<p>Reason: ${reason}</p>` : "";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Your tutorial was rejected`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your tutorial "${tutorialTitle}" was rejected.${reasonLine}</p>
+        <p>You may edit it and resubmit for review.</p>
+
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Tutorial rejection notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending tutorial rejected email: ", error);
+  }
+};
+
