@@ -31,13 +31,18 @@ export default function LanguageSwitcher({ changeLang }) {
                 i18n.language === lang.code ? "bg-gray-100 font-semibold" : ""
               }`}
             >
-              {lang.icon_url && (
-                <img
-                  src={`${API_BASE_URL}${lang.icon_url}`}
-                  alt={`${lang.name} flag`}
-                  className="w-5 h-5 rounded object-cover"
-                />
-              )}
+              <img
+                src={
+                  lang.icon_url
+                    ? `${API_BASE_URL}${lang.icon_url}`
+                    : `https://flagcdn.com/24x18/${lang.code
+                        .slice(0, 2)
+                        .toLowerCase()}.png`
+                }
+                alt={`${lang.name} flag`}
+                className="w-5 h-5 rounded object-cover"
+                onError={(e) => (e.target.src = "/flags/default.png")}
+              />
               <span>{lang.name}</span>
             </button>
           </li>
