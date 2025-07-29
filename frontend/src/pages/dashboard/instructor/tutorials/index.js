@@ -83,17 +83,21 @@ export default function InstructorTutorialsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
-      </div>
+      <InstructorLayout>
+        <div className="p-6 flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+        </div>
+      </InstructorLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-red-500 bg-red-50 rounded-lg max-w-md mx-auto mt-10 text-center">
-        {error}
-      </div>
+      <InstructorLayout>
+        <div className="p-6 text-red-500 bg-red-50 rounded-lg max-w-md mx-auto mt-10 text-center">
+          {error}
+        </div>
+      </InstructorLayout>
     );
   }
 
