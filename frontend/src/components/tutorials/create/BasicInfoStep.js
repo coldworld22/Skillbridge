@@ -50,6 +50,9 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
         }
         return { ...prev, lessonCount: value, chapters };
       });
+    } else if (field === "price") {
+      const clean = value.replace(/[^0-9.]/g, "");
+      setTutorialData((prev) => ({ ...prev, price: clean }));
     } else {
       setTutorialData((prev) => ({ ...prev, [field]: value }));
     }
