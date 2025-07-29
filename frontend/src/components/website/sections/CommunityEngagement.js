@@ -1,41 +1,61 @@
 // ✅ Enhanced Community Landing Page with Full Features
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FaUserCircle, FaCommentDots, FaUsers, FaPlus, FaSearch } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaCommentDots,
+  FaUsers,
+  FaPlus,
+  FaSearch,
+} from "react-icons/fa";
 import Link from "next/link";
-import Navbar from "@/components/website/sections/Navbar";
+import { fetchDiscussions } from "@/services/communityService";
+import { getBadge } from "@/utils/community/reputation";
 
 const CommunityLandingPage = () => {
   const [discussions, setDiscussions] = useState([]);
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags] = useState(["React", "AI", "Odoo", "Next.js", "Docker"]);
+  const [tags, setTags] = useState(["React", "AI", "Odoo", "Next.js", "Docker"]);
 
   useEffect(() => {
-    // Simulate fetch
-    setDiscussions([
-      { id: 1, title: "How to build a full-stack application?", user: "John Doe", replies: 15 },
-      { id: 2, title: "Best resources for learning AI?", user: "Jane Smith", replies: 20 },
-      { id: 3, title: "How to improve UI/UX design skills?", user: "Emily Johnson", replies: 12 },
-    ]);
+    const load = async () => {
+      try {
+        const list = await fetchDiscussions();
+        setDiscussions(
+          list.slice(0, 5).map((d) => ({
+            id: d.id,
+            title: d.title,
+            user: d.user_name || "Anonymous",
+            replies: d.replies || 0,
+          }))
+        );
 
-    setContributors([
-      { name: "John Doe", contributions: 50, reputation: 800, avatar: "/avatars/john.png" },
-      { name: "Jane Smith", contributions: 45, reputation: 720, avatar: "/avatars/jane.png" },
-      { name: "Emily Johnson", contributions: 38, reputation: 650, avatar: "" },
-    ]);
+        const tagSet = new Set();
+        list.forEach((d) => {
+          if (Array.isArray(d.tags)) {
+            d.tags.forEach((t) => tagSet.add(t));
+          }
+        });
+        if (tagSet.size) {
+          setTags(Array.from(tagSet).slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to load discussions", err);
+      }
+
+      setContributors([
+        { name: "John Doe", contributions: 50, reputation: 800, avatar: "/avatars/john.png" },
+        { name: "Jane Smith", contributions: 45, reputation: 720, avatar: "/avatars/jane.png" },
+        { name: "Emily Johnson", contributions: 38, reputation: 650, avatar: "" },
+      ]);
+    };
+    load();
   }, []);
 
-  const getBadge = (count) => {
-    if (count >= 50) return "🥇";
-    if (count >= 30) return "🥈";
-    if (count >= 10) return "🥉";
-    return "";
-  };
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
-      <Navbar />
       <motion.section
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -89,7 +109,9 @@ const CommunityLandingPage = () => {
                   key={discussion.id}
                   className="p-4 bg-gray-700 rounded-lg flex justify-between items-center hover:bg-gray-600 cursor-pointer transition"
                   whileHover={{ scale: 1.03 }}
-                  onClick={() => window.location.href = `/community/questions/${discussion.id}`}
+                  onClick={() => {
+                    window.location.href = `/community/question/details?id=${discussion.id}`;
+                  }}
                 >
                   <div>
                     <h4 className="text-lg font-semibold">{discussion.title}</h4>
