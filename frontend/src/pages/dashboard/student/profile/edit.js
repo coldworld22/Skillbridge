@@ -253,7 +253,10 @@ export default function StudentProfileEdit() {
         console.error("[StudentProfileEdit] notification error", err);
       }
 
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       router.push("/dashboard/student/profile/steps/Verification");
+
+
 
 
     } catch (err) {
