@@ -13,3 +13,16 @@ exports.getDiscussion = catchAsync(async (req, res) => {
   if (!disc) throw new AppError("Discussion not found", 404);
   sendSuccess(res, disc);
 });
+
+exports.createDiscussion = catchAsync(async (req, res) => {
+  const { title, content, tags } = req.body || {};
+  if (!title || !content) throw new AppError("Missing fields", 400);
+  const disc = await service.createDiscussion({
+    user_id: req.user.id,
+    user_name: req.user.full_name,
+    title,
+    content,
+    tags,
+  });
+  sendSuccess(res, disc, "Discussion created");
+});

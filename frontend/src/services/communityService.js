@@ -9,3 +9,8 @@ export const fetchDiscussionById = async (id) => {
   const { data } = await api.get(`/community/discussions/${id}`);
   return data?.data ?? null;
 };
+
+export const createDiscussion = async (payload) => {
+  const { data } = await api.post('/community/discussions', payload);
+  return data?.data;
+};
