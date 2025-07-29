@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import QuestionCard from "@/components/community/QuestionCard";
@@ -6,42 +6,28 @@ import Filters from "@/components/community/Filters";
 import Pagination from "@/components/community/Pagination";
 import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
+import { fetchDiscussions } from "@/services/communityService";
 
-// Sample Questions Data
-const sampleQuestions = [
-  {
-    id: 1,
-    title: "How to use useEffect in React?",
-    description: "I'm struggling to understand the use cases for useEffect.",
-    tags: ["React", "Hooks"],
-    votes: 12,
-    answers: [{ text: "Use useEffect for API calls!" }],
-    views: 150,
-    user: { name: "John Doe", reputation: 320 },
-    date: "2 days ago",
-  },
-  {
-    id: 2,
-    title: "Best practices for database indexing?",
-    description: "What are the best indexing strategies for MySQL?",
-    tags: ["Database", "MySQL"],
-    votes: 8,
-    answers: [],
-    views: 90,
-    user: { name: "Emma Wilson", reputation: 210 },
-    date: "5 days ago",
-  },
-];
 
 const CommunityPage = () => {
-  const [filteredQuestions, setFilteredQuestions] = useState(sampleQuestions);
+  const [allQuestions, setAllQuestions] = useState([]);
+  const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 3;
   const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
 
+  useEffect(() => {
+    const load = async () => {
+      const list = await fetchDiscussions();
+      setAllQuestions(list);
+      setFilteredQuestions(list);
+    };
+    load();
+  }, []);
+
   // Handle Filter Change
   const handleFilterChange = (filter) => {
-    let updatedQuestions = [...sampleQuestions];
+    let updatedQuestions = [...allQuestions];
 
     if (filter.noAnswers) {
       updatedQuestions = updatedQuestions.filter((q) => q.answers.length === 0);

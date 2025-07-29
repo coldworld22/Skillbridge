@@ -88,6 +88,7 @@ app.use("/api/bookings/admin", require("./modules/bookings/bookings.routes"));
 app.use("/api/bookings/student", require("./modules/bookings/student.routes"));
 app.use("/api/bookings/instructor", require("./modules/bookings/instructor.routes"));
 app.use("/api/community/admin", require("./modules/community/admin/admin.routes"));
+app.use("/api/community", require("./modules/community/public/public.routes"));
 app.use("/api/roles", require("./modules/roles/roles.routes"));
 app.use("/api/plans", require("./modules/plans/plans.routes"));
 app.use("/api/payment-methods", require("./modules/paymentMethods/paymentMethods.public.routes"));
