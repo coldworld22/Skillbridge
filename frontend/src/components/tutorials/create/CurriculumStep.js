@@ -28,7 +28,11 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
 
   const handleChange = (index, field, value) => {
     const updated = [...tutorialData.chapters];
-    updated[index][field] = value;
+    if (field === "duration") {
+      updated[index][field] = value.replace(/[^0-9]/g, "");
+    } else {
+      updated[index][field] = value;
+    }
     setTutorialData((prev) => ({
       ...prev,
       chapters: updated,
@@ -91,11 +95,11 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
           <div>
             <label className="block mb-1 font-semibold text-gray-700">Duration (e.g. 5 min)</label>
             <input
-              type="text"
+              type="number"
               value={chapter.duration}
               onChange={(e) => handleChange(index, "duration", e.target.value)}
               className="p-2 border rounded w-full"
-              placeholder="e.g. 10 min"
+              placeholder="e.g. 10"
             />
           </div>
 

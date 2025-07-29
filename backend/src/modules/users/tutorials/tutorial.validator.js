@@ -25,7 +25,14 @@ exports.create = z.object({
     category_id: z.string(), // assuming UUID
     level: z.string(),
     status: z.enum(["draft", "published", "archived"]).optional(),
-    price: z.string().optional(),
+    price: z.preprocess(
+      (val) => (val === '' || val === undefined ? undefined : Number(val)),
+      z.number().nonnegative()
+    ).optional(),
+    duration: z.preprocess(
+      (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
+      z.number().int().nonnegative()
+    ).optional(),
     is_paid: z.preprocess(toBoolean, z.boolean().optional()),
     tags: z.preprocess(parseJson, z.array(z.string()).optional()),
     chapters: z
@@ -37,6 +44,10 @@ exports.create = z.object({
               title: z.string(),
               content: z.string().optional(),
               video_url: z.string().url().optional(),
+              duration: z.preprocess(
+                (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
+                z.number().int().nonnegative()
+              ).optional(),
               order: z.number(),
               is_preview: z.boolean().optional(),
             })

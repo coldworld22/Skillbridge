@@ -9,6 +9,12 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 const analyticsService = require("../../../services/analyticsService");
+const {
+  sendTutorialCreatedAdminEmail,
+  sendTutorialCreatedInstructorEmail,
+  sendTutorialApprovedEmail,
+  sendTutorialRejectedEmail,
+} = require("../../../utils/email");
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
@@ -87,7 +93,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     description,
     category_id,
     level,
-    duration: duration ? parseInt(duration) : null,
+    duration: duration ?? null,
     price,
     instructor_id,
     status,
@@ -154,6 +160,12 @@ exports.createTutorial = catchAsync(async (req, res) => {
       })
     )
   );
+  // Email admins about the new tutorial
+  await Promise.all(
+    admins.map((admin) =>
+      sendTutorialCreatedAdminEmail(admin.email, instructor.full_name, title)
+    )
+  );
 
   // Send direct messages to admins about the new tutorial
   if (admins.length) {
@@ -174,6 +186,11 @@ exports.createTutorial = catchAsync(async (req, res) => {
     receiver_id: instructor_id,
     message: "Your tutorial was submitted and is pending review",
   });
+  try {
+    await sendTutorialCreatedInstructorEmail(instructor.email, title);
+  } catch (err) {
+    console.error("Error sending tutorial created email:", err.message);
+  }
 
   sendSuccess(res, tutorial, "Tutorial with chapters created");
 });
@@ -199,9 +216,6 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 exports.updateTutorial = catchAsync(async (req, res) => {
   const { tags: rawTags, ...data } = req.body;
-  if (data.duration) {
-    data.duration = parseInt(data.duration);
-  }
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
     data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
@@ -302,6 +316,12 @@ exports.approveTutorial = catchAsync(async (req, res) => {
         message,
       }),
     ]);
+    try {
+      const instr = await userModel.findById(tut.instructor_id);
+      if (instr) await sendTutorialApprovedEmail(instr.email, tut.title);
+    } catch (err) {
+      console.error("Error sending tutorial approved email:", err.message);
+    }
   }
 
   sendSuccess(res, { message: "Tutorial approved" });
@@ -329,6 +349,13 @@ exports.rejectTutorial = catchAsync(async (req, res) => {
         message,
       }),
     ]);
+    try {
+      const instr = await userModel.findById(tut.instructor_id);
+      if (instr)
+        await sendTutorialRejectedEmail(instr.email, tut.title, reason);
+    } catch (err) {
+      console.error("Error sending tutorial rejected email:", err.message);
+    }
   }
 
   sendSuccess(res, { message: "Tutorial rejected" });
@@ -359,6 +386,18 @@ exports.bulkApproveTutorials = catchAsync(async (req, res) => {
             receiver_id: tut.instructor_id,
             message,
           }),
+          (async () => {
+            try {
+              const instr = await userModel.findById(tut.instructor_id);
+              if (instr)
+                await sendTutorialApprovedEmail(instr.email, tut.title);
+            } catch (err) {
+              console.error(
+                "Error sending tutorial approved email:",
+                err.message
+              );
+            }
+          })(),
         ]);
       }
       return Promise.resolve();
