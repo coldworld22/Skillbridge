@@ -747,6 +747,9 @@
     ,"ticket_deleted": "Ticket deleted"
     ,"confirm_close_ticket": "Are you sure you want to close this ticket?"
     ,"confirm_reopen_ticket": "Reopen this ticket?"
+    ,"filter_by_status": "Filter by status",
+    ,"tickets_loaded": "Tickets loaded",
+    ,"tickets_load_failed": "Failed to load tickets"
     ,"search": "Search"
     ,"apply": "Apply"
     ,"no_tickets_found": "No tickets found"

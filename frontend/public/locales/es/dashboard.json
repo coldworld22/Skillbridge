@@ -632,6 +632,9 @@
     "ticket_deleted": "Ticket eliminado",
     "confirm_close_ticket": "¿Seguro que deseas cerrar este ticket?",
     "confirm_reopen_ticket": "¿Reabrir este ticket?",
+    "filter_by_status": "Filtrar por estado",
+    "tickets_loaded": "Tickets cargados",
+    "tickets_load_failed": "Error al cargar los tickets"
     "search": "Buscar",
     "apply": "Aplicar",
     "no_tickets_found": "No se encontraron tickets",
