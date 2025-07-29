@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { FaBookOpen, FaPlayCircle, FaCheckCircle, FaStar } from "react-icons/fa";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
+import StudentTutorialCard from "@/components/tutorials/StudentTutorialCard";
 
 export default function StudentTutorialsPage() {
   const [search, setSearch] = useState("");
@@ -9,6 +9,7 @@ export default function StudentTutorialsPage() {
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState("title");
 
   useEffect(() => {
     const load = async () => {
@@ -35,14 +36,46 @@ export default function StudentTutorialsPage() {
     load();
   }, []);
 
-  const filtered = tutorials.filter(tut => {
-    const matchesSearch = tut.title.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || (filter === "completed" && tut.isCompleted) || (filter === "in-progress" && !tut.isCompleted);
+  const filtered = tutorials.filter((tut) => {
+    const matchesSearch = tut.title
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "completed" && tut.isCompleted) ||
+      (filter === "in-progress" && !tut.isCompleted);
     return matchesSearch && matchesFilter;
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "rating") {
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    }
+    if (sortBy === "progress") {
+      const aProg = a.totalLessons
+        ? a.completedLessons / a.totalLessons
+        : 0;
+      const bProg = b.totalLessons
+        ? b.completedLessons / b.totalLessons
+        : 0;
+      return bProg - aProg;
+    }
+    return a.title.localeCompare(b.title);
+  });
+
   if (loading) {
-    return <div className="p-6">Loading tutorials...</div>;
+    return (
+      <StudentLayout>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-48 bg-gray-200 rounded-md animate-pulse"
+            />
+          ))}
+        </div>
+      </StudentLayout>
+    );
   }
 
   if (error) {
@@ -55,7 +88,7 @@ export default function StudentTutorialsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">📚 My Tutorials</h1>
-            <span className="text-sm text-gray-500">({filtered.length} found)</span>
+            <span className="text-sm text-gray-500">({sorted.length} found)</span>
           </div>
           <div className="flex gap-2 items-center">
             <input
@@ -74,60 +107,25 @@ export default function StudentTutorialsPage() {
               <option value="completed">Completed</option>
               <option value="in-progress">In Progress</option>
             </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 px-2 py-2 rounded-md text-sm"
+            >
+              <option value="title">Title</option>
+              <option value="rating">Rating</option>
+              <option value="progress">Progress</option>
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((tut) => {
-            const progressPercent = tut.totalLessons
-              ? (tut.completedLessons / tut.totalLessons) * 100
-              : 0;
-            return (
-              <div key={tut.id} className="bg-white shadow rounded-lg p-4 space-y-2 border border-gray-200">
-                <img
-                  src={tut.thumbnail || "/default-thumbnail.jpg"}
-                  alt={tut.title}
-                  className="w-full h-40 object-cover rounded-md"
-                />
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                    {tut.category}
-                  </span>
-                  <FaBookOpen className="text-yellow-500" /> {tut.title}
-                </h2>
-                <p className="text-xs text-gray-500">Instructor: {tut.instructor}</p>
-                <div className="w-full bg-gray-100 h-2 rounded-full relative">
-                  <div className="absolute right-1 top-[-18px] text-xs text-gray-500">
-                    {Math.round(progressPercent)}%
-                  </div>
-                  <div
-                    className="h-2 bg-yellow-400 rounded-full"
-                    style={{ width: `${progressPercent}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>{tut.completedLessons}/{tut.totalLessons} lessons</span>
-                  {tut.isCompleted ? (
-                    <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Completed</span>
-                  ) : (
-                    <span className="text-blue-600 flex items-center gap-1"><FaPlayCircle /> In Progress</span>
-                  )}
-                </div>
-                <div className="flex items-center text-xs text-gray-500 gap-1">
-                  <FaStar className="text-yellow-400" /> {tut.rating?.toFixed?.(1) ?? tut.rating}
-                </div>
-                <a
-                  href={`/tutorials/${tut.id}`}
-                  className="inline-flex items-center gap-2 text-sm mt-2 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition"
-                >
-                  {tut.isCompleted ? "Review" : "Continue"}
-                </a>
-              </div>
-            );
-          })}
+          {sorted.map((tut) => (
+            <StudentTutorialCard key={tut.id} tutorial={tut} />
+          ))}
         </div>
 
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="text-center text-gray-500">
             <p>No tutorials match your criteria.</p>
             <a href="/dashboard/student/tutorials" className="text-blue-600 hover:underline text-sm mt-2 inline-block">Browse all tutorials</a>
