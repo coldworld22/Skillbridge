@@ -786,3 +786,56 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
   }
 };
 
+// Notify users when a new community question is posted
+exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] New discussion notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New question posted on ${fromName}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>${askerName} just asked a new question:</p>
+        <p><strong>${questionTitle}</strong></p>
+        <p>Visit the community forum to view and reply.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`New discussion notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending new discussion email: ", error);
+  }
+};
+
