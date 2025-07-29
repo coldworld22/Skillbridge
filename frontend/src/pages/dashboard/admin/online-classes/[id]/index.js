@@ -245,7 +245,7 @@ AdminClassDetailPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
