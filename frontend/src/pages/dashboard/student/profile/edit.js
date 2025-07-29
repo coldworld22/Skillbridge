@@ -240,9 +240,8 @@ export default function StudentProfileEdit() {
       });
 
       toast.success("Profile updated successfully!");
-      setTimeout(() => {
-        router.push("/dashboard/student/profile/steps/Verification");
-      }, 1500);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.push("/dashboard/student/profile/steps/Verification");
 
       try {
         const message = "Your student profile was updated.";
