@@ -350,15 +350,18 @@ const Navbar = () => {
           onClick={() => setLanguageOpen(!languageOpen)}
           className="w-8 h-8 rounded-full overflow-hidden border border-gray-300 flex items-center justify-center"
         >
-          {currentLang?.icon_url ? (
-            <img
-              src={`${API_BASE_URL}${currentLang.icon_url}`}
-              alt={currentLang.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <FaLanguage className="text-xl" />
-          )}
+          <img
+            src={
+              currentLang?.icon_url
+                ? `${API_BASE_URL}${currentLang.icon_url}`
+                : `https://flagcdn.com/24x18/${currentLang?.code
+                    ?.slice(0, 2)
+                    .toLowerCase()}.png`
+            }
+            alt={currentLang ? currentLang.name : 'language'}
+            className="w-full h-full object-cover"
+            onError={(e) => (e.target.src = "/flags/default.png")}
+          />
         </motion.button>
 
         {currentCurrency && (
