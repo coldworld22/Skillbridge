@@ -1,5 +1,6 @@
 // ✅ AdminClassesTable.js with Full Routing, Labeled Buttons, and Tooltips
 import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import {
@@ -41,6 +42,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const user = useAuthStore((state) => state.user);
+  const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
 
@@ -303,7 +305,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                 <td className="px-6 py-4">{cls.start_date}</td>
                 <td className="px-6 py-4">{cls.end_date || '-'}</td>
                 <td className="px-6 py-4">{cls.category || '-'}</td>
-                <td className="px-6 py-4">${cls.price ?? '-'}</td>
+                <td className="px-6 py-4">
+                  {cls.price > 0 ? `$${cls.price}` : t('free_label')}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${{
                     Upcoming: 'bg-green-100 text-green-800',

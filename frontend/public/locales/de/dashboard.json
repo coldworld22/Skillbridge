@@ -58,6 +58,7 @@
     "max_students_label": "Maximale Teilnehmer",
     "lesson_count_label": "Anzahl der Lektionen *",
     "free_class": "Kostenloser Kurs",
+    "free_label": "Kostenlos",
     "allow_installments": "Ratenzahlung erlauben",
     "publish_immediately": "Sofort veröffentlichen",
     "description_label": "Beschreibung",
@@ -343,6 +344,15 @@
     "revoked": "Widerrufen",
     "refresh": "Aktualisieren",
     "no_certificates": "Keine Zertifikate gefunden."
+  },
+  "adminClassDetailPage": {
+    "title": "Kursdetails",
+    "back_to_all_classes": "Zurück zu allen Kursen",
+    "class_demo_video": "Kurs-Demovideo",
+    "loading": "Lade Kursdetails...",
+    "views_label": "Aufrufe",
+    "view_students": "Teilnehmer anzeigen",
+    "view_analytics": "Analysen anzeigen"
   },
   "popupAnnouncementsPage": {
     "title": "Popup Announcements",

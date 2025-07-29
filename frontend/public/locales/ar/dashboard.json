@@ -80,6 +80,7 @@
   "rejected": "مرفوض",
   "lesson_count_label": "عدد الدروس *",
   "free_class": "دورة مجانية",
+  "free_label": "مجاناً",
   "allow_installments": "السماح بالتقسيط",
   "publish_immediately": "النشر فوراً",
   "description_label": "الوصف",
@@ -411,6 +412,15 @@
     "revoked": "ألغى",
     "refresh": "ينعش",
     "no_certificates": "لم يتم العثور على شهادات."
+  },
+  "adminClassDetailPage": {
+    "title": "تفاصيل الدورة",
+    "back_to_all_classes": "العودة لجميع الدورات",
+    "class_demo_video": "فيديو توضيحي للدورة",
+    "loading": "جاري تحميل تفاصيل الدورة...",
+    "views_label": "المشاهدات",
+    "view_students": "عرض الطلاب",
+    "view_analytics": "عرض التحليلات"
   },
   "popupAnnouncementsPage": {
     "title": "Popup Announcements",
