@@ -688,6 +688,9 @@
     "ticket_deleted": "Ticket supprimé",
     "confirm_close_ticket": "Voulez-vous vraiment fermer ce ticket ?",
     "confirm_reopen_ticket": "Rouvrir ce ticket ?",
+    "filter_by_status": "Filtrer par statut",
+    "tickets_loaded": "Tickets chargés",
+    "tickets_load_failed": "Échec du chargement des tickets"
     "search": "Rechercher",
     "apply": "Appliquer",
     "no_tickets_found": "Aucun ticket trouvé",
