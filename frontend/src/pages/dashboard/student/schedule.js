@@ -1,27 +1,33 @@
 import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import CalendarView from "@/components/shared/CalendarView";
-
-const currentStudentId = 1;
-const mockBookings = [/* same data */];
+import { fetchStudentBookings } from "@/services/student/bookingService";
 
 export default function StudentSchedule() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    const myLessons = mockBookings
-      .filter((b) => b.status === "approved" && b.student.id === currentStudentId)
-      .map((b) => ({
-        id: b.id,
-        title: `${b.subject} with ${b.instructor.name}`,
-        start: `${b.date}T${b.time}`,
-        extendedProps: {
-          subject: b.subject,
-          instructor: b.instructor.name
-        }
-      }));
+    const load = async () => {
+      try {
+        const bookings = await fetchStudentBookings();
+        const approved = bookings.filter((b) => b.status === "approved");
+        const mapped = approved.map((b) => ({
+          id: b.id,
+          title: `${b.subject || "Lesson"} with ${b.instructor_name}`,
+          start: b.start_time,
+          end: b.end_time,
+          extendedProps: {
+            subject: b.subject || "Lesson",
+            instructor: b.instructor_name,
+          },
+        }));
+        setEvents(mapped);
+      } catch (err) {
+        console.error("Failed to load bookings", err);
+      }
+    };
 
-    setEvents(myLessons);
+    load();
   }, []);
 
   return (

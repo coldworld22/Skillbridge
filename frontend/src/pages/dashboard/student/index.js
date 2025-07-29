@@ -1,8 +1,25 @@
 import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { FaBook, FaClipboardList, FaCertificate, FaCalendarAlt, FaBullhorn, FaBell } from "react-icons/fa";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  FaBook,
+  FaClipboardList,
+  FaCertificate,
+  FaCalendarAlt,
+  FaBullhorn,
+  FaBell,
+} from "react-icons/fa";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { fetchMyEnrolledClasses } from "@/services/classService";
+import { getStudentProfile } from "@/services/student/studentService";
 
 function StudentDashboardHome() {
   const [hasMounted, setHasMounted] = useState(false);
@@ -33,6 +50,29 @@ function StudentDashboardHome() {
 
   useEffect(() => {
     setHasMounted(true);
+    const load = async () => {
+      try {
+        const profile = await getStudentProfile();
+        setStudentName(profile.full_name);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+
+      try {
+        const list = await fetchMyEnrolledClasses();
+        const formatted = list.map((cls) => ({
+          id: cls.id,
+          title: cls.title,
+          progress: cls.status === "completed" ? 100 : 0,
+          nextSession: cls.start_date,
+        }));
+        setClasses(formatted);
+      } catch (err) {
+        console.error("Failed to load classes", err);
+      }
+    };
+
+    load();
   }, []);
 
   if (!hasMounted) return null;
