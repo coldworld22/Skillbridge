@@ -34,16 +34,19 @@ const enrolledCourses = allCourses.slice(0, 3); // Mocked enrolled courses
 const recommendedCourses = getRecommendedCourses(enrolledCourses, allCourses);
 
 const DashboardPage = () => {
-  const { t } = useTranslation('dashboard');
+  const { t, i18n } = useTranslation('dashboard');
   const { user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     const role = user?.role?.toLowerCase();
     if (!role) return;
-    if (role === "admin" || role === "superadmin") router.replace("/dashboard/admin");
-    else router.replace(`/dashboard/${role}`);
-  }, [user, router]);
+    const target =
+      role === "admin" || role === "superadmin"
+        ? "/dashboard/admin"
+        : `/dashboard/${role}`;
+    router.replace(target, undefined, { locale: i18n.language });
+  }, [user, router, i18n.language]);
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <Navbar />
