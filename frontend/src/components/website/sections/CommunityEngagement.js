@@ -43,13 +43,13 @@ const CommunityLandingPage = () => {
       } catch (err) {
         console.error("Failed to load discussions", err);
       }
-
       try {
         const contribs = await fetchTopContributors();
         setContributors(contribs);
       } catch (err) {
         console.error("Failed to load contributors", err);
       }
+
     };
     load();
   }, []);
