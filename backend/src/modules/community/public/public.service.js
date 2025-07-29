@@ -1,27 +1,34 @@
-let discussions = [
-  {
-    id: '1',
-    title: 'How to use useEffect in React?',
-    content: "I'm struggling to understand the use cases for useEffect.",
-    tags: ['React', 'Hooks'],
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Best practices for database indexing?',
-    content: 'What are the best indexing strategies for MySQL?',
-    tags: ['Database', 'MySQL'],
-    created_at: new Date().toISOString(),
-  },
-];
+const db = require("../../../config/database");
 
-exports.listDiscussions = async () => discussions;
+exports.listDiscussions = async () => {
+  return db("community_discussions as d")
+    .leftJoin("users as u", "d.user_id", "u.id")
+    .select(
+      "d.id",
+      "d.title",
+      "d.content",
+      "d.created_at",
+      "d.resolved",
+      "d.locked",
+      "u.full_name as user_name"
+    )
+    .orderBy("d.created_at", "desc");
+};
 
-exports.getDiscussion = async (id) => discussions.find((d) => d.id === id);
-
-// Utility for tests to reset data
-exports.__setDiscussions = (data) => {
-  discussions = data;
+exports.getDiscussion = async (id) => {
+  return db("community_discussions as d")
+    .leftJoin("users as u", "d.user_id", "u.id")
+    .select(
+      "d.id",
+      "d.title",
+      "d.content",
+      "d.created_at",
+      "d.resolved",
+      "d.locked",
+      "u.full_name as user_name"
+    )
+    .where("d.id", id)
+    .first();
 };
 
 const { v4: uuidv4 } = require('uuid');
@@ -68,16 +75,32 @@ async function notifyAllUsers(discussion) {
 }
 
 exports.createDiscussion = async (data) => {
-  const disc = {
-    id: uuidv4(),
-    user_id: data.user_id,
-    user_name: data.user_name,
-    title: data.title,
-    content: data.content,
-    tags: data.tags || [],
-    created_at: new Date().toISOString(),
-  };
-  discussions.push(disc);
+  const [row] = await db("community_discussions")
+    .insert({
+      id: uuidv4(),
+      user_id: data.user_id,
+      title: data.title,
+      content: data.content,
+      tags: JSON.stringify(data.tags || []),
+      created_at: db.fn.now(),
+      updated_at: db.fn.now(),
+    })
+    .returning("*");
+
+  const disc = { ...row, user_name: data.user_name };
   await notifyAllUsers(disc);
   return disc;
+};
+
+exports.getTopContributors = async (limit = 5) => {
+  return db("community_contributors as c")
+    .join("users as u", "c.user_id", "u.id")
+    .select(
+      "u.full_name as name",
+      "u.avatar_url as avatar",
+      "c.discussions_count as contributions",
+      "c.score as reputation"
+    )
+    .orderBy("c.score", "desc")
+    .limit(limit);
 };

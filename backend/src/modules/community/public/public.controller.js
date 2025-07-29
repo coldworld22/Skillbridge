@@ -26,3 +26,9 @@ exports.createDiscussion = catchAsync(async (req, res) => {
   });
   sendSuccess(res, disc, "Discussion created");
 });
+
+exports.listContributors = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit, 10) || 5;
+  const contributors = await service.getTopContributors(limit);
+  sendSuccess(res, contributors);
+});
