@@ -9,14 +9,14 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import Link from "next/link";
-import { fetchDiscussions } from "@/services/communityService";
+import { fetchDiscussions, fetchTopContributors } from "@/services/communityService";
 import { getBadge } from "@/utils/community/reputation";
 
 const CommunityLandingPage = () => {
   const [discussions, setDiscussions] = useState([]);
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags, setTags] = useState(["React", "AI", "Odoo", "Next.js", "Docker"]);
+  const [tags, setTags] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -43,12 +43,13 @@ const CommunityLandingPage = () => {
       } catch (err) {
         console.error("Failed to load discussions", err);
       }
+      try {
+        const contribs = await fetchTopContributors();
+        setContributors(contribs);
+      } catch (err) {
+        console.error("Failed to load contributors", err);
+      }
 
-      setContributors([
-        { name: "John Doe", contributions: 50, reputation: 800, avatar: "/avatars/john.png" },
-        { name: "Jane Smith", contributions: 45, reputation: 720, avatar: "/avatars/jane.png" },
-        { name: "Emily Johnson", contributions: 38, reputation: 650, avatar: "" },
-      ]);
     };
     load();
   }, []);

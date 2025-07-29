@@ -14,3 +14,8 @@ export const createDiscussion = async (payload) => {
   const { data } = await api.post('/community/discussions', payload);
   return data?.data;
 };
+
+export const fetchTopContributors = async (limit = 5) => {
+  const { data } = await api.get(`/community/contributors?limit=${limit}`);
+  return data?.data ?? [];
+};
