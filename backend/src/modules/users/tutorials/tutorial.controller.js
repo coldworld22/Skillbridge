@@ -87,7 +87,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     description,
     category_id,
     level,
-    duration: duration ? parseInt(duration) : null,
+    duration: duration ?? null,
     price,
     instructor_id,
     status,
@@ -199,9 +199,6 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 exports.updateTutorial = catchAsync(async (req, res) => {
   const { tags: rawTags, ...data } = req.body;
-  if (data.duration) {
-    data.duration = parseInt(data.duration);
-  }
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
     data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
