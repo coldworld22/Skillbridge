@@ -6,6 +6,10 @@ jest.mock('../src/modules/community/public/public.service', () => ({
   getDiscussion: jest.fn(),
 }));
 
+jest.mock('../src/middleware/auth/authMiddleware', () => ({
+  verifyToken: (_req, _res, next) => next(),
+}));
+
 const service = require('../src/modules/community/public/public.service');
 const routes = require('../src/modules/community/public/public.routes');
 

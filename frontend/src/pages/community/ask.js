@@ -5,6 +5,9 @@ import FileUploader from "@/components/FileUploader";
 import RichTextEditor from "@/components/RichTextEditor";
 import { FaPaperPlane, FaEdit, FaCheckCircle } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
+import { toast } from "react-toastify";
+import { createDiscussion } from "@/services/communityService";
+import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 // ✅ AI API URL - Update with your actual backend API endpoint
 const AI_API_URL = "/api/ai-assistance";
@@ -29,6 +32,8 @@ const AskQuestionPage = () => {
   const [relatedQuestions, setRelatedQuestions] = useState([]);
   const [editableResponse, setEditableResponse] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [aiOptions, setAiOptions] = useState([]);
+  const [selectedAI, setSelectedAI] = useState("");
 
   // ✅ Fetch Related Questions Based on Title Input
   useEffect(() => {
@@ -45,6 +50,25 @@ const AskQuestionPage = () => {
     setTitle(localStorage.getItem("draftTitle") || "");
     setDescription(localStorage.getItem("draftDescription") || "");
     setTags(JSON.parse(localStorage.getItem("draftTags")) || []);
+  }, []);
+
+  useEffect(() => {
+    const loadAI = async () => {
+      try {
+        const cfg = await fetchThirdPartyConfig();
+        const opts = [];
+        if (cfg.chatgpt?.apiKey) opts.push('chatgpt');
+        if (cfg.deepseek?.apiKey) opts.push('deepseek');
+        if (cfg.claude?.apiKey) opts.push('claude');
+        if (cfg.gemini?.apiKey) opts.push('gemini');
+        if (cfg.huggingface?.apiKey) opts.push('huggingface');
+        setAiOptions(opts);
+        if (opts.length === 0) toast.info('No AI integrations available');
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadAI();
   }, []);
 
   // ✅ Auto-Save Draft Every 2 Seconds
@@ -65,6 +89,10 @@ const AskQuestionPage = () => {
   // ✅ Fetch AI Response for Given Question
   const fetchAIResponse = async () => {
     if (!title.trim()) return;
+    if (!selectedAI) {
+      toast.info('Select AI provider');
+      return;
+    }
 
     setIsProcessingAI(true);
     setAIResponse("");
@@ -74,7 +102,7 @@ const AskQuestionPage = () => {
       const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: title }),
+        body: JSON.stringify({ question: title, provider: selectedAI }),
       });
 
       const data = await response.json();
@@ -91,9 +119,23 @@ const AskQuestionPage = () => {
   };
 
   // ✅ Accept AI Answer & Convert to Community Question
-  const handleAcceptAIResponse = () => {
-    setDescription(editableResponse);
-    setActiveTab("community");
+const handleAcceptAIResponse = () => {
+  setDescription(editableResponse);
+  setActiveTab("community");
+};
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createDiscussion({ title, content: description, tags });
+      toast.success("Question posted");
+      setTitle("");
+      setDescription("");
+      setTags([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to post question");
+    }
   };
 
   return (
@@ -115,7 +157,7 @@ const AskQuestionPage = () => {
 
         {/* ✅ Community Tab */}
         {activeTab === "community" && (
-          <form className="bg-gray-800 p-6 rounded-md mt-6">
+          <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded-md mt-6">
             <label className="block font-bold">Title</label>
             <input className="w-full p-3 mt-2 bg-gray-700 rounded-md text-white" placeholder="Enter question title" value={title} onChange={(e) => setTitle(e.target.value)} />
 
@@ -153,6 +195,24 @@ const AskQuestionPage = () => {
           <div className="bg-gray-800 p-6 rounded-md mt-6">
             <h2 className="text-2xl font-bold text-yellow-500">💡 AI Assistance</h2>
 
+            {aiOptions.length > 0 && (
+              <select
+                value={selectedAI}
+                onChange={(e) => setSelectedAI(e.target.value)}
+                className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white"
+              >
+                <option value="">Select AI Provider</option>
+                {aiOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            )}
+            {aiOptions.length === 0 && (
+              <p className="text-red-400 mt-3">No AI integrations available.</p>
+            )}
+
             {/* ✅ AI Question Input */}
             <input className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white" placeholder="Ask AI a question..." value={title} onChange={(e) => setTitle(e.target.value)} />
 
@@ -188,9 +248,23 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export async function getStaticProps({ locale }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
-    },
-  };
+  try {
+    return {
+      props: {
+        ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      },
+    };
+  } catch (err) {
+    console.error('i18n load failed:', err);
+    const fallbackLocale = 'en';
+    return {
+      props: {
+        ...(await serverSideTranslations(
+          fallbackLocale,
+          ['common'],
+          nextI18NextConfig
+        )),
+      },
+    };
+  }
 }
