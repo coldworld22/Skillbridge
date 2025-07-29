@@ -8,7 +8,7 @@ import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../../../next-i18next.config.js';
+import nextI18NextConfig from '../../../../../../next-i18next.config.js';
 
 export default function AdminClassDetailPage() {
   const { id } = useRouter().query;
@@ -245,7 +245,7 @@ AdminClassDetailPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
