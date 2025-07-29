@@ -81,6 +81,7 @@
   "rejected": "Rejected",
   "lesson_count_label": "Number of Lessons *",
   "free_class": "Free Class",
+  "free_label": "Free",
   "allow_installments": "Allow Installments",
   "publish_immediately": "Publish Immediately",
   "description_label": "Description",
@@ -412,6 +413,15 @@
     "revoked": "Revoked",
     "refresh": "Refresh",
     "no_certificates": "No certificates found."
+  },
+  "adminClassDetailPage": {
+    "title": "Class Details",
+    "back_to_all_classes": "Back to All Classes",
+    "class_demo_video": "Class Demo Video",
+    "loading": "Loading class details...",
+    "views_label": "Views",
+    "view_students": "View Students",
+    "view_analytics": "View Analytics"
   },
   "popupAnnouncementsPage": {
     "title": "Popup Announcements",

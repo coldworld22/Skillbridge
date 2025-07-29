@@ -6,11 +6,15 @@ import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 export default function AdminClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { t, i18n } = useTranslation('dashboard');
 
   useEffect(() => {
     if (!id) return;
@@ -29,10 +33,10 @@ export default function AdminClassDetailPage() {
   }, [id]);
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 space-y-8" dir={i18n.dir()}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" dir={i18n.dir()}>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Class Details</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('adminClassDetailPage.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">ID: {id}</p>
         </div>
         <Link
@@ -42,7 +46,7 @@ export default function AdminClassDetailPage() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
-          Back to All Classes
+          {t('adminClassDetailPage.back_to_all_classes')}
         </Link>
       </div>
 
@@ -51,7 +55,7 @@ export default function AdminClassDetailPage() {
           <div className="animate-pulse flex justify-center">
             <div className="h-8 w-8 bg-blue-200 rounded-full"></div>
           </div>
-          <p className="mt-3 text-gray-600">Loading class details...</p>
+          <p className="mt-3 text-gray-600">{t('adminClassDetailPage.loading')}</p>
         </div>
       ) : (
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
@@ -73,7 +77,7 @@ export default function AdminClassDetailPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                   </svg>
-                  <h3 className="text-sm font-medium text-gray-700">Class Demo Video</h3>
+          <h3 className="text-sm font-medium text-gray-700">{t('adminClassDetailPage.class_demo_video')}</h3>
                 </div>
                 <CustomVideoPlayer
                   videos={[{ src: safeEncodeURI(details.demo_video_url) }]}
@@ -96,7 +100,7 @@ export default function AdminClassDetailPage() {
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-gray-800">{details?.title}</h2>
               <p className="text-gray-600 mt-1">
-                <span className="font-medium">Instructor:</span> {details?.instructor}
+                <span className="font-medium">{t('instructor')}:</span> {details?.instructor}
               </p>
             </div>
           </div>
@@ -111,7 +115,7 @@ export default function AdminClassDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Start Date</p>
+                  <p className="text-sm font-medium text-gray-500">{t('start_date_label')}</p>
                   <p className="text-gray-800">{details?.start_date}</p>
                 </div>
               </div>
@@ -123,7 +127,7 @@ export default function AdminClassDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">End Date</p>
+                  <p className="text-sm font-medium text-gray-500">{t('end_date_label')}</p>
                   <p className="text-gray-800">{details?.end_date || '-'}</p>
                 </div>
               </div>
@@ -135,7 +139,7 @@ export default function AdminClassDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Category</p>
+                  <p className="text-sm font-medium text-gray-500">{t('category_label')}</p>
                   <p className="text-gray-800">{details?.category || '-'}</p>
                 </div>
               </div>
@@ -149,7 +153,7 @@ export default function AdminClassDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <p className="text-sm font-medium text-gray-500">{t('status_label')}</p>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     details?.status === 'active' 
                       ? 'bg-green-100 text-green-800' 
@@ -162,7 +166,7 @@ export default function AdminClassDetailPage() {
                 </div>
               </div>
               
-              {details?.price && (
+              {details?.price !== undefined && (
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 flex-shrink-0 text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -171,8 +175,10 @@ export default function AdminClassDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Price</p>
-                    <p className="text-gray-800">${details.price}</p>
+                    <p className="text-sm font-medium text-gray-500">{t('price_label')}</p>
+                    <p className="text-gray-800">
+                      {details.price > 0 ? `$${details.price}` : t('free_label')}
+                    </p>
                   </div>
                 </div>
               )}
@@ -185,7 +191,7 @@ export default function AdminClassDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Views</p>
+                  <p className="text-sm font-medium text-gray-500">{t('adminClassDetailPage.views_label')}</p>
                   <p className="text-gray-800">{details?.views ?? 0}</p>
                 </div>
               </div>
@@ -194,7 +200,7 @@ export default function AdminClassDetailPage() {
 
           {/* Description */}
           <div className="pt-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">Description</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">{t('description_label')}</h3>
             <div className="prose max-w-none text-gray-600" dangerouslySetInnerHTML={{__html: details?.description}} />
           </div>
 
@@ -207,7 +213,7 @@ export default function AdminClassDetailPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
-              Edit Class
+              {t('edit_class')}
             </Link>
             <Link
               href={`/dashboard/admin/online-classes/${id}/students`}
@@ -216,7 +222,7 @@ export default function AdminClassDetailPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.025-3.5 4 4 0 011.025-3.5 4 4 0 011.766 3.001 4 4 0 013.234 3.001A6.969 6.969 0 0016 16c0 .34-.024.673-.07 1H12.93z" />
               </svg>
-              View Students
+              {t('adminClassDetailPage.view_students')}
             </Link>
             <Link
               href={`/dashboard/admin/online-classes/${id}/analytics`}
@@ -225,7 +231,7 @@ export default function AdminClassDetailPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
               </svg>
-              View Analytics
+              {t('adminClassDetailPage.view_analytics')}
             </Link>
           </div>
         </div>
@@ -238,3 +244,11 @@ export default function AdminClassDetailPage() {
 AdminClassDetailPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
+}

@@ -58,6 +58,7 @@
   "max_students_label": "Máximo de estudiantes",
   "lesson_count_label": "Número de lecciones *",
   "free_class": "Clase gratuita",
+  "free_label": "Gratis",
   "allow_installments": "Permitir pagos a plazos",
   "publish_immediately": "Publicar inmediatamente",
   "description_label": "Descripción",
@@ -343,6 +344,15 @@
     "revoked": "Revocado",
     "refresh": "Refrescar",
     "no_certificates": "No se encontraron certificados."
+  },
+  "adminClassDetailPage": {
+    "title": "Detalles de la clase",
+    "back_to_all_classes": "Volver a todas las clases",
+    "class_demo_video": "Video de demostración de la clase",
+    "loading": "Cargando detalles de la clase...",
+    "views_label": "Vistas",
+    "view_students": "Ver estudiantes",
+    "view_analytics": "Ver analíticas"
   },
   "popupAnnouncementsPage": {
     "title": "Popup Announcements",
