@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { FaReply, FaUserCircle } from "react-icons/fa";
 import { fetchDiscussionById, fetchReplies, createReply } from "@/services/communityService";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function QuestionDetailPage() {
   const router = useRouter();
@@ -45,7 +45,8 @@ export default function QuestionDetailPage() {
     try {
       const newReply = await createReply(id, fd);
       setReplies((prev) => [...prev, newReply]);
-      setReplyText("");
+      setReplyText("")
+      toast.success("Reply posted");
     } catch (err) {
       console.error(err);
       toast.error("Failed to post reply");
@@ -58,6 +59,7 @@ export default function QuestionDetailPage() {
 
   return (
     <StudentLayout title={question.title}>
+      <Toaster position="top-center" />
       <div className="p-6 max-w-4xl mx-auto space-y-8">
         {/* Question */}
         <div className="bg-white border border-gray-200 p-6 rounded-lg shadow">
