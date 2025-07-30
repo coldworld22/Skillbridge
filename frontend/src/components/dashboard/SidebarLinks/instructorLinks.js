@@ -12,6 +12,7 @@ import {
   Brain,
   Megaphone,
   ClipboardList,
+  BadgePercent,
   MailOpen,
   MessageCircle,
   CalendarRange,
@@ -77,6 +78,7 @@ export const instructorNavLinks = [
       { label: 'Earnings', href: '/dashboard/instructor/payments', icon: CreditCard },
       { label: 'Ads Manager', href: '/dashboard/instructor/ads', icon: Megaphone },
       { label: 'Offers', href: '/dashboard/instructor/offers', icon: ClipboardList },
+      { label: 'Coupons', href: '/dashboard/instructor/coupons', icon: BadgePercent },
     ]
   },
   {

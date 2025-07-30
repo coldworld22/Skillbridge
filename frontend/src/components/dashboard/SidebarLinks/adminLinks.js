@@ -5,7 +5,8 @@ import {
   Key, MessageCircleQuestion, BellRing, FileSignature, LayoutTemplate, Contact,
   SearchCheck, ClipboardList, FolderKanban, DollarSign, Home, MessageCircle, Network, BookMarked,            // For Blogs
   HelpCircle,            // For FAQs
-  LifeBuoy
+  LifeBuoy,
+  BadgePercent
 } from 'lucide-react';
 
 export const adminNavLinks = [
@@ -45,6 +46,7 @@ export const adminNavLinks = [
       { label: 'Payment Config', href: '/dashboard/admin/payments', icon: CreditCard },
       { label: 'Ads Manager', href: '/dashboard/admin/ads', icon: Megaphone },
       { label: 'Offers', href: '/dashboard/admin/offers', icon: ClipboardList },
+      { label: 'Coupons', href: '/dashboard/admin/coupons', icon: BadgePercent },
       { label: 'Support', href: '/dashboard/admin/support', icon: LifeBuoy },
     ]
   },
