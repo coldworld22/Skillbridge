@@ -105,6 +105,7 @@ app.use("/api/adsense", require("./modules/adsense/adsense.routes"));
 app.use("/api/ai-assistance", require("./modules/ai/ai.routes"));
 app.use("/api/email-config", require("./modules/emailConfig/emailConfig.routes"));
 app.use("/api/contact-config", require("./modules/contactConfig/contactConfig.routes"));
+app.use("/api/contact", require("./modules/contact/contact.routes"));
 app.use("/api/seo-config", require("./modules/seoConfig/seoConfig.routes"));
 app.use("/api/popup-announcements", require("./modules/popupAnnouncements/popupAnnouncements.routes"));
 app.use("/api/policies", require("./modules/policies/policies.routes"));
