@@ -18,3 +18,16 @@ SkillBridge lets administrators manage API keys and settings for various third-p
 - When no provider has an API key configured the page shows "No AI integrations available".
 
 After storing keys on the admin page, users can select a provider from a dropdown on the AI Assistance tab and submit questions powered by the chosen model.
+
+### ChatGPT Configuration
+
+1. Sign in to your OpenAI account and create an API key.
+2. In the admin dashboard navigate to **Settings → Third Party** and open the
+   **ChatGPT** modal.
+3. Paste the key into the **API Key** field. You can configure multiple models
+   by listing their names and default temperatures.
+4. Click **Add model** in the modal to create additional model rows (e.g.
+   `gpt-4`, `gpt-3.5-turbo`). Each question on the Ask page can then choose one
+   of the configured models.
+5. Click **Save** to persist the settings. The backend will use the selected
+   model when calling the OpenAI Chat Completion API.

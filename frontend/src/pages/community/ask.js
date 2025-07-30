@@ -36,6 +36,8 @@ const AskQuestionPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [aiOptions, setAiOptions] = useState([]);
   const [selectedAI, setSelectedAI] = useState("");
+  const [chatGPTModels, setChatGPTModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
 
   // ✅ Fetch Related Questions Based on Title Input
   useEffect(() => {
@@ -59,7 +61,16 @@ const AskQuestionPage = () => {
       try {
         const cfg = await fetchThirdPartyConfig();
         const opts = [];
-        if (cfg.chatgpt?.apiKey) opts.push('chatgpt');
+        if (cfg.chatgpt?.apiKey) {
+          opts.push('chatgpt');
+          if (Array.isArray(cfg.chatgpt.models)) {
+            setChatGPTModels(cfg.chatgpt.models);
+          } else if (cfg.chatgpt.model) {
+            setChatGPTModels([{ name: cfg.chatgpt.model }]);
+          } else {
+            toast.warning('ChatGPT models not configured');
+          }
+        }
         if (cfg.deepseek?.apiKey) opts.push('deepseek');
         if (cfg.claude?.apiKey) opts.push('claude');
         if (cfg.gemini?.apiKey) opts.push('gemini');
@@ -122,6 +133,10 @@ const AskQuestionPage = () => {
       toast.info('Select AI provider');
       return;
     }
+    if (selectedAI === 'chatgpt' && !selectedModel) {
+      toast.info('Select ChatGPT model');
+      return;
+    }
 
     setIsProcessingAI(true);
     setAIResponse("");
@@ -131,7 +146,11 @@ const AskQuestionPage = () => {
       const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: title, provider: selectedAI }),
+        body: JSON.stringify({
+          question: title,
+          provider: selectedAI,
+          model: selectedAI === 'chatgpt' ? selectedModel : undefined,
+        }),
       });
 
       const data = await response.json();
@@ -256,7 +275,10 @@ const handleAcceptAIResponse = () => {
             {aiOptions.length > 0 && (
               <select
                 value={selectedAI}
-                onChange={(e) => setSelectedAI(e.target.value)}
+                onChange={(e) => {
+                  setSelectedAI(e.target.value);
+                  setSelectedModel("");
+                }}
                 className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white"
               >
                 <option value="">Select AI Provider</option>
@@ -266,6 +288,23 @@ const handleAcceptAIResponse = () => {
                   </option>
                 ))}
               </select>
+            )}
+            {selectedAI === 'chatgpt' && chatGPTModels.length > 0 && (
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white"
+              >
+                <option value="">Select ChatGPT Model</option>
+                {chatGPTModels.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {selectedAI === 'chatgpt' && chatGPTModels.length === 0 && (
+              <p className="text-red-400 mt-3">ChatGPT models not configured.</p>
             )}
             {aiOptions.length === 0 && (
               <p className="text-red-400 mt-3">No AI integrations available.</p>
