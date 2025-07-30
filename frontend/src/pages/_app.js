@@ -17,6 +17,7 @@ import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
 import { getLanguages } from "@/services/languageService";
+import SeoTags from "@/components/common/SeoTags";
 
 const langFetcher = () => getLanguages();
 
@@ -141,6 +142,7 @@ function MyApp({ Component, pageProps, router }) {
             />
           )}
         </Head>
+        <SeoTags />
         {/* Render page with layout */}
         {getLayout(<Component {...pageProps} />)}
 
