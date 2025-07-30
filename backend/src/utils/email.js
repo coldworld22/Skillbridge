@@ -942,4 +942,3 @@ exports.sendCartAddedEmail = async (to, itemName) => {
     console.error("Error sending cart added email: ", error);
   }
 };
-
