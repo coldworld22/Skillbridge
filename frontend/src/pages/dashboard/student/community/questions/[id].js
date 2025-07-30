@@ -63,8 +63,15 @@ export default function QuestionDetailPage() {
       <div className="p-6 max-w-4xl mx-auto space-y-8">
         {/* Question */}
         <div className="bg-white border border-gray-200 p-6 rounded-lg shadow">
-          <h1 className="text-2xl font-bold mb-2 text-gray-800">{question.title}</h1>
-          <p className="text-sm text-gray-500 mb-2">Asked by <strong>{question.user_name}</strong></p>
+        <h1 className="text-2xl font-bold mb-2 text-gray-800">{question.title}</h1>
+        <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
+          {question.user_avatar ? (
+            <img src={question.user_avatar} alt="avatar" className="w-6 h-6 rounded-full" />
+          ) : (
+            <FaUserCircle className="text-gray-400" />
+          )}
+          <span>Asked by <strong>{question.user_name}</strong></span>
+        </p>
           <p className="text-gray-700 mb-4">{question.content}</p>
           <div className="flex gap-2 flex-wrap">
             {question.tags.map((tag) => (
@@ -80,7 +87,11 @@ export default function QuestionDetailPage() {
           <h2 className="text-lg font-semibold text-gray-800">Replies</h2>
           {replies.map((reply) => (
             <div key={reply.id} className="bg-gray-50 border border-gray-200 p-4 rounded-lg flex gap-3">
-              <FaUserCircle className="text-3xl text-gray-400" />
+              {reply.user_avatar ? (
+                <img src={reply.user_avatar} alt="avatar" className="w-8 h-8 rounded-full" />
+              ) : (
+                <FaUserCircle className="text-3xl text-gray-400" />
+              )}
               <div>
                 <p className="text-sm font-semibold text-gray-800">{reply.user_name}</p>
                 <p className="text-gray-600 text-sm">{reply.content}</p>
