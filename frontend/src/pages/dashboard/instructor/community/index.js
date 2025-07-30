@@ -1,38 +1,55 @@
-// pages/dashboard/student/community/index.js
+// Instructor community dashboard page
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import Link from "next/link";
 import { FaSearch, FaPlus, FaTags } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
+import { fetchDiscussions, searchTags } from "@/services/communityService";
+import useAuthStore from "@/store/auth/authStore";
 
-const allDiscussions = [
-  { id: 1, title: "How do I integrate Tailwind with Next.js?", replies: 5, user: "Ali" },
-  { id: 2, title: "Best Odoo learning path for beginners?", replies: 3, user: "Fatima" },
-  { id: 3, title: "React vs Vue: Which is better for SaaS?", replies: 7, user: "Hassan" },
-  { id: 4, title: "How to secure an API with JWT?", replies: 2, user: "Lina" },
-  { id: 5, title: "Best practices for UI design systems?", replies: 6, user: "Yusuf" },
-  { id: 6, title: "How to test React components with Jest?", replies: 1, user: "Aisha" },
-];
-
-const myQuestions = [
-  { id: 101, title: "How to connect Odoo with Google Sheets?", replies: 2, tags: ["Odoo", "API"] },
-  { id: 102, title: "What’s the best Next.js folder structure?", replies: 0, tags: ["Next.js"] },
-];
-
-const mockTags = ["React", "Odoo", "Next.js", "UI/UX", "APIs"];
-
-export default function StudentCommunityPage() {
+export default function InstructorCommunityPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [activeTag, setActiveTag] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [allDiscussions, setAllDiscussions] = useState([]);
+  const [tags, setTags] = useState([]);
   const itemsPerPage = 5;
+  const { user } = useAuthStore();
 
-  const discussions = activeTab === "mine" ? myQuestions : allDiscussions;
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await fetchDiscussions();
+        setAllDiscussions(list);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load discussions");
+      }
+    };
+    load();
+    searchTags("").then(setTags).catch(() => {});
+  }, []);
+
+  const normalized = allDiscussions.map((d) => ({
+    ...d,
+    tags: Array.isArray(d.tags)
+      ? d.tags
+      : typeof d.tags === "string" && d.tags
+      ? JSON.parse(d.tags)
+      : [],
+  }));
+
+  const discussions =
+    activeTab === "mine"
+      ? normalized.filter((d) => user && d.user_name === user.full_name)
+      : normalized;
+
   const filtered = discussions.filter(
     (d) =>
       d.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (activeTag === "" || d.title.toLowerCase().includes(activeTag.toLowerCase()))
+      (activeTag === "" ||
+        d.tags.some((t) => t.toLowerCase().includes(activeTag.toLowerCase())))
   );
 
   const paginated = filtered.slice(
@@ -52,7 +69,7 @@ export default function StudentCommunityPage() {
               Share your questions and get help from peers.
             </p>
           </div>
-          <Link href="/dashboard/student/community/ask">
+          <Link href="/dashboard/instructor/community/ask">
             <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg font-semibold flex items-center gap-2">
               <FaPlus /> Ask a Question
             </button>
@@ -104,17 +121,17 @@ export default function StudentCommunityPage() {
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-8 items-center">
           <FaTags className="text-yellow-500" />
-          {mockTags.map((tag) => (
+          {tags.map((tag) => (
             <button
-              key={tag}
-              onClick={() => setActiveTag(tag === activeTag ? "" : tag)}
+              key={tag.id || tag.name || tag}
+              onClick={() => setActiveTag((tag.name || tag) === activeTag ? "" : (tag.name || tag))}
               className={`px-3 py-1 rounded-full text-sm border ${
-                tag === activeTag
+                (tag.name || tag) === activeTag
                   ? "bg-yellow-500 text-white border-yellow-500"
                   : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
               }`}
             >
-              #{tag}
+              #{tag.name || tag}
             </button>
           ))}
         </div>
@@ -125,14 +142,14 @@ export default function StudentCommunityPage() {
             paginated.map((d) => (
               <Link
                 key={d.id}
-                href={`/dashboard/student/community/questions/${d.id}`}
+                href={`/dashboard/instructor/community/questions/${d.id}`}
               >
                 <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer">
                   <h3 className="text-lg font-semibold text-gray-800 mb-1">
                     {d.title}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {activeTab === "mine" ? "You" : d.user} • {d.replies} replies
+                    {activeTab === "mine" ? "You" : d.user_name} • {d.replies || 0} replies
                   </p>
                 </div>
               </Link>

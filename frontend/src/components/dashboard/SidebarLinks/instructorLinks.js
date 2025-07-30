@@ -45,6 +45,12 @@ export const instructorNavLinks = [
     ]
   },
   {
+    title: 'AI Tools',
+    items: [
+      { label: 'AI Tools', href: '/dashboard/instructor/ai', icon: Brain },
+    ]
+  },
+  {
     title: 'Bookings',
     items: [
       { label: 'Requests', href: '/dashboard/instructor/requests', icon: MailOpen },
@@ -88,3 +94,4 @@ export const instructorNavLinks = [
     ]
   }
 ];
+
