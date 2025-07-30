@@ -203,7 +203,12 @@ export default function StudentProfileEdit() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!user) {
+      toast.error("User not loaded. Please login again.");
+      return;
+    }
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
@@ -240,8 +245,9 @@ export default function StudentProfileEdit() {
       });
 
       toast.success("Profile updated successfully!");
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push("/dashboard/student/profile/steps/Verification");
+      setTimeout(() => {
+        router.push("/dashboard/student/profile/steps/Verification");
+      }, 1500);
 
       try {
         const message = "Your student profile was updated.";
@@ -255,15 +261,14 @@ export default function StudentProfileEdit() {
         console.error("[StudentProfileEdit] notification error", err);
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push("/dashboard/student/profile/steps/Verification");
 
 
 
 
     } catch (err) {
       console.error("[StudentProfileEdit] update error", err);
-      toast.error(err.message || "Failed to update profile");
+      const msg = err.response?.data?.message || err.message || "Failed to update profile";
+      toast.error(msg);
       if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         logout();
