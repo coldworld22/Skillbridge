@@ -30,7 +30,8 @@ const studentProfileSchema = z.object({
   education_level: z.string().min(2, "Education level is required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
+  // Social links are optional strings without strict URL validation
+  socialLinks: z.record(z.string()).optional(),
 });
 
 export default function StudentProfileEdit() {
@@ -581,7 +582,7 @@ export default function StudentProfileEdit() {
                       LinkedIn Profile URL
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       name="linkedin"
                       value={formData.socialLinks.linkedin || ""}
                       onChange={handleSocialChange}
@@ -596,7 +597,7 @@ export default function StudentProfileEdit() {
                       GitHub Profile URL
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       name="github"
                       value={formData.socialLinks.github || ""}
                       onChange={handleSocialChange}

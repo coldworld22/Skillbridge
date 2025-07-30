@@ -40,7 +40,8 @@ const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
-  socialLinks: z.record(z.string().url("Must be a valid URL")).optional(),
+  // Social links are optional strings without URL validation
+  socialLinks: z.record(z.string()).optional(),
 });
 
 function ProfileEditTemplate() {
@@ -451,7 +452,7 @@ function ProfileEditTemplate() {
                 <div>
                   <label className="block text-sm font-medium mb-1">LinkedIn</label>
                   <input
-                    type="url"
+                    type="text"
                     name="linkedin"
                     value={formData.socialLinks.linkedin || ""}
                     onChange={(e) =>

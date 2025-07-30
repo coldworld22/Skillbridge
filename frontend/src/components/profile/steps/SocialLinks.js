@@ -14,13 +14,8 @@ const SocialLinks = ({ formData, setFormData, onNext, onBack }) => {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  // ✅ Validate URLs
-  const validateURL = (name, value) => {
-    const urlRegex = /^(https?:\/\/)?([\w\d]+\.)?[\w\d]+\.\w+\/?.*$/;
-    if (value && !urlRegex.test(value)) {
-      setErrors((prev) => ({ ...prev, [name]: "Enter a valid URL" }));
-    }
-  };
+  // Validation removed to allow any text values
+  const validateURL = () => {};
 
   return (
     <motion.div
@@ -45,11 +40,10 @@ const SocialLinks = ({ formData, setFormData, onNext, onBack }) => {
           <div className="flex items-center bg-gray-700 rounded-lg p-2">
             {icon}
             <input
-              type="url"
+              type="text"
               name={name}
               value={formData.socialLinks[name] || ""}
               onChange={handleChange}
-              onBlur={(e) => validateURL(name, e.target.value)}
               className="w-full p-2 bg-gray-700 text-white border-none focus:outline-none ml-3"
               placeholder={`https://your-${name}.com`}
             />
