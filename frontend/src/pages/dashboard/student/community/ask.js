@@ -1,30 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { FaPaperPlane } from "react-icons/fa";
 import { useRouter } from "next/router";
-
-const availableTags = ["React", "Odoo", "Next.js", "APIs", "UI/UX", "Authentication"];
+import { createDiscussion, searchTags } from "@/services/communityService";
+import toast from "react-hot-toast";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
 
-  const toggleTag = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+  useEffect(() => {
+    if (tagInput.trim()) {
+      searchTags(tagInput.trim()).then(setTagSuggestions).catch(() => {});
+    } else {
+      setTagSuggestions([]);
+    }
+  }, [tagInput]);
+
+  const addTag = (tag) => {
+    if (!tag || selectedTags.includes(tag)) return;
+    setSelectedTags((prev) => [...prev, tag]);
   };
 
-  const handleSubmit = (e) => {
+  const removeTag = (tag) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      if (tagInput.trim()) addTag(tagInput.trim());
+      setTagInput("");
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return alert("Please enter a question title.");
-    // Here you'd call an API to save the question
-    console.log({ title, description, selectedTags });
-    setSubmitted(true);
-    setTimeout(() => router.push("/dashboard/student/community"), 1000);
+    if (!title.trim()) {
+      toast.error("Title required");
+      return;
+    }
+    try {
+      await createDiscussion({ title, content: description, tags: selectedTags });
+      setSubmitted(true);
+      setTimeout(() => router.push("/dashboard/student/community"), 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit");
+    }
   };
 
   return (
@@ -65,20 +93,41 @@ export default function AskQuestionPage() {
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.map((tag) => (
-                  <button
-                    type="button"
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1 rounded-full text-sm border ${
-                      selectedTags.includes(tag)
-                        ? "bg-yellow-500 text-white border-yellow-500"
-                        : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
-                    }`}
-                  >
-                    #{tag}
-                  </button>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                  placeholder="Add tags"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                />
+                {tagSuggestions.length > 0 && (
+                  <ul className="absolute z-10 bg-white border border-gray-300 w-full mt-1 rounded shadow max-h-40 overflow-y-auto">
+                    {tagSuggestions.map((s) => (
+                      <li
+                        key={s.id}
+                        className="px-3 py-1 cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                          addTag(s.name);
+                          setTagInput("");
+                          setTagSuggestions([]);
+                        }}
+                      >
+                        {s.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedTags.map((t) => (
+                  <span key={t} className="bg-yellow-500 text-white px-2 py-1 rounded flex items-center">
+                    {t}
+                    <button type="button" className="ml-1" onClick={() => removeTag(t)}>
+                      &times;
+                    </button>
+                  </span>
                 ))}
               </div>
             </div>

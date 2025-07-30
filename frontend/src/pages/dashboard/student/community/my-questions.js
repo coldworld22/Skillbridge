@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import Link from "next/link";
-import { FaCommentDots, FaEye } from "react-icons/fa";
-
-const mockMyQuestions = [
-  {
-    id: 1,
-    title: "How to connect Odoo with Google Sheets?",
-    replies: 4,
-    tags: ["Odoo", "API"],
-  },
-  {
-    id: 2,
-    title: "Best way to structure a Next.js education platform?",
-    replies: 2,
-    tags: ["Next.js", "Design"],
-  },
-];
+import { FaEye } from "react-icons/fa";
+import { fetchDiscussions } from "@/services/communityService";
+import useAuthStore from "@/store/auth/authStore";
+import toast from "react-hot-toast";
 
 export default function MyQuestionsPage() {
+  const { user } = useAuthStore();
   const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
-    setQuestions(mockMyQuestions); // Replace with real API later
-  }, []);
+    const load = async () => {
+      try {
+        const list = await fetchDiscussions();
+        const formatted = (list || []).map((d) => ({
+          id: d.id,
+          title: d.title,
+          tags: Array.isArray(d.tags)
+            ? d.tags
+            : typeof d.tags === "string" && d.tags
+            ? JSON.parse(d.tags)
+            : [],
+          user: d.user_name,
+        }));
+        setQuestions(formatted.filter((q) => q.user === user?.full_name));
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load questions");
+      }
+    };
+    load();
+  }, [user]);
 
   return (
     <StudentLayout title="My Questions">
@@ -40,7 +48,6 @@ export default function MyQuestionsPage() {
                 className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:shadow-md transition"
               >
                 <h2 className="text-lg font-semibold text-gray-800 mb-1">{q.title}</h2>
-                <p className="text-sm text-gray-500 mb-2">{q.replies} replies</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {q.tags.map((tag) => (
                     <span
