@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
+import { askAI } from "@/services/aiService";
 
 const goals = [
   "Improve coding skills",
@@ -26,20 +27,25 @@ export default function LessonPlannerPage() {
     setLoading(true);
     setGeneratedPlan(null);
 
-    // Simulate API call (replace with real backend integration)
-    setTimeout(() => {
+    try {
+      const { answer } = await askAI(
+        selectedModel,
+        `Create a lesson plan for: ${selectedGoal}`
+      );
       setGeneratedPlan({
         goal: selectedGoal,
         model: selectedModel,
-        plan: [
-          "🧠 Week 1: Assessment & foundational concepts",
-          "📘 Week 2–3: Targeted lessons with interactive content",
-          "📝 Week 4: Practice quizzes + feedback",
-          "🚀 Week 5+: Final project and certification prep"
-        ]
+        plan: answer.split("\n").filter(Boolean),
       });
+    } catch (err) {
+      setGeneratedPlan({
+        goal: selectedGoal,
+        model: selectedModel,
+        plan: ["Error generating plan"],
+      });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (

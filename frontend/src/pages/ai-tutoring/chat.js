@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { askAI } from "@/services/aiService";
 
 const models = [
   { key: "chatgpt", label: "ChatGPT 4" },
@@ -10,20 +11,22 @@ export default function AIChatTutorPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiReply = {
-        sender: "ai",
-        text: `🤖 [${selectedModel.toUpperCase()}] Here’s a helpful explanation for: "${userMessage.text}"`
-      };
+    try {
+      const { answer } = await askAI(selectedModel, userMessage.text);
+      const aiReply = { sender: "ai", text: answer };
       setMessages((prev) => [...prev, aiReply]);
-    }, 1000);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "ai", text: "Error fetching response" },
+      ]);
+    }
   };
 
   return (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { askAI } from "@/services/aiService";
 
 const models = [
   { key: "chatgpt", label: "ChatGPT 4" },
@@ -11,20 +12,19 @@ export default function InstantFeedbackPage() {
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!text.trim()) return;
     setLoading(true);
     setFeedback(null);
 
-    setTimeout(() => {
-      setFeedback(
-        `🤖 [${selectedModel.toUpperCase()}] Feedback:
-
-Great structure! Make sure to elaborate more on paragraph 2.
-Keep your tone consistent and cite sources properly.`
-      );
+    try {
+      const { answer } = await askAI(selectedModel, text);
+      setFeedback(answer);
+    } catch (err) {
+      setFeedback("Error fetching feedback");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
