@@ -20,6 +20,25 @@ import {
 } from "recharts";
 
 import { fetchDashboardStats } from "@/services/admin/communityService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+
+export async function getServerSideProps({ req, locale }) {
+  const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};
+  let stats = null;
+  try {
+    stats = await fetchDashboardStats(headers);
+  } catch (err) {
+    console.error("Dashboard fetch error:", err.message);
+  }
+
+  return {
+    props: {
+      ...(await serverSideTranslations(locale ?? "en", ["dashboard"], nextI18NextConfig)),
+      initialStats: stats,
+    },
+  };
+}
 
 const NavCard = ({ href, icon, label }) => (
   <Link href={href}>
@@ -37,11 +56,18 @@ const StatCard = ({ label, value, color }) => (
   </div>
 );
 
-export default function AdminCommunityDashboard() {
-  const [stats, setStats] = useState(null);
-  const [activityData, setActivityData] = useState([]);
+export default function AdminCommunityDashboard({ initialStats }) {
+  const [stats, setStats] = useState(initialStats ? {
+    totalDiscussions: initialStats.totalDiscussions,
+    pendingReports: initialStats.pendingReports,
+    contributors: initialStats.contributors,
+    repliesThisWeek: initialStats.repliesThisWeek,
+    topContributor: initialStats.topContributor || {},
+  } : null);
+  const [activityData, setActivityData] = useState(initialStats?.activityData || []);
 
   useEffect(() => {
+    if (stats) return;
     const load = async () => {
       try {
         const data = await fetchDashboardStats();
@@ -60,7 +86,7 @@ export default function AdminCommunityDashboard() {
       }
     };
     load();
-  }, []);
+  }, [stats]);
 
   if (!stats) {
     return (
