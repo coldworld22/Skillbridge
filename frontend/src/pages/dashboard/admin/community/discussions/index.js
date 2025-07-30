@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
   FaSearch,
@@ -39,9 +40,6 @@ export default function AdminCommunityDiscussionsPage() {
     load();
   }, []);
 
-  const handleView = (discussion) => {
-    window.location.href = `/dashboard/admin/community/discussions/${discussion.id}`;
-  };
 
   const handleLock = async (discussion) => {
     try {
@@ -132,12 +130,15 @@ export default function AdminCommunityDiscussionsPage() {
                     {discussion.status === "open" ? <FaCheckCircle /> : <FaTimesCircle />}
                     {discussion.status}
                   </span>
-                  <button
-                    onClick={() => handleView(discussion)}
+                  <Link
+                    href={{
+                      pathname: "/dashboard/admin/community/discussions/[id]",
+                      query: { id: discussion.id },
+                    }}
                     className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded hover:bg-blue-200 flex items-center gap-2"
                   >
                     <FaEye /> View
-                  </button>
+                  </Link>
                   {discussion.status !== "locked" && (
                     <button
                       onClick={() => handleLock(discussion)}
