@@ -1,13 +1,14 @@
 // src/components/shared/SearchBar.js
 import { Search } from 'lucide-react';
 
-export default function SearchBar({ value, onChange, placeholder = 'Search...' }) {
+export default function SearchBar({ value, onChange, onKeyDown, placeholder = 'Search...' }) {
   return (
     <div className="relative">
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         className="w-full border border-gray-300 rounded-lg px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />

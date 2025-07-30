@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Typewriter from "typewriter-effect";
@@ -17,6 +18,7 @@ import { useTranslation } from "next-i18next";
 
 
 const Hero = () => {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [ads, setAds] = useState([]);
@@ -77,9 +79,14 @@ const Hero = () => {
     trackMouse: true,
   });
 
+  const handleSearch = (query) => {
+    if (!query.trim()) return;
+    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+  };
+
   const handleSearchSelect = (selectedValue) => {
     setSearchText(selectedValue);
-    alert(`Navigating to results for: ${selectedValue}`); // Replace with real navigation
+    handleSearch(selectedValue);
   };
 
   return (
@@ -127,7 +134,24 @@ const Hero = () => {
 
           {/* 🔍 Modern Search Box */}
           <div className="relative w-full max-w-lg mx-auto mb-6">
-            <SearchBar value={searchText} onChange={setSearchText} onSelect={handleSearchSelect} />
+            <SearchBar
+              value={searchText}
+              onChange={setSearchText}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch(searchText)}
+            />
+            {searchSuggestions.length > 0 && (
+              <ul className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20">
+                {searchSuggestions.map((s, idx) => (
+                  <li
+                    key={idx}
+                    onClick={() => handleSearchSelect(s)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* CTA Buttons */}
