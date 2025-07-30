@@ -1,13 +1,37 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
+
+const formatUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:"))
+    return url;
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  const apiBase = base.replace(/\/?api\/?$/, "");
+  return `${apiBase}${url}`;
+};
+
+const formatDiscussion = (d) => ({
+  ...d,
+  user_avatar: formatUrl(d.user_avatar),
+  image_url: formatUrl(d.image_url),
+});
+
+const formatReply = (r) => ({
+  ...r,
+  user_avatar: formatUrl(r.user_avatar),
+  file_url: formatUrl(r.file_url),
+});
 
 export const fetchDiscussions = async () => {
   const { data } = await api.get("/community/discussions");
-  return data?.data ?? [];
+  const list = data?.data ?? [];
+  return list.map(formatDiscussion);
 };
 
 export const fetchDiscussionById = async (id) => {
   const { data } = await api.get(`/community/discussions/${id}`);
-  return data?.data ?? null;
+  const d = data?.data ?? null;
+  return d ? formatDiscussion(d) : null;
 };
 
 export const createDiscussion = async (payload) => {
@@ -27,12 +51,13 @@ export const searchTags = async (q) => {
 
 export const fetchReplies = async (discussionId) => {
   const { data } = await api.get(`/community/discussions/${discussionId}/replies`);
-  return data?.data ?? [];
+  const list = data?.data ?? [];
+  return list.map(formatReply);
 };
 
 export const createReply = async (discussionId, payload) => {
   const { data } = await api.post(`/community/discussions/${discussionId}/replies`, payload);
-  return data?.data;
+  return data?.data ? formatReply(data.data) : null;
 };
 
 export const likeDiscussion = async (id) => {

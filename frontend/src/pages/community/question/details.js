@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaUser, FaHeart, FaVideo, FaPaperclip, FaMicrophone, FaTrash, FaEdit } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -24,6 +25,7 @@ const QuestionDetails = () => {
   const [replies, setReplies] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
   const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
 
   useEffect(() => {
     if (!router.query.id) return;
@@ -51,13 +53,16 @@ const QuestionDetails = () => {
         const res = await likeDiscussion(router.query.id);
         setLikes(res.likes);
         setLiked(true);
+        toast.success('Liked');
       } else {
         const res = await unlikeDiscussion(router.query.id);
         setLikes(res.likes);
         setLiked(false);
+        toast.info('Like removed');
       }
     } catch (err) {
       console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update like');
     }
   };
 
@@ -66,8 +71,10 @@ const QuestionDetails = () => {
     try {
       const res = await voteDiscussion(router.query.id, type);
       setVotes(res.votes);
+      toast.success(type === 'up' ? 'Upvoted' : 'Downvoted');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to vote');
     }
   };
 
@@ -75,7 +82,15 @@ const QuestionDetails = () => {
   const handleAudioUpload = (e) => setAudioFile(e.target.files[0]);
 
   // ✅ Handle File Upload
-  const handleFileUpload = (e) => setFile(e.target.files[0]);
+  const handleFileUpload = (e) => {
+    const f = e.target.files[0];
+    setFile(f);
+    if (f) {
+      setFilePreview(URL.createObjectURL(f));
+    } else {
+      setFilePreview(null);
+    }
+  };
 
   // ✅ Handle Video Call Invitation
   const handleVideoInvite = () => {
@@ -94,10 +109,20 @@ const QuestionDetails = () => {
       setReplies([...replies, newReply]);
       setReplyText('');
       setFile(null);
+      if (filePreview) URL.revokeObjectURL(filePreview);
+      setFilePreview(null);
+      toast.success('Reply posted');
     } catch (err) {
       console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to post reply');
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -178,6 +203,15 @@ const QuestionDetails = () => {
         {/* ✅ File & Video Call */}
         <input type="file" accept="audio/*" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleAudioUpload} />
         <input type="file" accept=".pdf,.jpg,.png" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleFileUpload} />
+        {file && (
+          <div className="mt-2">
+            {file.type.startsWith('image/') ? (
+              <img src={filePreview} alt="preview" className="max-w-full rounded" />
+            ) : (
+              <p className="text-sm text-gray-400">{file.name}</p>
+            )}
+          </div>
+        )}
         <button onClick={handleVideoInvite} className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 flex items-center gap-2">
           <FaVideo /> Start Video Call
         </button>
