@@ -354,13 +354,10 @@ const Navbar = () => {
             src={
               currentLang?.icon_url
                 ? `${API_BASE_URL}${currentLang.icon_url}`
-                : `https://flagcdn.com/24x18/${currentLang?.code
-                    ?.slice(0, 2)
-                    .toLowerCase()}.png`
+                : "/flags/default.png"
             }
             alt={currentLang ? currentLang.name : 'language'}
             className="w-full h-full object-cover"
-            onError={(e) => (e.target.src = "/flags/default.png")}
           />
         </motion.button>
 

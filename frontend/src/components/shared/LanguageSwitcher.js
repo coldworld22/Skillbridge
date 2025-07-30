@@ -35,13 +35,10 @@ export default function LanguageSwitcher({ changeLang }) {
                 src={
                   lang.icon_url
                     ? `${API_BASE_URL}${lang.icon_url}`
-                    : `https://flagcdn.com/24x18/${lang.code
-                        .slice(0, 2)
-                        .toLowerCase()}.png`
+                    : "/flags/default.png"
                 }
                 alt={`${lang.name} flag`}
                 className="w-5 h-5 rounded object-cover"
-                onError={(e) => (e.target.src = "/flags/default.png")}
               />
               <span>{lang.name}</span>
             </button>
