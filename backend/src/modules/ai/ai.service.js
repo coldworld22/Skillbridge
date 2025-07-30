@@ -71,6 +71,35 @@ exports.answerWithAI = async (provider, question, model) => {
     }
   }
 
+  if (provider === 'huggingface') {
+    try {
+      const url = `https://api-inference.huggingface.co/models/${settings.model}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${settings.token || settings.apiKey}`,
+        },
+        body: JSON.stringify({ inputs: question }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        return { answer: null, error: text };
+      }
+
+      const data = await res.json();
+      let answer = '';
+      if (Array.isArray(data) && data[0]?.generated_text) answer = data[0].generated_text;
+      else if (data?.generated_text) answer = data.generated_text;
+      else if (data?.answer) answer = data.answer;
+      else answer = JSON.stringify(data);
+      return { answer, confidence: 0.9 };
+    } catch (err) {
+      return { answer: null, error: err.message };
+    }
+  }
+
   // Fallback stub for providers not yet implemented
   return {
     answer: `(${provider}) AI answer for: ${question}`,
