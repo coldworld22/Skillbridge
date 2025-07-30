@@ -20,15 +20,24 @@ import {
 } from "recharts";
 
 import { fetchDashboardStats } from "@/services/admin/communityService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req, locale }) {
+  const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};
+  let stats = null;
   try {
-    const data = await fetchDashboardStats();
-    return { props: { initialStats: data || null } };
+    stats = await fetchDashboardStats(headers);
   } catch (err) {
-    console.error("Dashboard fetch error:", err);
-    return { props: { initialStats: null } };
+    console.error("Dashboard fetch error:", err.message);
   }
+
+  return {
+    props: {
+      ...(await serverSideTranslations(locale ?? "en", ["dashboard"], nextI18NextConfig)),
+      initialStats: stats,
+    },
+  };
 }
 
 const NavCard = ({ href, icon, label }) => (

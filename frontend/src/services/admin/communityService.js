@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 
-export const fetchDashboardStats = async () => {
-  const { data } = await api.get("/community/admin/stats");
+export const fetchDashboardStats = async (headers = {}) => {
+  const { data } = await api.get("/community/admin/stats", { headers });
   return data?.data;
 };
 
