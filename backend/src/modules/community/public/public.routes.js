@@ -9,6 +9,9 @@ router.get("/discussions/:id", ctrl.getDiscussion);
 router.post("/discussions", verifyToken, upload, ctrl.createDiscussion);
 router.get("/discussions/:id/replies", ctrl.listReplies);
 router.post("/discussions/:id/replies", verifyToken, replyUpload, ctrl.createReply);
+router.post("/discussions/:id/like", verifyToken, ctrl.likeDiscussion);
+router.delete("/discussions/:id/like", verifyToken, ctrl.unlikeDiscussion);
+router.post("/discussions/:id/vote", verifyToken, ctrl.voteDiscussion);
 router.get("/contributors", ctrl.listContributors);
 router.get("/tags", ctrl.listTags);
 

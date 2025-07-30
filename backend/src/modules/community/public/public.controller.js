@@ -9,7 +9,12 @@ exports.listDiscussions = catchAsync(async (_req, res) => {
 });
 
 exports.getDiscussion = catchAsync(async (req, res) => {
-  const disc = await service.getDiscussion(req.params.id);
+  const disc = await service.getDiscussion(
+    req.params.id,
+    req.user?.id,
+    req.ip,
+    req.headers['user-agent']
+  );
   if (!disc) throw new AppError("Discussion not found", 404);
   sendSuccess(res, disc);
 });
@@ -64,4 +69,27 @@ exports.createReply = catchAsync(async (req, res) => {
     file_url: req.file ? `/uploads/community/${req.file.filename}` : null,
   });
   sendSuccess(res, reply, 'Reply posted');
+});
+
+exports.likeDiscussion = catchAsync(async (req, res) => {
+  await service.likeDiscussion(req.user.id, req.params.id);
+  const likes = await service.getLikeCount(req.params.id);
+  sendSuccess(res, { likes }, 'Liked');
+});
+
+exports.unlikeDiscussion = catchAsync(async (req, res) => {
+  await service.unlikeDiscussion(req.user.id, req.params.id);
+  const likes = await service.getLikeCount(req.params.id);
+  sendSuccess(res, { likes }, 'Unliked');
+});
+
+exports.voteDiscussion = catchAsync(async (req, res) => {
+  const { type } = req.body || {};
+  if (!['up', 'down'].includes(type)) throw new AppError('Invalid vote', 400);
+  const votes = await service.voteDiscussion(
+    req.user.id,
+    req.params.id,
+    type === 'up' ? 1 : -1
+  );
+  sendSuccess(res, { votes }, 'Voted');
 });

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { FaArrowUp, FaArrowDown, FaEye, FaComment } from "react-icons/fa";
+import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaHeart, FaUser } from "react-icons/fa";
 
 const QuestionCard = ({ question }) => {
   const router = useRouter();
@@ -20,13 +20,10 @@ const QuestionCard = ({ question }) => {
     >
       {/* Votes */}
       <div className="flex items-center space-x-2">
-        <button className="text-gray-400 hover:text-yellow-500">
-          <FaArrowUp />
-        </button>
+        <FaArrowUp />
         <span className="text-yellow-400 font-bold">{question.votes ?? 0}</span>
-        <button className="text-gray-400 hover:text-yellow-500">
-          <FaArrowDown />
-        </button>
+        <FaArrowDown />
+        <span className="flex items-center gap-1 text-red-400 ml-4"><FaHeart /> {question.likes ?? 0}</span>
       </div>
 
       {/* Question Content */}
@@ -50,7 +47,14 @@ const QuestionCard = ({ question }) => {
       <div className="flex justify-between mt-3 text-gray-400 text-sm">
         <span className="flex items-center gap-1"><FaEye /> {question.views ?? 0} views</span>
         <span className="flex items-center gap-1"><FaComment /> {answersCount} answers</span>
-        <span className="text-yellow-500">{question.user?.name || question.user_name || 'Anonymous'}</span>
+        <span className="flex items-center gap-1">
+          {question.user_avatar ? (
+            <img src={question.user_avatar} alt="avatar" className="w-5 h-5 rounded-full" />
+          ) : (
+            <FaUser />
+          )}
+          <span className="text-yellow-500">{question.user?.name || question.user_name || 'Anonymous'}</span>
+        </span>
       </div>
     </div>
   );

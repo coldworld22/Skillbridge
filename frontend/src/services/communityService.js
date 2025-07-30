@@ -34,3 +34,18 @@ export const createReply = async (discussionId, payload) => {
   const { data } = await api.post(`/community/discussions/${discussionId}/replies`, payload);
   return data?.data;
 };
+
+export const likeDiscussion = async (id) => {
+  const { data } = await api.post(`/community/discussions/${id}/like`);
+  return data?.data;
+};
+
+export const unlikeDiscussion = async (id) => {
+  const { data } = await api.delete(`/community/discussions/${id}/like`);
+  return data?.data;
+};
+
+export const voteDiscussion = async (id, type) => {
+  const { data } = await api.post(`/community/discussions/${id}/vote`, { type });
+  return data?.data;
+};
