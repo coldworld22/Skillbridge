@@ -203,7 +203,12 @@ export default function StudentProfileEdit() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!user) {
+      toast.error("User not loaded. Please login again.");
+      return;
+    }
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
@@ -240,8 +245,9 @@ export default function StudentProfileEdit() {
       });
 
       toast.success("Profile updated successfully!");
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push("/dashboard/student/profile/steps/Verification");
+      setTimeout(() => {
+        router.push("/dashboard/student/profile/steps/Verification");
+      }, 1500);
 
       try {
         const message = "Your student profile was updated.";
@@ -255,15 +261,14 @@ export default function StudentProfileEdit() {
         console.error("[StudentProfileEdit] notification error", err);
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push("/dashboard/student/profile/steps/Verification");
 
 
 
 
     } catch (err) {
       console.error("[StudentProfileEdit] update error", err);
-      toast.error(err.message || "Failed to update profile");
+      const msg = err.response?.data?.message || err.message || "Failed to update profile";
+      toast.error(msg);
       if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         logout();
@@ -285,7 +290,7 @@ export default function StudentProfileEdit() {
   }
   return (
     <StudentLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Student Profile</h1>
         </div>
@@ -594,13 +599,14 @@ export default function StudentProfileEdit() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
               <button
+                type="button"
                 onClick={() => router.push("/dashboard/student")}
                 className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isSubmitting}
                 className={`px-6 py-3 rounded-lg font-medium text-white ${isSubmitting ? 'bg-yellow-400 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700 transition-colors'}`}
               >
@@ -616,7 +622,7 @@ export default function StudentProfileEdit() {
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </StudentLayout>
   );
 }
