@@ -2,20 +2,13 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaReply, FaUserCircle } from "react-icons/fa";
+import {
+  fetchDiscussionById,
+  fetchReplies,
+  createReply,
+} from "@/services/communityService";
+import ReactMarkdown from "react-markdown";
 
-const mockQuestions = {
-  1: {
-    id: 1,
-    title: "How do I integrate Tailwind with Next.js?",
-    description: "I'm building a frontend using Next.js. How do I properly use Tailwind CSS with it?",
-    user: "Ali",
-    tags: ["Next.js", "Tailwind"],
-    replies: [
-      { id: 1, author: "Fatima", content: "Install Tailwind via npm and add to your config files.", timestamp: "1 hour ago" },
-      { id: 2, author: "Omar", content: "Check the Tailwind docs — they have a great Next.js guide.", timestamp: "30 mins ago" },
-    ],
-  },
-};
 
 export default function QuestionDetailPage() {
   const router = useRouter();
@@ -25,18 +18,43 @@ export default function QuestionDetailPage() {
   const [replyText, setReplyText] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const [replies, setReplies] = useState([]);
+
   useEffect(() => {
-    if (id && mockQuestions[id]) {
-      setQuestion(mockQuestions[id]);
-    }
+    if (!id) return;
+    const load = async () => {
+      try {
+        const q = await fetchDiscussionById(id);
+        if (q) {
+          setQuestion({
+            ...q,
+            tags: Array.isArray(q.tags)
+              ? q.tags
+              : typeof q.tags === "string" && q.tags
+              ? JSON.parse(q.tags)
+              : [],
+          });
+          const r = await fetchReplies(id);
+          setReplies(r);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleReply = () => {
+  const handleReply = async () => {
     if (!replyText.trim()) return;
-    alert("Reply submitted (mock)");
-    setSubmitted(true);
-    setReplyText("");
-    setTimeout(() => setSubmitted(false), 1500);
+    try {
+      const newReply = await createReply(id, { content: replyText });
+      setReplies([...replies, newReply]);
+      setSubmitted(true);
+      setReplyText("");
+      setTimeout(() => setSubmitted(false), 1500);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (!question) return <InstructorLayout title="Loading..."><div className="p-6">Loading...</div></InstructorLayout>;
@@ -47,8 +65,8 @@ export default function QuestionDetailPage() {
         {/* Question */}
         <div className="bg-white border border-gray-200 p-6 rounded-lg shadow">
           <h1 className="text-2xl font-bold mb-2 text-gray-800">{question.title}</h1>
-          <p className="text-sm text-gray-500 mb-2">Asked by <strong>{question.user}</strong></p>
-          <p className="text-gray-700 mb-4">{question.description}</p>
+          <p className="text-sm text-gray-500 mb-2">Asked by <strong>{question.user_name}</strong></p>
+          <p className="text-gray-700 mb-4">{question.content}</p>
           <div className="flex gap-2 flex-wrap">
             {question.tags.map((tag) => (
               <span key={tag} className="text-xs px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">
@@ -61,13 +79,13 @@ export default function QuestionDetailPage() {
         {/* Replies */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-800">Replies</h2>
-          {question.replies.map((reply) => (
+          {replies.map((reply) => (
             <div key={reply.id} className="bg-gray-50 border border-gray-200 p-4 rounded-lg flex gap-3">
               <FaUserCircle className="text-3xl text-gray-400" />
               <div>
-                <p className="text-sm font-semibold text-gray-800">{reply.author}</p>
-                <p className="text-gray-600 text-sm">{reply.content}</p>
-                <span className="text-xs text-gray-400">{reply.timestamp}</span>
+                <p className="text-sm font-semibold text-gray-800">{reply.user_name}</p>
+                <p className="text-gray-600 text-sm"><ReactMarkdown>{reply.content}</ReactMarkdown></p>
+                <span className="text-xs text-gray-400">{new Date(reply.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           ))}
