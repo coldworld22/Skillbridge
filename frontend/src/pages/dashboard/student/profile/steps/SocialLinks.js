@@ -28,15 +28,9 @@ const SocialLinks = ({
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validateURL = (name, value) => {
-    const urlRegex =
-      /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/\S*)?$/;
-    if (value && !urlRegex.test(value.trim())) {
-      setErrors((prev) => ({ ...prev, [name]: "Enter a valid URL" }));
-    }
-  };
-
-  const isFormValid = Object.values(errors).every((e) => !e);
+  // Validation removed to allow any text values
+  const validateURL = () => {};
+  const isFormValid = true;
 
   return (
     <motion.div
@@ -64,16 +58,15 @@ const SocialLinks = ({
           </label>
           <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white">
             {icon}
-            <input
-              id={name}
-              type="url"
-              name={name}
-              value={socialLinks[name] || ""}
-              onChange={handleChange}
-              onBlur={(e) => validateURL(name, e.target.value)}
-              placeholder={`https://your-${name}.com`}
-              className="ml-3 w-full bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-yellow-500"
-            />
+              <input
+                id={name}
+                type="text"
+                name={name}
+                value={socialLinks[name] || ""}
+                onChange={handleChange}
+                placeholder={`https://your-${name}.com`}
+                className="ml-3 w-full bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-yellow-500"
+              />
           </div>
           {errors[name] && (
             <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
