@@ -12,6 +12,19 @@ const GoogleAd = ({ slot }) => {
 
   useEffect(() => {
     if (adConfig && adConfig.enabled) {
+      if (!document.querySelector('script[data-adsbygoogle]')) {
+        const script = document.createElement('script');
+        script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+        script.async = true;
+        script.dataset.adsbygoogle = 'true';
+        script.crossOrigin = 'anonymous';
+        document.body.appendChild(script);
+      }
+    }
+  }, [adConfig]);
+
+  useEffect(() => {
+    if (adConfig && adConfig.enabled) {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       } catch (e) {

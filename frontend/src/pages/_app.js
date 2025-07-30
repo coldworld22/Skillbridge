@@ -87,6 +87,28 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   }, [configLoaded, fetchConfig]);
 
   useEffect(() => {
+    fetch('/api/google-analytics')
+      .then((res) => res.json())
+      .then((cfg) => {
+        if (cfg.enabled && cfg.measurementId) {
+          if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
+            const s = document.createElement('script');
+            s.async = true;
+            s.src = `https://www.googletagmanager.com/gtag/js?id=${cfg.measurementId}`;
+            s.dataset.gaMeasurementId = cfg.measurementId;
+            document.head.appendChild(s);
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', cfg.measurementId);
+          }
+        }
+      })
+      .catch((err) => console.error('Failed to load Google Analytics', err));
+  }, []);
+
+  useEffect(() => {
     if (seoSettings && !seoLoaded) {
       updateSEO(seoSettings);
       useSEOConfigStore.setState({ loaded: true });
