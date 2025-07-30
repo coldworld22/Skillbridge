@@ -45,7 +45,7 @@ export default function QuestionDetailPage() {
     try {
       const newReply = await createReply(id, fd);
       setReplies((prev) => [...prev, newReply]);
-      setReplyText("");
+      setReplyText("")
       toast.success("Reply posted");
     } catch (err) {
       console.error(err);

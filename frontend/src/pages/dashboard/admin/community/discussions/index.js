@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
   FaSearch,
@@ -19,6 +20,7 @@ export default function AdminCommunityDiscussionsPage() {
   const [discussions, setDiscussions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
 
   useEffect(() => {
     const load = async () => {
@@ -40,7 +42,7 @@ export default function AdminCommunityDiscussionsPage() {
   }, []);
 
   const handleView = (discussion) => {
-    window.location.href = `/dashboard/admin/community/discussions/${discussion.id}`;
+    router.push(`/dashboard/admin/community/discussions/${discussion.id}`);
   };
 
   const handleLock = async (discussion) => {
