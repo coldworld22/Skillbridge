@@ -203,7 +203,12 @@ export default function StudentProfileEdit() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!user) {
+      toast.error("User not loaded. Please login again.");
+      return;
+    }
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
@@ -262,7 +267,8 @@ export default function StudentProfileEdit() {
 
     } catch (err) {
       console.error("[StudentProfileEdit] update error", err);
-      toast.error(err.message || "Failed to update profile");
+      const msg = err.response?.data?.message || err.message || "Failed to update profile";
+      toast.error(msg);
       if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         logout();
