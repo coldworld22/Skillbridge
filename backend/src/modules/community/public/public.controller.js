@@ -15,14 +15,24 @@ exports.getDiscussion = catchAsync(async (req, res) => {
 });
 
 exports.createDiscussion = catchAsync(async (req, res) => {
-  const { title, content, tags } = req.body || {};
+  const { title, content } = req.body || {};
+  let { tags } = req.body || {};
   if (!title || !content) throw new AppError("Missing fields", 400);
+
+  if (typeof tags === "string") {
+    try { tags = JSON.parse(tags); } catch { tags = tags.split(',').map((t) => t.trim()).filter(Boolean); }
+  }
+  if (!Array.isArray(tags) || !tags.length) {
+    throw new AppError("Tags are required", 400);
+  }
+
   const disc = await service.createDiscussion({
     user_id: req.user.id,
     user_name: req.user.full_name,
     title,
     content,
     tags,
+    image_url: req.file ? `/uploads/community/${req.file.filename}` : null,
   });
   sendSuccess(res, disc, "Discussion created");
 });

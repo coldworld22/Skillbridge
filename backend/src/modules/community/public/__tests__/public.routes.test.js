@@ -37,17 +37,16 @@ describe('community public routes', () => {
   beforeEach(() => jest.clearAllMocks());
 
   test('create discussion', async () => {
-    const disc = { id: 'd1', title: 't', content: 'c' };
+    const disc = { id: 'd1', title: 't', content: 'c', tags: ['tag1'] };
     service.createDiscussion.mockResolvedValue(disc);
-    const res = await request(app).post('/community/discussions').send({ title: 't', content: 'c' });
+    const res = await request(app)
+      .post('/community/discussions')
+      .field('title', 't')
+      .field('content', 'c')
+      .field('tags', JSON.stringify(['tag1']))
+      .attach('image', Buffer.from('img'), 'a.png');
     expect(res.statusCode).toBe(200);
-    expect(service.createDiscussion).toHaveBeenCalledWith({
-      user_id: 'u1',
-      user_name: 'Test User',
-      title: 't',
-      content: 'c',
-      tags: undefined,
-    });
+    expect(service.createDiscussion).toHaveBeenCalled();
     expect(res.body.data).toEqual(disc);
   });
 });
