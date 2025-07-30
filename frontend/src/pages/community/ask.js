@@ -157,10 +157,16 @@ const AskQuestionPage = () => {
       });
 
       const data = await response.json();
-      setAIResponse(data.answer);
-      setEditableResponse(data.answer);
-      setConfidenceScore(data.confidence);
-      setRelatedQuestions(data.relatedQuestions || []);
+      if (!response.ok) {
+        setAIResponse(`⚠️ ${data.message || 'Error generating AI response.'}`);
+        return;
+      }
+      const ans = data.data?.answer ?? data.answer;
+      const conf = data.data?.confidence ?? data.confidence;
+      setAIResponse(ans);
+      setEditableResponse(ans);
+      setConfidenceScore(conf);
+      setRelatedQuestions(data.data?.relatedQuestions || data.relatedQuestions || []);
     } catch (error) {
       console.error("AI Response Error:", error);
       setAIResponse("⚠️ Error generating AI response.");
