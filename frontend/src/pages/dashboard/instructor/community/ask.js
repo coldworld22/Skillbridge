@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { FaPaperPlane } from "react-icons/fa";
 import { useRouter } from "next/router";
-
-const availableTags = ["React", "Odoo", "Next.js", "APIs", "UI/UX", "Authentication"];
+import { createDiscussion, searchTags } from "@/services/communityService";
+import toast from "react-hot-toast";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [availableTags, setAvailableTags] = useState([]);
   const router = useRouter();
+
+  useEffect(() => {
+    searchTags("").then(setAvailableTags).catch(() => {});
+  }, []);
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
@@ -18,13 +23,27 @@ export default function AskQuestionPage() {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return alert("Please enter a question title.");
-    // Here you'd call an API to save the question
-    console.log({ title, description, selectedTags });
-    setSubmitted(true);
-    setTimeout(() => router.push("/dashboard/student/community"), 1000);
+    if (!title.trim()) {
+      toast.error("Please enter a question title.");
+      return;
+    }
+    try {
+      await createDiscussion({
+        title,
+        content: description,
+        tags: selectedTags,
+      });
+      setSubmitted(true);
+      setTitle("");
+      setDescription("");
+      setSelectedTags([]);
+      setTimeout(() => router.push("/dashboard/instructor/community"), 1000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit question");
+    }
   };
 
   return (
@@ -69,15 +88,15 @@ export default function AskQuestionPage() {
                 {availableTags.map((tag) => (
                   <button
                     type="button"
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
+                    key={tag.id || tag.name || tag}
+                    onClick={() => toggleTag(tag.name || tag)}
                     className={`px-3 py-1 rounded-full text-sm border ${
-                      selectedTags.includes(tag)
+                      selectedTags.includes(tag.name || tag)
                         ? "bg-yellow-500 text-white border-yellow-500"
                         : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
                     }`}
                   >
-                    #{tag}
+                    #{tag.name || tag}
                   </button>
                 ))}
               </div>

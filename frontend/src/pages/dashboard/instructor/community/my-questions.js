@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import Link from "next/link";
-import { FaCommentDots, FaEye } from "react-icons/fa";
-
-const mockMyQuestions = [
-  {
-    id: 1,
-    title: "How to connect Odoo with Google Sheets?",
-    replies: 4,
-    tags: ["Odoo", "API"],
-  },
-  {
-    id: 2,
-    title: "Best way to structure a Next.js education platform?",
-    replies: 2,
-    tags: ["Next.js", "Design"],
-  },
-];
+import { FaEye } from "react-icons/fa";
+import { fetchDiscussions } from "@/services/communityService";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function MyQuestionsPage() {
   const [questions, setQuestions] = useState([]);
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    setQuestions(mockMyQuestions); // Replace with real API later
-  }, []);
+    const load = async () => {
+      try {
+        const list = await fetchDiscussions();
+        const normalized = (list || []).map((q) => ({
+          ...q,
+          tags: Array.isArray(q.tags)
+            ? q.tags
+            : typeof q.tags === "string" && q.tags
+            ? JSON.parse(q.tags)
+            : [],
+        }));
+        if (user) {
+          setQuestions(
+            normalized.filter((q) => q.user_name === user.full_name)
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
+  }, [user]);
 
   return (
     <InstructorLayout title="My Questions">
@@ -51,7 +59,7 @@ export default function MyQuestionsPage() {
                     </span>
                   ))}
                 </div>
-                <Link href={`/dashboard/student/community/questions/${q.id}`}>
+                <Link href={`/dashboard/instructor/community/questions/${q.id}`}>
                   <button className="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 hover:bg-blue-200">
                     <FaEye /> View Discussion
                   </button>
