@@ -3,6 +3,8 @@ const { sendSuccess } = require("../../utils/response");
 const mailService = require("../../services/mailService");
 const appConfigService = require("../appConfig/appConfig.service");
 const AppError = require("../../utils/AppError");
+const userModel = require("../users/user.model");
+const notificationService = require("../notifications/notifications.service");
 
 exports.submitForm = catchAsync(async (req, res) => {
   const { name, email, message } = req.body || {};
@@ -22,5 +24,16 @@ exports.submitForm = catchAsync(async (req, res) => {
     subject: `New contact form submission`,
     html,
   });
+  const admins = await userModel.findAdmins();
+  const note = `New contact message from ${name} (${email})`;
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "contact_message",
+        message: note,
+      })
+    )
+  );
   sendSuccess(res, null, "Message sent");
 });
