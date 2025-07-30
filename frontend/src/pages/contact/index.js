@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
-const mockSettings = {
+import { fetchContactConfig, sendContactMessage } from "@/services/contactService";
+const defaultSettings = {
   email: "support@skillbridge.com",
   phone: "+1 555-1234",
   addressLine: "123 Remote Learning Ave",
@@ -13,18 +14,33 @@ const mockSettings = {
 };
 
 export default function ContactPage() {
+  const [settings, setSettings] = useState(defaultSettings);
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchContactConfig();
+        if (data) setSettings(prev => ({ ...prev, ...data }));
+      } catch (err) {
+        console.error("Failed to load contact settings", err);
+      }
+    };
+    load();
+  }, []);
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", form);
-    setSubmitted(true);
-    // TODO: Send to backend
+    try {
+      await sendContactMessage(form);
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Failed to send message", err);
+    }
   };
 
   return (
@@ -44,20 +60,20 @@ export default function ContactPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-lg">
-                  <strong>Email:</strong> {mockSettings.email}
+                  <strong>Email:</strong> {settings.email}
                 </p>
                 <p className="text-lg">
-                  <strong>Phone:</strong> {mockSettings.phone}
+                  <strong>Phone:</strong> {settings.phone}
                 </p>
                 <p className="text-lg">
                   <strong>Address:</strong><br />
-                  {mockSettings.addressLine}<br />
-                  {mockSettings.city}, {mockSettings.country}
+                  {settings.addressLine}<br />
+                  {settings.city}, {settings.country}
                 </p>
               </div>
               <div className="rounded overflow-hidden shadow-lg">
                 <iframe
-                  src={mockSettings.mapEmbedUrl}
+                  src={settings.mapEmbedUrl}
                   width="100%"
                   height="250"
                   style={{ border: 0 }}
@@ -106,7 +122,7 @@ export default function ContactPage() {
                 Send Message
               </button>
               {submitted && (
-                <p className="text-green-400 mt-2">✅ Your message was sent (mock).</p>
+                <p className="text-green-400 mt-2">✅ Your message was sent.</p>
               )}
             </form>
           </div>

@@ -942,3 +942,57 @@ exports.sendCartAddedEmail = async (to, itemName) => {
     console.error("Error sending cart added email: ", error);
   }
 };
+
+// Handle contact form submissions from the public site
+exports.sendContactFormEmail = async (to, name, senderEmail, content) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Contact message from ${senderEmail}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: senderEmail,
+    to,
+    subject: `New contact message from ${name}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>You have received a new contact form submission.</p>
+        <p><strong>Name:</strong> ${name}<br/>
+           <strong>Email:</strong> ${senderEmail}</p>
+        <p style="white-space:pre-line">${content}</p>
+        <p>Thank you,<br/>The ${fromName} Site</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Contact form email sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending contact form email: ", error);
+  }
+};
