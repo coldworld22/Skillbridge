@@ -3,7 +3,7 @@ import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
-import { fetchContactConfig } from "@/services/contactService";
+import { fetchContactConfig, sendContactMessage } from "@/services/contactService";
 const defaultSettings = {
   email: "support@skillbridge.com",
   phone: "+1 555-1234",
@@ -33,11 +33,14 @@ export default function ContactPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", form);
-    setSubmitted(true);
-    // TODO: Send to backend
+    try {
+      await sendContactMessage(form);
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Failed to send message", err);
+    }
   };
 
   return (
@@ -119,7 +122,7 @@ export default function ContactPage() {
                 Send Message
               </button>
               {submitted && (
-                <p className="text-green-400 mt-2">✅ Your message was sent (mock).</p>
+                <p className="text-green-400 mt-2">✅ Your message was sent successfully.</p>
               )}
             </form>
           </div>
