@@ -11,6 +11,7 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
+const startCartReminderJob = require("./jobs/cartReminderJob");
 require("dotenv").config();
 
 
@@ -191,6 +192,7 @@ async function startServer() {
       console.log(`✅ Server running on port ${PORT}`);
     });
     startLessonReminderJob();
+    startCartReminderJob();
   } catch (err) {
     console.error("❌ Failed to start server:", err.message);
     process.exit(1);
