@@ -42,3 +42,9 @@ exports.listContributors = catchAsync(async (req, res) => {
   const contributors = await service.getTopContributors(limit);
   sendSuccess(res, contributors);
 });
+
+exports.listTags = catchAsync(async (req, res) => {
+  const q = req.query.q || '';
+  const tags = await service.searchTags(q);
+  sendSuccess(res, tags);
+});

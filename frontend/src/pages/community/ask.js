@@ -6,7 +6,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { FaPaperPlane, FaEdit, FaCheckCircle } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-toastify";
-import { createDiscussion } from "@/services/communityService";
+import { createDiscussion, searchTags } from "@/services/communityService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 // ✅ AI API URL - Update with your actual backend API endpoint
@@ -25,6 +25,8 @@ const AskQuestionPage = () => {
   const [tags, setTags] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
+  const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   // ✅ AI Assistance States
   const [aiResponse, setAIResponse] = useState("");
   const [isProcessingAI, setIsProcessingAI] = useState(false);
@@ -82,11 +84,38 @@ const AskQuestionPage = () => {
   }, [title, description, tags]);
 
   // ✅ Handle File Upload
+  useEffect(() => {
+    if (tagInput.trim()) {
+      searchTags(tagInput.trim()).then(setTagSuggestions).catch(() => {});
+    } else {
+      setTagSuggestions([]);
+    }
+  }, [tagInput]);
+
   const handleFileUpload = (files) => {
     setUploadedFiles([...uploadedFiles, ...files]);
   };
 
   // ✅ Fetch AI Response for Given Question
+  const handleAddTag = (t) => {
+    const tag = t.trim();
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+    }
+    setTagInput("");
+    setTagSuggestions([]);
+  };
+
+  const handleRemoveTag = (t) => {
+    setTags(tags.filter((tag) => tag !== t));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    }
+  };
   const fetchAIResponse = async () => {
     if (!title.trim()) return;
     if (!selectedAI) {
@@ -160,6 +189,35 @@ const handleAcceptAIResponse = () => {
           <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded-md mt-6">
             <label className="block font-bold">Title</label>
             <input className="w-full p-3 mt-2 bg-gray-700 rounded-md text-white" placeholder="Enter question title" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <label className="block font-bold mt-4">Tags</label>
+            <div className="relative">
+              <input
+                className="w-full p-3 mt-2 bg-gray-700 rounded-md text-white"
+                placeholder="Add tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+              />
+              {tagSuggestions.length > 0 && (
+                <ul className="absolute z-10 bg-gray-700 border border-gray-600 mt-1 rounded-md w-full max-h-40 overflow-y-auto">
+                  {tagSuggestions.map((s) => (
+                    <li key={s.id} className="px-2 py-1 cursor-pointer hover:bg-gray-600" onClick={() => handleAddTag(s.name)}>
+                      {s.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {tags.map((t) => (
+                <span key={t} className="bg-yellow-500 text-gray-900 px-2 py-1 rounded flex items-center">
+                  {t}
+                  <button type="button" className="ml-1 text-gray-900 hover:text-gray-700" onClick={() => handleRemoveTag(t)}>
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
 
             {/* ✅ Show Related Questions */}
             {relatedQuestions.length > 0 && (

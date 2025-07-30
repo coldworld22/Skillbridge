@@ -147,3 +147,10 @@ exports.getTopContributors = async (limit = 5) => {
     .orderBy("c.score", "desc")
     .limit(limit);
 };
+exports.searchTags = async (q) => {
+  return db('community_tags')
+    .whereILike('name', `%${q}%`)
+    .select('id', 'name', 'slug')
+    .orderBy('name')
+    .limit(10);
+};

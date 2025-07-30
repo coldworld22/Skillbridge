@@ -7,5 +7,6 @@ router.get("/discussions", ctrl.listDiscussions);
 router.get("/discussions/:id", ctrl.getDiscussion);
 router.post("/discussions", verifyToken, upload, ctrl.createDiscussion);
 router.get("/contributors", ctrl.listContributors);
+router.get("/tags", ctrl.listTags);
 
 module.exports = router;
