@@ -15,11 +15,14 @@ export default function AskQuestionPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (tagInput.trim()) {
-      searchTags(tagInput.trim()).then(setTagSuggestions).catch(() => {});
-    } else {
+    if (!tagInput.trim()) {
       setTagSuggestions([]);
+      return;
     }
+    const debounce = setTimeout(() => {
+      searchTags(tagInput.trim()).then(setTagSuggestions).catch(() => {});
+    }, 300);
+    return () => clearTimeout(debounce);
   }, [tagInput]);
 
   const addTag = (tag) => {
