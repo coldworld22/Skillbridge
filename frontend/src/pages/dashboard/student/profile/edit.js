@@ -229,7 +229,20 @@ export default function StudentProfileEdit() {
         social_links,
       };
       console.log("[StudentProfileEdit] Payload", payload);
-      await updateStudentProfile(payload);
+
+      await toast.promise(updateStudentProfile(payload), {
+        pending: "Saving profile...",
+        success: "Profile updated successfully!",
+        error: {
+          render({ data }) {
+            return (
+              data?.response?.data?.message ||
+              data?.message ||
+              "Failed to update profile"
+            );
+          },
+        },
+      });
 
       const fresh = await getStudentProfile();
       console.log("[StudentProfileEdit] Updated profile", fresh);
@@ -244,7 +257,6 @@ export default function StudentProfileEdit() {
         profile_complete: true,
       });
 
-      toast.success("Profile updated successfully!");
       setTimeout(() => {
         router.push("/dashboard/student/profile/steps/Verification");
       }, 1500);
