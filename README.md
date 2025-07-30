@@ -88,4 +88,4 @@ Admins can build a nested list of course categories. CRUD endpoints live under `
 
 ## Third-party integrations
 
-The admin dashboard page under `Settings → Third Party` lets you configure API keys for several external services such as ChatGPT, DeepSeek or Claude. See [docs/admin-third-party-integrations.md](docs/admin-third-party-integrations.md) for details. Once keys are saved, users can choose a provider on the community Ask page and request AI-generated answers.
+The admin dashboard page under `Settings → Third Party` lets you configure API keys for several external services such as ChatGPT, DeepSeek or Claude. For ChatGPT you can register multiple models that users may pick from. See [docs/admin-third-party-integrations.md](docs/admin-third-party-integrations.md) for details. Once keys are saved, users can choose a provider on the community Ask page and request AI-generated answers.

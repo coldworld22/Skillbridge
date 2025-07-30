@@ -24,7 +24,10 @@ After storing keys on the admin page, users can select a provider from a dropdow
 1. Sign in to your OpenAI account and create an API key.
 2. In the admin dashboard navigate to **Settings → Third Party** and open the
    **ChatGPT** modal.
-3. Paste the key into the **API Key** field and optionally adjust the model name
-   (e.g. `gpt-4`) and temperature.
-4. Click **Save** to persist the settings. The backend will use these values
-   when calling the OpenAI Chat Completion API.
+3. Paste the key into the **API Key** field. You can configure multiple models
+   by listing their names and default temperatures.
+4. Click **Add model** in the modal to create additional model rows (e.g.
+   `gpt-4`, `gpt-3.5-turbo`). Each question on the Ask page can then choose one
+   of the configured models.
+5. Click **Save** to persist the settings. The backend will use the selected
+   model when calling the OpenAI Chat Completion API.

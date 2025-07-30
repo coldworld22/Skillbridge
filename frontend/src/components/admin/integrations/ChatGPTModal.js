@@ -4,15 +4,41 @@ import { FaTimes, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function ChatGPTModal({ initialData = {}, onClose, onSave }) {
+  const initModels = initialData.models
+    ? initialData.models
+    : initialData.model
+      ? [{ name: initialData.model, temperature: initialData.temperature ?? 0.7 }]
+      : [{ name: "gpt-4", temperature: 0.7 }];
+
   const [form, setForm] = useState({
-    apiKey: "",
-    model: "gpt-4",
-    temperature: 0.7,
-    ...initialData,
+    apiKey: initialData.apiKey || "",
+    models: initModels,
   });
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleModelChange = (index, key, value) => {
+    setForm((prev) => {
+      const models = [...prev.models];
+      models[index] = { ...models[index], [key]: value };
+      return { ...prev, models };
+    });
+  };
+
+  const addModel = () => {
+    setForm((prev) => ({
+      ...prev,
+      models: [...prev.models, { name: "", temperature: 0.7 }],
+    }));
+  };
+
+  const removeModel = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      models: prev.models.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async () => {
@@ -49,29 +75,46 @@ export default function ChatGPTModal({ initialData = {}, onClose, onSave }) {
             />
           </div>
 
-          <div>
-            <label className="block font-medium">Model</label>
-            <select
-              value={form.model}
-              onChange={(e) => handleChange("model", e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
+          <div className="space-y-3">
+            <label className="block font-medium">Models</label>
+            {form.models.map((m, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={m.name}
+                  onChange={(e) => handleModelChange(idx, "name", e.target.value)}
+                  placeholder="gpt-4"
+                  className="flex-1 border border-gray-300 rounded px-2 py-1"
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="1"
+                  value={m.temperature}
+                  onChange={(e) =>
+                    handleModelChange(idx, "temperature", parseFloat(e.target.value))
+                  }
+                  className="w-24 border border-gray-300 rounded px-2 py-1"
+                />
+                {form.models.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeModel(idx)}
+                    className="text-red-600"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addModel}
+              className="text-sm text-blue-600 hover:underline"
             >
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-medium">Temperature</label>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="1"
-              value={form.temperature}
-              onChange={(e) => handleChange("temperature", parseFloat(e.target.value))}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
+              Add model
+            </button>
           </div>
         </div>
 
