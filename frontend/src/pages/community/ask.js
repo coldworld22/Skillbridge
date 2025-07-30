@@ -59,11 +59,11 @@ const AskQuestionPage = () => {
       try {
         const cfg = await fetchThirdPartyConfig();
         const opts = [];
-        if (cfg.chatgpt?.apiKey) opts.push('chatgpt');
-        if (cfg.deepseek?.apiKey) opts.push('deepseek');
-        if (cfg.claude?.apiKey) opts.push('claude');
-        if (cfg.gemini?.apiKey) opts.push('gemini');
-        if (cfg.huggingface?.apiKey) opts.push('huggingface');
+        if (cfg.chatgpt?.apiKey && cfg.chatgpt.active !== false) opts.push('chatgpt');
+        if (cfg.deepseek?.apiKey && cfg.deepseek.active !== false) opts.push('deepseek');
+        if (cfg.claude?.apiKey && cfg.claude.active !== false) opts.push('claude');
+        if (cfg.gemini?.apiKey && cfg.gemini.active !== false) opts.push('gemini');
+        if (cfg.huggingface?.apiKey && cfg.huggingface.active !== false) opts.push('huggingface');
         setAiOptions(opts);
         if (opts.length === 0) toast.info('No AI integrations available');
       } catch (err) {

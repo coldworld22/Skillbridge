@@ -8,6 +8,7 @@ export default function ChatGPTModal({ initialData = {}, onClose, onSave }) {
     apiKey: "",
     model: "gpt-4",
     temperature: 0.7,
+    active: true,
     ...initialData,
   });
 
@@ -73,6 +74,15 @@ export default function ChatGPTModal({ initialData = {}, onClose, onSave }) {
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
           </div>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => handleChange('active', e.target.checked)}
+            />
+            Active
+          </label>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">

@@ -3,7 +3,12 @@ import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function GeminiModal({ initialData = {}, onClose, onSave }) {
-  const [form, setForm] = useState({ apiKey: "", model: "gemini-pro", ...initialData });
+  const [form, setForm] = useState({
+    apiKey: "",
+    model: "gemini-pro",
+    active: true,
+    ...initialData,
+  });
 
   const handleSubmit = async () => {
     if (!onSave) return onClose();
@@ -54,6 +59,15 @@ export default function GeminiModal({ initialData = {}, onClose, onSave }) {
               <option value="gemini-ultra">Gemini Ultra</option>
             </select>
           </div>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
+            Active
+          </label>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">

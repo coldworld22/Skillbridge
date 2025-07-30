@@ -3,7 +3,12 @@ import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function HuggingFaceModal({ initialData = {}, onClose, onSave }) {
-  const [form, setForm] = useState({ token: "", model: "", ...initialData });
+  const [form, setForm] = useState({
+    token: "",
+    model: "",
+    active: true,
+    ...initialData,
+  });
 
   const handleSubmit = async () => {
     if (!onSave) return onClose();
@@ -52,6 +57,15 @@ export default function HuggingFaceModal({ initialData = {}, onClose, onSave }) 
               className="w-full border border-gray-300 rounded px-3 py-2"
             />
           </div>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
+            Active
+          </label>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
