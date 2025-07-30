@@ -20,6 +20,7 @@ export default function AdminCommunityDiscussionsPage() {
   const [discussions, setDiscussions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
 
   useEffect(() => {
     const load = async () => {
