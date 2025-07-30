@@ -85,3 +85,7 @@ Administrators can monitor runtime warnings and errors from the dashboard. The a
 ## Admin category management
 
 Admins can build a nested list of course categories. CRUD endpoints live under `/api/users/admin/categories`. See [docs/admin-category-management.md](docs/admin-category-management.md) for an overview of the routes and frontend pages.
+
+## Third-party integrations
+
+The admin dashboard page under `Settings → Third Party` lets you configure API keys for several external services such as ChatGPT, DeepSeek or Claude. See [docs/admin-third-party-integrations.md](docs/admin-third-party-integrations.md) for details. Once keys are saved, users can choose a provider on the community Ask page and request AI-generated answers.
