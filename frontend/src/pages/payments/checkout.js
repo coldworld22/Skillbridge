@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
+import { validateCode } from '@/services/couponService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
@@ -57,11 +58,12 @@ export default function CheckoutPage() {
     load();
   }, [classId]);
 
-  const handleApplyPromo = () => {
-    if (promoCode.toUpperCase() === 'DISCOUNT10') {
-      setDiscount(10);
+  const handleApplyPromo = async () => {
+    try {
+      const data = await validateCode(promoCode);
+      setDiscount(data.discount_percent);
       setError('');
-    } else {
+    } catch {
       setDiscount(0);
       setError('Invalid promo code');
     }
