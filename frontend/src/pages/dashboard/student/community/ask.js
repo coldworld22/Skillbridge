@@ -48,6 +48,10 @@ export default function AskQuestionPage() {
       toast.error("Title required");
       return;
     }
+    if (selectedTags.length === 0) {
+      toast.error("At least one tag required");
+      return;
+    }
     try {
       await createDiscussion({ title, content: description, tags: selectedTags });
       setSubmitted(true);
