@@ -19,8 +19,20 @@ const CommunityPage = () => {
   useEffect(() => {
     const load = async () => {
       const list = await fetchDiscussions();
-      setAllQuestions(list);
-      setFilteredQuestions(list);
+      const normalized = list.map((q) => ({
+        ...q,
+        description: q.description || q.content || "",
+        tags: Array.isArray(q.tags)
+          ? q.tags
+          : typeof q.tags === "string" && q.tags
+          ? JSON.parse(q.tags)
+          : [],
+        answers: Array.isArray(q.answers) ? q.answers : [],
+        date: q.date || q.created_at,
+        user: q.user ? q.user : { name: q.user_name },
+      }));
+      setAllQuestions(normalized);
+      setFilteredQuestions(normalized);
     };
     load();
   }, []);
@@ -30,13 +42,17 @@ const CommunityPage = () => {
     let updatedQuestions = [...allQuestions];
 
     if (filter.noAnswers) {
-      updatedQuestions = updatedQuestions.filter((q) => q.answers.length === 0);
+      updatedQuestions = updatedQuestions.filter(
+        (q) => (q.answers?.length ?? 0) === 0
+      );
     }
 
     if (filter.sortBy === "Newest") {
-      updatedQuestions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      updatedQuestions.sort(
+        (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+      );
     } else if (filter.sortBy === "Highest Score") {
-      updatedQuestions.sort((a, b) => b.votes - a.votes);
+      updatedQuestions.sort((a, b) => (b.votes || 0) - (a.votes || 0));
     }
 
     setFilteredQuestions(updatedQuestions);
