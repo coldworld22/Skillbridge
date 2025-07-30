@@ -20,6 +20,16 @@ import {
 } from "recharts";
 
 import { fetchDashboardStats } from "@/services/admin/communityService";
+export async function getServerSideProps({ req }) {
+  try {
+    const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};
+    const data = await fetchDashboardStats(headers);
+    return { props: { initialStats: data || null } };
+  } catch (err) {
+    console.error("Dashboard fetch error:", err.message);
+    return { props: { initialStats: null } };
+  }
+}
 
 export async function getServerSideProps() {
   try {
