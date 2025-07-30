@@ -1,13 +1,27 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import SearchBar from "@/components/shared/SearchBar";
 import SearchFilters from "@/components/shared/SearchFilters";
 import SearchResults from "@/components/shared/SearchResults";
 import mockData from "@/mocks/searchResults.json";
 
 const SearchPage = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredResults, setFilteredResults] = useState(mockData);
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  useEffect(() => {
+    if (router.query.q) {
+      setSearchQuery(router.query.q);
+    }
+  }, [router.query.q]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      router.replace({ pathname: '/search', query: { q: searchQuery } }, undefined, { shallow: true });
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     let results = mockData;
@@ -25,7 +39,11 @@ const SearchPage = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">Search Results</h1>
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        onKeyDown={(e) => e.key === 'Enter' && router.push(`/search?q=${encodeURIComponent(searchQuery)}`)}
+      />
       <SearchFilters selected={selectedCategory} onChange={setSelectedCategory} />
       <SearchResults results={filteredResults} />
     </div>
