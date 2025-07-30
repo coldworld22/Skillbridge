@@ -33,6 +33,12 @@ describe('GET /api/community/discussions/:id', () => {
     service.getDiscussion.mockResolvedValue(mock);
     const res = await request(app).get('/api/community/discussions/1');
     expect(res.status).toBe(200);
+    expect(service.getDiscussion).toHaveBeenCalledWith(
+      '1',
+      undefined,
+      expect.anything(),
+      undefined
+    );
     expect(res.body.data).toEqual(mock);
   });
 });

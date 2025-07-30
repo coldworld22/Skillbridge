@@ -16,6 +16,33 @@ exports.getDiscussionTags = async (ids) => {
 exports.listDiscussions = async () => {
   const rows = await db("community_discussions as d")
     .leftJoin("users as u", "d.user_id", "u.id")
+    .leftJoin(
+      db("community_views")
+        .select("discussion_id")
+        .count({ views: "id" })
+        .groupBy("discussion_id")
+        .as("v"),
+      "v.discussion_id",
+      "d.id"
+    )
+    .leftJoin(
+      db("community_likes")
+        .select("discussion_id")
+        .count({ likes: "id" })
+        .groupBy("discussion_id")
+        .as("l"),
+      "l.discussion_id",
+      "d.id"
+    )
+    .leftJoin(
+      db("community_votes")
+        .select("discussion_id")
+        .sum({ votes: "vote" })
+        .groupBy("discussion_id")
+        .as("t"),
+      "t.discussion_id",
+      "d.id"
+    )
     .select(
       "d.id",
       "d.title",
@@ -25,16 +52,47 @@ exports.listDiscussions = async () => {
       "d.resolved",
       "d.locked",
       "u.full_name as user_name",
-      "u.avatar_url as user_avatar"
+      "u.avatar_url as user_avatar",
+      db.raw("COALESCE(v.views,0) as views"),
+      db.raw("COALESCE(l.likes,0) as likes"),
+      db.raw("COALESCE(t.votes,0) as votes")
     )
     .orderBy("d.created_at", "desc");
   const tagsMap = await exports.getDiscussionTags(rows.map((r) => r.id));
   return rows.map((r) => ({ ...r, tags: tagsMap[r.id] || [] }));
 };
 
-exports.getDiscussion = async (id) => {
+exports.getDiscussion = async (id, viewerId, ip, userAgent) => {
+  await exports.recordView(id, viewerId, ip, userAgent);
   const row = await db("community_discussions as d")
     .leftJoin("users as u", "d.user_id", "u.id")
+    .leftJoin(
+      db("community_views")
+        .select("discussion_id")
+        .count({ views: "id" })
+        .groupBy("discussion_id")
+        .as("v"),
+      "v.discussion_id",
+      "d.id"
+    )
+    .leftJoin(
+      db("community_likes")
+        .select("discussion_id")
+        .count({ likes: "id" })
+        .groupBy("discussion_id")
+        .as("l"),
+      "l.discussion_id",
+      "d.id"
+    )
+    .leftJoin(
+      db("community_votes")
+        .select("discussion_id")
+        .sum({ votes: "vote" })
+        .groupBy("discussion_id")
+        .as("t"),
+      "t.discussion_id",
+      "d.id"
+    )
     .select(
       "d.id",
       "d.title",
@@ -44,7 +102,10 @@ exports.getDiscussion = async (id) => {
       "d.resolved",
       "d.locked",
       "u.full_name as user_name",
-      "u.avatar_url as user_avatar"
+      "u.avatar_url as user_avatar",
+      db.raw("COALESCE(v.views,0) as views"),
+      db.raw("COALESCE(l.likes,0) as likes"),
+      db.raw("COALESCE(t.votes,0) as votes")
     )
     .where("d.id", id)
     .first();
@@ -192,4 +253,52 @@ exports.createReply = async (data) => {
     user_name: user?.full_name,
     user_avatar: user?.avatar_url,
   };
+};
+
+// View tracking
+exports.recordView = async (discussionId, viewerId, ip, userAgent) => {
+  return db('community_views').insert({
+    id: uuidv4(),
+    discussion_id: discussionId,
+    viewer_id: viewerId || null,
+    ip_address: ip,
+    user_agent: userAgent,
+  });
+};
+
+exports.getViewCount = async (discussionId) => {
+  const [row] = await db('community_views').where({ discussion_id: discussionId }).count();
+  return parseInt(row.count, 10) || 0;
+};
+
+// Likes
+exports.likeDiscussion = async (userId, discussionId) => {
+  const [row] = await db('community_likes')
+    .insert({ id: uuidv4(), user_id: userId, discussion_id: discussionId })
+    .onConflict(['user_id', 'discussion_id']).ignore()
+    .returning('*');
+  return row;
+};
+
+exports.unlikeDiscussion = async (userId, discussionId) => {
+  return db('community_likes').where({ user_id: userId, discussion_id: discussionId }).del();
+};
+
+exports.getLikeCount = async (discussionId) => {
+  const [row] = await db('community_likes').where({ discussion_id: discussionId }).count();
+  return parseInt(row.count, 10) || 0;
+};
+
+// Votes
+exports.voteDiscussion = async (userId, discussionId, vote) => {
+  await db('community_votes')
+    .insert({ id: uuidv4(), user_id: userId, discussion_id: discussionId, vote })
+    .onConflict(['user_id', 'discussion_id']).merge({ vote });
+  const [row] = await db('community_votes').where({ discussion_id: discussionId }).sum({ score: 'vote' });
+  return parseInt(row.score, 10) || 0;
+};
+
+exports.getVoteScore = async (discussionId) => {
+  const [row] = await db('community_votes').where({ discussion_id: discussionId }).sum({ score: 'vote' });
+  return parseInt(row.score, 10) || 0;
 };

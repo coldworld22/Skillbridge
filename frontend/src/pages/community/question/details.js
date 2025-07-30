@@ -5,13 +5,21 @@ import Footer from "@/components/website/sections/Footer";
 import { useRouter } from "next/router";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReactMarkdown from "react-markdown";
-import { fetchDiscussionById, fetchReplies, createReply } from "@/services/communityService";
+import {
+  fetchDiscussionById,
+  fetchReplies,
+  createReply,
+  likeDiscussion,
+  unlikeDiscussion,
+  voteDiscussion,
+} from "@/services/communityService";
 
 const QuestionDetails = () => {
   const router = useRouter();
   const [question, setQuestion] = useState(null);
   const [likes, setLikes] = useState(0);
   const [votes, setVotes] = useState(0);
+  const [liked, setLiked] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replies, setReplies] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
@@ -37,12 +45,30 @@ const QuestionDetails = () => {
   }, [router.query.id]);
 
   // ✅ Handle Like Button
-  const handleLike = () => setLikes(likes + 1);
+  const handleLike = async () => {
+    try {
+      if (!liked) {
+        const res = await likeDiscussion(router.query.id);
+        setLikes(res.likes);
+        setLiked(true);
+      } else {
+        const res = await unlikeDiscussion(router.query.id);
+        setLikes(res.likes);
+        setLiked(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // ✅ Handle Vote System
-  const handleVote = (type) => {
-    if (type === "up") setVotes(votes + 1);
-    if (type === "down") setVotes(votes - 1);
+  const handleVote = async (type) => {
+    try {
+      const res = await voteDiscussion(router.query.id, type);
+      setVotes(res.votes);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // ✅ Handle Audio Upload
