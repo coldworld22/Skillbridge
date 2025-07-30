@@ -24,3 +24,13 @@ export const searchTags = async (q) => {
   const { data } = await api.get(`/community/tags?q=${encodeURIComponent(q)}`);
   return data?.data ?? [];
 };
+
+export const fetchReplies = async (discussionId) => {
+  const { data } = await api.get(`/community/discussions/${discussionId}/replies`);
+  return data?.data ?? [];
+};
+
+export const createReply = async (discussionId, payload) => {
+  const { data } = await api.post(`/community/discussions/${discussionId}/replies`, payload);
+  return data?.data;
+};

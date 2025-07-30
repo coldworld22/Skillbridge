@@ -48,3 +48,20 @@ exports.listTags = catchAsync(async (req, res) => {
   const tags = await service.searchTags(q);
   sendSuccess(res, tags);
 });
+
+exports.listReplies = catchAsync(async (req, res) => {
+  const replies = await service.listReplies(req.params.id);
+  sendSuccess(res, replies);
+});
+
+exports.createReply = catchAsync(async (req, res) => {
+  const { content } = req.body || {};
+  if (!content) throw new AppError('Missing fields', 400);
+  const reply = await service.createReply({
+    discussion_id: req.params.id,
+    user_id: req.user.id,
+    content,
+    file_url: req.file ? `/uploads/community/${req.file.filename}` : null,
+  });
+  sendSuccess(res, reply, 'Reply posted');
+});
