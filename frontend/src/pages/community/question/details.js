@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { FaArrowUp, FaArrowDown, FaEye, FaComment, FaUser, FaHeart, FaVideo, FaPaperclip, FaMicrophone, FaTrash, FaEdit } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -52,13 +53,16 @@ const QuestionDetails = () => {
         const res = await likeDiscussion(router.query.id);
         setLikes(res.likes);
         setLiked(true);
+        toast.success('Liked');
       } else {
         const res = await unlikeDiscussion(router.query.id);
         setLikes(res.likes);
         setLiked(false);
+        toast.info('Like removed');
       }
     } catch (err) {
       console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update like');
     }
   };
 
@@ -67,8 +71,10 @@ const QuestionDetails = () => {
     try {
       const res = await voteDiscussion(router.query.id, type);
       setVotes(res.votes);
+      toast.success(type === 'up' ? 'Upvoted' : 'Downvoted');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to vote');
     }
   };
 
@@ -103,11 +109,20 @@ const QuestionDetails = () => {
       setReplies([...replies, newReply]);
       setReplyText('');
       setFile(null);
+      if (filePreview) URL.revokeObjectURL(filePreview);
       setFilePreview(null);
+      toast.success('Reply posted');
     } catch (err) {
       console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to post reply');
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
