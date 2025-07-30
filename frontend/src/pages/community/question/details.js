@@ -24,6 +24,7 @@ const QuestionDetails = () => {
   const [replies, setReplies] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
   const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
 
   useEffect(() => {
     if (!router.query.id) return;
@@ -75,7 +76,15 @@ const QuestionDetails = () => {
   const handleAudioUpload = (e) => setAudioFile(e.target.files[0]);
 
   // ✅ Handle File Upload
-  const handleFileUpload = (e) => setFile(e.target.files[0]);
+  const handleFileUpload = (e) => {
+    const f = e.target.files[0];
+    setFile(f);
+    if (f) {
+      setFilePreview(URL.createObjectURL(f));
+    } else {
+      setFilePreview(null);
+    }
+  };
 
   // ✅ Handle Video Call Invitation
   const handleVideoInvite = () => {
@@ -94,6 +103,7 @@ const QuestionDetails = () => {
       setReplies([...replies, newReply]);
       setReplyText('');
       setFile(null);
+      setFilePreview(null);
     } catch (err) {
       console.error(err);
     }
@@ -178,6 +188,15 @@ const QuestionDetails = () => {
         {/* ✅ File & Video Call */}
         <input type="file" accept="audio/*" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleAudioUpload} />
         <input type="file" accept=".pdf,.jpg,.png" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleFileUpload} />
+        {file && (
+          <div className="mt-2">
+            {file.type.startsWith('image/') ? (
+              <img src={filePreview} alt="preview" className="max-w-full rounded" />
+            ) : (
+              <p className="text-sm text-gray-400">{file.name}</p>
+            )}
+          </div>
+        )}
         <button onClick={handleVideoInvite} className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 flex items-center gap-2">
           <FaVideo /> Start Video Call
         </button>
