@@ -20,6 +20,16 @@ import {
 } from "recharts";
 
 import { fetchDashboardStats } from "@/services/admin/communityService";
+export async function getServerSideProps({ req }) {
+  try {
+    const headers = req.headers.cookie ? { Cookie: req.headers.cookie } : {};
+    const data = await fetchDashboardStats(headers);
+    return { props: { initialStats: data || null } };
+  } catch (err) {
+    console.error("Dashboard fetch error:", err.message);
+    return { props: { initialStats: null } };
+  }
+}
 
 const NavCard = ({ href, icon, label }) => (
   <Link href={href}>
@@ -37,11 +47,18 @@ const StatCard = ({ label, value, color }) => (
   </div>
 );
 
-export default function AdminCommunityDashboard() {
-  const [stats, setStats] = useState(null);
-  const [activityData, setActivityData] = useState([]);
+export default function AdminCommunityDashboard({ initialStats }) {
+  const [stats, setStats] = useState(initialStats ? {
+    totalDiscussions: initialStats.totalDiscussions,
+    pendingReports: initialStats.pendingReports,
+    contributors: initialStats.contributors,
+    repliesThisWeek: initialStats.repliesThisWeek,
+    topContributor: initialStats.topContributor || {},
+  } : null);
+  const [activityData, setActivityData] = useState(initialStats?.activityData || []);
 
   useEffect(() => {
+    if (stats) return;
     const load = async () => {
       try {
         const data = await fetchDashboardStats();
@@ -60,7 +77,7 @@ export default function AdminCommunityDashboard() {
       }
     };
     load();
-  }, []);
+  }, [stats]);
 
   if (!stats) {
     return (
