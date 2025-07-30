@@ -100,13 +100,18 @@ const Footer = () => {
             <div>
               <h3 className="text-lg font-bold mb-4 text-yellow-400">Quick Links</h3>
               <ul className="space-y-2 text-sm">
-                {quickLinks.map((item, index) => (
-                  <li key={index}>
-                    <Link href={`/${item.toLowerCase().replace(/\s/g, "-")}`} className="hover:text-yellow-300 transition">
-                      {item}
-                    </Link>
-                  </li>
-                ))}
+                {quickLinks.map((item, index) => {
+                  const slug = item.toLowerCase().replace(/\s/g, "-");
+                  const pathMap = { 'about-us': 'about', 'contact-us': 'contact' };
+                  const href = `/${pathMap[slug] || slug}`;
+                  return (
+                    <li key={index}>
+                      <Link href={href} className="hover:text-yellow-300 transition">
+                        {item}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
