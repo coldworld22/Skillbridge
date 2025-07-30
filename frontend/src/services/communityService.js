@@ -19,3 +19,8 @@ export const fetchTopContributors = async (limit = 5) => {
   const { data } = await api.get(`/community/contributors?limit=${limit}`);
   return data?.data ?? [];
 };
+
+export const searchTags = async (q) => {
+  const { data } = await api.get(`/community/tags?q=${encodeURIComponent(q)}`);
+  return data?.data ?? [];
+};
