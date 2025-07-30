@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { askAI } from "@/services/aiService";
 
 const models = [
   { key: "chatgpt", label: "ChatGPT 4" },
@@ -19,24 +20,32 @@ export default function ResearchAssistantPage() {
   const [followUp, setFollowUp] = useState("");
   const [followUpResponse, setFollowUpResponse] = useState(null);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!inputText.trim()) return;
     setLoading(true);
     setOutput(null);
 
-    setTimeout(() => {
-      setOutput(
-        selectedMode === "summary"
-          ? `📚 [${selectedModel.toUpperCase()}] Summary:\n\nThis paper presents an overview of key findings, emphasizes important correlations, and outlines suggestions for future research.`
-          : `🧠 [${selectedModel.toUpperCase()}] Explanation:\n\nThis section discusses complex methodologies. The use of regression analysis implies a predictive modeling approach, focusing on variable X's impact on Y.`
+    try {
+      const { answer } = await askAI(
+        selectedModel,
+        `${selectedMode}: ${inputText}`
       );
+      setOutput(answer);
+    } catch (err) {
+      setOutput("Error generating response");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
-  const handleFollowUp = () => {
+  const handleFollowUp = async () => {
     if (!followUp.trim()) return;
-    setFollowUpResponse(`💬 [${selectedModel.toUpperCase()}] Follow-up response:\n\nHere's what you need to know about: "${followUp}". It's a crucial element in context of the provided content.`);
+    try {
+      const { answer } = await askAI(selectedModel, followUp);
+      setFollowUpResponse(answer);
+    } catch (err) {
+      setFollowUpResponse("Error fetching response");
+    }
   };
 
   const handleFileUpload = (e) => {

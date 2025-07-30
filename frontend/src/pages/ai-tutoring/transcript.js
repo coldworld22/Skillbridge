@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { FaDownload, FaHistory } from "react-icons/fa";
+import { askAI } from "@/services/aiService";
 
 const mockTranscript = {
   model: "ChatGPT 4",
@@ -17,8 +18,19 @@ export default function AITranscriptPage() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching user transcript
-    setTimeout(() => setData(mockTranscript), 800);
+    const load = async () => {
+      try {
+        const { answer } = await askAI(
+          "chatgpt",
+          "Provide a sample learning transcript as JSON"
+        );
+        const parsed = JSON.parse(answer);
+        setData(parsed);
+      } catch (err) {
+        setData(mockTranscript);
+      }
+    };
+    load();
   }, []);
 
   const downloadTranscript = () => {
