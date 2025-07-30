@@ -47,7 +47,20 @@ exports.answerWithAI = async (provider, question, model) => {
 
       if (!res.ok) {
         const text = await res.text();
-        return { answer: null, error: text };
+        try {
+          const json = JSON.parse(text);
+          const msg = json.error?.message || text;
+          const code = json.error?.code;
+          if (code === 'insufficient_quota' || /insufficient quota/i.test(msg)) {
+            return {
+              answer: null,
+              error: 'AI API request failed: your account has no remaining credits.',
+            };
+          }
+          return { answer: null, error: msg };
+        } catch (e) {
+          return { answer: null, error: text };
+        }
       }
 
       const data = await res.json();
