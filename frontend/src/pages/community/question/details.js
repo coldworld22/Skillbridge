@@ -5,7 +5,7 @@ import Footer from "@/components/website/sections/Footer";
 import { useRouter } from "next/router";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReactMarkdown from "react-markdown";
-import { fetchDiscussionById } from "@/services/communityService";
+import { fetchDiscussionById, fetchReplies, createReply } from "@/services/communityService";
 
 const QuestionDetails = () => {
   const router = useRouter();
@@ -25,6 +25,12 @@ const QuestionDetails = () => {
         setQuestion(data);
         setLikes(data.likes || 0);
         setVotes(data.votes || 0);
+        try {
+          const r = await fetchReplies(router.query.id);
+          setReplies(r);
+        } catch (err) {
+          console.error(err);
+        }
       }
     };
     load();
@@ -52,10 +58,18 @@ const QuestionDetails = () => {
   };
 
   // ✅ Handle Reply Submission
-  const handleReply = () => {
-    if (replyText) {
-      setReplies([...replies, { text: replyText, user: { name: "You" }, date: "Just now" }]);
-      setReplyText("");
+  const handleReply = async () => {
+    if (!replyText) return;
+    const fd = new FormData();
+    fd.append('content', replyText);
+    if (file) fd.append('file', file);
+    try {
+      const newReply = await createReply(router.query.id, fd);
+      setReplies([...replies, newReply]);
+      setReplyText('');
+      setFile(null);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -65,9 +79,13 @@ const QuestionDetails = () => {
       <div className="container mx-auto px-6 py-8 mt-16">
         <h1 className="text-3xl font-bold text-yellow-500">{question?.title}</h1>
         <div className="flex items-center text-gray-400 text-sm mt-2">
-          <FaUser className="mr-2 text-yellow-500" />
-          <span className="font-bold text-white">{question?.user?.name}</span>
-          <span className="ml-4">{question?.date}</span>
+          {question?.user_avatar ? (
+            <img src={question.user_avatar} alt="avatar" className="w-6 h-6 rounded-full mr-2" />
+          ) : (
+            <FaUser className="mr-2 text-yellow-500" />
+          )}
+          <span className="font-bold text-white">{question?.user_name}</span>
+          <span className="ml-4">{new Date(question?.created_at || '').toLocaleDateString()}</span>
         </div>
 
         {/* ✅ Voting, Likes, Views */}
@@ -87,7 +105,10 @@ const QuestionDetails = () => {
       </div>
 
       {/* ✅ Question Content */}
-        <p className="text-gray-300 mt-4">{question?.description}</p>
+        {question?.image_url && (
+          <img src={question.image_url} alt="attachment" className="mt-4 max-w-full rounded" />
+        )}
+        <p className="text-gray-300 mt-4">{question?.content}</p>
 
         {/* ✅ Tags */}
         <div className="flex space-x-2 mt-3">
@@ -98,24 +119,27 @@ const QuestionDetails = () => {
           ))}
         </div>
 
-        {/* ✅ Answers Section */}
-        <h2 className="text-2xl font-bold text-yellow-500 mt-8">Answers</h2>
+        {/* ✅ Replies Section */}
+        <h2 className="text-2xl font-bold text-yellow-500 mt-8">Replies</h2>
         <div className="mt-4 space-y-6">
-          {question?.answers?.map((answer) => (
-            <div key={answer.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
-              <p className="text-gray-300 mt-2"><ReactMarkdown>{answer.text}</ReactMarkdown></p>
-
-              {/* ✅ Reply to Answer */}
-              <textarea
-                className="w-full mt-3 p-2 bg-gray-700 text-white rounded-lg"
-                rows="2"
-                placeholder="Reply to this answer..."
-              ></textarea>
-              <button className="mt-2 px-4 py-2 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600">
-                Post Reply
-              </button>
+          {replies.map((reply) => (
+            <div key={reply.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
+              <div className="flex items-center text-sm text-gray-400 mb-2">
+                {reply.user_avatar ? (
+                  <img src={reply.user_avatar} alt="avatar" className="w-5 h-5 rounded-full mr-2" />
+                ) : (
+                  <FaUser className="mr-2" />
+                )}
+                <span className="font-bold text-white">{reply.user_name}</span>
+                <span className="ml-2">{new Date(reply.created_at).toLocaleDateString()}</span>
+              </div>
+              <p className="text-gray-300 mt-2"><ReactMarkdown>{reply.content}</ReactMarkdown></p>
+              {reply.file_url && (
+                <img src={reply.file_url} alt="attachment" className="mt-2 max-w-full rounded" />
+              )}
             </div>
           ))}
+          {replies.length === 0 && <p className="text-gray-400">No replies yet.</p>}
         </div>
 
         {/* ✅ User Reply Section */}

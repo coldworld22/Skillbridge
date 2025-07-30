@@ -24,7 +24,8 @@ exports.listDiscussions = async () => {
       "d.created_at",
       "d.resolved",
       "d.locked",
-      "u.full_name as user_name"
+      "u.full_name as user_name",
+      "u.avatar_url as user_avatar"
     )
     .orderBy("d.created_at", "desc");
   const tagsMap = await exports.getDiscussionTags(rows.map((r) => r.id));
@@ -42,7 +43,8 @@ exports.getDiscussion = async (id) => {
       "d.created_at",
       "d.resolved",
       "d.locked",
-      "u.full_name as user_name"
+      "u.full_name as user_name",
+      "u.avatar_url as user_avatar"
     )
     .where("d.id", id)
     .first();
@@ -153,4 +155,41 @@ exports.searchTags = async (q) => {
     .select('id', 'name', 'slug')
     .orderBy('name')
     .limit(10);
+};
+
+exports.listReplies = async (discussionId) => {
+  return db('community_replies as r')
+    .leftJoin('users as u', 'r.user_id', 'u.id')
+    .where('r.discussion_id', discussionId)
+    .select(
+      'r.id',
+      'r.content',
+      'r.file_url',
+      'r.is_answer',
+      'r.created_at',
+      'u.full_name as user_name',
+      'u.avatar_url as user_avatar'
+    )
+    .orderBy('r.created_at', 'asc');
+};
+
+exports.createReply = async (data) => {
+  const [row] = await db('community_replies')
+    .insert({
+      discussion_id: data.discussion_id,
+      user_id: data.user_id,
+      content: data.content,
+      file_url: data.file_url || null,
+    })
+    .returning('*');
+
+  const user = await db('users')
+    .where({ id: data.user_id })
+    .first('full_name', 'avatar_url');
+
+  return {
+    ...row,
+    user_name: user?.full_name,
+    user_avatar: user?.avatar_url,
+  };
 };
