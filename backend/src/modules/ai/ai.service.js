@@ -11,7 +11,9 @@ exports.answerWithAI = async (provider, question, model) => {
   const cfg = (await thirdPartyConfig.getSettings()) || {};
   const settings = cfg[provider] || {};
 
-  if (!settings.apiKey) {
+  // Each provider may store its credential under different keys. Perform a
+  // generic check here only when no provider specific credential exists.
+  if (!settings.apiKey && !settings.token) {
     return { answer: null, error: 'No API key configured' };
   }
 
@@ -65,6 +67,35 @@ exports.answerWithAI = async (provider, question, model) => {
 
       const data = await res.json();
       const answer = data.choices?.[0]?.message?.content?.trim();
+      return { answer, confidence: 0.9 };
+    } catch (err) {
+      return { answer: null, error: err.message };
+    }
+  }
+
+  if (provider === 'huggingface') {
+    try {
+      const url = `https://api-inference.huggingface.co/models/${settings.model}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${settings.token || settings.apiKey}`,
+        },
+        body: JSON.stringify({ inputs: question }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        return { answer: null, error: text };
+      }
+
+      const data = await res.json();
+      let answer = '';
+      if (Array.isArray(data) && data[0]?.generated_text) answer = data[0].generated_text;
+      else if (data?.generated_text) answer = data.generated_text;
+      else if (data?.answer) answer = data.answer;
+      else answer = JSON.stringify(data);
       return { answer, confidence: 0.9 };
     } catch (err) {
       return { answer: null, error: err.message };
