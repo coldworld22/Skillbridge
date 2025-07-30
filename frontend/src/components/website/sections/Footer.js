@@ -181,25 +181,10 @@ const Footer = () => {
           </div>
         </div>
 
-         {/* Google AdSense Ads (If Enabled) */}
-         {/* {showAds && ( */}
-          <div className="mt-6 text-center">
-            {/* <h4 className="text-lg font-bold text-yellow-400 flex items-center gap-2 justify-center">
-              <FaBullhorn /> Sponsored Ads
-            </h4> */}
-            <div className="text-center">
-              {/* Google AdSense Ad Slot */}
-              {/* <ins className="adsbygoogle"
-                style={{ display: "block" }}
-                data-ad-client="ca-pub-xxxxxxxxxxxxxxxx"
-                data-ad-slot="1234567890"
-                data-ad-format="auto"
-                data-full-width-responsive="true">
-              </ins> */}
-            </div>
-          </div>
-        {/* )}
-         */}
+        {/* Google AdSense Ads (If Enabled) */}
+        <div className="mt-6 text-center">
+          <GoogleAd />
+        </div>
 
         {/* Divider */}
         <hr className="border-gray-700 my-6" />
