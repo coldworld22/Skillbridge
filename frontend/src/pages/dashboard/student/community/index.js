@@ -4,35 +4,54 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import Link from "next/link";
 import { FaSearch, FaPlus, FaTags } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
-
-const allDiscussions = [
-  { id: 1, title: "How do I integrate Tailwind with Next.js?", replies: 5, user: "Ali" },
-  { id: 2, title: "Best Odoo learning path for beginners?", replies: 3, user: "Fatima" },
-  { id: 3, title: "React vs Vue: Which is better for SaaS?", replies: 7, user: "Hassan" },
-  { id: 4, title: "How to secure an API with JWT?", replies: 2, user: "Lina" },
-  { id: 5, title: "Best practices for UI design systems?", replies: 6, user: "Yusuf" },
-  { id: 6, title: "How to test React components with Jest?", replies: 1, user: "Aisha" },
-];
-
-const myQuestions = [
-  { id: 101, title: "How to connect Odoo with Google Sheets?", replies: 2, tags: ["Odoo", "API"] },
-  { id: 102, title: "What’s the best Next.js folder structure?", replies: 0, tags: ["Next.js"] },
-];
-
-const mockTags = ["React", "Odoo", "Next.js", "UI/UX", "APIs"];
+import { fetchDiscussions } from "@/services/communityService";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function StudentCommunityPage() {
+  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [activeTag, setActiveTag] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [allDiscussions, setAllDiscussions] = useState([]);
+  const [tags, setTags] = useState([]);
   const itemsPerPage = 5;
 
-  const discussions = activeTab === "mine" ? myQuestions : allDiscussions;
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await fetchDiscussions();
+        const formatted = (list || []).map((d) => ({
+          id: d.id,
+          title: d.title,
+          user: d.user_name || "Anonymous",
+          tags: Array.isArray(d.tags)
+            ? d.tags
+            : typeof d.tags === "string" && d.tags
+            ? JSON.parse(d.tags)
+            : [],
+        }));
+        setAllDiscussions(formatted);
+        const tagSet = new Set();
+        formatted.forEach((q) => q.tags?.forEach((t) => tagSet.add(t)));
+        setTags(Array.from(tagSet));
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load discussions");
+      }
+    };
+    load();
+  }, []);
+
+  const discussions =
+    activeTab === "mine"
+      ? allDiscussions.filter((d) => d.user === user?.full_name)
+      : allDiscussions;
+
   const filtered = discussions.filter(
     (d) =>
       d.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (activeTag === "" || d.title.toLowerCase().includes(activeTag.toLowerCase()))
+      (activeTag === "" || d.tags?.some((t) => t.toLowerCase() === activeTag.toLowerCase()))
   );
 
   const paginated = filtered.slice(
@@ -104,7 +123,7 @@ export default function StudentCommunityPage() {
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-8 items-center">
           <FaTags className="text-yellow-500" />
-          {mockTags.map((tag) => (
+          {tags.map((tag) => (
             <button
               key={tag}
               onClick={() => setActiveTag(tag === activeTag ? "" : tag)}
@@ -132,7 +151,7 @@ export default function StudentCommunityPage() {
                     {d.title}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {activeTab === "mine" ? "You" : d.user} • {d.replies} replies
+                    {activeTab === "mine" ? "You" : d.user}
                   </p>
                 </div>
               </Link>
