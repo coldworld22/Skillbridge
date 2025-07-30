@@ -1,27 +1,44 @@
 const db = require("../../../config/database");
 
+exports.getDiscussionTags = async (ids) => {
+  const rows = await db("community_discussion_tags as m")
+    .join("community_tags as t", "m.tag_id", "t.id")
+    .whereIn("m.discussion_id", Array.isArray(ids) ? ids : [ids])
+    .select("m.discussion_id", "t.name");
+  const map = {};
+  rows.forEach((r) => {
+    if (!map[r.discussion_id]) map[r.discussion_id] = [];
+    map[r.discussion_id].push(r.name);
+  });
+  return map;
+};
+
 exports.listDiscussions = async () => {
-  return db("community_discussions as d")
+  const rows = await db("community_discussions as d")
     .leftJoin("users as u", "d.user_id", "u.id")
     .select(
       "d.id",
       "d.title",
       "d.content",
+      "d.image_url",
       "d.created_at",
       "d.resolved",
       "d.locked",
       "u.full_name as user_name"
     )
     .orderBy("d.created_at", "desc");
+  const tagsMap = await exports.getDiscussionTags(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, tags: tagsMap[r.id] || [] }));
 };
 
 exports.getDiscussion = async (id) => {
-  return db("community_discussions as d")
+  const row = await db("community_discussions as d")
     .leftJoin("users as u", "d.user_id", "u.id")
     .select(
       "d.id",
       "d.title",
       "d.content",
+      "d.image_url",
       "d.created_at",
       "d.resolved",
       "d.locked",
@@ -29,6 +46,9 @@ exports.getDiscussion = async (id) => {
     )
     .where("d.id", id)
     .first();
+  if (!row) return null;
+  const tagsMap = await exports.getDiscussionTags(id);
+  return { ...row, tags: tagsMap[id] || [] };
 };
 
 const { v4: uuidv4 } = require('uuid');
@@ -74,6 +94,27 @@ async function notifyAllUsers(discussion) {
   }
 }
 
+exports.syncDiscussionTags = async (discussionId, tagNames = []) => {
+  if (!tagNames.length) return [];
+  const existing = await db("community_tags").whereIn("name", tagNames);
+  const map = {};
+  existing.forEach((t) => { map[t.name] = t; });
+  const toInsert = tagNames.filter((n) => !map[n]);
+  const inserted = [];
+  for (const name of toInsert) {
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const [row] = await db("community_tags").insert({ name, slug }).returning("*");
+    inserted.push(row);
+  }
+  const all = [...existing, ...inserted];
+  for (const tag of all) {
+    await db("community_discussion_tags")
+      .insert({ discussion_id: discussionId, tag_id: tag.id })
+      .onConflict(["discussion_id", "tag_id"]).ignore();
+  }
+  return all;
+};
+
 exports.createDiscussion = async (data) => {
   const [row] = await db("community_discussions")
     .insert({
@@ -82,12 +123,14 @@ exports.createDiscussion = async (data) => {
       title: data.title,
       content: data.content,
       tags: JSON.stringify(data.tags || []),
+      image_url: data.image_url || null,
       created_at: db.fn.now(),
       updated_at: db.fn.now(),
     })
     .returning("*");
 
-  const disc = { ...row, user_name: data.user_name };
+  await exports.syncDiscussionTags(row.id, data.tags);
+  const disc = { ...row, user_name: data.user_name, tags: data.tags };
   await notifyAllUsers(disc);
   return disc;
 };
