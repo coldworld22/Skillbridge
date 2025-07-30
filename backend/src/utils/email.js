@@ -891,3 +891,54 @@ exports.sendCartReminderEmail = async (to, itemName) => {
   }
 };
 
+// Notify user immediately when they add an item to their cart
+exports.sendCartAddedEmail = async (to, itemName) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Cart added notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Item added to your cart`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>You just added <strong>${itemName}</strong> to your cart.</p>
+        <p>Complete your purchase anytime to secure it.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Cart added notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending cart added email: ", error);
+  }
+};

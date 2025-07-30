@@ -4,6 +4,7 @@ const catchAsync = require("../../utils/catchAsync");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
+const { sendCartAddedEmail } = require("../../utils/email");
 
 exports.addItem = catchAsync(async (req, res) => {
   const item = service.add(req.user.id, req.body);
@@ -23,6 +24,12 @@ exports.addItem = catchAsync(async (req, res) => {
       message,
     });
   }
+  try {
+    const user = await userModel.findById(req.user.id);
+    if (user?.email) await sendCartAddedEmail(user.email, item.name);
+  } catch (err) {
+    console.error("Error sending cart added email:", err.message);
+  }
 
   sendSuccess(res, item, "Item added to cart");
 });
@@ -41,5 +48,13 @@ exports.updateItem = catchAsync(async (req, res) => {
 exports.removeItem = catchAsync(async (req, res) => {
   const item = service.remove(req.user.id, req.params.id);
   if (!item) return res.status(404).json({ message: "Item not found" });
+  if (item) {
+    const message = `Removed ${item.name || "item"} from your cart`;
+    await notificationService.createNotification({
+      user_id: req.user.id,
+      type: "cart_removed",
+      message,
+    });
+  }
   sendSuccess(res, null, "Item removed");
 });
