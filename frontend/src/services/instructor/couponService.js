@@ -5,6 +5,11 @@ export const fetchCoupons = async () => {
   return data?.data || [];
 };
 
+export const fetchCouponById = async (id) => {
+  const { data } = await api.get(`/coupons/admin/${id}`);
+  return data?.data;
+};
+
 export const createCoupon = async (payload) => {
   const { data } = await api.post("/coupons/admin", payload);
   return data?.data;
