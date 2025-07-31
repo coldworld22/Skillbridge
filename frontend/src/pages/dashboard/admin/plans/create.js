@@ -17,7 +17,10 @@ export default function CreatePlanPage() {
     priceYearly: 0,
     currency: "USD",
     color: "#1F2937",
-    style: "",
+    textColor: "#ffffff",
+    textSize: 16,
+    gradientStart: "",
+    gradientEnd: "",
     recommended: false,
     active: true,
   });
@@ -34,8 +37,35 @@ export default function CreatePlanPage() {
     }
   }, [accessToken, hasHydrated, router, user]);
 
+  const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!form.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!isHex(form.color) || !isHex(form.textColor)) {
+      toast.error("Invalid color value");
+      return;
+    }
+    if (form.gradientStart && !isHex(form.gradientStart)) {
+      toast.error("Invalid gradient start color");
+      return;
+    }
+    if (form.gradientEnd && !isHex(form.gradientEnd)) {
+      toast.error("Invalid gradient end color");
+      return;
+    }
+
+    const style = {
+      textColor: form.textColor,
+      textSize: Number(form.textSize) || 16,
+      gradientStart: form.gradientStart || null,
+      gradientEnd: form.gradientEnd || null,
+    };
+
     try {
       await createPlan({
         name: form.name,
@@ -43,7 +73,7 @@ export default function CreatePlanPage() {
         price_yearly: Number(form.priceYearly),
         currency: form.currency,
         color: form.color,
-        style: form.style,
+        style: JSON.stringify(style),
         recommended: form.recommended,
         active: form.active,
         features: [],
@@ -126,17 +156,42 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Plan Style</label>
-          <select
+          <label className="block text-sm font-medium mb-1">Text Color</label>
+          <input
+            type="color"
             className="w-full border px-4 py-2 rounded"
-            value={form.style}
-            onChange={(e) => setForm({ ...form, style: e.target.value })}
-          >
-            <option value="">Default</option>
-            <option value="style-blue">Blue</option>
-            <option value="style-green">Green</option>
-            <option value="style-red">Red</option>
-          </select>
+            value={form.textColor}
+            onChange={(e) => setForm({ ...form, textColor: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Font Size (px)</label>
+          <input
+            type="number"
+            className="w-full border px-4 py-2 rounded"
+            value={form.textSize}
+            min={10}
+            max={40}
+            onChange={(e) => setForm({ ...form, textSize: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Gradient Start</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.gradientStart}
+            onChange={(e) => setForm({ ...form, gradientStart: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Gradient End</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.gradientEnd}
+            onChange={(e) => setForm({ ...form, gradientEnd: e.target.value })}
+          />
         </div>
         <label className="flex items-center gap-2">
           <input

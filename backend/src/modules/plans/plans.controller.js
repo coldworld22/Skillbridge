@@ -22,6 +22,22 @@ exports.createPlan = catchAsync(async (req, res) => {
 
   if (!name) throw new AppError("Name is required", 400);
 
+  const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+  if (color && !isHex(color)) throw new AppError("Invalid color format", 400);
+  if (style) {
+    try {
+      const conf = JSON.parse(style);
+      if (conf.textColor && !isHex(conf.textColor))
+        throw new Error("Invalid text color");
+      if (conf.gradientStart && !isHex(conf.gradientStart))
+        throw new Error("Invalid gradient start color");
+      if (conf.gradientEnd && !isHex(conf.gradientEnd))
+        throw new Error("Invalid gradient end color");
+    } catch (err) {
+      throw new AppError("Invalid style format", 400);
+    }
+  }
+
   const planSlug = slug || slugify(name, { lower: true, strict: true });
   const exists = await service.findBySlug(planSlug);
   if (exists) throw new AppError("Plan slug already exists", 409);
@@ -83,6 +99,23 @@ exports.updatePlan = catchAsync(async (req, res) => {
     style,
     features,
   } = req.body;
+
+  const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+
+  if (color && !isHex(color)) throw new AppError("Invalid color format", 400);
+  if (style) {
+    try {
+      const conf = JSON.parse(style);
+      if (conf.textColor && !isHex(conf.textColor))
+        throw new Error("Invalid text color");
+      if (conf.gradientStart && !isHex(conf.gradientStart))
+        throw new Error("Invalid gradient start color");
+      if (conf.gradientEnd && !isHex(conf.gradientEnd))
+        throw new Error("Invalid gradient end color");
+    } catch (err) {
+      throw new AppError("Invalid style format", 400);
+    }
+  }
 
   const updates = {};
   if (name) updates.name = name;
