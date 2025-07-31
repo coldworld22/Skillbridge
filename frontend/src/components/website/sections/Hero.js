@@ -80,18 +80,31 @@ const Hero = () => {
     }
   }, [searchText]);
 
-
   // Detect user country from browser locale to avoid network calls
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const locale = navigator.language || '';
-      const parts = locale.split('-');
+      const locale =
+        navigator.language ||
+        (Array.isArray(navigator.languages) ? navigator.languages[0] : '');
+      // Accept both en-US and en_US style locales
+      const parts = locale.split(/[-_]/);
+      let regionCode = '';
       if (parts.length > 1) {
-        const regionCode = parts[1].toUpperCase();
-        const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
-        const countryName = displayNames.of(regionCode);
-        if (countryName) setCountry(countryName);
+        regionCode = parts[1].toUpperCase();
+      } else if (locale.length === 2) {
+        // Locale may just be a language code like "us"
+        regionCode = locale.toUpperCase();
+      }
+
+      if (regionCode) {
+        try {
+          const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
+          const countryName = displayNames.of(regionCode);
+          setCountry(countryName || regionCode);
+        } catch {
+          setCountry(regionCode);
+        }
       }
     } catch (err) {
       console.error('Failed to detect country', err);
