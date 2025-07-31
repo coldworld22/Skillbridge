@@ -3,7 +3,18 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const allowed = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+const imageTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/jpg",
+];
+const videoTypes = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+];
 
 // Directory: /backend/uploads/ads
 const uploadDir = path.join(__dirname, "../../../uploads/ads");
@@ -18,13 +29,19 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  if (allowed.includes(file.mimetype)) cb(null, true);
-  else cb(new Error("Invalid file type. Only images are allowed."), false);
+const fileFilter = (_req, file, cb) => {
+  if (imageTypes.includes(file.mimetype) || videoTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type. Only images or videos are allowed."), false);
+  }
 };
 
 module.exports = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
-});
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for videos
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "video", maxCount: 1 },
+]);

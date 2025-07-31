@@ -10,7 +10,11 @@ const PreviewModal = ({ ad, onClose }) => {
         <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-black">
           ✕
         </button>
-        <img src={ad.image} alt={ad.title} className="w-full h-48 object-cover rounded mb-4" />
+        {ad.video ? (
+          <video src={ad.video} className="w-full h-48 object-cover rounded mb-4" controls />
+        ) : (
+          <img src={ad.image} alt={ad.title} className="w-full h-48 object-cover rounded mb-4" />
+        )}
         <h2 className="text-xl font-bold mb-2">{ad.title}</h2>
         <p className="text-sm text-gray-700 mb-2">{ad.description}</p>
         <p className="text-xs text-gray-500 mb-1">

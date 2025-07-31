@@ -24,12 +24,20 @@ export default function AdCard({
         />
       </div>
 
-      {/* Ad Image */}
-      <img
-        src={ad.image}
-        alt={ad.title}
-        className="w-full h-40 object-cover rounded-t-lg"
-      />
+      {/* Ad Media */}
+      {ad.video ? (
+        <video
+          src={ad.video}
+          className="w-full h-40 object-cover rounded-t-lg"
+          controls
+        />
+      ) : (
+        <img
+          src={ad.image}
+          alt={ad.title}
+          className="w-full h-40 object-cover rounded-t-lg"
+        />
+      )}
 
       {/* Ad Content */}
       <div className="p-4 space-y-2">
