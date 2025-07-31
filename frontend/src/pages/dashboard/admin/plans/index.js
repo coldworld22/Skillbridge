@@ -150,7 +150,8 @@ export default function PlansIndex() {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </div>
