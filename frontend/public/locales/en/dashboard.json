@@ -304,7 +304,23 @@
     "title_image_required": "Title and image are required.",
     "dates_required": "Start and end dates are required.",
     "end_before_start": "End date cannot be before start date.",
-    "failed": "Failed to create ad."
+  "failed": "Failed to create ad."
+  },
+  "plansPage": {
+    "title": "Subscription Plans",
+    "add_plan": "Add Plan",
+    "back_to_plans": "Back to Plans",
+    "save_plan": "Save Plan",
+    "update_plan": "Update Plan",
+    "plan_created": "Plan created",
+    "plan_updated": "Plan updated",
+    "plan_deleted": "Plan deleted",
+    "failed_to_load": "Failed to load plans",
+    "failed_to_create": "Failed to create plan",
+    "failed_to_update": "Failed to update plan",
+    "failed_to_delete": "Failed to delete plan",
+    "delete_selected": "Delete Selected",
+    "selected": "selected"
   },
   "alertsPage": {
     "title": "Real-Time Alerts",

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { createPlan } from "@/services/admin/planService";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 export default function CreatePlanPage() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
   const { accessToken, user, hasHydrated } = useAuthStore();
 
   const [form, setForm] = useState({
@@ -99,11 +101,11 @@ export default function CreatePlanPage() {
           (f) => f.feature_key || f.value || f.description
         ),
       });
-      toast.success("Plan created");
+      toast.success(t('plan_created'));
       router.push("/dashboard/admin/plans");
     } catch (err) {
       console.error("Create failed", err);
-      toast.error("Failed to create plan");
+      toast.error(t('failed_to_create'));
     }
   };
 
@@ -116,18 +118,18 @@ export default function CreatePlanPage() {
   }
 
   return (
-    <AdminLayout title="Create New Plan">
+    <AdminLayout title={t('title')}>
       <div className="flex justify-between items-center mb-6">
         <Link href="/dashboard/admin/plans">
           <button className="flex items-center gap-2 text-gray-600 hover:text-black">
-            <FaArrowLeft /> Back to Plans
+            <FaArrowLeft /> {t('back_to_plans')}
           </button>
         </Link>
         <button
           onClick={handleSubmit}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2"
         >
-          <FaSave /> Save Plan
+          <FaSave /> {t('save_plan')}
         </button>
       </div>
 
