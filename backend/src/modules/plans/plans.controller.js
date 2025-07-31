@@ -13,6 +13,8 @@ exports.createPlan = catchAsync(async (req, res) => {
     currency = "USD",
     recommended = false,
     active = true,
+    color = '#1F2937',
+    style = null,
     features = [],
   } = req.body;
 
@@ -30,6 +32,8 @@ exports.createPlan = catchAsync(async (req, res) => {
     currency,
     recommended,
     active,
+    color,
+    style,
   });
 
   await service.setFeatures(plan.id, Array.isArray(features) ? features : []);
@@ -58,6 +62,8 @@ exports.updatePlan = catchAsync(async (req, res) => {
     currency,
     recommended,
     active,
+    color,
+    style,
     features,
   } = req.body;
 
@@ -68,6 +74,8 @@ exports.updatePlan = catchAsync(async (req, res) => {
   if (currency) updates.currency = currency;
   if (recommended !== undefined) updates.recommended = recommended;
   if (active !== undefined) updates.active = active;
+  if (color !== undefined) updates.color = color;
+  if (style !== undefined) updates.style = style;
 
   if (slug || name) {
     const planSlug = slug || slugify(name, { lower: true, strict: true });
