@@ -36,6 +36,7 @@ const Hero = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [country, setCountry] = useState("");
   const { t } = useTranslation("website");
 
   const typewriterText = [
@@ -78,6 +79,48 @@ const Hero = () => {
       setSearchSuggestions([]);
     }
   }, [searchText]);
+
+  // Detect user country using IP lookup with locale fallback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const detect = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.country_name) {
+            setCountry(data.country_name);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("IP lookup failed", err);
+      }
+
+      try {
+        const locale =
+          navigator.language ||
+          (Array.isArray(navigator.languages) ? navigator.languages[0] : "");
+        const parts = locale.split(/[-_]/);
+        if (parts.length > 1) {
+          const regionCode = parts[1].toUpperCase();
+          try {
+            const displayNames = new Intl.DisplayNames([locale], {
+              type: "region",
+            });
+            const countryName = displayNames.of(regionCode);
+            setCountry(countryName || regionCode);
+          } catch {
+            setCountry(regionCode);
+          }
+        }
+      } catch (err) {
+        console.error("Locale lookup failed", err);
+      }
+    };
+
+    detect();
+  }, []);
 
   // Handle Ad Navigation
   const prevAd = () => setCurrentAd((prev) => (prev === 0 ? ads.length - 1 : prev - 1));
@@ -150,20 +193,26 @@ const Hero = () => {
               onChange={setSearchText}
               onKeyDown={(e) => e.key === "Enter" && handleSearch(searchText)}
             />
-            {searchSuggestions.length > 0 && (
-              <ul className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20">
-                {searchSuggestions.map((s, idx) => (
-                  <li
-                    key={idx}
-                    onClick={() => handleSearchSelect(s)}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {searchSuggestions.length > 0 && (
+            <ul className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20">
+              {searchSuggestions.map((s, idx) => (
+                <li
+                  key={idx}
+                  onClick={() => handleSearchSelect(s)}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {country && (
+          <p className="mb-4 text-white bg-blue-500 bg-opacity-75 px-4 py-2 rounded-lg">
+            {t('location_message', { country })}
+          </p>
+        )}
 
           {/* CTA Buttons */}
           <motion.div className="flex flex-wrap justify-center gap-4">
