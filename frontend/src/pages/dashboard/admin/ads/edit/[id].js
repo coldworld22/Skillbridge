@@ -15,13 +15,21 @@ export default function EditAdPage() {
   const { id } = router.query;
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
+  const [mediaType, setMediaType] = useState('image');
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
 
   useEffect(() => {
     if (id) {
       fetchAdById(id)
         .then((ad) => {
-          if (ad) setFormData(ad);
-          else setError("Ad not found.");
+          if (ad) {
+            setFormData(ad);
+            if (ad.video) {
+              setMediaType('video');
+              setVideoPreview(ad.video);
+            }
+          } else setError("Ad not found.");
         })
         .catch(() => setError("Failed to load ad"));
     }
@@ -48,13 +56,21 @@ export default function EditAdPage() {
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const start = new Date(formData.startAt);
     const end = new Date(formData.endAt);
     const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-    if (!formData.title || !formData.image || !formData.startAt || !formData.endAt) {
+    if (!formData.title || (mediaType === 'image' && !formData.image) || (mediaType === 'video' && !videoFile && !formData.video) || !formData.startAt || !formData.endAt) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -69,10 +85,14 @@ export default function EditAdPage() {
 
     try {
       const payload = new FormData();
-      if (formData.image && formData.image.startsWith("data:")) {
-        const blob = await fetch(formData.image).then((r) => r.blob());
-        const file = new File([blob], "ad.jpg", { type: blob.type });
-        payload.append("image", file);
+      if (mediaType === 'image') {
+        if (formData.image && formData.image.startsWith("data:")) {
+          const blob = await fetch(formData.image).then((r) => r.blob());
+          const file = new File([blob], "ad.jpg", { type: blob.type });
+          payload.append("image", file);
+        }
+      } else if (mediaType === 'video') {
+        if (videoFile) payload.append('video', videoFile);
       }
       payload.append("title", formData.title);
       payload.append("description", formData.description);
@@ -107,10 +127,30 @@ export default function EditAdPage() {
                 className="w-full border border-gray-300 rounded px-3 py-2" placeholder="Ad Title" />
               <textarea name="description" value={formData.description} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2" rows={3} placeholder="Description" />
-              <ImageCropUpload
-                value={formData.image}
-                onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Media Type</label>
+                <select
+                  value={mediaType}
+                  onChange={(e) => setMediaType(e.target.value)}
+                  className="w-full border px-3 py-2 rounded"
+                >
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                </select>
+              </div>
+              {mediaType === 'image' ? (
+                <ImageCropUpload
+                  value={formData.image}
+                  onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+                />
+              ) : (
+                <div>
+                  {videoPreview && (
+                    <video src={videoPreview} className="h-40 w-full mb-2" controls />
+                  )}
+                  <input type="file" accept="video/*" onChange={handleVideoChange} />
+                </div>
+              )}
             </div>
           </section>
 

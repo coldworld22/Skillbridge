@@ -21,8 +21,11 @@ exports.createAd = catchAsync(async (req, res) => {
     throw new AppError("Ad title already exists", 409);
   }
 
-  if (!req.file && !req.body.image_url) {
-    throw new AppError("Image is required", 400);
+  if (!req.files?.image?.[0] &&
+      !req.files?.video?.[0] &&
+      !req.body.image_url &&
+      !req.body.video_url) {
+    throw new AppError("Image or video is required", 400);
   }
 
   const data = {
@@ -31,8 +34,16 @@ exports.createAd = catchAsync(async (req, res) => {
     description,
     link_url,
     created_by: req.user.id,
-    image_url: req.file ? `/uploads/ads/${req.file.filename}` : req.body.image_url,
   };
+
+  if (req.files?.image?.[0]) {
+    data.image_url = `/uploads/ads/${req.files.image[0].filename}`;
+  } else if (req.files?.video?.[0]) {
+    data.video_url = `/uploads/ads/${req.files.video[0].filename}`;
+  }
+
+  if (req.body.image_url) data.image_url = req.body.image_url;
+  if (req.body.video_url) data.video_url = req.body.video_url;
 
   const ad = await service.createAd(data);
   // Notify creator and all admins about the new ad
@@ -84,9 +95,15 @@ exports.updateAd = catchAsync(async (req, res) => {
       throw new AppError("Ad title already exists", 409);
   }
 
-  if (req.file) {
-    updates.image_url = `/uploads/ads/${req.file.filename}`;
+  if (req.files?.image?.[0]) {
+    updates.image_url = `/uploads/ads/${req.files.image[0].filename}`;
+    updates.video_url = null;
+  } else if (req.files?.video?.[0]) {
+    updates.video_url = `/uploads/ads/${req.files.video[0].filename}`;
+    updates.image_url = null;
   }
+  if (req.body.image_url) updates.image_url = req.body.image_url;
+  if (req.body.video_url) updates.video_url = req.body.video_url;
 
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);

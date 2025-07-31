@@ -13,7 +13,12 @@ export const fetchAds = async () => {
   const ads = data?.data ?? [];
   return ads.map((ad) => ({
     ...ad,
-    image: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`,
+    image: ad.image_url
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`
+      : null,
+    video: ad.video_url
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.video_url}`
+      : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   }));
@@ -25,7 +30,12 @@ export const fetchAdById = async (id) => {
   if (!ad) return null;
   return {
     ...ad,
-    image: `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`,
+    image: ad.image_url
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`
+      : null,
+    video: ad.video_url
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.video_url}`
+      : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   };
