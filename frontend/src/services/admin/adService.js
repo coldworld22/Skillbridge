@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { API_BASE_URL } from "@/config/config";
 
 export const createAd = async (payload) => {
   const { data } = await api.post("/ads/admin", payload, {
@@ -11,14 +12,11 @@ export const fetchAds = async () => {
   const { data } = await api.get("/ads");
 
   const ads = data?.data ?? [];
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   return ads.map((ad) => ({
     ...ad,
-    image: ad.image_url
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`
-      : null,
-    video: ad.video_url
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.video_url}`
-      : null,
+    image: ad.image_url ? `${base}${ad.image_url}` : null,
+    video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   }));
@@ -28,14 +26,11 @@ export const fetchAdById = async (id) => {
   const { data } = await api.get(`/ads/${id}`);
   const ad = data?.data;
   if (!ad) return null;
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   return {
     ...ad,
-    image: ad.image_url
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.image_url}`
-      : null,
-    video: ad.video_url
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${ad.video_url}`
-      : null,
+    image: ad.image_url ? `${base}${ad.image_url}` : null,
+    video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
   };
