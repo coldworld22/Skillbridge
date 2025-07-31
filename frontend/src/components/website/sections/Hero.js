@@ -80,18 +80,22 @@ const Hero = () => {
     }
   }, [searchText]);
 
-  // Detect user country
+
+  // Detect user country from browser locale to avoid network calls
   useEffect(() => {
-    const fetchCountry = async () => {
-      try {
-        const res = await fetch('https://ipapi.co/json/');
-        const data = await res.json();
-        setCountry(data.country_name);
-      } catch (err) {
-        console.error('Failed to fetch location', err);
+    if (typeof window === 'undefined') return;
+    try {
+      const locale = navigator.language || '';
+      const parts = locale.split('-');
+      if (parts.length > 1) {
+        const regionCode = parts[1].toUpperCase();
+        const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
+        const countryName = displayNames.of(regionCode);
+        if (countryName) setCountry(countryName);
       }
-    };
-    fetchCountry();
+    } catch (err) {
+      console.error('Failed to detect country', err);
+    }
   }, []);
 
   // Handle Ad Navigation
