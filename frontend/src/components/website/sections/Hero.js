@@ -189,14 +189,24 @@ const Hero = () => {
               className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500"
               {...handlers}
             >
-            <Image
-              src={ads[currentAd].image}
-              alt={ads[currentAd].title}
-              layout="fill"
-              objectFit="cover"
-              className="object-cover"
-              priority
-            />
+            {ads[currentAd].video ? (
+              <video
+                src={ads[currentAd].video}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+              />
+            ) : (
+              <Image
+                src={ads[currentAd].image}
+                alt={ads[currentAd].title}
+                layout="fill"
+                objectFit="cover"
+                className="object-cover"
+                priority
+              />
+            )
             <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent z-10 flex items-end justify-center pb-8 text-center">
               <div className="px-6 md:px-10 max-w-xl text-white">
                 <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-snug drop-shadow-xl">

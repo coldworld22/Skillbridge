@@ -59,6 +59,9 @@ export default function CreateAdPage() {
   const [error, setError] = useState(null);
   const [titleError, setTitleError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaType, setMediaType] = useState('image');
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -79,11 +82,19 @@ export default function CreateAdPage() {
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.title || !formData.image) {
+    if (!formData.title || (mediaType === 'image' && !formData.image) || (mediaType === 'video' && !videoFile)) {
       setError(t('title_image_required'));
       return;
     }
@@ -99,13 +110,18 @@ export default function CreateAdPage() {
     setIsSubmitting(true);
 
     try {
-      const blob = await fetch(formData.image).then((r) => r.blob());
-      const file = new File([blob], "ad.jpg", { type: blob.type });
       const payload = new FormData();
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("link_url", formData.link);
-      payload.append("image", file);
+
+      if (mediaType === 'image') {
+        const blob = await fetch(formData.image).then((r) => r.blob());
+        const file = new File([blob], "ad.jpg", { type: blob.type });
+        payload.append("image", file);
+      } else if (mediaType === 'video') {
+        payload.append('video', videoFile);
+      }
 
       await createAd(payload);
       toast.success(t('success'));
@@ -168,13 +184,34 @@ export default function CreateAdPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
-                <ImageCropUpload
-                  value={formData.image}
-                  onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
-                />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium mb-1">{t('media_type')}</label>
+                <select
+                  value={mediaType}
+                  onChange={(e) => setMediaType(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="image">{t('image')}</option>
+                  <option value="video">{t('video')}</option>
+                </select>
               </div>
+              {mediaType === 'image' ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
+                  <ImageCropUpload
+                    value={formData.image}
+                    onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('video_label')} *</label>
+                  {videoPreview && (
+                    <video src={videoPreview} className="w-full h-48 mb-2" controls />
+                  )}
+                  <input type="file" accept="video/*" onChange={handleVideoChange} />
+                </div>
+              )}
             </div>
           </section>
 
