@@ -123,6 +123,7 @@
   "experience_years": "experience : {{count}} Years",
   "instructor_rating": "Rating: {{count}} / 5",
   "no_offers": "No offers right now",
-  "view_media": "View Media"
+  "view_media": "View Media",
+  "location_message": "Platform available in {{country}}. You can explore content based on it."
 
 }
