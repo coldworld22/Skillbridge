@@ -27,6 +27,20 @@ export default function CreatePlanPage() {
     active: true,
   });
 
+  const [features, setFeatures] = useState([]);
+
+  const addFeature = () =>
+    setFeatures([...features, { feature_key: "", value: "", description: "" }]);
+
+  const updateFeature = (index, field, value) => {
+    const updated = [...features];
+    updated[index][field] = value;
+    setFeatures(updated);
+  };
+
+  const removeFeature = (index) =>
+    setFeatures(features.filter((_, i) => i !== index));
+
   useEffect(() => {
     if (!hasHydrated) return;
     if (!accessToken || !user) {
@@ -81,7 +95,9 @@ export default function CreatePlanPage() {
         style: JSON.stringify(style),
         recommended: form.recommended,
         active: form.active,
-        features: [],
+        features: features.filter(
+          (f) => f.feature_key || f.value || f.description
+        ),
       });
       toast.success("Plan created");
       router.push("/dashboard/admin/plans");
@@ -215,6 +231,52 @@ export default function CreatePlanPage() {
             value={form.gradientEnd}
             onChange={(e) => setForm({ ...form, gradientEnd: e.target.value })}
           />
+        </div>
+
+        <div className="md:col-span-2">
+          <h4 className="font-semibold mb-2">Plan Features</h4>
+          {features.map((feat, idx) => (
+            <div key={idx} className="grid grid-cols-3 gap-2 mb-2 items-center">
+              <input
+                className="border px-2 py-1 rounded"
+                placeholder="Key"
+                value={feat.feature_key}
+                onChange={(e) =>
+                  updateFeature(idx, "feature_key", e.target.value)
+                }
+              />
+              <input
+                className="border px-2 py-1 rounded"
+                placeholder="Value"
+                value={feat.value}
+                onChange={(e) => updateFeature(idx, "value", e.target.value)}
+              />
+              <div className="flex gap-2">
+                <input
+                  className="border px-2 py-1 rounded flex-1"
+                  placeholder="Description"
+                  value={feat.description}
+                  onChange={(e) =>
+                    updateFeature(idx, "description", e.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => removeFeature(idx)}
+                  className="text-red-500 text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addFeature}
+            className="mt-2 bg-gray-200 px-3 py-1 rounded text-sm"
+          >
+            + Add Feature
+          </button>
         </div>
         <label className="flex items-center gap-2">
           <input
