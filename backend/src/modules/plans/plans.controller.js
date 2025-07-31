@@ -3,6 +3,8 @@ const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./plans.service");
 const slugify = require("slugify");
+const notificationService = require("../notifications/notifications.service");
+const userModel = require("../users/user.model");
 
 exports.createPlan = catchAsync(async (req, res) => {
   const {
@@ -38,6 +40,21 @@ exports.createPlan = catchAsync(async (req, res) => {
 
   await service.setFeatures(plan.id, Array.isArray(features) ? features : []);
   const full = await service.getPlanById(plan.id);
+  await notificationService.createNotification({
+    user_id: req.user.id,
+    type: "plan_created",
+    message: `Plan "${full.name}" created successfully`,
+  });
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "plan_created",
+        message: `New plan "${full.name}" created by ${req.user.id}`,
+      })
+    )
+  );
   sendSuccess(res, full, "Plan created");
 });
 
