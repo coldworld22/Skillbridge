@@ -80,6 +80,7 @@ const Hero = () => {
     }
   }, [searchText]);
 
+
   // Detect user country from browser locale to avoid network calls
   useEffect(() => {
     if (typeof window === 'undefined') return;
