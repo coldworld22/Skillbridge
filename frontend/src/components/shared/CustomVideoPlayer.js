@@ -32,6 +32,18 @@ export default function CustomVideoPlayer({
     setProgress(0);
   }, [currentVideo]);
 
+  // Seek to provided start time whenever it changes and metadata is already loaded
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (startTime > 0 && video.readyState >= 1) {
+      video.currentTime = startTime;
+      if (video.duration) {
+        setProgress((startTime / video.duration) * 100);
+      }
+    }
+  }, [startTime, currentVideo]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -136,14 +148,23 @@ export default function CustomVideoPlayer({
     }
   };
 
-  const downloadVideo = () => {
+  const downloadVideo = async () => {
     if (!currentVideo) return;
-    const link = document.createElement('a');
-    link.href = currentVideo;
-    link.download = `video-${currentIndex + 1}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const res = await fetch(currentVideo);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const ext = currentVideo.split('.').pop().split(/[?#]/)[0] || 'mp4';
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `video-${currentIndex + 1}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download video', err);
+    }
   };
 
   return (
