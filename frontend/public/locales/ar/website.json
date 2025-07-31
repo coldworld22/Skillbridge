@@ -123,5 +123,6 @@
   "experience_years": "الخبرة: {{count}} سنة",
   "instructor_rating": "التقييم: {{count}} من 5",
   "no_offers": "لا توجد عروض حالياً",
-  "view_media": "عرض الوسائط"
-}
+  "view_media": "عرض الوسائط",
+  "location_message": "المنصة متاحة في {{country}}. يمكنك استعراض المحتوى بناءً على ذلك."
+ }
