@@ -28,7 +28,9 @@ export default function AdminCouponsPage() {
             <tr>
               <th className="p-2 border">Code</th>
               <th className="p-2 border">Discount %</th>
+              <th className="p-2 border">Starts</th>
               <th className="p-2 border">Expires</th>
+              <th className="p-2 border">Applies To</th>
               <th className="p-2 border">Actions</th>
             </tr>
           </thead>
@@ -37,7 +39,9 @@ export default function AdminCouponsPage() {
               <tr key={c.id}>
                 <td className="p-2 border">{c.code}</td>
                 <td className="p-2 border">{c.discount_percent}</td>
+                <td className="p-2 border">{c.starts_at ? new Date(c.starts_at).toLocaleDateString() : ""}</td>
                 <td className="p-2 border">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : ""}</td>
+                <td className="p-2 border">{c.applies_to || ""}</td>
                 <td className="p-2 border space-x-2">
                   <Link href={`/dashboard/admin/coupons/edit/${c.id}`}>Edit</Link>
                   <button onClick={() => handleDelete(c.id)} className="text-red-600">Delete</button>

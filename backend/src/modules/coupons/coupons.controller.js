@@ -9,8 +9,11 @@ exports.createCoupon = catchAsync(async (req, res) => {
     id: uuidv4(),
     code: req.body.code,
     discount_percent: req.body.discount_percent,
+    starts_at: req.body.starts_at || null,
     expires_at: req.body.expires_at || null,
     usage_limit: req.body.usage_limit || null,
+    applies_to: req.body.applies_to || null,
+    applies_to_id: req.body.applies_to_id || null,
     instructor_id: req.user?.role === "instructor" ? req.user.id : req.body.instructor_id || null,
   };
   const coupon = await service.createCoupon(data);
@@ -43,6 +46,9 @@ exports.validateCode = catchAsync(async (req, res) => {
   const { code } = req.params;
   const coupon = await service.findByCode(code);
   if (!coupon) throw new AppError("Invalid coupon", 404);
+  if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
+    throw new AppError("Coupon not active", 400);
+  }
   if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
     throw new AppError("Coupon expired", 400);
   }
