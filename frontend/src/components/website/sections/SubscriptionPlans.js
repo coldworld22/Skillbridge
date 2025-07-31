@@ -61,6 +61,11 @@ const SubscriptionPlans = () => {
               if (styleConf.textColor) styleObj.color = styleConf.textColor;
               if (styleConf.textSize) styleObj.fontSize = `${styleConf.textSize}px`;
             }
+            const buttonStyles = {};
+            if (styleConf) {
+              if (styleConf.buttonColor) buttonStyles.backgroundColor = styleConf.buttonColor;
+              if (styleConf.buttonTextColor) buttonStyles.color = styleConf.buttonTextColor;
+            }
 
             const cardClasses = `p-6 rounded-lg shadow-2xl transition-all duration-300 ${isMiddle ? "md:scale-105" : ""} relative`;
 
@@ -91,7 +96,8 @@ const SubscriptionPlans = () => {
                 </ul>
 
                 <button
-                  className="mt-6 px-6 py-3 rounded-lg font-semibold bg-gray-900 text-white hover:bg-gray-800"
+                  className="mt-6 px-6 py-3 rounded-lg font-semibold hover:opacity-90"
+                  style={buttonStyles}
                   onClick={() => setSelectedPlan(plan)}
                 >
                   {t("subscription_select_plan")}

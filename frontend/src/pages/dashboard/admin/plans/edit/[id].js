@@ -37,6 +37,8 @@ export default function EditPlanPage() {
         if (data) {
           let styleConf = {
             textColor: "#ffffff",
+            buttonColor: "#111827",
+            buttonTextColor: "#ffffff",
             textSize: 16,
             gradientStart: "",
             gradientEnd: "",
@@ -55,6 +57,8 @@ export default function EditPlanPage() {
             currency: data.currency,
             color: data.color || "#1F2937",
             textColor: styleConf.textColor,
+            buttonColor: styleConf.buttonColor,
+            buttonTextColor: styleConf.buttonTextColor,
             textSize: styleConf.textSize,
             gradientStart: styleConf.gradientStart,
             gradientEnd: styleConf.gradientEnd,
@@ -81,7 +85,8 @@ export default function EditPlanPage() {
       toast.error("Name is required");
       return;
     }
-    if (!isHex(form.color) || !isHex(form.textColor)) {
+    if (!isHex(form.color) || !isHex(form.textColor) ||
+        !isHex(form.buttonColor) || !isHex(form.buttonTextColor)) {
       toast.error("Invalid color value");
       return;
     }
@@ -96,6 +101,8 @@ export default function EditPlanPage() {
 
     const style = {
       textColor: form.textColor,
+      buttonColor: form.buttonColor,
+      buttonTextColor: form.buttonTextColor,
       textSize: Number(form.textSize) || 16,
       gradientStart: form.gradientStart || null,
       gradientEnd: form.gradientEnd || null,
@@ -152,7 +159,7 @@ export default function EditPlanPage() {
         </button>
       </div>
 
-      <form className="bg-white rounded shadow p-6 space-y-4" onSubmit={handleSubmit}>
+      <form className="bg-white rounded shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
         <div>
           <label className="block text-sm font-medium mb-1">Plan Name</label>
           <input
@@ -204,6 +211,24 @@ export default function EditPlanPage() {
             className="w-full border px-4 py-2 rounded"
             value={form.textColor}
             onChange={(e) => setForm({ ...form, textColor: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Button Color</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.buttonColor}
+            onChange={(e) => setForm({ ...form, buttonColor: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Button Text Color</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.buttonTextColor}
+            onChange={(e) => setForm({ ...form, buttonTextColor: e.target.value })}
           />
         </div>
         <div>

@@ -1,9 +1,13 @@
 # Subscription Plan Style Configuration
 
-Subscription plans have two optional fields that control how they appear on the website pricing page:
+Subscription plans have optional fields that control how they appear on the website pricing page:
 
 - **color** – background color of the plan card.
-- **style** – additional CSS/Tailwind classes applied to the card.
+- **style** – JSON string with additional visual settings:
+  - `textColor` – text color for the card contents.
+  - `gradientStart`/`gradientEnd` – optional gradient background.
+  - `buttonColor` – subscription button background color.
+  - `buttonTextColor` – subscription button text color.
 
 Administrators can set these values when creating or editing a plan from
 `/dashboard/admin/plans`. The `SubscriptionPlans` component automatically

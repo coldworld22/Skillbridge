@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 export default function PlansIndex() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const router = useRouter();
   const { accessToken, user, hasHydrated } = useAuthStore();
@@ -70,6 +71,29 @@ export default function PlansIndex() {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => setSelectedIds(plans.map((p) => p.id));
+  const clearAll = () => setSelectedIds([]);
+
+  const bulkDelete = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm("Delete selected plans?")) return;
+    try {
+      await Promise.all(selectedIds.map((id) => deletePlan(id)));
+      setPlans((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+      setSelectedIds([]);
+      toast.success("Plans deleted");
+    } catch (err) {
+      console.error("Bulk delete failed", err);
+      toast.error("Failed to delete plans");
+    }
+  };
+
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -82,13 +106,29 @@ export default function PlansIndex() {
     <AdminLayout title="Manage Subscription Plans">
       <div className="bg-white rounded-xl p-6 shadow mb-10">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">📦 Subscription Plans</h1>
+          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+            <input
+              type="checkbox"
+              onChange={(e) => (e.target.checked ? selectAll() : clearAll())}
+              checked={selectedIds.length === plans.length && plans.length > 0}
+            />
+            <span>📦 Subscription Plans</span>
+          </h1>
           <Link href="/dashboard/admin/plans/create">
             <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow">
               <FaPlus /> Add Plan
             </button>
           </Link>
         </div>
+        {selectedIds.length > 0 && (
+          <div className="flex justify-between items-center bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
+            <span>{selectedIds.length} selected</span>
+            <div className="flex gap-2">
+              <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete Selected</button>
+              <button onClick={clearAll} className="text-sm text-gray-500 hover:text-black">Clear</button>
+            </div>
+          </div>
+        )}
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -115,10 +155,16 @@ export default function PlansIndex() {
               return (
                 <div
                   key={plan.id}
-                  className="border rounded p-4 flex justify-between items-center"
+                  className={`border rounded p-4 flex justify-between items-center ${selectedIds.includes(plan.id) ? 'ring-2 ring-blue-500' : ''}`}
                   style={styleObj}
                 >
                 <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={selectedIds.includes(plan.id)}
+                    onChange={() => toggleSelect(plan.id)}
+                  />
                   <span
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: plan.color || "#1f2937" }}
