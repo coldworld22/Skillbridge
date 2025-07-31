@@ -8,15 +8,19 @@ import ClassesGrid from '@/components/online-classes/ClassesGrid';
 import LoadMoreButton from '@/components/online-classes/LoadMoreButton';
 import { fetchPublishedClasses } from '@/services/classService';
 
-export default function OnlineClassesPage() {
-  const [allClasses, setAllClasses] = useState([]);
+export default function OnlineClassesPage({ initialClasses = [] }) {
+  const [allClasses, setAllClasses] = useState(initialClasses);
   const [visibleCount, setVisibleCount] = useState(6);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialClasses.length === 0);
   const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
 
   useEffect(() => {
+    if (initialClasses.length > 0) {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
       setError(null);
       try {
@@ -34,7 +38,7 @@ export default function OnlineClassesPage() {
       }
     };
     load();
-  }, []);
+  }, [initialClasses]);
 
   useEffect(() => {
     setVisibleCount(6);
@@ -109,10 +113,22 @@ export default function OnlineClassesPage() {
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 
-export async function getStaticProps({ locale }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
-    },
-  };
+export async function getServerSideProps({ locale }) {
+  try {
+    const { data } = await fetchPublishedClasses();
+    return {
+      props: {
+        initialClasses: data || [],
+        ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      },
+    };
+  } catch (err) {
+    console.error('Failed to load classes', err);
+    return {
+      props: {
+        initialClasses: [],
+        ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      },
+    };
+  }
 }
