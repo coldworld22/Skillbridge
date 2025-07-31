@@ -3,6 +3,8 @@ const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./plans.service");
 const slugify = require("slugify");
+const notificationService = require("../notifications/notifications.service");
+const userModel = require("../users/user.model");
 
 exports.createPlan = catchAsync(async (req, res) => {
   const {
@@ -19,6 +21,22 @@ exports.createPlan = catchAsync(async (req, res) => {
   } = req.body;
 
   if (!name) throw new AppError("Name is required", 400);
+
+  const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+  if (color && !isHex(color)) throw new AppError("Invalid color format", 400);
+  if (style) {
+    try {
+      const conf = JSON.parse(style);
+      if (conf.textColor && !isHex(conf.textColor))
+        throw new Error("Invalid text color");
+      if (conf.gradientStart && !isHex(conf.gradientStart))
+        throw new Error("Invalid gradient start color");
+      if (conf.gradientEnd && !isHex(conf.gradientEnd))
+        throw new Error("Invalid gradient end color");
+    } catch (err) {
+      throw new AppError("Invalid style format", 400);
+    }
+  }
 
   const planSlug = slug || slugify(name, { lower: true, strict: true });
   const exists = await service.findBySlug(planSlug);
@@ -38,6 +56,21 @@ exports.createPlan = catchAsync(async (req, res) => {
 
   await service.setFeatures(plan.id, Array.isArray(features) ? features : []);
   const full = await service.getPlanById(plan.id);
+  await notificationService.createNotification({
+    user_id: req.user.id,
+    type: "plan_created",
+    message: `Plan "${full.name}" created successfully`,
+  });
+  const admins = await userModel.findAdmins();
+  await Promise.all(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "plan_created",
+        message: `New plan "${full.name}" created by ${req.user.id}`,
+      })
+    )
+  );
   sendSuccess(res, full, "Plan created");
 });
 
@@ -66,6 +99,23 @@ exports.updatePlan = catchAsync(async (req, res) => {
     style,
     features,
   } = req.body;
+
+  const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+
+  if (color && !isHex(color)) throw new AppError("Invalid color format", 400);
+  if (style) {
+    try {
+      const conf = JSON.parse(style);
+      if (conf.textColor && !isHex(conf.textColor))
+        throw new Error("Invalid text color");
+      if (conf.gradientStart && !isHex(conf.gradientStart))
+        throw new Error("Invalid gradient start color");
+      if (conf.gradientEnd && !isHex(conf.gradientEnd))
+        throw new Error("Invalid gradient end color");
+    } catch (err) {
+      throw new AppError("Invalid style format", 400);
+    }
+  }
 
   const updates = {};
   if (name) updates.name = name;

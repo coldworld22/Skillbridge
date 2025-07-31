@@ -35,13 +35,29 @@ export default function EditPlanPage() {
       try {
         const data = await fetchPlanById(id);
         if (data) {
+          let styleConf = {
+            textColor: "#ffffff",
+            textSize: 16,
+            gradientStart: "",
+            gradientEnd: "",
+          };
+          if (data.style) {
+            try {
+              styleConf = { ...styleConf, ...JSON.parse(data.style) };
+            } catch {
+              // ignore invalid style format
+            }
+          }
           setForm({
             name: data.name,
             priceMonthly: data.price_monthly,
             priceYearly: data.price_yearly,
             currency: data.currency,
             color: data.color || "#1F2937",
-            style: data.style || "",
+            textColor: styleConf.textColor,
+            textSize: styleConf.textSize,
+            gradientStart: styleConf.gradientStart,
+            gradientEnd: styleConf.gradientEnd,
             recommended: data.recommended,
             active: data.active,
           });
@@ -59,6 +75,32 @@ export default function EditPlanPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form) return;
+    const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
+
+    if (!form.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!isHex(form.color) || !isHex(form.textColor)) {
+      toast.error("Invalid color value");
+      return;
+    }
+    if (form.gradientStart && !isHex(form.gradientStart)) {
+      toast.error("Invalid gradient start color");
+      return;
+    }
+    if (form.gradientEnd && !isHex(form.gradientEnd)) {
+      toast.error("Invalid gradient end color");
+      return;
+    }
+
+    const style = {
+      textColor: form.textColor,
+      textSize: Number(form.textSize) || 16,
+      gradientStart: form.gradientStart || null,
+      gradientEnd: form.gradientEnd || null,
+    };
+
     try {
       await updatePlan(id, {
         name: form.name,
@@ -66,7 +108,7 @@ export default function EditPlanPage() {
         price_yearly: Number(form.priceYearly),
         currency: form.currency,
         color: form.color,
-        style: form.style,
+        style: JSON.stringify(style),
         recommended: form.recommended,
         active: form.active,
       });
@@ -156,11 +198,41 @@ export default function EditPlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Custom CSS Class</label>
+          <label className="block text-sm font-medium mb-1">Text Color</label>
           <input
+            type="color"
             className="w-full border px-4 py-2 rounded"
-            value={form.style}
-            onChange={(e) => setForm({ ...form, style: e.target.value })}
+            value={form.textColor}
+            onChange={(e) => setForm({ ...form, textColor: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Font Size (px)</label>
+          <input
+            type="number"
+            className="w-full border px-4 py-2 rounded"
+            value={form.textSize}
+            min={10}
+            max={40}
+            onChange={(e) => setForm({ ...form, textSize: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Gradient Start</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.gradientStart}
+            onChange={(e) => setForm({ ...form, gradientStart: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Gradient End</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.gradientEnd}
+            onChange={(e) => setForm({ ...form, gradientEnd: e.target.value })}
           />
         </div>
         <label className="flex items-center gap-2">
