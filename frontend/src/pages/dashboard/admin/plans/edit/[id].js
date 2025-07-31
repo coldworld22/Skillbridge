@@ -40,6 +40,8 @@ export default function EditPlanPage() {
             priceMonthly: data.price_monthly,
             priceYearly: data.price_yearly,
             currency: data.currency,
+            color: data.color || "#1F2937",
+            style: data.style || "",
             recommended: data.recommended,
             active: data.active,
           });
@@ -63,6 +65,8 @@ export default function EditPlanPage() {
         price_monthly: Number(form.priceMonthly),
         price_yearly: Number(form.priceYearly),
         currency: form.currency,
+        color: form.color,
+        style: form.style,
         recommended: form.recommended,
         active: form.active,
       });
@@ -140,6 +144,23 @@ export default function EditPlanPage() {
             className="w-full border px-4 py-2 rounded"
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Plan Color</label>
+          <input
+            type="color"
+            className="w-full border px-4 py-2 rounded"
+            value={form.color}
+            onChange={(e) => setForm({ ...form, color: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Custom CSS Class</label>
+          <input
+            className="w-full border px-4 py-2 rounded"
+            value={form.style}
+            onChange={(e) => setForm({ ...form, style: e.target.value })}
           />
         </div>
         <label className="flex items-center gap-2">
