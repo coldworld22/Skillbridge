@@ -6,11 +6,14 @@ import Link from "next/link";
 import { fetchPlans, deletePlan, updatePlan } from "@/services/admin/planService";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 export default function PlansIndex() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
 
   const router = useRouter();
   const { accessToken, user, hasHydrated } = useAuthStore();
@@ -35,7 +38,7 @@ export default function PlansIndex() {
         setPlans(data);
       } catch (err) {
         console.error("Failed to load plans", err);
-        toast.error("Failed to load plans");
+        toast.error(t('failed_to_load'));
       } finally {
         setLoading(false);
       }
@@ -52,10 +55,10 @@ export default function PlansIndex() {
       setPlans((prev) =>
         prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p))
       );
-      toast.success("Plan updated");
+      toast.success(t('plan_updated'));
     } catch (err) {
       console.error("Toggle failed", err);
-      toast.error("Failed to update plan");
+      toast.error(t('failed_to_update'));
     }
   };
 
@@ -64,10 +67,10 @@ export default function PlansIndex() {
     try {
       await deletePlan(id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
-      toast.success("Plan deleted");
+      toast.success(t('plan_deleted'));
     } catch (err) {
       console.error("Delete plan failed", err);
-      toast.error("Failed to delete plan");
+      toast.error(t('failed_to_delete'));
     }
   };
 
@@ -87,10 +90,10 @@ export default function PlansIndex() {
       await Promise.all(selectedIds.map((id) => deletePlan(id)));
       setPlans((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
       setSelectedIds([]);
-      toast.success("Plans deleted");
+      toast.success(t('plan_deleted'));
     } catch (err) {
       console.error("Bulk delete failed", err);
-      toast.error("Failed to delete plans");
+      toast.error(t('failed_to_delete'));
     }
   };
 
@@ -103,7 +106,7 @@ export default function PlansIndex() {
   }
 
   return (
-    <AdminLayout title="Manage Subscription Plans">
+    <AdminLayout title={t('title')}>
       <div className="bg-white rounded-xl p-6 shadow mb-10">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
@@ -112,19 +115,19 @@ export default function PlansIndex() {
               onChange={(e) => (e.target.checked ? selectAll() : clearAll())}
               checked={selectedIds.length === plans.length && plans.length > 0}
             />
-            <span>📦 Subscription Plans</span>
+            <span>📦 {t('title')}</span>
           </h1>
           <Link href="/dashboard/admin/plans/create">
             <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow">
-              <FaPlus /> Add Plan
+              <FaPlus /> {t('add_plan')}
             </button>
           </Link>
         </div>
         {selectedIds.length > 0 && (
           <div className="flex justify-between items-center bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
-            <span>{selectedIds.length} selected</span>
+            <span>{selectedIds.length} {t('selected')}</span>
             <div className="flex gap-2">
-              <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">Delete Selected</button>
+              <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">{t('delete_selected')}</button>
               <button onClick={clearAll} className="text-sm text-gray-500 hover:text-black">Clear</button>
             </div>
           </div>

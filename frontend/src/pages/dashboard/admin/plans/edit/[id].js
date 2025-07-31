@@ -9,9 +9,11 @@ import {
 } from "@/services/admin/planService";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 export default function EditPlanPage() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
   const { id } = router.query;
   const { accessToken, user, hasHydrated } = useAuthStore();
 
@@ -136,11 +138,11 @@ export default function EditPlanPage() {
           (f) => f.feature_key || f.value || f.description
         ),
       });
-      toast.success("Plan updated");
+      toast.success(t('plan_updated'));
       router.push("/dashboard/admin/plans");
     } catch (err) {
       console.error("Update failed", err);
-      toast.error("Failed to update plan");
+      toast.error(t('failed_to_update'));
     }
   };
 
@@ -161,18 +163,18 @@ export default function EditPlanPage() {
   }
 
   return (
-    <AdminLayout title={`Edit ${form.name}`}>
+    <AdminLayout title={`${t('update_plan')}: ${form.name}`}>
       <div className="flex justify-between items-center mb-6">
         <Link href="/dashboard/admin/plans">
           <button className="flex items-center gap-2 text-gray-600 hover:text-black">
-            <FaArrowLeft /> Back to Plans
+            <FaArrowLeft /> {t('back_to_plans')}
           </button>
         </Link>
         <button
           onClick={handleSubmit}
           className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded flex items-center gap-2"
         >
-          <FaSave /> Update Plan
+          <FaSave /> {t('update_plan')}
         </button>
       </div>
 
