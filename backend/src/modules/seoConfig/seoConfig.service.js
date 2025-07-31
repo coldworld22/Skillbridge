@@ -4,15 +4,21 @@ const SETTINGS_KEY = "seo_settings";
 
 exports.getSettings = async () => {
   const row = await db("settings").where({ key: SETTINGS_KEY }).first();
-  if (!row) return null;
+  const base = process.env.FRONTEND_URL || "http://localhost:3000";
+  if (!row) return { baseUrl: base };
   try {
-    return JSON.parse(row.value);
+    const data = JSON.parse(row.value);
+    if (!data.baseUrl) data.baseUrl = base;
+    return data;
   } catch (_err) {
-    return null;
+    return { baseUrl: base };
   }
 };
 
 exports.updateSettings = async (settings) => {
+  if (!settings.baseUrl) {
+    settings.baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  }
   const value = JSON.stringify(settings);
   const existing = await db("settings").where({ key: SETTINGS_KEY }).first();
   if (existing) {
@@ -44,6 +50,8 @@ exports.updateSettings = async (settings) => {
 exports.generateSitemap = async () => {
   const fs = require("fs");
   const path = require("path");
+  const fetch = require("node-fetch");
+  const { frontendBase } = require("../../utils/frontend");
 
   const settings = (await exports.getSettings()) || {};
   const pages = settings.sitemap || [];
@@ -68,18 +76,60 @@ exports.generateSitemap = async () => {
   settings.sitemapUpdated = updated;
   await exports.updateSettings(settings);
 
+  if (settings.globalSEO?.autoPingSitemap) {
+    const sitemapUrl = `${frontendBase}/uploads/seo/sitemap.xml`;
+    const endpoints = [
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`,
+      `https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`,
+    ];
+    for (const url of endpoints) {
+      try {
+        await fetch(url);
+      } catch (err) {
+        console.error("Failed to ping", url, err);
+      }
+    }
+  }
+
   return { url: "/uploads/seo/sitemap.xml", updated };
 };
 
-// Scan saved meta tags for missing title or description
+// Scan saved meta tags for common issues
 exports.scanMetaIssues = async () => {
   const settings = (await exports.getSettings()) || {};
   const meta = settings.metaTags || {};
+  const openGraph = settings.openGraph || {};
   const issues = [];
+  const duplicates = [];
+  const titleMap = {};
+  const descMap = {};
   Object.entries(meta).forEach(([path, data]) => {
     const missing = [];
     if (!data.title) missing.push("title");
     if (!data.description) missing.push("description");
+
+    const og = openGraph[path] || {};
+    if (Object.keys(openGraph).length) {
+      if (!og.title) missing.push("og:title");
+      if (!og.description) missing.push("og:description");
+      if (!og.image) missing.push("og:image");
+    }
+
+    if (data.title) {
+      if (titleMap[data.title]) {
+        duplicates.push({ field: "title", paths: [titleMap[data.title], path] });
+      } else {
+        titleMap[data.title] = path;
+      }
+    }
+    if (data.description) {
+      if (descMap[data.description]) {
+        duplicates.push({ field: "description", paths: [descMap[data.description], path] });
+      } else {
+        descMap[data.description] = path;
+      }
+    }
+
     if (missing.length) issues.push({ path, missing });
   });
 
@@ -98,7 +148,7 @@ exports.scanMetaIssues = async () => {
   settings.lastChecked = scannedAt;
   await exports.updateSettings(settings);
 
-  return { stats, issues, scannedAt };
+  return { stats, issues, duplicates, scannedAt };
 };
 
 // Recursively scan the Next.js pages directory to collect available routes

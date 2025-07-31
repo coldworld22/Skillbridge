@@ -47,6 +47,9 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   const seoLoaded = useSEOConfigStore((s) => s.loaded);
   const fetchSEO = useSEOConfigStore((s) => s.fetch);
   const updateSEO = useSEOConfigStore((s) => s.update);
+  if (seoSettings && !useSEOConfigStore.getState().loaded) {
+    useSEOConfigStore.setState({ settings: seoSettings, loaded: true });
+  }
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);

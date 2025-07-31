@@ -18,7 +18,8 @@ export default function SeoTags() {
   const og = settings.openGraph?.[path] || {};
   const twitter = settings.twitter?.[path] || {};
 
-  const baseUrl = settings.baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
 
   const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
