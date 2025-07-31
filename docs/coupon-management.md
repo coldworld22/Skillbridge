@@ -8,6 +8,8 @@ This document explains how discount coupons are handled in SkillBridge.
 - Admins and instructors use `/api/coupons/admin` for CRUD operations.
 - `GET /api/coupons/code/:code` validates a coupon for checkout.
 - Coupons include an optional `instructor_id` so instructors can create their own codes.
+- `starts_at` and `expires_at` define the active window for a coupon.
+- `applies_to` (with optional `applies_to_id`) restricts the coupon to a plan, class or tutorial.
 
 ## Frontend
 
