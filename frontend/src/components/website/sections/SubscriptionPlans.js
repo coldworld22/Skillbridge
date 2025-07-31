@@ -42,13 +42,33 @@ const SubscriptionPlans = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto relative z-10">
           {plans.map((plan, index) => {
             const isMiddle = index === 1;
-            const cardClasses = `p-6 rounded-lg shadow-2xl transition-all duration-300 ${plan.style || ""} ${isMiddle ? "md:scale-105" : ""} relative`;
+            let styleConf = null;
+            if (plan.style) {
+              try {
+                styleConf = JSON.parse(plan.style);
+              } catch {
+                styleConf = null;
+              }
+            }
+            const styleObj = {
+              backgroundColor: plan.color || "#1f2937",
+              color: "#fff",
+            };
+            if (styleConf) {
+              if (styleConf.gradientStart && styleConf.gradientEnd) {
+                styleObj.background = `linear-gradient(90deg, ${styleConf.gradientStart}, ${styleConf.gradientEnd})`;
+              }
+              if (styleConf.textColor) styleObj.color = styleConf.textColor;
+              if (styleConf.textSize) styleObj.fontSize = `${styleConf.textSize}px`;
+            }
+
+            const cardClasses = `p-6 rounded-lg shadow-2xl transition-all duration-300 ${isMiddle ? "md:scale-105" : ""} relative`;
 
             return (
               <motion.div
                 key={plan.id}
                 className={cardClasses}
-                style={{ backgroundColor: plan.color || "#1f2937", color: "#fff" }}
+                style={styleObj}
                 whileHover={{ scale: 1.08 }}
               >
                 {plan.recommended && (

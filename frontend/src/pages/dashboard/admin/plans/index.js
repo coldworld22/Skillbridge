@@ -93,12 +93,31 @@ export default function PlansIndex() {
           <p>Loading...</p>
         ) : (
           <div className="space-y-4">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`border rounded p-4 flex justify-between items-center ${plan.style || ""}`}
-                style={{ backgroundColor: plan.color || "transparent" }}
-              >
+            {plans.map((plan) => {
+              let styleConf = null;
+              if (plan.style) {
+                try {
+                  styleConf = JSON.parse(plan.style);
+                } catch {
+                  styleConf = null;
+                }
+              }
+              const styleObj = {
+                backgroundColor: plan.color || "transparent",
+              };
+              if (styleConf) {
+                if (styleConf.gradientStart && styleConf.gradientEnd) {
+                  styleObj.background = `linear-gradient(90deg, ${styleConf.gradientStart}, ${styleConf.gradientEnd})`;
+                }
+                if (styleConf.textColor) styleObj.color = styleConf.textColor;
+                if (styleConf.textSize) styleObj.fontSize = `${styleConf.textSize}px`;
+              }
+              return (
+                <div
+                  key={plan.id}
+                  className="border rounded p-4 flex justify-between items-center"
+                  style={styleObj}
+                >
                 <div className="flex items-center gap-2">
                   <span
                     className="w-4 h-4 rounded"
@@ -131,7 +150,8 @@ export default function PlansIndex() {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </div>
