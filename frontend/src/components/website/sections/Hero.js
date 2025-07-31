@@ -88,8 +88,16 @@ const Hero = () => {
         const res = await fetch("https://ipapi.co/json/");
         if (res.ok) {
           const data = await res.json();
-          if (data && data.country_name) {
-            setCountry(data.country_name);
+          const code = data && (data.country_code || data.country);
+          if (code) {
+            const locale = navigator.language || "en";
+            try {
+              const displayNames = new Intl.DisplayNames([locale], { type: "region" });
+              const countryName = displayNames.of(code);
+              setCountry(countryName || data.country_name || code);
+            } catch {
+              setCountry(data.country_name || code);
+            }
             return;
           }
         }
