@@ -320,7 +320,36 @@
     "failed_to_update": "Failed to update plan",
     "failed_to_delete": "Failed to delete plan",
     "delete_selected": "Delete Selected",
-    "selected": "selected"
+    "selected": "selected",
+    "plan_name": "Plan Name",
+    "monthly_price": "Monthly Price",
+    "yearly_price": "Yearly Price",
+    "currency": "Currency",
+    "plan_color": "Plan Color",
+    "text_color": "Text Color",
+    "button_color": "Button Color",
+    "button_text_color": "Button Text Color",
+    "font_size": "Font Size (px)",
+    "gradient_start": "Gradient Start",
+    "gradient_end": "Gradient End",
+    "plan_features": "Plan Features",
+    "key": "Key",
+    "value": "Value",
+    "description": "Description",
+    "remove": "Remove",
+    "add_feature": "+ Add Feature",
+    "recommended": "Recommended",
+    "active": "Active",
+    "name_required": "Name is required",
+    "invalid_color": "Invalid color value",
+    "invalid_gradient_start": "Invalid gradient start color",
+    "invalid_gradient_end": "Invalid gradient end color",
+    "plan_not_found": "Plan not found",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "confirm_delete_plan": "Are you sure you want to delete this plan?",
+    "confirm_delete_selected": "Delete selected plans?"
   },
   "alertsPage": {
     "title": "Real-Time Alerts",
@@ -777,8 +806,8 @@
     ,"ticket_deleted": "Ticket deleted"
     ,"confirm_close_ticket": "Are you sure you want to close this ticket?"
     ,"confirm_reopen_ticket": "Reopen this ticket?"
-    ,"filter_by_status": "Filter by status",
-    ,"tickets_loaded": "Tickets loaded",
+    ,"filter_by_status": "Filter by status"
+    ,"tickets_loaded": "Tickets loaded"
     ,"tickets_load_failed": "Failed to load tickets"
     ,"search": "Search"
     ,"apply": "Apply"

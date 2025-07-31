@@ -63,7 +63,7 @@ export default function PlansIndex() {
   };
 
   const removePlan = async (id) => {
-    if (!confirm("Are you sure you want to delete this plan?")) return;
+    if (!confirm(t('confirm_delete_plan'))) return;
     try {
       await deletePlan(id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
@@ -85,7 +85,7 @@ export default function PlansIndex() {
 
   const bulkDelete = async () => {
     if (!selectedIds.length) return;
-    if (!confirm("Delete selected plans?")) return;
+    if (!confirm(t('confirm_delete_selected'))) return;
     try {
       await Promise.all(selectedIds.map((id) => deletePlan(id)));
       setPlans((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
@@ -100,7 +100,7 @@ export default function PlansIndex() {
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-500 text-lg">Loading...</p>
+        <p className="text-gray-500 text-lg">{t('loading')}</p>
       </div>
     );
   }
@@ -133,7 +133,7 @@ export default function PlansIndex() {
           </div>
         )}
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('loading')}</p>
         ) : (
           <div className="space-y-4">
             {plans.map((plan) => {
@@ -188,14 +188,14 @@ export default function PlansIndex() {
                   </button>
                   <Link href={`/dashboard/admin/plans/edit/${plan.id}`}>
                     <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded flex items-center gap-1">
-                      <FaEdit /> Edit
+                      <FaEdit /> {t('edit')}
                     </button>
                   </Link>
                   <button
                     onClick={() => removePlan(plan.id)}
                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded flex items-center gap-1"
                   >
-                    <FaTrash /> Delete
+                    <FaTrash /> {t('delete')}
                   </button>
                 </div>
               </div>
