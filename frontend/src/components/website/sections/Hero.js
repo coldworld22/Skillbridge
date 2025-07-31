@@ -7,9 +7,19 @@ import Typewriter from "typewriter-effect";
 import SearchBar from "@/components/shared/SearchBar";
 import { useSwipeable } from "react-swipeable"; // ✅ New for mobile swipe
 import {
-  FaBars, FaRobot, FaSearch, FaArrowRight, FaChalkboardTeacher,
-  FaBookOpen, FaMouse, FaChevronLeft, FaChevronRight, FaQuestionCircle
+  FaBars,
+  FaRobot,
+  FaSearch,
+  FaArrowRight,
+  FaChalkboardTeacher,
+  FaBookOpen,
+  FaMouse,
+  FaChevronLeft,
+  FaChevronRight,
+  FaQuestionCircle,
+  FaSearchPlus,
 } from "react-icons/fa";
+import AdMediaModal from "@/components/website/AdMediaModal";
 import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
@@ -23,6 +33,7 @@ const Hero = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [ads, setAds] = useState([]);
   const [currentAd, setCurrentAd] = useState(0);
+  const [showMedia, setShowMedia] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const { t } = useTranslation("website");
@@ -207,6 +218,14 @@ const Hero = () => {
                 priority
               />
             )}
+            {/* View Media Button */}
+            <button
+              onClick={() => setShowMedia(true)}
+              className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white"
+              aria-label={t('view_media')}
+            >
+              <FaSearchPlus />
+            </button>
             <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent z-10 flex items-end justify-center pb-8 text-center">
               <div className="px-6 md:px-10 max-w-xl text-white">
                 <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-snug drop-shadow-xl">
@@ -262,6 +281,9 @@ const Hero = () => {
           <FaMouse className="text-white text-3xl animate-bounce" />
           <p className="text-white text-sm mt-2">{t('scroll_down')}</p>
         </motion.div>
+        {showMedia && (
+          <AdMediaModal ad={ads[currentAd]} onClose={() => setShowMedia(false)} />
+        )}
       </section>
     </motion.section>
   );
