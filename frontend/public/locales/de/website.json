@@ -122,5 +122,7 @@
   "show_more_nfts": "Zeigen Sie mehr NFTs",
   "experience_years": "Erfahrung: {{count}} Jahre",
   "instructor_rating": "Bewertung: {{count}} / 5",
-  "no_offers": "Im Moment keine Angebote"
-}
+  "no_offers": "Im Moment keine Angebote",
+  "view_media": "Medien anzeigen",
+  "location_message": "Plattform verfügbar in {{country}}. Sie können Inhalte basierend darauf erkunden."
+ }
