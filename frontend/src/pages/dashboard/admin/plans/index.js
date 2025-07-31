@@ -96,13 +96,20 @@ export default function PlansIndex() {
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className="border rounded p-4 flex justify-between items-center"
+                className={`border rounded p-4 flex justify-between items-center ${plan.style || ""}`}
+                style={{ backgroundColor: plan.color || "transparent" }}
               >
-                <div>
-                  <h2 className="font-bold text-lg">{plan.name}</h2>
-                  <p className="text-sm text-gray-600">
-                    Monthly: {plan.price_monthly} {plan.currency} | Yearly: {plan.price_yearly} {plan.currency}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: plan.color || "#1f2937" }}
+                  ></span>
+                  <div>
+                    <h2 className="font-bold text-lg">{plan.name}</h2>
+                    <p className="text-sm text-gray-600">
+                      Monthly: {plan.price_monthly} {plan.currency} | Yearly: {plan.price_yearly} {plan.currency}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
