@@ -3,24 +3,25 @@ import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
-
-const mockFaqs = [
-  {
-    question: "What is SkillBridge?",
-    answer: "SkillBridge is an online learning platform that connects learners with expert instructors.",
-  },
-  {
-    question: "How can I join a class?",
-    answer: "You can browse classes, select one you like, and join after registering and completing payment.",
-  },
-  {
-    question: "Do I get a certificate?",
-    answer: "Yes! Most courses include an auto-generated certificate you can download and verify via QR code.",
-  },
-];
+import { useTranslation } from 'next-i18next';
 
 export default function FaqPage() {
+  const { t } = useTranslation('website');
   const [openIndex, setOpenIndex] = useState(null);
+  const faqs = [
+    {
+      question: t('faqPage.q1_question'),
+      answer: t('faqPage.q1_answer'),
+    },
+    {
+      question: t('faqPage.q2_question'),
+      answer: t('faqPage.q2_answer'),
+    },
+    {
+      question: t('faqPage.q3_question'),
+      answer: t('faqPage.q3_answer'),
+    },
+  ];
 
   const toggle = (index) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -28,21 +29,21 @@ export default function FaqPage() {
 
   return (
     <>
-      <PageHead title="FAQs" />
+      <PageHead title={t('faqPage.title')} />
 
       <div className="bg-gray-900 min-h-screen text-white">
         <Navbar />
 
         <header className="text-center py-24 px-4">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-4">FAQs</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-4">{t('faqPage.heading')}</h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Everything you need to know before getting started with SkillBridge.
+            {t('faqPage.description')}
           </p>
         </header>
 
         <section className="bg-black py-16 px-4">
           <div className="max-w-3xl mx-auto space-y-6">
-            {mockFaqs.map((faq, index) => {
+            {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
                 <div
@@ -85,7 +86,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'website'], nextI18NextConfig)),
     },
   };
 }

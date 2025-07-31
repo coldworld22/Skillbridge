@@ -122,5 +122,47 @@
   "show_more_nfts": "Mostrar más NFTS",
   "experience_years": "Experiencia: {{Count}} años",
   "instructor_rating": "Calificación: {{Count}} / 5",
-  "no_offers": "No hay ofertas ahora mismo"
+  "no_offers": "No hay ofertas ahora mismo",
+  "aboutPage": {
+    "title": "About Us",
+    "hero_heading": "Empowering Global Learning",
+    "hero_description": "SkillBridge connects learners, instructors, and institutions on a unified educational platform.",
+    "mission_heading": "Our Mission",
+    "mission_description": "We're on a mission to make high-quality education accessible, flexible, and smart through AI, community, and expert-led content.",
+    "features": {
+      "online_classes": "Online Classes",
+      "online_classes_desc": "Structured learning with lessons, assignments, and attendance.",
+      "ai_tutoring": "AI Tutoring",
+      "ai_tutoring_desc": "Adaptive AI-based tutors and lesson planners.",
+      "community": "Interactive Community",
+      "community_desc": "Ask questions, join groups, and grow with others.",
+      "instructor_tools": "Instructor Tools",
+      "instructor_tools_desc": "Advanced dashboards, earnings insights, and class management.",
+      "certificates": "Certificates",
+      "certificates_desc": "Auto-issued certificates with QR code verification.",
+      "flexible_plans": "Flexible Plans",
+      "flexible_plans_desc": "Subscription model with customizable access control."
+    },
+    "join_heading": "Join thousands of learners and instructors",
+    "join_description": "Your journey toward smarter, more flexible education starts here.",
+    "get_started": "Get Started",
+    "contact_us": "Contact Us"
+  },
+  "blogPage": {
+    "title": "Blog",
+    "heading": "SkillBridge Blog",
+    "description": "Insights, tips, and updates from the future of online learning.",
+    "read_more": "Read More →"
+  },
+  "faqPage": {
+    "title": "FAQs",
+    "heading": "FAQs",
+    "description": "Everything you need to know before getting started with SkillBridge.",
+    "q1_question": "What is SkillBridge?",
+    "q1_answer": "SkillBridge is an online learning platform that connects learners with expert instructors.",
+    "q2_question": "How can I join a class?",
+    "q2_answer": "You can browse classes, select one you like, and join after registering and completing payment.",
+    "q3_question": "Do I get a certificate?",
+    "q3_answer": "Yes! Most courses include an auto-generated certificate you can download and verify via QR code."
+  }
 }

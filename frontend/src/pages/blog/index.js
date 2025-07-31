@@ -4,8 +4,10 @@ import Footer from '@/components/website/sections/Footer';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { fetchBlogPosts } from '@/services/blogService';
+import { useTranslation } from 'next-i18next';
 
 export default function BlogPage() {
+  const { t } = useTranslation('website');
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
@@ -21,14 +23,14 @@ export default function BlogPage() {
   }, []);
   return (
     <>
-      <PageHead title="Blog" />
+      <PageHead title={t('blogPage.title')} />
 
       <div className="bg-gray-900 text-white min-h-screen">
         <Navbar />
 
         <section className="py-24 px-6 text-center">
-          <h1 className="text-4xl font-bold text-yellow-400 mb-4">SkillBridge Blog</h1>
-          <p className="text-gray-300 max-w-2xl mx-auto">Insights, tips, and updates from the future of online learning.</p>
+          <h1 className="text-4xl font-bold text-yellow-400 mb-4">{t('blogPage.heading')}</h1>
+          <p className="text-gray-300 max-w-2xl mx-auto">{t('blogPage.description')}</p>
         </section>
 
         <section className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-10 px-6 pb-24">
@@ -44,7 +46,7 @@ export default function BlogPage() {
                 )}
                 <p className="text-gray-300 mt-3">{post.excerpt}</p>
                 <Link href={`/blog/${post.slug}`}>
-                  <span className="text-indigo-400 hover:underline mt-4 inline-block">Read More →</span>
+                  <span className="text-indigo-400 hover:underline mt-4 inline-block">{t('blogPage.read_more')}</span>
                 </Link>
               </div>
             </div>
@@ -63,7 +65,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'website'], nextI18NextConfig)),
     },
   };
 }
