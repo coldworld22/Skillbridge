@@ -122,5 +122,47 @@
   "show_more_nfts": "Montrer plus de NFT",
   "experience_years": "Expérience: {{count}} années",
   "instructor_rating": "Note: {{count}} / 5",
-  "no_offers": "Aucune offre en ce moment"
+  "no_offers": "Aucune offre en ce moment",
+  "aboutPage": {
+    "title": "À propos de nous",
+    "hero_heading": "Favoriser l'apprentissage mondial",
+    "hero_description": "SkillBridge relie apprenants, instructeurs et établissements sur une plateforme éducative unifiée.",
+    "mission_heading": "Notre mission",
+    "mission_description": "Nous voulons rendre l'éducation de qualité accessible, flexible et intelligente grâce à l'IA, la communauté et des contenus d'experts.",
+    "features": {
+      "online_classes": "Cours en ligne",
+      "online_classes_desc": "Apprentissage structuré avec leçons, devoirs et présence.",
+      "ai_tutoring": "Tutorat IA",
+      "ai_tutoring_desc": "Tuteurs et planificateurs de cours adaptatifs basés sur l'IA.",
+      "community": "Communauté interactive",
+      "community_desc": "Posez des questions, rejoignez des groupes et progressez ensemble.",
+      "instructor_tools": "Outils pour instructeurs",
+      "instructor_tools_desc": "Tableaux de bord avancés, revenus et gestion des cours.",
+      "certificates": "Certificats",
+      "certificates_desc": "Certificats délivrés automatiquement avec vérification par QR code.",
+      "flexible_plans": "Formules flexibles",
+      "flexible_plans_desc": "Modèle d'abonnement avec contrôle d'accès personnalisable."
+    },
+    "join_heading": "Rejoignez des milliers d'apprenants et d'instructeurs",
+    "join_description": "Votre parcours vers une éducation plus intelligente et flexible commence ici.",
+    "get_started": "Commencer",
+    "contact_us": "Nous contacter"
+  },
+  "blogPage": {
+    "title": "Blog",
+    "heading": "Blog de SkillBridge",
+    "description": "Idées, conseils et actualités sur l'avenir de l'apprentissage en ligne.",
+    "read_more": "Lire la suite →"
+  },
+  "faqPage": {
+    "title": "FAQs",
+    "heading": "FAQs",
+    "description": "Tout ce qu'il faut savoir avant de débuter avec SkillBridge.",
+    "q1_question": "Qu'est-ce que SkillBridge ?",
+    "q1_answer": "SkillBridge est une plateforme d'apprentissage en ligne qui met en relation les apprenants avec des instructeurs experts.",
+    "q2_question": "Comment rejoindre un cours ?",
+    "q2_answer": "Vous pouvez parcourir les cours, en choisir un et le rejoindre après inscription et paiement.",
+    "q3_question": "Est-ce que je reçois un certificat ?",
+    "q3_answer": "Oui ! La plupart des cours comprennent un certificat généré automatiquement que vous pouvez télécharger et vérifier via QR code."
+  }
 }
