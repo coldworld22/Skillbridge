@@ -1,40 +1,38 @@
 import nextI18NextConfig from './next-i18next.config.js';
 
 /** @type {import('next').NextConfig} */
+const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/api';
+const { protocol, hostname, port } = new URL(apiBase);
 const nextConfig = {
   images: {
     remotePatterns: [
-
       {
-        protocol: 'http',
-        hostname: '147.93.121.45',
-        port: '5002', // Add port explicitly
+        protocol: protocol.replace(':', ''),
+        hostname,
+        port,
         pathname: '/**',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '5002',
-        pathname: '/**',
+        protocol: protocol.replace(':', ''),
+        hostname,
+        port,
+        pathname: '/api/uploads/**',
       },
       {
-        protocol: 'https',
-        hostname: 'eduskillbridge.net',
-        pathname: '/api/uploads/**', // Production domain
-      },
-      {
-        protocol: 'https',
-        hostname: 'eduskillbridge.net',
+        protocol: protocol.replace(':', ''),
+        hostname,
+        port,
         pathname: '/uploads/**',
       },
+      // Legacy patterns kept for backward compatibility
       {
-        protocol: 'http',
-        hostname: '147.93.121.45',
-        pathname: '/api/uploads/**', // Production IP
+        protocol: 'https',
+        hostname: 'eduskillbridge.net',
+        pathname: '/api/uploads/**',
       },
       {
-        protocol: 'http',
-        hostname: '147.93.121.45',
+        protocol: 'https',
+        hostname: 'eduskillbridge.net',
         pathname: '/uploads/**',
       },
     ],
