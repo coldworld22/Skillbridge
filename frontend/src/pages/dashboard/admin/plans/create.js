@@ -6,9 +6,11 @@ import Link from "next/link";
 import { createPlan } from "@/services/admin/planService";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 export default function CreatePlanPage() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'plansPage' });
   const { accessToken, user, hasHydrated } = useAuthStore();
 
   const [form, setForm] = useState({
@@ -59,20 +61,20 @@ export default function CreatePlanPage() {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      toast.error("Name is required");
+      toast.error(t('name_required'));
       return;
     }
     if (!isHex(form.color) || !isHex(form.textColor) ||
         !isHex(form.buttonColor) || !isHex(form.buttonTextColor)) {
-      toast.error("Invalid color value");
+      toast.error(t('invalid_color'));
       return;
     }
     if (form.gradientStart && !isHex(form.gradientStart)) {
-      toast.error("Invalid gradient start color");
+      toast.error(t('invalid_gradient_start'));
       return;
     }
     if (form.gradientEnd && !isHex(form.gradientEnd)) {
-      toast.error("Invalid gradient end color");
+      toast.error(t('invalid_gradient_end'));
       return;
     }
 
@@ -99,11 +101,11 @@ export default function CreatePlanPage() {
           (f) => f.feature_key || f.value || f.description
         ),
       });
-      toast.success("Plan created");
+      toast.success(t('plan_created'));
       router.push("/dashboard/admin/plans");
     } catch (err) {
       console.error("Create failed", err);
-      toast.error("Failed to create plan");
+      toast.error(t('failed_to_create'));
     }
   };
 
@@ -116,24 +118,24 @@ export default function CreatePlanPage() {
   }
 
   return (
-    <AdminLayout title="Create New Plan">
+    <AdminLayout title={t('title')}>
       <div className="flex justify-between items-center mb-6">
         <Link href="/dashboard/admin/plans">
           <button className="flex items-center gap-2 text-gray-600 hover:text-black">
-            <FaArrowLeft /> Back to Plans
+            <FaArrowLeft /> {t('back_to_plans')}
           </button>
         </Link>
         <button
           onClick={handleSubmit}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2"
         >
-          <FaSave /> Save Plan
+          <FaSave /> {t('save_plan')}
         </button>
       </div>
 
       <form className="bg-white rounded shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-sm font-medium mb-1">Plan Name</label>
+          <label className="block text-sm font-medium mb-1">{t('plan_name')}</label>
           <input
             className="w-full border px-4 py-2 rounded"
             value={form.name}
@@ -142,7 +144,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Monthly Price</label>
+          <label className="block text-sm font-medium mb-1">{t('monthly_price')}</label>
           <input
             type="number"
             className="w-full border px-4 py-2 rounded"
@@ -151,7 +153,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Yearly Price</label>
+          <label className="block text-sm font-medium mb-1">{t('yearly_price')}</label>
           <input
             type="number"
             className="w-full border px-4 py-2 rounded"
@@ -160,7 +162,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Currency</label>
+          <label className="block text-sm font-medium mb-1">{t('currency')}</label>
           <input
             className="w-full border px-4 py-2 rounded"
             value={form.currency}
@@ -168,7 +170,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Plan Color</label>
+          <label className="block text-sm font-medium mb-1">{t('plan_color')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -177,7 +179,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Text Color</label>
+          <label className="block text-sm font-medium mb-1">{t('text_color')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -186,7 +188,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Button Color</label>
+          <label className="block text-sm font-medium mb-1">{t('button_color')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -195,7 +197,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Button Text Color</label>
+          <label className="block text-sm font-medium mb-1">{t('button_text_color')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -204,7 +206,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Font Size (px)</label>
+          <label className="block text-sm font-medium mb-1">{t('font_size')}</label>
           <input
             type="number"
             className="w-full border px-4 py-2 rounded"
@@ -215,7 +217,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Gradient Start</label>
+          <label className="block text-sm font-medium mb-1">{t('gradient_start')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -224,7 +226,7 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Gradient End</label>
+          <label className="block text-sm font-medium mb-1">{t('gradient_end')}</label>
           <input
             type="color"
             className="w-full border px-4 py-2 rounded"
@@ -234,12 +236,12 @@ export default function CreatePlanPage() {
         </div>
 
         <div className="md:col-span-2">
-          <h4 className="font-semibold mb-2">Plan Features</h4>
+          <h4 className="font-semibold mb-2">{t('plan_features')}</h4>
           {features.map((feat, idx) => (
             <div key={idx} className="grid grid-cols-3 gap-2 mb-2 items-center">
               <input
                 className="border px-2 py-1 rounded"
-                placeholder="Key"
+                placeholder={t('key')}
                 value={feat.feature_key}
                 onChange={(e) =>
                   updateFeature(idx, "feature_key", e.target.value)
@@ -247,14 +249,14 @@ export default function CreatePlanPage() {
               />
               <input
                 className="border px-2 py-1 rounded"
-                placeholder="Value"
+                placeholder={t('value')}
                 value={feat.value}
                 onChange={(e) => updateFeature(idx, "value", e.target.value)}
               />
               <div className="flex gap-2">
                 <input
                   className="border px-2 py-1 rounded flex-1"
-                  placeholder="Description"
+                  placeholder={t('description')}
                   value={feat.description}
                   onChange={(e) =>
                     updateFeature(idx, "description", e.target.value)
@@ -265,7 +267,7 @@ export default function CreatePlanPage() {
                   onClick={() => removeFeature(idx)}
                   className="text-red-500 text-sm"
                 >
-                  Remove
+                  {t('remove')}
                 </button>
               </div>
             </div>
@@ -275,7 +277,7 @@ export default function CreatePlanPage() {
             onClick={addFeature}
             className="mt-2 bg-gray-200 px-3 py-1 rounded text-sm"
           >
-            + Add Feature
+            {t('add_feature')}
           </button>
         </div>
         <label className="flex items-center gap-2">
@@ -284,7 +286,7 @@ export default function CreatePlanPage() {
             checked={form.recommended}
             onChange={(e) => setForm({ ...form, recommended: e.target.checked })}
           />
-          Recommended
+          {t('recommended')}
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -292,7 +294,7 @@ export default function CreatePlanPage() {
             checked={form.active}
             onChange={(e) => setForm({ ...form, active: e.target.checked })}
           />
-          Active
+          {t('active')}
         </label>
       </form>
     </AdminLayout>
