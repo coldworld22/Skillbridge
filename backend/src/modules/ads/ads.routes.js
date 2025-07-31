@@ -10,7 +10,7 @@ router.post(
   "/admin",
   verifyToken,
   isInstructorOrAdmin,
-  upload.single("image"),
+  upload,
   validate(validator.create),
   controller.createAd
 );
@@ -21,7 +21,7 @@ router.put(
   "/:id",
   verifyToken,
   isInstructorOrAdmin,
-  upload.single("image"),
+  upload,
   controller.updateAd
 );
 router.delete(
