@@ -122,5 +122,7 @@
   "show_more_nfts": "Mostrar más NFTS",
   "experience_years": "Experiencia: {{Count}} años",
   "instructor_rating": "Calificación: {{Count}} / 5",
-  "no_offers": "No hay ofertas ahora mismo"
-}
+  "no_offers": "No hay ofertas ahora mismo",
+  "view_media": "Ver medios",
+  "location_message": "Plataforma disponible en {{country}}. Puedes explorar contenido basado en ello."
+ }
