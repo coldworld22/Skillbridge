@@ -126,12 +126,17 @@ export default function CreatePlanPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Custom CSS Class</label>
-          <input
+          <label className="block text-sm font-medium mb-1">Plan Style</label>
+          <select
             className="w-full border px-4 py-2 rounded"
             value={form.style}
             onChange={(e) => setForm({ ...form, style: e.target.value })}
-          />
+          >
+            <option value="">Default</option>
+            <option value="style-blue">Blue</option>
+            <option value="style-green">Green</option>
+            <option value="style-red">Red</option>
+          </select>
         </div>
         <label className="flex items-center gap-2">
           <input
