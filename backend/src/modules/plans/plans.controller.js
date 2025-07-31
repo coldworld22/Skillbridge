@@ -33,6 +33,10 @@ exports.createPlan = catchAsync(async (req, res) => {
         throw new Error("Invalid gradient start color");
       if (conf.gradientEnd && !isHex(conf.gradientEnd))
         throw new Error("Invalid gradient end color");
+      if (conf.buttonColor && !isHex(conf.buttonColor))
+        throw new Error("Invalid button color");
+      if (conf.buttonTextColor && !isHex(conf.buttonTextColor))
+        throw new Error("Invalid button text color");
     } catch (err) {
       throw new AppError("Invalid style format", 400);
     }
@@ -112,6 +116,10 @@ exports.updatePlan = catchAsync(async (req, res) => {
         throw new Error("Invalid gradient start color");
       if (conf.gradientEnd && !isHex(conf.gradientEnd))
         throw new Error("Invalid gradient end color");
+      if (conf.buttonColor && !isHex(conf.buttonColor))
+        throw new Error("Invalid button color");
+      if (conf.buttonTextColor && !isHex(conf.buttonTextColor))
+        throw new Error("Invalid button text color");
     } catch (err) {
       throw new AppError("Invalid style format", 400);
     }
