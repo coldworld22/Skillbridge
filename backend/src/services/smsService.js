@@ -64,18 +64,18 @@ exports.sendSMS = async ({ to, text }) => {
         },
         body: JSON.stringify(payload),
       });
-      const bodyText = await res.text();
-      let parsed = bodyText;
-      try {
-        parsed = JSON.parse(bodyText);
-      } catch {
-        // keep as plain text
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch {
+        json = null;
       }
-      const bodyLog =
-        typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
-      console.log('[SMS] Infobip response:', res.status, bodyLog);
       if (!res.ok) {
-        console.error('[SMS] Infobip SMS error:', bodyLog);
+        console.error('Infobip SMS error:', json || text);
+      } else if (json && Array.isArray(json.messages)) {
+        const status = json.messages[0]?.status;
+        const desc = status?.description || 'unknown status';
+        console.log(`SMS sent via Infobip to ${to}: ${desc}`);
+
       } else {
         console.log(`[SMS] SMS sent via Infobip to ${to}`);
       }
