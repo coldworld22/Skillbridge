@@ -21,6 +21,7 @@
   "third_party_integrations": "تكاملات الطرف الثالث",
   "settings_saved": "تم حفظ الإعدادات",
   "settings_save_failed": "فشل حفظ الإعدادات",
+  "settings_load_failed": "فشل تحميل الإعدادات",
   "monetization": "تحقيق الدخل",
   "subscription_plans": "خطط الاشتراك",
   "payment_config": "إعدادات الدفع",

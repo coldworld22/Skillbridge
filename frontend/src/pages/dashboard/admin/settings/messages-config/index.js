@@ -67,7 +67,7 @@ function MessageServiceConfig() {
           setProviders(data.providers);
         }
       } catch (err) {
-        toast.error("Failed to load settings");
+        toast.error(t('settings_load_failed'));
       } finally {
         setLoading(false);
       }
@@ -107,16 +107,15 @@ function MessageServiceConfig() {
     const save = async () => {
       try {
         await updateMessagesConfig({ providers });
-        toast.success(`${providers[index].name} settings saved!`, { theme: "colored" });
+        toast.success(t('settings_saved'), { theme: "colored" });
       } catch (err) {
-        toast.error("Failed to save settings");
+        toast.error(t('settings_save_failed'));
       }
     };
     save();
   };
 
   return (
-    <AdminLayout>
       <div className="max-w-5xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">{t('messagesConfigPage.title')}</h1>
 
@@ -232,7 +231,6 @@ function MessageServiceConfig() {
         )}
 
       </div>
-    </AdminLayout>
   );
 }
 

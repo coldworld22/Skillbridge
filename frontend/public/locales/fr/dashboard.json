@@ -21,6 +21,7 @@
   "third_party_integrations": "Intégrations tierces",
   "settings_saved": "Paramètres enregistrés",
   "settings_save_failed": "Échec de l'enregistrement des paramètres",
+  "settings_load_failed": "Échec du chargement des paramètres",
   "monetization": "Monétisation",
   "subscription_plans": "Abonnements",
   "payment_config": "Configuration des paiements",
