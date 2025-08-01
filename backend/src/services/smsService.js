@@ -43,7 +43,6 @@ exports.sendSMS = async ({ to, text }) => {
       const auth = provider.apiKey.trim().startsWith('App ')
         ? provider.apiKey.trim()
         : `App ${provider.apiKey.trim()}`;
-
       console.log(
         '[SMS] Sending request to Infobip:',
         JSON.stringify(
@@ -66,9 +65,17 @@ exports.sendSMS = async ({ to, text }) => {
         body: JSON.stringify(payload),
       });
       const bodyText = await res.text();
-      console.log('[SMS] Infobip response:', res.status, bodyText);
+      let parsed = bodyText;
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        // keep as plain text
+      }
+      const bodyLog =
+        typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+      console.log('[SMS] Infobip response:', res.status, bodyLog);
       if (!res.ok) {
-        console.error('[SMS] Infobip SMS error:', bodyText);
+        console.error('[SMS] Infobip SMS error:', bodyLog);
       } else {
         console.log(`[SMS] SMS sent via Infobip to ${to}`);
       }
