@@ -148,9 +148,10 @@ const Verification = ({ onNext, onBack }) => {
                   ? setEmailOTP(e.target.value)
                   : setPhoneOTP(e.target.value)
               }
-              className="w-full px-3 py-2 border rounded mb-4"
+              className="w-full px-3 py-2 border rounded mb-2"
               placeholder="Enter OTP"
             />
+            <p className="text-xs text-gray-500 mb-2">Default OTP: <code>123456</code></p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowOtpModal(null)}

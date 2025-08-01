@@ -4,6 +4,7 @@ const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
 const { sendOtpEmail } = require("../../utils/email");
+const smsService = require("../../services/smsService");
 
 const generateCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -34,7 +35,14 @@ exports.sendOtp = async (userId, type) => {
       console.error("Error sending OTP email:", err.message);
     }
   } else {
-    console.log(`[SMS] Phone OTP for ${user.phone}: ${code}`); // Replace with SMS provider
+    try {
+      await smsService.sendSMS({
+        to: user.phone,
+        text: `Your SkillBridge OTP is: ${code}`,
+      });
+    } catch (err) {
+      console.error("Error sending OTP SMS:", err.message);
+    }
   }
 
   console.log(`[OTP] Sent ${type} code:`, code);
