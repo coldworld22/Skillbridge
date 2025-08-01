@@ -80,6 +80,16 @@ export default function MessageServiceConfig() {
     setProviders(updated);
   };
 
+  const toggleActive = (index) => {
+    setProviders((prev) =>
+      prev.map((p, i) =>
+        p.type === "Gateway"
+          ? { ...p, active: i === index ? !p.active : false }
+          : p
+      )
+    );
+  };
+
   const setDefault = (index) => {
     setProviders((prev) =>
       prev.map((p, i) =>
@@ -121,7 +131,7 @@ export default function MessageServiceConfig() {
                   Default
                 </label>
                 <button
-                  onClick={() => handleChange(providers.findIndex(p => p.id === provider.id), "active", !provider.active)}
+                  onClick={() => toggleActive(providers.findIndex(p => p.id === provider.id))}
                   className={`text-xl ${provider.active ? "text-green-500" : "text-gray-400"}`}
                 >
                   {provider.active ? <FaToggleOn /> : <FaToggleOff />}
