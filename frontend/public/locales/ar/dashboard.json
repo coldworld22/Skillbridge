@@ -858,4 +858,15 @@
     "apply": "تطبيق",
     "no_tickets_found": "لم يتم العثور على تذاكر"
   }
+  ,"messagesConfigPage": {
+    "title": "Messaging Providers Configuration",
+    "sms_providers": "SMS Providers",
+    "otp_provider": "OTP Provider",
+    "api_key": "API Key",
+    "sender_id": "Sender ID",
+    "region": "Base URL / Region",
+    "no_app_prefix": "Do not include the `App` prefix.",
+    "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
+    "default": "Default"
+  }
 }

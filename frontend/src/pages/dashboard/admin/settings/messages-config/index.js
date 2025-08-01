@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaToggleOn, FaToggleOff, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchMessagesConfig, updateMessagesConfig } from "@/services/admin/messagesConfigService";
 
 const initialProviders = [
@@ -49,7 +53,8 @@ const initialProviders = [
 ];
 
 
-export default function MessageServiceConfig() {
+function MessageServiceConfig() {
+  const { t } = useTranslation('dashboard');
   const [providers, setProviders] = useState(initialProviders);
   const [loading, setLoading] = useState(false);
 
@@ -113,10 +118,10 @@ export default function MessageServiceConfig() {
   return (
     <AdminLayout>
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Messaging Providers Configuration</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('messagesConfigPage.title')}</h1>
 
         {/* --- SMS Providers --- */}
-        <h2 className="text-xl font-semibold mb-4">📩 SMS Providers</h2>
+        <h2 className="text-xl font-semibold mb-4">📩 {t('messagesConfigPage.sms_providers')}</h2>
         {smsProviders.map((provider, index) => (
           <div key={provider.id} className="border rounded p-4 mb-6 shadow space-y-4">
             <div className="flex justify-between items-center">
@@ -128,7 +133,7 @@ export default function MessageServiceConfig() {
                     checked={provider.isDefault}
                     onChange={() => setDefault(providers.findIndex(p => p.id === provider.id))}
                   />
-                  Default
+                  {t('messagesConfigPage.default')}
                 </label>
                 <button
                   onClick={() => toggleActive(providers.findIndex(p => p.id === provider.id))}
@@ -140,7 +145,7 @@ export default function MessageServiceConfig() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-medium mb-1">API Key</label>
+                <label className="block font-medium mb-1">{t('messagesConfigPage.api_key')}</label>
                 <input
                   type="text"
                   className="w-full border rounded p-2"
@@ -149,10 +154,10 @@ export default function MessageServiceConfig() {
                     handleChange(providers.findIndex(p => p.id === provider.id), "apiKey", e.target.value)
                   }
                 />
-                <p className="text-xs text-gray-500 mt-1">Do not include the <code>App</code> prefix.</p>
+                <p className="text-xs text-gray-500 mt-1">{t('messagesConfigPage.no_app_prefix')}</p>
               </div>
               <div>
-                <label className="block font-medium mb-1">Sender ID</label>
+                <label className="block font-medium mb-1">{t('messagesConfigPage.sender_id')}</label>
                 <input
                   type="text"
                   className="w-full border rounded p-2"
@@ -163,7 +168,7 @@ export default function MessageServiceConfig() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Base URL / Region</label>
+                <label className="block font-medium mb-1">{t('messagesConfigPage.region')}</label>
                 <input
                   type="text"
                   className="w-full border rounded p-2"
@@ -178,7 +183,7 @@ export default function MessageServiceConfig() {
               onClick={() => handleSaveProvider(providers.findIndex(p => p.id === provider.id))}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
             >
-              <FaSave /> Save
+              <FaSave /> {t('save')}
             </button>
           </div>
         ))}
@@ -186,12 +191,12 @@ export default function MessageServiceConfig() {
         {/* --- OTP Provider --- */}
         {otpProvider && (
           <>
-            <h2 className="text-xl font-semibold mb-4 mt-10">🔐 OTP Provider</h2>
+            <h2 className="text-xl font-semibold mb-4 mt-10">🔐 {t('messagesConfigPage.otp_provider')}</h2>
             <div className="border rounded p-4 shadow space-y-4">
               <h3 className="text-lg font-semibold">{otpProvider.name}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block font-medium mb-1">API Key</label>
+                  <label className="block font-medium mb-1">{t('messagesConfigPage.api_key')}</label>
                   <input
                     type="text"
                     className="w-full border rounded p-2"
@@ -202,7 +207,7 @@ export default function MessageServiceConfig() {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium mb-1">Base URL / Region</label>
+                  <label className="block font-medium mb-1">{t('messagesConfigPage.region')}</label>
                   <input
                     type="text"
                     className="w-full border rounded p-2"
@@ -214,13 +219,13 @@ export default function MessageServiceConfig() {
                 </div>
               </div>
               <p className="text-sm text-gray-500">
-                Firebase Auth is used for phone number OTP during login. No toggle is required.
+                {t('messagesConfigPage.firebase_hint')}
               </p>
               <button
                 onClick={() => handleSaveProvider(providers.findIndex(p => p.id === otpProvider.id))}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
               >
-                <FaSave /> Save
+                <FaSave /> {t('save')}
               </button>
             </div>
           </>
@@ -229,4 +234,25 @@ export default function MessageServiceConfig() {
       </div>
     </AdminLayout>
   );
+}
+
+MessageServiceConfig.getLayout = function getLayout(page) {
+  return <AdminLayout>{page}</AdminLayout>;
+};
+
+const ProtectedMessagesConfigPage = withAuthProtection(MessageServiceConfig, [
+  'admin',
+  'superadmin',
+]);
+
+ProtectedMessagesConfigPage.getLayout = MessageServiceConfig.getLayout;
+
+export default ProtectedMessagesConfigPage;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
