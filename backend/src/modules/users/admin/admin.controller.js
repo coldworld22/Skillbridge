@@ -76,8 +76,6 @@ exports.updateProfile = async (req, res) => {
     date_of_birth,
     avatar_url,
     profile_complete: true,
-    is_email_verified: true,
-    is_phone_verified: true,
     updated_at: new Date(),
   });
 
