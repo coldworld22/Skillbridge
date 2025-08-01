@@ -33,13 +33,13 @@ import getCroppedImg from "@/utils/cropImage";
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 const profileSchema = z.object({
-  full_name: z.string().min(3, "Full name must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(8, "Phone must be at least 8 digits"),
+  full_name: z.string().min(3, "full_name_min"),
+  email: z.string().email("invalid_email_address"),
+  phone: z.string().min(8, "phone_min"),
   job_title: z.string().min(2),
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
-  date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }),
+  date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
   // Social links are optional strings without URL validation
   socialLinks: z.record(z.string()).optional(),
 });
@@ -222,15 +222,18 @@ useEffect(() => {
   const validateForm = () => {
     try {
       profileSchema.parse(formData);
+      setErrors({});
       return true;
     } catch (err) {
       if (err instanceof z.ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
-          newErrors[error.path[0]] = error.message;
+          newErrors[error.path[0]] = t(error.message);
         });
         setErrors(newErrors);
-        if (err.errors[0]) toast.error(t(err.errors[0].message));
+        if (err.errors?.length) {
+          toast.error(t(err.errors[0].message));
+        }
       }
       return false;
     }
