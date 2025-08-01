@@ -58,9 +58,10 @@ const Hero = () => {
     }
   }, [settings.home_bg_url]);
 
+  // Always fetch latest configuration so hero background stays in sync
   useEffect(() => {
-    if (!configLoaded) fetchAppConfig();
-  }, [configLoaded, fetchAppConfig]);
+    fetchAppConfig();
+  }, []);
 
   const typewriterText = [
     t("hero_slogan_1"),
@@ -214,7 +215,7 @@ const Hero = () => {
 
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
-          <Image src={heroBg} alt="Learning Illustration" layout="fill" objectFit="cover" priority />
+          <Image src={heroBg} alt="Learning Illustration" fill style={{ objectFit: 'cover' }} priority />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
         </div>
 
