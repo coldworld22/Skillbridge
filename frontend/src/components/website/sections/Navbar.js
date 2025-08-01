@@ -446,15 +446,17 @@ const Navbar = () => {
                       <span>{t('change_password')}</span>
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      href="/dashboard/student/wishlist"
-                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
-                    >
-                      <FaHeart className="text-gray-500" />
-                      <span>{t('wishlist')}</span>
-                    </Link>
-                  </li>
+                  {userRole === 'student' && (
+                    <li>
+                      <Link
+                        href="/dashboard/student/wishlist"
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition rounded-md"
+                      >
+                        <FaHeart className="text-gray-500" />
+                        <span>{t('wishlist')}</span>
+                      </Link>
+                    </li>
+                  )}
                   {userRole === "superadmin" && profile?.job_title && (
                     <li className="px-3 pt-1 text-xs text-gray-400 font-medium italic">
                       {profile.job_title}

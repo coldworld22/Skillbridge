@@ -871,4 +871,19 @@
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
     "default": "Default"
   }
+  ,"wishlistPage": {
+    "title": "قائمة الرغبات",
+    "search_placeholder": "ابحث في القائمة...",
+    "sort": "فرز",
+    "share": "مشاركة",
+    "classes": "الدورات",
+    "no_classes": "لا توجد دورات في القائمة.",
+    "enroll": "تسجيل",
+    "add_to_cart": "أضف إلى السلة",
+    "set_reminder": "تعيين تذكير",
+    "remove": "إزالة",
+    "add_tag": "أضف وسم",
+    "tutorials": "الدروس",
+    "no_tutorials": "لا توجد دروس في القائمة."
+  }
 }
