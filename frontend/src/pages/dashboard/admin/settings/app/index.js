@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchAppConfig, updateAppConfig, uploadAppLogo, uploadAppFavicon } from "@/services/admin/appConfigService";
+import {
+  fetchAppConfig,
+  updateAppConfig,
+  uploadAppLogo,
+  uploadAppFavicon,
+  uploadHomeBackground,
+} from "@/services/admin/appConfigService";
 import useAppConfigStore from "@/store/appConfigStore";
 import { FaSave, FaUpload, FaImage, FaGlobe } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -9,8 +15,9 @@ import { API_BASE_URL } from "@/config/config";
 const defaultConfig = { 
   appName: "", 
   siteTitle: "", 
-  logo_url: "", 
+  logo_url: "",
   favicon_url: "",
+  home_bg_url: "",
   metaDescription: "",
   contactEmail: ""
 };
@@ -19,9 +26,11 @@ export default function AppSettingsPage() {
   const [config, setConfig] = useState(defaultConfig);
   const [logoFile, setLogoFile] = useState(null);
   const [faviconFile, setFaviconFile] = useState(null);
+  const [homeBgFile, setHomeBgFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState("");
   const [faviconPreview, setFaviconPreview] = useState("");
+  const [homeBgPreview, setHomeBgPreview] = useState("");
   const updateConfigStore = useAppConfigStore((state) => state.update);
 
   useEffect(() => {
@@ -62,6 +71,16 @@ export default function AppSettingsPage() {
     setFaviconPreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [faviconFile]);
+
+  useEffect(() => {
+    if (!homeBgFile) {
+      setHomeBgPreview("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(homeBgFile);
+    setHomeBgPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [homeBgFile]);
 
   const handleChange = (field, value) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
@@ -113,6 +132,22 @@ export default function AppSettingsPage() {
       toast.success("Favicon uploaded successfully");
     } catch (err) {
       toast.error("Favicon upload failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleHomeBgUpload = async () => {
+    if (!homeBgFile) return;
+    setIsLoading(true);
+    try {
+      const data = await uploadHomeBackground(homeBgFile);
+      setConfig((prev) => ({ ...prev, ...data }));
+      updateConfigStore(data);
+      setHomeBgFile(null);
+      toast.success("Background uploaded successfully");
+    } catch (err) {
+      toast.error("Background upload failed");
     } finally {
       setIsLoading(false);
     }
@@ -293,18 +328,67 @@ export default function AppSettingsPage() {
                     />
                   </label>
                   
-                  {faviconFile && (
-                    <button
-                      type="button"
-                      onClick={handleFaviconUpload}
-                      disabled={isLoading}
-                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                      Upload
-                    </button>
-                  )}
-                </div>
+              {faviconFile && (
+                <button
+                  type="button"
+                  onClick={handleFaviconUpload}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Upload
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Home Background Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Home Background
+            </label>
+
+            {(config.home_bg_url || homeBgPreview) && (
+              <div className="mb-3 flex items-center gap-4">
+                <img
+                  src={
+                    homeBgPreview ||
+                    (config.home_bg_url ? `${API_BASE_URL}${config.home_bg_url}` : "")
+                  }
+                  alt="Background preview"
+                  className="h-24 w-full object-cover border border-gray-200 dark:border-gray-600 rounded"
+                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Recommended: 1600x900px
+                </span>
               </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <label className="flex-1">
+                <div className="flex items-center justify-center w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                  <FaUpload className="mr-2" />
+                  {homeBgFile ? homeBgFile.name : "Choose File"}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setHomeBgFile(e.target.files[0])}
+                />
+              </label>
+
+              {homeBgFile && (
+                <button
+                  type="button"
+                  onClick={handleHomeBgUpload}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Upload
+                </button>
+              )}
+            </div>
+          </div>
             </div>
           </div>
         </div>

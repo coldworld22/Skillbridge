@@ -29,3 +29,12 @@ export const uploadAppFavicon = async (file) => {
   return data?.data;
 };
 
+export const uploadHomeBackground = async (file) => {
+  const formData = new FormData();
+  formData.append("home_bg", file);
+  const { data } = await api.patch("/app-config/home-bg", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
+};
+

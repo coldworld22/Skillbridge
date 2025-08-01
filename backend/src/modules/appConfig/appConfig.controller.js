@@ -60,3 +60,14 @@ exports.uploadFavicon = catchAsync(async (req, res) => {
   sendSuccess(res, updated, "Favicon updated");
 });
 
+exports.uploadHomeBackground = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError("No file uploaded", 400);
+  const existing = await service.getSettings();
+  if (existing.home_bg_url) {
+    const oldPath = path.join(__dirname, "../../../", existing.home_bg_url);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+  const bgUrl = `/uploads/app/${req.file.filename}`;
+  const updated = await service.updateSettings({ ...existing, home_bg_url: bgUrl });
+  sendSuccess(res, updated, "Background updated");
+});
