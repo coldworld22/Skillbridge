@@ -219,18 +219,6 @@ export default function AppSettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Meta Description
-                </label>
-                <textarea
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:bg-gray-700 dark:text-white"
-                  value={config.metaDescription || ""}
-                  onChange={(e) => handleChange("metaDescription", e.target.value)}
-                  placeholder="Brief description for SEO"
-                />
-              </div>
             </div>
           </div>
 

@@ -48,10 +48,15 @@ const Hero = () => {
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
 
-  const heroBg =
-    settings.home_bg_url && typeof window !== "undefined"
-      ? `${API_BASE_URL}${settings.home_bg_url}`
-      : heroImage;
+  const [heroBg, setHeroBg] = useState(heroImage);
+
+  useEffect(() => {
+    if (settings.home_bg_url) {
+      setHeroBg(`${API_BASE_URL}${settings.home_bg_url}`);
+    } else {
+      setHeroBg(heroImage);
+    }
+  }, [settings.home_bg_url]);
 
   useEffect(() => {
     if (!configLoaded) fetchAppConfig();
