@@ -31,7 +31,14 @@ exports.searchInstructors = async (q) => {
 exports.searchOffers = async (q) => {
   const term = `%${q}%`;
   return db("offers")
-    .whereRaw("title ILIKE ?", [term])
+    .where("status", "open")
+    .andWhere(function () {
+      this.whereRaw("title ILIKE ?", [term]).orWhereRaw("description ILIKE ?", [term]);
+    })
+    .select("id", "title")
+    .limit(5);
+};
+
 exports.searchCommunity = async (q) => {
   const term = `%${q}%`;
   return db("community_discussions")
