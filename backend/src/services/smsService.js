@@ -26,7 +26,10 @@ exports.sendSMS = async ({ to, text }) => {
   }
 
   if (provider.name === 'Infobip') {
-    const url = `${provider.region.replace(/\/$/, '')}/sms/2/text/advanced`;
+    const base = provider.region.startsWith('http')
+      ? provider.region
+      : `https://${provider.region}`;
+    const url = `${base.replace(/\/$/, '')}/sms/2/text/advanced`;
     const payload = {
       messages: [
         {
@@ -42,6 +45,7 @@ exports.sendSMS = async ({ to, text }) => {
         headers: {
           Authorization: `App ${provider.apiKey}`,
           'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify(payload),
       });

@@ -162,7 +162,7 @@ export default function MessageServiceConfig() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Region</label>
+                <label className="block font-medium mb-1">Base URL / Region</label>
                 <input
                   type="text"
                   className="w-full border rounded p-2"
@@ -201,7 +201,7 @@ export default function MessageServiceConfig() {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium mb-1">Region</label>
+                  <label className="block font-medium mb-1">Base URL / Region</label>
                   <input
                     type="text"
                     className="w-full border rounded p-2"
