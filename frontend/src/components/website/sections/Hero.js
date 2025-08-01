@@ -66,18 +66,28 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [ads]);
 
-  // Search Suggestions
+  // Search Suggestions (async with debounce)
   useEffect(() => {
-    if (searchText.length > 2) {
-      setSearchSuggestions([
-        "React for Beginners",
-        "Mastering Python",
-        "Data Science Bootcamp",
-        "UX/UI Design Fundamentals",
-      ]);
-    } else {
+    if (searchText.trim().length < 2) {
       setSearchSuggestions([]);
+      return;
     }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/search/suggestions?q=${encodeURIComponent(searchText.trim())}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSearchSuggestions(data);
+        } else {
+          setSearchSuggestions([]);
+        }
+      } catch {
+        setSearchSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
   }, [searchText]);
 
   // Detect user country using IP lookup with locale fallback
@@ -196,25 +206,37 @@ const Hero = () => {
 
           {/* 🔍 Modern Search Box */}
           <div className="relative w-full max-w-lg mx-auto mb-6">
-            <SearchBar
-              value={searchText}
-              onChange={setSearchText}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch(searchText)}
-            />
-          {searchSuggestions.length > 0 && (
-            <ul className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20">
-              {searchSuggestions.map((s, idx) => (
-                <li
-                  key={idx}
-                  onClick={() => handleSearchSelect(s)}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            <div className="flex">
+              <div className="flex-grow">
+                <SearchBar
+                  value={searchText}
+                  onChange={setSearchText}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchText)}
+                  label="Search courses and more"
+                />
+              </div>
+              <button
+                onClick={() => handleSearch(searchText)}
+                aria-label="Search"
+                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <FaSearch />
+              </button>
+            </div>
+            {searchSuggestions.length > 0 && (
+              <ul className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20">
+                {searchSuggestions.map((s, idx) => (
+                  <li
+                    key={idx}
+                    onClick={() => handleSearchSelect(s)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
         {country && (
           <p className="mb-4 text-white bg-blue-500 bg-opacity-75 px-4 py-2 rounded-lg">
