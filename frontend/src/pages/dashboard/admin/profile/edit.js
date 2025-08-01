@@ -73,29 +73,40 @@ function ProfileEditTemplate() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
-  useEffect(() => {
-    const local = localStorage.getItem("auth");
-    const parsed = JSON.parse(local)?.state;
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
-
-  useEffect(() => {
-    const local = localStorage.getItem("auth");
-    const parsed = JSON.parse(local)?.state;
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
+useEffect(() => {
+  const local = localStorage.getItem("auth");
+  const parsed = JSON.parse(local)?.state;
+  if (hasHydrated && !user && parsed?.user) {
+    setUser(parsed.user);
+  }
+}, [hasHydrated]);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user) return;
+    if (!user) {
+      setLoadingProfile(false);
+      return;
+    }
     if (user.role?.toLowerCase() !== "admin") {
       setLoadingProfile(false);
       return;
     }
+
+    // Pre-fill with existing user info while fetching latest data
+    setFormData((prev) => ({
+      ...prev,
+      full_name: user.full_name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      gender: user.gender || "male",
+      date_of_birth: user.date_of_birth?.split("T")[0] || "",
+      avatar_url: user.avatar_url,
+      avatarPreview: user.avatar_url
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+        : null,
+      job_title: user.job_title || "",
+      department: user.department || "",
+    }));
 
     const loadProfile = async () => {
       try {
