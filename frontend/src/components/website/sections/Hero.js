@@ -44,12 +44,18 @@ const Hero = () => {
     );
   const [country, setCountry] = useState("");
   const settings = useAppConfigStore((s) => s.settings);
+  const fetchAppConfig = useAppConfigStore((s) => s.fetch);
+  const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
 
   const heroBg =
     settings.home_bg_url && typeof window !== "undefined"
       ? `${API_BASE_URL}${settings.home_bg_url}`
       : heroImage;
+
+  useEffect(() => {
+    if (!configLoaded) fetchAppConfig();
+  }, [configLoaded, fetchAppConfig]);
 
   const typewriterText = [
     t("hero_slogan_1"),
