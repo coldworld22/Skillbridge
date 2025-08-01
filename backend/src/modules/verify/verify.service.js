@@ -16,7 +16,8 @@ exports.sendOtp = async (userId, type) => {
     return { alreadyVerified: true };
   }
 
-  const code = type === "phone" ? "123456" : generateCode();
+  // Always generate a unique OTP; "123456" remains a fallback
+  const code = generateCode();
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await db("verifications").insert({
