@@ -22,6 +22,8 @@ import AdMediaModal from "@/components/website/AdMediaModal";
 import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import heroImage from "@/shared/assets/images/home/hero.png";
+import useAppConfigStore from "@/store/appConfigStore";
+import { API_BASE_URL } from "@/config/config";
 import { getAds } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
@@ -41,7 +43,19 @@ const Hero = () => {
       (arr) => Array.isArray(arr) && arr.length > 0
     );
   const [country, setCountry] = useState("");
+  const settings = useAppConfigStore((s) => s.settings);
+  const fetchAppConfig = useAppConfigStore((s) => s.fetch);
+  const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
+
+  const heroBg =
+    settings.home_bg_url && typeof window !== "undefined"
+      ? `${API_BASE_URL}${settings.home_bg_url}`
+      : heroImage;
+
+  useEffect(() => {
+    if (!configLoaded) fetchAppConfig();
+  }, [configLoaded, fetchAppConfig]);
 
   const typewriterText = [
     t("hero_slogan_1"),
@@ -195,7 +209,7 @@ const Hero = () => {
 
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
-          <Image src={heroImage} alt="Learning Illustration" layout="fill" objectFit="cover" priority />
+          <Image src={heroBg} alt="Learning Illustration" layout="fill" objectFit="cover" priority />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
         </div>
 
