@@ -43,6 +43,7 @@ exports.sendSMS = async ({ to, text }) => {
       const auth = provider.apiKey.trim().startsWith('App ')
         ? provider.apiKey.trim()
         : `App ${provider.apiKey.trim()}`;
+
       console.log(
         '[SMS] Sending request to Infobip:',
         JSON.stringify(
