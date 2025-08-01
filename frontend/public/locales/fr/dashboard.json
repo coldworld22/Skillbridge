@@ -860,4 +860,19 @@
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
     "default": "Default"
   }
+  ,"wishlistPage": {
+    "title": "Ma liste de souhaits",
+    "search_placeholder": "Rechercher dans la liste...",
+    "sort": "Trier",
+    "share": "Partager",
+    "classes": "Cours",
+    "no_classes": "Aucun cours dans la liste.",
+    "enroll": "S'inscrire",
+    "add_to_cart": "Ajouter au panier",
+    "set_reminder": "Rappel",
+    "remove": "Supprimer",
+    "add_tag": "Ajouter un tag",
+    "tutorials": "Tutoriels",
+    "no_tutorials": "Aucun tutoriel dans la liste."
+  }
 }
