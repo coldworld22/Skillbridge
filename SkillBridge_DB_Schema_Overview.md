@@ -275,6 +275,8 @@
 ### `community_contributors`
 - **Purpose**: Aggregate stats for active users
 - **Primary Key**: `user_id (PK)`
+- **Foreign Keys**: `user_id → users(id)`
+- **Columns**: `discussions_count`, `score`
 
 
 ## Bookings Tables
