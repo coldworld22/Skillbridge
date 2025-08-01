@@ -1,4 +1,3 @@
-// pages/dashboard/admin/settings/messages-config.js
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaToggleOn, FaToggleOff, FaSave } from "react-icons/fa";
