@@ -449,9 +449,10 @@
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
     "full_name_min": "Full name must be at least 3 characters",
-    "phone_min": "Phone number must be at least 8 digits",
-    "invalid_date": "Invalid date format",
-    "url_invalid": "Must be a valid URL"
+      "phone_min": "Phone number must be at least 8 digits",
+      "invalid_email_address": "Invalid email address",
+      "invalid_date": "Invalid date format",
+      "url_invalid": "Must be a valid URL"
   },
   "adminCertificatesPage": {
     "title": "Certificates",
