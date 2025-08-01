@@ -13,6 +13,9 @@ import { toast } from "react-toastify";
 import { changeStudentPassword } from "@/services/student/studentService";
 import { changeInstructorPassword } from "@/services/instructor/instructorService";
 import { changeAdminPassword } from "@/services/admin/adminService";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
 
 const ChangePasswordPage = ({ prevStep }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -25,13 +28,17 @@ const ChangePasswordPage = ({ prevStep }) => {
 
   const router = useRouter();
   const { user, accessToken } = useAuthStore.getState();
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
+  const { t } = useTranslation("auth");
+  const { t: tCommon } = useTranslation("common");
 
   useEffect(() => {
     if (!user || !accessToken) {
-      toast.error("You must be logged in to access this page.");
-      router.replace("/auth/login");
+      toast.error(t('must_be_logged_in'));
+      router.replace('/auth/login');
     }
-  }, [user, accessToken]);
+  }, [user, accessToken, t]);
 
   const handlePasswordChange = async () => {
     setError("");
@@ -44,15 +51,14 @@ const ChangePasswordPage = ({ prevStep }) => {
       !/\d/.test(newPassword) ||
       !/[!@#$%^&*]/.test(newPassword)
     ) {
-      const msg =
-        "Password must be 5+ characters, include an uppercase letter, a number, and a special character.";
+      const msg = t('password_strength_error');
       setError(`❌ ${msg}`);
       toast.error(msg);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      const msg = "New password and confirm password do not match.";
+      const msg = t('passwords_not_match');
       setError(`❌ ${msg}`);
       toast.error(msg);
       return;
@@ -68,7 +74,7 @@ const ChangePasswordPage = ({ prevStep }) => {
       } else if (user.role === "Admin" || user.role === "SuperAdmin") {
         await changeAdminPassword(user.id, newPassword);
       } else {
-        throw new Error("Your role is not allowed to perform this action.");
+        throw new Error(t('role_not_allowed'));
       }
 
       setSuccess(true);
@@ -76,14 +82,16 @@ const ChangePasswordPage = ({ prevStep }) => {
       setNewPassword("");
       setConfirmPassword("");
 
-      toast.success("Password updated! Please log in again.");
+      toast.success(t('password_updated_login_again'));
+      await fetchNotifications();
+      fetchMessages();
       setTimeout(() => {
         window.location.href = "/auth/login";
       }, 1500);
     } catch (err) {
       console.error(err);
       const msg =
-        err?.response?.data?.message || err.message || "Failed to update password";
+        err?.response?.data?.message || err.message || t('password_update_failed');
       setError(`❌ ${msg}`);
       toast.error(msg);
     } finally {
@@ -124,12 +132,12 @@ const ChangePasswordPage = ({ prevStep }) => {
           transition={{ duration: 0.4 }}
         >
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-yellow-500">
-            <FaLock /> Change Password
+            <FaLock /> {tCommon('change_password')}
           </h2>
 
-          {passwordInput("Current Password", currentPassword, setCurrentPassword, "current")}
-          {passwordInput("New Password", newPassword, setNewPassword, "new")}
-          {passwordInput("Confirm New Password", confirmPassword, setConfirmPassword, "confirm")}
+          {passwordInput(t('current_password'), currentPassword, setCurrentPassword, 'current')}
+          {passwordInput(t('new_password'), newPassword, setNewPassword, 'new')}
+          {passwordInput(t('confirm_new_password'), confirmPassword, setConfirmPassword, 'confirm')}
 
           {error && (
             <div className="p-3 bg-red-600 text-white rounded-lg mb-4 flex items-center gap-2">
@@ -139,7 +147,7 @@ const ChangePasswordPage = ({ prevStep }) => {
 
           {success && (
             <div className="p-3 bg-green-600 text-white rounded-lg mb-4 flex items-center gap-2">
-              <FaCheckCircle /> Password updated successfully! Redirecting...
+              <FaCheckCircle /> {t('password_updated_redirecting')}
             </div>
           )}
 
@@ -148,7 +156,7 @@ const ChangePasswordPage = ({ prevStep }) => {
               className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
               onClick={prevStep}
             >
-              <FaArrowLeft /> Back
+              <FaArrowLeft /> {tCommon('back')}
             </button>
             <button
               className="px-5 py-2 bg-yellow-500 text-gray-900 rounded-lg hover:bg-yellow-600 transition font-bold text-lg disabled:opacity-50"
@@ -158,10 +166,10 @@ const ChangePasswordPage = ({ prevStep }) => {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <FaSpinner className="animate-spin" />
-                  Updating...
+                  {t('updating')}
                 </span>
               ) : (
-                "Update Password"
+                t('update_password')
               )}
             </button>
           </div>
@@ -181,7 +189,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'auth'], nextI18NextConfig)),
     },
   };
 }
