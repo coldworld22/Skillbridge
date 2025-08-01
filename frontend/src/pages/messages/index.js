@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -11,6 +12,8 @@ import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 
 const MessagesPage = () => {
+  const { t } = useTranslation("common");
+  const { t: tDash } = useTranslation("dashboard");
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -104,7 +107,7 @@ const MessagesPage = () => {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search users, groups..."
+            placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 bg-gray-600 text-white rounded-md focus:outline-none"
@@ -115,12 +118,12 @@ const MessagesPage = () => {
           {messages.length > 0 && (
             <div>
               <div className="flex items-center mb-2">
-                <h3 className="text-lg text-yellow-400 flex-1">System Messages</h3>
+                <h3 className="text-lg text-yellow-400 flex-1">{t('system_messages')}</h3>
                 <button
                   className="text-xs text-blue-400 hover:underline"
                   onClick={() => setShowSystemMessages((s) => !s)}
                 >
-                  {showSystemMessages ? "Hide" : "Show"}
+                  {showSystemMessages ? t('hide') : t('show')}
                 </button>
               </div>
               {showSystemMessages && (
@@ -145,7 +148,7 @@ const MessagesPage = () => {
                       </span>
                       <div className="flex items-center gap-2 ml-2">
                         {!msg.read && (
-                          <span className="text-xs text-red-400">new</span>
+                          <span className="text-xs text-red-400">{t('new')}</span>
                         )}
                         <button
                           onClick={(e) => {
@@ -173,7 +176,7 @@ const MessagesPage = () => {
                   searchInputRef.current?.focus();
                 }}
               >
-                Start New Message
+                {t('start_new_message')}
               </button>
             </div>
           )}
@@ -184,7 +187,7 @@ const MessagesPage = () => {
             {searchTerm && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg text-yellow-400">👤 Users</h3>
+                  <h3 className="text-lg text-yellow-400">👤 {t('users')}</h3>
                   {filteredUsers.length > 0 ? (
                     <div className="space-y-2">
                       {filteredUsers.map((user) => (
@@ -210,7 +213,7 @@ const MessagesPage = () => {
                             className="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1 rounded-md hover:bg-yellow-600 transition"
                             onClick={() => setSelectedChat(user)}
                           >
-                            <FaCommentDots /> Start Chat
+                            <FaCommentDots /> {t('start_chat')}
                           </button>
                         </div>
                       ))}
@@ -221,7 +224,7 @@ const MessagesPage = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg text-yellow-400">📌 Groups</h3>
+                  <h3 className="text-lg text-yellow-400">📌 {t('groups')}</h3>
                   {filteredGroups.length > 0 ? (
                     <div className="space-y-2">
                       {filteredGroups.map((group) => (
@@ -243,7 +246,7 @@ const MessagesPage = () => {
                             className="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1 rounded-md hover:bg-yellow-600 transition"
                             onClick={() => setSelectedChat({ ...group, isGroup: true })}
                           >
-                            <FaCommentDots /> Join Group
+                            <FaCommentDots /> {tDash('groupsPage.join_group')}
                           </button>
                         </div>
                       ))}

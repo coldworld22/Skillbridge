@@ -36,6 +36,7 @@
   "mark_as_read": "Mark as Read",
   "notifications_center": "Notifications Center",
   "system_alerts": "System Alerts",
+  "system_messages": "System Messages",
   "users": "Users",
   "groups": "Groups",
   "no_new_notifications": "No new notifications right now.",
@@ -61,5 +62,7 @@
   "admin_dashboard": "Admin Dashboard",
   "instructor_dashboard": "Instructor Dashboard",
   "student_dashboard": "Student Dashboard"
+  ,"start_chat": "Start Chat"
+  ,"start_new_message": "Start New Message"
 }
   
