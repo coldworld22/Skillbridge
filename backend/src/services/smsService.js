@@ -43,6 +43,18 @@ exports.sendSMS = async ({ to, text }) => {
       const auth = provider.apiKey.trim().startsWith('App ')
         ? provider.apiKey.trim()
         : `App ${provider.apiKey.trim()}`;
+      console.log(
+        '[SMS] Sending request to Infobip:',
+        JSON.stringify(
+          {
+            url,
+            provider: { region: provider.region, senderId: provider.senderId },
+            payload,
+          },
+          null,
+          2
+        )
+      );
       const res = await fetchFn(url, {
         method: 'POST',
         headers: {
@@ -52,11 +64,20 @@ exports.sendSMS = async ({ to, text }) => {
         },
         body: JSON.stringify(payload),
       });
+      const bodyText = await res.text();
+      let parsed = bodyText;
+      try {
+        parsed = JSON.parse(bodyText);
+      } catch {
+        // keep as plain text
+      }
+      const bodyLog =
+        typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+      console.log('[SMS] Infobip response:', res.status, bodyLog);
       if (!res.ok) {
-        const msg = await res.text();
-        console.error('Infobip SMS error:', msg);
+        console.error('[SMS] Infobip SMS error:', bodyLog);
       } else {
-        console.log(`SMS sent via Infobip to ${to}`);
+        console.log(`[SMS] SMS sent via Infobip to ${to}`);
       }
     } catch (err) {
       console.error('Failed to send SMS via Infobip:', err.message);
