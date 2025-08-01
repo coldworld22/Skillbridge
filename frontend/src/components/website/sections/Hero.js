@@ -65,9 +65,18 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [ads]);
 
-  // Clear results when input cleared
+  // Auto search when user types with small debounce
   useEffect(() => {
-    if (!searchText.trim()) setResults(null);
+    if (!searchText.trim()) {
+      setResults(null);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      handleSearch(searchText);
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [searchText]);
 
   // Detect user country using IP lookup with locale fallback
