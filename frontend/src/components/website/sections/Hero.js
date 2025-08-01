@@ -35,6 +35,11 @@ const Hero = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState(null);
+  const hasResults =
+    results &&
+    Object.values(results).some(
+      (arr) => Array.isArray(arr) && arr.length > 0
+    );
   const [country, setCountry] = useState("");
   const { t } = useTranslation("website");
 
@@ -280,6 +285,9 @@ const Hero = () => {
                       </Link>
                     ))}
                   </div>
+                )}
+                {!hasResults && (
+                  <p className="px-4 py-2 text-sm text-gray-500">No results found.</p>
                 )}
               </div>
             )}
