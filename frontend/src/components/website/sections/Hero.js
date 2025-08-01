@@ -226,69 +226,62 @@ const Hero = () => {
             </div>
             {results && (
               <div className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20 max-h-80 overflow-y-auto text-left">
-                {results.classes?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">📚 Online Classes</h3>
-                    {results.classes.map((c) => (
-                      <Link href={`/online-classes/${c.id}`} key={`c-${c.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{c.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {results.tutorials?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">📘 Tutorials</h3>
-                    {results.tutorials.map((t) => (
-                      <Link href={`/tutorials/${t.id}`} key={`t-${t.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{t.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {results.instructors?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">👩‍🏫 Instructors</h3>
-                    {results.instructors.map((i) => (
-                      <Link href={`/instructors/${i.id}`} key={`i-${i.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{i.full_name}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {results.offers?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">💼 Offers</h3>
-                    {results.offers.map((o) => (
-                      <Link href={`/offers/${o.id}`} key={`o-${o.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{o.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {results.community?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">💬 Community</h3>
-                    {results.community.map((d) => (
-                      <Link href={`/community/${d.id}`} key={`d-${d.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{d.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {results.blog?.length > 0 && (
-                  <div className="py-1">
-                    <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">📝 Blog</h3>
-                    {results.blog.map((b) => (
-                      <Link href={`/blog/${b.slug}`} key={`b-${b.id}`}>
-                        <span className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{b.title}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {!hasResults && (
-                  <p className="px-4 py-2 text-sm text-gray-500">No results found.</p>
-                )}
+                  {results && (
+                    <>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📚 Online Classes ({results.classes?.length || 0})</h3>
+                        {results.classes?.map((c) => (
+                          <Link href={`/online-classes/${c.id}`} key={`c-${c.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{c.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📘 Tutorials ({results.tutorials?.length || 0})</h3>
+                        {results.tutorials?.map((t) => (
+                          <Link href={`/tutorials/${t.id}`} key={`t-${t.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{t.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">👩‍🏫 Instructors ({results.instructors?.length || 0})</h3>
+                        {results.instructors?.map((i) => (
+                          <Link href={`/instructors/${i.id}`} key={`i-${i.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{i.full_name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">💼 Offers ({results.offers?.length || 0})</h3>
+                        {results.offers?.map((o) => (
+                          <Link href={`/offers/${o.id}`} key={`o-${o.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{o.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">💬 Community ({results.community?.length || 0})</h3>
+                        {results.community?.map((d) => (
+                          <Link href={`/community/${d.id}`} key={`d-${d.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{d.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📝 Blog ({results.blog?.length || 0})</h3>
+                        {results.blog?.map((b) => (
+                          <Link href={`/blog/${b.slug}`} key={`b-${b.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{b.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {!hasResults && (
+                    <p class="px-4 py-2 text-sm text-gray-500">No results found.</p>
+                  )}
+                
               </div>
             )}
           </div>
