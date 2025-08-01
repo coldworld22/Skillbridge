@@ -52,9 +52,17 @@ exports.sendSMS = async ({ to, text }) => {
         },
         body: JSON.stringify(payload),
       });
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch {
+        json = null;
+      }
       if (!res.ok) {
-        const msg = await res.text();
-        console.error('Infobip SMS error:', msg);
+        console.error('Infobip SMS error:', json || text);
+      } else if (json && Array.isArray(json.messages)) {
+        const status = json.messages[0]?.status;
+        const desc = status?.description || 'unknown status';
+        console.log(`SMS sent via Infobip to ${to}: ${desc}`);
       } else {
         console.log(`SMS sent via Infobip to ${to}`);
       }
