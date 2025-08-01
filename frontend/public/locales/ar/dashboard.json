@@ -444,7 +444,7 @@
     "cancel": "إلغاء",
     "upload": "رفع",
     "load_profile_failed": "فشل في تحميل الملف الشخصي",
-    "avatar_max_size": "الحد الأقصى 2 ميغابايت",
+    "avatar_max_size": "الحد الأقصى 10 ميغابايت",
     "avatar_upload_failed": "فشل في رفع الصورة",
     "profile_update_success": "تم تحديث الملف الشخصي بنجاح!",
     "profile_update_failed": "فشل في تحديث الملف الشخصي",
