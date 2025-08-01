@@ -5,7 +5,8 @@ export default async function handler(req, res) {
   const query = q.trim();
   if (!query) return res.status(400).json({ error: 'Missing query string' });
   try {
-    const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/search`, {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/api';
+    const { data } = await axios.get(`${base}/search`, {
       params: { q: query },
       headers: req.headers.cookie ? { Cookie: req.headers.cookie } : {},
       withCredentials: true,
