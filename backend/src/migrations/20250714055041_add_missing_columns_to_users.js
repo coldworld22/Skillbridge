@@ -23,13 +23,20 @@ exports.up = async function (knex) {
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.down = function (knex) {
+exports.down = async function (knex) {
+  const hasGender = await knex.schema.hasColumn('users', 'gender');
+  const hasDateOfBirth = await knex.schema.hasColumn('users', 'date_of_birth');
+  const hasEmailVerified = await knex.schema.hasColumn('users', 'is_email_verified');
+  const hasPhoneVerified = await knex.schema.hasColumn('users', 'is_phone_verified');
+  const hasProfileComplete = await knex.schema.hasColumn('users', 'profile_complete');
+  const hasAvatarUrl = await knex.schema.hasColumn('users', 'avatar_url');
+
   return knex.schema.alterTable('users', function (table) {
-    table.dropColumn('gender');
-    table.dropColumn('date_of_birth');
-    table.dropColumn('is_email_verified');
-    table.dropColumn('is_phone_verified');
-    table.dropColumn('profile_complete');
-    table.dropColumn('avatar_url');
+    if (hasGender) table.dropColumn('gender');
+    if (hasDateOfBirth) table.dropColumn('date_of_birth');
+    if (hasEmailVerified) table.dropColumn('is_email_verified');
+    if (hasPhoneVerified) table.dropColumn('is_phone_verified');
+    if (hasProfileComplete) table.dropColumn('profile_complete');
+    if (hasAvatarUrl) table.dropColumn('avatar_url');
   });
 };

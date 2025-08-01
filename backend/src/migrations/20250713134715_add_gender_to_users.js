@@ -6,7 +6,11 @@ exports.up = function (knex) {
 };
 
 exports.down = function (knex) {
-  return knex.schema.alterTable('users', function (table) {
-    table.dropColumn('gender');
+  return knex.schema.hasColumn('users', 'gender').then(function(exists) {
+    if (exists) {
+      return knex.schema.alterTable('users', function (table) {
+        table.dropColumn('gender');
+      });
+    }
   });
 };
