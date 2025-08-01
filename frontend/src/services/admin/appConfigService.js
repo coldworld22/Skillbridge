@@ -13,9 +13,7 @@ export const updateAppConfig = async (payload) => {
 export const uploadAppLogo = async (file) => {
   const formData = new FormData();
   formData.append("logo", file);
-  const { data } = await api.patch("/app-config/logo", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.patch("/app-config/logo", formData);
   return data?.data;
 };
 
@@ -23,18 +21,14 @@ export const uploadAppLogo = async (file) => {
 export const uploadAppFavicon = async (file) => {
   const formData = new FormData();
   formData.append("favicon", file);
-  const { data } = await api.patch("/app-config/favicon", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.patch("/app-config/favicon", formData);
   return data?.data;
 };
 
 export const uploadHomeBackground = async (file) => {
   const formData = new FormData();
   formData.append("home_bg", file);
-  const { data } = await api.patch("/app-config/home-bg", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await api.patch("/app-config/home-bg", formData);
   return data?.data;
 };
 
