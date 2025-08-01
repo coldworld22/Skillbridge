@@ -87,7 +87,8 @@ useEffect(() => {
       setLoadingProfile(false);
       return;
     }
-    if (user.role?.toLowerCase() !== "admin") {
+    const role = user.role?.toLowerCase();
+    if (role !== "admin" && role !== "superadmin") {
       setLoadingProfile(false);
       return;
     }
