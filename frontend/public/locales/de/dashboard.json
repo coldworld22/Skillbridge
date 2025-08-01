@@ -421,7 +421,7 @@
     "cancel": "Abbrechen",
     "upload": "Hochladen",
     "load_profile_failed": "Profil konnte nicht geladen werden",
-    "avatar_max_size": "Maximalgr\u00f6\u00dfe 2MB",
+    "avatar_max_size": "Maximalgr\u00f6\u00dfe 10MB",
     "avatar_upload_failed": "Fehler beim Hochladen des Bildes",
     "profile_update_success": "Profil erfolgreich aktualisiert!",
     "profile_update_failed": "Fehler beim Aktualisieren des Profils",

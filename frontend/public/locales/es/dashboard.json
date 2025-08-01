@@ -421,7 +421,7 @@
     "cancel": "Cancelar",
     "upload": "Subir",
     "load_profile_failed": "Error al cargar el perfil",
-    "avatar_max_size": "Tamaño máximo 2MB",
+    "avatar_max_size": "Tamaño máximo 10MB",
     "avatar_upload_failed": "Error al subir el avatar",
     "profile_update_success": "¡Perfil actualizado con éxito!",
     "profile_update_failed": "Error al actualizar el perfil",
