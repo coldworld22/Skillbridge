@@ -40,10 +40,13 @@ exports.sendSMS = async ({ to, text }) => {
       ],
     };
     try {
+      const auth = provider.apiKey.trim().startsWith('App ')
+        ? provider.apiKey.trim()
+        : `App ${provider.apiKey.trim()}`;
       const res = await fetchFn(url, {
         method: 'POST',
         headers: {
-          Authorization: `App ${provider.apiKey}`,
+          Authorization: auth,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },

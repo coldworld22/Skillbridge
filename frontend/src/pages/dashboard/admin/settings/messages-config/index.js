@@ -149,6 +149,7 @@ export default function MessageServiceConfig() {
                     handleChange(providers.findIndex(p => p.id === provider.id), "apiKey", e.target.value)
                   }
                 />
+                <p className="text-xs text-gray-500 mt-1">Do not include the <code>App</code> prefix.</p>
               </div>
               <div>
                 <label className="block font-medium mb-1">Sender ID</label>
