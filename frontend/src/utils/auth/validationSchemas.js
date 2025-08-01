@@ -39,7 +39,6 @@ export const registerSchema = (t) =>
 // 🔢 OTP Verification Schema
 export const otpSchema = (t) =>
   z.object({
-    email: z.string().email(t("invalid_email")),
     code: z
       .string()
       .length(6, t("otp_exactly_6_digits"))
