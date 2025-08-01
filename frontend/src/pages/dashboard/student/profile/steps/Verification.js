@@ -183,8 +183,9 @@ const Verification = ({ prevStep = () => {} }) => {
                 placeholder="Enter Phone OTP"
                 value={phoneOTP}
                 onChange={(e) => setPhoneOTP(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded mb-2"
               />
+              <p className="text-xs text-gray-500">Default OTP: <code>123456</code></p>
               <button
                 onClick={() => verifyOtp("phone")}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"

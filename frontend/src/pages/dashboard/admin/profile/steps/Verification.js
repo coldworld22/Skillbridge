@@ -161,10 +161,11 @@ const Verification = ({ onBack = () => {} }) => {
                 onChange={(e) =>
                   showOtpModal === "email" ? setEmailOTP(e.target.value) : setPhoneOTP(e.target.value)
                 }
-                className="w-full px-3 py-2 border rounded mb-4"
-                placeholder="Enter OTP"
-              />
-              <div className="flex justify-end gap-2">
+              className="w-full px-3 py-2 border rounded mb-2"
+              placeholder="Enter OTP"
+            />
+            <p className="text-xs text-gray-500 mb-2">Default OTP: <code>123456</code></p>
+            <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowOtpModal(null)}
                   className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
