@@ -90,9 +90,9 @@ function ProfileEditTemplate() {
   }, [hasHydrated]);
 
   useEffect(() => {
-
     if (!hasHydrated) return;
-    if (!user || user.role?.toLowerCase() !== "admin") {
+    if (!user) return;
+    if (user.role?.toLowerCase() !== "admin") {
       setLoadingProfile(false);
       return;
     }
@@ -272,7 +272,7 @@ function ProfileEditTemplate() {
       toast.success(t('profile_update_success'));
       await fetchNotifications();
       fetchMessages();
-      router.push("/dashboard/admin");
+      router.push("/dashboard/admin/profile/steps/Verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
