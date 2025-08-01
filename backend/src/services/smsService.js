@@ -75,7 +75,6 @@ exports.sendSMS = async ({ to, text }) => {
         const status = json.messages[0]?.status;
         const desc = status?.description || 'unknown status';
         console.log(`SMS sent via Infobip to ${to}: ${desc}`);
-
       } else {
         console.log(`[SMS] SMS sent via Infobip to ${to}`);
       }
