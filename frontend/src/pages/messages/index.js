@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -6,11 +7,13 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
 import { getUsers, getGroups } from "@/services/messageService";
-import { FaSearch, FaCommentDots } from "react-icons/fa";
+import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 
 const MessagesPage = () => {
+  const { t } = useTranslation("common");
+  const { t: tDash } = useTranslation("dashboard");
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -18,11 +21,13 @@ const MessagesPage = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const searchInputRef = useRef(null);
+  const [showSystemMessages, setShowSystemMessages] = useState(true);
 
   const messages = useMessageStore((state) => state.items);
   const fetchMessagesStore = useMessageStore((state) => state.fetch);
   const startPollingStore = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
+  const deleteMessageStore = useMessageStore((state) => state.delete);
 
   const fetchMessages = useCallback(() => {
     fetchMessagesStore();
@@ -102,7 +107,7 @@ const MessagesPage = () => {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search users, groups..."
+            placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 bg-gray-600 text-white rounded-md focus:outline-none"
@@ -112,32 +117,54 @@ const MessagesPage = () => {
         <div className="mb-8 space-y-3">
           {messages.length > 0 && (
             <div>
-              <h3 className="text-lg text-yellow-400 mb-2">System Messages</h3>
-              <ul className="space-y-2">
-                {messages.map((msg) => (
-                  <li
-                    key={msg.id}
-                    onClick={() => {
-                      if (!msg.read) markMessageRead(msg.id);
-                      const user = users.find((u) => u.id === msg.sender_id);
-                      setSelectedChat(
-                        user || { id: msg.sender_id, name: msg.sender_name }
-                      );
-                    }}
-                    className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between ${msg.read ? "opacity-70" : ""}`}
-                  >
-                    <span>
-                      <span className="font-semibold mr-1">
-                        {msg.sender_name || "System"}:
+              <div className="flex items-center mb-2">
+                <h3 className="text-lg text-yellow-400 flex-1">{t('system_messages')}</h3>
+                <button
+                  className="text-xs text-blue-400 hover:underline"
+                  onClick={() => setShowSystemMessages((s) => !s)}
+                >
+                  {showSystemMessages ? t('hide') : t('show')}
+                </button>
+              </div>
+              {showSystemMessages && (
+                <ul className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {messages.map((msg) => (
+                    <li
+                      key={msg.id}
+                      onClick={() => {
+                        if (!msg.read) markMessageRead(msg.id);
+                        const user = users.find((u) => u.id === msg.sender_id);
+                        setSelectedChat(
+                          user || { id: msg.sender_id, name: msg.sender_name }
+                        );
+                      }}
+                      className={`p-3 rounded-md cursor-pointer bg-gray-700 hover:bg-gray-600 transition flex justify-between items-center ${msg.read ? "opacity-70" : ""}`}
+                    >
+                      <span className="flex-1">
+                        <span className="font-semibold mr-1">
+                          {msg.sender_name || "System"}:
+                        </span>
+                        {msg.message}
                       </span>
-                      {msg.message}
-                    </span>
-                    {!msg.read && (
-                      <span className="text-xs text-red-400 ml-2">new</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      <div className="flex items-center gap-2 ml-2">
+                        {!msg.read && (
+                          <span className="text-xs text-red-400">{t('new')}</span>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteMessageStore(msg.id);
+                          }}
+                          className="text-red-400 hover:text-red-300"
+                          title="Delete"
+                        >
+                          <FaTrash className="text-xs" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {messages.length === 0 && !selectedChat && (
@@ -149,7 +176,7 @@ const MessagesPage = () => {
                   searchInputRef.current?.focus();
                 }}
               >
-                Start New Message
+                {t('start_new_message')}
               </button>
             </div>
           )}
@@ -160,7 +187,7 @@ const MessagesPage = () => {
             {searchTerm && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg text-yellow-400">👤 Users</h3>
+                  <h3 className="text-lg text-yellow-400">👤 {t('users')}</h3>
                   {filteredUsers.length > 0 ? (
                     <div className="space-y-2">
                       {filteredUsers.map((user) => (
@@ -186,7 +213,7 @@ const MessagesPage = () => {
                             className="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1 rounded-md hover:bg-yellow-600 transition"
                             onClick={() => setSelectedChat(user)}
                           >
-                            <FaCommentDots /> Start Chat
+                            <FaCommentDots /> {t('start_chat')}
                           </button>
                         </div>
                       ))}
@@ -197,7 +224,7 @@ const MessagesPage = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg text-yellow-400">📌 Groups</h3>
+                  <h3 className="text-lg text-yellow-400">📌 {t('groups')}</h3>
                   {filteredGroups.length > 0 ? (
                     <div className="space-y-2">
                       {filteredGroups.map((group) => (
@@ -219,7 +246,7 @@ const MessagesPage = () => {
                             className="flex items-center gap-2 bg-yellow-500 text-gray-900 px-3 py-1 rounded-md hover:bg-yellow-600 transition"
                             onClick={() => setSelectedChat({ ...group, isGroup: true })}
                           >
-                            <FaCommentDots /> Join Group
+                            <FaCommentDots /> {tDash('groupsPage.join_group')}
                           </button>
                         </div>
                       ))}

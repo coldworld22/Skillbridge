@@ -61,4 +61,7 @@
   "admin_dashboard": "Tableau Admin",
   "instructor_dashboard": "Tableau Instructeur",
   "student_dashboard": "Tableau \u00c9tudiant"
+  ,"system_messages": "Messages syst\u00e8me"
+  ,"start_chat": "D\u00e9marrer le chat"
+  ,"start_new_message": "Commencer un nouveau message"
 }

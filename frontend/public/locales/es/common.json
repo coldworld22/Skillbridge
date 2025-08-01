@@ -53,4 +53,7 @@
   "admin_dashboard": "Panel de Administrador",
   "instructor_dashboard": "Panel de Instructor",
   "student_dashboard": "Panel de Estudiante"
+  ,"system_messages": "Mensajes del sistema"
+  ,"start_chat": "Iniciar chat"
+  ,"start_new_message": "Comenzar nuevo mensaje"
 }
