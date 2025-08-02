@@ -12,6 +12,7 @@ const availableTags = ["Urgent", "LiveClass", "Discount", "Flexible", "OneOnOne"
 const CreateOffer = () => {
   const router = useRouter();
   const [offerType, setOfferType] = useState("student");
+  const [offerCategory, setOfferCategory] = useState("class");
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [price, setPrice] = useState("");
@@ -26,6 +27,8 @@ const CreateOffer = () => {
         description,
         budget: price,
         timeframe: duration,
+        offer_type: offerCategory,
+        tags: JSON.stringify(tags),
       });
       toast.success("🎉 Offer posted successfully!", { theme: "dark" });
       setTimeout(() => router.push("/offers"), 1800);
@@ -54,7 +57,7 @@ const CreateOffer = () => {
             onSubmit={handleSubmit}
             className="bg-gray-800 p-6 rounded-lg shadow-lg"
           >
-            {/* Offer Type */}
+            {/* User Type */}
             <div className="mb-4">
               <label className="block text-white font-bold">I am a:</label>
               <select
@@ -64,6 +67,19 @@ const CreateOffer = () => {
               >
                 <option value="student">Student (Looking for a tutor)</option>
                 <option value="instructor">Instructor (Offering lessons)</option>
+              </select>
+            </div>
+
+            {/* Offer Type */}
+            <div className="mb-4">
+              <label className="block text-white font-bold">Offer Type:</label>
+              <select
+                className="w-full p-3 bg-gray-700 text-white rounded-lg mt-2"
+                value={offerCategory}
+                onChange={(e) => setOfferCategory(e.target.value)}
+              >
+                <option value="class">Class</option>
+                <option value="tutorial">Tutorial</option>
               </select>
             </div>
 
@@ -152,7 +168,6 @@ const CreateOffer = () => {
 };
 
 export default CreateOffer;
-1
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 

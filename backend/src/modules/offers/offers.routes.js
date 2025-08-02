@@ -15,8 +15,14 @@ router.post(
 );
 router.get("/", controller.getOffers);
 router.get("/:id", controller.getOfferById);
-router.put("/:id", verifyToken, validate(validator.update), controller.updateOffer);
-router.delete("/:id", verifyToken, controller.deleteOffer);
+router.put(
+  "/:id",
+  verifyToken,
+  ensureVerified,
+  validate(validator.update),
+  controller.updateOffer
+);
+router.delete("/:id", verifyToken, ensureVerified, controller.deleteOffer);
 
 // Tags
 router.get("/tags", tagController.listTags);
