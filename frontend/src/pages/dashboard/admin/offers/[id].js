@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchOfferById, updateOffer } from "@/services/admin/offerService";
+import { updateUserStatus } from "@/services/admin/userService";
 import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
@@ -43,6 +44,17 @@ const AdminOfferDetails = () => {
       alert("Offer closed.");
     } catch (_) {
       alert("Failed to close offer.");
+    }
+  };
+
+  const handleFlagUser = async () => {
+    if (!offer?.userId) return;
+    if (!confirm("Flag this user for review?")) return;
+    try {
+      await updateUserStatus(offer.userId, "suspended");
+      alert("User flagged for review.");
+    } catch (_) {
+      alert("Failed to flag user.");
     }
   };
 
@@ -200,7 +212,7 @@ const AdminOfferDetails = () => {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
-            onClick={() => alert("Offer flagged for review.")}
+            onClick={handleFlagUser}
             className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
           >
             <FaUserShield /> Flag User
