@@ -23,6 +23,8 @@ const StudentOfferDashboard = () => {
   const [visibleCount, setVisibleCount] = useState(6);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [priceSort, setPriceSort] = useState("");
+  const [dateFilter, setDateFilter] = useState("all");
   const router = useRouter();
   const { user, hasHydrated } = useAuthStore();
   const { t } = useTranslation("dashboard", { keyPrefix: "offersPage" });
@@ -52,11 +54,11 @@ const StudentOfferDashboard = () => {
               : "student",
           offerType: o.offer_type,
           title: o.title,
-          price: o.budget || "",
+          price: o.budget ? Number(o.budget) : 0,
           duration: o.timeframe || "",
           status: o.status || "open",
           tags: [],
-          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+          date: o.created_at ? new Date(o.created_at) : null,
         }));
 
         setMyOffers(
@@ -70,17 +72,25 @@ const StudentOfferDashboard = () => {
       });
   }, [user?.id]);
 
-  const filteredMyOffers = myOffers
-    .filter((o) =>
-      o.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((o) => (typeFilter === "all" ? true : o.offerType === typeFilter));
+  const applyFilters = (offers) => {
+    return offers
+      .filter((o) => o.title.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((o) => (typeFilter === "all" ? true : o.offerType === typeFilter))
+      .filter((o) => {
+        if (dateFilter === "all" || !o.date) return true;
+        const days = parseInt(dateFilter, 10);
+        const diff = (new Date() - o.date) / (1000 * 60 * 60 * 24);
+        return diff <= days;
+      })
+      .sort((a, b) => {
+        if (priceSort === "asc") return a.price - b.price;
+        if (priceSort === "desc") return b.price - a.price;
+        return 0;
+      });
+  };
 
-  const filteredInstructorOffers = instructorOffers
-    .filter((o) =>
-      o.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((o) => (typeFilter === "all" ? true : o.offerType === typeFilter));
+  const filteredMyOffers = applyFilters([...myOffers]);
+  const filteredInstructorOffers = applyFilters([...instructorOffers]);
 
   const OfferCard = ({ offer }) => (
     <div
@@ -125,7 +135,9 @@ const StudentOfferDashboard = () => {
         <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
           {offer.title}
         </h3>
-        <p className="text-sm text-gray-500 mb-3">{offer.date}</p>
+        <p className="text-sm text-gray-500 mb-3">
+          {offer.date ? offer.date.toLocaleDateString() : ""}
+        </p>
   
         <div className="flex gap-2 items-center text-sm text-gray-600 mb-1">
           <FaClock className="text-yellow-500" /> {offer.duration}
@@ -193,6 +205,24 @@ const StudentOfferDashboard = () => {
             <option value="all">{t("filter_all")}</option>
             <option value="class">{t("filter_class")}</option>
             <option value="tutorial">{t("filter_tutorial")}</option>
+          </select>
+          <select
+            value={priceSort}
+            onChange={(e) => setPriceSort(e.target.value)}
+            className="p-2 border rounded w-full sm:w-auto"
+          >
+            <option value="">{t("sort_price")}</option>
+            <option value="asc">{t("sort_price_asc")}</option>
+            <option value="desc">{t("sort_price_desc")}</option>
+          </select>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="p-2 border rounded w-full sm:w-auto"
+          >
+            <option value="all">{t("date_all")}</option>
+            <option value="7">{t("date_7")}</option>
+            <option value="30">{t("date_30")}</option>
           </select>
         </div>
 
