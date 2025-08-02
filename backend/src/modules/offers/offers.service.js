@@ -15,6 +15,9 @@ exports.getOffers = () => {
       "u.avatar_url as student_avatar"
     )
     .where("o.status", "open")
+    .andWhere(function () {
+      this.whereNull("o.expires_at").orWhere("o.expires_at", ">", db.fn.now());
+    })
     .orderBy("o.created_at", "desc");
 };
 
@@ -28,6 +31,9 @@ exports.getOfferById = (id) => {
       "u.avatar_url as student_avatar"
     )
     .where("o.id", id)
+    .andWhere(function () {
+      this.whereNull("o.expires_at").orWhere("o.expires_at", ">", db.fn.now());
+    })
     .first();
 };
 
@@ -38,6 +44,13 @@ exports.updateOffer = async (id, data) => {
 
 exports.deleteOffer = (id) => {
   return db("offers").where({ id }).del();
+};
+
+exports.deleteExpiredOffers = () => {
+  return db("offers")
+    .whereNotNull("expires_at")
+    .andWhere("expires_at", "<", db.fn.now())
+    .del();
 };
 
 exports.addOfferTags = async (offerId, tagIds) => {
