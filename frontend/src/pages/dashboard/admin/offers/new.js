@@ -9,6 +9,8 @@ const NewOfferPage = () => {
   const [form, setForm] = useState({
     title: "",
     price: "",
+    timeframe: "",
+    offerType: "class",
     expiresAt: "",
     tags: "",
     description: "",
@@ -31,6 +33,8 @@ const NewOfferPage = () => {
         title: form.title,
         description: form.description,
         budget: form.price,
+        timeframe: form.timeframe,
+        offer_type: form.offerType,
         expires_at: form.expiresAt || undefined,
         tags: JSON.stringify(tags),
       });
@@ -71,13 +75,37 @@ const NewOfferPage = () => {
         </div>
 
         <div>
+          <label className="block font-medium mb-1">Timeframe</label>
+          <input
+            name="timeframe"
+            value={form.timeframe}
+            onChange={handleChange}
+            required
+            placeholder="e.g. 3 months"
+            className="w-full border border-gray-300 rounded px-4 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium mb-1">Offer Type</label>
+          <select
+            name="offerType"
+            value={form.offerType}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-4 py-2"
+          >
+            <option value="class">Class</option>
+            <option value="tutorial">Tutorial</option>
+          </select>
+        </div>
+
+        <div>
           <label className="block font-medium mb-1">Expires At</label>
           <input
             type="date"
             name="expiresAt"
             value={form.expiresAt}
             onChange={handleChange}
-            required
             className="w-full border border-gray-300 rounded px-4 py-2"
           />
         </div>
