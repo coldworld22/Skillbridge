@@ -145,7 +145,7 @@ const MessagesPage = () => {
     }
   }, [users, selectedChat]);
 
-  useEffect(() => {
+  useEffect
     if (callAccepted?.chatId) {
       router.push(`/video-call?chatId=${callAccepted.chatId}`);
       clearCallStatus();

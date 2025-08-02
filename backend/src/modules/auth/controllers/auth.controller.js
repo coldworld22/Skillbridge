@@ -100,10 +100,10 @@ exports.logout = catchAsync(async (req, res) => {
   if (token) {
     try {
       const decoded = authService.verifyRefreshToken(token);
-      const user = await userModel.findById(decoded.id);
-      if (user && user.role && user.role.toLowerCase() === "instructor") {
-        await userModel.updateUser(user.id, { is_online: false });
-      }
+      await userModel.updateUser(decoded.id, {
+        is_online: false,
+        updated_at: new Date(),
+      });
     } catch (err) {
       console.error("Failed to update online status on logout:", err.message);
     }
