@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Typewriter from "typewriter-effect";
 import SearchBar from "@/components/shared/SearchBar";
 import { useSwipeable } from "react-swipeable"; // ✅ New for mobile swipe
+import Image from "next/image";
 import {
   FaBars,
   FaRobot,
@@ -20,7 +21,6 @@ import {
 import AdMediaModal from "@/components/website/AdMediaModal";
 import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
-import heroImage from "@/shared/assets/images/home/hero.png";
 import useAppConfigStore from "@/store/appConfigStore";
 import { API_BASE_URL } from "@/config/config";
 import { getAds } from "@/services/adsService";
@@ -47,7 +47,7 @@ const Hero = () => {
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
 
-  const [heroBg, setHeroBg] = useState(heroImage.src);
+  const [heroBg, setHeroBg] = useState("");
 
   useEffect(() => {
     const bg = settings.home_bg_url;
@@ -55,7 +55,7 @@ const Hero = () => {
       const finalBg = bg.startsWith("http") ? bg : `${API_BASE_URL}${bg}`;
       setHeroBg(finalBg);
     } else {
-      setHeroBg(heroImage.src);
+      setHeroBg("");
     }
   }, [settings.home_bg_url]);
 
@@ -216,11 +216,13 @@ const Hero = () => {
 
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
-          <img
-            src={heroBg}
-            alt="Learning Illustration"
-            className="w-full h-full object-cover"
-          />
+          {heroBg && (
+            <img
+              src={heroBg}
+              alt="Learning Illustration"
+              className="w-full h-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
         </div>
 
