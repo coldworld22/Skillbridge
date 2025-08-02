@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
+import { toast } from "react-toastify";
 import {
   FaUserGraduate,
   FaChalkboardTeacher,
@@ -57,10 +58,6 @@ const OffersIndex = () => {
 
   const handleNavigate = (action, id) => {
     const role = user?.role?.toLowerCase();
-    if (!role) {
-      alert("You must register to continue.");
-      return;
-    }
 
     const routes = {
       student: "/dashboard/student/offers",
@@ -69,10 +66,16 @@ const OffersIndex = () => {
     };
 
     if (action === "post") {
+      if (!role) {
+        toast.error(t('login_to_post_offer'));
+        return;
+      }
       router.push(`${routes[role]}/new`);
-    } else if (action === "dashboard") {
-      router.push(routes[role]);
     } else if (action === "detail" && id) {
+      if (!role) {
+        toast.error(t('login_to_post_offer'));
+        return;
+      }
       router.push(`${routes[role]}/${id}`);
     }
   };
@@ -136,24 +139,17 @@ const OffersIndex = () => {
           ))}
         </div>
 
-        {/* Load More / Dashboard CTA */}
-        <div className="text-center mt-14">
-          {allVisible ? (
-            <button
-              onClick={() => handleNavigate("dashboard")}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-lg transition"
-            >
-              {t('go_to_dashboard')}
-            </button>
-          ) : (
+        {/* Load More */}
+        {!allVisible && (
+          <div className="text-center mt-14">
             <button
               onClick={() => setVisibleCount((prev) => prev + 6)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md transition"
             >
               {t('load_more_offers')}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       
