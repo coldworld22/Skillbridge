@@ -36,7 +36,17 @@ exports.createOffer = catchAsync(async (req, res) => {
     }
     data.expires_at = expires_at;
   }
-  const tags = rawTags ? JSON.parse(rawTags) : [];
+  let tags = [];
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) {
+        return res.status(400).json({ message: "Tags must be an array" });
+      }
+    } catch (e) {
+      return res.status(400).json({ message: "Invalid tags format" });
+    }
+  }
   const offer = await service.createOffer(data);
   if (tags.length) {
     const tagIds = [];
@@ -124,11 +134,17 @@ exports.updateOffer = catchAsync(async (req, res) => {
   }
   const offer = await service.updateOffer(req.params.id, data);
 
-  const tags = rawTags
-    ? typeof rawTags === "string"
-      ? JSON.parse(rawTags)
-      : rawTags
-    : null;
+  let tags = null;
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) {
+        return res.status(400).json({ message: "Tags must be an array" });
+      }
+    } catch (e) {
+      return res.status(400).json({ message: "Invalid tags format" });
+    }
+  }
   if (tags) {
     await db("offer_tag_map").where({ offer_id: offer.id }).del();
     if (tags.length) {

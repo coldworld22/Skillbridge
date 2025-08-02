@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import {
   FaSearch,
   FaTag,
@@ -11,36 +10,7 @@ import {
 } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
-
-const sampleOffers = [
-  {
-    id: 1,
-    title: "Need Physics Tutor",
-    type: "student",
-    price: "$200",
-    duration: "3 months",
-    tags: ["OneOnOne", "Urgent"],
-    date: "2024-04-03T12:00:00Z",
-  },
-  {
-    id: 2,
-    title: "Math Tutoring Available",
-    type: "instructor",
-    price: "$100/month",
-    duration: "8 months",
-    tags: ["Discount", "LiveClass"],
-    date: "2024-04-05T08:00:00Z",
-  },
-  {
-    id: 3,
-    title: "Seeking Spanish Lessons",
-    type: "student",
-    price: "$150",
-    duration: "5 months",
-    tags: ["Flexible"],
-    date: "2024-04-04T10:30:00Z",
-  },
-];
+import { fetchOffers } from "@/services/offerService";
 
 const tagColors = {
   Urgent: "bg-red-500 text-white",
@@ -64,8 +34,34 @@ const OffersPage = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = sampleOffers
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchOffers();
+        const normalized = data.map((o) => ({
+          id: o.id,
+          title: o.title,
+          type: o.offer_type === "class" ? "instructor" : "student",
+          price: o.budget || "",
+          duration: o.timeframe || "",
+          tags: o.tags?.map((t) => t.name) || [],
+          date: o.created_at || o.updated_at || new Date().toISOString(),
+        }));
+        setOffers(normalized);
+      } catch (err) {
+        setError("Failed to load offers");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filtered = offers
     .filter(
       (offer) =>
         offer.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -131,7 +127,15 @@ const OffersPage = () => {
 
           {/* Offers Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.length > 0 ? (
+            {loading ? (
+              <div className="col-span-full text-center text-gray-500 text-lg py-20">
+                Loading offers...
+              </div>
+            ) : error ? (
+              <div className="col-span-full text-center text-red-500 text-lg py-20">
+                {error}
+              </div>
+            ) : filtered.length > 0 ? (
               filtered.map((offer, index) => (
                 <motion.div
                   key={offer.id}
