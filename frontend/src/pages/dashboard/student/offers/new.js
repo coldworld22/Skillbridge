@@ -4,10 +4,16 @@ import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { fetchOfferTags, createOfferTag } from "@/services/offerTagService";
 import { createOffer } from "@/services/offerService";
+import useAuthStore from "@/store/auth/authStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const NewOfferPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, hasHydrated } = useAuthStore();
+  const { t } = useTranslation("dashboard", { keyPrefix: "offersPage" });
   const [form, setForm] = useState({
     title: "",
     price: "",
@@ -20,10 +26,23 @@ const NewOfferPage = () => {
   const [suggestedTags, setSuggestedTags] = useState([]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) {
+      router.replace("/auth/login");
+    } else if (user.role?.toLowerCase() !== "student") {
+      router.replace("/error/403");
+    }
+  }, [hasHydrated, user, router]);
+
+  useEffect(() => {
     const search = tagInput.trim();
     if (!search) return setSuggestedTags([]);
     fetchOfferTags(search).then(setSuggestedTags).catch(() => {});
   }, [tagInput]);
+
+  if (!hasHydrated || !user || user.role?.toLowerCase() !== "student") {
+    return null;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,11 +82,11 @@ const NewOfferPage = () => {
         tags: JSON.stringify(selectedTags),
       };
       await createOffer(payload);
-      toast.success("Your request has been posted successfully!");
+      toast.success(t("success_post"));
       router.push("/dashboard/student/offers");
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error("There was an error submitting your request. Please try again.");
+      toast.error(t("error_post"));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,26 +94,26 @@ const NewOfferPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-md mt-10 mb-10 border border-gray-100">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">📢 Post New Learning Request</h1>
-      <p className="text-gray-600 mb-6">Fill out the form below to create your learning request</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("new_title")}</h1>
+      <p className="text-gray-600 mb-6">{t("new_subtitle")}</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("field_title")}</label>
           <input
             name="title"
             value={form.title}
             onChange={handleChange}
             required
-            placeholder="e.g. Need Help with Algebra"
+            placeholder={t("title_placeholder")}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
-          <p className="mt-1 text-sm text-gray-500">Be specific about what you need help with</p>
+          <p className="mt-1 text-sm text-gray-500">{t("title_hint")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("field_price")}</label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
               <input
@@ -110,7 +129,7 @@ const NewOfferPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("field_expires_at")}</label>
             <input
               type="date"
               name="expiresAt"
@@ -123,7 +142,7 @@ const NewOfferPage = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("field_tags")}</label>
           <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded-lg px-2 py-1">
             {selectedTags.map((tag) => (
               <span
@@ -153,7 +172,7 @@ const NewOfferPage = () => {
                 }
               }}
               className="flex-grow py-2 focus:outline-none"
-              placeholder="Add tag"
+              placeholder={t("add_tag_placeholder")}
             />
           </div>
           {suggestedTags.length > 0 && tagInput && (
@@ -173,16 +192,16 @@ const NewOfferPage = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("field_description")}</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             rows={5}
-            placeholder="Briefly describe your learning needs, goals, and any specific requirements..."
+            placeholder={t("description_placeholder")}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           ></textarea>
-          <p className="mt-1 text-sm text-gray-500">The more details you provide, the better tutors can help</p>
+          <p className="mt-1 text-sm text-gray-500">{t("description_hint")}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -199,10 +218,10 @@ const NewOfferPage = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Posting...
+                {t("submitting")}
               </>
             ) : (
-              "Post Request"
+              t("submit")
             )}
           </button>
           <button
@@ -211,7 +230,7 @@ const NewOfferPage = () => {
             className="text-gray-600 hover:text-gray-800 px-6 py-3 rounded-lg font-medium border border-gray-300 hover:border-gray-400 transition-all"
             disabled={isSubmitting}
           >
-            Cancel
+            {t("cancel")}
           </button>
         </div>
       </form>
@@ -220,5 +239,11 @@ const NewOfferPage = () => {
 };
 
 NewOfferPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
-
+ 
 export default NewOfferPage;
+
+export const getServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+  },
+});

@@ -13,6 +13,9 @@ import {
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { fetchOffers } from "@/services/offerService";
 import useAuthStore from "@/store/auth/authStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 const StudentOfferDashboard = () => {
   const [myOffers, setMyOffers] = useState([]);
@@ -21,7 +24,21 @@ const StudentOfferDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, hasHydrated } = useAuthStore();
+  const { t } = useTranslation("dashboard", { keyPrefix: "offersPage" });
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) {
+      router.replace("/auth/login");
+    } else if (user.role?.toLowerCase() !== "student") {
+      router.replace("/error/403");
+    }
+  }, [hasHydrated, user, router]);
+
+  if (!hasHydrated || !user || user.role?.toLowerCase() !== "student") {
+    return null;
+  }
 
   useEffect(() => {
     fetchOffers()
@@ -89,7 +106,9 @@ const StudentOfferDashboard = () => {
                   : "bg-green-100 text-green-700"
               }`}
             >
-              {offer.type === "student" ? "My Request" : "Instructor Offer"}
+              {offer.type === "student"
+                ? t("my_request_label")
+                : t("instructor_offer_label")}
             </span>
             <span
               className={`text-xs px-2 py-1 rounded-full font-medium shadow ${
@@ -98,7 +117,7 @@ const StudentOfferDashboard = () => {
                   : "bg-red-100 text-red-700"
               }`}
             >
-              {offer.status}
+              {t(offer.status)}
             </span>
           </div>
         </div>
@@ -134,7 +153,7 @@ const StudentOfferDashboard = () => {
             onClick={() => router.push(`/messages?to=${offer.userId}`)}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition"
           >
-            Message
+            {t("message")}
           </button>
         </div>
       )}
@@ -146,10 +165,10 @@ const StudentOfferDashboard = () => {
     <section className="w-full min-h-screen py-12 px-6 bg-gray-50 text-gray-800">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-800">📚 My Offers Dashboard</h2>
+          <h2 className="text-3xl font-bold text-gray-800">{t("title")}</h2>
           <Link href="/dashboard/student/offers/new">
             <button className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 font-semibold rounded-lg shadow">
-              <FaPlus /> Post New Request
+              <FaPlus /> {t("post_new")}
             </button>
           </Link>
         </div>
@@ -160,7 +179,7 @@ const StudentOfferDashboard = () => {
             <FaSearch className="text-gray-500" />
             <input
               type="text"
-              placeholder="Search offers..."
+              placeholder={t("search_placeholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full outline-none"
@@ -171,17 +190,17 @@ const StudentOfferDashboard = () => {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="p-2 border rounded w-full sm:w-auto"
           >
-            <option value="all">All Types</option>
-            <option value="class">Class</option>
-            <option value="tutorial">Tutorial</option>
+            <option value="all">{t("filter_all")}</option>
+            <option value="class">{t("filter_class")}</option>
+            <option value="tutorial">{t("filter_tutorial")}</option>
           </select>
         </div>
 
         {/* My Requests */}
         <div className="mb-12">
-          <h3 className="text-xl font-semibold mb-4">🎓 My Requests</h3>
+          <h3 className="text-xl font-semibold mb-4">{t("my_requests")}</h3>
           {myOffers.length === 0 ? (
-            <p className="text-gray-500">You haven’t posted any offers yet.</p>
+            <p className="text-gray-500">{t("no_my_offers")}</p>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -195,7 +214,7 @@ const StudentOfferDashboard = () => {
                     onClick={() => setVisibleCount((prev) => prev + 6)}
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
                   >
-                    Load More
+                    {t("load_more")}
                   </button>
                 </div>
               )}
@@ -205,9 +224,9 @@ const StudentOfferDashboard = () => {
 
         {/* Instructor Offers */}
         <div>
-          <h3 className="text-xl font-semibold mb-4">🧑‍🏫 Instructor Offers</h3>
+          <h3 className="text-xl font-semibold mb-4">{t("instructor_offers")}</h3>
           {instructorOffers.length === 0 ? (
-            <p className="text-gray-500">No instructor offers available yet.</p>
+            <p className="text-gray-500">{t("no_instructor_offers")}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredInstructorOffers.slice(0, visibleCount).map((offer) => (
@@ -227,3 +246,9 @@ StudentOfferDashboard.getLayout = function getLayout(page) {
 };
 
 export default StudentOfferDashboard;
+
+export const getServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+  },
+});

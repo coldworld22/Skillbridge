@@ -108,7 +108,7 @@ exports.findAdmins = () => {
 // Fetch Instructor users
 exports.findInstructors = () => {
   return db("users")
-    .select("id")
+    .select("id", "email", "full_name")
     .whereRaw("LOWER(role) = ?", ["instructor"])
     .andWhere({ status: "active" });
 };
@@ -116,7 +116,7 @@ exports.findInstructors = () => {
 // Fetch Student users
 exports.findStudents = () => {
   return db("users")
-    .select("id")
+    .select("id", "email", "full_name")
     .whereRaw("LOWER(role) = ?", ["student"])
     .andWhere({ status: "active" });
 };
