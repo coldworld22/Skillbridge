@@ -10,6 +10,7 @@ import {
   FaThumbtack,
   FaStar,
   FaBell,
+  FaWhatsapp,
 } from "react-icons/fa";
 
 const ChatSidebar = ({
@@ -84,6 +85,16 @@ const ChatSidebar = ({
     }
   };
 
+  const handleWhatsAppChat = (phone, e) => {
+    e?.stopPropagation();
+    if (phone) {
+      const phoneNumber = phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${phoneNumber}`, "_blank");
+    } else {
+      alert("Phone number is missing!");
+    }
+  };
+
   return (
     <aside className="bg-gray-800 p-4 rounded-lg shadow-lg col-span-1">
       <h2 className="text-lg font-bold text-yellow-400 mb-4">💬 Chats</h2>
@@ -123,14 +134,18 @@ const ChatSidebar = ({
               onClick={() => setSelectedChat(chat)}
             >
               <p className="text-white font-semibold flex-1">{chat.name}</p>
-              {chat.email && (
-                <button
-                  className="text-gray-400 hover:text-yellow-500"
-                  onClick={(e) => handleSendEmail(chat.email, e)}
-                >
-                  <FaEnvelope />
-                </button>
-              )}
+              <button
+                className="text-gray-400 hover:text-green-500"
+                onClick={(e) => handleWhatsAppChat(chat.phone, e)}
+              >
+                <FaWhatsapp />
+              </button>
+              <button
+                className="text-gray-400 hover:text-yellow-500"
+                onClick={(e) => handleSendEmail(chat.email, e)}
+              >
+                <FaEnvelope />
+              </button>
               <button
                 className="text-gray-400 hover:text-yellow-500"
                 onClick={(e) => {
@@ -189,14 +204,18 @@ const ChatSidebar = ({
               </div>
             )}
 
-            {user.email && (
-              <button
-                className="text-gray-400 hover:text-yellow-500"
-                onClick={(e) => handleSendEmail(user.email, e)}
-              >
-                <FaEnvelope />
-              </button>
-            )}
+            <button
+              className="text-gray-400 hover:text-green-500"
+              onClick={(e) => handleWhatsAppChat(user.phone, e)}
+            >
+              <FaWhatsapp />
+            </button>
+            <button
+              className="text-gray-400 hover:text-yellow-500"
+              onClick={(e) => handleSendEmail(user.email, e)}
+            >
+              <FaEnvelope />
+            </button>
 
             {/* ⭐ Pin Chat */}
             <button
@@ -280,14 +299,18 @@ const ChatSidebar = ({
                 height={40}
               />
               <p className="text-white font-semibold flex-1">{user.name}</p>
-              {user.email && (
-                <button
-                  className="text-gray-400 hover:text-yellow-500"
-                  onClick={(e) => handleSendEmail(user.email, e)}
-                >
-                  <FaEnvelope />
-                </button>
-              )}
+              <button
+                className="text-gray-400 hover:text-green-500"
+                onClick={(e) => handleWhatsAppChat(user.phone, e)}
+              >
+                <FaWhatsapp />
+              </button>
+              <button
+                className="text-gray-400 hover:text-yellow-500"
+                onClick={(e) => handleSendEmail(user.email, e)}
+              >
+                <FaEnvelope />
+              </button>
             </div>
           ))}
       </div>
