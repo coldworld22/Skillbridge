@@ -18,6 +18,7 @@ import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
 import { API_BASE_URL } from "@/config/config";
+import { toast } from "react-toastify";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");
@@ -141,10 +142,13 @@ const MessagesPage = () => {
   }, [listenCalls]);
 
   useEffect(() => {
-    if (acceptedCall) {
-      router.push(`/video-call?chatId=${acceptedCall.chatId}`);
+    const accepted = acceptedCall();
+    const isDeclined = declined();
+
+    if (accepted?.chatId) {
+      router.push(`/video-call?chatId=${accepted.chatId}`);
       clearCallStatus();
-    } else if (declined) {
+    } else if (isDeclined) {
       toast.info("Call declined");
       clearCallStatus();
     }
