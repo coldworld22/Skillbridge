@@ -1,18 +1,43 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
-import ChatWindow from "@/components/chat/ChatWindow"; 
+import ChatWindow from "@/components/chat/ChatWindow";
+import CallOverlay from "@/components/video-call/CallOverlay";
+import socket from "@/services/socketService";
 import { getUsers, getGroups } from "@/services/messageService";
 
 const ChatPage = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     getUsers().then(setUsers).catch(() => setUsers([]));
     getGroups().then(setGroups).catch(() => setGroups([]));
   }, []);
+
+  useEffect(() => {
+    const handleIncomingCall = ({ chatId }) => setIncomingCall(chatId);
+    socket.on("incoming-call", handleIncomingCall);
+    return () => socket.off("incoming-call", handleIncomingCall);
+  }, []);
+
+  const handleAccept = () => {
+    if (!incomingCall) return;
+    socket.emit("call-accepted", { chatId: incomingCall });
+    router.push(`/video-call?chatId=${incomingCall}`);
+    setIncomingCall(null);
+  };
+
+  const handleDecline = () => {
+    if (!incomingCall) return;
+    socket.emit("call-declined", { chatId: incomingCall });
+    setIncomingCall(null);
+  };
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -21,6 +46,9 @@ const ChatPage = () => {
         <ChatSidebar users={users} groups={groups} setSelectedChat={setSelectedChat} selectedChat={selectedChat} />
         {selectedChat ? <ChatWindow selectedChat={selectedChat} /> : <div className="col-span-3 text-center text-gray-400">Select a chat to start messaging</div>}
       </main>
+      {incomingCall && (
+        <CallOverlay onAccept={handleAccept} onDecline={handleDecline} />
+      )}
     </div>
   );
 };
