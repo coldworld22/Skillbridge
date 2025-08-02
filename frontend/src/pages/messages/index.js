@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -145,7 +147,7 @@ const MessagesPage = () => {
     }
   }, [users, selectedChat]);
 
-  useEffect
+  useEffect(() => {
     if (callAccepted?.chatId) {
       router.push(`/video-call?chatId=${callAccepted.chatId}`);
       clearCallStatus();
@@ -356,14 +358,12 @@ const MessagesPage = () => {
   );
 };
 
-export default MessagesPage;
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
-
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["common"], nextI18NextConfig)),
     },
   };
 }
+
+export default MessagesPage;
