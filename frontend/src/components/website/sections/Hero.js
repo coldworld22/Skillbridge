@@ -62,7 +62,7 @@ const Hero = () => {
   // Always fetch latest configuration so hero background stays in sync
   useEffect(() => {
     fetchAppConfig();
-  }, []);
+  }, [fetchAppConfig]);
 
   const typewriterText = [
     t("hero_slogan_1"),
