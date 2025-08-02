@@ -10,6 +10,9 @@ import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
+import CallOverlay from "@/components/video-call/CallOverlay";
+import useCallStore from "@/store/call/callStore";
+import { toast } from "react-toastify";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");
@@ -28,6 +31,14 @@ const MessagesPage = () => {
   const startPollingStore = useMessageStore((state) => state.startPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
   const deleteMessageStore = useMessageStore((state) => state.delete);
+
+  const incomingCall = useCallStore((state) => state.incomingCall);
+  const acceptCall = useCallStore((state) => state.acceptCall);
+  const declineCall = useCallStore((state) => state.declineCall);
+  const listenCalls = useCallStore((state) => state.listen);
+  const acceptedCall = useCallStore((state) => state.acceptedCall);
+  const clearCallStatus = useCallStore((state) => state.clearStatus);
+  const declined = useCallStore((state) => state.declined);
 
   const fetchMessages = useCallback(() => {
     fetchMessagesStore();
@@ -106,6 +117,20 @@ const MessagesPage = () => {
       }
     }
   }, [users, selectedChat]);
+
+  useEffect(() => {
+    listenCalls();
+  }, [listenCalls]);
+
+  useEffect(() => {
+    if (acceptedCall) {
+      router.push(`/video-call?chatId=${acceptedCall.chatId}`);
+      clearCallStatus();
+    } else if (declined) {
+      toast.info("Call declined");
+      clearCallStatus();
+    }
+  }, [acceptedCall, declined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -291,6 +316,9 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
+      {incomingCall && (
+        <CallOverlay onAccept={acceptCall} onDecline={declineCall} />
+      )}
     </div>
   );
 };
