@@ -129,6 +129,9 @@ app.use("/api/blog", require("./modules/blog/blog.routes"));
 app.use("/api/support", require("./modules/support/support.routes"));
 app.use("/api/tickets", require("./modules/tickets/tickets.routes"));
 app.use("/api/media", require("./modules/media/media.routes"));
+app.use("/api/book-categories", require("./modules/bookCategories/bookCategories.routes"));
+app.use("/api/books", require("./modules/books/book.routes"));
+app.use("/api/library", require("./modules/library/library.routes"));
 app.use("/api/search", require("./modules/search/search.routes"));
 
 app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
