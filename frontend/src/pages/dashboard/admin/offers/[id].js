@@ -75,8 +75,8 @@ const AdminOfferDetails = () => {
             : null,
           description: o.description || "",
           status: o.status,
-          email: o.email || "",
-          phone: o.phone || "",
+          email: o.student_email || "",
+          phone: o.student_phone || "",
         });
 
         return fetchResponses(o.id);
@@ -178,24 +178,28 @@ const AdminOfferDetails = () => {
       <div className="border-t border-gray-200 pt-6">
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Contact Info</h4>
         <div className="flex flex-wrap gap-4 items-center">
-          <a
-            href={`https://wa.me/${offer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-              `Check out this offer: ${offerUrl}`
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold transition"
-          >
-            <FaWhatsapp /> WhatsApp
-          </a>
-          <a
-            href={`mailto:${offer.email}?subject=${encodeURIComponent(
-              `Offer: ${offer.title}`
-            )}&body=${encodeURIComponent(`Check out this offer: ${offerUrl}`)}`}
-            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-semibold transition"
-          >
-            <FaEnvelope /> Email
-          </a>
+          {offer.phone && (
+            <a
+              href={`https://wa.me/${offer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                `Check out this offer: ${offerUrl}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold transition"
+            >
+              <FaWhatsapp /> WhatsApp
+            </a>
+          )}
+          {offer.email && (
+            <a
+              href={`mailto:${offer.email}?subject=${encodeURIComponent(
+                `Offer: ${offer.title}`
+              )}&body=${encodeURIComponent(`Check out this offer: ${offerUrl}`)}`}
+              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+            >
+              <FaEnvelope /> Email
+            </a>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
