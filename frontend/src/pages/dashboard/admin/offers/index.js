@@ -15,8 +15,13 @@ import {
   updateOffer,
   deleteOffer,
 } from "@/services/admin/offerService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
 const AdminOfferDashboard = () => {
+  const { t } = useTranslation("dashboard");
   const [offers, setOffers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
@@ -48,28 +53,35 @@ const AdminOfferDashboard = () => {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this offer?")) return;
+    if (!confirm(t("adminOffersPage.confirm_delete"))) return;
     const prev = offers;
     setOffers((prevOffers) => prevOffers.filter((o) => o.id !== id));
     try {
       await deleteOffer(id);
-      toast.success("Offer deleted");
+      toast.success(t("adminOffersPage.offer_deleted"));
     } catch (_) {
       setOffers(prev);
-      toast.error("Failed to delete offer");
+      toast.error(t("adminOffersPage.delete_failed"));
     }
   };
 
   const handleToggleStatus = async (id) => {
     const offer = offers.find((o) => o.id === id);
     if (!offer) return;
+    const previous = offer.status;
     const newStatus = offer.status === "open" ? "closed" : "open";
     setOffers((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
     try {
       await updateOffer(id, { status: newStatus });
-    } catch (_) {}
+      toast.success(t("adminOffersPage.status_updated"));
+    } catch (_) {
+      setOffers((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status: previous } : o))
+      );
+      toast.error(t("adminOffersPage.status_update_failed"));
+    }
   };
 
   const filtered = offers
@@ -82,7 +94,7 @@ const AdminOfferDashboard = () => {
   return (
     <div className="p-6">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">📋 Admin: Manage All Offers</h1>
+        <h1 className="text-3xl font-bold text-gray-800">📋 {t("adminOffersPage.title")}</h1>
 
         <div className="flex flex-wrap items-center gap-3">
           <select
@@ -90,23 +102,23 @@ const AdminOfferDashboard = () => {
             value={filterRole}
             className="border border-gray-300 rounded px-3 py-1 text-sm"
           >
-            <option value="">All Roles</option>
-            <option value="instructor">Instructor</option>
-            <option value="student">Student</option>
+            <option value="">{t("adminOffersPage.all_roles")}</option>
+            <option value="instructor">{t("adminOffersPage.instructor")}</option>
+            <option value="student">{t("adminOffersPage.student")}</option>
           </select>
 
           <button
             onClick={() => setSortAsc(!sortAsc)}
             className="text-sm px-3 py-1 bg-gray-100 border rounded text-gray-700 hover:bg-gray-200 flex items-center gap-1"
           >
-            {sortAsc ? <FaSortAmountDown /> : <FaSortAmountUp />} Sort by ID
+            {sortAsc ? <FaSortAmountDown /> : <FaSortAmountUp />} {t("adminOffersPage.sort_by_id")}
           </button>
 
           <div className="flex items-center border border-gray-300 rounded px-2 py-1 bg-white shadow-sm">
             <FaSearch className="text-gray-400 mr-2" />
             <input
               type="text"
-              placeholder="Search title..."
+              placeholder={t("adminOffersPage.search_title")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="outline-none text-sm w-48"
@@ -119,12 +131,12 @@ const AdminOfferDashboard = () => {
         <table className="min-w-full text-sm text-gray-800">
           <thead className="bg-gray-100 text-left uppercase text-xs font-semibold">
             <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t("adminOffersPage.column_title")}</th>
+              <th className="px-4 py-3">{t("adminOffersPage.column_user")}</th>
+              <th className="px-4 py-3">{t("adminOffersPage.column_type")}</th>
+              <th className="px-4 py-3">{t("adminOffersPage.column_status")}</th>
+              <th className="px-4 py-3">{t("adminOffersPage.column_date")}</th>
+              <th className="px-4 py-3 text-right">{t("adminOffersPage.column_actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -197,19 +209,38 @@ const AdminOfferDashboard = () => {
           onClick={() => setPage((prev) => prev - 1)}
           className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
         >
-          Previous
+          {t("adminOffersPage.prev")}
         </button>
         <button
           disabled={page * perPage >= filtered.length}
           onClick={() => setPage((prev) => prev + 1)}
           className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
         >
-          Next
+          {t("adminOffersPage.next")}
         </button>
       </div>
     </div>
   );
 };
+const ProtectedAdminOfferDashboard = withAuthProtection(AdminOfferDashboard, [
+  "admin",
+  "superadmin",
+]);
 
-AdminOfferDashboard.getLayout = (page) => <AdminLayout>{page}</AdminLayout>;
-export default AdminOfferDashboard;
+ProtectedAdminOfferDashboard.getLayout = (page) => (
+  <AdminLayout>{page}</AdminLayout>
+);
+
+export default ProtectedAdminOfferDashboard;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard"],
+        nextI18NextConfig
+      )),
+    },
+  };
+}
