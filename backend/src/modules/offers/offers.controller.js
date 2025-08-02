@@ -81,6 +81,15 @@ exports.createOffer = catchAsync(async (req, res) => {
         message,
       })
     ),
+    ...recipients
+      .filter((u) => u.email)
+      .map((u) =>
+        mailService.sendMail({
+          to: u.email,
+          subject: "New offer posted",
+          html: `<p>${message}</p>`,
+        })
+      ),
   ]);
 
   sendSuccess(res, offer, "Offer created");
@@ -144,7 +153,10 @@ exports.updateOffer = catchAsync(async (req, res) => {
   const instructors = await userModel.findInstructors();
   const students = await userModel.findStudents();
   const admins = await userModel.findAdmins();
-  const message = `Offer updated by ${req.user.full_name} (${req.user.role})`;
+  const message =
+    data.status === "closed"
+      ? `Offer closed by ${req.user.full_name} (${req.user.role})`
+      : `Offer updated by ${req.user.full_name} (${req.user.role})`;
 
   let recipients = [];
   if (req.user.role && req.user.role.toLowerCase() === "instructor") {
@@ -152,6 +164,8 @@ exports.updateOffer = catchAsync(async (req, res) => {
   } else {
     recipients = [...instructors, ...admins];
   }
+
+  const emailSubject = data.status === "closed" ? "Offer closed" : "Offer updated";
 
   await Promise.all([
     ...recipients.map((u) =>
@@ -168,6 +182,15 @@ exports.updateOffer = catchAsync(async (req, res) => {
         message,
       })
     ),
+    ...recipients
+      .filter((u) => u.email)
+      .map((u) =>
+        mailService.sendMail({
+          to: u.email,
+          subject: emailSubject,
+          html: `<p>${message}</p>`,
+        })
+      ),
   ]);
 
 
@@ -214,6 +237,34 @@ exports.deleteOffer = catchAsync(async (req, res) => {
         }),
       ]);
     }
+  } else if (offer && req.user.id === offer.student_id) {
+    const admins = await userModel.findAdmins();
+    const message = `Offer "${offer.title}" was deleted by ${req.user.full_name}.`;
+    await Promise.all([
+      ...admins.map((a) =>
+        notificationService.createNotification({
+          user_id: a.id,
+          type: "offer_deleted",
+          message,
+        })
+      ),
+      ...admins.map((a) =>
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: a.id,
+          message,
+        })
+      ),
+      ...admins
+        .filter((a) => a.email)
+        .map((a) =>
+          mailService.sendMail({
+            to: a.email,
+            subject: "Offer deleted",
+            html: `<p>${message}</p>`,
+          })
+        ),
+    ]);
   }
 
   sendSuccess(res, null, "Offer deleted");
