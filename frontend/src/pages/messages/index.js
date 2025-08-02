@@ -6,6 +6,8 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
+import CallOverlay from "@/components/video-call/CallOverlay";
+import socket from "@/services/socketService";
 import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
@@ -20,6 +22,7 @@ const MessagesPage = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -49,6 +52,25 @@ const MessagesPage = () => {
   }, [startPollingStore]);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const handleIncomingCall = ({ chatId }) => setIncomingCall(chatId);
+    socket.on("incoming-call", handleIncomingCall);
+    return () => socket.off("incoming-call", handleIncomingCall);
+  }, []);
+
+  const handleAccept = () => {
+    if (!incomingCall) return;
+    socket.emit("call-accepted", { chatId: incomingCall });
+    router.push(`/video-call?chatId=${incomingCall}`);
+    setIncomingCall(null);
+  };
+
+  const handleDecline = () => {
+    if (!incomingCall) return;
+    socket.emit("call-declined", { chatId: incomingCall });
+    setIncomingCall(null);
+  };
 
   // Keep unread counts from the backend so new chats show up in the sidebar
   const adjustCounts = useCallback((list) => list, []);
@@ -317,7 +339,8 @@ const MessagesPage = () => {
         )}
       </div>
       {incomingCall && (
-        <CallOverlay onAccept={acceptCall} onDecline={declineCall} />
+        <CallOverlay onAccept={handleAccept} onDecline={handleDecline} />
+
       )}
     </div>
   );
