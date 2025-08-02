@@ -22,7 +22,7 @@ const avatarFileFilter = (req, file, cb) => {
 const avatarUpload = multer({
   storage: avatarStorage,
   fileFilter: avatarFileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
 // ────── Identity Document Upload ──────
