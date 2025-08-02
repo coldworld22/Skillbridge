@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchOfferById } from "@/services/admin/offerService";
+import { fetchOfferById, updateOffer } from "@/services/admin/offerService";
 import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
@@ -32,6 +32,23 @@ const AdminOfferDetails = () => {
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [offerUrl, setOfferUrl] = useState("");
+
+  const handleCloseOffer = async () => {
+    if (!offer || offer.status === "closed") return;
+    if (!confirm("Close this offer?")) return;
+    try {
+      await updateOffer(offer.id, { status: "closed" });
+      setOffer((prev) => ({ ...prev, status: "closed" }));
+      alert("Offer closed.");
+    } catch (_) {
+      alert("Failed to close offer.");
+    }
+  };
+
+  useEffect(() => {
+    setOfferUrl(window.location.href);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -42,12 +59,20 @@ const AdminOfferDetails = () => {
         setOffer({
           id: o.id,
           userId: o.student_id,
-          type: o.student_role?.toLowerCase() === "instructor" ? "instructor" : "student",
+          type:
+            o.student_role?.toLowerCase() === "instructor"
+              ? "instructor"
+              : "student",
           title: o.title,
           price: o.budget || "",
           duration: o.timeframe || "",
           tags: [],
-          date: o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+          date: o.created_at
+            ? new Date(o.created_at).toLocaleDateString()
+            : "",
+          expiresAt: o.expires_at
+            ? new Date(o.expires_at).toLocaleDateString()
+            : null,
           description: o.description || "",
           status: o.status,
           email: o.email || "",
@@ -98,8 +123,9 @@ const AdminOfferDetails = () => {
         </span>
       </div>
 
-      <div className="flex justify-between text-sm text-gray-500 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-2 text-sm text-gray-500 mb-6">
         <p>Posted: {offer.date}</p>
+        {offer.expiresAt && <p>Available until: {offer.expiresAt}</p>}
         <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
           Status: {offer.status}
         </span>
@@ -123,7 +149,14 @@ const AdminOfferDetails = () => {
 
       <div className="mb-10">
         <h3 className="text-md font-semibold text-gray-700 mb-2">Description</h3>
-        <p className="text-gray-700 leading-relaxed whitespace-pre-line">{offer.description}</p>
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+          {offer.description}
+        </p>
+        {offer.expiresAt && (
+          <p className="text-sm text-gray-500 mt-4">
+            This offer is available until {offer.expiresAt}.
+          </p>
+        )}
       </div>
 
       <div className="border-t pt-6 mb-10">
@@ -146,7 +179,9 @@ const AdminOfferDetails = () => {
         <h4 className="text-sm font-semibold text-gray-600 mb-3">Contact Info</h4>
         <div className="flex flex-wrap gap-4 items-center">
           <a
-            href={`https://wa.me/${offer.phone.replace(/\D/g, "")}`}
+            href={`https://wa.me/${offer.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+              `Check out this offer: ${offerUrl}`
+            )}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold transition"
@@ -154,7 +189,9 @@ const AdminOfferDetails = () => {
             <FaWhatsapp /> WhatsApp
           </a>
           <a
-            href={`mailto:${offer.email}`}
+            href={`mailto:${offer.email}?subject=${encodeURIComponent(
+              `Offer: ${offer.title}`
+            )}&body=${encodeURIComponent(`Check out this offer: ${offerUrl}`)}`}
             className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-semibold transition"
           >
             <FaEnvelope /> Email
@@ -168,12 +205,14 @@ const AdminOfferDetails = () => {
           >
             <FaUserShield /> Flag User
           </button>
-          <button
-            onClick={() => confirm("Deactivate this offer?") && alert("Offer deactivated.")}
-            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
-          >
-            <FaBan /> Deactivate Offer
-          </button>
+          {offer.status !== "closed" && (
+            <button
+              onClick={handleCloseOffer}
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
+            >
+              <FaBan /> Close Offer
+            </button>
+          )}
         </div>
 
         <div className="mt-6">
