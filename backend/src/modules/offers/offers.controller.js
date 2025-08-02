@@ -98,6 +98,17 @@ exports.getOfferById = catchAsync(async (req, res) => {
 
 exports.updateOffer = catchAsync(async (req, res) => {
   const existing = await service.getOfferById(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ message: "Offer not found" });
+  }
+
+  if (
+    req.user.role?.toLowerCase() !== "admin" &&
+    req.user.id !== existing.student_id
+  ) {
+    return res.status(403).json({ message: "Not authorized" });
+  }
+
   const { tags: rawTags, ...data } = req.body;
   if (data.expires_at && new Date(data.expires_at) <= new Date()) {
     return res.status(400).json({ message: "Expiration must be in the future" });
