@@ -20,6 +20,11 @@ import {
 } from "@/services/offerResponseService";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
 const getAvatarUrl = (url) => {
   if (!url) return "/images/default-avatar.png";
@@ -30,6 +35,7 @@ const getAvatarUrl = (url) => {
 const AdminOfferDetails = () => {
   const router = useRouter();
   const { id } = router.query;
+  const { t } = useTranslation("dashboard");
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -37,24 +43,24 @@ const AdminOfferDetails = () => {
 
   const handleCloseOffer = async () => {
     if (!offer || offer.status === "closed") return;
-    if (!confirm("Close this offer?")) return;
+    if (!confirm(t("adminOfferDetailsPage.confirm_close"))) return;
     try {
       await updateOffer(offer.id, { status: "closed" });
       setOffer((prev) => ({ ...prev, status: "closed" }));
-      alert("Offer closed.");
+      toast.success(t("adminOfferDetailsPage.offer_closed"));
     } catch (_) {
-      alert("Failed to close offer.");
+      toast.error(t("adminOfferDetailsPage.close_failed"));
     }
   };
 
   const handleFlagUser = async () => {
     if (!offer?.userId) return;
-    if (!confirm("Flag this user for review?")) return;
+    if (!confirm(t("adminOfferDetailsPage.confirm_flag"))) return;
     try {
       await updateUserStatus(offer.userId, "suspended");
-      alert("User flagged for review.");
+      toast.success(t("adminOfferDetailsPage.user_flagged"));
     } catch (_) {
-      alert("Failed to flag user.");
+      toast.error(t("adminOfferDetailsPage.flag_failed"));
     }
   };
 
@@ -116,7 +122,7 @@ const AdminOfferDetails = () => {
       });
   }, [id]);
 
-  if (!offer) return <div className="p-6 text-gray-600">Loading offer...</div>;
+  if (!offer) return <div className="p-6 text-gray-600">{t("adminOfferDetailsPage.loading")}</div>;
 
   const isStudentOffer = offer.type === "student";
 
@@ -124,22 +130,32 @@ const AdminOfferDetails = () => {
     <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-lg mt-10 mb-12">
       <Link href="/dashboard/admin/offers">
         <button className="text-gray-600 hover:text-gray-800 underline text-sm mb-6 block">
-          ← Back to Offer List
+          {t("adminOfferDetailsPage.back_to_list")}
         </button>
       </Link>
 
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold text-gray-800">{offer.title}</h1>
-        <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow ${isStudentOffer ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-          {isStudentOffer ? "Student Request" : "Instructor Offer"}
+        <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow ${
+          isStudentOffer ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+        }`}>
+          {isStudentOffer
+            ? t("adminOfferDetailsPage.student_request")
+            : t("adminOfferDetailsPage.instructor_offer")}
         </span>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between gap-2 text-sm text-gray-500 mb-6">
-        <p>Posted: {offer.date}</p>
-        {offer.expiresAt && <p>Available until: {offer.expiresAt}</p>}
+        <p>
+          {t("adminOfferDetailsPage.posted")}: {offer.date}
+        </p>
+        {offer.expiresAt && (
+          <p>
+            {t("adminOfferDetailsPage.available_until")}: {offer.expiresAt}
+          </p>
+        )}
         <span className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700">
-          Status: {offer.status}
+          {t("adminOfferDetailsPage.status")}: {offer.status}
         </span>
       </div>
 
@@ -160,19 +176,25 @@ const AdminOfferDetails = () => {
       </div>
 
       <div className="mb-10">
-        <h3 className="text-md font-semibold text-gray-700 mb-2">Description</h3>
+        <h3 className="text-md font-semibold text-gray-700 mb-2">
+          {t("adminOfferDetailsPage.description")}
+        </h3>
         <p className="text-gray-700 leading-relaxed whitespace-pre-line">
           {offer.description}
         </p>
         {offer.expiresAt && (
           <p className="text-sm text-gray-500 mt-4">
-            This offer is available until {offer.expiresAt}.
+            {t("adminOfferDetailsPage.available_until_sentence", {
+              date: offer.expiresAt,
+            })}
           </p>
         )}
       </div>
 
       <div className="border-t pt-6 mb-10">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">💬 Discussion Thread</h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">
+          {t("adminOfferDetailsPage.discussion_thread")}
+        </h3>
         <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-4">
           {messages.map((msg, index) => (
             <div key={index} className="flex items-start gap-2">
@@ -188,7 +210,9 @@ const AdminOfferDetails = () => {
       </div>
 
       <div className="border-t border-gray-200 pt-6">
-        <h4 className="text-sm font-semibold text-gray-600 mb-3">Contact Info</h4>
+        <h4 className="text-sm font-semibold text-gray-600 mb-3">
+          {t("adminOfferDetailsPage.contact_info")}
+        </h4>
         <div className="flex flex-wrap gap-4 items-center">
           {offer.phone && (
             <a
@@ -199,7 +223,7 @@ const AdminOfferDetails = () => {
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg font-semibold transition"
             >
-              <FaWhatsapp /> WhatsApp
+              <FaWhatsapp /> {t("adminOfferDetailsPage.whatsapp")}
             </a>
           )}
           {offer.email && (
@@ -209,7 +233,7 @@ const AdminOfferDetails = () => {
               )}&body=${encodeURIComponent(`Check out this offer: ${offerUrl}`)}`}
               className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg font-semibold transition"
             >
-              <FaEnvelope /> Email
+              <FaEnvelope /> {t("adminOfferDetailsPage.email")}
             </a>
           )}
         </div>
@@ -219,14 +243,14 @@ const AdminOfferDetails = () => {
             onClick={handleFlagUser}
             className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
           >
-            <FaUserShield /> Flag User
+            <FaUserShield /> {t("adminOfferDetailsPage.flag_user")}
           </button>
           {offer.status !== "closed" && (
             <button
               onClick={handleCloseOffer}
               className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
             >
-              <FaBan /> Close Offer
+              <FaBan /> {t("adminOfferDetailsPage.close_offer")}
             </button>
           )}
         </div>
@@ -235,18 +259,36 @@ const AdminOfferDetails = () => {
           <button
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
-              alert("Link copied to clipboard!");
+              toast.success(t("adminOfferDetailsPage.link_copied"));
             }}
             className="flex items-center text-sm text-blue-600 hover:text-blue-800 gap-2"
           >
-            <FaLink /> Copy Offer Link
+            <FaLink /> {t("adminOfferDetailsPage.copy_offer_link")}
           </button>
         </div>
       </div>
     </div>
   );
 };
+const ProtectedAdminOfferDetails = withAuthProtection(AdminOfferDetails, [
+  "admin",
+  "superadmin",
+]);
 
-AdminOfferDetails.getLayout = (page) => <AdminLayout>{page}</AdminLayout>;
+ProtectedAdminOfferDetails.getLayout = (page) => (
+  <AdminLayout>{page}</AdminLayout>
+);
 
-export default AdminOfferDetails;
+export default ProtectedAdminOfferDetails;
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard"],
+        nextI18NextConfig
+      )),
+    },
+  };
+}
