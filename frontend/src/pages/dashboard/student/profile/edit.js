@@ -74,7 +74,17 @@ export default function StudentProfileEdit() {
   }, [hasHydrated]);
 
   useEffect(() => {
-    if (!user || user.role?.toLowerCase() !== "student") return;
+    if (!user) {
+      // No logged in user – stop loading to avoid endless spinner
+      setIsLoading(false);
+      return;
+    }
+
+    if (user.role?.toLowerCase() !== "student") {
+      // Logged in but not a student; redirect to a safe dashboard
+      router.push("/dashboard");
+      return;
+    }
 
     const loadProfile = async () => {
       try {
@@ -109,7 +119,7 @@ export default function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user]);
+  }, [user, router]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
