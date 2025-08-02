@@ -179,7 +179,7 @@ const Navbar = () => {
       : `/dashboard/${userRole}/profile/edit`;
 
   const getAvatarUrl = (avatar) => {
-    if (!avatar) return "/images/profile/user.png";
+    if (!avatar) return "";
     if (avatar.startsWith("http") || avatar.startsWith("blob:")) return avatar;
     return `${API_BASE_URL}${avatar}`; // avatar starts with "/uploads/..."
   };
@@ -409,17 +409,18 @@ const Navbar = () => {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg flex items-center justify-center bg-white"
             >
-              <img
-                src={getAvatarUrl(user.avatar_url)}
-                alt="Avatar"
-                width={48}
-                height={48}
-                className="w-full h-full object-cover rounded-full"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/images/profile/user.png";
-                }}
-              />
+              {user.avatar_url && (
+                <img
+                  src={getAvatarUrl(user.avatar_url)}
+                  alt="Avatar"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              )}
             </motion.button>
 
             {dropdownOpen && (

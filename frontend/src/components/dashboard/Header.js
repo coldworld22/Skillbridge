@@ -322,18 +322,21 @@ export default function Header() {
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
           >
-            <img
-              src={
-                user?.avatar_url
-                  ? user.avatar_url.startsWith("http") ||
-                    user.avatar_url.startsWith("blob:")
+            {user?.avatar_url && (
+              <img
+                src={
+                  user.avatar_url.startsWith("http") ||
+                  user.avatar_url.startsWith("blob:")
                     ? user.avatar_url
                     : `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-                  : "/images/default-avatar.png"
-              }
-              alt="User Avatar"
-              className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
-            />
+                }
+                alt="User Avatar"
+                className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">
                 {user?.full_name || "Guest"}
