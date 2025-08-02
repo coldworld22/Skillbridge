@@ -1,6 +1,7 @@
 const service = require("./instructor.service");
 const { sendSuccess } = require("../../utils/response");
 const catchAsync = require("../../utils/catchAsync");
+const msgService = require("../messages/messages.service");
 
 exports.list = catchAsync(async (_req, res) => {
   const data = await service.getPublicInstructors();
@@ -28,4 +29,46 @@ exports.getAvailability = catchAsync(async (req, res) => {
 
   const availability = await service.getInstructorAvailability(id);
   sendSuccess(res, availability);
+});
+
+exports.sendEmail = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+    return res.status(400).json({ message: "Invalid instructor id" });
+  }
+
+  const data = await msgService.sendEmail({
+    sender_id: req.user.id,
+    receiver_id: id,
+    subject: req.body.subject,
+    message: req.body.message,
+  });
+  sendSuccess(res, data, "Email sent");
+});
+
+exports.sendWhatsApp = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+    return res.status(400).json({ message: "Invalid instructor id" });
+  }
+
+  const data = await msgService.sendWhatsApp({
+    sender_id: req.user.id,
+    receiver_id: id,
+    message: req.body.message,
+  });
+  sendSuccess(res, data, "WhatsApp message sent");
+});
+
+exports.startVideoCall = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+    return res.status(400).json({ message: "Invalid instructor id" });
+  }
+
+  const data = await msgService.startVideoCall({
+    sender_id: req.user.id,
+    receiver_id: id,
+  });
+  sendSuccess(res, data, "Video call started");
 });
