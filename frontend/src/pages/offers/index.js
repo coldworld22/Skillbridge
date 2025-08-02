@@ -37,6 +37,7 @@ const OffersPage = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sortOption, setSortOption] = useState("date_desc");
 
   useEffect(() => {
     const load = async () => {
@@ -67,7 +68,20 @@ const OffersPage = () => {
         offer.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (filterType === "all" || offer.type === filterType)
     )
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => {
+      const priceA = parseFloat(String(a.price).replace(/[^0-9.-]+/g, "")) || 0;
+      const priceB = parseFloat(String(b.price).replace(/[^0-9.-]+/g, "")) || 0;
+      switch (sortOption) {
+        case "price_asc":
+          return priceA - priceB;
+        case "price_desc":
+          return priceB - priceA;
+        case "date_asc":
+          return new Date(a.date) - new Date(b.date);
+        default:
+          return new Date(b.date) - new Date(a.date);
+      }
+    });
 
   return (
     <div className="bg-gray-950 text-white min-h-screen">
@@ -111,6 +125,20 @@ const OffersPage = () => {
                 {btn.label}
               </button>
             ))}
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex justify-center mb-6">
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="bg-gray-800 border border-gray-600 text-sm rounded px-3 py-2 text-yellow-300"
+            >
+              <option value="date_desc">Newest</option>
+              <option value="date_asc">Oldest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+            </select>
           </div>
 
           {/* Search */}

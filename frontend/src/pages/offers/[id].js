@@ -22,8 +22,6 @@ import {
   FaChalkboardTeacher,
   FaComment,
   FaPaperPlane,
-  FaPlayCircle,
-  FaVideo,
 } from "react-icons/fa";
 
 dayjs.extend(relativeTime);
@@ -42,7 +40,25 @@ const OfferDetailsPage = () => {
   useEffect(() => {
     if (!id) return;
     fetchOfferById(id)
-      .then((o) => setOffer(o || null))
+      .then((o) =>
+        setOffer(
+          o
+            ? {
+                id: o.id,
+                title: o.title,
+                description: o.description,
+                type: o.offer_type === "class" ? "instructor" : "student",
+                price: o.budget || "",
+                duration: o.timeframe || "",
+                tags: o.tags?.map((t) => t.name) || [],
+                date: o.created_at || o.updated_at,
+                expires_at: o.expires_at,
+                owner: o.student_name,
+                ownerRole: o.student_role,
+              }
+            : null
+        )
+      )
       .catch(() => setOffer(null));
     fetchResponses(id)
       .then((resps) => {
@@ -102,28 +118,6 @@ const OfferDetailsPage = () => {
     } catch (_) {}
   };
 
-  const renderDealActions = () => {
-    if (offer.type === "student") {
-      return (
-        <button
-          onClick={() => alert("Redirecting to create tutorial form...")}
-          className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
-        >
-          <FaPlayCircle /> Create Tutorial for This Student
-        </button>
-      );
-    } else {
-      return (
-        <button
-          onClick={() => alert("Redirecting to enroll/payment process...")}
-          className="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
-        >
-          <FaVideo /> Join This Live Class / Accept Offer
-        </button>
-      );
-    }
-  };
-
   if (!offer) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
@@ -165,11 +159,18 @@ const OfferDetailsPage = () => {
           <div className="flex items-center gap-3 text-sm text-gray-300 mb-2">
             <span className="flex items-center gap-1">
               {offer.type === "student" ? <FaUserGraduate /> : <FaChalkboardTeacher />}
-              {offer.type === "student" ? " Student" : " Instructor"}
+              {offer.owner} ({offer.ownerRole})
             </span>
-            <span>• Duration: {offer.duration}</span>
             <span>• Price: {offer.price}</span>
+            <span>• Duration: {offer.duration}</span>
           </div>
+
+          <p className="text-xs text-gray-400 mb-4">
+            Created: {dayjs(offer.date).format("MMM D, YYYY")}
+            {offer.expires_at && (
+              <> • Ends: {dayjs(offer.expires_at).format("MMM D, YYYY")}</>
+            )}
+          </p>
 
           <div className="flex flex-wrap gap-2 mt-4">
             {offer.tags?.map((tag, i) => (
@@ -181,10 +182,6 @@ const OfferDetailsPage = () => {
               </span>
             ))}
           </div>
-
-          <p className="mt-6 text-xs text-gray-500">
-            📅 Posted: {dayjs(offer.date).fromNow()}
-          </p>
 
           {/* Negotiation Chat */}
           <div className="bg-gray-900 p-4 rounded-lg mt-10 shadow-md">
@@ -238,8 +235,6 @@ const OfferDetailsPage = () => {
             </div>
           </div>
 
-          {/* CTA Button based on Role */}
-          {renderDealActions()}
         </div>
       </main>
 
