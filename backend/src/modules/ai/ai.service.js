@@ -10,6 +10,9 @@ const thirdPartyConfig = require('../thirdPartyConfig/thirdPartyConfig.service')
 exports.answerWithAI = async (provider, question, model) => {
   const cfg = (await thirdPartyConfig.getSettings()) || {};
   const settings = cfg[provider] || {};
+  if (settings.active === false) {
+    return { answer: null, error: 'Provider inactive' };
+  }
 
   // Each provider may store its credential under different keys. Perform a
   // generic check here only when no provider specific credential exists.

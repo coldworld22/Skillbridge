@@ -70,56 +70,71 @@ export default function ThirdPartyIntegrationsPage() {
     }
   };
 
+  const toggleIntegration = (key) => {
+    const current = settings[key] || {};
+    const isActive = current.active !== false;
+    saveSection(key, { ...current, active: !isActive });
+  };
+
   const integrations = [
     {
+      key: 'chatgpt',
       name: "ChatGPT (OpenAI)",
       description: "Manage your OpenAI API keys and usage preferences.",
       icon: <FaRobot className="text-4xl text-blue-600" />,
       onClick: () => setShowChatGPTModal(true),
     },
     {
+      key: 'deepseek',
       name: "DeepSeek AI",
       description: "Configure DeepSeek large language model settings.",
       icon: <FaWrench className="text-4xl text-green-600" />,
       onClick: () => setShowDeepSeekModal(true),
     },
     {
+      key: 'claude',
       name: "Claude (Anthropic)",
       description: "Configure Claude AI model access and behavior.",
       icon: <FaFeather className="text-4xl text-purple-500" />,
       onClick: () => setShowClaudeModal(true),
     },
     {
+      key: 'gemini',
       name: "Gemini (Google AI)",
       description: "Integrate Gemini AI models from Google Cloud.",
       icon: <FaGoogle className="text-4xl text-indigo-600" />,
       onClick: () => setShowGeminiModal(true),
     },
     {
+      key: 'huggingface',
       name: "Hugging Face",
       description: "Connect with Hugging Face-hosted AI models.",
       icon: <SiHuggingface className="text-4xl text-yellow-500" />,
       onClick: () => setShowHuggingFaceModal(true),
     },
     {
+      key: 'googleCalendar',
       name: "Google Calendar",
       description: "Sync platform bookings with Google Calendar.",
       icon: <FaCalendarAlt className="text-4xl text-red-500" />,
       onClick: () => setShowGoogleCalendarModal(true),
     },
     {
+      key: 'googleAnalytics',
       name: "Google Analytics",
       description: "Track user activity using Google Analytics.",
       icon: <FaChartBar className="text-4xl text-green-700" />,
       onClick: () => setShowGoogleAnalyticsModal(true),
     },
     {
+      key: 'googleAdSense',
       name: "Google AdSense",
       description: "Display monetized ads using Google AdSense.",
       icon: <FaAd className="text-4xl text-yellow-600" />,
       onClick: () => setShowGoogleAdSenseModal(true),
     },
     {
+      key: 'recaptcha',
       name: "reCAPTCHA v3",
       description: "Protect your forms with Google reCAPTCHA.",
       icon: <FaShieldAlt className="text-4xl text-blue-800" />,
@@ -132,21 +147,33 @@ export default function ThirdPartyIntegrationsPage() {
       <div className="p-6 max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">{t('third_party_integrations')}</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {integrations.map((item, index) => (
-            <div
-              key={index}
-              onClick={item.onClick}
-              className="cursor-pointer border border-gray-200 rounded-xl p-5 shadow hover:shadow-lg bg-white transition"
-            >
-              <div className="flex items-center gap-4">
-                {item.icon}
-                <div>
-                  <h2 className="text-lg font-semibold">{item.name}</h2>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+          {integrations.map((item, index) => {
+            const isActive = settings[item.key]?.active !== false;
+            return (
+              <div
+                key={index}
+                onClick={item.onClick}
+                className="cursor-pointer border border-gray-200 rounded-xl p-5 shadow hover:shadow-lg bg-white transition"
+              >
+                <div className="flex items-center gap-4">
+                  {item.icon}
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold">{item.name}</h2>
+                    <p className="text-gray-600 text-sm">{item.description}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleIntegration(item.key);
+                    }}
+                    className={`px-2 py-1 rounded text-xs ${isActive ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
+                  >
+                    {isActive ? 'Active' : 'Inactive'}
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

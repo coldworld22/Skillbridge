@@ -21,4 +21,13 @@ describe('GET /api/adsense', () => {
     expect(res.body.data).toEqual(cfg);
     expect(service.getSettings).toHaveBeenCalled();
   });
+
+  it('returns empty when inactive', async () => {
+    const cfg = { clientID: 'pub', slotID: '123', enabled: true, active: false };
+    service.getSettings.mockResolvedValue({ googleAdSense: cfg });
+
+    const res = await request(app).get('/api/adsense');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({});
+  });
 });

@@ -21,4 +21,13 @@ describe('GET /api/google-analytics', () => {
     expect(res.body.data).toEqual(cfg);
     expect(service.getSettings).toHaveBeenCalled();
   });
+
+  it('returns empty when inactive', async () => {
+    const cfg = { measurementId: 'G-TEST', enabled: true, active: false };
+    service.getSettings.mockResolvedValue({ googleAnalytics: cfg });
+
+    const res = await request(app).get('/api/google-analytics');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({});
+  });
 });

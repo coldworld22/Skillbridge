@@ -13,7 +13,9 @@ exports.getSettings = async () => {
 };
 
 exports.updateSettings = async (settings) => {
-  const value = JSON.stringify(settings);
+  const prev = (await exports.getSettings()) || {};
+  const merged = { ...prev, ...settings };
+  const value = JSON.stringify(merged);
   const existing = await db("settings").where({ key: SETTINGS_KEY }).first();
   if (existing) {
     await db("settings")
@@ -22,5 +24,5 @@ exports.updateSettings = async (settings) => {
   } else {
     await db("settings").insert({ key: SETTINGS_KEY, value });
   }
-  return settings;
+  return merged;
 };
