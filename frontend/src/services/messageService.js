@@ -69,3 +69,19 @@ export const togglePinMessage = async (id) => {
   const res = await api.patch(`/chat/messages/${id}/pin`);
   return res.data.data || res.data;
 };
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect a call-listener helper. Currently does nothing.
+export const listenCalls = () => {};
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect an accepted-call handler. Currently does nothing.
+export const acceptedCall = () => {};
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect a declined-call handler. Currently does nothing.
+export const declined = () => {};
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect a helper to clear call status. Currently does nothing.
+export const clearCallStatus = () => {};
