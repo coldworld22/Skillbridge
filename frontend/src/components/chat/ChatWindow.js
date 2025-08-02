@@ -12,9 +12,10 @@ import {
   sendChatMessage,
   deleteChatMessage as apiDeleteChatMessage,
   togglePinMessage as apiTogglePinMessage,
+  startVideoCall,
 } from "@/services/messageService";
 
-const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
+const ChatWindow = ({ selectedChat, refreshUsers }) => {
   const currentUser = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
@@ -69,6 +70,15 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     }
   }, [typing]);
 
+  const handleStartVideoCall = async (chatId) => {
+    try {
+      await startVideoCall(chatId);
+      toast.info("Video call invitation sent");
+    } catch (_) {
+      toast.error("Failed to start video call");
+    }
+  };
+
   const sendMessage = async (newMessage) => {
     if (!newMessage.text && !newMessage.file && !newMessage.audio) {
       toast.error("Message is empty!");
@@ -122,7 +132,7 @@ const ChatWindow = ({ selectedChat, onStartVideoCall, refreshUsers }) => {
     <div className="flex flex-col h-[calc(100vh-7rem)] bg-gray-800 rounded-lg shadow-md overflow-hidden w-full md:col-span-3">
       {/* Header */}
       <div className="border-b border-gray-700">
-        <ChatHeader selectedChat={selectedChat} onStartVideoCall={onStartVideoCall} />
+        <ChatHeader selectedChat={selectedChat} onStartVideoCall={handleStartVideoCall} />
       </div>
 
       {/* Pinned */}

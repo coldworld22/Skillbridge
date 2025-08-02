@@ -6,7 +6,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
-import { getUsers, getGroups } from "@/services/messageService";
+import { getUsers, getGroups, listenCalls, acceptedCall, declined } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
@@ -38,6 +38,18 @@ const MessagesPage = () => {
   }, [startPollingStore]);
 
   const router = useRouter();
+
+  useEffect(() => {
+    listenCalls();
+    try {
+      // Some builds expect global call handlers. Provide no-op
+      // placeholders to avoid ReferenceError during pre-render.
+      acceptedCall();
+      declined();
+    } catch (_) {
+      // ignore
+    }
+  }, []);
 
   // Keep unread counts from the backend so new chats show up in the sidebar
   const adjustCounts = useCallback((list) => list, []);
