@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import StudentLayout from "@/components/layouts/StudentLayout";
+import { toast } from "react-toastify";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { createOffer } from "@/services/admin/offerService";
 
 const NewOfferPage = () => {
   const router = useRouter();
@@ -17,13 +19,26 @@ const NewOfferPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const tags = form.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
-    // Simulate API call
-    console.log("Submitting new offer:", form);
-    alert("Your request has been posted!");
-    router.push("/dashboard/student/offers");
+    try {
+      await createOffer({
+        title: form.title,
+        description: form.description,
+        budget: form.price,
+        timeframe: form.duration,
+        tags: JSON.stringify(tags),
+      });
+      toast.success("Offer created successfully");
+      router.push("/dashboard/admin/offers");
+    } catch (error) {
+      toast.error("Failed to create offer");
+    }
   };
 
   return (
@@ -110,6 +125,6 @@ const NewOfferPage = () => {
   );
 };
 
-NewOfferPage.getLayout = (page) => <StudentLayout>{page}</StudentLayout>;
+NewOfferPage.getLayout = (page) => <AdminLayout>{page}</AdminLayout>;
 
 export default NewOfferPage;
