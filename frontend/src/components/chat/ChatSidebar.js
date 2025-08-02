@@ -32,6 +32,9 @@ const ChatSidebar = ({
     return `${API_BASE_URL}${url}`;
   };
 
+  const isUserOnline = (user) =>
+    user?.isOnline ?? user?.is_online ?? user?.status === "online";
+
   const getGroupAvatar = (g) => {
     const src = g.cover_image || g.image;
     return getAvatarUrl(src);
@@ -40,11 +43,16 @@ const ChatSidebar = ({
   // ✅ Sort users by online status & last active
   useEffect(() => {
     const sortedUsers = [...users].sort((a, b) => {
-      if (a.isOnline === b.isOnline) return b.lastActive - a.lastActive;
-      return a.isOnline ? -1 : 1;
+      const aOnline = isUserOnline(a);
+      const bOnline = isUserOnline(b);
+      if (aOnline === bOnline)
+        return (b.lastActive || b.last_active || 0) - (a.lastActive || a.last_active || 0);
+      return aOnline ? -1 : 1;
     });
 
-    const sortedGroups = [...groups].sort((a, b) => b.lastActive - a.lastActive);
+    const sortedGroups = [...groups].sort(
+      (a, b) => (b.lastActive || b.last_active || 0) - (a.lastActive || a.last_active || 0)
+    );
 
     setSortedUsers(sortedUsers);
     setSortedGroups(sortedGroups);
@@ -182,9 +190,7 @@ const ChatSidebar = ({
               />
               <span
                 className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border border-gray-800 ${
-                  (user.isOnline ?? user.status === "online")
-                    ? "bg-green-500"
-                    : "bg-red-500"
+                  isUserOnline(user) ? "bg-green-500" : "bg-red-500"
                 }`}
               />
             </div>

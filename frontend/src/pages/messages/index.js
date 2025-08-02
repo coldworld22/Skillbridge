@@ -6,10 +6,13 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
+import CallOverlay from "@/components/video-call/CallOverlay";
+import socket from "@/services/socketService";
 import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
+import { API_BASE_URL } from "@/config/config";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");
@@ -17,6 +20,7 @@ const MessagesPage = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -29,6 +33,12 @@ const MessagesPage = () => {
   const markMessageRead = useMessageStore((state) => state.markRead);
   const deleteMessageStore = useMessageStore((state) => state.delete);
 
+  const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
+    if (!url) return fallback;
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
   const fetchMessages = useCallback(() => {
     fetchMessagesStore();
   }, [fetchMessagesStore]);
@@ -38,6 +48,25 @@ const MessagesPage = () => {
   }, [startPollingStore]);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const handleIncomingCall = ({ chatId }) => setIncomingCall(chatId);
+    socket.on("incoming-call", handleIncomingCall);
+    return () => socket.off("incoming-call", handleIncomingCall);
+  }, []);
+
+  const handleAccept = () => {
+    if (!incomingCall) return;
+    socket.emit("call-accepted", { chatId: incomingCall });
+    router.push(`/video-call?chatId=${incomingCall}`);
+    setIncomingCall(null);
+  };
+
+  const handleDecline = () => {
+    if (!incomingCall) return;
+    socket.emit("call-declined", { chatId: incomingCall });
+    setIncomingCall(null);
+  };
 
   // Keep unread counts from the backend so new chats show up in the sidebar
   const adjustCounts = useCallback((list) => list, []);
@@ -106,6 +135,20 @@ const MessagesPage = () => {
       }
     }
   }, [users, selectedChat]);
+
+  useEffect(() => {
+    listenCalls();
+  }, [listenCalls]);
+
+  useEffect(() => {
+    if (acceptedCall) {
+      router.push(`/video-call?chatId=${acceptedCall.chatId}`);
+      clearCallStatus();
+    } else if (declined) {
+      toast.info("Call declined");
+      clearCallStatus();
+    }
+  }, [acceptedCall, declined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -206,7 +249,7 @@ const MessagesPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <ChatImage
-                              src={user.profileImage || "/images/default-avatar.png"}
+                              src={getAvatarUrl(user.profileImage)}
                               alt={user.name || "User"}
                               className="w-10 h-10 rounded-full border border-yellow-500"
                               width={40}
@@ -243,7 +286,12 @@ const MessagesPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <ChatImage
-                              src={group.cover_image || group.image || "/images/group-placeholder.jpg"}
+                              src={
+                                getAvatarUrl(
+                                  group.cover_image || group.image,
+                                  "/images/group-placeholder.jpg"
+                                )
+                              }
                               alt={group.name}
                               className="w-10 h-10 rounded-full border border-gray-500"
                               width={40}
@@ -291,6 +339,10 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
+      {incomingCall && (
+        <CallOverlay onAccept={handleAccept} onDecline={handleDecline} />
+
+      )}
     </div>
   );
 };
