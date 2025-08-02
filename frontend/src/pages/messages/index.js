@@ -6,6 +6,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
+import CallOverlay from "@/components/video-call/CallOverlay";
 import {
   getUsers,
   getGroups,
@@ -17,6 +18,7 @@ import {
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
+import useCallStore from "@/store/call/callStore";
 import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 
@@ -26,7 +28,11 @@ const MessagesPage = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [incomingCall, setIncomingCall] = useState(null);
+  const incomingCall = useCallStore((state) => state.incomingCall);
+  const outgoingCall = useCallStore((state) => state.outgoingCall);
+  const acceptCall = useCallStore((state) => state.acceptCall);
+  const declineCall = useCallStore((state) => state.declineCall);
+  const cancelCall = useCallStore((state) => state.cancelCall);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -62,7 +68,6 @@ const MessagesPage = () => {
       // placeholders to avoid ReferenceError during pre-render.
       acceptedCall();
       declined();
-
       clearCallStatus();
     } catch (_) {
       // ignore
@@ -136,10 +141,6 @@ const MessagesPage = () => {
       }
     }
   }, [users, selectedChat]);
-
-  useEffect(() => {
-    listenCalls();
-  }, [listenCalls]);
 
   useEffect(() => {
     const accepted = acceptedCall();
@@ -343,9 +344,13 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
-      {incomingCall && (
-        <CallOverlay onAccept={handleAccept} onDecline={handleDecline} />
-
+      {(incomingCall || outgoingCall) && (
+        <CallOverlay
+          incoming={!!incomingCall}
+          name={incomingCall?.name || selectedChat?.name}
+          onAccept={incomingCall ? () => acceptCall() : undefined}
+          onDecline={incomingCall ? () => declineCall() : cancelCall}
+        />
       )}
     </div>
   );
