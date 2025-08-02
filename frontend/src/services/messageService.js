@@ -69,3 +69,7 @@ export const togglePinMessage = async (id) => {
   const res = await api.patch(`/chat/messages/${id}/pin`);
   return res.data.data || res.data;
 };
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect a call-listener helper. Currently does nothing.
+export const listenCalls = () => {};

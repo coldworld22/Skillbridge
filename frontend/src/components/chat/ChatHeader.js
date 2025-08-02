@@ -31,7 +31,6 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
 
-
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
       await onStartVideoCall(selectedChat.id);
