@@ -9,14 +9,12 @@ exports.up = function (knex) {
     table.string('pdf_url');
     table.string('cover_image_url');
     table
-      .integer('category_id')
-      .unsigned()
+      .uuid('category_id')
       .references('id')
       .inTable('book_categories')
       .onDelete('SET NULL');
     table
-      .integer('instructor_id')
-      .unsigned()
+      .uuid('instructor_id')
       .references('id')
       .inTable('users')
       .onDelete('CASCADE');
