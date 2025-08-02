@@ -172,7 +172,7 @@ const OfferDetailsPage = () => {
           </div>
 
           <div className="flex flex-wrap gap-2 mt-4">
-            {offer.tags.map((tag, i) => (
+            {offer.tags?.map((tag, i) => (
               <span
                 key={i}
                 className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs flex items-center gap-1"
