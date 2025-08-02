@@ -73,3 +73,7 @@ export const togglePinMessage = async (id) => {
 // Placeholder to avoid runtime ReferenceError when build processes
 // expect a call-listener helper. Currently does nothing.
 export const listenCalls = () => {};
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect an accepted-call handler. Currently does nothing.
+export const acceptedCall = () => {};
