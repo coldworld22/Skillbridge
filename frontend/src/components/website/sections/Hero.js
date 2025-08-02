@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import Typewriter from "typewriter-effect";
 import SearchBar from "@/components/shared/SearchBar";
 import { useSwipeable } from "react-swipeable"; // ✅ New for mobile swipe
@@ -48,13 +47,15 @@ const Hero = () => {
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
 
-  const [heroBg, setHeroBg] = useState(heroImage);
+  const [heroBg, setHeroBg] = useState(heroImage.src);
 
   useEffect(() => {
-    if (settings.home_bg_url) {
-      setHeroBg(`${API_BASE_URL}${settings.home_bg_url}`);
+    const bg = settings.home_bg_url;
+    if (bg) {
+      const finalBg = bg.startsWith("http") ? bg : `${API_BASE_URL}${bg}`;
+      setHeroBg(finalBg);
     } else {
-      setHeroBg(heroImage);
+      setHeroBg(heroImage.src);
     }
   }, [settings.home_bg_url]);
 
@@ -215,7 +216,11 @@ const Hero = () => {
 
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
-          <Image src={heroBg} alt="Learning Illustration" fill style={{ objectFit: 'cover' }} priority />
+          <img
+            src={heroBg}
+            alt="Learning Illustration"
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
         </div>
 
