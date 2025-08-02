@@ -18,6 +18,9 @@ const useCallStore = create((set, get) => ({
     socket.on("call-declined", () => {
       set({ declined: true, outgoingCall: null });
     });
+    socket.on("call-cancelled", () => {
+      set({ incomingCall: null });
+    });
     set({ listening: true });
   },
   initiateCall: (info) => set({ outgoingCall: info, declined: false, acceptedCall: null }),
@@ -32,6 +35,12 @@ const useCallStore = create((set, get) => ({
     if (!call) return;
     socket.emit("call-declined", call);
     set({ incomingCall: null, declined: true });
+  },
+  cancelCall: () => {
+    const call = get().outgoingCall;
+    if (!call) return;
+    socket.emit("call-cancelled", call);
+    set({ outgoingCall: null });
   },
   clearStatus: () => set({ acceptedCall: null, declined: false }),
 }));
