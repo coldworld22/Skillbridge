@@ -130,10 +130,12 @@ exports.loginUser = async ({ email, password }) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) throw new AppError("Invalid credentials", 401);
 
-  if (user.role && user.role.toLowerCase() === "instructor") {
-    await userModel.updateUser(user.id, { is_online: true });
-    user.is_online = true;
-  }
+  // Mark user as online on successful login
+  await userModel.updateUser(user.id, {
+    is_online: true,
+    updated_at: new Date(),
+  });
+  user.is_online = true;
 
   const roles = await userModel.getUserRoles(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
