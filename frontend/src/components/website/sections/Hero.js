@@ -215,7 +215,11 @@ const Hero = () => {
 
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
-          <Image src={heroBg} alt="Learning Illustration" fill style={{ objectFit: 'cover' }} priority />
+          <img
+            src={typeof heroBg === 'string' ? heroBg : heroBg.src}
+            alt="Learning Illustration"
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
         </div>
 
