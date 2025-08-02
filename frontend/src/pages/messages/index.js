@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../next-i18next.config.js";
 import Navbar from "@/components/website/sections/Navbar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -11,9 +13,9 @@ import {
   getUsers,
   getGroups,
   listenCalls,
-  acceptedCall,
-  declined,
-  clearCallStatus,
+  acceptedCall as getAcceptedCall,
+  declined as getDeclined,
+  clearCallStatus as resetCallStatus,
 } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
@@ -29,8 +31,13 @@ const MessagesPage = () => {
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const incomingCall = useCallStore((state) => state.incomingCall);
+  const outgoingCall = useCallStore((state) => state.outgoingCall);
   const acceptCall = useCallStore((state) => state.acceptCall);
   const declineCall = useCallStore((state) => state.declineCall);
+  const cancelCall = useCallStore((state) => state.cancelCall);
+  const callAccepted = useCallStore((state) => state.acceptedCall);
+  const callDeclined = useCallStore((state) => state.declined);
+  const clearCallStatus = useCallStore((state) => state.clearStatus);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -64,9 +71,9 @@ const MessagesPage = () => {
     try {
       // Some builds expect global call handlers. Provide no-op
       // placeholders to avoid ReferenceError during pre-render.
-      acceptedCall();
-      declined();
-      clearCallStatus();
+      getAcceptedCall();
+      getDeclined();
+      resetCallStatus();
     } catch (_) {
       // ignore
     }
@@ -141,21 +148,14 @@ const MessagesPage = () => {
   }, [users, selectedChat]);
 
   useEffect(() => {
-    listenCalls();
-  }, [listenCalls]);
-
-  useEffect(() => {
-    const accepted = acceptedCall();
-    const isDeclined = declined();
-
-    if (accepted?.chatId) {
-      router.push(`/video-call?chatId=${accepted.chatId}`);
+    if (callAccepted?.chatId) {
+      router.push(`/video-call?chatId=${callAccepted.chatId}`);
       clearCallStatus();
-    } else if (isDeclined) {
+    } else if (callDeclined) {
       toast.info("Call declined");
       clearCallStatus();
     }
-  }, [acceptedCall, declined, router, clearCallStatus]);
+  }, [callAccepted, callDeclined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -346,24 +346,24 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
-      {incomingCall && (
+      {(incomingCall || outgoingCall) && (
         <CallOverlay
-          onAccept={() => acceptCall()}
-          onDecline={() => declineCall()}
+          incoming={!!incomingCall}
+          name={incomingCall?.name || selectedChat?.name}
+          onAccept={incomingCall ? () => acceptCall() : undefined}
+          onDecline={incomingCall ? () => declineCall() : cancelCall}
         />
       )}
     </div>
   );
 };
 
-export default MessagesPage;
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../../../next-i18next.config.js';
-
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["common"], nextI18NextConfig)),
     },
   };
 }
+
+export default MessagesPage;
