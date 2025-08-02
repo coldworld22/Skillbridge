@@ -12,7 +12,9 @@ exports.getOffers = () => {
       "o.*",
       "u.full_name as student_name",
       "u.role as student_role",
-      "u.avatar_url as student_avatar"
+      "u.avatar_url as student_avatar",
+      "u.email as student_email",
+      "u.phone as student_phone"
     )
     .where("o.status", "open")
     .andWhere(function () {
@@ -28,7 +30,9 @@ exports.getOfferById = (id) => {
       "o.*",
       "u.full_name as student_name",
       "u.role as student_role",
-      "u.avatar_url as student_avatar"
+      "u.avatar_url as student_avatar",
+      "u.email as student_email",
+      "u.phone as student_phone"
     )
     .where("o.id", id)
     .andWhere(function () {
