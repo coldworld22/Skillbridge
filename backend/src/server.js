@@ -12,6 +12,7 @@ const db = require("./config/database");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
+const startCleanupJob = require("./jobs/cleanupJob");
 require("dotenv").config();
 
 
@@ -197,6 +198,7 @@ async function startServer() {
     });
     startLessonReminderJob();
     startCartReminderJob();
+    startCleanupJob();
   } catch (err) {
     console.error("❌ Failed to start server:", err.message);
     process.exit(1);

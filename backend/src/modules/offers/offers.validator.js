@@ -8,6 +8,7 @@ exports.create = z.object({
     timeframe: z.string().optional(),
     offer_type: z.enum(["class", "tutorial"]),
     tags: z.string().optional(),
+    expires_at: z.string().optional(),
   }),
 });
 
@@ -20,5 +21,6 @@ exports.update = z.object({
     tags: z.string().optional(),
     offer_type: z.enum(["class", "tutorial"]).optional(),
     status: z.enum(["open", "closed", "cancelled"]).optional(),
+    expires_at: z.string().optional(),
   }),
 });

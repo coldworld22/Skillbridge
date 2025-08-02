@@ -10,7 +10,15 @@ const slugify = require("slugify");
 const db = require("../../config/database");
 
 exports.createOffer = catchAsync(async (req, res) => {
-  const { tags: rawTags, title, description, budget, timeframe, offer_type } = req.body;
+  const {
+    tags: rawTags,
+    title,
+    description,
+    budget,
+    timeframe,
+    offer_type,
+    expires_at,
+  } = req.body;
   const data = {
     id: uuidv4(),
     student_id: req.user.id,
@@ -21,6 +29,12 @@ exports.createOffer = catchAsync(async (req, res) => {
     offer_type,
     status: "open",
   };
+  if (expires_at) {
+    if (new Date(expires_at) <= new Date()) {
+      return res.status(400).json({ message: "Expiration must be in the future" });
+    }
+    data.expires_at = expires_at;
+  }
   const tags = rawTags ? JSON.parse(rawTags) : [];
   const offer = await service.createOffer(data);
   if (tags.length) {
@@ -84,6 +98,9 @@ exports.getOfferById = catchAsync(async (req, res) => {
 exports.updateOffer = catchAsync(async (req, res) => {
   const existing = await service.getOfferById(req.params.id);
   const { tags: rawTags, ...data } = req.body;
+  if (data.expires_at && new Date(data.expires_at) <= new Date()) {
+    return res.status(400).json({ message: "Expiration must be in the future" });
+  }
   const offer = await service.updateOffer(req.params.id, data);
 
   const tags = rawTags
