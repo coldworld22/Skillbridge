@@ -32,9 +32,9 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
 
 
-  const handleVideoCall = () => {
+  const handleVideoCall = async () => {
     if (onStartVideoCall) {
-      onStartVideoCall(selectedChat.id);
+      await onStartVideoCall(selectedChat.id);
     }
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
