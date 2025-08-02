@@ -77,3 +77,7 @@ export const listenCalls = () => {};
 // Placeholder to avoid runtime ReferenceError when build processes
 // expect an accepted-call handler. Currently does nothing.
 export const acceptedCall = () => {};
+
+// Placeholder to avoid runtime ReferenceError when build processes
+// expect a declined-call handler. Currently does nothing.
+export const declined = () => {};
