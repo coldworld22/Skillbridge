@@ -6,7 +6,6 @@ import {
   FaTag,
   FaEnvelope,
   FaWhatsapp,
-  FaComments,
   FaLink,
   FaUserShield,
   FaBan,
@@ -14,6 +13,18 @@ import {
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchOfferById } from "@/services/admin/offerService";
+import {
+  fetchResponses,
+  fetchMessages as fetchResponseMessages,
+} from "@/services/offerResponseService";
+import { API_BASE_URL } from "@/config/config";
+import formatRelativeTime from "@/utils/relativeTime";
+
+const getAvatarUrl = (url) => {
+  if (!url) return "/images/default-avatar.png";
+  if (url.startsWith("http") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url}`;
+};
 
 const AdminOfferDetails = () => {
   const router = useRouter();
@@ -42,25 +53,30 @@ const AdminOfferDetails = () => {
           email: o.email || "",
           phone: o.phone || "",
         });
-      })
-      .catch(() => setOffer(null));
 
-    setMessages([
-      {
-        sender: "student1",
-        name: "Ahmed",
-        avatar: "/avatars/ahmed.jpg",
-        text: "Can you lower the price to $120?",
-        timeAgo: "3 days ago",
-      },
-      {
-        sender: "instructor1",
-        name: "Mr. Khaled",
-        avatar: "/avatars/khaled.jpg",
-        text: "I can offer $130 with extended support.",
-        timeAgo: "2 days ago",
-      },
-    ]);
+        return fetchResponses(o.id);
+      })
+      .then(async (resps) => {
+        if (!resps) return setMessages([]);
+        const allMsgs = await Promise.all(
+          resps.map((r) => fetchResponseMessages(id, r.id))
+        );
+        const merged = allMsgs
+          .flat()
+          .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at))
+          .map((m) => ({
+            id: m.id,
+            name: m.sender_name,
+            avatar: getAvatarUrl(m.sender_avatar),
+            text: m.message,
+            timeAgo: formatRelativeTime(m.sent_at),
+          }));
+        setMessages(merged);
+      })
+      .catch(() => {
+        setOffer(null);
+        setMessages([]);
+      });
   }, [id]);
 
   if (!offer) return <div className="p-6 text-gray-600">Loading offer...</div>;
