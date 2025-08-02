@@ -4,14 +4,15 @@ exports.up = function (knex) {
   return knex.schema.createTable(TABLE_NAME, (table) => {
     table.increments('id').primary();
     table
-      .integer('student_id')
-      .unsigned()
+      .uuid('student_id')
+      .notNullable()
       .references('id')
       .inTable('users')
       .onDelete('CASCADE');
     table
       .integer('book_id')
       .unsigned()
+      .notNullable()
       .references('id')
       .inTable('books')
       .onDelete('CASCADE');
