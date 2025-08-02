@@ -4,5 +4,6 @@ const service = require("../thirdPartyConfig/thirdPartyConfig.service");
 
 exports.getConfig = catchAsync(async (_req, res) => {
   const settings = await service.getSettings();
-  sendSuccess(res, settings?.googleAnalytics || {});
+  const cfg = settings?.googleAnalytics;
+  sendSuccess(res, cfg?.active === false ? {} : cfg || {});
 });
