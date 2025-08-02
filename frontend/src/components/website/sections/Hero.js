@@ -194,7 +194,7 @@ const Hero = () => {
 
         {/* Sidebar & Chatbot */}
         <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <Chatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        <Chatbot isOpen={isChatOpen} onToggle={setIsChatOpen} />
 
         {/* Floating Sidebar Button */}
         <motion.button
