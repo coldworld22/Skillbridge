@@ -19,7 +19,8 @@ import {
   Star,
   LifeBuoy,
   UsersRound,
-  Home
+  Home,
+  Book
 } from 'lucide-react';
 
 export const instructorNavLinks = [
@@ -42,6 +43,13 @@ export const instructorNavLinks = [
     items: [
       { label: 'My Tutorials', href: '/dashboard/instructor/tutorials', icon: Brain },
       { label: 'Create Tutorial', href: '/dashboard/instructor/tutorials/create', icon: PlusCircle },
+    ]
+  },
+  {
+    title: 'Books',
+    items: [
+      { label: 'Create Book', href: '/dashboard/instructor/books/create', icon: PlusCircle },
+      { label: 'My Books', href: '/dashboard/instructor/books', icon: Book },
     ]
   },
   {
