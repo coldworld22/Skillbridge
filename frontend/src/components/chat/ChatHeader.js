@@ -1,8 +1,8 @@
 import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
+import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
-import useLastSeen from "@/hooks/useLastSeen";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
@@ -19,11 +19,12 @@ const ChatHeader = ({ selectedChat }) => {
 
   const avatar = selectedChat.isGroup
     ? selectedChat.cover_image || selectedChat.image
-    : selectedChat.profileImage;
+    :
+        selectedChat.profileImage ||
+        selectedChat.profile_image ||
+        selectedChat.avatar_url;
 
-  const { lastSeen } = useLastSeen(selectedChat.id);
 
- 
   const handleVideoCall = () => {
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
@@ -53,23 +54,36 @@ const ChatHeader = ({ selectedChat }) => {
   return (
     <div className="flex justify-between items-center mb-4 border-b pb-2 border-gray-700">
       {/* Chat Name */}
-      <div className="flex items-center gap-2">
-        <ChatImage
-          src={getAvatarUrl(
-            avatar,
-            selectedChat.isGroup ? "/images/group-placeholder.jpg" : undefined
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <ChatImage
+            src={getAvatarUrl(
+              avatar,
+              selectedChat.isGroup ? "/images/group-placeholder.jpg" : undefined
+            )}
+            alt="avatar"
+            className="w-8 h-8 rounded-full border border-gray-500"
+            width={32}
+            height={32}
+          />
+          {!selectedChat.isGroup && (
+            <span
+              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border border-gray-700 ${
+                selectedChat.isOnline ? "bg-green-500" : "bg-gray-500"
+              }`}
+            />
           )}
-          alt="avatar"
-          className="w-8 h-8 rounded-full border border-gray-500"
-          width={32}
-          height={32}
-        />
+        </div>
         <div>
           <h3 className="text-lg font-bold text-yellow-500">
             {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
           </h3>
           {!selectedChat.isGroup && (
-            <p className="text-sm text-gray-400">{lastSeen}</p>
+            <div className="text-sm text-gray-400">
+              {selectedChat.isOnline
+                ? "Online"
+                : `Last active ${formatRelativeTime(selectedChat.lastActive)}`}
+            </div>
           )}
         </div>
       </div>

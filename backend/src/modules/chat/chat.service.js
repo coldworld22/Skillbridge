@@ -15,7 +15,9 @@ exports.searchUsers = async (currentUserId, term) => {
       "users.email",
       "users.phone",
       db.raw("COALESCE(users.avatar_url, '') as profileImage"),
-      db.raw("COALESCE(unread.count, 0) as unreadMessages")
+      db.raw("COALESCE(unread.count, 0) as unreadMessages"),
+      db.raw("COALESCE(users.is_online, false) as \"isOnline\""),
+      db.raw("EXTRACT(EPOCH FROM users.updated_at) * 1000 as \"lastActive\"")
     )
     .leftJoin(subquery, "users.id", "unread.sender_id")
     .modify((query) => {
