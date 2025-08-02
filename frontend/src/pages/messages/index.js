@@ -11,9 +11,9 @@ import {
   getUsers,
   getGroups,
   listenCalls,
-  acceptedCall,
-  declined,
-  clearCallStatus,
+  acceptedCall as getAcceptedCall,
+  declined as getDeclined,
+  clearCallStatus as resetCallStatus,
 } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
@@ -33,6 +33,9 @@ const MessagesPage = () => {
   const acceptCall = useCallStore((state) => state.acceptCall);
   const declineCall = useCallStore((state) => state.declineCall);
   const cancelCall = useCallStore((state) => state.cancelCall);
+  const callAccepted = useCallStore((state) => state.acceptedCall);
+  const callDeclined = useCallStore((state) => state.declined);
+  const clearCallStatus = useCallStore((state) => state.clearStatus);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -66,9 +69,9 @@ const MessagesPage = () => {
     try {
       // Some builds expect global call handlers. Provide no-op
       // placeholders to avoid ReferenceError during pre-render.
-      acceptedCall();
-      declined();
-      clearCallStatus();
+      getAcceptedCall();
+      getDeclined();
+      resetCallStatus();
     } catch (_) {
       // ignore
     }
@@ -142,18 +145,15 @@ const MessagesPage = () => {
     }
   }, [users, selectedChat]);
 
-  useEffect(() => {
-    const accepted = acceptedCall();
-    const isDeclined = declined();
-
-    if (accepted?.chatId) {
-      router.push(`/video-call?chatId=${accepted.chatId}`);
+  useEffect
+    if (callAccepted?.chatId) {
+      router.push(`/video-call?chatId=${callAccepted.chatId}`);
       clearCallStatus();
-    } else if (isDeclined) {
+    } else if (callDeclined) {
       toast.info("Call declined");
       clearCallStatus();
     }
-  }, [acceptedCall, declined, router, clearCallStatus]);
+  }, [callAccepted, callDeclined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
