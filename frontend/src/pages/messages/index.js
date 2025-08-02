@@ -98,6 +98,15 @@ const MessagesPage = () => {
     }
   }, [router.query, groups, users]);
 
+  useEffect(() => {
+    if (selectedChat && !selectedChat.isGroup) {
+      const updated = users.find((u) => u.id === selectedChat.id);
+      if (updated && updated !== selectedChat) {
+        setSelectedChat(updated);
+      }
+    }
+  }, [users, selectedChat]);
+
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <Navbar />

@@ -1,8 +1,7 @@
 import { useRouter } from "next/router";
-import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import { FaVideo, FaWhatsapp, FaEnvelope, FaCircle } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import ChatImage from "../shared/ChatImage";
-import useLastSeen from "@/hooks/useLastSeen";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
@@ -21,9 +20,7 @@ const ChatHeader = ({ selectedChat }) => {
     ? selectedChat.cover_image || selectedChat.image
     : selectedChat.profileImage;
 
-  const { lastSeen } = useLastSeen(selectedChat.id);
 
- 
   const handleVideoCall = () => {
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
@@ -69,7 +66,14 @@ const ChatHeader = ({ selectedChat }) => {
             {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
           </h3>
           {!selectedChat.isGroup && (
-            <p className="text-sm text-gray-400">{lastSeen}</p>
+            <div className="flex items-center text-sm text-gray-400">
+              <FaCircle
+                className={`mr-1 ${
+                  selectedChat.isOnline ? "text-green-500" : "text-gray-500"
+                }`}
+              />
+              {selectedChat.isOnline ? "Online" : "Offline"}
+            </div>
           )}
         </div>
       </div>
