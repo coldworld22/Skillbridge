@@ -2,23 +2,28 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { FaCreditCard, FaClock, FaCheckCircle, FaDownload, FaFileInvoice } from "react-icons/fa";
-
-const mockPayments = [
-  { id: 1, title: "React Bootcamp", amount: 49, method: "Stripe", date: "2025-04-01", status: "Paid" },
-  { id: 2, title: "Python Basics", amount: 39, method: "PayPal", date: "2025-04-15", status: "Paid" },
-  { id: 3, title: "Node.js Fundamentals", amount: 59, method: "Bank Transfer", date: "2025-05-05", status: "Pending" },
-];
+import { FaCreditCard, FaClock, FaCheckCircle, FaFileInvoice } from "react-icons/fa";
+import { fetchMyPayments } from "@/services/student/paymentService";
 
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
-    setPayments(mockPayments);
+    const load = async () => {
+      try {
+        const data = await fetchMyPayments();
+        setPayments(data);
+      } catch (err) {
+        console.error("Failed to load payments", err);
+      }
+    };
+    load();
   }, []);
 
-  const totalPaid = payments.filter(p => p.status === "Paid").reduce((sum, p) => sum + p.amount, 0);
-  const pending = payments.filter(p => p.status === "Pending").length;
+  const totalPaid = payments
+    .filter(p => p.status === "paid")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const pending = payments.filter(p => p.status === "pending").length;
 
   const downloadInvoicePDF = async (id) => {
     const element = document.getElementById(`invoice-${id}`);
@@ -90,11 +95,13 @@ export default function StudentPaymentsPage() {
             <tbody>
               {payments.map((p) => (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 font-medium">{p.title}</td>
+                  <td className="p-3 font-medium">{p.class_title || p.item_id}</td>
                   <td className="p-3">${p.amount}</td>
-                  <td className="p-3">{p.method}</td>
-                  <td className="p-3">{p.date}</td>
-                  <td className={`p-3 font-medium ${p.status === "Paid" ? "text-green-600" : "text-yellow-600"}`}>{p.status}</td>
+                  <td className="p-3">{p.method_name || "-"}</td>
+                  <td className="p-3">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</td>
+                  <td className={`p-3 font-medium ${p.status === "paid" ? "text-green-600" : "text-yellow-600"}`}>
+                    {p.status ? p.status.charAt(0).toUpperCase() + p.status.slice(1) : ""}
+                  </td>
                   <td className="p-3">
                     <button
                       onClick={() => downloadInvoicePDF(p.id)}
@@ -105,10 +112,10 @@ export default function StudentPaymentsPage() {
                     <div id={`invoice-${p.id}`} className="hidden">
                       <div className="p-4 w-[600px] bg-white text-black">
                         <h2 className="text-xl font-bold mb-2">Invoice #{p.id}</h2>
-                        <p><strong>Course:</strong> {p.title}</p>
+                        <p><strong>Course:</strong> {p.class_title || p.item_id}</p>
                         <p><strong>Amount:</strong> ${p.amount}</p>
                         <p><strong>Status:</strong> {p.status}</p>
-                        <p><strong>Date:</strong> {p.date}</p>
+                        <p><strong>Date:</strong> {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</p>
                         <p><strong>Student:</strong> Sara Ali</p>
                         <p><strong>Email:</strong> sara@example.com</p>
                       </div>
