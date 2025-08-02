@@ -7,7 +7,7 @@ import { startVideoCall } from "@/services/messageService";
 import useCallStore from "@/store/call/callStore";
 import { toast } from "react-toastify";
 
-const ChatHeader = ({ selectedChat }) => {
+const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const router = useRouter();
 
   const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
@@ -28,16 +28,12 @@ const ChatHeader = ({ selectedChat }) => {
         selectedChat.avatar_url;
 
 
-  const initiateCall = useCallStore((state) => state.initiateCall);
 
-  const handleVideoCall = async () => {
-    try {
-      await startVideoCall(selectedChat.id);
-      initiateCall({ chatId: selectedChat.id });
-      toast.info("Calling...");
-    } catch (_) {
-      toast.error("Failed to start call");
+  const handleVideoCall = () => {
+    if (onStartVideoCall) {
+      onStartVideoCall(selectedChat.id);
     }
+    router.push(`/video-call?chatId=${selectedChat.id}`);
   };
 
   const handleWhatsAppChat = () => {
