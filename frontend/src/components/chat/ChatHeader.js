@@ -4,7 +4,7 @@ import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
 
-const ChatHeader = ({ selectedChat }) => {
+const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const router = useRouter();
 
   const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
@@ -26,6 +26,9 @@ const ChatHeader = ({ selectedChat }) => {
 
 
   const handleVideoCall = () => {
+    if (onStartVideoCall) {
+      onStartVideoCall(selectedChat.id);
+    }
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
 
