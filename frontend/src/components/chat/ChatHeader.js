@@ -3,6 +3,9 @@ import { FaVideo, FaWhatsapp, FaEnvelope, FaCircle } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
+import { startVideoCall } from "@/services/messageService";
+import useCallStore from "@/store/call/callStore";
+import { toast } from "react-toastify";
 
 const ChatHeader = ({ selectedChat }) => {
   const router = useRouter();
@@ -25,8 +28,16 @@ const ChatHeader = ({ selectedChat }) => {
         selectedChat.avatar_url;
 
 
-  const handleVideoCall = () => {
-    router.push(`/video-call?chatId=${selectedChat.id}`);
+  const initiateCall = useCallStore((state) => state.initiateCall);
+
+  const handleVideoCall = async () => {
+    try {
+      await startVideoCall(selectedChat.id);
+      initiateCall({ chatId: selectedChat.id });
+      toast.info("Calling...");
+    } catch (_) {
+      toast.error("Failed to start call");
+    }
   };
 
   const handleWhatsAppChat = () => {

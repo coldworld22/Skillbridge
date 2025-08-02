@@ -13,4 +13,4 @@ const CallOverlay = ({ onAccept, onDecline }) => {
       </div>
     );
   };
-  
+  export default CallOverlay;
