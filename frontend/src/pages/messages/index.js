@@ -6,7 +6,14 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
-import { getUsers, getGroups, listenCalls, acceptedCall, declined } from "@/services/messageService";
+import {
+  getUsers,
+  getGroups,
+  listenCalls,
+  acceptedCall,
+  declined,
+  clearCallStatus,
+} from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
@@ -54,6 +61,8 @@ const MessagesPage = () => {
       // placeholders to avoid ReferenceError during pre-render.
       acceptedCall();
       declined();
+
+      clearCallStatus();
     } catch (_) {
       // ignore
     }
