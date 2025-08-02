@@ -63,16 +63,17 @@ const OffersIndex = () => {
       student: "/dashboard/student/offers",
       instructor: "/dashboard/instructor/offers",
       admin: "/dashboard/admin/offers",
+      superadmin: "/dashboard/admin/offers",
     };
 
     if (action === "post") {
-      if (!role) {
+      if (!role || !routes[role]) {
         toast.error(t('login_to_post_offer'));
         return;
       }
       router.push(`${routes[role]}/new`);
     } else if (action === "detail" && id) {
-      if (!role) {
+      if (!role || !routes[role]) {
         toast.error(t('login_to_post_offer'));
         return;
       }
