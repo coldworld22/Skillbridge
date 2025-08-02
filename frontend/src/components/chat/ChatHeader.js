@@ -3,8 +3,11 @@ import { FaVideo, FaWhatsapp, FaEnvelope, FaCircle } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
+import { startVideoCall } from "@/services/messageService";
+import useCallStore from "@/store/call/callStore";
+import { toast } from "react-toastify";
 
-const ChatHeader = ({ selectedChat }) => {
+const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const router = useRouter();
 
   const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
@@ -28,7 +31,11 @@ const ChatHeader = ({ selectedChat }) => {
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
 
+
   const handleVideoCall = () => {
+    if (onStartVideoCall) {
+      onStartVideoCall(selectedChat.id);
+    }
     router.push(`/video-call?chatId=${selectedChat.id}`);
   };
 
