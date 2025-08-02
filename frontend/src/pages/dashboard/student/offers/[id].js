@@ -21,6 +21,7 @@ import {
   createResponse,
   deleteMessage as deleteResponseMessage,
 } from "@/services/offerResponseService";
+import { updateOffer } from "@/services/admin/offerService";
 import MessageInput from "@/components/chat/MessageInput";
 import formatRelativeTime from "@/utils/relativeTime";
 import { API_BASE_URL } from "@/config/config";
@@ -58,6 +59,18 @@ const OfferDetailsPage = () => {
   const [response, setResponse] = useState(null);
   const [messages, setMessages] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
+
+  const handleCloseOffer = async () => {
+    if (!offer || offer.status === "closed") return;
+    if (!confirm("Close this offer?")) return;
+    try {
+      await updateOffer(offer.id, { status: "closed" });
+      setOffer((prev) => ({ ...prev, status: "closed" }));
+      toast.success("Offer closed.");
+    } catch (_) {
+      toast.error("Failed to close offer");
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -342,6 +355,17 @@ const OfferDetailsPage = () => {
           </div>
         </>
       </div>
+
+      {isMyRequest && offer.status !== "closed" && (
+        <div className="border-t pt-6 mb-10">
+          <button
+            onClick={handleCloseOffer}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
+          >
+            Close Offer
+          </button>
+        </div>
+      )}
 
       {/* Contact / Copy Link */}
       <div className="border-t pt-6">

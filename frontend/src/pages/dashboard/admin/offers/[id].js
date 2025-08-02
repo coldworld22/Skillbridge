@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { fetchOfferById } from "@/services/admin/offerService";
+import { fetchOfferById, updateOffer } from "@/services/admin/offerService";
 import {
   fetchResponses,
   fetchMessages as fetchResponseMessages,
@@ -32,6 +32,18 @@ const AdminOfferDetails = () => {
 
   const [offer, setOffer] = useState(null);
   const [messages, setMessages] = useState([]);
+
+  const handleCloseOffer = async () => {
+    if (!offer || offer.status === "closed") return;
+    if (!confirm("Close this offer?")) return;
+    try {
+      await updateOffer(offer.id, { status: "closed" });
+      setOffer((prev) => ({ ...prev, status: "closed" }));
+      alert("Offer closed.");
+    } catch (_) {
+      alert("Failed to close offer.");
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -168,12 +180,14 @@ const AdminOfferDetails = () => {
           >
             <FaUserShield /> Flag User
           </button>
-          <button
-            onClick={() => confirm("Deactivate this offer?") && alert("Offer deactivated.")}
-            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
-          >
-            <FaBan /> Deactivate Offer
-          </button>
+          {offer.status !== "closed" && (
+            <button
+              onClick={handleCloseOffer}
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm"
+            >
+              <FaBan /> Close Offer
+            </button>
+          )}
         </div>
 
         <div className="mt-6">
