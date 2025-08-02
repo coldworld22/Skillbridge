@@ -6,6 +6,7 @@ const tagService = require("./offerTag.service");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const mailService = require("../../services/mailService");
 const slugify = require("slugify");
 const db = require("../../config/database");
 
@@ -163,6 +164,46 @@ exports.updateOffer = catchAsync(async (req, res) => {
 });
 
 exports.deleteOffer = catchAsync(async (req, res) => {
+  const offer = await service.getOfferById(req.params.id);
   await service.deleteOffer(req.params.id);
+
+  if (offer && req.user.role && req.user.role.toLowerCase() === "admin") {
+    const creator = await userModel.findContactInfo(offer.student_id);
+    if (creator) {
+      const userMsg = `Your offer "${offer.title}" was deleted by ${req.user.full_name}.`;
+      const adminMsg = `You deleted offer "${offer.title}" from ${creator.full_name}.`;
+
+      await Promise.all([
+        creator.email
+          ? mailService.sendMail({
+              to: creator.email,
+              subject: "Offer deleted",
+              html: `<p>Dear ${creator.full_name},</p><p>Your offer "${offer.title}" has been deleted by admin ${req.user.full_name}.</p>`,
+            })
+          : Promise.resolve(),
+        notificationService.createNotification({
+          user_id: creator.id,
+          type: "offer_deleted",
+          message: userMsg,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: creator.id,
+          message: userMsg,
+        }),
+        notificationService.createNotification({
+          user_id: req.user.id,
+          type: "offer_deleted",
+          message: adminMsg,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: req.user.id,
+          message: adminMsg,
+        }),
+      ]);
+    }
+  }
+
   sendSuccess(res, null, "Offer deleted");
 });

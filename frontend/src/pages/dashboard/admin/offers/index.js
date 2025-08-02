@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
+import { toast } from "react-toastify";
 import {
   fetchOffers,
   updateOffer,
@@ -48,10 +49,15 @@ const AdminOfferDashboard = () => {
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this offer?")) return;
-    setOffers((prev) => prev.filter((o) => o.id !== id));
+    const prev = offers;
+    setOffers((prevOffers) => prevOffers.filter((o) => o.id !== id));
     try {
       await deleteOffer(id);
-    } catch (_) {}
+      toast.success("Offer deleted");
+    } catch (_) {
+      setOffers(prev);
+      toast.error("Failed to delete offer");
+    }
   };
 
   const handleToggleStatus = async (id) => {
