@@ -12,9 +12,7 @@ import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
-import CallOverlay from "@/components/video-call/CallOverlay";
-import useCallStore from "@/store/call/callStore";
-import { toast } from "react-toastify";
+import { API_BASE_URL } from "@/config/config";
 
 const MessagesPage = () => {
   const { t } = useTranslation("common");
@@ -35,13 +33,11 @@ const MessagesPage = () => {
   const markMessageRead = useMessageStore((state) => state.markRead);
   const deleteMessageStore = useMessageStore((state) => state.delete);
 
-  const incomingCall = useCallStore((state) => state.incomingCall);
-  const acceptCall = useCallStore((state) => state.acceptCall);
-  const declineCall = useCallStore((state) => state.declineCall);
-  const listenCalls = useCallStore((state) => state.listen);
-  const acceptedCall = useCallStore((state) => state.acceptedCall);
-  const clearCallStatus = useCallStore((state) => state.clearStatus);
-  const declined = useCallStore((state) => state.declined);
+  const getAvatarUrl = (url, fallback = "/images/default-avatar.png") => {
+    if (!url) return fallback;
+    if (url.startsWith("http") || url.startsWith("blob:")) return url;
+    return `${API_BASE_URL}${url}`;
+  };
 
   const fetchMessages = useCallback(() => {
     fetchMessagesStore();
@@ -253,7 +249,7 @@ const MessagesPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <ChatImage
-                              src={user.profileImage || "/images/default-avatar.png"}
+                              src={getAvatarUrl(user.profileImage)}
                               alt={user.name || "User"}
                               className="w-10 h-10 rounded-full border border-yellow-500"
                               width={40}
@@ -290,7 +286,12 @@ const MessagesPage = () => {
                         >
                           <div className="flex items-center gap-3">
                             <ChatImage
-                              src={group.cover_image || group.image || "/images/group-placeholder.jpg"}
+                              src={
+                                getAvatarUrl(
+                                  group.cover_image || group.image,
+                                  "/images/group-placeholder.jpg"
+                                )
+                              }
                               alt={group.name}
                               className="w-10 h-10 rounded-full border border-gray-500"
                               width={40}

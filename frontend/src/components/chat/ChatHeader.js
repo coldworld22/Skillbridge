@@ -27,6 +27,9 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
         selectedChat.profile_image ||
         selectedChat.avatar_url;
 
+  const isOnline =
+    selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
+  const lastActive = selectedChat.lastActive || selectedChat.last_active;
 
 
   const handleVideoCall = () => {
@@ -76,7 +79,7 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
           {!selectedChat.isGroup && (
             <span
               className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border border-gray-700 ${
-                selectedChat.isOnline ? "bg-green-500" : "bg-gray-500"
+                isOnline ? "bg-green-500" : "bg-gray-500"
               }`}
             />
           )}
@@ -86,11 +89,8 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
             {selectedChat.groupName || selectedChat.name || "Unknown Chat"}
           </h3>
           {!selectedChat.isGroup && (
-
             <div className="text-sm text-gray-400">
-              {selectedChat.isOnline
-                ? "Online"
-                : `Last active ${formatRelativeTime(selectedChat.lastActive)}`}
+              {isOnline ? "Online" : `Last active ${formatRelativeTime(lastActive)}`}
             </div>
           )}
         </div>
