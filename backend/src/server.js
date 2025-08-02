@@ -94,6 +94,7 @@ app.use("/api/community", require("./modules/community/public/public.routes"));
 app.use("/api/roles", require("./modules/roles/roles.routes"));
 app.use("/api/plans", require("./modules/plans/plans.routes"));
 app.use("/api/payment-methods", require("./modules/paymentMethods/paymentMethods.public.routes"));
+app.use("/api/payments/student", require("./modules/payments/student.routes"));
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
 app.use("/api/payment-methods/admin", require("./modules/paymentMethods/paymentMethods.routes"));
 app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.routes"));

@@ -18,6 +18,21 @@ exports.getAll = async () => {
     .orderBy('p.created_at', 'desc');
 };
 
+exports.getByUser = async (userId) => {
+  return db({ p: 'payments' })
+    .leftJoin('payment_methods_config as m', 'p.method_id', 'm.id')
+    .leftJoin('online_classes as c', function () {
+      this.on('p.item_id', '=', 'c.id').andOn('p.item_type', '=', db.raw('?', ['class']));
+    })
+    .select(
+      'p.*',
+      'm.name as method_name',
+      'c.title as class_title'
+    )
+    .where('p.user_id', userId)
+    .orderBy('p.created_at', 'desc');
+};
+
 exports.getById = async (id) => {
   return db("payments").where({ id }).first();
 };
