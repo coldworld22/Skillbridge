@@ -84,25 +84,21 @@ const ChatHeader = ({ selectedChat }) => {
           <FaVideo /> Video Call
         </button>
 
-        {/* ✅ WhatsApp Button (Only If Phone Exists) */}
-        {selectedChat.phone && (
-          <button
-            className="px-3 py-2 bg-green-500 text-white rounded flex items-center gap-2 hover:bg-green-600 transition"
-            onClick={handleWhatsAppChat}
-          >
-            <FaWhatsapp /> WhatsApp
-          </button>
-        )}
+        {/* ✅ WhatsApp Button */}
+        <button
+          className="px-3 py-2 bg-green-500 text-white rounded flex items-center gap-2 hover:bg-green-600 transition"
+          onClick={handleWhatsAppChat}
+        >
+          <FaWhatsapp /> WhatsApp
+        </button>
 
-        {/* ✅ Email Button (Only If Email Exists) */}
-        {selectedChat.email && (
-          <button
-            className="px-3 py-2 bg-gray-600 text-white rounded flex items-center gap-2 hover:bg-gray-700 transition"
-            onClick={handleSendEmail}
-          >
-            <FaEnvelope /> Email
-          </button>
-        )}
+        {/* ✅ Email Button */}
+        <button
+          className="px-3 py-2 bg-gray-600 text-white rounded flex items-center gap-2 hover:bg-gray-700 transition"
+          onClick={handleSendEmail}
+        >
+          <FaEnvelope /> Email
+        </button>
       </div>
     </div>
   );
