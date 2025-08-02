@@ -1,5 +1,6 @@
 
 import api from "@/services/api/api";
+import useCallStore from "@/store/call/callStore";
 
 
 export const getUsers = async () => {
@@ -40,6 +41,8 @@ export const sendWhatsAppMessage = async (userId, { message }) => {
 
 export const startVideoCall = async (userId) => {
   const res = await api.post(`/messages/${userId}/video-call`);
+  // Track outgoing call so the caller can react to accept/decline events
+  useCallStore.getState().initiateCall({ chatId: userId });
   return res.data.data || res.data;
 };
 
@@ -70,18 +73,12 @@ export const togglePinMessage = async (id) => {
   return res.data.data || res.data;
 };
 
-// Placeholder to avoid runtime ReferenceError when build processes
-// expect a call-listener helper. Currently does nothing.
-export const listenCalls = () => {};
+// Attach socket listeners for incoming/accepted/declined calls
+export const listenCalls = () => useCallStore.getState().listen();
 
-// Placeholder to avoid runtime ReferenceError when build processes
-// expect an accepted-call handler. Currently does nothing.
-export const acceptedCall = () => {};
+// Helpers to read call status from the store
+export const acceptedCall = () => useCallStore.getState().acceptedCall;
 
-// Placeholder to avoid runtime ReferenceError when build processes
-// expect a declined-call handler. Currently does nothing.
-export const declined = () => {};
+export const declined = () => useCallStore.getState().declined;
 
-// Placeholder to avoid runtime ReferenceError when build processes
-// expect a helper to clear call status. Currently does nothing.
-export const clearCallStatus = () => {};
+export const clearCallStatus = () => useCallStore.getState().clearStatus();
