@@ -1,4 +1,7 @@
 const db = require("../../config/database");
+const { v4: uuidv4 } = require("uuid");
+const mailService = require("../../services/mailService");
+const whatsappService = require("../../services/whatsappService");
 
 exports.createMessage = async ({ sender_id, receiver_id, message, booking_id }) => {
   const [row] = await db("messages")
@@ -38,4 +41,25 @@ exports.deleteMessage = async (userId, id) => {
     .del()
     .returning("*");
   return row;
+};
+
+exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) => {
+  const user = await db("users").select("email").where({ id: receiver_id }).first();
+  if (!user) throw new Error("User not found");
+  await mailService.sendMail({ to: user.email, subject, html: message });
+  return exports.createMessage({ sender_id, receiver_id, message });
+};
+
+exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) => {
+  const user = await db("users").select("phone").where({ id: receiver_id }).first();
+  if (!user || !user.phone) throw new Error("User phone not found");
+  await whatsappService.sendWhatsApp({ to: user.phone, message });
+  return exports.createMessage({ sender_id, receiver_id, message });
+};
+
+exports.startVideoCall = async ({ sender_id, receiver_id }) => {
+  const roomId = uuidv4();
+  const callMsg = `Video call room: ${roomId}`;
+  await exports.createMessage({ sender_id, receiver_id, message: callMsg });
+  return { roomId };
 };

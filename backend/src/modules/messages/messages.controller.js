@@ -19,3 +19,30 @@ exports.deleteMessage = catchAsync(async (req, res) => {
   if (!msg) throw new AppError("Message not found", 404);
   sendSuccess(res, msg, "Message deleted");
 });
+
+exports.sendEmail = catchAsync(async (req, res) => {
+  const data = await service.sendEmail({
+    sender_id: req.user.id,
+    receiver_id: req.params.id,
+    subject: req.body.subject,
+    message: req.body.message,
+  });
+  sendSuccess(res, data, "Email sent");
+});
+
+exports.sendWhatsApp = catchAsync(async (req, res) => {
+  const data = await service.sendWhatsApp({
+    sender_id: req.user.id,
+    receiver_id: req.params.id,
+    message: req.body.message,
+  });
+  sendSuccess(res, data, "WhatsApp message sent");
+});
+
+exports.startVideoCall = catchAsync(async (req, res) => {
+  const data = await service.startVideoCall({
+    sender_id: req.user.id,
+    receiver_id: req.params.id,
+  });
+  sendSuccess(res, data, "Video call started");
+});

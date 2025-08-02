@@ -5,6 +5,9 @@ jest.mock('../src/modules/messages/messages.service', () => ({
   getUserMessages: jest.fn(),
   markAsRead: jest.fn(),
   deleteMessage: jest.fn(),
+  sendEmail: jest.fn(),
+  sendWhatsApp: jest.fn(),
+  startVideoCall: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -47,5 +50,51 @@ describe('DELETE /api/messages/:id', () => {
     const res = await request(app).delete('/api/messages/1');
     expect(res.status).toBe(200);
     expect(service.deleteMessage).toHaveBeenCalledWith('user1', '1');
+  });
+});
+
+describe('POST /api/messages/:id/email', () => {
+  it('sends email', async () => {
+    const data = { id: '1' };
+    service.sendEmail.mockResolvedValue(data);
+    const res = await request(app)
+      .post('/api/messages/2/email')
+      .send({ subject: 'Hi', message: 'Hello' });
+    expect(res.status).toBe(200);
+    expect(service.sendEmail).toHaveBeenCalledWith({
+      sender_id: 'user1',
+      receiver_id: '2',
+      subject: 'Hi',
+      message: 'Hello',
+    });
+  });
+});
+
+describe('POST /api/messages/:id/whatsapp', () => {
+  it('sends whatsapp message', async () => {
+    const data = { id: '1' };
+    service.sendWhatsApp.mockResolvedValue(data);
+    const res = await request(app)
+      .post('/api/messages/2/whatsapp')
+      .send({ message: 'Hello' });
+    expect(res.status).toBe(200);
+    expect(service.sendWhatsApp).toHaveBeenCalledWith({
+      sender_id: 'user1',
+      receiver_id: '2',
+      message: 'Hello',
+    });
+  });
+});
+
+describe('POST /api/messages/:id/video-call', () => {
+  it('starts video call', async () => {
+    const data = { roomId: 'abc' };
+    service.startVideoCall.mockResolvedValue(data);
+    const res = await request(app).post('/api/messages/2/video-call');
+    expect(res.status).toBe(200);
+    expect(service.startVideoCall).toHaveBeenCalledWith({
+      sender_id: 'user1',
+      receiver_id: '2',
+    });
   });
 });

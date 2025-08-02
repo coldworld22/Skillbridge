@@ -28,6 +28,21 @@ export const deleteMessage = async (id) => {
   return res.data.data || res.data;
 };
 
+export const sendDirectEmail = async (userId, { subject, message }) => {
+  const res = await api.post(`/messages/${userId}/email`, { subject, message });
+  return res.data.data || res.data;
+};
+
+export const sendWhatsAppMessage = async (userId, { message }) => {
+  const res = await api.post(`/messages/${userId}/whatsapp`, { message });
+  return res.data.data || res.data;
+};
+
+export const startVideoCall = async (userId) => {
+  const res = await api.post(`/messages/${userId}/video-call`);
+  return res.data.data || res.data;
+};
+
 export const getConversation = async (userId) => {
   const res = await api.get(`/chat/${userId}`);
   return res.data.data || res.data;
