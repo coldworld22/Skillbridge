@@ -29,8 +29,10 @@ const MessagesPage = () => {
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const incomingCall = useCallStore((state) => state.incomingCall);
+  const outgoingCall = useCallStore((state) => state.outgoingCall);
   const acceptCall = useCallStore((state) => state.acceptCall);
   const declineCall = useCallStore((state) => state.declineCall);
+  const cancelCall = useCallStore((state) => state.cancelCall);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -139,10 +141,6 @@ const MessagesPage = () => {
       }
     }
   }, [users, selectedChat]);
-
-  useEffect(() => {
-    listenCalls();
-  }, [listenCalls]);
 
   useEffect(() => {
     const accepted = acceptedCall();
@@ -346,10 +344,12 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
-      {incomingCall && (
+      {(incomingCall || outgoingCall) && (
         <CallOverlay
-          onAccept={() => acceptCall()}
-          onDecline={() => declineCall()}
+          incoming={!!incomingCall}
+          name={incomingCall?.name || selectedChat?.name}
+          onAccept={incomingCall ? () => acceptCall() : undefined}
+          onDecline={incomingCall ? () => declineCall() : cancelCall}
         />
       )}
     </div>
