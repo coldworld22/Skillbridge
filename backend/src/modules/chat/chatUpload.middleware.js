@@ -13,7 +13,21 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const fileFilter = (_req, file, cb) => {
+  const fileTypes = {
+    file: ["image/jpeg", "image/png", "application/pdf"],
+    audio: ["audio/mpeg", "audio/wav"],
+  };
+  const allowed = fileTypes[file.fieldname] || [];
+  if (allowed.includes(file.mimetype)) return cb(null, true);
+  cb(new Error("Invalid file type"));
+};
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter,
+});
 
 module.exports = upload.fields([
   { name: 'file', maxCount: 1 },

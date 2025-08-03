@@ -7,6 +7,25 @@ jest.mock('../src/modules/books/book.service', () => ({
   getBookById: jest.fn(),
 }));
 
+jest.mock('../src/modules/messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+
+jest.mock('../src/services/mailService', () => ({
+  sendMail: jest.fn(),
+}));
+
+jest.mock('../src/modules/notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+
+jest.mock('../src/modules/books/bookTag.service', () => ({
+  findByName: jest.fn(),
+  createTag: jest.fn(),
+  getAllTags: jest.fn(),
+  searchTags: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: '1' };
