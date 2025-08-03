@@ -43,14 +43,29 @@ export const sendWhatsAppMessage = async (userId, { message }) => {
 };
 
 export const startVideoCall = async (userId) => {
-  const res = await api.post(`/messages/${userId}/video-call`);
-  const { roomId } = res.data.data || res.data;
-  useCallStore.getState().initiateCall({ chatId: userId, roomId });
-  const caller = useAuthStore.getState().user;
-  if (caller?.id) {
-    socket.emit("call-user", { to: userId, roomId });
+  try {
+    const res = await api.post(`/messages/${userId}/video-call`);
+    const { roomId, callId } = res.data.data || res.data;
+    useCallStore.getState().initiateCall({ chatId: userId, roomId, callId });
+    const caller = useAuthStore.getState().user;
+    if (caller?.id) {
+      socket.emit("call-user", { to: userId, roomId, callId });
+    }
+    return { roomId, callId };
+  } catch (err) {
+    console.error("Failed to start video call", err);
+    throw err;
   }
-  return { roomId };
+};
+
+export const respondToCall = async (callId, action) => {
+  const res = await api.post(`/messages/call/${callId}/respond`, { action });
+  return res.data.data || res.data;
+};
+
+export const endCall = async (callId) => {
+  const res = await api.post(`/messages/call/${callId}/end`);
+  return res.data.data || res.data;
 };
 
 export const getConversation = async (userId) => {

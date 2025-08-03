@@ -233,7 +233,6 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
               draggable
               pauseOnHover
               theme="dark"
-            />
           </motion.div>
         </AnimatePresence>
       </>

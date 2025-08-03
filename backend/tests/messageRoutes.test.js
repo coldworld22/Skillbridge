@@ -8,6 +8,8 @@ jest.mock('../src/modules/messages/messages.service', () => ({
   sendEmail: jest.fn(),
   sendWhatsApp: jest.fn(),
   startVideoCall: jest.fn(),
+  respondVideoCall: jest.fn(),
+  endVideoCall: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -20,6 +22,10 @@ const routes = require('../src/modules/messages/messages.routes');
 const app = express();
 app.use(express.json());
 app.use('/api/messages', routes);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('GET /api/messages', () => {
   it('returns user messages', async () => {
@@ -68,6 +74,14 @@ describe('POST /api/messages/:id/email', () => {
       message: 'Hello',
     });
   });
+
+  it('fails validation without subject', async () => {
+    const res = await request(app)
+      .post('/api/messages/2/email')
+      .send({ message: 'Hi' });
+    expect(res.status).toBe(400);
+    expect(service.sendEmail).not.toHaveBeenCalled();
+  });
 });
 
 describe('POST /api/messages/:id/whatsapp', () => {
@@ -84,17 +98,52 @@ describe('POST /api/messages/:id/whatsapp', () => {
       message: 'Hello',
     });
   });
+
+  it('fails validation without message', async () => {
+    const res = await request(app).post('/api/messages/2/whatsapp').send({});
+    expect(res.status).toBe(400);
+    expect(service.sendWhatsApp).not.toHaveBeenCalled();
+  });
 });
 
 describe('POST /api/messages/:id/video-call', () => {
   it('starts video call', async () => {
-    const data = { roomId: 'abc' };
+    const data = { roomId: 'abc', callId: 'c1' };
     service.startVideoCall.mockResolvedValue(data);
     const res = await request(app).post('/api/messages/2/video-call');
     expect(res.status).toBe(200);
     expect(service.startVideoCall).toHaveBeenCalledWith({
       sender_id: 'user1',
       receiver_id: '2',
+    });
+  });
+});
+
+describe('POST /api/messages/call/:id/respond', () => {
+  it('responds to call', async () => {
+    const data = { id: 'c1', status: 'accepted' };
+    service.respondVideoCall.mockResolvedValue(data);
+    const res = await request(app)
+      .post('/api/messages/call/c1/respond')
+      .send({ action: 'accept' });
+    expect(res.status).toBe(200);
+    expect(service.respondVideoCall).toHaveBeenCalledWith({
+      call_id: 'c1',
+      user_id: 'user1',
+      action: 'accept',
+    });
+  });
+});
+
+describe('POST /api/messages/call/:id/end', () => {
+  it('ends call', async () => {
+    const data = { id: 'c1', status: 'ended' };
+    service.endVideoCall.mockResolvedValue(data);
+    const res = await request(app).post('/api/messages/call/c1/end');
+    expect(res.status).toBe(200);
+    expect(service.endVideoCall).toHaveBeenCalledWith({
+      call_id: 'c1',
+      user_id: 'user1',
     });
   });
 });
