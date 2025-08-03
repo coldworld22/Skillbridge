@@ -4,7 +4,7 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { Slider } from "@/components/ui/slider";
 
-export default function ImageCropUpload({ value, onChange }) {
+export default function ImageCropUpload({ value = null, onChange }) {
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -20,7 +20,7 @@ export default function ImageCropUpload({ value, onChange }) {
         const dataUrl = reader.result;
         setImageSrc(dataUrl);
         setPreview(dataUrl);
-        onChange(dataUrl); // prefill with original image in case cropping is skipped
+        onChange(file); // prefill with original image in case cropping is skipped
       };
     }
   };
@@ -30,9 +30,10 @@ export default function ImageCropUpload({ value, onChange }) {
   };
 
   const handleCrop = async () => {
-    const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
-    setPreview(croppedImage);
-    onChange(croppedImage);
+    const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
+    const url = URL.createObjectURL(blob);
+    setPreview(url);
+    onChange(blob);
     setImageSrc(null);
   };
 
