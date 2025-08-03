@@ -2,6 +2,7 @@ const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
+const AppError = require("../../utils/AppError");
 
 exports.createMessage = async ({
   sender_id,
@@ -64,15 +65,23 @@ exports.deleteMessage = async (userId, id) => {
 
 exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) => {
   const user = await db("users").select("email").where({ id: receiver_id }).first();
-  if (!user) throw new Error("User not found");
-  await mailService.sendMail({ to: user.email, subject, html: message });
+  if (!user) throw new AppError("User not found", 404);
+  try {
+    await mailService.sendMail({ to: user.email, subject, html: message });
+  } catch (err) {
+    throw new AppError("Failed to send email", 502);
+  }
   return exports.createMessage({ sender_id, receiver_id, message });
 };
 
 exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) => {
   const user = await db("users").select("phone").where({ id: receiver_id }).first();
-  if (!user || !user.phone) throw new Error("User phone not found");
-  await whatsappService.sendWhatsApp({ to: user.phone, message });
+  if (!user || !user.phone) throw new AppError("User phone not found", 404);
+  try {
+    await whatsappService.sendWhatsApp({ to: user.phone, message });
+  } catch (err) {
+    throw new AppError("Failed to send WhatsApp message", 502);
+  }
   return exports.createMessage({ sender_id, receiver_id, message });
 };
 
@@ -85,14 +94,79 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
     .select("id")
     .where({ id: receiver_id })
     .first();
-  if (!sender || !receiver) throw new Error("Invalid call participants");
+  if (!sender || !receiver) throw new AppError("Invalid call participants", 400);
 
   const roomId = uuidv4();
+  const [call] = await db("video_calls")
+    .insert({
+      caller_id: sender_id,
+      receiver_id,
+      room_id: roomId,
+    })
+    .returning("*");
+
   await exports.createMessage({
     sender_id,
     receiver_id,
     message: roomId,
     type: "video-call",
   });
-  return { roomId };
+
+  try {
+    if (global.io && global.userSockets?.[receiver_id]) {
+      global.io
+        .to(global.userSockets[receiver_id])
+        .emit("video-call-invite", { callId: call.id, roomId });
+    }
+  } catch (err) {
+    console.error("Failed to emit video-call-invite", err);
+  }
+
+  return { callId: call.id, roomId };
+};
+
+exports.respondVideoCall = async ({ call_id, user_id, action }) => {
+  const call = await db("video_calls").where({ id: call_id }).first();
+  if (!call || call.receiver_id !== user_id)
+    throw new AppError("Call not found", 404);
+  const status = action === "accept" ? "accepted" : "declined";
+  const [updated] = await db("video_calls")
+    .where({ id: call_id })
+    .update({ status })
+    .returning("*");
+  try {
+    if (global.io && global.userSockets?.[call.caller_id]) {
+      global.io
+        .to(global.userSockets[call.caller_id])
+        .emit("video-call-response", { callId: call_id, status });
+    }
+  } catch (err) {
+    console.error("Failed to emit video-call-response", err);
+  }
+  return updated;
+};
+
+exports.endVideoCall = async ({ call_id, user_id }) => {
+  const call = await db("video_calls").where({ id: call_id }).first();
+  if (!call || (call.caller_id !== user_id && call.receiver_id !== user_id))
+    throw new AppError("Call not found", 404);
+  const [updated] = await db("video_calls")
+    .where({ id: call_id })
+    .update({ status: "ended", ended_at: new Date() })
+    .returning("*");
+  try {
+    if (global.io) {
+      const sockets = [];
+      if (global.userSockets?.[call.caller_id])
+        sockets.push(global.userSockets[call.caller_id]);
+      if (global.userSockets?.[call.receiver_id])
+        sockets.push(global.userSockets[call.receiver_id]);
+      sockets.forEach((sid) =>
+        global.io.to(sid).emit("video-call-ended", { callId: call_id }),
+      );
+    }
+  } catch (err) {
+    console.error("Failed to emit video-call-ended", err);
+  }
+  return updated;
 };

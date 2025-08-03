@@ -11,6 +11,7 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
   const [audioOutputDevices, setAudioOutputDevices] = useState([]);
   const [selectedAudioInput, setSelectedAudioInput] = useState(null);
   const [selectedAudioOutput, setSelectedAudioOutput] = useState(null);
+  const [error, setError] = useState(null);
   const socketRef = useRef();
   const peersRef = useRef([]);
 
@@ -20,53 +21,58 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
       process.env.NEXT_PUBLIC_API_URL || "",
     );
     const initMedia = async () => {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: selectedAudioInput ? { deviceId: selectedAudioInput } : true,
-      });
-      setStream(mediaStream);
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      setAudioInputDevices(devices.filter((d) => d.kind === "audioinput"));
-      setAudioOutputDevices(devices.filter((d) => d.kind === "audiooutput"));
-      if (!selectedAudioInput) {
-        const defaultInput = devices.find((d) => d.kind === "audioinput");
-        setSelectedAudioInput(defaultInput?.deviceId || null);
-      }
-      if (!selectedAudioOutput) {
-        const defaultOutput = devices.find((d) => d.kind === "audiooutput");
-        setSelectedAudioOutput(defaultOutput?.deviceId || null);
-      }
-
-      socketRef.current.emit("join-room", {
-        roomId,
-        name: userName,
-        role,
-      });
-
-      socketRef.current.on("all-users", (users) => {
-        const peers = [];
-        users.forEach((userID) => {
-          const peer = createPeer(userID, socketRef.current.id, mediaStream);
-          peersRef.current.push({ peerID: userID, peer });
-          peers.push({ peerID: userID, peer });
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: selectedAudioInput ? { deviceId: selectedAudioInput } : true,
         });
-        setPeers(peers);
-      });
+        setStream(mediaStream);
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        setAudioInputDevices(devices.filter((d) => d.kind === "audioinput"));
+        setAudioOutputDevices(devices.filter((d) => d.kind === "audiooutput"));
+        if (!selectedAudioInput) {
+          const defaultInput = devices.find((d) => d.kind === "audioinput");
+          setSelectedAudioInput(defaultInput?.deviceId || null);
+        }
+        if (!selectedAudioOutput) {
+          const defaultOutput = devices.find((d) => d.kind === "audiooutput");
+          setSelectedAudioOutput(defaultOutput?.deviceId || null);
+        }
 
-      socketRef.current.on("user-joined", (payload) => {
-        const peer = addPeer(payload.signal, payload.callerID, mediaStream);
-        peersRef.current.push({ peerID: payload.callerID, peer });
-        setPeers((users) => [...users, { peerID: payload.callerID, peer }]);
-      });
+        socketRef.current.emit("join-room", {
+          roomId,
+          name: userName,
+          role,
+        });
 
-      socketRef.current.on("receiving-returned-signal", (payload) => {
-        const item = peersRef.current.find((p) => p.peerID === payload.id);
-        if (item) item.peer.signal(payload.signal);
-      });
+        socketRef.current.on("all-users", (users) => {
+          const peers = [];
+          users.forEach((userID) => {
+            const peer = createPeer(userID, socketRef.current.id, mediaStream);
+            peersRef.current.push({ peerID: userID, peer });
+            peers.push({ peerID: userID, peer });
+          });
+          setPeers(peers);
+        });
 
-      socketRef.current.on("user-disconnected", (id) => {
-        setPeers((prev) => prev.filter((p) => p.peerID !== id));
-      });
+        socketRef.current.on("user-joined", (payload) => {
+          const peer = addPeer(payload.signal, payload.callerID, mediaStream);
+          peersRef.current.push({ peerID: payload.callerID, peer });
+          setPeers((users) => [...users, { peerID: payload.callerID, peer }]);
+        });
+
+        socketRef.current.on("receiving-returned-signal", (payload) => {
+          const item = peersRef.current.find((p) => p.peerID === payload.id);
+          if (item) item.peer.signal(payload.signal);
+        });
+
+        socketRef.current.on("user-disconnected", (id) => {
+          setPeers((prev) => prev.filter((p) => p.peerID !== id));
+        });
+      } catch (err) {
+        console.error("Failed to get media", err);
+        setError(err);
+      }
     };
 
     initMedia();
@@ -175,9 +181,10 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     setSelectedAudioOutput(deviceId);
     document.querySelectorAll("video").forEach((video) => {
       if (typeof video.sinkId !== "undefined") {
-        video
-          .setSinkId(deviceId)
-          .catch((e) => console.warn("Failed to set output device", e));
+        video.setSinkId(deviceId).catch((e) => {
+          console.warn("Failed to set output device", e);
+          setError(e);
+        });
       }
     });
   };
@@ -195,5 +202,6 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     selectedAudioOutput,
     isMuted,
     isVideoOff,
+    error,
   };
 }

@@ -46,3 +46,20 @@ exports.startVideoCall = catchAsync(async (req, res) => {
   });
   sendSuccess(res, data, "Video call started");
 });
+
+exports.respondVideoCall = catchAsync(async (req, res) => {
+  const data = await service.respondVideoCall({
+    call_id: req.params.id,
+    user_id: req.user.id,
+    action: req.body.action,
+  });
+  sendSuccess(res, data, `Call ${req.body.action}`);
+});
+
+exports.endVideoCall = catchAsync(async (req, res) => {
+  const data = await service.endVideoCall({
+    call_id: req.params.id,
+    user_id: req.user.id,
+  });
+  sendSuccess(res, data, "Call ended");
+});
