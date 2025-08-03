@@ -9,14 +9,7 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
 import CallOverlay from "@/components/video-call/CallOverlay";
-import {
-  getUsers,
-  getGroups,
-  listenCalls,
-  acceptedCall as getAcceptedCall,
-  declined as getDeclined,
-  clearCallStatus as resetCallStatus,
-} from "@/services/messageService";
+import { getUsers, getGroups, listenCalls } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
@@ -35,9 +28,6 @@ const MessagesPage = () => {
   const acceptCall = useCallStore((state) => state.acceptCall);
   const declineCall = useCallStore((state) => state.declineCall);
   const cancelCall = useCallStore((state) => state.cancelCall);
-  const callAccepted = useCallStore((state) => state.acceptedCall);
-  const callDeclined = useCallStore((state) => state.declined);
-  const clearCallStatus = useCallStore((state) => state.clearStatus);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -68,15 +58,8 @@ const MessagesPage = () => {
 
   useEffect(() => {
     listenCalls();
-    try {
-      // Some builds expect global call handlers. Provide no-op
-      // placeholders to avoid ReferenceError during pre-render.
-      getAcceptedCall();
-      getDeclined();
-      resetCallStatus();
-    } catch (_) {
-      // ignore
-    }
+    // ensure socket listeners are registered
+    listenCalls();
   }, []);
 
   // Keep unread counts from the backend so new chats show up in the sidebar
@@ -147,15 +130,6 @@ const MessagesPage = () => {
     }
   }, [users, selectedChat]);
 
-  useEffect(() => {
-    if (callAccepted?.roomId) {
-      router.push(`/video-call?roomId=${callAccepted.roomId}`);
-      clearCallStatus();
-    } else if (callDeclined) {
-      toast.info("Call declined");
-      clearCallStatus();
-    }
-  }, [callAccepted, callDeclined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
