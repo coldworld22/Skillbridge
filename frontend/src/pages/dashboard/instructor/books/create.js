@@ -9,11 +9,15 @@ import withAuthProtection from "@/hooks/withAuthProtection";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 function CreateBookPage() {
   const router = useRouter();
   const { t } = useTranslation("dashboard");
   const [categories, setCategories] = useState([]);
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
     fetchBookCategories()
@@ -27,6 +31,8 @@ function CreateBookPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(t("booksCreate.success"));
+      fetchNotifications();
+      fetchMessages();
       router.push("/dashboard/instructor/books");
     } catch (e) {
       console.error("Failed to create book", e);
