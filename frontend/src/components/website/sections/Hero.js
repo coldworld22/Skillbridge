@@ -12,6 +12,7 @@ import {
   FaArrowRight,
   FaChalkboardTeacher,
   FaBookOpen,
+  FaBook,
   FaMouse,
   FaChevronLeft,
   FaChevronRight,
@@ -190,7 +191,7 @@ const Hero = () => {
                   value={searchText}
                   onChange={setSearchText}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchText)}
-                  label="Search courses and more"
+                  label="Search courses, books and more"
                 />
               </div>
               <button
@@ -218,6 +219,14 @@ const Hero = () => {
                         {results.tutorials?.map((t) => (
                           <Link href={`/tutorials/${t.id}`} key={`t-${t.id}`}>
                             <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{t.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                      <div class="py-1">
+                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📖 Books ({results.books?.length || 0})</h3>
+                        {results.books?.map((b) => (
+                          <Link href={`/marketplace/books/${b.id}`} key={`b-${b.id}`}>
+                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{b.title}</span>
                           </Link>
                         ))}
                       </div>
@@ -281,6 +290,12 @@ const Hero = () => {
             <Link href="/tutorials">
               <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
                 <FaBookOpen /> {t('explore_tutorials')}
+              </button>
+            </Link>
+
+            <Link href="/marketplace/books">
+              <button className="px-6 py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition shadow-lg flex items-center gap-2">
+                <FaBook /> {t('explore_books')}
               </button>
             </Link>
           </motion.div>

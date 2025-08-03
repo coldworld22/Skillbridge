@@ -19,6 +19,17 @@ exports.searchTutorials = async (q) => {
     .limit(5);
 };
 
+exports.searchBooks = async (q) => {
+  const term = `%${q}%`;
+  return db("books")
+    .where({ status: "approved" })
+    .andWhere(function () {
+      this.whereRaw("title ILIKE ?", [term]).orWhereRaw("description ILIKE ?", [term]);
+    })
+    .select("id", "title", "cover_image_url as cover")
+    .limit(5);
+};
+
 exports.searchInstructors = async (q) => {
   const term = `%${q}%`;
   return db("users")

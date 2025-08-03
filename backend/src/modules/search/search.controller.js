@@ -6,14 +6,24 @@ exports.search = catchAsync(async (req, res) => {
   const q = req.query.q ? req.query.q.trim() : '';
   if (!q) return res.status(400).json({ error: 'Missing query string' });
 
-  const [classes, tutorials, instructors, offers, community, blog] = await Promise.all([
-    service.searchClasses(q),
-    service.searchTutorials(q),
-    service.searchInstructors(q),
-    service.searchOffers(q),
-    service.searchCommunity(q),
-    service.searchBlog(q),
-  ]);
+  const [classes, tutorials, books, instructors, offers, community, blog] =
+    await Promise.all([
+      service.searchClasses(q),
+      service.searchTutorials(q),
+      service.searchBooks(q),
+      service.searchInstructors(q),
+      service.searchOffers(q),
+      service.searchCommunity(q),
+      service.searchBlog(q),
+    ]);
 
-  sendSuccess(res, { classes, tutorials, instructors, offers, community, blog });
+  sendSuccess(res, {
+    classes,
+    tutorials,
+    books,
+    instructors,
+    offers,
+    community,
+    blog,
+  });
 });
