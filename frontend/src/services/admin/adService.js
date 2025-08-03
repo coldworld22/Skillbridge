@@ -1,6 +1,15 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
+// Helper to read the CSRF token from cookies
+const getCsrfToken = () => {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("csrfToken="));
+  return match ? match.split("=")[1] : null;
+};
+
 export const createAd = async (payload) => {
   const config = payload instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
   const { data } = await api.post("/ads/admin", payload, config);
@@ -44,7 +53,10 @@ export const updateAd = async (id, payload) => {
 };
 
 export const deleteAd = async (id) => {
-  await api.delete(`/ads/${id}`);
+  const headers = {};
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  await api.delete(`/ads/${id}`, { headers });
 };
 
 export const fetchAdAnalytics = async (id) => {
