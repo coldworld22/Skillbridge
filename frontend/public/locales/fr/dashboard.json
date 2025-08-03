@@ -260,6 +260,9 @@
     "all_roles": "Tous les rôles",
     "student": "Étudiant",
     "instructor": "Instructeur",
+    "low": "Faible",
+    "medium": "Moyen",
+    "high": "Élevé",
     "no_ads": "Aucune annonce trouvée.",
     "deleted": "Annonce supprimée",
     "status_updated": "Statut mis à jour",
@@ -285,14 +288,14 @@
     "priority": "Priorité",
     "optional_link": "Lien optionnel",
     "allow_branding": "Activer la personnalisation de la marque (Prime uniquement)",
-    "activate_immediately": "Activer cette annonce immédiatement",
     "create_ad": "Créer l'annonce",
     "creating": "Création...",
     "success": "Annonce créée avec succès !",
     "title_image_required": "Titre et image requis.",
     "dates_required": "Les dates de début et de fin sont requises.",
     "end_before_start": "La date de fin ne peut pas précéder la date de début.",
-    "failed": "Échec de la création de l'annonce."
+    "failed": "Échec de la création de l'annonce.",
+    "title_exists": "Le titre de l'annonce existe déjà."
   },
   "plansPage": {
     "title": "Subscription Plans",

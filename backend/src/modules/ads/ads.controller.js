@@ -34,6 +34,7 @@ exports.createAd = catchAsync(async (req, res) => {
     description,
     link_url,
     created_by: req.user.id,
+    is_active: false,
   };
 
   if (req.files?.image?.[0]) {
@@ -46,23 +47,35 @@ exports.createAd = catchAsync(async (req, res) => {
   if (req.body.video_url) data.video_url = req.body.video_url;
 
   const ad = await service.createAd(data);
-  // Notify creator and all admins about the new ad
-  await notificationService.createNotification({
-    user_id: req.user.id,
-    type: "ad_created",
-    message: `Ad "${ad.title}" created successfully`,
-  });
 
-  const admins = await userModel.findAdmins();
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "ad_created",
-        message: `New ad "${ad.title}" created by ${req.user.id}`,
-      })
-    )
-  );
+  try {
+    const [admins, instructors, students] = await Promise.all([
+      userModel.findAdmins(),
+      userModel.findInstructors(),
+      userModel.findStudents(),
+    ]);
+    const users = [...admins, ...instructors, ...students];
+
+    await Promise.all(
+      users.map((u) =>
+        Promise.all([
+          notificationService.createNotification({
+            user_id: u.id,
+            type: "ad_created",
+            message: `New ad "${ad.title}" created`,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: u.id,
+            message: `New ad "${ad.title}" created`,
+          }),
+        ])
+      )
+    );
+  } catch (err) {
+    console.error("Failed to notify users of new ad", err);
+  }
+
   sendSuccess(res, ad, "Ad created");
 });
 
@@ -86,8 +99,12 @@ exports.getAdById = catchAsync(async (req, res) => {
  * Update an existing ad.
  */
 exports.updateAd = catchAsync(async (req, res) => {
-  const { title, description, link_url } = req.body;
+  const { title, description, link_url, is_active } = req.body;
   const updates = { title, description, link_url };
+
+  if (typeof is_active === "boolean") {
+    updates.is_active = is_active;
+  }
 
   if (title) {
     const existing = await service.findByTitle(title);
@@ -107,22 +124,34 @@ exports.updateAd = catchAsync(async (req, res) => {
 
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);
-  await notificationService.createNotification({
-    user_id: updated.created_by,
-    type: "ad_updated",
-    message: `Your ad "${updated.title}" was updated`,
-  });
 
-  const admins = await userModel.findAdmins();
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "ad_updated",
-        message: `Ad "${updated.title}" was updated`,
-      })
-    )
-  );
+  try {
+    const [admins, instructors, students] = await Promise.all([
+      userModel.findAdmins(),
+      userModel.findInstructors(),
+      userModel.findStudents(),
+    ]);
+    const users = [...admins, ...instructors, ...students];
+
+    await Promise.all(
+      users.map((u) =>
+        Promise.all([
+          notificationService.createNotification({
+            user_id: u.id,
+            type: "ad_updated",
+            message: `Ad "${updated.title}" was updated`,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: u.id,
+            message: `Ad "${updated.title}" was updated`,
+          }),
+        ])
+      )
+    );
+  } catch (err) {
+    console.error("Failed to notify users of ad update", err);
+  }
   sendSuccess(res, updated, "Ad updated");
 });
 
@@ -134,21 +163,32 @@ exports.deleteAd = catchAsync(async (req, res) => {
   const count = await service.deleteAd(req.params.id);
   if (!count) throw new AppError("Ad not found", 404);
   if (ad) {
-    await notificationService.createNotification({
-      user_id: ad.created_by,
-      type: "ad_deleted",
-      message: `Your ad "${ad.title}" was deleted`,
-    });
-    const admins = await userModel.findAdmins();
-    await Promise.all(
-      admins.map((admin) =>
-        notificationService.createNotification({
-          user_id: admin.id,
-          type: "ad_deleted",
-          message: `Ad "${ad.title}" was deleted`,
-        })
-      )
-    );
+    try {
+      const [admins, instructors, students] = await Promise.all([
+        userModel.findAdmins(),
+        userModel.findInstructors(),
+        userModel.findStudents(),
+      ]);
+      const users = [...admins, ...instructors, ...students];
+      await Promise.all(
+        users.map((u) =>
+          Promise.all([
+            notificationService.createNotification({
+              user_id: u.id,
+              type: "ad_deleted",
+              message: `Ad "${ad.title}" was deleted`,
+            }),
+            messageService.createMessage({
+              sender_id: req.user.id,
+              receiver_id: u.id,
+              message: `Ad "${ad.title}" was deleted`,
+            }),
+          ])
+        )
+      );
+    } catch (err) {
+      console.error("Failed to notify users of ad deletion", err);
+    }
   }
   sendSuccess(res, null, "Ad deleted");
 });
