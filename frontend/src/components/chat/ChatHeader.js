@@ -35,7 +35,6 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
     if (onStartVideoCall) {
       await onStartVideoCall(selectedChat.id);
     }
-    router.push(`/video-call?chatId=${selectedChat.id}`);
   };
 
   const handleWhatsAppChat = () => {
