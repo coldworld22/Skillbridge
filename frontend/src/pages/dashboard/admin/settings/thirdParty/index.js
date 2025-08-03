@@ -70,10 +70,13 @@ export default function ThirdPartyIntegrationsPage() {
     }
   };
 
-  const toggleIntegration = (key) => {
+  // Toggle the enabled/disabled state of an integration. This is async so we
+  // can await the save operation and ensure local state reflects the latest
+  // server response before the user interacts again.
+  const toggleIntegration = async (key) => {
     const current = settings[key] || {};
     const isActive = current.active !== false;
-    saveSection(key, { ...current, active: !isActive });
+    await saveSection(key, { ...current, active: !isActive });
   };
 
   const integrations = [

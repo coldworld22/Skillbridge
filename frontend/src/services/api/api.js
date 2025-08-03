@@ -27,6 +27,12 @@ if (
 const api = axios.create({
   baseURL,
   withCredentials: true, // ✅ KEEP this to send cookies with requests
+  // Ensure CSRF protection headers are sent automatically. The backend
+  // expects a `csrfToken` cookie and `x-csrf-token` header on state changing
+  // requests (POST/PUT/PATCH/DELETE). Axios can handle this if we specify the
+  // cookie and header names here.
+  xsrfCookieName: "csrfToken",
+  xsrfHeaderName: "x-csrf-token",
 });
 
 export default api;
