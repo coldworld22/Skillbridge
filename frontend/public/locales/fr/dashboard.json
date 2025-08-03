@@ -962,5 +962,11 @@
     "user_flagged": "User flagged for review.",
     "flag_failed": "Failed to flag user.",
     "loading": "Loading offer..."
+  },
+  "booksCreate": {
+    "title": "Ajouter un nouveau livre",
+    "success": "Livre soumis pour examen",
+    "error": "Échec de la création du livre",
+    "save": "Enregistrer"
   }
 }

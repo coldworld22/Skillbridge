@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { fetchBookCategories } from "@/services/bookCategoryService";
+import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 
-export default function BookForm({ onSubmit }) {
+export default function BookForm({ onSubmit, categories = [] }) {
+  const { t } = useTranslation("dashboard");
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
   } = useForm({ defaultValues: { tags: [], status: "pending" } });
-  const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
@@ -22,12 +22,6 @@ export default function BookForm({ onSubmit }) {
 
   useEffect(() => {
     const load = async () => {
-      try {
-        const data = await fetchBookCategories();
-        setCategories(data);
-      } catch (e) {
-        console.error("Failed to load categories", e);
-      }
       try {
         const langs = await getLanguages();
         setLanguages(langs);
@@ -396,7 +390,7 @@ export default function BookForm({ onSubmit }) {
         type="submit"
         className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
       >
-        Save
+        {t("booksCreate.save")}
       </button>
     </form>
   );
