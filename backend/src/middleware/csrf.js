@@ -1,12 +1,24 @@
 const csrf = (req, res, next) => {
   if (process.env.NODE_ENV === 'test') return next();
 
+  const exempt = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/request-reset',
+    '/api/auth/forgot-password',
+    '/api/auth/verify-otp',
+    '/api/auth/reset-password',
+  ];
+
+  const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (!unsafe.includes(req.method) || exempt.includes(req.path)) {
+    return next();
+  }
+
   const tokenCookie = req.cookies?.csrfToken;
   const tokenHeader = req.get('x-csrf-token');
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-    if (!tokenCookie || !tokenHeader || tokenCookie !== tokenHeader) {
-      return res.status(403).json({ message: 'Invalid CSRF token' });
-    }
+  if (!tokenCookie || !tokenHeader || tokenCookie !== tokenHeader) {
+    return res.status(403).json({ message: 'Invalid CSRF token' });
   }
   next();
 };
