@@ -3,9 +3,6 @@ import { FaVideo, FaWhatsapp, FaEnvelope, FaCircle } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
-import { startVideoCall } from "@/services/messageService";
-import useCallStore from "@/store/call/callStore";
-import { toast } from "react-toastify";
 
 const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const router = useRouter();
