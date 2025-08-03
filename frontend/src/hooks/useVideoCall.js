@@ -86,7 +86,17 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     };
   }, [roomId]);
 
-  const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+  const defaultIce = [{ urls: "stun:stun.l.google.com:19302" }];
+  const iceServers = process.env.NEXT_PUBLIC_TURN_URL
+    ? [
+        ...defaultIce,
+        {
+          urls: process.env.NEXT_PUBLIC_TURN_URL,
+          username: process.env.NEXT_PUBLIC_TURN_USERNAME,
+          credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
+        },
+      ]
+    : defaultIce;
 
   const createPeer = (userToSignal, callerID, stream) => {
     const peer = new Peer({
@@ -102,6 +112,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
         signal,
       });
     });
+    peer.on("error", (err) => console.error("Peer error", err));
+    peer.on("close", () => console.warn("Peer connection closed"));
     return peer;
   };
 
@@ -115,6 +127,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     peer.on("signal", (signal) => {
       socketRef.current.emit("returning-signal", { signal, callerID });
     });
+    peer.on("error", (err) => console.error("Peer error", err));
+    peer.on("close", () => console.warn("Peer connection closed"));
     peer.signal(incomingSignal);
     return peer;
   };

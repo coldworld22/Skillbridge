@@ -153,11 +153,23 @@ io.on("connection", (socket) => {
     socket.userId = userId;
   });
 
-  socket.on("call-user", ({ to, roomId }) => {
+  socket.on("call-user", async ({ to, roomId }) => {
     const from = socket.userId;
     const target = userSockets[to];
     if (from && target) {
-      io.to(target).emit("incoming-call", { chatId: from, roomId });
+      try {
+        const caller = await db("users")
+          .select("full_name")
+          .where({ id: from })
+          .first();
+        io.to(target).emit("incoming-call", {
+          chatId: from,
+          roomId,
+          name: caller?.full_name || "",
+        });
+      } catch (err) {
+        console.error("Failed to handle call-user event", err);
+      }
     }
   });
 

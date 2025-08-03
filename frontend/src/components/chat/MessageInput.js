@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import EmojiPicker from "emoji-picker-react";
+import { useTranslation } from "next-i18next";
 import {
   FaMicrophone,
   FaPaperPlane,
@@ -9,6 +10,7 @@ import {
 } from "react-icons/fa";
 
 const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -149,7 +151,7 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
             clearTimeout(typingTimeout.current);
             typingTimeout.current = setTimeout(() => onTyping?.(false), 1500);
           }}
-          placeholder="Type a message..."
+          placeholder={t("type_message_placeholder")}
           className="flex-1 px-2 py-[2px] text-xs bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-[1px] focus:ring-yellow-400 shadow-sm"
         />
 
