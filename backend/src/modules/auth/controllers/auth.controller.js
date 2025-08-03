@@ -7,7 +7,7 @@ const recaptchaService = require("../../recaptcha/recaptcha.service");
 const authMiddleware = require("../../../middleware/auth/authMiddleware");
 
 // 🔧 Cookie options used in login and logout
-const { refreshCookieOptions } = require("../../../utils/cookie");
+const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
 
 /**
  * @desc Register a new user
@@ -68,7 +68,7 @@ exports.login = catchAsync(async (req, res) => {
   const { accessToken, refreshToken, user, csrfToken } = await authService.loginUser(req.body);
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .cookie("csrfToken", csrfToken, { httpOnly: false, sameSite: "Strict" })
+    .cookie("csrfToken", csrfToken, csrfCookieOptions)
     .json({ message: "Login successful", accessToken, user });
 });
 
@@ -89,7 +89,7 @@ exports.refreshToken = catchAsync(async (req, res) => {
     const csrfToken = authService.generateCsrfToken();
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
-      .cookie("csrfToken", csrfToken, { httpOnly: false, sameSite: "Strict" })
+      .cookie("csrfToken", csrfToken, csrfCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     console.error("❌ Refresh token error:", err.message);
@@ -121,7 +121,7 @@ exports.logout = catchAsync(async (req, res) => {
   }
   res
     .clearCookie("refreshToken", refreshCookieOptions)
-    .clearCookie("csrfToken")
+    .clearCookie("csrfToken", csrfCookieOptions)
     .json({ message: "Logged out successfully" });
 });
 
