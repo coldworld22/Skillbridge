@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import socket from "@/services/socketService";
+import useAuthStore from "@/store/auth/authStore";
 
 const useCallStore = create((set, get) => ({
   incomingCall: null,
@@ -9,6 +10,10 @@ const useCallStore = create((set, get) => ({
   listening: false,
   listen: () => {
     if (get().listening) return;
+    const user = useAuthStore.getState().user;
+    if (user?.id) {
+      socket.emit("register", { userId: user.id });
+    }
     socket.on("incoming-call", (data) => {
       set({ incomingCall: data });
     });
