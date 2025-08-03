@@ -6,11 +6,13 @@ jest.mock("../../services/api/api", () => ({ get: jest.fn() }));
 describe("bookCategoryService", () => {
   it("fetches book categories", async () => {
     const mock = [{ id: 1, name: "Fiction" }];
-    api.get.mockResolvedValue({ data: { data: mock } });
+    api.get.mockResolvedValue({ data: { data: { data: mock } } });
 
     const categories = await fetchBookCategories();
 
-    expect(api.get).toHaveBeenCalledWith("/book-categories");
+    expect(api.get).toHaveBeenCalledWith("/users/categories", {
+      params: { status: "active", limit: 1000 },
+    });
     expect(categories).toEqual(mock);
   });
 });
