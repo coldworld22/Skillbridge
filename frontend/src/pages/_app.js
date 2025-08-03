@@ -14,6 +14,10 @@ import useAuthStore from "@/store/auth/authStore";
 import useAppConfigStore from "@/store/appConfigStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useCallStore from "@/store/call/callStore";
+import CallOverlay from "@/components/video-call/CallOverlay";
+import { listenCalls } from "@/services/messageService";
+import { toast } from "react-toastify";
 import { fetchSEOConfig } from "@/services/admin/seoConfigService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
@@ -44,6 +48,14 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   const fetchNotifs = useNotificationStore((s) => s.fetch);
   const startMsgPolling = useMessageStore((s) => s.startPolling);
   const fetchMsgs = useMessageStore((s) => s.fetch);
+  const incomingCall = useCallStore((s) => s.incomingCall);
+  const outgoingCall = useCallStore((s) => s.outgoingCall);
+  const acceptCall = useCallStore((s) => s.acceptCall);
+  const declineCall = useCallStore((s) => s.declineCall);
+  const cancelCall = useCallStore((s) => s.cancelCall);
+  const callAccepted = useCallStore((s) => s.acceptedCall);
+  const callDeclined = useCallStore((s) => s.declined);
+  const clearCallStatus = useCallStore((s) => s.clearStatus);
   const seoLoaded = useSEOConfigStore((s) => s.loaded);
   const fetchSEO = useSEOConfigStore((s) => s.fetch);
   const updateSEO = useSEOConfigStore((s) => s.update);
@@ -126,8 +138,19 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
       startNotifPolling();
       fetchMsgs();
       startMsgPolling();
+      listenCalls();
     }
   }, [user, fetchNotifs, startNotifPolling, fetchMsgs, startMsgPolling]);
+
+  useEffect(() => {
+    if (callAccepted?.roomId) {
+      router.push(`/video-call?roomId=${callAccepted.roomId}`);
+      clearCallStatus();
+    } else if (callDeclined) {
+      toast.info("Call declined");
+      clearCallStatus();
+    }
+  }, [callAccepted, callDeclined, router, clearCallStatus]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -185,6 +208,15 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
         <SeoTags />
         {/* Render page with layout */}
         {getLayout(<Component {...pageProps} />)}
+
+        {(incomingCall || outgoingCall) && (
+          <CallOverlay
+            incoming={!!incomingCall}
+            name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
+            onAccept={incomingCall ? () => acceptCall() : undefined}
+            onDecline={incomingCall ? () => declineCall() : cancelCall}
+          />
+        )}
 
         {/* Global Toast Message Container */}
         <ToastContainer
