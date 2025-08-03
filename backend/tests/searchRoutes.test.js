@@ -4,6 +4,7 @@ const express = require('express');
 jest.mock('../src/modules/search/search.service', () => ({
   searchClasses: jest.fn(),
   searchTutorials: jest.fn(),
+  searchBooks: jest.fn(),
   searchInstructors: jest.fn(),
   searchOffers: jest.fn(),
   searchCommunity: jest.fn(),
@@ -20,6 +21,7 @@ describe('GET /api/search', () => {
   it('returns grouped search results', async () => {
     service.searchClasses.mockResolvedValue([{ id: 1 }]);
     service.searchTutorials.mockResolvedValue([{ id: 2 }]);
+    service.searchBooks.mockResolvedValue([{ id: 3 }]);
     service.searchInstructors.mockResolvedValue([]);
     service.searchOffers.mockResolvedValue([]);
     service.searchCommunity.mockResolvedValue([]);
@@ -29,6 +31,7 @@ describe('GET /api/search', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.classes).toEqual([{ id: 1 }]);
     expect(service.searchClasses).toHaveBeenCalledWith('term');
+    expect(service.searchBooks).toHaveBeenCalledWith('term');
   });
 
   it('returns 400 if query missing', async () => {
