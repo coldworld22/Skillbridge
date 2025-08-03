@@ -21,21 +21,24 @@ const ChatPage = () => {
   }, []);
 
   useEffect(() => {
-    const handleIncomingCall = ({ chatId }) => setIncomingCall(chatId);
+    const handleIncomingCall = (data) => setIncomingCall(data);
     socket.on("incoming-call", handleIncomingCall);
     return () => socket.off("incoming-call", handleIncomingCall);
   }, []);
 
   const handleAccept = () => {
     if (!incomingCall) return;
-    socket.emit("call-accepted", { chatId: incomingCall });
-    router.push(`/video-call?chatId=${incomingCall}`);
+    socket.emit("call-accepted", {
+      chatId: incomingCall.chatId,
+      roomId: incomingCall.roomId,
+    });
+    router.push(`/video-call?roomId=${incomingCall.roomId}`);
     setIncomingCall(null);
   };
 
   const handleDecline = () => {
     if (!incomingCall) return;
-    socket.emit("call-declined", { chatId: incomingCall });
+    socket.emit("call-declined", { chatId: incomingCall.chatId });
     setIncomingCall(null);
   };
 
@@ -47,7 +50,12 @@ const ChatPage = () => {
         {selectedChat ? <ChatWindow selectedChat={selectedChat} /> : <div className="col-span-3 text-center text-gray-400">Select a chat to start messaging</div>}
       </main>
       {incomingCall && (
-        <CallOverlay onAccept={handleAccept} onDecline={handleDecline} />
+        <CallOverlay
+          incoming
+          name={incomingCall.name}
+          onAccept={handleAccept}
+          onDecline={handleDecline}
+        />
       )}
     </div>
   );

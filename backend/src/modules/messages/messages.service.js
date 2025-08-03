@@ -3,19 +3,38 @@ const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 
-exports.createMessage = async ({ sender_id, receiver_id, message, booking_id }) => {
+exports.createMessage = async ({
+  sender_id,
+  receiver_id,
+  message,
+  booking_id,
+  type,
+}) => {
   const [row] = await db("messages")
-    .insert({ sender_id, receiver_id, message, booking_id })
+    .insert({ sender_id, receiver_id, message, booking_id, type })
     .returning("*");
+  try {
+    if (global.io && global.userSockets?.[receiver_id]) {
+      global.io.to(global.userSockets[receiver_id]).emit("message-created");
+    }
+  } catch (err) {
+    console.error("Failed to emit message-created event", err);
+  }
   return row;
 };
 
 exports.getUserMessages = async (userId) => {
-  const threshold = new Date(Date.now() - 60 * 60 * 1000);
-  await db("messages")
-    .where({ receiver_id: userId, read: true })
-    .andWhere("read_at", "<", threshold)
-    .del();
+  const retentionHours = parseInt(
+    process.env.MESSAGE_RETENTION_HOURS || "1",
+    10,
+  );
+  if (retentionHours > 0) {
+    const threshold = new Date(Date.now() - retentionHours * 60 * 60 * 1000);
+    await db("messages")
+      .where({ receiver_id: userId, read: true })
+      .andWhere("read_at", "<", threshold)
+      .del();
+  }
 
   return db("messages")
     .select("messages.*", "users.full_name as sender_name")
@@ -58,8 +77,22 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) => {
 };
 
 exports.startVideoCall = async ({ sender_id, receiver_id }) => {
+  const sender = await db("users")
+    .select("id")
+    .where({ id: sender_id })
+    .first();
+  const receiver = await db("users")
+    .select("id")
+    .where({ id: receiver_id })
+    .first();
+  if (!sender || !receiver) throw new Error("Invalid call participants");
+
   const roomId = uuidv4();
-  const callMsg = `Video call room: ${roomId}`;
-  await exports.createMessage({ sender_id, receiver_id, message: callMsg });
+  await exports.createMessage({
+    sender_id,
+    receiver_id,
+    message: roomId,
+    type: "video-call",
+  });
   return { roomId };
 };

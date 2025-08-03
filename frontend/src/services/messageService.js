@@ -2,6 +2,7 @@
 import api from "@/services/api/api";
 import useCallStore from "@/store/call/callStore";
 import useAuthStore from "@/store/auth/authStore";
+import useMessageStore from "@/store/messages/messageStore";
 import socket from "@/services/socketService";
 
 
@@ -81,6 +82,15 @@ export const togglePinMessage = async (id) => {
 
 // Attach socket listeners for incoming/accepted/declined calls
 export const listenCalls = () => useCallStore.getState().listen();
+
+let msgListener = false;
+export const listenMessages = () => {
+  if (msgListener) return;
+  socket.on("message-created", () => {
+    useMessageStore.getState().fetch(true);
+  });
+  msgListener = true;
+};
 
 // Helpers to read call status from the store
 export const acceptedCall = () => useCallStore.getState().acceptedCall;

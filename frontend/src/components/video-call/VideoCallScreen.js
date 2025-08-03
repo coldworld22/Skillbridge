@@ -142,6 +142,10 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
             onEndCall={() => setIsCallActive(false)}
             onSettingsToggle={() => setIsSettingsOpen(!isSettingsOpen)}
             userRole={userRole}
+            isRecording={isRecording}
+            startRecording={startRecording}
+            stopRecording={stopRecording}
+            downloadRecording={downloadRecording}
           />
           </div>
 
