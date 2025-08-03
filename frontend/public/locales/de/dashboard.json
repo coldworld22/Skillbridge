@@ -249,6 +249,9 @@
     "all_roles": "Alle Rollen",
     "student": "Student",
     "instructor": "Instruktor",
+    "low": "Niedrig",
+    "medium": "Mittel",
+    "high": "Hoch",
     "no_ads": "Keine Anzeigen gefunden.",
     "deleted": "Anzeige gelöscht",
     "status_updated": "Status aktualisiert",
@@ -274,14 +277,14 @@
     "priority": "Priorität",
     "optional_link": "Optionaler Link",
     "allow_branding": "Benutzerdefiniertes Branding aktivieren (nur Prime)",
-    "activate_immediately": "Anzeige sofort aktivieren",
     "create_ad": "Anzeige erstellen",
     "creating": "Erstelle...",
     "success": "Anzeige erfolgreich erstellt!",
     "title_image_required": "Titel und Bild sind erforderlich.",
     "dates_required": "Start- und Enddatum sind erforderlich.",
     "end_before_start": "Enddatum darf nicht vor dem Startdatum liegen.",
-    "failed": "Anzeige konnte nicht erstellt werden."
+    "failed": "Anzeige konnte nicht erstellt werden.",
+    "title_exists": "Anzeigetitel existiert bereits."
   },
   "plansPage": {
     "title": "Subscription Plans",

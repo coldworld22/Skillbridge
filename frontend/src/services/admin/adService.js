@@ -19,6 +19,7 @@ export const fetchAds = async () => {
     video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
+    isActive: ad.is_active ?? ad.isActive ?? false,
   }));
 };
 
@@ -33,6 +34,7 @@ export const fetchAdById = async (id) => {
     video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
+    isActive: ad.is_active ?? ad.isActive ?? false,
   };
 };
 

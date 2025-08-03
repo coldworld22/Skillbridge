@@ -11,38 +11,13 @@ import { FaSpinner } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
-
 const currentUserPlan = "basic";
 const { maxAdDuration } = plansConfig[currentUserPlan];
-
-const useAdminNotice = () => {
-  const user = useAuthStore((s) => s.user);
-  const refreshNotifications = useNotificationStore((s) => s.fetch);
-  const refreshMessages = useMessageStore((s) => s.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to send notification";
-      toast.error(msg);
-    }
-  };
-};
 
 export default function CreateAdPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
-  const notify = useAdminNotice();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -54,7 +29,6 @@ export default function CreateAdPage() {
     priority: 0,
     link: "",
     allowBranding: false,
-    isActive: true,
   });
   const [error, setError] = useState(null);
   const [titleError, setTitleError] = useState(null);
@@ -127,13 +101,11 @@ export default function CreateAdPage() {
 
       await createAd(payload);
       toast.success(t('success'));
-      const message = `Ad "${formData.title}" created.`;
-      notify('ad_created', message);
       router.push("/dashboard/admin/ads");
     } catch (err) {
       const message = err?.response?.data?.message || t('failed');
       if (message.toLowerCase().includes("title")) {
-        setTitleError(message);
+        setTitleError(t('title_exists'));
       } else {
         setError(message);
         toast.error(message);
@@ -296,10 +268,6 @@ export default function CreateAdPage() {
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="allowBranding" checked={formData.allowBranding} onChange={handleChange} />
                   {t('allow_branding')}
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} />
-                  {t('activate_immediately')}
                 </label>
               </div>
             </div>

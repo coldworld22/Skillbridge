@@ -1,5 +1,5 @@
 // components/shared/ImageCropUpload.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +10,10 @@ export default function ImageCropUpload({ value = null, onChange }) {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [preview, setPreview] = useState(value);
+
+  useEffect(() => {
+    setPreview(value);
+  }, [value]);
 
   const onFileChange = async (e) => {
     const file = e.target.files?.[0];

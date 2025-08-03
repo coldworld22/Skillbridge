@@ -249,6 +249,9 @@
     "all_roles": "Todos los roles",
     "student": "Estudiante",
     "instructor": "Instructor",
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
     "no_ads": "No se encontraron anuncios.",
     "deleted": "Anuncio eliminado",
     "status_updated": "Estado actualizado",
@@ -274,14 +277,14 @@
     "priority": "Prioridad",
     "optional_link": "Enlace opcional",
     "allow_branding": "Habilitar marca personalizada (solo Prime)",
-    "activate_immediately": "Activar este anuncio inmediatamente",
     "create_ad": "Crear anuncio",
     "creating": "Creando...",
     "success": "¡Anuncio creado con éxito!",
     "title_image_required": "Se requiere título e imagen.",
     "dates_required": "Se requieren las fechas de inicio y finalización.",
     "end_before_start": "La fecha de finalización no puede ser anterior a la de inicio.",
-    "failed": "No se pudo crear el anuncio."
+    "failed": "No se pudo crear el anuncio.",
+    "title_exists": "El título del anuncio ya existe."
   },
   "plansPage": {
     "title": "Subscription Plans",

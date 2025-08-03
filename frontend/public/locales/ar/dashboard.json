@@ -272,6 +272,9 @@
     "all_roles": "All Roles",
     "student": "Student",
     "instructor": "Instructor",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
     "no_ads": "No ads found.",
     "deleted": "Ad deleted",
     "status_updated": "Status updated",
@@ -297,14 +300,14 @@
     "priority": "Priority",
     "optional_link": "Optional Link",
     "allow_branding": "Enable Custom Branding (Prime only)",
-    "activate_immediately": "Activate this ad immediately",
     "create_ad": "Create Advertisement",
     "creating": "Creating...",
     "success": "Advertisement created successfully!",
     "title_image_required": "Title and image are required.",
     "dates_required": "Start and end dates are required.",
     "end_before_start": "End date cannot be before start date.",
-    "failed": "Failed to create ad."
+    "failed": "Failed to create ad.",
+    "title_exists": "Ad title already exists."
   },
   "plansPage": {
     "title": "Subscription Plans",
