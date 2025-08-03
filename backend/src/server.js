@@ -142,7 +142,52 @@ const io = new Server(server, {
 });
 const rooms = {}, participants = {}, callMessages = {};
 
+const userSockets = {};
+global.io = io;
+global.userSockets = userSockets;
+
 io.on("connection", (socket) => {
+  socket.on("register", ({ userId }) => {
+    if (!userId) return;
+    userSockets[userId] = socket.id;
+    socket.userId = userId;
+  });
+
+  socket.on("call-user", ({ to, roomId }) => {
+    const from = socket.userId;
+    const target = userSockets[to];
+    if (from && target) {
+      io.to(target).emit("incoming-call", { chatId: from, roomId });
+    }
+  });
+
+  socket.on("call-accepted", ({ chatId, roomId }) => {
+    const target = userSockets[chatId];
+    if (socket.userId && target) {
+      io.to(target).emit("call-accepted", { chatId: socket.userId, roomId });
+    }
+  });
+
+  socket.on("call-declined", ({ chatId }) => {
+    const target = userSockets[chatId];
+    if (socket.userId && target) {
+      io.to(target).emit("call-declined", { chatId: socket.userId });
+    }
+  });
+
+  socket.on("call-cancelled", ({ chatId }) => {
+    const target = userSockets[chatId];
+    if (socket.userId && target) {
+      io.to(target).emit("call-cancelled", { chatId: socket.userId });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.userId && userSockets[socket.userId] === socket.id) {
+      delete userSockets[socket.userId];
+    }
+  });
+
   socket.on("join-room", ({ roomId, name, role }) => {
     rooms[roomId] = rooms[roomId] || [];
     participants[roomId] = participants[roomId] || [];

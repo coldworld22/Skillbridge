@@ -44,14 +44,14 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
       });
 
       socketRef.current.on("all-users", (users) => {
-          const peers = [];
-          users.forEach((userID) => {
-            const peer = createPeer(userID, socketRef.current.id, mediaStream);
-            peersRef.current.push({ peerID: userID, peer });
-            peers.push({ peerID: userID, peer });
-          });
-          setPeers(peers);
+        const peers = [];
+        users.forEach((userID) => {
+          const peer = createPeer(userID, socketRef.current.id, mediaStream);
+          peersRef.current.push({ peerID: userID, peer });
+          peers.push({ peerID: userID, peer });
         });
+        setPeers(peers);
+      });
 
       socketRef.current.on("user-joined", (payload) => {
         const peer = addPeer(payload.signal, payload.callerID, mediaStream);
@@ -86,8 +86,15 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     };
   }, [roomId]);
 
+  const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+
   const createPeer = (userToSignal, callerID, stream) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+      config: { iceServers },
+    });
     peer.on("signal", (signal) => {
       socketRef.current.emit("sending-signal", {
         userToSignal,
@@ -99,7 +106,12 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
   };
 
   const addPeer = (incomingSignal, callerID, stream) => {
-    const peer = new Peer({ initiator: false, trickle: false, stream });
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream,
+      config: { iceServers },
+    });
     peer.on("signal", (signal) => {
       socketRef.current.emit("returning-signal", { signal, callerID });
     });
