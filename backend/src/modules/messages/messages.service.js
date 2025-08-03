@@ -26,7 +26,7 @@ exports.createMessage = async ({
 
 exports.getUserMessages = async (userId) => {
   const retentionHours = parseInt(
-    process.env.MESSAGE_RETENTION_HOURS || "1",
+    process.env.MESSAGE_RETENTION_HOURS || "24",
     10,
   );
   if (retentionHours > 0) {

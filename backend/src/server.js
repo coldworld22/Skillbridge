@@ -9,6 +9,7 @@ const session = require("express-session");
 const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
+const { verifyToken } = require("./middleware/auth/authMiddleware");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
@@ -140,7 +141,7 @@ app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
 const io = new Server(server, {
   cors: { origin: ALLOWED_ORIGINS, credentials: true },
 });
-const rooms = {}, participants = {}, callMessages = {};
+const rooms = {}, participants = {};
 
 const userSockets = {};
 global.io = io;
@@ -204,9 +205,18 @@ io.on("connection", (socket) => {
     rooms[roomId] = rooms[roomId] || [];
     participants[roomId] = participants[roomId] || [];
     rooms[roomId].push(socket.id);
-    participants[roomId].push({ id: socket.id, name, role: role || "participant", isMuted: false });
+    const participant = { id: socket.id, name, role: role || "participant", isMuted: false };
+    participants[roomId].push(participant);
     socket.join(roomId);
     socket.emit("all-users", rooms[roomId].filter((id) => id !== socket.id));
+
+    db("video_call_participants")
+      .insert({ room_id: roomId, socket_id: socket.id, name, role: role || "participant" })
+      .returning("id")
+      .then(([row]) => {
+        socket.participantDbId = row.id;
+      })
+      .catch((err) => console.error("Failed to store participant", err));
 
     socket.on("sending-signal", (payload) => {
       io.to(payload.userToSignal).emit("user-joined", {
@@ -226,24 +236,57 @@ io.on("connection", (socket) => {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
       participants[roomId] = participants[roomId].filter((p) => p.id !== socket.id);
       socket.to(roomId).emit("user-disconnected", socket.id);
+      if (socket.participantDbId) {
+        db("video_call_participants")
+          .where({ id: socket.participantDbId })
+          .update({ left_at: new Date() })
+          .catch((err) => console.error("Failed to update participant leave", err));
+      }
     });
   });
 });
 
-app.get("/api/video-calls/:roomId/participants", (req, res) => {
-  res.json(participants[req.params.roomId] || []);
+app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) => {
+  try {
+    const rows = await db("video_call_participants")
+      .select("name", "role", "is_muted", "joined_at")
+      .where({ room_id: req.params.roomId })
+      .andWhere("left_at", null);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch participants" });
+  }
 });
-app.get("/api/video-calls/:roomId/messages", (req, res) => {
-  res.json(callMessages[req.params.roomId] || []);
+
+app.get("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
+  try {
+    const messages = await db("video_call_messages")
+      .where({ room_id: req.params.roomId })
+      .orderBy("timestamp", "asc");
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch messages" });
+  }
 });
-app.post("/api/video-calls/:roomId/messages", (req, res) => {
-  const { sender, text } = req.body || {};
+
+app.post("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
+  const { text } = req.body || {};
   const roomId = req.params.roomId;
   if (!text?.trim()) return res.status(400).json({ message: "Message text required" });
-  const message = { id: Date.now(), sender: sender || "Anonymous", text: text.trim(), timestamp: new Date().toISOString() };
-  callMessages[roomId] = callMessages[roomId] || [];
-  callMessages[roomId].push(message);
-  res.status(201).json(message);
+  try {
+    const [message] = await db("video_call_messages")
+      .insert({
+        room_id: roomId,
+        sender_id: req.user.id,
+        sender: req.user.full_name,
+        text: text.trim(),
+      })
+      .returning("*");
+    io.to(roomId).emit("call-message", message);
+    res.status(201).json(message);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to store message" });
+  }
 });
 
 app.use(require("./middleware/errorHandler"));
