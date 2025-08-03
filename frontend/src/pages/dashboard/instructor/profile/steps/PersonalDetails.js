@@ -41,9 +41,10 @@ const PersonalDetails = ({
   // ✅ Apply Cropping
   const handleCropSave = async () => {
     try {
-      const croppedImage = await getCroppedImg(preview, croppedAreaPixels);
-      setPreview(croppedImage);
-      setFormData({ ...formData, profilePicture: croppedImage });
+      const blob = await getCroppedImg(preview, croppedAreaPixels);
+      const url = URL.createObjectURL(blob);
+      setPreview(url);
+      setFormData({ ...formData, profilePicture: blob });
       setShowCropper(false);
     } catch (error) {
       console.error("Crop Error:", error);
@@ -53,7 +54,7 @@ const PersonalDetails = ({
   // ✅ Remove Profile Picture
   const removeImage = () => {
     setPreview("");
-    setFormData({ ...formData, profilePicture: "" });
+    setFormData({ ...formData, profilePicture: null });
   };
 
   return (

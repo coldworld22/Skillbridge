@@ -69,9 +69,11 @@ export default function EditAdPage() {
 
     try {
       const payload = new FormData();
-      if (formData.image && formData.image.startsWith("data:")) {
-        const blob = await fetch(formData.image).then((r) => r.blob());
-        const file = new File([blob], "ad.jpg", { type: blob.type });
+      if (formData.image instanceof Blob) {
+        const file =
+          formData.image instanceof File
+            ? formData.image
+            : new File([formData.image], "ad.jpg", { type: formData.image.type || "image/jpeg" });
         payload.append("image", file);
       }
       payload.append("title", formData.title);
@@ -108,8 +110,8 @@ export default function EditAdPage() {
               <textarea name="description" value={formData.description} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2" rows={3} placeholder="Description" />
               <ImageCropUpload
-                value={formData.image}
-                onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+                value={typeof formData.image === 'string' ? formData.image : undefined}
+                onChange={(file) => setFormData((prev) => ({ ...prev, image: file }))}
               />
             </div>
           </section>
