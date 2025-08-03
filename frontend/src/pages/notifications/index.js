@@ -10,6 +10,7 @@ const NotificationsPage = () => {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const startPolling = useNotificationStore((state) => state.startPolling);
   const markRead = useNotificationStore((state) => state.markRead);
+  const remove = useNotificationStore((state) => state.remove);
 
   useEffect(() => {
     fetchNotifications();
@@ -81,16 +82,27 @@ const NotificationsPage = () => {
                       </div>
                     </div>
 
-                    {!notif.read && (
+                    <div className="flex items-center gap-2">
+                      {!notif.read && (
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => markRead(notif.id)}
+                          className="px-3 py-1 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-bold"
+                        >
+                          Mark as Read
+                        </motion.button>
+                      )}
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => markRead(notif.id)}
-                        className="px-3 py-1 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-bold"
+                        onClick={() => remove(notif.id)}
+                        className="p-2 rounded-lg bg-red-600 hover:bg-red-700"
+                        title="Delete"
                       >
-                        Mark as Read
+                        <FaTrash />
                       </motion.button>
-                    )}
+                    </div>
                   </motion.li>
                 ))}
               </AnimatePresence>
