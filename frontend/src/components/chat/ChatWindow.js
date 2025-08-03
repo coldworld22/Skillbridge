@@ -72,12 +72,12 @@ const ChatWindow = ({ selectedChat, refreshUsers }) => {
 
   const handleStartVideoCall = async (chatId) => {
     try {
-      await startVideoCall(chatId);
+      const res = await startVideoCall(chatId);
       toast.info("Calling...");
-      return true;
+      return res;
     } catch (_) {
       toast.error("Failed to start video call");
-      return false;
+      return null;
     }
   };
 

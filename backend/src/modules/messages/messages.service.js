@@ -114,12 +114,27 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
 
   try {
     if (global.io && global.userSockets?.[receiver_id]) {
+      const caller = await db("users")
+        .select("full_name")
+        .where({ id: sender_id })
+        .first();
+
+      // Emit legacy event for compatibility
       global.io
         .to(global.userSockets[receiver_id])
         .emit("video-call-invite", { callId: call.id, roomId });
+
+      // Emit incoming-call event used by the frontend call overlay
+      global.io
+        .to(global.userSockets[receiver_id])
+        .emit("incoming-call", {
+          chatId: sender_id,
+          roomId,
+          name: caller?.full_name || "",
+        });
     }
   } catch (err) {
-    console.error("Failed to emit video-call-invite", err);
+    console.error("Failed to emit video call events", err);
   }
 
   return { callId: call.id, roomId };
