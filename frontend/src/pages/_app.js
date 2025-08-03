@@ -212,7 +212,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
         {(incomingCall || outgoingCall) && (
           <CallOverlay
             incoming={!!incomingCall}
-            name={incomingCall ? incomingCall.chatId : undefined}
+            name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
             onAccept={incomingCall ? () => acceptCall() : undefined}
             onDecline={incomingCall ? () => declineCall() : cancelCall}
           />
