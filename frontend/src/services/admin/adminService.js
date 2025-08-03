@@ -86,6 +86,12 @@ export const changeAdminPassword = async (adminId, newPassword) => {
  * 📊 Fetch dashboard statistics for admin home page
  */
 export const fetchAdminDashboardStats = async () => {
-  const res = await api.get('/users/admin/dashboard-stats');
-  return res.data?.data;
+  try {
+    const res = await api.get("/users/admin/dashboard-stats");
+    // The API nests the actual stats under `data`
+    return res.data?.data;
+  } catch (err) {
+    console.error("Failed to fetch admin dashboard stats", err);
+    throw err;
+  }
 };
