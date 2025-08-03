@@ -185,57 +185,58 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   const appName = settings.appName || 'SkillBridge';
   const defaultTitle = `${appName} | ${getPageTitle()}`;
 
-  return (
-    <AnimatePresence mode="wait">
-      {/* Motion wrapper for route transition */}
-      <motion.div
-        key={router.route}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Head>
-          <title>{defaultTitle}</title>
-          {settings.metaDescription && (
-            <meta name="description" content={settings.metaDescription} />
-          )}
-          {settings.favicon_url && (
-            <link
-              rel="icon"
-              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
-            />
-          )}
-        </Head>
-        <SeoTags />
+    return (
+      <>
         <PageLoader />
-        {/* Render page with layout */}
-        {getLayout(<Component {...pageProps} />)}
+        <AnimatePresence mode="wait">
+          {/* Motion wrapper for route transition */}
+          <motion.div
+            key={router.route}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Head>
+              <title>{defaultTitle}</title>
+              {settings.metaDescription && (
+                <meta name="description" content={settings.metaDescription} />
+              )}
+              {settings.favicon_url && (
+                <link
+                  rel="icon"
+                  href={`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}${settings.favicon_url}`}
+                />
+              )}
+            </Head>
+            <SeoTags />
+            {/* Render page with layout */}
+            {getLayout(<Component {...pageProps} />)}
 
-        {(incomingCall || outgoingCall) && (
-          <CallOverlay
-            incoming={!!incomingCall}
-            name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
-            onAccept={incomingCall ? () => acceptCall() : undefined}
-            onDecline={incomingCall ? () => declineCall() : cancelCall}
-          />
-        )}
+            {(incomingCall || outgoingCall) && (
+              <CallOverlay
+                incoming={!!incomingCall}
+                name={incomingCall ? incomingCall.chatId : outgoingCall?.chatId}
+                onAccept={incomingCall ? () => acceptCall() : undefined}
+                onDecline={incomingCall ? () => declineCall() : cancelCall}
+              />
+            )}
 
-        {/* Global Toast Message Container */}
-        <ToastContainer
-          position="top-center"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
-      </motion.div>
-    </AnimatePresence>
-  );
+            {/* Global Toast Message Container */}
+            <ToastContainer
+              position="top-center"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+          </motion.div>
+        </AnimatePresence>
+      </>
+    );
 }
 
 MyApp.getInitialProps = async (appContext) => {

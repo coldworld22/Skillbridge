@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Router from 'next/router';
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';
+
+// Configure NProgress to remove the spinner icon
+NProgress.configure({ showSpinner: false });
 
 const PageLoader = () => {
-  const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    const handleStart = () => setLoading(true);
-    const handleEnd = () => setLoading(false);
+    const handleStart = () => NProgress.start();
+    const handleEnd = () => NProgress.done();
 
     Router.events.on('routeChangeStart', handleStart);
     Router.events.on('routeChangeComplete', handleEnd);
@@ -19,13 +22,7 @@ const PageLoader = () => {
     };
   }, []);
 
-  if (!loading) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-yellow-500 bg-opacity-80">
-      <div className="h-16 w-16 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
-    </div>
-  );
+  return null;
 };
 
 export default PageLoader;
