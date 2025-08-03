@@ -20,7 +20,6 @@ const csrf = (req, res, next) => {
   if (!tokenCookie || !tokenHeader || tokenCookie !== tokenHeader) {
     return res.status(403).json({ message: 'Invalid CSRF token' });
   }
-
   next();
 };
 
