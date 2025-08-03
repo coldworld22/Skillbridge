@@ -13,7 +13,7 @@ function CreateBookPage() {
       await api.post("/books", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success("Book created");
+      toast.success("Book submitted for review");
       router.push("/dashboard/instructor/books");
     } catch (e) {
       console.error("Failed to create book", e);

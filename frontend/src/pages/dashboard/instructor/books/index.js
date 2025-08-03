@@ -47,7 +47,7 @@ function InstructorBooksPage() {
           <h1 className="text-3xl font-bold">My Books</h1>
           <Link
             href="/dashboard/instructor/books/create"
-            className="px-4 py-2 bg-blue-600 text-white rounded"
+            className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             Add Book
           </Link>
@@ -59,12 +59,12 @@ function InstructorBooksPage() {
             placeholder="Search by title"
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="border rounded p-2"
+            className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <select
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="border rounded p-2"
+            className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -76,9 +76,10 @@ function InstructorBooksPage() {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="border rounded p-2"
+            className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>

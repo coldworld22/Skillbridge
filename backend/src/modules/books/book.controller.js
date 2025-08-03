@@ -1,21 +1,81 @@
 const service = require("./book.service");
+const tagService = require("./bookTag.service");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
+const slugify = require("slugify");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
+const mailService = require("../../services/mailService");
 
 exports.createBook = catchAsync(async (req, res) => {
+  const { tags: rawTags, ...body } = req.body || {};
   const data = {
-    title: req.body.title,
-    description: req.body.description,
-    price: req.body.price,
-    pdf_url: req.body.pdf_url,
-    cover_image_url: req.body.cover_image_url,
-    category_id: req.body.category_id,
+    title: body.title,
+    short_description: body.short_description,
+    detailed_description: body.detailed_description,
+    price: body.price,
+    language: body.language,
+    license_type: body.license_type,
+    category_id: body.category_id,
     instructor_id: req.user.id,
-    status: req.body.status || "pending",
+    status: "pending",
   };
+  if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
+  if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
+
   const book = await service.createBook(data);
-  sendSuccess(res, book, "Book created");
+
+  let tags = [];
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) tags = [];
+    } catch {
+      tags = [];
+    }
+  }
+  if (tags.length) {
+    const tagIds = [];
+    for (const name of tags) {
+      const existing = await tagService.findByName(name);
+      const tag =
+        existing ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addBookTags(book.id, tagIds);
+    book.tags = await service.getBookTags(book.id);
+  } else {
+    book.tags = [];
+  }
+
+  const message =
+    "Your book was submitted successfully and is under review.";
+  await Promise.all([
+    notificationService.createNotification({
+      user_id: req.user.id,
+      type: "book_submitted",
+      message,
+    }),
+    messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: req.user.id,
+      message,
+    }),
+    req.user.email
+      ? mailService.sendMail({
+          to: req.user.email,
+          subject: "Book submitted for review",
+          html: `<p>${message} We will notify you when it is published.</p>`,
+        })
+      : Promise.resolve(),
+  ]);
+
+  sendSuccess(res, book, "Book submitted for review");
 });
 
 exports.listBooks = catchAsync(async (_req, res) => {
