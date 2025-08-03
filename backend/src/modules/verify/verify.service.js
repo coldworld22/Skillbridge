@@ -16,7 +16,6 @@ exports.sendOtp = async (userId, type) => {
     return { alreadyVerified: true };
   }
 
-  // Always generate a unique OTP; "123456" remains a fallback
   const code = generateCode();
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
@@ -46,8 +45,6 @@ exports.sendOtp = async (userId, type) => {
     }
   }
 
-  console.log(`[OTP] Sent ${type} code:`, code);
-
   return { code };
 };
 
@@ -59,19 +56,10 @@ exports.verifyOtp = async (userId, type, code) => {
     return { alreadyVerified: true };
   }
 
-  let record;
-  if (code === "123456") {
-    record = await db("verifications")
-      .where({ user_id: userId, type, verified: false })
-      .andWhere("expires_at", ">", new Date())
-      .orderBy("created_at", "desc")
-      .first();
-  } else {
-    record = await db("verifications")
-      .where({ user_id: userId, type, code, verified: false })
-      .andWhere("expires_at", ">", new Date())
-      .first();
-  }
+  const record = await db("verifications")
+    .where({ user_id: userId, type, code, verified: false })
+    .andWhere("expires_at", ">", new Date())
+    .first();
 
   if (!record) throw new Error("Invalid or expired OTP");
 

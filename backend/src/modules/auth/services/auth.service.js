@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 const {
@@ -21,7 +22,20 @@ const messageService = require("../../messages/messages.service");
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "60m";
 const REFRESH_EXPIRES_IN = "30d";
+const REFRESH_TOKEN_SECRET =
+  process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
+
+const failedLoginAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCK_TIME = 15 * 60 * 1000;
+
+function recordFailedAttempt(email) {
+  const info = failedLoginAttempts.get(email) || { count: 0 };
+  const count = info.count + 1;
+  const lockUntil = count >= MAX_ATTEMPTS ? Date.now() + LOCK_TIME : info.lockUntil;
+  failedLoginAttempts.set(email, { count, lockUntil });
+}
 
 /**
  * Register a new user
@@ -124,11 +138,28 @@ exports.registerUser = async (data) => {
  * Login user and issue tokens
  */
 exports.loginUser = async ({ email, password }) => {
+  const attempt = failedLoginAttempts.get(email);
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError("Too many failed login attempts. Try again later.", 429);
+  }
+
   const user = await userModel.findByEmail(email);
-  if (!user) throw new AppError("Invalid credentials", 401);
+  if (!user) {
+    recordFailedAttempt(email);
+    throw new AppError("Invalid credentials", 401);
+  }
+
+  if (user.status !== "active") {
+    throw new AppError("Account is not active", 403);
+  }
 
   const match = await bcrypt.compare(password, user.password_hash);
-  if (!match) throw new AppError("Invalid credentials", 401);
+  if (!match) {
+    recordFailedAttempt(email);
+    throw new AppError("Invalid credentials", 401);
+  }
+
+  failedLoginAttempts.delete(email);
 
   // Mark user as online on successful login
   await userModel.updateUser(user.id, {
@@ -140,7 +171,8 @@ exports.loginUser = async ({ email, password }) => {
   const roles = await userModel.getUserRoles(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = generateRefreshToken({ id: user.id });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const csrfToken = generateCsrfToken();
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -148,7 +180,7 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
 
-  return { accessToken, refreshToken, user: { ...user, roles } };
+  return { accessToken, refreshToken, csrfToken, user: { ...user, roles } };
 };
 
 /**
@@ -160,21 +192,60 @@ function generateAccessToken(payload) {
 
 exports.generateAccessToken = generateAccessToken;
 
-/**
- * Generate JWT refresh token
- */
-function generateRefreshToken(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
+function generateRefreshToken(payload, jti) {
+  return jwt.sign({ ...payload, jti }, REFRESH_TOKEN_SECRET, {
+    expiresIn: REFRESH_EXPIRES_IN,
+  });
 }
 
-exports.generateRefreshToken = generateRefreshToken;
+async function issueRefreshToken(userId, role) {
+  const jti = uuidv4();
+  const token = generateRefreshToken({ id: userId, role }, jti);
+  const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await db("refresh_tokens").insert({
+    id: jti,
+    user_id: userId,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    created_at: new Date(),
+  });
+  return token;
+}
 
-/**
- * Verify JWT refresh token
- */
-exports.verifyRefreshToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+exports.issueRefreshToken = issueRefreshToken;
+
+exports.verifyRefreshToken = async (token) => {
+  const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
+  const row = await db("refresh_tokens")
+    .where({ id: decoded.jti, user_id: decoded.id })
+    .first();
+  if (!row || row.revoked_at || row.expires_at < new Date()) {
+    throw new Error("Invalid refresh token");
+  }
+  const match = await bcrypt.compare(token, row.token_hash);
+  if (!match) throw new Error("Invalid refresh token");
+  return decoded;
 };
+
+exports.rotateRefreshToken = async (token) => {
+  const decoded = await exports.verifyRefreshToken(token);
+  await db("refresh_tokens")
+    .where({ id: decoded.jti })
+    .update({ revoked_at: new Date() });
+  const refreshToken = await issueRefreshToken(decoded.id, decoded.role);
+  return { decoded, refreshToken };
+};
+
+exports.revokeRefreshToken = async (jti) => {
+  await db("refresh_tokens").where({ id: jti }).update({ revoked_at: new Date() });
+};
+
+function generateCsrfToken() {
+  return crypto.randomBytes(24).toString("hex");
+}
+
+exports.generateCsrfToken = generateCsrfToken;
 
 /**
  * Generate OTP for password reset and email it to the user.
@@ -183,7 +254,11 @@ exports.verifyRefreshToken = (token) => {
  */
 exports.generateOtp = async (email) => {
   const user = await userModel.findByEmail(email);
-  if (!user) throw new AppError("Email not found", 404);
+  if (!user) {
+    // simulate work to prevent user enumeration timing attacks
+    await bcrypt.hash("dummy", SALT_ROUNDS);
+    return;
+  }
 
   const code = generateOtp(OTP_LENGTH);
   const codeHash = await bcrypt.hash(code, SALT_ROUNDS);
@@ -200,10 +275,6 @@ exports.generateOtp = async (email) => {
   });
 
   await sendOtpEmail(email, code);
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[OTP] Sent code ${code} to ${email}`);
-  }
 };
 
 /**
