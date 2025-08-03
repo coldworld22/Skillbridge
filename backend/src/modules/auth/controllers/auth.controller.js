@@ -4,6 +4,7 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const socialLoginConfigService = require("../../socialLoginConfig/socialLoginConfig.service");
 const recaptchaService = require("../../recaptcha/recaptcha.service");
+const authMiddleware = require("../../../middleware/auth/authMiddleware");
 
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions } = require("../../../utils/cookie");
@@ -64,10 +65,11 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user, csrfToken } = await authService.loginUser(req.body);
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .json({ accessToken, user });
+    .cookie("csrfToken", csrfToken, { httpOnly: false, sameSite: "Strict" })
+    .json({ message: "Login successful", accessToken, user });
 });
 
 /**
@@ -79,12 +81,16 @@ exports.refreshToken = catchAsync(async (req, res) => {
   if (!token) return res.status(401).json({ message: "Missing refresh token" });
 
   try {
-    const decoded = authService.verifyRefreshToken(token);
+    const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
     const accessToken = authService.generateAccessToken({
       id: decoded.id,
       role: decoded.role,
     });
-    res.json({ accessToken });
+    const csrfToken = authService.generateCsrfToken();
+    res
+      .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+      .cookie("csrfToken", csrfToken, { httpOnly: false, sameSite: "Strict" })
+      .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     console.error("❌ Refresh token error:", err.message);
     return res.status(401).json({ message: "Invalid or expired refresh token" });
@@ -99,7 +105,8 @@ exports.logout = catchAsync(async (req, res) => {
   const token = req.cookies.refreshToken;
   if (token) {
     try {
-      const decoded = authService.verifyRefreshToken(token);
+      const decoded = await authService.verifyRefreshToken(token);
+      await authService.revokeRefreshToken(decoded.jti);
       await userModel.updateUser(decoded.id, {
         is_online: false,
         updated_at: new Date(),
@@ -108,8 +115,14 @@ exports.logout = catchAsync(async (req, res) => {
       console.error("Failed to update online status on logout:", err.message);
     }
   }
-  res.clearCookie("refreshToken", refreshCookieOptions);
-  res.json({ message: "Logged out successfully" });
+  if (req.headers.authorization?.startsWith("Bearer ")) {
+    const access = req.headers.authorization.split(" ")[1];
+    authMiddleware.addTokenToBlacklist(access);
+  }
+  res
+    .clearCookie("refreshToken", refreshCookieOptions)
+    .clearCookie("csrfToken")
+    .json({ message: "Logged out successfully" });
 });
 
 /**
@@ -118,14 +131,12 @@ exports.logout = catchAsync(async (req, res) => {
  */
 exports.requestReset = catchAsync(async (req, res) => {
   const { email } = req.body;
-  // Ensure the email exists before attempting to send an OTP
-  const userExists = await userModel.findByEmail(email);
-  if (!userExists) {
-    throw new AppError("Email not found", 404);
+  try {
+    await authService.generateOtp(email);
+  } catch (err) {
+    // swallow errors to avoid user enumeration
   }
-
-  await authService.generateOtp(email);
-  res.json({ message: "OTP sent to email" });
+  res.json({ message: "If that email exists, an OTP has been sent" });
 });
 
 /**
