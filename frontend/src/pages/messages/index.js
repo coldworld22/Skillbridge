@@ -148,8 +148,8 @@ const MessagesPage = () => {
   }, [users, selectedChat]);
 
   useEffect(() => {
-    if (callAccepted?.chatId) {
-      router.push(`/video-call?chatId=${callAccepted.chatId}`);
+    if (callAccepted?.roomId) {
+      router.push(`/video-call?roomId=${callAccepted.roomId}`);
       clearCallStatus();
     } else if (callDeclined) {
       toast.info("Call declined");
@@ -349,7 +349,11 @@ const MessagesPage = () => {
       {(incomingCall || outgoingCall) && (
         <CallOverlay
           incoming={!!incomingCall}
-          name={incomingCall?.name || selectedChat?.name}
+          name={
+            incomingCall
+              ? users.find((u) => u.id === incomingCall.chatId)?.name
+              : selectedChat?.name
+          }
           onAccept={incomingCall ? () => acceptCall() : undefined}
           onDecline={incomingCall ? () => declineCall() : cancelCall}
         />
