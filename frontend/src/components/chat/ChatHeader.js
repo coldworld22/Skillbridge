@@ -33,7 +33,10 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
 
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
-      await onStartVideoCall(selectedChat.id);
+      const res = await onStartVideoCall(selectedChat.id);
+      if (res?.roomId) {
+        router.push(`/video-call?roomId=${res.roomId}`);
+      }
     }
   };
 

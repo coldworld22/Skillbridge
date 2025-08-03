@@ -19,6 +19,15 @@ const useCallStore = create((set, get) => ({
     socket.on("connect", register);
     register();
     if (get().listening) return;
+    const register = () => {
+      const user = useAuthStore.getState().user;
+      if (user?.id) {
+        socket.emit("register", { userId: user.id });
+      }
+    };
+
+    socket.on("connect", register);
+    register();
     socket.on("incoming-call", (data) => {
       set({ incomingCall: data });
     });
