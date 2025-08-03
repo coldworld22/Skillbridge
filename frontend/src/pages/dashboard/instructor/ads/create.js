@@ -15,7 +15,7 @@ export default function CreateAdPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    image: "",
+    image: null,
     startAt: "",
     endAt: "",
     targetRoles: [],
@@ -55,9 +55,11 @@ export default function CreateAdPage() {
     }
 
     try {
-      const blob = await fetch(formData.image).then((r) => r.blob());
-      const file = new File([blob], "ad.jpg", { type: blob.type });
       const payload = new FormData();
+      const file =
+        formData.image instanceof File
+          ? formData.image
+          : new File([formData.image], "ad.jpg", { type: formData.image.type || "image/jpeg" });
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("link_url", formData.link);
@@ -112,8 +114,7 @@ export default function CreateAdPage() {
               <div>
                 <label className="block font-medium">Banner Image *</label>
                 <ImageCropUpload
-                  value={formData.image}
-                  onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+                  onChange={(file) => setFormData((prev) => ({ ...prev, image: file }))}
                 />
               </div>
             </div>

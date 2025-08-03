@@ -23,8 +23,7 @@ export default async function getCroppedImg(imageSrc, pixelCrop) {
   
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
-        resolve(URL.createObjectURL(blob));
+        resolve(blob);
       }, "image/jpeg");
     });
   }
-  

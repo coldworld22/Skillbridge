@@ -185,8 +185,7 @@ useEffect(() => {
     if (!tempAvatar || !croppedAreaPixels) return;
     setIsSubmitting(true);
     try {
-      const croppedUrl = await getCroppedImg(tempAvatar, croppedAreaPixels);
-      const blob = await fetch(croppedUrl).then((r) => r.blob());
+      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
