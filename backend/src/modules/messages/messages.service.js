@@ -7,6 +7,11 @@ exports.createMessage = async ({ sender_id, receiver_id, message, booking_id }) 
   const [row] = await db("messages")
     .insert({ sender_id, receiver_id, message, booking_id })
     .returning("*");
+  try {
+    if (global.io && global.userSockets?.[receiver_id]) {
+      global.io.to(global.userSockets[receiver_id]).emit("message-created");
+    }
+  } catch (_) {}
   return row;
 };
 

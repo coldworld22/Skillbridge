@@ -16,7 +16,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
 import CallOverlay from "@/components/video-call/CallOverlay";
-import { listenCalls } from "@/services/messageService";
+import { listenCalls, listenMessages } from "@/services/messageService";
 import { toast } from "react-toastify";
 import { fetchSEOConfig } from "@/services/admin/seoConfigService";
 import useSEOConfigStore from "@/store/seoConfigStore";
@@ -139,6 +139,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
       fetchMsgs();
       startMsgPolling();
       listenCalls();
+      listenMessages();
     }
   }, [user, fetchNotifs, startNotifPolling, fetchMsgs, startMsgPolling]);
 

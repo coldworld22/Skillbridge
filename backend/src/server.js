@@ -143,6 +143,8 @@ const io = new Server(server, {
 const rooms = {}, participants = {}, callMessages = {};
 
 const userSockets = {};
+global.io = io;
+global.userSockets = userSockets;
 
 io.on("connection", (socket) => {
   socket.on("register", ({ userId }) => {
