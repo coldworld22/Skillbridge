@@ -1,10 +1,21 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
+// Helper to read the CSRF token from cookies
+const getCsrfToken = () => {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("csrfToken="));
+  return match ? match.split("=")[1] : null;
+};
+
 export const createAd = async (payload) => {
-  const { data } = await api.post("/ads/admin", payload, {
-    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
-  });
+  const headers =
+    payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  const { data } = await api.post("/ads/admin", payload, { headers });
   return data?.data;
 };
 
@@ -39,14 +50,19 @@ export const fetchAdById = async (id) => {
 };
 
 export const updateAd = async (id, payload) => {
-  const { data } = await api.put(`/ads/${id}`, payload, {
-    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
-  });
+  const headers =
+    payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  const { data } = await api.put(`/ads/${id}`, payload, { headers });
   return data?.data;
 };
 
 export const deleteAd = async (id) => {
-  await api.delete(`/ads/${id}`);
+  const headers = {};
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  await api.delete(`/ads/${id}`, { headers });
 };
 
 export const fetchAdAnalytics = async (id) => {
