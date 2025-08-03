@@ -8,19 +8,10 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import GroupChat from "@/components/chat/GroupChat";
 import ChatNotifications from "@/components/chat/ChatNotifications";
-import CallOverlay from "@/components/video-call/CallOverlay";
-import {
-  getUsers,
-  getGroups,
-  listenCalls,
-  acceptedCall as getAcceptedCall,
-  declined as getDeclined,
-  clearCallStatus as resetCallStatus,
-} from "@/services/messageService";
+import { getUsers, getGroups } from "@/services/messageService";
 import { FaSearch, FaCommentDots, FaTrash } from "react-icons/fa";
 import ChatImage from "@/components/shared/ChatImage";
 import useMessageStore from "@/store/messages/messageStore";
-import useCallStore from "@/store/call/callStore";
 import { API_BASE_URL } from "@/config/config";
 import { toast } from "react-toastify";
 
@@ -30,14 +21,6 @@ const MessagesPage = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const incomingCall = useCallStore((state) => state.incomingCall);
-  const outgoingCall = useCallStore((state) => state.outgoingCall);
-  const acceptCall = useCallStore((state) => state.acceptCall);
-  const declineCall = useCallStore((state) => state.declineCall);
-  const cancelCall = useCallStore((state) => state.cancelCall);
-  const callAccepted = useCallStore((state) => state.acceptedCall);
-  const callDeclined = useCallStore((state) => state.declined);
-  const clearCallStatus = useCallStore((state) => state.clearStatus);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -65,19 +48,6 @@ const MessagesPage = () => {
   }, [startPollingStore]);
 
   const router = useRouter();
-
-  useEffect(() => {
-    listenCalls();
-    try {
-      // Some builds expect global call handlers. Provide no-op
-      // placeholders to avoid ReferenceError during pre-render.
-      getAcceptedCall();
-      getDeclined();
-      resetCallStatus();
-    } catch (_) {
-      // ignore
-    }
-  }, []);
 
   // Keep unread counts from the backend so new chats show up in the sidebar
   const adjustCounts = useCallback((list) => list, []);
@@ -147,15 +117,6 @@ const MessagesPage = () => {
     }
   }, [users, selectedChat]);
 
-  useEffect(() => {
-    if (callAccepted?.chatId) {
-      router.push(`/video-call?chatId=${callAccepted.chatId}`);
-      clearCallStatus();
-    } else if (callDeclined) {
-      toast.info("Call declined");
-      clearCallStatus();
-    }
-  }, [callAccepted, callDeclined, router, clearCallStatus]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -346,14 +307,6 @@ const MessagesPage = () => {
           </main>
         )}
       </div>
-      {(incomingCall || outgoingCall) && (
-        <CallOverlay
-          incoming={!!incomingCall}
-          name={incomingCall?.name || selectedChat?.name}
-          onAccept={incomingCall ? () => acceptCall() : undefined}
-          onDecline={incomingCall ? () => declineCall() : cancelCall}
-        />
-      )}
     </div>
   );
 };

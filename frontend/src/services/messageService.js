@@ -1,6 +1,9 @@
 
 import api from "@/services/api/api";
 import useCallStore from "@/store/call/callStore";
+import useAuthStore from "@/store/auth/authStore";
+import useMessageStore from "@/store/messages/messageStore";
+import socket from "@/services/socketService";
 
 
 export const getUsers = async () => {
@@ -41,9 +44,13 @@ export const sendWhatsAppMessage = async (userId, { message }) => {
 
 export const startVideoCall = async (userId) => {
   const res = await api.post(`/messages/${userId}/video-call`);
-  // Track outgoing call so the caller can react to accept/decline events
-  useCallStore.getState().initiateCall({ chatId: userId });
-  return res.data.data || res.data;
+  const { roomId } = res.data.data || res.data;
+  useCallStore.getState().initiateCall({ chatId: userId, roomId });
+  const caller = useAuthStore.getState().user;
+  if (caller?.id) {
+    socket.emit("call-user", { to: userId, roomId });
+  }
+  return { roomId };
 };
 
 export const getConversation = async (userId) => {
@@ -75,6 +82,15 @@ export const togglePinMessage = async (id) => {
 
 // Attach socket listeners for incoming/accepted/declined calls
 export const listenCalls = () => useCallStore.getState().listen();
+
+let msgListener = false;
+export const listenMessages = () => {
+  if (msgListener) return;
+  socket.on("message-created", () => {
+    useMessageStore.getState().fetch(true);
+  });
+  msgListener = true;
+};
 
 // Helpers to read call status from the store
 export const acceptedCall = () => useCallStore.getState().acceptedCall;
