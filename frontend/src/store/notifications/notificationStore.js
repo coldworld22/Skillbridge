@@ -38,10 +38,10 @@ const useNotificationStore = create((set, get) => ({
   markRead: async (id) => {
     const res = await markNotificationAsRead(id);
     const readAt = res.read_at || new Date().toISOString();
-    const strId = String(id);
+    const numericId = Number(id);
     set((state) => ({
       items: state.items.map((n) =>
-        n.id === strId ? { ...n, read: true, read_at: readAt } : n,
+        Number(n.id) === numericId ? { ...n, read: true, read_at: readAt } : n,
       ),
     }));
 
@@ -50,7 +50,7 @@ const useNotificationStore = create((set, get) => ({
         items: state.items.filter(
           (n) =>
             !(
-              n.id === strId &&
+              Number(n.id) === numericId &&
               n.read &&
               n.read_at &&
               new Date() - new Date(n.read_at) >= HOUR_MS
@@ -63,7 +63,7 @@ const useNotificationStore = create((set, get) => ({
   remove: async (id) => {
     await deleteNotification(id);
     set((state) => ({
-      items: state.items.filter((n) => n.id !== id),
+      items: state.items.filter((n) => Number(n.id) !== Number(id)),
     }));
   },
 
