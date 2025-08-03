@@ -41,10 +41,10 @@ const useMessageStore = create((set, get) => ({
   markRead: async (id) => {
     const res = await markMessageAsRead(id);
     const readAt = res.read_at || new Date().toISOString();
-    const strId = String(id);
+    const numericId = Number(id);
     set((state) => ({
       items: state.items.map((m) =>
-        m.id === strId ? { ...m, read: true, read_at: readAt } : m,
+        Number(m.id) === numericId ? { ...m, read: true, read_at: readAt } : m,
       ),
     }));
 
@@ -53,7 +53,7 @@ const useMessageStore = create((set, get) => ({
         items: state.items.filter(
           (m) =>
             !(
-              m.id === strId &&
+              Number(m.id) === numericId &&
               m.read &&
               m.read_at &&
               new Date() - new Date(m.read_at) >= HOUR_MS
@@ -66,8 +66,9 @@ const useMessageStore = create((set, get) => ({
   delete: async (id) => {
     try {
       await apiDeleteMessage(id);
+      const numericId = Number(id);
       set((state) => ({
-        items: state.items.filter((m) => m.id !== id),
+        items: state.items.filter((m) => Number(m.id) !== numericId),
       }));
     } catch (_) {}
   },
