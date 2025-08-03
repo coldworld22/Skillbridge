@@ -25,6 +25,7 @@ import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
 import { getLanguages } from "@/services/languageService";
 import SeoTags from "@/components/common/SeoTags";
+import PageLoader from "@/components/PageLoader";
 
 const langFetcher = () => getLanguages();
 
@@ -207,6 +208,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
           )}
         </Head>
         <SeoTags />
+        <PageLoader />
         {/* Render page with layout */}
         {getLayout(<Component {...pageProps} />)}
 
