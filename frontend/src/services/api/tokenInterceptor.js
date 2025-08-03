@@ -8,6 +8,15 @@ import { toast } from "react-toastify";
 import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 
+// Helper to read a cookie value in the browser
+const getCookie = (name) => {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
+
 let isRefreshing = false;
 let failedQueue = [];
 let lastNetworkToast = 0;
@@ -30,6 +39,15 @@ api.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    const method = config.method?.toLowerCase();
+    if (["post", "put", "patch", "delete"].includes(method)) {
+      const csrfToken = getCookie("csrfToken");
+      if (csrfToken) {
+        config.headers["x-csrf-token"] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
