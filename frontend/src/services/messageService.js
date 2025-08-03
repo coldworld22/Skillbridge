@@ -1,6 +1,8 @@
 
 import api from "@/services/api/api";
 import useCallStore from "@/store/call/callStore";
+import useAuthStore from "@/store/auth/authStore";
+import socket from "@/services/socketService";
 
 
 export const getUsers = async () => {
@@ -41,9 +43,13 @@ export const sendWhatsAppMessage = async (userId, { message }) => {
 
 export const startVideoCall = async (userId) => {
   const res = await api.post(`/messages/${userId}/video-call`);
-  // Track outgoing call so the caller can react to accept/decline events
-  useCallStore.getState().initiateCall({ chatId: userId });
-  return res.data.data || res.data;
+  const { roomId } = res.data.data || res.data;
+  useCallStore.getState().initiateCall({ chatId: userId, roomId });
+  const caller = useAuthStore.getState().user;
+  if (caller?.id) {
+    socket.emit("call-user", { to: userId, roomId });
+  }
+  return { roomId };
 };
 
 export const getConversation = async (userId) => {
