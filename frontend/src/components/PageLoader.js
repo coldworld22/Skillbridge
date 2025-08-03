@@ -33,19 +33,19 @@ const PageLoader = () => {
 
   useEffect(() => {
     if (loaded) {
-      const t = setTimeout(() => setVisible(false), 300);
+      const t = setTimeout(() => setVisible(false), 1000);
       return () => clearTimeout(t);
     }
   }, [loaded]);
 
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center bg-[#FFD700] z-[9999] transition-opacity duration-500 ${
+      className={`fixed inset-0 flex items-center justify-center bg-white z-[9999] transition-opacity duration-500 ${
         visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
     >
       <div className="relative flex items-center justify-center">
-        <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
         {logoSrc && (
           <img
             src={logoSrc}
