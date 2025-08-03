@@ -25,10 +25,16 @@ function CreateBookPage() {
       .catch((e) => console.error("Failed to load categories", e));
   }, []);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, setProgress) => {
     try {
       await api.post("/books", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+          if (event.total) {
+            const progress = Math.round((event.loaded * 100) / event.total);
+            setProgress(progress);
+          }
+        },
       });
       toast.success(t("booksCreate.success"));
       fetchNotifications();
@@ -37,6 +43,8 @@ function CreateBookPage() {
     } catch (e) {
       console.error("Failed to create book", e);
       toast.error(t("booksCreate.error"));
+    } finally {
+      setProgress(null);
     }
   };
 

@@ -9,9 +9,10 @@ export default function BookForm({ onSubmit, categories = [] }) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
     setValue,
-  } = useForm({ defaultValues: { tags: [], status: "pending" } });
+  } = useForm({ defaultValues: { tags: [], status: "pending", is_free: false } });
   const [languages, setLanguages] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
@@ -19,6 +20,8 @@ export default function BookForm({ onSubmit, categories = [] }) {
   const [coverPreview, setCoverPreview] = useState(null);
   const [bookFileName, setBookFileName] = useState("");
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const isFree = watch("is_free");
 
   useEffect(() => {
     const load = async () => {
@@ -35,9 +38,9 @@ export default function BookForm({ onSubmit, categories = [] }) {
   useEffect(() => {
     register("tags", {
       validate: (value) =>
-        value && value.length > 0 ? true : "At least one tag is required",
+        value && value.length > 0 ? true : t("booksCreate.tagsRequired"),
     });
-  }, [register]);
+  }, [register, t]);
 
   useEffect(() => {
     setValue("tags", tags);
@@ -89,20 +92,26 @@ export default function BookForm({ onSubmit, categories = [] }) {
         formData.append("preview_pages", file)
       );
     }
-    formData.append("price", data.price);
+    formData.append("price", isFree ? 0 : data.price);
     formData.append("language", data.language);
     formData.append("license_type", data.license_type);
+    formData.append("is_free", isFree ? 1 : 0);
     formData.append("status", "pending");
-    onSubmit(formData);
+    setUploadProgress(0);
+    onSubmit(formData, setUploadProgress);
   };
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Book Title</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.bookTitleLabel")}
+        </label>
         <input
           type="text"
-          {...register("title", { required: "Book title is required" })}
+          {...register("title", {
+            required: t("booksCreate.bookTitleRequired"),
+          })}
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
         {errors.title && (
@@ -111,12 +120,16 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Category</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.categoryLabel")}
+        </label>
         <select
-          {...register("category_id", { required: "Category is required" })}
+          {...register("category_id", {
+            required: t("booksCreate.categoryRequired"),
+          })}
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
-          <option value="">Select category</option>
+          <option value="">{t("booksCreate.selectCategory")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -131,7 +144,9 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Tags</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.tagsLabel")}
+        </label>
         <div className="relative">
           <div className="flex flex-wrap gap-2 mb-2">
             {tags.map((tag) => (
@@ -161,7 +176,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
                   addTag(tagInput);
                 }
               }}
-              placeholder="Add tags..."
+              placeholder={t("booksCreate.addTagsPlaceholder")}
               className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             <button
@@ -169,7 +184,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
               onClick={() => addTag(tagInput)}
               className="px-3 py-2 bg-yellow-500 text-white rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
             >
-              Add
+              {t("booksCreate.addTag")}
             </button>
           </div>
           {tagSuggestions.length > 0 && tagInput && (
@@ -192,10 +207,12 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Short Description</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.shortDescriptionLabel")}
+        </label>
         <textarea
           {...register("short_description", {
-            required: "Short description is required",
+            required: t("booksCreate.shortDescriptionRequired"),
           })}
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
@@ -208,11 +225,11 @@ export default function BookForm({ onSubmit, categories = [] }) {
 
       <div>
         <label className="block text-sm font-medium mb-1">
-          Detailed Description
+          {t("booksCreate.detailedDescriptionLabel")}
         </label>
         <textarea
           {...register("detailed_description", {
-            required: "Detailed description is required",
+            required: t("booksCreate.detailedDescriptionRequired"),
           })}
           className="w-full border rounded p-2 h-32 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
@@ -224,10 +241,12 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Cover Image</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.coverImageLabel")}
+        </label>
         {(() => {
           const reg = register("cover_image", {
-            required: "Cover image is required",
+            required: t("booksCreate.coverImageRequired"),
             validate: {
               fileType: (files) =>
                 !files[0] ||
@@ -266,10 +285,12 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Book File (PDF)</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.bookFileLabel")}
+        </label>
         {(() => {
           const reg = register("book_file", {
-            required: "Book file is required",
+            required: t("booksCreate.bookFileRequired"),
             validate: {
               fileType: (files) =>
                 !files[0] || files[0].type === "application/pdf" || "PDF only",
@@ -303,7 +324,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
 
       <div>
         <label className="block text-sm font-medium mb-1">
-          Preview Pages (optional)
+          {t("booksCreate.previewPagesLabel")}
         </label>
         {(() => {
           const reg = register("preview_pages");
@@ -331,13 +352,38 @@ export default function BookForm({ onSubmit, categories = [] }) {
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        {(() => {
+          const reg = register("is_free");
+          return (
+            <input
+              type="checkbox"
+              {...reg}
+              onChange={(e) => {
+                reg.onChange(e);
+                if (e.target.checked) setValue("price", 0);
+              }}
+              className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+            />
+          );
+        })()}
+        <label className="text-sm font-medium">
+          {t("booksCreate.isFree")}
+        </label>
+      </div>
+
       <div>
-        <label className="block text-sm font-medium mb-1">Price</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.priceLabel")}
+        </label>
         <input
           type="number"
           step="0.01"
-          {...register("price", { required: "Price is required" })}
-          className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          {...register("price", {
+            required: !isFree && t("booksCreate.priceRequired"),
+          })}
+          disabled={isFree}
+          className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
         />
         {errors.price && (
           <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>
@@ -345,12 +391,16 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Language</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.languageLabel")}
+        </label>
         <select
-          {...register("language", { required: "Language is required" })}
+          {...register("language", {
+            required: t("booksCreate.languageRequired"),
+          })}
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
-          <option value="">Select language</option>
+          <option value="">{t("booksCreate.selectLanguage")}</option>
           {languages.map((l) => (
             <option key={l.code || l.id} value={l.code || l.id}>
               {l.name}
@@ -365,19 +415,19 @@ export default function BookForm({ onSubmit, categories = [] }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">License Type</label>
+        <label className="block text-sm font-medium mb-1">
+          {t("booksCreate.licenseTypeLabel")}
+        </label>
         <select
           {...register("license_type", {
-            required: "License type is required",
+            required: t("booksCreate.licenseTypeRequired"),
           })}
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
-          <option value="">Select license type</option>
+          <option value="">{t("booksCreate.selectLicenseType")}</option>
           <option value="personal">Personal use</option>
           <option value="educational">Educational use</option>
-          <option value="commercial">
-            Commercial resale not allowed
-          </option>
+          <option value="commercial">Commercial resale not allowed</option>
         </select>
         {errors.license_type && (
           <p className="text-red-500 text-sm mt-1">
@@ -385,6 +435,15 @@ export default function BookForm({ onSubmit, categories = [] }) {
           </p>
         )}
       </div>
+
+      {uploadProgress !== null && (
+        <div className="w-full bg-gray-200 rounded h-2 mb-4">
+          <div
+            className="bg-yellow-500 h-2 rounded"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      )}
 
       <button
         type="submit"
