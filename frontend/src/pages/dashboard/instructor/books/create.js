@@ -2,13 +2,17 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import api from "@/services/api/api";
 import BookForm from "@/components/books/BookForm";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function CreateBook() {
+function CreateBookPage() {
   const router = useRouter();
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (formData) => {
     try {
-      await api.post("/books", values);
+      await api.post("/books", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       toast.success("Book created");
       router.push("/dashboard/instructor/books");
     } catch (e) {
@@ -18,9 +22,13 @@ export default function CreateBook() {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-semibold mb-4">Add New Book</h1>
-      <BookForm onSubmit={handleSubmit} />
-    </div>
+    <InstructorLayout>
+      <div className="p-4">
+        <h1 className="text-xl font-semibold mb-4">Add New Book</h1>
+        <BookForm onSubmit={handleSubmit} />
+      </div>
+    </InstructorLayout>
   );
 }
+
+export default withAuthProtection(CreateBookPage, ["instructor"]);
