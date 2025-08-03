@@ -1,6 +1,7 @@
 // 📁 src/middleware/auth/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const userModel = require("../../modules/users/user.model");
+const tokenBlacklist = new Set();
 
 /**
  * ✅ Helper: Determines if a role has admin-level access
@@ -35,11 +36,18 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ message: "Missing or malformed token" });
   }
 
+  if (tokenBlacklist.has(token)) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await userModel.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    if (user.status !== "active") {
+      return res.status(403).json({ message: "Account is not active" });
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
@@ -126,4 +134,5 @@ module.exports = {
   isInstructorOrAdmin,
   isStudent,
   isSelfOrAdmin,
+  addTokenToBlacklist: (token) => tokenBlacklist.add(token),
 };

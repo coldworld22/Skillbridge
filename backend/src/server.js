@@ -10,6 +10,7 @@ const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const { verifyToken } = require("./middleware/auth/authMiddleware");
+const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
@@ -64,6 +65,7 @@ app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use(csrf);
 app.use(session({
   secret: process.env.SESSION_SECRET || "skillbridge",
   resave: false,

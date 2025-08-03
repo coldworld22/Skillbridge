@@ -35,12 +35,13 @@ describe('POST /api/auth/forgot-password', () => {
     expect(res.body.message).toBeDefined();
   });
 
-  it('returns 404 for unknown email', async () => {
+  it('returns generic message for unknown email', async () => {
+    service.generateOtp.mockResolvedValue();
     userModel.findByEmail.mockResolvedValue(null);
     const res = await request(app)
       .post('/api/auth/forgot-password')
       .send({ email: 'missing@example.com' });
-    expect(res.status).toBe(404);
-    expect(res.body.message).toMatch(/not found/i);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/if that email exists/i);
   });
 });
