@@ -11,6 +11,7 @@ import StudyGroups from "@/components/website/sections/StudyGroups";
 import InstructorBooking from "@/components/website/sections/InstructorBooking";
 import SubscriptionPlans from "@/components/website/sections/SubscriptionPlans";
 import TutorialsSection from "@/components/website/sections/TutorialsSection";
+import BooksSection from "@/components/website/sections/BooksSection";
 import Footer from "@/components/website/sections/Footer";
 import AITutoring from "@/components/website/sections/AITutoring";
 import IncompleteAlertModal from "@/components/auth/IncompleteAlertModal";
@@ -21,7 +22,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 
 export default function Home() {
   const sections = [
-    Hero, OnlineClasses, TutorialsSection, LearningMarketplace, StudyCategories,
+    Hero, OnlineClasses, TutorialsSection, BooksSection, LearningMarketplace, StudyCategories,
     StudyGroups, InstructorBooking, SubscriptionPlans
     , AITutoring, CommunityEngagement, Footer // ✅ Removed last section before the footer
   ];
