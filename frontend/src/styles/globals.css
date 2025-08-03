@@ -202,3 +202,13 @@ input:-webkit-autofill:focus {
 .phone-input-container .PhoneInput:focus-within {
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
 }
+
+/* NProgress custom color */
+#nprogress .bar {
+  background: #fbbf24; /* Tailwind yellow-400 */
+  height: 3px;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #fbbf24, 0 0 5px #fbbf24;
+}
