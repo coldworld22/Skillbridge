@@ -11,11 +11,8 @@ const getCsrfToken = () => {
 };
 
 export const createAd = async (payload) => {
-  const headers =
-    payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
-  const csrfToken = getCsrfToken();
-  if (csrfToken) headers["x-csrf-token"] = csrfToken;
-  const { data } = await api.post("/ads/admin", payload, { headers });
+  const config = payload instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
+  const { data } = await api.post("/ads/admin", payload, config);
   return data?.data;
 };
 
@@ -50,11 +47,8 @@ export const fetchAdById = async (id) => {
 };
 
 export const updateAd = async (id, payload) => {
-  const headers =
-    payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {};
-  const csrfToken = getCsrfToken();
-  if (csrfToken) headers["x-csrf-token"] = csrfToken;
-  const { data } = await api.put(`/ads/${id}`, payload, { headers });
+  const config = payload instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
+  const { data } = await api.put(`/ads/${id}`, payload, config);
   return data?.data;
 };
 

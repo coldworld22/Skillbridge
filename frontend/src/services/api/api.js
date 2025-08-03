@@ -27,6 +27,8 @@ if (
 const api = axios.create({
   baseURL,
   withCredentials: true, // ✅ KEEP this to send cookies with requests
+  xsrfCookieName: "csrfToken", // ensure axios reads our CSRF cookie
+  xsrfHeaderName: "x-csrf-token", // and sends it in this header automatically
 });
 
 export default api;
