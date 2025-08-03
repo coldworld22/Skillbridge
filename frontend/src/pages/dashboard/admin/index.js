@@ -25,6 +25,7 @@ function AdminDashboardHome() {
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Wait for hydration to access Zustand state safely
   useEffect(() => {
@@ -43,11 +44,14 @@ function AdminDashboardHome() {
 
   useEffect(() => {
     const loadStats = async () => {
+      setStatsLoading(true);
       try {
         const data = await fetchAdminDashboardStats();
         setStats(data);
       } catch (err) {
-        console.error('Failed to load dashboard stats', err);
+        console.error("Failed to load dashboard stats", err);
+      } finally {
+        setStatsLoading(false);
       }
     };
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
@@ -123,7 +127,11 @@ function AdminDashboardHome() {
         </div>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
-        <StatsGrid stats={statsArray} />
+        {statsLoading ? (
+          <p>Loading stats...</p>
+        ) : (
+          <StatsGrid stats={statsArray} />
+        )}
       </section>
 
       {/* Approvals + Shortcuts */}
