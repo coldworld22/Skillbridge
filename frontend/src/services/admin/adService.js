@@ -2,9 +2,8 @@ import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
 export const createAd = async (payload) => {
-  const { data } = await api.post("/ads/admin", payload, {
-    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
-  });
+  const config = payload instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
+  const { data } = await api.post("/ads/admin", payload, config);
   return data?.data;
 };
 
@@ -39,9 +38,8 @@ export const fetchAdById = async (id) => {
 };
 
 export const updateAd = async (id, payload) => {
-  const { data } = await api.put(`/ads/${id}`, payload, {
-    headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : {},
-  });
+  const config = payload instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
+  const { data } = await api.put(`/ads/${id}`, payload, config);
   return data?.data;
 };
 
