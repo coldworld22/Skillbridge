@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { toast } from "react-toastify";
 import {
   fetchSEOConfig,
   regenerateSitemap,
@@ -14,14 +15,16 @@ const useSEOConfigStore = create(
       pages: [],
       loading: false,
       loaded: false,
+      error: null,
       fetch: async () => {
         if (get().loading) return;
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
           const data = await fetchSEOConfig();
           set({ settings: data || {}, loaded: true, loading: false });
-        } catch (_err) {
-          set({ loaded: true, loading: false });
+        } catch (err) {
+          toast.error("Failed to load SEO settings");
+          set({ loaded: true, loading: false, error: err.message });
         }
       },
       update: (newSettings) =>
@@ -52,8 +55,9 @@ const useSEOConfigStore = create(
         try {
           const list = await fetchPageList();
           set({ pages: list });
-        } catch (_err) {
-          set({ pages: [] });
+        } catch (err) {
+          toast.error("Failed to load page list");
+          set({ pages: [], error: err.message });
         }
       },
       clear: () => set({ settings: {}, loaded: false })

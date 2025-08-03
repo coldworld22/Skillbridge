@@ -41,7 +41,7 @@
   "class_updated": "Class updated successfully",
   "class_update_failed": "Failed to update class",
   "classes_load_failed": "Failed to load classes",
-  "student_dashboard_title": "Tableau de bord \u00e9tudiant",
+  "student_dashboard_title": "Tableau de bord étudiant",
   "continue_lessons": "Continue to Lessons",
   "submit_class": "Submit Class",
   "back": "Back",
@@ -131,7 +131,7 @@
     "create_title": "Créer une nouvelle catégorie",
     "edit_title": "Modifier la catégorie",
     "none_top_level": "Aucune (niveau supérieur)",
-  "processing": "Sauvegarde..."
+    "processing": "Sauvegarde..."
   },
   "instructorsPage": {
     "title": "Instructors",
@@ -242,7 +242,7 @@
     "save_language": "Save Language",
     "language_added": "Language added",
     "language_exists": "Language code already exists.",
-  "failed_to_add": "Failed to add language"
+    "failed_to_add": "Failed to add language"
   },
   "adsPage": {
     "title": "Gestion des annonces",
@@ -437,10 +437,10 @@
     "profile_update_success": "Profil mis à jour avec succès !",
     "profile_update_failed": "Échec de la mise à jour du profil",
     "full_name_min": "Le nom complet doit comporter au moins 3 caractères",
-      "phone_min": "Le numéro de téléphone doit comporter au moins 8 chiffres",
-      "invalid_email_address": "Adresse e-mail invalide",
-      "invalid_date": "Format de date invalide",
-      "url_invalid": "Doit être une URL valide"
+    "phone_min": "Le numéro de téléphone doit comporter au moins 8 chiffres",
+    "invalid_email_address": "Adresse e-mail invalide",
+    "invalid_date": "Format de date invalide",
+    "url_invalid": "Doit être une URL valide"
   },
   "adminCertificatesPage": {
     "title": "Certificats",
@@ -552,7 +552,7 @@
     "add_note": "Add Note",
     "edit_attendance": "Edit Attendance",
     "back_to_list": "Back to Student List",
-  "student_not_found": "Student not found"
+    "student_not_found": "Student not found"
   },
   "classAnalyticsPage": {
     "title": "Class Analytics",
@@ -630,7 +630,7 @@
     "default_updated": "Default status updated",
     "method_deleted": "Payment method deleted",
     "delete_failed": "Failed to delete method",
-  "configure": "Configure"
+    "configure": "Configure"
   },
   "groupsPage": {
     "explore_title": "Explorer les groupes publics",
@@ -798,8 +798,8 @@
     "confirm_reopen_ticket": "Rouvrir ce ticket ?",
     "filter_by_status": "Filtrer par statut",
     "tickets_loaded": "Tickets chargés",
-      "tickets_load_failed": "Échec du chargement des tickets",
-      "search": "Rechercher",
+    "tickets_load_failed": "Échec du chargement des tickets",
+    "search": "Rechercher",
     "apply": "Appliquer",
     "no_tickets_found": "Aucun ticket trouvé",
     "support_dashboard": "Tableau de support",
@@ -810,47 +810,46 @@
     "view_reports": "Voir les rapports",
     "manage_content": "Gérer le contenu",
     "recent_activity": "Activité récente",
-    "under_construction": "Cette section est en construction."
-    ,"admin_support": "Assistance Admin"
-    ,"manage_all_support_tickets": "Gérer tous les tickets de support"
-    ,"back_to_tickets": "Retour aux tickets"
-    ,"apply_filters": "Appliquer les filtres"
-    ,"reset_filters": "Réinitialiser les filtres"
-    ,"try_changing_filters": "Essayez de modifier les filtres"
-    ,"ticket_not_found": "Ticket introuvable"
-    ,"ticket_not_found_description": "Le ticket demandé est introuvable."
-    ,"quick_actions": "Actions rapides"
-    ,"email_customer": "Envoyer un e-mail au client"
-    ,"mark_resolved": "Marquer comme résolu"
-    ,"priority_updated": "Priorité mise à jour"
-    ,"ticket_resolved_warning": "Ce ticket a été marqué comme résolu."
-    ,"ticket": "Ticket"
-    ,"load_failed": "Échec du chargement du ticket"
-    ,"open": "Ouvert"
-    ,"resolved": "Résolu"
-    ,"closed": "Fermé"
-    ,"all_statuses": "Tous les statuts"
-    ,"all_priorities": "Toutes les priorités"
-    ,"low": "Faible"
-    ,"medium": "Moyenne"
-    ,"high": "Élevée"
-    ,"urgent": "Urgente"
-    ,"date_range": "Plage de dates"
-    ,"all_time": "Tout le temps"
-    ,"today": "Aujourd'hui"
-    ,"this_week": "Cette semaine"
-    ,"this_month": "Ce mois"
-    ,"this_year": "Cette année"
-    ,"reset": "Réinitialiser"
-    ,"search": "Rechercher"
-    ,"showing": "Affichage"
-    ,"to": "à"
-    ,"of": "de"
-    ,"results": "résultats"
-    ,"previous": "Précédent"
-    ,"next": "Suivant"
-  }
-  ,"messagesConfigPage": {
+    "under_construction": "Cette section est en construction.",
+    "admin_support": "Assistance Admin",
+    "manage_all_support_tickets": "Gérer tous les tickets de support",
+    "back_to_tickets": "Retour aux tickets",
+    "apply_filters": "Appliquer les filtres",
+    "reset_filters": "Réinitialiser les filtres",
+    "try_changing_filters": "Essayez de modifier les filtres",
+    "ticket_not_found": "Ticket introuvable",
+    "ticket_not_found_description": "Le ticket demandé est introuvable.",
+    "quick_actions": "Actions rapides",
+    "email_customer": "Envoyer un e-mail au client",
+    "mark_resolved": "Marquer comme résolu",
+    "priority_updated": "Priorité mise à jour",
+    "ticket_resolved_warning": "Ce ticket a été marqué comme résolu.",
+    "ticket": "Ticket",
+    "load_failed": "Échec du chargement du ticket",
+    "open": "Ouvert",
+    "resolved": "Résolu",
+    "closed": "Fermé",
+    "all_statuses": "Tous les statuts",
+    "all_priorities": "Toutes les priorités",
+    "low": "Faible",
+    "medium": "Moyenne",
+    "high": "Élevée",
+    "urgent": "Urgente",
+    "date_range": "Plage de dates",
+    "all_time": "Tout le temps",
+    "today": "Aujourd'hui",
+    "this_week": "Cette semaine",
+    "this_month": "Ce mois",
+    "this_year": "Cette année",
+    "reset": "Réinitialiser",
+    "showing": "Affichage",
+    "to": "à",
+    "of": "de",
+    "results": "résultats",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "messagesConfigPage": {
     "title": "Messaging Providers Configuration",
     "sms_providers": "SMS Providers",
     "otp_provider": "OTP Provider",
@@ -860,9 +859,9 @@
     "no_app_prefix": "Do not include the `App` prefix.",
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
     "default": "Default"
-  }
-  ,"offersPage": {
-    "title": "\ud83d\udcda My Offers Dashboard",
+  },
+  "offersPage": {
+    "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",
     "search_placeholder": "Search offers...",
     "filter_all": "All Types",
@@ -874,17 +873,17 @@
     "date_all": "All Dates",
     "date_7": "Last 7 days",
     "date_30": "Last 30 days",
-    "my_requests": "\ud83c\udf93 My Requests",
-    "no_my_offers": "You haven\u2019t posted any offers yet.",
+    "my_requests": "🎓 My Requests",
+    "no_my_offers": "You haven’t posted any offers yet.",
     "load_more": "Load More",
-    "instructor_offers": "\ud83e\uddd1\u200d\ud83c\udfeb Instructor Offers",
+    "instructor_offers": "🧑‍🏫 Instructor Offers",
     "no_instructor_offers": "No instructor offers available yet.",
     "my_request_label": "My Request",
     "instructor_offer_label": "Instructor Offer",
     "message": "Message",
     "open": "open",
     "closed": "closed",
-    "new_title": "\ud83d\udce2 Post New Learning Request",
+    "new_title": "📢 Post New Learning Request",
     "new_subtitle": "Fill out the form below to create your learning request",
     "field_title": "Title",
     "title_placeholder": "e.g. Need Help with Algebra",
@@ -901,8 +900,8 @@
     "cancel": "Cancel",
     "success_post": "Your request has been posted successfully!",
     "error_post": "There was an error submitting your request. Please try again."
-  }
-  ,"wishlistPage": {
+  },
+  "wishlistPage": {
     "title": "Ma liste de souhaits",
     "search_placeholder": "Rechercher dans la liste...",
     "sort": "Trier",
@@ -916,8 +915,8 @@
     "add_tag": "Ajouter un tag",
     "tutorials": "Tutoriels",
     "no_tutorials": "Aucun tutoriel dans la liste."
-  }
-  ,"adminOffersPage": {
+  },
+  "adminOffersPage": {
     "title": "Admin: Manage All Offers",
     "all_roles": "All Roles",
     "instructor": "Instructor",
@@ -939,7 +938,7 @@
     "status_update_failed": "Failed to update status"
   },
   "adminOfferDetailsPage": {
-    "back_to_list": "\u2190 Back to Offer List",
+    "back_to_list": "← Back to Offer List",
     "student_request": "Student Request",
     "instructor_offer": "Instructor Offer",
     "posted": "Posted",
@@ -947,7 +946,7 @@
     "status": "Status",
     "description": "Description",
     "available_until_sentence": "This offer is available until {{date}}.",
-    "discussion_thread": "\ud83d\udcac Discussion Thread",
+    "discussion_thread": "💬 Discussion Thread",
     "contact_info": "Contact Info",
     "whatsapp": "WhatsApp",
     "email": "Email",
@@ -995,5 +994,129 @@
     "licenseTypeLabel": "Type de licence",
     "selectLicenseType": "Sélectionnez le type de licence",
     "licenseTypeRequired": "Le type de licence est obligatoire"
+  },
+  "seoPage": {
+    "title": "SEO Control Panel",
+    "description": "Manage meta data, sitemap, and indexing rules.",
+    "tabs": {
+      "overview": "Overview",
+      "meta": "Meta Tags",
+      "sitemap": "Sitemap",
+      "robots": "Robots.txt",
+      "og": "Open Graph",
+      "twitter": "Twitter Cards",
+      "advanced": "Advanced"
+    },
+    "overview": {
+      "indexed": "Indexed Pages",
+      "missingMeta": "Pages Missing Meta Tags",
+      "sitemapUpdated": "Sitemap Last Updated",
+      "robotsStatus": "Robots.txt Status",
+      "ogReady": "Open Graph Ready Pages",
+      "actions": {
+        "regenerateSitemap": "Regenerate Sitemap",
+        "regenerateTip": "Generate a fresh sitemap.xml file",
+        "editRobots": "Edit Robots.txt",
+        "editRobotsTip": "Manage crawler instructions",
+        "scanMeta": "Scan for Meta Issues",
+        "scanMetaTip": "Check pages for missing titles and descriptions"
+      },
+      "sitemapSuccess": "Sitemap regenerated",
+      "sitemapFail": "Failed to regenerate",
+      "scanSuccess": "{{count}} issues found",
+      "scanFail": "Failed to scan",
+      "statsHeading": "SEO Stats",
+      "ok": "OK",
+      "warning": "Warning",
+      "error": "Error",
+      "viewPages": "View pages",
+      "lastChecked": "Last checked: {{date}}",
+      "quickActions": "Quick Actions"
+    },
+    "meta": {
+      "invalidCanonical": "Canonical URL must be absolute",
+      "saved": "Meta tags saved",
+      "saveFailed": "Failed to save",
+      "heading": "Edit Meta Tags",
+      "selectPage": "Select Page:",
+      "metaTitle": "Meta Title",
+      "metaTitlePlaceholder": "Enter SEO title...",
+      "metaDescription": "Meta Description",
+      "metaDescriptionPlaceholder": "Short description for search engines...",
+      "keywords": "Keywords",
+      "canonical": "Canonical URL",
+      "noindex": "Noindex",
+      "nofollow": "Nofollow",
+      "save": "Save Meta Tags"
+    },
+    "sitemap": {
+      "invalidPriority": "Priority must be between 0 and 1",
+      "saved": "Sitemap saved",
+      "saveFailed": "Failed to save",
+      "heading": "Sitemap Manager",
+      "regenerate": "Regenerate Sitemap",
+      "path": "Path",
+      "include": "Include",
+      "priority": "Priority",
+      "changeFreq": "Change Freq",
+      "actions": "Actions",
+      "delete": "Delete",
+      "addPage": "Add Page",
+      "lastUpdated": "Last updated: {{date}}"
+    },
+    "robots": {
+      "saveFailed": "Failed to save",
+      "heading": "Robots.txt Editor",
+      "description": "Search engines use robots.txt to know what they can or cannot index. You can preview it at:",
+      "save": "Save",
+      "restore": "Restore Default",
+      "saved": "Saved successfully"
+    },
+    "og": {
+      "saved": "Open Graph saved",
+      "saveFailed": "Failed to save",
+      "heading": "Open Graph Settings",
+      "selectPage": "Select Page",
+      "title": "OG Title",
+      "titlePlaceholder": "Open Graph title",
+      "description": "OG Description",
+      "descriptionPlaceholder": "Description for social sharing",
+      "type": "OG Type",
+      "image": "OG Image",
+      "save": "Save OG Settings"
+    },
+    "twitter": {
+      "invalidHandle": "Handle must start with @",
+      "saved": "Twitter card saved",
+      "saveFailed": "Failed to save",
+      "heading": "Twitter Card Settings",
+      "selectPage": "Select Page",
+      "title": "Twitter Card Title",
+      "titlePlaceholder": "Title for Twitter card",
+      "description": "Description",
+      "descriptionPlaceholder": "Description for Twitter",
+      "cardType": "Card Type",
+      "image": "Twitter Card Image",
+      "handle": "Twitter Handle",
+      "save": "Save Twitter Card"
+    },
+    "advanced": {
+      "invalidRedirect": "Redirect paths must start with /",
+      "saved": "SEO settings saved!",
+      "saveFailed": "Failed to save settings",
+      "heading": "Advanced SEO Settings",
+      "forceCanonical": "Force canonical URLs",
+      "noindexSitewide": "Noindex sitewide",
+      "autoPingSitemap": "Auto ping sitemap",
+      "redirects": "Redirect Rules",
+      "from": "From",
+      "to": "To",
+      "status": "Status",
+      "actions": "Actions",
+      "delete": "Delete",
+      "addRedirect": "Add Redirect",
+      "jsonLd": "Structured Data (JSON-LD)",
+      "save": "Save SEO Settings"
+    }
   }
 }
