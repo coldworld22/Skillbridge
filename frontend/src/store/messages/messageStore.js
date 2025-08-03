@@ -41,9 +41,10 @@ const useMessageStore = create((set, get) => ({
   markRead: async (id) => {
     const res = await markMessageAsRead(id);
     const readAt = res.read_at || new Date().toISOString();
+    const strId = String(id);
     set((state) => ({
       items: state.items.map((m) =>
-        m.id === id ? { ...m, read: true, read_at: readAt } : m,
+        m.id === strId ? { ...m, read: true, read_at: readAt } : m,
       ),
     }));
 
@@ -52,7 +53,7 @@ const useMessageStore = create((set, get) => ({
         items: state.items.filter(
           (m) =>
             !(
-              m.id === id &&
+              m.id === strId &&
               m.read &&
               m.read_at &&
               new Date() - new Date(m.read_at) >= HOUR_MS
