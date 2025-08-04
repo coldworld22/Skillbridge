@@ -1,7 +1,7 @@
 // pages/admin/ads/create.js
 import { useState } from "react";
 import { useRouter } from "next/router";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
@@ -86,7 +86,6 @@ export default function CreateAdPage() {
 
   return (
     <AdminLayout>
-      <Toaster position="top-center" />
       <div className="max-w-3xl mx-auto p-6" dir={i18n.dir()}>
         <h1 className="text-3xl font-bold mb-6">📢 {t('title')}</h1>
         {error && (
