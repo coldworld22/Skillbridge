@@ -55,8 +55,14 @@ const Hero = () => {
   useEffect(() => {
     const bg = settings.home_bg_url;
     if (bg) {
-      const finalBg = bg.startsWith("http") ? bg : `${API_BASE_URL}${bg}`;
-      setHeroBg(finalBg);
+      let base = API_BASE_URL;
+      if (!base.startsWith("http") && typeof window !== "undefined") {
+        base = window.location.origin + base;
+      }
+      const normalizedBg = bg.startsWith("http")
+        ? bg
+        : `${base}${bg.startsWith("/") ? bg : `/${bg}`}`;
+      setHeroBg(normalizedBg);
     } else {
       setHeroBg("");
     }

@@ -16,7 +16,6 @@ export const getAds = async () => {
       return `${apiBase}${url}`;
     };
     return ads.map((ad) => ({
-      ...ad,
       image: formatUrl(ad.image_url),
       video: formatUrl(ad.video_url),
       link: ad.link_url,
