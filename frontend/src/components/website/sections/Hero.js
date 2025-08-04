@@ -412,7 +412,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.5 }}
-              className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500"
+              className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500 group"
               {...handlers}
             >
             {ads[currentAd].video ? (
@@ -441,7 +441,7 @@ const Hero = () => {
             >
               <FaSearchPlus />
             </button>
-            <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent z-10 flex items-end justify-center pb-8 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-transparent z-10 flex items-end justify-center pb-8 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto">
               <div className="px-6 md:px-10 max-w-xl text-white">
                 <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-snug drop-shadow-xl">
                   {ads[currentAd].title}

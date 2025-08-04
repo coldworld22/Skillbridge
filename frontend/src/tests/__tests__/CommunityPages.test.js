@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CommunityPage from '../../pages/community';
 import AskQuestionPage from '../../pages/community/ask';
