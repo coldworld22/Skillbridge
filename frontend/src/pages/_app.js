@@ -104,7 +104,10 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
 
   useEffect(() => {
     fetch('/api/google-analytics')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
+        return res.json();
+      })
       .then((cfg) => {
         if (cfg.enabled && cfg.measurementId) {
           if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
