@@ -314,6 +314,7 @@
     "optional_link": "Optional Link",
     "link_placeholder": "https://example.com",
     "allow_branding": "Enable Custom Branding (Prime only)",
+    "target_audience": "Target Audience",
     "create_ad": "Create Advertisement",
     "creating": "Creating...",
     "success": "Advertisement created successfully!",
@@ -324,35 +325,11 @@
     "failed": "Failed to create ad.",
     "title_exists": "Ad title already exists.",
     "image_ratio_error": "Image must be exactly 1600x1000 pixels to fit the hero ad box.",
-    "preview_ad": "Preview Ad",
-    "notification_failed": "Failed to send notification"
-  },
-  "adsEditPage": {
-    "not_found": "Ad not found.",
-    "error_load": "Failed to load ad",
-    "required_fields": "Please fill in all required fields.",
-    "end_before_start": "End date must be after start date.",
-    "duration_exceeded": "Your plan only allows ads for up to {{days}} days.",
-    "update_success": "Ad updated successfully!",
-    "update_failed": "Failed to update ad",
-    "loading": "Loading ad data..."
-  },
-  "adsAnalyticsPage": {
-    "loading": "Loading ad analytics...",
-    "title_prefix": "Ad Analytics",
-    "overview": "Analytics overview for this campaign",
-    "edit": "Edit",
-    "activate": "Activate",
-    "deactivate": "Deactivate",
-    "delete": "Delete",
-    "description": "Description",
-    "target_roles": "Target Roles",
-    "duration": "Duration",
-    "ad_type": "Ad Type",
-    "status": "Status",
-    "performance_metrics": "Performance Metrics",
-    "views_over_time": "Views Over Time",
-    "views_by_country": "Views by Country"
+    "invalid_image_type": "Only image files are allowed.",
+    "image_too_large": "Image size must be under 5MB.",
+    "invalid_video_type": "Only video files are allowed.",
+    "video_too_large": "Video size must be under 50MB.",
+    "preview_ad": "Preview Ad"
   },
   "plansPage": {
     "title": "Subscription Plans",

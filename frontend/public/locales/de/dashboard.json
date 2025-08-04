@@ -278,6 +278,7 @@
     "optional_link": "Optionaler Link",
     "link_placeholder": "https://example.com",
     "allow_branding": "Benutzerdefiniertes Branding aktivieren (nur Prime)",
+    "target_audience": "Zielgruppe",
     "create_ad": "Anzeige erstellen",
     "creating": "Erstelle...",
     "success": "Anzeige erfolgreich erstellt!",
@@ -288,6 +289,10 @@
     "failed": "Anzeige konnte nicht erstellt werden.",
     "title_exists": "Anzeigetitel existiert bereits.",
     "image_ratio_error": "Das Bild muss exakt 1600x1000 Pixel groß sein, damit es in die Hero-Anzeigenbox passt.",
+    "invalid_image_type": "Es sind nur Bilddateien erlaubt.",
+    "image_too_large": "Das Bild darf nicht größer als 5 MB sein.",
+    "invalid_video_type": "Es sind nur Videodateien erlaubt.",
+    "video_too_large": "Das Video darf nicht größer als 50 MB sein.",
     "preview_ad": "Anzeige Vorschau"
   },
   "plansPage": {
