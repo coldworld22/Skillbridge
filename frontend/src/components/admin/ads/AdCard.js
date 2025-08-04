@@ -31,12 +31,16 @@ export default function AdCard({
           className="w-full h-40 object-cover rounded-t-lg"
           controls
         />
-      ) : (
+      ) : ad.image ? (
         <img
           src={ad.image}
           alt={ad.title}
           className="w-full h-40 object-cover rounded-t-lg"
         />
+      ) : (
+        <div className="w-full h-40 flex items-center justify-center bg-gray-100 text-gray-500 rounded-t-lg">
+          No media
+        </div>
       )}
 
       {/* Ad Content */}

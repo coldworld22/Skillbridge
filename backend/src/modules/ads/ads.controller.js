@@ -3,9 +3,6 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./ads.service");
-const notificationService = require("../notifications/notifications.service");
-const messageService = require("../messages/messages.service");
-const userModel = require("../users/user.model");
 
 /**
  * Controller functions for managing advertisement banners.
@@ -48,33 +45,8 @@ exports.createAd = catchAsync(async (req, res) => {
 
   const ad = await service.createAd(data);
 
-  try {
-    const [admins, instructors, students] = await Promise.all([
-      userModel.findAdmins(),
-      userModel.findInstructors(),
-      userModel.findStudents(),
-    ]);
-    const users = [...admins, ...instructors, ...students];
-
-    await Promise.all(
-      users.map((u) =>
-        Promise.all([
-          notificationService.createNotification({
-            user_id: u.id,
-            type: "ad_created",
-            message: `New ad "${ad.title}" created`,
-          }),
-          messageService.createMessage({
-            sender_id: req.user.id,
-            receiver_id: u.id,
-            message: `New ad "${ad.title}" created`,
-          }),
-        ])
-      )
-    );
-  } catch (err) {
-    console.error("Failed to notify users of new ad", err);
-  }
+  // Notifications and messages to all users were removed to simplify ad creation
+  // and avoid spamming the platform with global alerts.
 
   sendSuccess(res, ad, "Ad created");
 });
@@ -125,33 +97,8 @@ exports.updateAd = catchAsync(async (req, res) => {
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);
 
-  try {
-    const [admins, instructors, students] = await Promise.all([
-      userModel.findAdmins(),
-      userModel.findInstructors(),
-      userModel.findStudents(),
-    ]);
-    const users = [...admins, ...instructors, ...students];
+  // Global notifications/messages removed
 
-    await Promise.all(
-      users.map((u) =>
-        Promise.all([
-          notificationService.createNotification({
-            user_id: u.id,
-            type: "ad_updated",
-            message: `Ad "${updated.title}" was updated`,
-          }),
-          messageService.createMessage({
-            sender_id: req.user.id,
-            receiver_id: u.id,
-            message: `Ad "${updated.title}" was updated`,
-          }),
-        ])
-      )
-    );
-  } catch (err) {
-    console.error("Failed to notify users of ad update", err);
-  }
   sendSuccess(res, updated, "Ad updated");
 });
 
@@ -159,37 +106,11 @@ exports.updateAd = catchAsync(async (req, res) => {
  * Delete an ad by id.
  */
 exports.deleteAd = catchAsync(async (req, res) => {
-  const ad = await service.getAdById(req.params.id);
   const count = await service.deleteAd(req.params.id);
   if (!count) throw new AppError("Ad not found", 404);
-  if (ad) {
-    try {
-      const [admins, instructors, students] = await Promise.all([
-        userModel.findAdmins(),
-        userModel.findInstructors(),
-        userModel.findStudents(),
-      ]);
-      const users = [...admins, ...instructors, ...students];
-      await Promise.all(
-        users.map((u) =>
-          Promise.all([
-            notificationService.createNotification({
-              user_id: u.id,
-              type: "ad_deleted",
-              message: `Ad "${ad.title}" was deleted`,
-            }),
-            messageService.createMessage({
-              sender_id: req.user.id,
-              receiver_id: u.id,
-              message: `Ad "${ad.title}" was deleted`,
-            }),
-          ])
-        )
-      );
-    } catch (err) {
-      console.error("Failed to notify users of ad deletion", err);
-    }
-  }
+
+  // Skip sending system-wide notifications when ads are removed
+
   sendSuccess(res, null, "Ad deleted");
 });
 
