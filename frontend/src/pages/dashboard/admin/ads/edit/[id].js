@@ -5,13 +5,19 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import plansConfig from "@/config/plansConfig";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
-
-const currentUserPlan = "basic";
-const { maxAdDuration } = plansConfig[currentUserPlan];
+import { toast } from "react-toastify";
+import useAuthStore from "@/store/auth/authStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function EditAdPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { t } = useTranslation('dashboard', { keyPrefix: 'adsEditPage' });
+  const user = useAuthStore((s) => s.user);
+  const currentUserPlan = user?.plan || 'basic';
+  const { maxAdDuration } = plansConfig[currentUserPlan] || {};
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
   const [mediaType, setMediaType] = useState('image');
@@ -28,11 +34,19 @@ export default function EditAdPage() {
               setMediaType('video');
               setVideoPreview(ad.video);
             }
-          } else setError("Ad not found.");
+          } else setError(t('not_found'));
         })
-        .catch(() => setError("Failed to load ad"));
+        .catch(() => setError(t('error_load')));
     }
-  }, [id]);
+  }, [id, t]);
+
+  useEffect(() => {
+    return () => {
+      if (videoPreview && videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreview);
+      }
+    };
+  }, [videoPreview]);
   
   
 
@@ -70,15 +84,15 @@ export default function EditAdPage() {
     const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
     if (!formData.title || (mediaType === 'image' && !formData.image) || (mediaType === 'video' && !videoFile && !formData.video) || !formData.startAt || !formData.endAt) {
-      setError("Please fill in all required fields.");
+      setError(t('required_fields'));
       return;
     }
     if (start > end) {
-      setError("End date must be after start date.");
+      setError(t('end_before_start'));
       return;
     }
     if (diffInDays > maxAdDuration) {
-      setError(`Your plan only allows ads for up to ${maxAdDuration} days.`);
+      setError(t('duration_exceeded', { days: maxAdDuration }));
       return;
     }
 
@@ -100,17 +114,18 @@ export default function EditAdPage() {
       payload.append("link_url", formData.link);
 
       await updateAd(id, payload);
-      alert("Ad updated successfully!");
+      toast.success(t('update_success'));
       router.push("/dashboard/admin/ads");
     } catch (err) {
-      setError("Failed to update ad");
+      setError(t('update_failed'));
+      toast.error(t('update_failed'));
     }
   };
 
   if (!formData) {
     return (
       <AdminLayout>
-        <div className="p-6">Loading ad data...</div>
+        <div className="p-6">{t('loading')}</div>
       </AdminLayout>
     );
   }
@@ -204,4 +219,16 @@ export default function EditAdPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticPaths() {
+  return { paths: [], fallback: 'blocking' };
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }

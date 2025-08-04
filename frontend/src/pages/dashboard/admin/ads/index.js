@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { FaPlus, FaChartBar } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { CSVLink } from "react-csv";
 import AdCard from "@/components/admin/ads/AdCard"; // Extract AdCard for maintainability
@@ -16,6 +17,7 @@ export default function AdminAdsPage() {
     // State Management
     // ─────────────────────
     const { t } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
+    const router = useRouter();
     const [ads, setAds] = useState([]);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
@@ -48,13 +50,13 @@ export default function AdminAdsPage() {
                 await updateAd(id, { is_active: !ad.isActive });
                 toast.success(t('status_updated'));
             } catch {
-                toast.error('Error');
+                toast.error(t('error_generic'));
             }
         }
     };
 
     const handleEdit = (ad) => {
-        window.location.href = `/dashboard/admin/ads/edit/${ad.id}`;
+        router.push(`/dashboard/admin/ads/edit/${ad.id}`);
       };
       
     const handleDelete = async (ad) => {
@@ -64,13 +66,13 @@ export default function AdminAdsPage() {
                 setAds((prev) => prev.filter((a) => a.id !== ad.id));
                 toast.success(t('deleted'));
             } catch {
-                toast.error('Error');
+                toast.error(t('error_generic'));
             }
         }
     };
 
     const handleAnalytics = (ad) => {
-        window.location.href = `/dashboard/admin/ads/analytics/${ad.id}`;
+        router.push(`/dashboard/admin/ads/analytics/${ad.id}`);
       };
       
     const handlePreview = (ad) => setPreviewAd(ad);
@@ -81,10 +83,15 @@ export default function AdminAdsPage() {
         );
     };
 
-    const bulkDelete = () => {
-        if (confirm("Delete selected ads?")) {
+    const bulkDelete = async () => {
+        if (!confirm(t('confirm_bulk_delete'))) return;
+        try {
+            await Promise.all(selectedAds.map((id) => deleteAd(id)));
             setAds((prev) => prev.filter((ad) => !selectedAds.includes(ad.id)));
             setSelectedAds([]);
+            toast.success(t('deleted'));
+        } catch {
+            toast.error(t('delete_failed'));
         }
     };
 
