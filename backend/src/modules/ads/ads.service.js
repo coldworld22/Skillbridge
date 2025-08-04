@@ -5,11 +5,12 @@ exports.createAd = async (data) => {
   return row;
 };
 
-exports.getAds = async () => {
-  // Only return ads that are marked as active so the frontend
-  // doesn't display unpublished or draft ads in the hero section.
+// Fetch ads with optional inclusion of inactive ones
+exports.getAds = async (includeInactive = false) => {
   return db("ads")
-    .where({ is_active: true })
+    .modify((qb) => {
+      if (!includeInactive) qb.where({ is_active: true });
+    })
     .orderBy("created_at", "desc");
 };
 

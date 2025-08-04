@@ -75,10 +75,18 @@ exports.createAd = catchAsync(async (req, res) => {
 });
 
 /**
- * List all ads ordered by creation date.
+ * Public endpoint: list only active ads.
  */
 exports.getAds = catchAsync(async (_req, res) => {
-  const ads = await service.getAds();
+  const ads = await service.getAds(false);
+  sendSuccess(res, ads);
+});
+
+/**
+ * Admin endpoint: list all ads including inactive ones.
+ */
+exports.getAllAds = catchAsync(async (_req, res) => {
+  const ads = await service.getAds(true);
   sendSuccess(res, ads);
 });
 
