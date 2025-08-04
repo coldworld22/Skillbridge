@@ -1,5 +1,5 @@
 // pages/admin/ads/create.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -9,22 +9,19 @@ import { FaSpinner } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
 import PreviewModal from "@/components/admin/ads/PreviewModal";
-const currentUserPlan = "basic";
-const { allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
 export default function CreateAdPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
-  const refreshNotifications = useNotificationStore((s) => s.fetch);
-  const refreshMessages = useMessageStore((s) => s.fetch);
+
+  const planKey = user?.plan || 'basic';
+  const { allowBranding: allowBrandingEnabled } = plansConfig[planKey] || { allowBranding: false };
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,34 +40,35 @@ export default function CreateAdPage() {
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    if (!file.type.startsWith('image/')) {
+      setError(t('invalid_image_type'));
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError(t('image_too_large'));
+      return;
+    }
+    const url = URL.createObjectURL(file);
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    img.src = url;
     img.onload = () => {
       if (img.width === 1600 && img.height === 1000) {
         setError(null);
         setFormData((prev) => ({ ...prev, image: file }));
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImagePreview(url);
       } else {
         setError(t('image_ratio_error'));
         setFormData((prev) => ({ ...prev, image: null }));
+        URL.revokeObjectURL(url);
       }
     };
-  };
-
-  const notify = async (message) => {
-    try {
-      await createNotification({ user_id: user.id, type: "ad_created", message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleChange = (e) => {
@@ -94,10 +92,20 @@ export default function CreateAdPage() {
 
   const handleVideoChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      setVideoPreview(URL.createObjectURL(file));
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      setError(t('invalid_video_type'));
+      return;
     }
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError(t('video_too_large'));
+      return;
+    }
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+    setError(null);
   };
 
   const handleSubmit = async (e) => {
@@ -124,6 +132,12 @@ export default function CreateAdPage() {
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("link_url", formData.link);
+      payload.append("start_at", formData.startAt);
+      payload.append("end_at", formData.endAt);
+      payload.append("ad_type", formData.adType);
+      payload.append("priority", String(formData.priority));
+      payload.append("allow_branding", formData.allowBranding ? "true" : "false");
+      payload.append("target_roles", JSON.stringify(formData.targetRoles));
 
       if (mediaType === 'image') {
         payload.append('image', formData.image);
@@ -133,7 +147,6 @@ export default function CreateAdPage() {
 
       await createAd(payload);
       toast.success(t('success'));
-      notify(t('ad_created_notification', { title: formData.title }));
       router.push("/dashboard/admin/ads");
     } catch (err) {
       const message = err?.response?.data?.message || t('failed');
@@ -147,6 +160,13 @@ export default function CreateAdPage() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+    };
+  }, [imagePreview, videoPreview]);
 
   return (
     <AdminLayout>
@@ -204,9 +224,9 @@ export default function CreateAdPage() {
               {mediaType === 'image' ? (
                 <div>
                   <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
-                  {formData.image && (
+                  {imagePreview && (
                     <img
-                      src={URL.createObjectURL(formData.image)}
+                      src={imagePreview}
                       alt="Preview"
                       className="w-full h-48 object-cover rounded border mb-2"
                     />
@@ -251,6 +271,35 @@ export default function CreateAdPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Target Audience */}
+          <section className="bg-white rounded-2xl shadow border border-gray-200">
+            <header className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">👥 {t('target_audience')}</h2>
+            </header>
+            <div className="px-5 py-6 space-y-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="targetRoles"
+                  value="student"
+                  checked={formData.targetRoles.includes('student')}
+                  onChange={handleChange}
+                />
+                {tp('student')}
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="targetRoles"
+                  value="instructor"
+                  checked={formData.targetRoles.includes('instructor')}
+                  onChange={handleChange}
+                />
+                {tp('instructor')}
+              </label>
             </div>
           </section>
 
@@ -350,8 +399,8 @@ export default function CreateAdPage() {
             title: formData.title,
             description: formData.description,
             image:
-              mediaType === 'image' && formData.image
-                ? URL.createObjectURL(formData.image)
+              mediaType === 'image' && imagePreview
+                ? imagePreview
                 : null,
             video: mediaType === 'video' ? videoPreview : null,
             startAt: formData.startAt,

@@ -289,6 +289,7 @@
     "optional_link": "Lien optionnel",
     "link_placeholder": "https://example.com",
     "allow_branding": "Activer la personnalisation de la marque (Prime uniquement)",
+    "target_audience": "Public cible",
     "create_ad": "Créer l'annonce",
     "creating": "Création...",
     "success": "Annonce créée avec succès !",
@@ -299,6 +300,10 @@
     "failed": "Échec de la création de l'annonce.",
     "title_exists": "Le titre de l'annonce existe déjà.",
     "image_ratio_error": "L'image doit être exactement de 1600x1000 pixels pour s'adapter à l'encart publicitaire du héros.",
+    "invalid_image_type": "Seuls les fichiers image sont autorisés.",
+    "image_too_large": "La taille de l'image doit être inférieure à 5 Mo.",
+    "invalid_video_type": "Seuls les fichiers vidéo sont autorisés.",
+    "video_too_large": "La taille de la vidéo doit être inférieure à 50 Mo.",
     "preview_ad": "Aperçu de l'annonce"
   },
   "plansPage": {

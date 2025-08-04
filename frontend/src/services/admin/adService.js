@@ -30,6 +30,11 @@ export const fetchAds = async () => {
     video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
+    startAt: ad.start_at ?? ad.startAt,
+    endAt: ad.end_at ?? ad.endAt,
+    adType: ad.ad_type ?? ad.adType,
+    priority: ad.priority ?? 0,
+    allowBranding: ad.allow_branding ?? false,
     isActive: ad.is_active ?? ad.isActive ?? false,
   }));
 };
@@ -45,6 +50,11 @@ export const fetchAdById = async (id) => {
     video: ad.video_url ? `${base}${ad.video_url}` : null,
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
+    startAt: ad.start_at ?? ad.startAt,
+    endAt: ad.end_at ?? ad.endAt,
+    adType: ad.ad_type ?? ad.adType,
+    priority: ad.priority ?? 0,
+    allowBranding: ad.allow_branding ?? false,
     isActive: ad.is_active ?? ad.isActive ?? false,
   };
 };

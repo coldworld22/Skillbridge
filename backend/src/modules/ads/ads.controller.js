@@ -12,7 +12,17 @@ const service = require("./ads.service");
  * Create a new advertisement.
  */
 exports.createAd = catchAsync(async (req, res) => {
-  const { title, description, link_url } = req.body;
+  const {
+    title,
+    description,
+    link_url,
+    start_at,
+    end_at,
+    target_roles,
+    ad_type,
+    priority,
+    allow_branding,
+  } = req.body;
 
   if (await service.findByTitle(title)) {
     throw new AppError("Ad title already exists", 409);
@@ -30,9 +40,22 @@ exports.createAd = catchAsync(async (req, res) => {
     title,
     description,
     link_url,
+    start_at,
+    end_at,
+    ad_type,
+    priority: priority ? Number(priority) : 0,
+    allow_branding: allow_branding === "true" || allow_branding === true,
     created_by: req.user.id,
     is_active: false,
   };
+
+  if (target_roles) {
+    try {
+      data.target_roles = JSON.parse(target_roles);
+    } catch {
+      data.target_roles = Array.isArray(target_roles) ? target_roles : [target_roles];
+    }
+  }
 
   if (req.files?.image?.[0]) {
     data.image_url = `/uploads/ads/${req.files.image[0].filename}`;
@@ -71,11 +94,39 @@ exports.getAdById = catchAsync(async (req, res) => {
  * Update an existing ad.
  */
 exports.updateAd = catchAsync(async (req, res) => {
-  const { title, description, link_url, is_active } = req.body;
-  const updates = { title, description, link_url };
+  const {
+    title,
+    description,
+    link_url,
+    is_active,
+    start_at,
+    end_at,
+    target_roles,
+    ad_type,
+    priority,
+    allow_branding,
+  } = req.body;
+  const updates = {
+    title,
+    description,
+    link_url,
+    start_at,
+    end_at,
+    ad_type,
+    priority: priority ? Number(priority) : undefined,
+    allow_branding: allow_branding === "true" || allow_branding === true,
+  };
 
-  if (typeof is_active === "boolean") {
-    updates.is_active = is_active;
+  if (target_roles) {
+    try {
+      updates.target_roles = JSON.parse(target_roles);
+    } catch {
+      updates.target_roles = Array.isArray(target_roles) ? target_roles : [target_roles];
+    }
+  }
+
+  if (typeof is_active === "boolean" || is_active === "true" || is_active === "false") {
+    updates.is_active = is_active === true || is_active === "true";
   }
 
   if (title) {

@@ -278,6 +278,7 @@
     "optional_link": "Enlace opcional",
     "link_placeholder": "https://example.com",
     "allow_branding": "Habilitar marca personalizada (solo Prime)",
+    "target_audience": "Público objetivo",
     "create_ad": "Crear anuncio",
     "creating": "Creando...",
     "success": "¡Anuncio creado con éxito!",
@@ -288,6 +289,10 @@
     "failed": "No se pudo crear el anuncio.",
     "title_exists": "El título del anuncio ya existe.",
     "image_ratio_error": "La imagen debe ser exactamente de 1600x1000 píxeles para ajustarse al cuadro de anuncio del héroe.",
+    "invalid_image_type": "Solo se permiten archivos de imagen.",
+    "image_too_large": "La imagen debe ser menor de 5 MB.",
+    "invalid_video_type": "Solo se permiten archivos de video.",
+    "video_too_large": "El video debe ser menor de 50 MB.",
     "preview_ad": "Vista previa del anuncio"
   },
   "plansPage": {
