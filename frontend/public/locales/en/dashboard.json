@@ -280,7 +280,20 @@
     "status_updated": "Status updated",
     "confirm_delete": "Delete ad: {{title}}?",
     "selected": "selected",
-    "delete_selected": "Delete Selected"
+    "delete_selected": "Delete Selected",
+    "confirm_bulk_delete": "Delete selected ads?",
+    "delete_failed": "Failed to delete ad(s)",
+    "error_generic": "Something went wrong",
+    "no_media": "No media",
+    "on": "On",
+    "off": "Off",
+    "view_analytics": "View Analytics",
+    "preview_ad": "Preview Ad",
+    "edit_ad": "Edit Ad",
+    "delete_ad": "Delete Ad",
+    "close": "Close",
+    "target_label": "Target",
+    "views": "Views"
   },
   "adsCreatePage": {
     "title": "Create Advertisement",

@@ -12,7 +12,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useAuthStore from "@/store/auth/authStore";
 import PreviewModal from "@/components/admin/ads/PreviewModal";
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50M
 
 export default function CreateAdPage() {
   const router = useRouter();
@@ -107,6 +107,13 @@ export default function CreateAdPage() {
     setVideoPreview(url);
     setError(null);
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [videoPreview, imagePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
