@@ -12,11 +12,15 @@ const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 
   const [showAlerts, setShowAlerts] = useState(false);
 
   const handleMarkRead = async (id) => {
+    const prev = systemNotifs;
+    setSystemNotifs((p) => p.filter((n) => n.id !== id));
     try {
       await markNotificationAsRead(id);
       toast.success(t('mark_as_read'));
-    } catch (_) {}
-    setSystemNotifs((prev) => prev.filter((n) => n.id !== id));
+    } catch (_) {
+      setSystemNotifs(prev);
+      toast.error(t('mark_as_read_error', 'Failed to mark notification as read'));
+    }
   };
 
   useEffect(() => {
