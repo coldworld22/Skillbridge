@@ -57,7 +57,7 @@ const Hero = () => {
     if (!base.startsWith("http") && typeof window !== "undefined") {
       base = window.location.origin + base;
     }
-    return base.replace(/\/?api\/?$/, "");
+    return base.replace(/\/api.*$/, "");
   };
 
   useEffect(() => {

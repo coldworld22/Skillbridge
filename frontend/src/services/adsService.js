@@ -14,7 +14,7 @@ export const getAds = async () => {
     if (!base.startsWith("http") && typeof window !== "undefined") {
       base = window.location.origin + base;
     }
-    const apiBase = base.replace(/\/?api\/?$/, "");
+    const apiBase = base.replace(/\/api.*$/, "");
 
     const formatUrl = (url) => {
       if (!url) return null;
