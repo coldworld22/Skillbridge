@@ -7,18 +7,17 @@ export const getAds = async () => {
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    const apiBase = base.replace(/\/?api\/?$/, "");
+    const formatUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
+        return url;
+      }
+      return `${apiBase}${url}`;
+    };
     return ads.map((ad) => ({
-      ...ad,
-      image: ad.image_url
-        ? ad.image_url.startsWith("http")
-          ? ad.image_url
-          : `${base}${ad.image_url}`
-        : null,
-      video: ad.video_url
-        ? ad.video_url.startsWith("http")
-          ? ad.video_url
-          : `${base}${ad.video_url}`
-        : null,
+      image: formatUrl(ad.image_url),
+      video: formatUrl(ad.video_url),
       link: ad.link_url,
     }));
   } catch (error) {
