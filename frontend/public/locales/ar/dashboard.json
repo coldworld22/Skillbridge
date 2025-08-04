@@ -311,7 +311,6 @@
     "end_before_start": "End date cannot be before start date.",
     "failed": "Failed to create ad.",
     "title_exists": "Ad title already exists.",
-    "image_ratio_error": "يجب أن تكون الصورة بدقة 1600x1000 بكسل بالضبط لتناسب صندوق الإعلان في قسم البطل.",
     "invalid_image_type": "يُسمح بملفات الصور فقط.",
     "image_too_large": "يجب أن يكون حجم الصورة أقل من 5 ميغابايت.",
     "invalid_video_type": "يُسمح بملفات الفيديو فقط.",

@@ -288,7 +288,6 @@
     "end_before_start": "La fecha de finalización no puede ser anterior a la de inicio.",
     "failed": "No se pudo crear el anuncio.",
     "title_exists": "El título del anuncio ya existe.",
-    "image_ratio_error": "La imagen debe ser exactamente de 1600x1000 píxeles para ajustarse al cuadro de anuncio del héroe.",
     "invalid_image_type": "Solo se permiten archivos de imagen.",
     "image_too_large": "La imagen debe ser menor de 5 MB.",
     "invalid_video_type": "Solo se permiten archivos de video.",

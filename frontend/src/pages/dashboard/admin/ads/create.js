@@ -55,20 +55,10 @@ export default function CreateAdPage() {
       return;
     }
     const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      if (img.width === 1600 && img.height === 1000) {
-        setError(null);
-        setFormData((prev) => ({ ...prev, image: file }));
-        if (imagePreview) URL.revokeObjectURL(imagePreview);
-        setImagePreview(url);
-      } else {
-        setError(t('image_ratio_error'));
-        setFormData((prev) => ({ ...prev, image: null }));
-        URL.revokeObjectURL(url);
-      }
-    };
+    setError(null);
+    setFormData((prev) => ({ ...prev, image: file }));
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(url);
   };
 
   const handleChange = (e) => {
