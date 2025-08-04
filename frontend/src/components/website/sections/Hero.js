@@ -325,8 +325,8 @@ const Hero = () => {
               <Image
                 src={ads[currentAd].image}
                 alt={ads[currentAd].title}
-                layout="fill"
-                objectFit="cover"
+                fill
+                style={{ objectFit: "cover" }}
                 className="object-cover"
                 priority
               />

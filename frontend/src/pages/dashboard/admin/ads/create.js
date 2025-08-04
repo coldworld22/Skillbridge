@@ -1,7 +1,7 @@
 // pages/admin/ads/create.js
 import { useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
@@ -11,6 +11,11 @@ import { FaSpinner } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 const currentUserPlan = "basic";
 const { maxAdDuration, allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
 
@@ -18,6 +23,9 @@ export default function CreateAdPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -36,6 +44,17 @@ export default function CreateAdPage() {
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
+
+  const notify = async (message) => {
+    try {
+      await createNotification({ user_id: user.id, type: "ad_created", message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -101,6 +120,7 @@ export default function CreateAdPage() {
 
       await createAd(payload);
       toast.success(t('success'));
+      notify(`Ad "${formData.title}" created`);
       router.push("/dashboard/admin/ads");
     } catch (err) {
       const message = err?.response?.data?.message || t('failed');
@@ -117,7 +137,6 @@ export default function CreateAdPage() {
 
   return (
     <AdminLayout>
-      <Toaster position="top-center" />
       <div className="max-w-4xl mx-auto p-6" dir={i18n.dir()}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">🛠️ {t('title')}</h1>
 
