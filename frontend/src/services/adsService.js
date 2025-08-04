@@ -16,9 +16,12 @@ export const getAds = async () => {
       return `${apiBase}${url}`;
     };
     return ads.map((ad) => ({
-      image: formatUrl(ad.image_url),
-      video: formatUrl(ad.video_url),
-      link: ad.link_url,
+      id: ad.id,
+      title: ad.title,
+      description: ad.description,
+      image: formatUrl(ad.image_url || ad.image),
+      video: formatUrl(ad.video_url || ad.video),
+      link: ad.link_url || ad.link,
     }));
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
