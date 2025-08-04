@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
 import { FaSpinner } from "react-icons/fa";
@@ -16,7 +15,7 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 const currentUserPlan = "basic";
-const { maxAdDuration, allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
+const { allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
 
 export default function CreateAdPage() {
   const router = useRouter();
@@ -251,9 +250,6 @@ export default function CreateAdPage() {
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
-              </div>
-              <div className="col-span-2">
-                <PlanLimitHint plan={currentUserPlan} />
               </div>
             </div>
           </section>

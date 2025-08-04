@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
-import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
 
@@ -124,7 +123,6 @@ export default function EditAdPage() {
               <input type="date" name="endAt" value={formData.endAt} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2" />
             </div>
-            <PlanLimitHint plan={currentUserPlan} />
           </section>
 
           <section className="grid md:grid-cols-2 gap-4">
