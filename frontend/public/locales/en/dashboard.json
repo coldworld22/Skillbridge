@@ -309,7 +309,8 @@
     "dates_required": "Start and end dates are required.",
     "end_before_start": "End date cannot be before start date.",
     "failed": "Failed to create ad.",
-    "title_exists": "Ad title already exists."
+    "title_exists": "Ad title already exists.",
+    "image_ratio_error": "Image must have a 16:10 aspect ratio (e.g., 1600x1000) to fit the hero ad box."
   },
   "plansPage": {
     "title": "Subscription Plans",

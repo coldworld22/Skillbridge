@@ -4,15 +4,11 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
-import PlanLimitHint from "@/components/shared/PlanLimitHint";
-import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
-const currentUserPlan = "basic"; // "basic" | "regular" | "prime"
-const { maxAdDuration } = plansConfig[currentUserPlan];
 
 export default function CreateAdPage() {
   const router = useRouter();
@@ -141,7 +137,6 @@ export default function CreateAdPage() {
                   className="w-full border border-gray-300 rounded px-3 py-2" />
               </div>
             </div>
-            <PlanLimitHint plan={currentUserPlan} />
           </section>
 
           <section>
