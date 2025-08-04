@@ -120,7 +120,7 @@ export default function CreateAdPage() {
 
       await createAd(payload);
       toast.success(t('success'));
-      notify(`Ad "${formData.title}" created`);
+      notify(t('ad_created_notification', { title: formData.title }));
       router.push("/dashboard/admin/ads");
     } catch (err) {
       const message = err?.response?.data?.message || t('failed');
@@ -279,7 +279,7 @@ export default function CreateAdPage() {
                   name="link"
                   value={formData.link}
                   onChange={handleChange}
-                  placeholder="https://example.com"
+                  placeholder={t('link_placeholder')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
