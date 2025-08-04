@@ -9,8 +9,16 @@ export const getAds = async () => {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return ads.map((ad) => ({
       ...ad,
-      image: ad.image_url ? `${base}${ad.image_url}` : null,
-      video: ad.video_url ? `${base}${ad.video_url}` : null,
+      image: ad.image_url
+        ? ad.image_url.startsWith("http")
+          ? ad.image_url
+          : `${base}${ad.image_url}`
+        : null,
+      video: ad.video_url
+        ? ad.video_url.startsWith("http")
+          ? ad.video_url
+          : `${base}${ad.video_url}`
+        : null,
       link: ad.link_url,
     }));
   } catch (error) {
