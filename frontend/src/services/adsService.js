@@ -3,7 +3,7 @@ import { API_BASE_URL } from "@/config/config";
 
 export const getAds = async () => {
   const { data } = await api.get("/ads");
-
+  // Backend already filters out inactive ads so simply map the returned list.
   const ads = data?.data ?? [];
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   return ads.map((ad) => ({
