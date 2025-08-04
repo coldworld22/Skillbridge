@@ -12,7 +12,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 const currentUserPlan = "basic";
-const { maxAdDuration } = plansConfig[currentUserPlan];
+const { maxAdDuration, allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
 
 export default function CreateAdPage() {
   const router = useRouter();
@@ -264,12 +264,19 @@ export default function CreateAdPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
-              <div className="col-span-2 space-y-3">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="allowBranding" checked={formData.allowBranding} onChange={handleChange} />
-                  {t('allow_branding')}
-                </label>
-              </div>
+              {allowBrandingEnabled && (
+                <div className="col-span-2 space-y-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="allowBranding"
+                      checked={formData.allowBranding}
+                      onChange={handleChange}
+                    />
+                    {t('allow_branding')}
+                  </label>
+                </div>
+              )}
             </div>
           </section>
 

@@ -12,7 +12,7 @@ const plansConfig = {
       maxAds: 3,
       maxAdDuration: 7,
       placements: ["dashboard", "homepage"],
-      allowBranding: true,
+      allowBranding: false,
       showAnalytics: true
     },
     prime: {
