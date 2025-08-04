@@ -6,14 +6,23 @@ export const getAds = async () => {
     const { data } = await api.get("/ads");
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+
+    // Derive a fully-qualified base URL so media links resolve regardless of
+    // whether NEXT_PUBLIC_API_BASE_URL is absolute ("https://api.com/api") or
+    // relative ("/api").  When relative, fall back to the current origin.
+    let base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    if (!base.startsWith("http") && typeof window !== "undefined") {
+      base = window.location.origin + base;
+    }
     const apiBase = base.replace(/\/?api\/?$/, "");
+
     const formatUrl = (url) => {
       if (!url) return null;
       if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
         return url;
       }
-      return `${apiBase}${url}`;
+      const path = url.startsWith("/") ? url : `/${url}`;
+      return `${apiBase}${path}`;
     };
     return ads.map((ad) => ({
       id: ad.id,
