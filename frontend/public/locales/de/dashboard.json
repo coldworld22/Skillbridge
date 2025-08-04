@@ -286,7 +286,8 @@
     "dates_required": "Start- und Enddatum sind erforderlich.",
     "end_before_start": "Enddatum darf nicht vor dem Startdatum liegen.",
     "failed": "Anzeige konnte nicht erstellt werden.",
-    "title_exists": "Anzeigetitel existiert bereits."
+    "title_exists": "Anzeigetitel existiert bereits.",
+    "image_ratio_error": "Das Bild muss ein Seitenverhältnis von 16:10 haben (z. B. 1600x1000), damit es in die Hero-Anzeigenbox passt."
   },
   "plansPage": {
     "title": "Subscription Plans",
