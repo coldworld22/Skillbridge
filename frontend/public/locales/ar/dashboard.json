@@ -309,7 +309,8 @@
     "dates_required": "Start and end dates are required.",
     "end_before_start": "End date cannot be before start date.",
     "failed": "Failed to create ad.",
-    "title_exists": "Ad title already exists."
+    "title_exists": "Ad title already exists.",
+    "image_ratio_error": "يجب أن تكون الصورة بنسبة 16:10 (مثل 1600x1000) لتناسب صندوق الإعلان في قسم البطل."
   },
   "plansPage": {
     "title": "Subscription Plans",

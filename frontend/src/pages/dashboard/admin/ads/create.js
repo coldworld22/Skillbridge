@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import PlanLimitHint from "@/components/shared/PlanLimitHint";
 import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
@@ -44,6 +43,25 @@ export default function CreateAdPage() {
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const aspect = img.width / img.height;
+      const expected = 16 / 10;
+      if (Math.abs(aspect - expected) > 0.01) {
+        setError(t('image_ratio_error'));
+        setFormData((prev) => ({ ...prev, image: null }));
+      } else {
+        setError(null);
+        setFormData((prev) => ({ ...prev, image: file }));
+      }
+    };
+  };
 
   const notify = async (message) => {
     try {
@@ -109,11 +127,7 @@ export default function CreateAdPage() {
       payload.append("link_url", formData.link);
 
       if (mediaType === 'image') {
-        const file =
-          formData.image instanceof File
-            ? formData.image
-            : new File([formData.image], "ad.jpg", { type: formData.image.type || "image/jpeg" });
-        payload.append("image", file);
+        payload.append('image', formData.image);
       } else if (mediaType === 'video') {
         payload.append('video', videoFile);
       }
@@ -191,9 +205,14 @@ export default function CreateAdPage() {
               {mediaType === 'image' ? (
                 <div>
                   <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
-                  <ImageCropUpload
-                    onChange={(file) => setFormData((prev) => ({ ...prev, image: file }))}
-                  />
+                  {formData.image && (
+                    <img
+                      src={URL.createObjectURL(formData.image)}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded border mb-2"
+                    />
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageChange} />
                 </div>
               ) : (
                 <div>

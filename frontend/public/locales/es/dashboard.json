@@ -286,7 +286,8 @@
     "dates_required": "Se requieren las fechas de inicio y finalización.",
     "end_before_start": "La fecha de finalización no puede ser anterior a la de inicio.",
     "failed": "No se pudo crear el anuncio.",
-    "title_exists": "El título del anuncio ya existe."
+    "title_exists": "El título del anuncio ya existe.",
+    "image_ratio_error": "La imagen debe tener una relación de aspecto de 16:10 (por ejemplo, 1600x1000) para ajustarse al cuadro de anuncio del héroe."
   },
   "plansPage": {
     "title": "Subscription Plans",

@@ -297,7 +297,8 @@
     "dates_required": "Les dates de début et de fin sont requises.",
     "end_before_start": "La date de fin ne peut pas précéder la date de début.",
     "failed": "Échec de la création de l'annonce.",
-    "title_exists": "Le titre de l'annonce existe déjà."
+    "title_exists": "Le titre de l'annonce existe déjà.",
+    "image_ratio_error": "L'image doit avoir un format 16:10 (par exemple 1600x1000) pour s'adapter à l'encart publicitaire du héros."
   },
   "plansPage": {
     "title": "Subscription Plans",
