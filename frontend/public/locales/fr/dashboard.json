@@ -298,7 +298,8 @@
     "end_before_start": "La date de fin ne peut pas précéder la date de début.",
     "failed": "Échec de la création de l'annonce.",
     "title_exists": "Le titre de l'annonce existe déjà.",
-    "image_ratio_error": "L'image doit avoir un format 16:10 (par exemple 1600x1000) pour s'adapter à l'encart publicitaire du héros."
+    "image_ratio_error": "L'image doit être exactement de 1600x1000 pixels pour s'adapter à l'encart publicitaire du héros.",
+    "preview_ad": "Aperçu de l'annonce"
   },
   "plansPage": {
     "title": "Subscription Plans",
