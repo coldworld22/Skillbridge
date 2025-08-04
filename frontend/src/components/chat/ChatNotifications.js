@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
 import { FaEnvelopeOpenText, FaUsers, FaBell } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { getNotifications, markNotificationAsRead } from "@/services/notificationService";
+import { getNotifications } from "@/services/notificationService";
 import formatRelativeTime from "@/utils/relativeTime";
 import LinkText from "@/components/shared/LinkText";
 import { useTranslation } from "next-i18next";
+import useNotificationStore from "@/store/notifications/notificationStore";
 
 const ChatNotifications = ({ users = [], groups = [], setSelectedChat, userId = 1 }) => {
   const { t } = useTranslation("common");
   const [systemNotifs, setSystemNotifs] = useState([]);
   const [showAlerts, setShowAlerts] = useState(false);
 
+  const markRead = useNotificationStore((s) => s.markRead);
+
   const handleMarkRead = async (id) => {
-    try {
-      await markNotificationAsRead(id);
+    const prev = systemNotifs;
+    setSystemNotifs((p) => p.filter((n) => n.id !== id));
+    const success = await markRead(id);
+    if (success) {
       toast.success(t('mark_as_read'));
-    } catch (_) {}
-    setSystemNotifs((prev) => prev.filter((n) => n.id !== id));
+    } else {
+      setSystemNotifs(prev);
+      toast.error(t('mark_as_read_error', 'Failed to mark notification as read'));
+    }
   };
 
   useEffect(() => {
