@@ -310,7 +310,8 @@
     "end_before_start": "End date cannot be before start date.",
     "failed": "Failed to create ad.",
     "title_exists": "Ad title already exists.",
-    "image_ratio_error": "يجب أن تكون الصورة بنسبة 16:10 (مثل 1600x1000) لتناسب صندوق الإعلان في قسم البطل."
+    "image_ratio_error": "يجب أن تكون الصورة بدقة 1600x1000 بكسل بالضبط لتناسب صندوق الإعلان في قسم البطل.",
+    "preview_ad": "معاينة الإعلان"
   },
   "plansPage": {
     "title": "Subscription Plans",

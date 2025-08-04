@@ -15,6 +15,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import PreviewModal from "@/components/admin/ads/PreviewModal";
 const currentUserPlan = "basic";
 const { maxAdDuration, allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
 
@@ -43,6 +44,7 @@ export default function CreateAdPage() {
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -51,14 +53,12 @@ export default function CreateAdPage() {
     const img = new Image();
     img.src = URL.createObjectURL(file);
     img.onload = () => {
-      const aspect = img.width / img.height;
-      const expected = 16 / 10;
-      if (Math.abs(aspect - expected) > 0.01) {
-        setError(t('image_ratio_error'));
-        setFormData((prev) => ({ ...prev, image: null }));
-      } else {
+      if (img.width === 1600 && img.height === 1000) {
         setError(null);
         setFormData((prev) => ({ ...prev, image: file }));
+      } else {
+        setError(t('image_ratio_error'));
+        setFormData((prev) => ({ ...prev, image: null }));
       }
     };
   };
@@ -319,7 +319,14 @@ export default function CreateAdPage() {
           </section>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="px-6 py-3 rounded-xl font-medium text-sm border border-gray-300"
+            >
+              {t('preview_ad')}
+            </button>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -341,6 +348,24 @@ export default function CreateAdPage() {
           </div>
         </form>
       </div>
+      {showPreview && (
+        <PreviewModal
+          ad={{
+            title: formData.title,
+            description: formData.description,
+            image:
+              mediaType === 'image' && formData.image
+                ? URL.createObjectURL(formData.image)
+                : null,
+            video: mediaType === 'video' ? videoPreview : null,
+            startAt: formData.startAt,
+            endAt: formData.endAt,
+            targetRoles: formData.targetRoles,
+            adType: formData.adType,
+          }}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </AdminLayout>
   );
 }

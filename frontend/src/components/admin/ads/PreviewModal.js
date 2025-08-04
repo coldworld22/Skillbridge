@@ -21,13 +21,17 @@ const PreviewModal = ({ ad, onClose }) => {
           🎯 Target: {(ad.targetRoles || []).join(', ')}
         </p>
         <p className="text-xs text-gray-500 mb-1">📅 {ad.startAt} → {ad.endAt}</p>
-        <p className="text-xs text-blue-500">👁️ {ad.views} views</p>
+        {ad.views !== undefined && (
+          <p className="text-xs text-blue-500">👁️ {ad.views} views</p>
+        )}
         <p className="text-xs text-purple-500">📌 Type: {ad.adType}</p>
-        <Link href={`/dashboard/admin/ads/analytics/${ad.id}`}>
-          <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 text-sm">
-            <FaChartBar /> View Analytics
-          </button>
-        </Link>
+        {ad.id && (
+          <Link href={`/dashboard/admin/ads/analytics/${ad.id}`}>
+            <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center justify-center gap-2 text-sm">
+              <FaChartBar /> View Analytics
+            </button>
+          </Link>
+        )}
       </div>
     </div>
   );
