@@ -288,7 +288,6 @@
     "end_before_start": "Enddatum darf nicht vor dem Startdatum liegen.",
     "failed": "Anzeige konnte nicht erstellt werden.",
     "title_exists": "Anzeigetitel existiert bereits.",
-    "image_ratio_error": "Das Bild muss exakt 1600x1000 Pixel groß sein, damit es in die Hero-Anzeigenbox passt.",
     "invalid_image_type": "Es sind nur Bilddateien erlaubt.",
     "image_too_large": "Das Bild darf nicht größer als 5 MB sein.",
     "invalid_video_type": "Es sind nur Videodateien erlaubt.",

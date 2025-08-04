@@ -299,7 +299,6 @@
     "end_before_start": "La date de fin ne peut pas précéder la date de début.",
     "failed": "Échec de la création de l'annonce.",
     "title_exists": "Le titre de l'annonce existe déjà.",
-    "image_ratio_error": "L'image doit être exactement de 1600x1000 pixels pour s'adapter à l'encart publicitaire du héros.",
     "invalid_image_type": "Seuls les fichiers image sont autorisés.",
     "image_too_large": "La taille de l'image doit être inférieure à 5 Mo.",
     "invalid_video_type": "Seuls les fichiers vidéo sont autorisés.",
