@@ -1,5 +1,5 @@
 // pages/admin/ads/create.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -15,14 +15,14 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import PreviewModal from "@/components/admin/ads/PreviewModal";
-const currentUserPlan = "basic";
-const { allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan];
 
 export default function CreateAdPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
+  const currentUserPlan = user?.plan || 'basic';
+  const { allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan] || {};
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [formData, setFormData] = useState({
@@ -43,21 +43,25 @@ export default function CreateAdPage() {
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const previewUrl = URL.createObjectURL(file);
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    img.src = previewUrl;
     img.onload = () => {
       if (img.width === 1600 && img.height === 1000) {
         setError(null);
         setFormData((prev) => ({ ...prev, image: file }));
+        setImagePreview(previewUrl);
       } else {
         setError(t('image_ratio_error'));
         setFormData((prev) => ({ ...prev, image: null }));
+        URL.revokeObjectURL(previewUrl);
       }
     };
   };
@@ -70,6 +74,7 @@ export default function CreateAdPage() {
       refreshMessages?.();
     } catch (err) {
       console.error(err);
+      toast.error(t('notification_failed'));
     }
   };
 
@@ -95,10 +100,18 @@ export default function CreateAdPage() {
   const handleVideoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const previewUrl = URL.createObjectURL(file);
       setVideoFile(file);
-      setVideoPreview(URL.createObjectURL(file));
+      setVideoPreview(previewUrl);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [videoPreview, imagePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -204,9 +217,9 @@ export default function CreateAdPage() {
               {mediaType === 'image' ? (
                 <div>
                   <label className="block text-sm font-medium mb-1">{t('image_label')} *</label>
-                  {formData.image && (
+                  {imagePreview && (
                     <img
-                      src={URL.createObjectURL(formData.image)}
+                      src={imagePreview}
                       alt="Preview"
                       className="w-full h-48 object-cover rounded border mb-2"
                     />
@@ -349,10 +362,7 @@ export default function CreateAdPage() {
           ad={{
             title: formData.title,
             description: formData.description,
-            image:
-              mediaType === 'image' && formData.image
-                ? URL.createObjectURL(formData.image)
-                : null,
+            image: mediaType === 'image' ? imagePreview : null,
             video: mediaType === 'video' ? videoPreview : null,
             startAt: formData.startAt,
             endAt: formData.endAt,
