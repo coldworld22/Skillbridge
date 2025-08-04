@@ -7,14 +7,15 @@ export const getAds = async () => {
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
 
-    // Derive a fully-qualified base URL so media links resolve regardless of
+    // Build a fully-qualified base URL so media links resolve regardless of
     // whether NEXT_PUBLIC_API_BASE_URL is absolute ("https://api.com/api") or
-    // relative ("/api").  When relative, fall back to the current origin.
+    // relative ("/api"). When relative, fall back to the current origin and
+    // retain the "/api" prefix so proxied media paths still work.
     let base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     if (!base.startsWith("http") && typeof window !== "undefined") {
       base = window.location.origin + base;
     }
-    const apiBase = base.replace(/\/api.*$/, "");
+    base = base.replace(/\/$/, "");
 
     const formatUrl = (url) => {
       if (!url) return null;
@@ -22,7 +23,7 @@ export const getAds = async () => {
         return url;
       }
       const path = url.startsWith("/") ? url : `/${url}`;
-      return `${apiBase}${path}`;
+      return `${base}${path}`;
     };
     return ads.map((ad) => ({
       id: ad.id,
