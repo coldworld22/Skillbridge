@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import plansConfig from "@/config/plansConfig";
-import { createAd } from "@/services/admin/adService";
+import { createAd, checkAdTitle } from "@/services/admin/adService";
 import { FaSpinner } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -42,6 +42,23 @@ export default function CreateAdPage() {
   const [videoPreview, setVideoPreview] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    if (!formData.title) {
+      setTitleError(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const exists = await checkAdTitle(formData.title);
+        if (exists) setTitleError(t('title_exists'));
+        else setTitleError(null);
+      } catch {
+        /* ignore */
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [formData.title, t]);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -119,6 +136,11 @@ export default function CreateAdPage() {
     }
     if (new Date(formData.endAt) < new Date(formData.startAt)) {
       setError(t('end_before_start'));
+      return;
+    }
+
+    if (await checkAdTitle(formData.title)) {
+      setTitleError(t('title_exists'));
       return;
     }
 

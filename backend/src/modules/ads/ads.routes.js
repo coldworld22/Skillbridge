@@ -6,6 +6,13 @@ const { verifyToken, isInstructorOrAdmin } = require("../../middleware/auth/auth
 const validator = require("./ads.validator");
 const upload = require("./adsUploadMiddleware");
 
+router.get(
+  "/admin/check-title",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.checkTitle
+);
+
 router.post(
   "/admin",
   verifyToken,
