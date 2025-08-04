@@ -14,6 +14,12 @@ router.post(
   validate(validator.create),
   controller.createAd
 );
+router.get(
+  "/admin",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.getAllAds
+);
 router.get("/", controller.getAds);
 router.get("/:id/analytics", controller.getAdAnalytics);
 router.get("/:id", controller.getAdById);

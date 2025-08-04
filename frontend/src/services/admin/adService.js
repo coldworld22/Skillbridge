@@ -20,7 +20,7 @@ export const createAd = async (payload) => {
 };
 
 export const fetchAds = async () => {
-  const { data } = await api.get("/ads");
+  const { data } = await api.get("/ads/admin");
 
   const ads = data?.data ?? [];
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
