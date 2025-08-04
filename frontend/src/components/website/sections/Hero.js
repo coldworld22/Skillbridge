@@ -52,20 +52,25 @@ const Hero = () => {
 
   const [heroBg, setHeroBg] = useState("");
 
+  const getApiBaseUrl = () => {
+    let base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+    if (!base.startsWith("http") && typeof window !== "undefined") {
+      base = window.location.origin + base;
+    }
+    return base.replace(/\/api.*$/, "");
+  };
+
   useEffect(() => {
     const bg = settings.home_bg_url;
-    if (bg) {
-      let base = API_BASE_URL;
-      if (!base.startsWith("http") && typeof window !== "undefined") {
-        base = window.location.origin + base;
-      }
-      const normalizedBg = bg.startsWith("http")
-        ? bg
-        : `${base}${bg.startsWith("/") ? bg : `/${bg}`}`;
-      setHeroBg(normalizedBg);
-    } else {
+    if (!bg) {
       setHeroBg("");
+      return;
     }
+    const apiBase = getApiBaseUrl();
+    const normalizedBg = bg.startsWith("http")
+      ? bg
+      : `${apiBase}${bg.startsWith("/") ? bg : `/${bg}`}`;
+    setHeroBg(normalizedBg);
   }, [settings.home_bg_url]);
 
   // Always fetch latest configuration so hero background stays in sync
