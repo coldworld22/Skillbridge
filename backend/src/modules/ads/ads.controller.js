@@ -13,7 +13,7 @@ const service = require("./ads.service");
  */
 exports.createAd = catchAsync(async (req, res) => {
   const {
-    title,
+    title: rawTitle,
     description,
     link_url,
     start_at,
@@ -23,6 +23,8 @@ exports.createAd = catchAsync(async (req, res) => {
     priority,
     allow_branding,
   } = req.body;
+
+  const title = rawTitle?.trim();
 
   if (await service.findByTitle(title)) {
     throw new AppError("Ad title already exists", 409);
@@ -103,7 +105,7 @@ exports.getAdById = catchAsync(async (req, res) => {
  */
 exports.updateAd = catchAsync(async (req, res) => {
   const {
-    title,
+    title: rawTitle,
     description,
     link_url,
     is_active,
@@ -114,6 +116,7 @@ exports.updateAd = catchAsync(async (req, res) => {
     priority,
     allow_branding,
   } = req.body;
+  const title = rawTitle?.trim();
   const updates = {
     title,
     description,

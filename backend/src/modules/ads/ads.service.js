@@ -19,7 +19,10 @@ exports.getAdById = async (id) => {
 };
 
 exports.findByTitle = async (title) => {
-  return db("ads").where({ title }).first();
+  if (!title) return null;
+  return db("ads")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
 };
 
 exports.updateAd = async (id, data) => {
