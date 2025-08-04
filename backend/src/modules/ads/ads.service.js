@@ -6,7 +6,11 @@ exports.createAd = async (data) => {
 };
 
 exports.getAds = async () => {
-  return db("ads").orderBy("created_at", "desc");
+  // Only return ads that are marked as active so the frontend
+  // doesn't display unpublished or draft ads in the hero section.
+  return db("ads")
+    .where({ is_active: true })
+    .orderBy("created_at", "desc");
 };
 
 exports.getAdById = async (id) => {
