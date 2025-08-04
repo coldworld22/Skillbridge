@@ -55,26 +55,28 @@ const useNotificationStore = create((set, get) => ({
           Number(n.id) === numericId ? { ...n, read_at: readAt } : n,
         ),
       }));
+
+      setTimeout(() => {
+        set((state) => ({
+          items: state.items.filter(
+            (n) =>
+              !(
+                Number(n.id) === numericId &&
+                n.read &&
+                n.read_at &&
+                new Date() - new Date(n.read_at) >= HOUR_MS
+              ),
+          ),
+        }));
+      }, HOUR_MS);
+
+      return true;
     } catch (err) {
       // Revert on failure
       set({ items: prevItems });
       toast.error("Failed to mark notification as read");
-      return;
+      return false;
     }
-
-    setTimeout(() => {
-      set((state) => ({
-        items: state.items.filter(
-          (n) =>
-            !(
-              Number(n.id) === numericId &&
-              n.read &&
-              n.read_at &&
-              new Date() - new Date(n.read_at) >= HOUR_MS
-            ),
-        ),
-      }));
-    }, HOUR_MS);
   },
 
   remove: async (id) => {
