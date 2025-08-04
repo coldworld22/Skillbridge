@@ -31,22 +31,23 @@ export default function Home() {
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const { user, hasHydrated } = useAuthStore();
-
-  // ─────────────────────────────────────────────
-  // Ensure user data is loaded before rendering
-  // ─────────────────────────────────────────────
-  useEffect(() => {
-    console.log("✅ hasHydrated:", hasHydrated);
-    console.log("👤 User object:", user);
-  }, [hasHydrated, user]);
+  // Intentionally no console logs to avoid leaking user data
 
   // Track scrolling position
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = (scrollY / docHeight) * 100;
-      setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const docHeight =
+            document.documentElement.scrollHeight - window.innerHeight;
+          const progress = (scrollY / docHeight) * 100;
+          setScrollProgress(progress);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll);

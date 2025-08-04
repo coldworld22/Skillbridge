@@ -37,6 +37,9 @@ const Hero = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState(null);
+  const [searchError, setSearchError] = useState(false);
+  const [loadingAds, setLoadingAds] = useState(true);
+  const [adsError, setAdsError] = useState(false);
   const hasResults =
     results &&
     Object.values(results).some(
@@ -72,11 +75,16 @@ const Hero = () => {
 
   useEffect(() => {
     const fetchAds = async () => {
+      setLoadingAds(true);
       try {
         const data = await getAds();
         setAds(data);
-      } catch (err) {
-        console.error("Failed to fetch ads", err);
+        setAdsError(false);
+      } catch (_err) {
+        setAds([]);
+        setAdsError(true);
+      } finally {
+        setLoadingAds(false);
       }
     };
     fetchAds();
@@ -100,7 +108,7 @@ const Hero = () => {
 
     const timeout = setTimeout(() => {
       handleSearch(searchText);
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timeout);
   }, [searchText]);
@@ -123,9 +131,10 @@ const Hero = () => {
     try {
       const data = await searchAll(term);
       setResults(data);
-    } catch (err) {
-      console.error('Search failed', err);
+      setSearchError(false);
+    } catch (_err) {
       setResults(null);
+      setSearchError(true);
     }
   };
 
@@ -168,10 +177,12 @@ const Hero = () => {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 w-full h-full">
           {heroBg && (
-            <img
+            <Image
               src={heroBg}
               alt="Learning Illustration"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              priority
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
@@ -203,71 +214,162 @@ const Hero = () => {
               </button>
             </div>
             {results && (
-              <div className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20 max-h-80 overflow-y-auto text-left">
-                  {results && (
-                    <>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📚 Online Classes ({results.classes?.length || 0})</h3>
+              <div
+                className="absolute mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-20 max-h-80 overflow-y-auto text-left"
+                role="listbox"
+                aria-label="Search results"
+                aria-live="polite"
+              >
+                {results && (
+                  <>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        📚 Online Classes ({results.classes?.length || 0})
+                      </h3>
+                      <ul>
                         {results.classes?.map((c) => (
-                          <Link href={`/online-classes/${c.id}`} key={`c-${c.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{c.title}</span>
-                          </Link>
+                          <li key={`c-${c.id}`}>
+                            <Link href={`/online-classes/${c.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {c.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📘 Tutorials ({results.tutorials?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        📘 Tutorials ({results.tutorials?.length || 0})
+                      </h3>
+                      <ul>
                         {results.tutorials?.map((t) => (
-                          <Link href={`/tutorials/${t.id}`} key={`t-${t.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{t.title}</span>
-                          </Link>
+                          <li key={`t-${t.id}`}>
+                            <Link href={`/tutorials/${t.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {t.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📖 Books ({results.books?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        📖 Books ({results.books?.length || 0})
+                      </h3>
+                      <ul>
                         {results.books?.map((b) => (
-                          <Link href={`/marketplace/books/${b.id}`} key={`b-${b.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{b.title}</span>
-                          </Link>
+                          <li key={`b-${b.id}`}>
+                            <Link href={`/marketplace/books/${b.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {b.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">👩‍🏫 Instructors ({results.instructors?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        👩‍🏫 Instructors ({results.instructors?.length || 0})
+                      </h3>
+                      <ul>
                         {results.instructors?.map((i) => (
-                          <Link href={`/instructors/${i.id}`} key={`i-${i.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{i.full_name}</span>
-                          </Link>
+                          <li key={`i-${i.id}`}>
+                            <Link href={`/instructors/${i.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {i.full_name}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">💼 Offers ({results.offers?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        💼 Offers ({results.offers?.length || 0})
+                      </h3>
+                      <ul>
                         {results.offers?.map((o) => (
-                          <Link href={`/offers/${o.id}`} key={`o-${o.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{o.title}</span>
-                          </Link>
+                          <li key={`o-${o.id}`}>
+                            <Link href={`/offers/${o.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {o.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">💬 Community ({results.community?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        💬 Community ({results.community?.length || 0})
+                      </h3>
+                      <ul>
                         {results.community?.map((d) => (
-                          <Link href={`/community/${d.id}`} key={`d-${d.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{d.title}</span>
-                          </Link>
+                          <li key={`d-${d.id}`}>
+                            <Link href={`/community/${d.id}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {d.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                      <div class="py-1">
-                        <h3 class="px-4 py-1 text-sm font-semibold text-gray-500">📝 Blog ({results.blog?.length || 0})</h3>
+                      </ul>
+                    </div>
+                    <div className="py-1">
+                      <h3 className="px-4 py-1 text-sm font-semibold text-gray-500">
+                        📝 Blog ({results.blog?.length || 0})
+                      </h3>
+                      <ul>
                         {results.blog?.map((b) => (
-                          <Link href={`/blog/${b.slug}`} key={`b-${b.id}`}>
-                            <span class="block px-4 py-2 hover:bg-gray-100 cursor-pointer">{b.title}</span>
-                          </Link>
+                          <li key={`b-${b.id}`}>
+                            <Link href={`/blog/${b.slug}`}>
+                              <span
+                                role="option"
+                                tabIndex={0}
+                                className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                {b.title}
+                              </span>
+                            </Link>
+                          </li>
                         ))}
-                      </div>
-                    </>
-                  )}
-                  {!hasResults && (
-                    <p class="px-4 py-2 text-sm text-gray-500">No results found.</p>
-                  )}
-                
+                      </ul>
+                    </div>
+                  </>
+                )}
+                {!hasResults && (
+                  <p className="px-4 py-2 text-sm text-gray-500">No results found.</p>
+                )}
+                {searchError && (
+                  <p className="px-4 py-2 text-sm text-red-500">Search failed.</p>
+                )}
               </div>
             )}
           </div>
@@ -383,7 +485,13 @@ const Hero = () => {
           </AnimatePresence>
         ) : (
           <div className="relative w-full lg:w-1/2 h-[450px] flex items-center justify-center text-white text-xl">
-            {t('no_offers')}
+            {loadingAds ? (
+              <div className="w-full h-full bg-gray-700 animate-pulse rounded-2xl" />
+            ) : adsError ? (
+              <span>Failed to load ads.</span>
+            ) : (
+              <span>{t('no_offers')}</span>
+            )}
           </div>
         )}
 
