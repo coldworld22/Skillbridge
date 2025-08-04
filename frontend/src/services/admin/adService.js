@@ -19,6 +19,11 @@ export const createAd = async (payload) => {
   return data?.data;
 };
 
+export const checkAdTitle = async (title) => {
+  const { data } = await api.get("/ads/admin/check-title", { params: { title } });
+  return data?.data?.exists;
+};
+
 export const fetchAds = async () => {
   const { data } = await api.get("/ads/admin");
 

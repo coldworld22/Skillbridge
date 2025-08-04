@@ -48,6 +48,28 @@ describe('GET /api/ads', () => {
   });
 });
 
+describe('GET /api/ads/admin/check-title', () => {
+  it('returns exists true when title found', async () => {
+    service.findByTitle.mockResolvedValue({ id: '1', title: 'Test' });
+    const res = await request(app)
+      .get('/api/ads/admin/check-title')
+      .query({ title: 'Test' });
+    expect(res.status).toBe(200);
+    expect(service.findByTitle).toHaveBeenCalledWith('Test');
+    expect(res.body.data.exists).toBe(true);
+  });
+
+  it('returns exists false when title not found', async () => {
+    service.findByTitle.mockResolvedValue(null);
+    const res = await request(app)
+      .get('/api/ads/admin/check-title')
+      .query({ title: 'Unknown' });
+    expect(res.status).toBe(200);
+    expect(service.findByTitle).toHaveBeenCalledWith('Unknown');
+    expect(res.body.data.exists).toBe(false);
+  });
+});
+
 describe('POST /api/ads/admin', () => {
   it('creates ad', async () => {
     const payload = { title: 'Test', image_url: 'img.jpg' };

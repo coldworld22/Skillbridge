@@ -77,6 +77,19 @@ exports.createAd = catchAsync(async (req, res) => {
 });
 
 /**
+ * Check if a given ad title already exists.
+ */
+exports.checkTitle = catchAsync(async (req, res) => {
+  const title = req.query.title?.trim();
+  if (!title) {
+    sendSuccess(res, { exists: false });
+    return;
+  }
+  const existing = await service.findByTitle(title);
+  sendSuccess(res, { exists: !!existing });
+});
+
+/**
  * Public endpoint: list only active ads.
  */
 exports.getAds = catchAsync(async (_req, res) => {
