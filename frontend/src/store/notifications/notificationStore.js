@@ -36,14 +36,31 @@ const useNotificationStore = create((set, get) => ({
   },
 
   markRead: async (id) => {
-    const res = await markNotificationAsRead(id);
-    const readAt = res.read_at || new Date().toISOString();
     const numericId = Number(id);
+    const prevItems = get().items;
+    const tempReadAt = new Date().toISOString();
+
+    // Optimistically update UI
     set((state) => ({
       items: state.items.map((n) =>
-        Number(n.id) === numericId ? { ...n, read: true, read_at: readAt } : n,
+        Number(n.id) === numericId ? { ...n, read: true, read_at: tempReadAt } : n,
       ),
     }));
+
+    try {
+      const res = await markNotificationAsRead(id);
+      const readAt = res.read_at || tempReadAt;
+      set((state) => ({
+        items: state.items.map((n) =>
+          Number(n.id) === numericId ? { ...n, read_at: readAt } : n,
+        ),
+      }));
+    } catch (err) {
+      // Revert on failure
+      set({ items: prevItems });
+      toast.error("Failed to mark notification as read");
+      return;
+    }
 
     setTimeout(() => {
       set((state) => ({
