@@ -50,7 +50,13 @@ const Navbar = () => {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const dropdownRef = useRef(null);
+
+  // Separate refs for each dropdown to avoid conflicts
+  const profileRef = useRef(null);
+  const notificationRef = useRef(null);
+  const messageRef = useRef(null);
+  const languageRef = useRef(null);
+  const cartRef = useRef(null);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const appSettings = useAppConfigStore((state) => state.settings);
@@ -161,11 +167,19 @@ const Navbar = () => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setNotificationOpen(false);
+      }
+      if (messageRef.current && !messageRef.current.contains(event.target)) {
         setMessageOpen(false);
+      }
+      if (languageRef.current && !languageRef.current.contains(event.target)) {
         setLanguageOpen(false);
+      }
+      if (cartRef.current && !cartRef.current.contains(event.target)) {
         setCartOpen(false);
       }
     }
@@ -213,7 +227,10 @@ const Navbar = () => {
             <div className="relative">
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                onClick={() => setMessageOpen(!messageOpen)}
+                onClick={() => {
+                  setNotificationOpen(false);
+                  setMessageOpen(!messageOpen);
+                }}
                 className="relative text-2xl"
               >
                 <FaEnvelope />
@@ -226,7 +243,7 @@ const Navbar = () => {
 
               {messageOpen && (
                 <div
-                  ref={dropdownRef}
+                  ref={messageRef}
                   className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
@@ -274,7 +291,10 @@ const Navbar = () => {
             <div className="relative">
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                onClick={() => setNotificationOpen(!notificationOpen)}
+                onClick={() => {
+                  setMessageOpen(false);
+                  setNotificationOpen(!notificationOpen);
+                }}
                 className="relative text-2xl"
               >
                 <FaBell />
@@ -286,7 +306,7 @@ const Navbar = () => {
 
               {notificationOpen && (
                 <div
-                  ref={dropdownRef}
+                  ref={notificationRef}
                   className="absolute left-0 mt-2 bg-white text-gray-800 w-72 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
                 >
                   <h4 className="text-base font-semibold mb-2 border-b pb-1">
@@ -347,7 +367,12 @@ const Navbar = () => {
       <div className="flex items-center space-x-6">
         <motion.button
           whileHover={{ scale: 1.1 }}
-          onClick={() => setLanguageOpen(!languageOpen)}
+          onClick={() => {
+            setMessageOpen(false);
+            setNotificationOpen(false);
+            setDropdownOpen(false);
+            setLanguageOpen(!languageOpen);
+          }}
           className="w-8 h-8 rounded-full overflow-hidden border border-gray-300 flex items-center justify-center"
         >
           <img
@@ -391,11 +416,17 @@ const Navbar = () => {
         )}
         {user ? (
           <>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              onClick={() => setCartOpen(!cartOpen)}
-              className="relative text-2xl"
-            >
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          onClick={() => {
+            setMessageOpen(false);
+            setNotificationOpen(false);
+            setDropdownOpen(false);
+            setLanguageOpen(false);
+            setCartOpen(!cartOpen);
+          }}
+          className="relative text-2xl"
+        >
               <FaShoppingCart />
               {cartItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-2 rounded-full text-white">
@@ -406,7 +437,11 @@ const Navbar = () => {
 
             <motion.button
               whileHover={{ scale: 1.1 }}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+            onClick={() => {
+              setMessageOpen(false);
+              setNotificationOpen(false);
+              setDropdownOpen(!dropdownOpen);
+            }}
               className="w-12 h-12 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg flex items-center justify-center bg-white"
             >
               {user.avatar_url && (
@@ -425,7 +460,7 @@ const Navbar = () => {
 
             {dropdownOpen && (
               <div
-                ref={dropdownRef}
+                ref={profileRef}
                 className="absolute right-6 top-20 bg-white text-gray-800 w-60 rounded-2xl shadow-xl p-4 z-50 border border-gray-200"
               >
                 <ul className="space-y-2 text-sm">
@@ -490,13 +525,19 @@ const Navbar = () => {
             )}
 
             {languageOpen && (
-              <div className="absolute top-20 right-24 bg-white text-gray-800 w-48 rounded-xl shadow-xl border border-gray-200 p-2 z-50">
+              <div
+                ref={languageRef}
+                className="absolute top-20 right-24 bg-white text-gray-800 w-48 rounded-xl shadow-xl border border-gray-200 p-2 z-50"
+              >
                 <LanguageSwitcher changeLang={changeLang} />
               </div>
             )}
 
             {cartOpen && (
-              <div className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+              <div
+                ref={cartRef}
+                className="absolute top-20 right-36 bg-white text-gray-800 w-64 rounded-xl shadow-xl border border-gray-200 p-4 z-50"
+              >
                 <h4 className="text-base font-semibold mb-2 border-b pb-1">
                   {t('your_cart')}
                 </h4>
