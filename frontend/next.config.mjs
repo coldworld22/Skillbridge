@@ -5,7 +5,18 @@ const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/a
 const { protocol, hostname, port } = new URL(apiBase);
 const nextConfig = {
   images: {
+    unoptimized: true,
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+        pathname: '/**',
+      },
       {
         protocol: protocol.replace(':', ''),
         hostname,
