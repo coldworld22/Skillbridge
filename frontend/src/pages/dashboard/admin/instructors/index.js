@@ -8,7 +8,11 @@ import InstructorCard from '@/components/admin/instructors/InstructorCard';
 import FilterBar from '@/components/admin/instructors/FilterBar';
 import BulkActions from '@/components/admin/instructors/BulkActions';
 import InstructorDetailsModal from '@/components/admin/instructors/InstructorDetailsModal';
-import { fetchAllInstructors, updateInstructorStatus, deleteInstructor as apiDeleteInstructor } from '@/services/admin/instructorService';
+import {
+  fetchAllInstructors,
+  updateInstructorStatus,
+  deleteInstructor as apiDeleteInstructor,
+} from '@/services/admin/instructorService';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 
@@ -21,6 +25,9 @@ export default function AdminInstructorsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
   const [viewInstructor, setViewInstructor] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const router = useRouter();
   const { accessToken, user, hasHydrated } = useAuthStore();
@@ -42,7 +49,7 @@ export default function AdminInstructorsPage() {
 
     const loadData = async () => {
       try {
-        const data = await fetchAllInstructors();
+        const { instructors: data, meta } = await fetchAllInstructors(1, 20);
         const formatted = (data ?? []).map((i) => ({
           id: i.id,
           name: i.full_name || i.email?.split('@')[0],
@@ -58,6 +65,8 @@ export default function AdminInstructorsPage() {
           classes: [],
         }));
         setInstructors(formatted);
+        setHasMore(meta?.hasNextPage ?? formatted.length >= 20);
+        setPage(1);
       } catch (err) {
         toast.error(t('failed_to_load'));
         console.error('Instructor load error:', err);
@@ -67,7 +76,38 @@ export default function AdminInstructorsPage() {
     };
 
     loadData();
-  }, [accessToken, hasHydrated, router, user]);
+  }, [accessToken, hasHydrated, router, user, t]);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      const { instructors: data, meta } = await fetchAllInstructors(nextPage, 20);
+      const formatted = (data ?? []).map((i) => ({
+        id: i.id,
+        name: i.full_name || i.email?.split('@')[0],
+        email: i.email,
+        avatar: i.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${i.avatar_url}`
+          : 'https://via.placeholder.com/80',
+        status: i.status === 'active' || i.status === true,
+        joinDate: i.created_at
+          ? new Date(i.created_at).toISOString().split('T')[0]
+          : '',
+        bio: i.expertise || '',
+        classes: [],
+      }));
+      setInstructors((prev) => [...prev, ...formatted]);
+      setHasMore(meta?.hasNextPage ?? formatted.length >= 20);
+      setPage(nextPage);
+    } catch (err) {
+      toast.error(t('failed_to_load'));
+      console.error('Instructor load more error:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const toggleStatus = async (id) => {
     const inst = instructors.find((i) => i.id === id);
@@ -99,10 +139,19 @@ export default function AdminInstructorsPage() {
 
   const deleteSelected = async () => {
     try {
-      await Promise.all(selectedIds.map((id) => apiDeleteInstructor(id)));
-      setInstructors((prev) => prev.filter((i) => !selectedIds.includes(i.id)));
-      setSelectedIds([]);
-      toast.success(t('selected_deleted'));
+      const results = await Promise.allSettled(
+        selectedIds.map((id) => apiDeleteInstructor(id))
+      );
+      const succeeded = selectedIds.filter((_, idx) => results[idx].status === 'fulfilled');
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (succeeded.length) {
+        setInstructors((prev) => prev.filter((i) => !succeeded.includes(i.id)));
+        setSelectedIds((prev) => prev.filter((id) => !succeeded.includes(id)));
+        toast.success(t('selected_deleted'));
+      }
+      if (failed.length) {
+        toast.error(t('delete_selected_failed'));
+      }
     } catch (err) {
       toast.error(t('delete_selected_failed'));
       console.error('Bulk delete error:', err);
@@ -175,6 +224,7 @@ export default function AdminInstructorsPage() {
                 type="checkbox"
                 className="absolute top-2 left-2 z-10"
                 checked={selectedIds.includes(instructor.id)}
+                aria-label={t('select_instructor', { name: instructor.name })}
                 onChange={(e) => {
                   setSelectedIds((prev) =>
                     e.target.checked
@@ -193,6 +243,18 @@ export default function AdminInstructorsPage() {
           ))}
         </div>
 
+        {hasMore && (
+          <div className="text-center mt-4">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            >
+              {loadingMore ? t('loading') : t('load_more')}
+            </button>
+          </div>
+        )}
+
         {viewInstructor && (
           <InstructorDetailsModal
             instructor={viewInstructor}
@@ -206,7 +268,7 @@ export default function AdminInstructorsPage() {
   );
 }
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),

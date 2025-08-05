@@ -6,8 +6,12 @@ export default function FilterBar({ search, onSearchChange, sort, onSortChange, 
   return (
     <div className="flex flex-wrap items-center gap-4 mb-6">
       <div className="flex items-center gap-2">
-        <FaSearch className="text-gray-400" />
+        <FaSearch className="text-gray-400" aria-hidden="true" />
+        <label htmlFor="search" className="sr-only">
+          {t('search_label')}
+        </label>
         <input
+          id="search"
           type="text"
           placeholder={t('search_placeholder')}
           value={search}
@@ -17,8 +21,12 @@ export default function FilterBar({ search, onSearchChange, sort, onSortChange, 
       </div>
 
       <div className="flex items-center gap-2">
-        <FaSortAlphaDown className="text-gray-400" />
+        <FaSortAlphaDown className="text-gray-400" aria-hidden="true" />
+        <label htmlFor="sort" className="sr-only">
+          {t('sort_label')}
+        </label>
         <select
+          id="sort"
           value={sort}
           onChange={(e) => onSortChange(e.target.value)}
           className="border px-3 py-2 rounded"

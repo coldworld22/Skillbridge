@@ -148,8 +148,10 @@
   "instructorsPage": {
     "title": "المدربون",
     "search_placeholder": "ابحث عن المدربين...",
+    "search_label": "بحث",
     "sort_name": "ترتيب حسب الاسم",
     "sort_date": "ترتيب حسب تاريخ الانضمام",
+    "sort_label": "ترتيب",
     "status_label": "الحالة",
     "all": "الكل",
     "active": "نشط",
@@ -168,7 +170,21 @@
     "joined": "انضم في: {{date}}",
     "classes": "الدورات",
     "save_changes": "حفظ التغييرات",
-    "details_title": "تفاصيل المدرب"
+    "details_title": "تفاصيل المدرب",
+    "select_instructor": "تحديد {{name}}",
+    "load_more": "تحميل المزيد",
+    "activate_instructor": "تفعيل {{name}}",
+    "deactivate_instructor": "تعطيل {{name}}",
+    "delete_instructor": "حذف {{name}}",
+    "tab_profile": "الملف الشخصي",
+    "tab_classes": "الدورات",
+    "tab_edit": "تعديل",
+    "name_label": "الاسم",
+    "email_label": "البريد الإلكتروني",
+    "bio_label": "نبذة",
+    "details_updated": "تم تحديث المدرب",
+    "details_update_failed": "فشل تحديث المدرب",
+    "processing": "جارٍ الحفظ..."
   },
   "currenciesPage": {
     "title": "إدارة العملات",

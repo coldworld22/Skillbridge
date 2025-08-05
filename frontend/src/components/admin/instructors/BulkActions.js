@@ -16,13 +16,14 @@ export default function BulkActions({ selectedIds, onSelectAll, onDeleteSelected
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
         <input
+          id="selectAll"
           type="checkbox"
           checked={allSelected}
           onChange={handleToggleAll}
         />
-        <span className="text-sm text-gray-700">
+        <label htmlFor="selectAll" className="text-sm text-gray-700">
           {allSelected ? t('deselect_all') : t('select_all')} ({allVisibleIds.length})
-        </span>
+        </label>
       </div>
 
       {selectedIds.length > 0 && (
