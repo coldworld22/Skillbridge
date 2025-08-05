@@ -283,6 +283,16 @@ exports.deleteAd = catchAsync(async (req, res) => {
 });
 
 /**
+ * Record a view for the specified ad. Authentication is optional; if the
+ * request is unauthenticated the view will be stored without a user id.
+ */
+exports.recordAdView = catchAsync(async (req, res) => {
+  const userId = req.user?.id || null;
+  await service.recordAdView(req.params.id, userId);
+  sendSuccess(res, null, "View recorded");
+});
+
+/**
  * Return basic analytics for an ad.
  */
 exports.getAdAnalytics = catchAsync(async (req, res) => {

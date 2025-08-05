@@ -9,6 +9,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   updateAd: jest.fn(),
   deleteAd: jest.fn(),
   getAdAnalytics: jest.fn(),
+  recordAdView: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({
@@ -175,5 +176,14 @@ describe('GET /api/ads/:id/analytics', () => {
     expect(service.getAdAnalytics).toHaveBeenCalledWith('1');
     expect(res.body.data.views).toBe(5);
     expect(res.body.data.conversions).toBe(2);
+  });
+});
+
+describe('POST /api/ads/:id/view', () => {
+  it('records ad view', async () => {
+    service.recordAdView.mockResolvedValue();
+    const res = await request(app).post('/api/ads/1/view');
+    expect(res.status).toBe(200);
+    expect(service.recordAdView).toHaveBeenCalledWith('1', null);
   });
 });

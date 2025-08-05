@@ -41,3 +41,14 @@ export const getAds = async (role) => {
     return [];
   }
 };
+
+// Notify backend that an ad has been viewed
+export const recordAdView = async (id) => {
+  try {
+    await api.post(`/ads/${id}/view`);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Failed to record ad view", error);
+    }
+  }
+};

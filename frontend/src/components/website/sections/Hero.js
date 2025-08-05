@@ -24,7 +24,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import useAppConfigStore from "@/store/appConfigStore";
 import { API_BASE_URL } from "@/config/config";
-import { getAds } from "@/services/adsService";
+import { getAds, recordAdView } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
@@ -108,6 +108,13 @@ const Hero = () => {
     }, AD_ROTATION_INTERVAL);
     return () => clearInterval(interval);
   }, [ads, isAdPaused]);
+
+  // Record a view whenever the current ad changes
+  useEffect(() => {
+    if (ads[currentAd]) {
+      recordAdView(ads[currentAd].id);
+    }
+  }, [ads, currentAd]);
 
   // Auto search when user types with small debounce
   useEffect(() => {

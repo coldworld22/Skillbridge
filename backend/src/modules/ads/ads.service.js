@@ -44,6 +44,39 @@ exports.deleteAd = (id) => {
   return db("ads").where({ id }).del();
 };
 
+// Record a single ad view. `userId` may be null for anonymous views.
+exports.recordAdView = async (adId, userId) => {
+  await db("ad_views").insert({ ad_id: adId, user_id: userId });
+};
+
+// Retrieve aggregated analytics for a given ad.
 exports.getAdAnalytics = async (adId) => {
-  return db("ad_analytics").where({ ad_id: adId }).first();
+  // Aggregate total views and unique viewers from ad_views table
+  const [agg] = await db("ad_views")
+    .where({ ad_id: adId })
+    .count("* as views")
+    .countDistinct("user_id as unique_viewers");
+
+  // Group views by day for line chart data
+  const daily = await db("ad_views")
+    .select(db.raw("DATE(viewed_at) as day"))
+    .count("* as views")
+    .where({ ad_id: adId })
+    .groupBy("day")
+    .orderBy("day", "asc");
+
+  // Optional stored analytics such as clicks/ctr
+  const row = await db("ad_analytics").where({ ad_id: adId }).first();
+  const clicks = row?.clicks ?? 0;
+  const ctr = row?.ctr ?? (agg.views ? clicks / agg.views : 0);
+
+  return {
+    views: Number(agg?.views) || 0,
+    clicks,
+    ctr: Number(ctr) || 0,
+    unique_viewers: Number(agg?.unique_viewers) || 0,
+    devices: [],
+    location_stats: [],
+    analytics: daily.map((d) => ({ day: d.day, views: Number(d.views) })),
+  };
 };
