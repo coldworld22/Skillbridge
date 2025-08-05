@@ -42,22 +42,13 @@ export const getAds = async (role) => {
   }
 };
 
-export const recordAdView = async (id, userId) => {
+// Notify backend that an ad has been viewed
+export const recordAdView = async (id) => {
   try {
-    await api.post(`/ads/${id}/view`, { userId });
+    await api.post(`/ads/${id}/view`);
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.error("Failed to record ad view", error);
-    }
-  }
-};
-
-export const recordAdClick = async (id, userId) => {
-  try {
-    await api.post(`/ads/${id}/click`, { userId });
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Failed to record ad click", error);
     }
   }
 };
