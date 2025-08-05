@@ -11,7 +11,8 @@ const csrf = (req, res, next) => {
   ];
 
   const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'];
-  if (!unsafe.includes(req.method) || exempt.includes(req.path)) {
+  const isAdTracking = /^\/api\/ads\/[^/]+\/(view|click)$/.test(req.path);
+  if (!unsafe.includes(req.method) || exempt.includes(req.path) || isAdTracking) {
     return next();
   }
 

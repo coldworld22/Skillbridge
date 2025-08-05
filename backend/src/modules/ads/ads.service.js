@@ -47,3 +47,67 @@ exports.deleteAd = (id) => {
 exports.getAdAnalytics = async (adId) => {
   return db("ad_analytics").where({ ad_id: adId }).first();
 };
+
+// Increment view count and track unique viewers
+exports.recordView = async (adId, userId) => {
+  return db.transaction(async (trx) => {
+    // Check if this viewer is unique before inserting the view record
+    let isUnique = false;
+    if (userId) {
+      const existing = await trx("ad_views")
+        .where({ ad_id: adId, user_id: userId })
+        .first();
+      if (!existing) {
+        isUnique = true;
+      }
+    }
+
+    // Log the view event
+    await trx("ad_views").insert({ ad_id: adId, user_id: userId || null });
+
+    const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
+    if (analytics) {
+      const views = analytics.views + 1;
+      const clicks = analytics.clicks;
+      const updates = {
+        views,
+        ctr: views ? (clicks / views) * 100 : 0,
+      };
+      if (isUnique) {
+        updates.unique_viewers = analytics.unique_viewers + 1;
+      }
+      await trx("ad_analytics").where({ ad_id: adId }).update(updates);
+    } else {
+      await trx("ad_analytics").insert({
+        ad_id: adId,
+        views: 1,
+        clicks: 0,
+        ctr: 0,
+        unique_viewers: isUnique ? 1 : 0,
+      });
+    }
+  });
+};
+
+// Increment click count and recompute CTR
+exports.recordClick = async (adId) => {
+  return db.transaction(async (trx) => {
+    const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
+    if (analytics) {
+      const clicks = analytics.clicks + 1;
+      const ctr = analytics.views ? (clicks / analytics.views) * 100 : 0;
+      await trx("ad_analytics").where({ ad_id: adId }).update({
+        clicks,
+        ctr,
+      });
+    } else {
+      await trx("ad_analytics").insert({
+        ad_id: adId,
+        views: 0,
+        clicks: 1,
+        ctr: 0,
+        unique_viewers: 0,
+      });
+    }
+  });
+};
