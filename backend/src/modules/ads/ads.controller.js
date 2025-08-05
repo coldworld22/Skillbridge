@@ -61,12 +61,19 @@ exports.createAd = catchAsync(async (req, res) => {
 
   if (req.files?.image?.[0]) {
     data.image_url = `/uploads/ads/${req.files.image[0].filename}`;
+    data.video_url = null;
   } else if (req.files?.video?.[0]) {
     data.video_url = `/uploads/ads/${req.files.video[0].filename}`;
+    data.image_url = null;
   }
 
-  if (req.body.image_url) data.image_url = req.body.image_url;
-  if (req.body.video_url) data.video_url = req.body.video_url;
+  if (req.body.image_url) {
+    data.image_url = req.body.image_url;
+    data.video_url = null;
+  } else if (req.body.video_url) {
+    data.video_url = req.body.video_url;
+    data.image_url = null;
+  }
 
   const ad = await service.createAd(data);
 
@@ -172,8 +179,13 @@ exports.updateAd = catchAsync(async (req, res) => {
     updates.video_url = `/uploads/ads/${req.files.video[0].filename}`;
     updates.image_url = null;
   }
-  if (req.body.image_url) updates.image_url = req.body.image_url;
-  if (req.body.video_url) updates.video_url = req.body.video_url;
+  if (req.body.image_url) {
+    updates.image_url = req.body.image_url;
+    updates.video_url = null;
+  } else if (req.body.video_url) {
+    updates.video_url = req.body.video_url;
+    updates.image_url = null;
+  }
 
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);
