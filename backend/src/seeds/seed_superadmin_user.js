@@ -23,8 +23,8 @@ exports.seed = async function(knex) {
   const [superAdminUserId] = await knex("users")
     .insert({
       full_name: "Platform Owner",
-      email: "superadmin@skillbridge.com",
-      phone: "1234567890",
+      email: "support@eduskillbridge.net",
+      phone: "+966531505513",
       password_hash: hashedPassword,
       role: "SuperAdmin", // ✅ Role matches updated enum constraint
       avatar_url: null,
