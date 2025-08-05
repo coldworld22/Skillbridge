@@ -87,7 +87,12 @@ const Hero = () => {
     const fetchAds = async () => {
       setLoadingAds(true);
       try {
-        const data = await getAds(userRole?.toLowerCase());
+        const normalizedRole = userRole?.toLowerCase();
+        const roleParam =
+          normalizedRole === "admin" || normalizedRole === "superadmin"
+            ? undefined
+            : normalizedRole;
+        const data = await getAds(roleParam);
         setAds(data);
         setAdsError(false);
       } catch (_err) {
