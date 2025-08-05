@@ -142,6 +142,7 @@
     "delete_failed": "Failed to delete instructor",
     "selected_deleted": "Selected instructors deleted",
     "delete_selected_failed": "Failed to delete selected",
+    "confirm_bulk_delete": "Ausgewählte Dozenten löschen?",
     "joined": "Joined: {{date}}",
     "classes": "Classes",
     "save_changes": "Save Changes",
