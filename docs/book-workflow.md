@@ -7,10 +7,16 @@ Allow instructors to upload and sell PDF books, and allow students to browse, pu
 ### books
 - `id`
 - `title`
-- `description`
+- `short_description`
+- `detailed_description`
 - `price` (decimal)
 - `pdf_url`
 - `cover_image_url`
+- `category_id` (FK → categories)
+- `language`
+- `license_type`
+- `allow_preview`
+- `preview_pages`
 - `instructor_id` (FK → users)
 - `status` (pending, approved, rejected)
 - `created_at`

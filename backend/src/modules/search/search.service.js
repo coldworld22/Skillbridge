@@ -24,7 +24,9 @@ exports.searchBooks = async (q) => {
   return db("books")
     .where({ status: "approved" })
     .andWhere(function () {
-      this.whereRaw("title ILIKE ?", [term]).orWhereRaw("description ILIKE ?", [term]);
+      this.whereRaw("title ILIKE ?", [term])
+        .orWhereRaw("short_description ILIKE ?", [term])
+        .orWhereRaw("detailed_description ILIKE ?", [term]);
     })
     .select("id", "title", "cover_image_url as cover")
     .limit(5);
