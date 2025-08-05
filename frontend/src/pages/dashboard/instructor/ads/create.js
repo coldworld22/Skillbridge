@@ -11,6 +11,10 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useAuthStore from "@/store/auth/authStore";
 import PreviewModal from "@/components/admin/ads/PreviewModalinstrutor";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
@@ -20,6 +24,19 @@ export default function CreateAdPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsCreatePage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+
+  const notify = async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error("[CreateAdPage] notification error", err);
+    }
+  };
 
   const planKey = user?.plan || 'basic';
   const { allowBranding: allowBrandingEnabled } =
@@ -147,6 +164,8 @@ export default function CreateAdPage() {
 
       await createAd(payload);
       toast.success(t('success'));
+      const msg = t('ad_created_notification', { title: formData.title });
+      await notify('ad_created', msg);
       router.push("/dashboard/instructor/ads");
     } catch (err) {
       const message = err?.response?.data?.message || t('failed');
