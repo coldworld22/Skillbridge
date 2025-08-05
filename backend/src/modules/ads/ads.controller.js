@@ -216,6 +216,10 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
     ctr: data.ctr,
     conversions: data.clicks,
     reach: data.unique_viewers,
+    // Include any additional analytics information if present on the record.
+    devices: data.devices || base.devices,
+    locationStats: data.location_stats || base.locationStats,
+    analytics: data.analytics || base.analytics,
   };
   sendSuccess(res, response);
 });
