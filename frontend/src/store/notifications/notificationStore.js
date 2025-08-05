@@ -36,14 +36,14 @@ const useNotificationStore = create((set, get) => ({
   },
 
   markRead: async (id) => {
-    const numericId = Number(id);
+    const idStr = String(id);
     const prevItems = get().items;
     const tempReadAt = new Date().toISOString();
 
     // Optimistically update UI
     set((state) => ({
       items: state.items.map((n) =>
-        Number(n.id) === numericId ? { ...n, read: true, read_at: tempReadAt } : n,
+        String(n.id) === idStr ? { ...n, read: true, read_at: tempReadAt } : n,
       ),
     }));
 
@@ -52,7 +52,7 @@ const useNotificationStore = create((set, get) => ({
       const readAt = res.read_at || tempReadAt;
       set((state) => ({
         items: state.items.map((n) =>
-          Number(n.id) === numericId ? { ...n, read_at: readAt } : n,
+          String(n.id) === idStr ? { ...n, read_at: readAt } : n,
         ),
       }));
 
@@ -61,7 +61,7 @@ const useNotificationStore = create((set, get) => ({
           items: state.items.filter(
             (n) =>
               !(
-                Number(n.id) === numericId &&
+                String(n.id) === idStr &&
                 n.read &&
                 n.read_at &&
                 new Date() - new Date(n.read_at) >= HOUR_MS
@@ -81,8 +81,9 @@ const useNotificationStore = create((set, get) => ({
 
   remove: async (id) => {
     await deleteNotification(id);
+    const idStr = String(id);
     set((state) => ({
-      items: state.items.filter((n) => Number(n.id) !== Number(id)),
+      items: state.items.filter((n) => String(n.id) !== idStr),
     }));
   },
 
