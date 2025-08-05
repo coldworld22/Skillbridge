@@ -269,6 +269,10 @@
     "low": "Baja",
     "medium": "Media",
     "high": "Alta",
+    "dashboard": "Panel",
+    "homepage": "Página principal",
+    "email": "Correo electrónico",
+    "sidebar": "Barra lateral",
     "no_ads": "No se encontraron anuncios.",
     "deleted": "Anuncio eliminado",
     "status_updated": "Estado actualizado",
@@ -1022,6 +1026,8 @@
   },
   "adsEditPage": {
     "title": "Editar anuncio",
+    "description": "Actualiza los detalles y ajustes de tu anuncio",
+    "loading": "Cargando datos del anuncio...",
     "ad_details": "Detalles del anuncio",
     "title_label": "Título",
     "description_label": "Descripción",
@@ -1071,6 +1077,7 @@
     "not_found": "Anuncio no encontrado",
     "error_load": "Error al cargar el anuncio",
     "required_fields": "Por favor completa todos los campos requeridos.",
+    "duration_preview": "Duración: {{days}} días (Máx: {{max}} días)",
     "duration_exceeded": "La duración no puede exceder {{days}} días.",
     "update_success": "¡Anuncio actualizado correctamente!",
     "update_failed": "No se pudo actualizar el anuncio"
