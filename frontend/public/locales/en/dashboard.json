@@ -292,6 +292,10 @@
     "low": "Low",
     "medium": "Medium",
     "high": "High",
+    "dashboard": "Dashboard",
+    "homepage": "Homepage",
+    "email": "Email",
+    "sidebar": "Sidebar",
     "no_ads": "No ads found.",
     "deleted": "Ad deleted",
     "status_updated": "Status updated",
@@ -1199,6 +1203,8 @@
   },
   "adsEditPage": {
     "title": "Edit Advertisement",
+    "description": "Update your ad details and settings",
+    "loading": "Loading ad data...",
     "ad_details": "Ad Details",
     "title_label": "Title",
     "description_label": "Description",
@@ -1248,6 +1254,7 @@
     "not_found": "Advertisement not found",
     "error_load": "Failed to load advertisement",
     "required_fields": "Please fill in all required fields.",
+    "duration_preview": "Duration: {{days}} days (Max: {{max}} days)",
     "duration_exceeded": "Duration cannot exceed {{days}} days.",
     "update_success": "Advertisement updated successfully!",
     "update_failed": "Failed to update advertisement"

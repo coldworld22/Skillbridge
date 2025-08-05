@@ -280,6 +280,10 @@
     "low": "Faible",
     "medium": "Moyen",
     "high": "Élevé",
+    "dashboard": "Tableau de bord",
+    "homepage": "Page d'accueil",
+    "email": "E-mail",
+    "sidebar": "Barre latérale",
     "no_ads": "Aucune annonce trouvée.",
     "deleted": "Annonce supprimée",
     "status_updated": "Statut mis à jour",
@@ -1174,6 +1178,8 @@
   },
   "adsEditPage": {
     "title": "Modifier l'annonce",
+    "description": "Mettez à jour les détails et paramètres de votre annonce",
+    "loading": "Chargement des données de l'annonce...",
     "ad_details": "Détails de l'annonce",
     "title_label": "Titre",
     "description_label": "Description",
@@ -1223,6 +1229,7 @@
     "not_found": "Annonce introuvable",
     "error_load": "Échec du chargement de l'annonce",
     "required_fields": "Veuillez remplir tous les champs requis.",
+    "duration_preview": "Durée : {{days}} jours (Max : {{max}} jours)",
     "duration_exceeded": "La durée ne peut pas dépasser {{days}} jours.",
     "update_success": "Annonce mise à jour avec succès !",
     "update_failed": "Échec de la mise à jour de l'annonce"

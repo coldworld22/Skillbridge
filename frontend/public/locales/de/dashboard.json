@@ -269,6 +269,10 @@
     "low": "Niedrig",
     "medium": "Mittel",
     "high": "Hoch",
+    "dashboard": "Dashboard",
+    "homepage": "Startseite",
+    "email": "E-Mail",
+    "sidebar": "Seitenleiste",
     "no_ads": "Keine Anzeigen gefunden.",
     "deleted": "Anzeige gelöscht",
     "status_updated": "Status aktualisiert",
@@ -1022,6 +1026,8 @@
   },
   "adsEditPage": {
     "title": "Anzeige bearbeiten",
+    "description": "Aktualisieren Sie die Details und Einstellungen Ihrer Anzeige",
+    "loading": "Anzeigendaten werden geladen...",
     "ad_details": "Anzeigedetails",
     "title_label": "Titel",
     "description_label": "Beschreibung",
@@ -1071,6 +1077,7 @@
     "not_found": "Anzeige nicht gefunden",
     "error_load": "Anzeige konnte nicht geladen werden",
     "required_fields": "Bitte füllen Sie alle erforderlichen Felder aus.",
+    "duration_preview": "Dauer: {{days}} Tage (Max: {{max}} Tage)",
     "duration_exceeded": "Dauer darf {{days}} Tage nicht überschreiten.",
     "update_success": "Anzeige erfolgreich aktualisiert!",
     "update_failed": "Anzeige konnte nicht aktualisiert werden"
