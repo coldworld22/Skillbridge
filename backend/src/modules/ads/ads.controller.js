@@ -328,15 +328,6 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
 });
 
 /**
- * Record a view for the given ad. Optionally accepts a userId to
- * track unique viewers.
- */
-exports.recordAdView = catchAsync(async (req, res) => {
-  await service.recordView(req.params.id, req.body.userId);
-  sendSuccess(res, null, "View recorded");
-});
-
-/**
  * Record a click for the given ad.
  */
 exports.recordAdClick = catchAsync(async (req, res) => {
