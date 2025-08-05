@@ -11,7 +11,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import { FiArrowLeft, FiUpload, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
 
 function AdminCreateBookPage() {
