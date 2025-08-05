@@ -9,6 +9,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
+import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
@@ -73,6 +74,8 @@ function AdminBooksPage() {
     return filteredBooks.slice(start, start + perPage);
   }, [filteredBooks, page]);
 
+  const totalPages = Math.ceil(filteredBooks.length / perPage);
+
   const handleSelectBook = (id) => {
     setSelectedBooks((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -82,45 +85,53 @@ function AdminBooksPage() {
   const handleBulkDelete = async () => {
     if (!confirm(t("Are you sure you want to delete selected books?"))) return;
 
-    for (let id of selectedBooks) {
-      try {
-        await deleteBook(id);
-        setBooks((prev) => prev.filter((b) => b.id !== id));
-      } catch (err) {
-        toast.error(t("Failed to delete book ID") + ` ${id}`);
-      }
+    try {
+      const deletePromises = selectedBooks.map(id => deleteBook(id));
+      await Promise.all(deletePromises);
+      setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
+      setSelectedBooks([]);
+      toast.success(t("Books deleted successfully"));
+    } catch (err) {
+      toast.error(t("Failed to delete some books"));
     }
-
-    setSelectedBooks([]);
-    toast.success(t("Books deleted successfully"));
   };
 
   return (
     <AdminLayout>
-      <section className="py-10 px-4 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">{t("Books")}</h1>
+      <section className="py-8 px-4 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t("Books")}</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {t("Showing")} {paginatedBooks.length} {t("of")} {filteredBooks.length} {t("books")}
+            </p>
+          </div>
           <Link
             href="/dashboard/admin/books/create"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
           >
-            {t("Add Book")}
+            <FiPlus className="text-lg" />
+            <span>{t("Add Book")}</span>
           </Link>
         </div>
 
         {/* Filters */}
-        <div className="sticky top-0 z-10 bg-white border rounded-md p-4 mb-6 flex flex-wrap gap-4 items-center shadow-sm">
-          <input
-            type="text"
-            placeholder={t("Search by title")}
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="border rounded p-2 w-full sm:w-56"
-          />
+        <div className="sticky top-0 z-10 bg-white border border-gray-200 rounded-lg p-4 mb-6 flex flex-wrap gap-4 items-center shadow-sm">
+          <div className="relative flex-1 min-w-[200px]">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder={t("Search by title")}
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="border border-gray-300 rounded-lg p-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            />
+          </div>
+          
           <select
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="border rounded p-2 w-full sm:w-40"
+            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="">{t("All Categories")}</option>
             {categories.map((c) => (
@@ -129,79 +140,131 @@ function AdminBooksPage() {
               </option>
             ))}
           </select>
+          
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="border rounded p-2 w-full sm:w-40"
+            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="">{t("All Statuses")}</option>
             <option value="pending">{t("Pending")}</option>
             <option value="approved">{t("Approved")}</option>
             <option value="rejected">{t("Rejected")}</option>
           </select>
+          
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="border rounded p-2 w-full sm:w-40"
+            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="newest">{t("Newest First")}</option>
             <option value="oldest">{t("Oldest First")}</option>
             <option value="title">{t("Title A-Z")}</option>
           </select>
+          
           {selectedBooks.length > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
             >
-              {t("Delete Selected")} ({selectedBooks.length})
+              <FiTrash2 className="text-lg" />
+              <span>{t("Delete")} ({selectedBooks.length})</span>
             </button>
           )}
         </div>
 
-        {/* Loading */}
+        {/* Content */}
         {loading ? (
-          <p className="text-center text-gray-500">{t("Loading books...")}</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
         ) : filteredBooks.length === 0 ? (
-          <p className="text-gray-500 text-center">{t("No books found.")}</p>
+          <div className="text-center py-12">
+            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <FiSearch className="text-3xl text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-700 mb-1">{t("No books found")}</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              {filters.search || filters.category || filters.status 
+                ? t("Try adjusting your search or filter criteria")
+                : t("There are currently no books in the system")}
+            </p>
+          </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {paginatedBooks.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                isSelected={selectedBooks.includes(book.id)}
-                onSelect={() => handleSelectBook(book.id)}
-                onDelete={async () => {
-                  if (!confirm(t("Are you sure?"))) return;
-                  try {
-                    await deleteBook(book.id);
-                    setBooks((prev) => prev.filter((b) => b.id !== book.id));
-                    toast.success(t("Book deleted"));
-                  } catch {
-                    toast.error(t("Failed to delete"));
-                  }
-                }}
-                onEditLink={`/dashboard/admin/books/edit/${book.id}`}
-              />
-            ))}
-          </div>
-        )}
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedBooks.map((book) => (
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  isSelected={selectedBooks.includes(book.id)}
+                  onSelect={() => handleSelectBook(book.id)}
+                  onDelete={async () => {
+                    if (!confirm(t("Are you sure?"))) return;
+                    try {
+                      await deleteBook(book.id);
+                      setBooks((prev) => prev.filter((b) => b.id !== book.id));
+                      toast.success(t("Book deleted"));
+                    } catch {
+                      toast.error(t("Failed to delete"));
+                    }
+                  }}
+                  onEditLink={`/dashboard/admin/books/edit/${book.id}`}
+                />
+              ))}
+            </div>
 
-        {/* Pagination */}
-        {filteredBooks.length > perPage && (
-          <div className="flex justify-center mt-6 gap-2">
-            {Array.from({ length: Math.ceil(filteredBooks.length / perPage) }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className={`px-3 py-1 rounded ${
-                  page === i + 1 ? "bg-yellow-400 text-white" : "bg-gray-100"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <nav className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <FiChevronLeft className="text-lg" />
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Show first, last and nearby pages
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          page === pageNum 
+                            ? "bg-blue-600 text-white" 
+                            : "border border-gray-300 hover:bg-gray-50"
+                        } transition`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <FiChevronRight className="text-lg" />
+                  </button>
+                </nav>
+              </div>
+            )}
+          </>
         )}
       </section>
     </AdminLayout>
