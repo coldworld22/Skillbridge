@@ -78,8 +78,8 @@ exports.createBook = catchAsync(async (req, res) => {
   sendSuccess(res, book, "Book submitted for review");
 });
 
-exports.listBooks = catchAsync(async (_req, res) => {
-  const books = await service.listBooks();
+exports.listBooks = catchAsync(async (req, res) => {
+  const books = await service.listBooks(req.query.status);
   sendSuccess(res, books);
 });
 
