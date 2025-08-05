@@ -256,7 +256,10 @@ export default function EditAdPage() {
             </div>
             {formData.startAt && formData.endAt && (
               <p className="text-sm text-gray-600 mt-3">
-                Duration: {Math.ceil((new Date(formData.endAt) - new Date(formData.startAt)) / (1000 * 60 * 60 * 24)} days
+                Duration: {Math.ceil(
+                  (new Date(formData.endAt) - new Date(formData.startAt)) /
+                    (1000 * 60 * 60 * 24)
+                )} days
                 (Max: {maxAdDuration} days)
               </p>
             )}
