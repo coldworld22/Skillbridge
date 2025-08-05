@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -11,22 +11,77 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { FiArrowLeft, FiUpload, FiX } from "react-icons/fi";
+import Head from "next/head";
 
 function AdminCreateBookPage() {
   const router = useRouter();
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation(["common", "dashboard"]);
   const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [fileError, setFileError] = useState(null);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    fetchBookCategories()
-      .then(setCategories)
-      .catch((e) => console.error("Failed to load categories", e));
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchBookCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+        setError(t("errors.categoryLoad"));
+        toast.error(t("errors.categoryLoad"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, [t]);
+
+  const handleFileChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setFileError(t("validation.invalidFileType"));
+      return;
+    }
+
+    // Validate file size (10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      setFileError(t("validation.fileTooLarge", { size: "10MB" }));
+      return;
+    }
+
+    setFileError(null);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCoverPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }, [t]);
+
+  const handleRemoveImage = useCallback(() => {
+    setCoverPreview(null);
+    setFileError(null);
+    // You might need to clear the file input as well
+    const fileInput = document.getElementById('coverImage');
+    if (fileInput) fileInput.value = '';
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
     try {
+      setProgress(0);
       await api.post("/books", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (event) => {
@@ -36,23 +91,141 @@ function AdminCreateBookPage() {
           }
         },
       });
+      
       toast.success(t("booksCreate.success"));
-      fetchNotifications();
-      fetchMessages();
+      // Refresh notifications and messages
+      await Promise.all([fetchNotifications(), fetchMessages()]);
       router.push("/dashboard/admin/books");
-    } catch (e) {
-      console.error("Failed to create book", e);
-      toast.error(t("booksCreate.error"));
+    } catch (err) {
+      console.error("Failed to create book", err);
+      
+      let errorMessage = t("booksCreate.error");
+      if (err.response) {
+        if (err.response.data?.errors) {
+          errorMessage = Object.values(err.response.data.errors).join(", ");
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setProgress(null);
     }
   };
 
+  const handleCancel = () => {
+    router.push("/dashboard/admin/books");
+  };
+
   return (
     <AdminLayout>
-      <section className="py-10 px-4 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">{t("booksCreate.title")}</h1>
-        <BookForm onSubmit={handleSubmit} categories={categories} />
+      <Head>
+        <title>{t("booksCreate.pageTitle")} | {t("common.adminPanel")}</title>
+      </Head>
+      
+      <section className="py-8 px-4 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <button
+            onClick={handleCancel}
+            className="flex items-center text-primary hover:text-primary-dark transition-colors"
+          >
+            <FiArrowLeft className="mr-2" />
+            {t("common.backToList")}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            {t("booksCreate.title")}
+          </h1>
+          
+          {error ? (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          ) : isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Cover Image Upload Section */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  {t("booksCreate.coverImage")}
+                </label>
+                
+                {coverPreview ? (
+                  <div className="relative group">
+                    <div className="w-64 h-64 rounded-md overflow-hidden border border-gray-200">
+                      <img 
+                        src={coverPreview} 
+                        alt="Cover preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={t("common.removeImage")}
+                    >
+                      <FiX className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div className="space-y-1 text-center">
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <label
+                          htmlFor="coverImage"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                        >
+                          <span>{t("booksCreate.uploadImage")}</span>
+                          <input
+                            id="coverImage"
+                            name="coverImage"
+                            type="file"
+                            className="sr-only"
+                            onChange={handleFileChange}
+                            accept="image/jpeg, image/png, image/webp"
+                          />
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {t("booksCreate.imageRequirements", { size: "10MB" })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {fileError && (
+                  <p className="mt-2 text-sm text-red-600">{fileError}</p>
+                )}
+              </div>
+
+              <BookForm 
+                onSubmit={handleSubmit} 
+                categories={categories} 
+                submitText={t("booksCreate.submitButton")}
+                cancelText={t("common.cancel")}
+                onCancel={handleCancel}
+                maxFileSize={10 * 1024 * 1024} // 10MB
+                allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
+              />
+            </div>
+          )}
+        </div>
       </section>
     </AdminLayout>
   );
@@ -63,8 +236,11 @@ export default withAuthProtection(AdminCreateBookPage, ["admin", "superadmin"]);
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["common", "dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale, 
+        ["common", "dashboard", "validation", "errors"],
+        nextI18NextConfig
+      )),
     },
   };
 }
-
