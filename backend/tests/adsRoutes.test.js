@@ -25,7 +25,7 @@ jest.mock('../src/modules/users/user.model', () => ({
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'user1' };
+    req.user = { id: 'user1', role: 'instructor', roles: ['instructor'] };
     next();
   },
   isInstructorOrAdmin: (_req, _res, next) => next(),
@@ -44,6 +44,17 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads');
     expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+  });
+});
+
+describe('GET /api/ads/admin', () => {
+  it('returns ads for the authenticated instructor', async () => {
+    const mock = [{ id: '1', created_by: 'user1' }];
+    service.getAds.mockResolvedValue(mock);
+    const res = await request(app).get('/api/ads/admin');
+    expect(res.status).toBe(200);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1');
     expect(res.body.data).toEqual(mock);
   });
 });
