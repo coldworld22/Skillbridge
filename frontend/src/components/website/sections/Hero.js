@@ -24,7 +24,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import useAppConfigStore from "@/store/appConfigStore";
 import { API_BASE_URL } from "@/config/config";
-import { getAds } from "@/services/adsService";
+import { getAds, recordAdView, recordAdClick } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
@@ -52,6 +52,7 @@ const Hero = () => {
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
   const userRole = useAuthStore((s) => s.user?.roles?.[0] || s.user?.role);
+  const userId = useAuthStore((s) => s.user?.id);
 
   const [heroBg, setHeroBg] = useState("");
 
@@ -98,6 +99,12 @@ const Hero = () => {
     };
     fetchAds();
   }, [userRole]);
+
+  useEffect(() => {
+    if (ads.length) {
+      recordAdView(ads[currentAd].id, userId);
+    }
+  }, [ads, currentAd, userId]);
 
   const AD_ROTATION_INTERVAL = 10000; // ms
   // Auto-rotate Ads Every 10 Seconds, pause when focused/hovered
@@ -468,6 +475,7 @@ const Hero = () => {
                 </p>
                 <a
                   href={ads[currentAd].link}
+                  onClick={() => recordAdClick(ads[currentAd].id, userId)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-semibold shadow-md"
                 >
                   {t('learn_more')} <FaArrowRight />
