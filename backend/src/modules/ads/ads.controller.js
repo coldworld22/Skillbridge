@@ -3,6 +3,12 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./ads.service");
+const userModel = require("../users/user.model");
+const {
+  sendAdSubmissionEmail,
+  sendAdApprovalEmail,
+  sendNewAdAdminEmail,
+} = require("../../utils/email");
 
 /**
  * Controller functions for managing advertisement banners.
@@ -76,6 +82,27 @@ exports.createAd = catchAsync(async (req, res) => {
   }
 
   const ad = await service.createAd(data);
+  try {
+    if (req.user?.email) {
+      await sendAdSubmissionEmail(
+        req.user.email,
+        req.user.full_name,
+        ad.title
+      );
+    }
+    const admins = await userModel.findAdmins();
+    await Promise.all(
+      admins.map((admin) =>
+        sendNewAdAdminEmail(
+          admin.email,
+          req.user.full_name || "Instructor",
+          ad.title
+        )
+      )
+    );
+  } catch (err) {
+    console.error("Error sending ad creation emails:", err);
+  }
 
   // Notifications and messages to all users were removed to simplify ad creation
   // and avoid spamming the platform with global alerts.
@@ -166,6 +193,19 @@ exports.updateAd = catchAsync(async (req, res) => {
     updates.is_active = is_active === true || is_active === "true";
   }
 
+  const roles = req.user.roles || [req.user.role];
+  const normalizedRoles = roles.map((r) => String(r).toLowerCase());
+  const isAdmin =
+    normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
+
+  let previousAd;
+  if (updates.is_active !== undefined) {
+    if (!isAdmin) {
+      throw new AppError("Only admins can change ad status", 403);
+    }
+    previousAd = await service.getAdById(req.params.id);
+  }
+
   if (title) {
     const existing = await service.findByTitle(title);
     if (existing && existing.id !== req.params.id)
@@ -189,6 +229,22 @@ exports.updateAd = catchAsync(async (req, res) => {
 
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);
+
+  if (
+    updates.is_active === true &&
+    previousAd &&
+    previousAd.is_active === false &&
+    updated.created_by
+  ) {
+    try {
+      const creator = await userModel.findById(updated.created_by);
+      if (creator?.email) {
+        await sendAdApprovalEmail(creator.email, updated.title);
+      }
+    } catch (err) {
+      console.error("Error sending ad approval email:", err);
+    }
+  }
 
   // Global notifications/messages removed
 

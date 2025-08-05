@@ -942,3 +942,159 @@ exports.sendCartAddedEmail = async (to, itemName) => {
     console.error("Error sending cart added email: ", error);
   }
 };
+
+// Notify instructor that their ad was submitted for review
+exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Ad submission notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Your ad "${adTitle}" was submitted`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello${name ? ` ${name}` : ""},</p>
+        <p>Your advertisement <strong>${adTitle}</strong> has been submitted successfully and is awaiting review.</p>
+        <p>You will receive another email once it has been approved.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Ad submission notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending ad submission email: ", error);
+  }
+};
+
+// Notify admins when a new ad is created by an instructor
+exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] New ad notice to ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New ad submitted: ${adTitle}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>${instructorName || "An instructor"} submitted a new advertisement titled <strong>${adTitle}</strong>.</p>
+        <p>Please review and approve it at your earliest convenience.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Admin new ad notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending new ad admin email: ", error);
+  }
+};
+
+// Notify instructor when their ad is approved
+exports.sendAdApprovalEmail = async (to, adTitle) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Ad approval notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `Your ad "${adTitle}" was approved`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>Your advertisement <strong>${adTitle}</strong> has been reviewed and approved. It is now live on the platform.</p>
+        <p>Thank you for advertising with us!</p>
+        <p>Best regards,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Ad approval notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending ad approval email: ", error);
+  }
+};

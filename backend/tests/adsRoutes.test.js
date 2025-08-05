@@ -20,18 +20,35 @@ jest.mock('../src/modules/messages/messages.service', () => ({
 }));
 
 jest.mock('../src/modules/users/user.model', () => ({
-  findAdmins: jest.fn(() => [{ id: 'admin1' }]),
+  findAdmins: jest.fn(() => [{ id: 'admin1', email: 'admin@example.com' }]),
+}));
+
+jest.mock('../src/utils/email', () => ({
+  sendAdSubmissionEmail: jest.fn(),
+  sendAdApprovalEmail: jest.fn(),
+  sendNewAdAdminEmail: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'user1', role: 'instructor', roles: ['instructor'] };
+    req.user = {
+      id: 'user1',
+      role: 'instructor',
+      roles: ['instructor'],
+      email: 'inst@example.com',
+      full_name: 'Instructor One',
+    };
     next();
   },
   isInstructorOrAdmin: (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/ads/ads.service');
+const {
+  sendAdSubmissionEmail,
+  sendAdApprovalEmail,
+  sendNewAdAdminEmail,
+} = require('../src/utils/email');
 const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
@@ -88,6 +105,16 @@ describe('POST /api/ads/admin', () => {
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
+    expect(sendAdSubmissionEmail).toHaveBeenCalledWith(
+      'inst@example.com',
+      'Instructor One',
+      'Test'
+    );
+    expect(sendNewAdAdminEmail).toHaveBeenCalledWith(
+      'admin@example.com',
+      'Instructor One',
+      'Test'
+    );
   });
 });
 
