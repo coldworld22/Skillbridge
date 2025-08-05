@@ -5,11 +5,13 @@ exports.createAd = async (data) => {
   return row;
 };
 
-// Fetch ads with optional inclusion of inactive ones
-exports.getAds = async (includeInactive = false) => {
+// Fetch ads with optional inclusion of inactive ones and ability to
+// restrict results to a specific creator
+exports.getAds = async (includeInactive = false, createdBy) => {
   return db("ads")
     .modify((qb) => {
       if (!includeInactive) qb.where({ is_active: true });
+      if (createdBy) qb.where({ created_by: createdBy });
     })
     .orderBy("created_at", "desc");
 };

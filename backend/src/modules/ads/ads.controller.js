@@ -98,10 +98,16 @@ exports.getAds = catchAsync(async (_req, res) => {
 });
 
 /**
- * Admin endpoint: list all ads including inactive ones.
+ * Admin/Instructor endpoint: list ads including inactive ones.
+ *
+ * - Admins receive all ads.
+ * - Instructors receive only the ads they created.
  */
-exports.getAllAds = catchAsync(async (_req, res) => {
-  const ads = await service.getAds(true);
+exports.getAllAds = catchAsync(async (req, res) => {
+  const roles = req.user.roles || [req.user.role];
+  const normalized = roles.map((r) => String(r).toLowerCase());
+  const isAdmin = normalized.includes("admin") || normalized.includes("superadmin");
+  const ads = await service.getAds(true, isAdmin ? undefined : req.user.id);
   sendSuccess(res, ads);
 });
 
