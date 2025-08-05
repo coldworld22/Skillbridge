@@ -309,7 +309,17 @@
     "image_too_large": "Das Bild darf nicht größer als 5 MB sein.",
     "invalid_video_type": "Es sind nur Videodateien erlaubt.",
     "video_too_large": "Das Video darf nicht größer als 50 MB sein.",
-    "preview_ad": "Anzeige Vorschau"
+    "preview_ad": "Anzeige Vorschau",
+    "back_to_ads": "Zurück zu Anzeigen",
+    "title_placeholder": "Anzeigentitel eingeben",
+    "description_placeholder": "Anzeigenbeschreibung eingeben",
+    "remove_image": "Bild entfernen",
+    "click_to_upload": "Zum Hochladen klicken",
+    "image_requirements": "PNG, JPG, WEBP bis 5MB",
+    "remove_video": "Video entfernen",
+    "video_requirements": "MP4, WEBM bis 50MB",
+    "target_audience_help": "Wählen Sie aus, wer diese Anzeige sieht",
+    "allow_branding_help": "Marke der Organisation in dieser Anzeige anzeigen"
   },
   "plansPage": {
     "title": "Subscription Plans",
