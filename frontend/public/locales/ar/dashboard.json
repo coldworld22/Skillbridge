@@ -332,7 +332,17 @@
     "image_too_large": "يجب أن يكون حجم الصورة أقل من 5 ميغابايت.",
     "invalid_video_type": "يُسمح بملفات الفيديو فقط.",
     "video_too_large": "يجب أن يكون حجم الفيديو أقل من 50 ميغابايت.",
-    "preview_ad": "معاينة الإعلان"
+    "preview_ad": "معاينة الإعلان",
+    "back_to_ads": "العودة إلى الإعلانات",
+    "title_placeholder": "أدخل عنوان الإعلان",
+    "description_placeholder": "أدخل وصف الإعلان",
+    "remove_image": "إزالة الصورة",
+    "click_to_upload": "اضغط للرفع",
+    "image_requirements": "PNG, JPG, WEBP حتى 5MB",
+    "remove_video": "إزالة الفيديو",
+    "video_requirements": "MP4, WEBM حتى 50MB",
+    "target_audience_help": "اختر من سيشاهد هذا الإعلان",
+    "allow_branding_help": "عرض علامة المنظمة على هذا الإعلان"
   },
   "plansPage": {
     "title": "Subscription Plans",
