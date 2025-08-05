@@ -134,7 +134,7 @@ export default function AdAnalyticsPage({ ad: initialAd, error }) {
                 ))}
               </div>
             </div>
-            <div><strong>{t('duration')}:</strong> 📅 {ad.startAt} → {ad.endAt}</div>
+            <div><strong>{t('duration')}:</strong> 📅 {new Date(ad.startAt).toLocaleDateString()} → {new Date(ad.endAt).toLocaleDateString()}</div>
             <div><strong>{t('ad_type')}:</strong> 📌 <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{ad.adType}</span></div>
             <div>
               <strong>{t('status')}:</strong> ⚙️

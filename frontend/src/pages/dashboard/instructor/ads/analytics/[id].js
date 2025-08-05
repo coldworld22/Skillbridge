@@ -58,7 +58,7 @@ export default function InstructorAdAnalyticsPage() {
           <div className="flex flex-col gap-4 text-sm text-gray-700">
             <div><strong>Description:</strong> {ad.description}</div>
             <div><strong>Audience:</strong> {ad.targetRoles.join(", ")}</div>
-            <div><strong>Duration:</strong> {ad.startAt} → {ad.endAt}</div>
+            <div><strong>Duration:</strong> {new Date(ad.startAt).toLocaleDateString()} → {new Date(ad.endAt).toLocaleDateString()}</div>
             <div><strong>Ad Type:</strong> {ad.adType}</div>
             <div><strong>Status:</strong> {ad.isActive ? "Active" : "Inactive"}</div>
           </div>
