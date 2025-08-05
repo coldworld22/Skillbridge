@@ -29,7 +29,9 @@ exports.createBook = catchAsync(async (req, res) => {
   if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
   if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
   if (req.files?.preview_pages?.length) {
-    data.preview_pages = req.files.preview_pages.map((f) => f.path);
+    data.preview_pages = JSON.stringify(
+      req.files.preview_pages.map((f) => f.path)
+    );
   }
 
   const book = await service.createBook(data);
