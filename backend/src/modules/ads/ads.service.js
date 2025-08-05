@@ -23,8 +23,10 @@ exports.getAdById = async (id) => {
 exports.findByTitle = async (title) => {
   const normalized = title?.trim();
   if (!normalized) return null;
+  // Normalize both sides of the comparison to avoid false positives
+  // when titles contain extra whitespace or mixed casing.
   return db("ads")
-    .whereRaw("LOWER(title) = LOWER(?)", [normalized])
+    .whereRaw("LOWER(TRIM(title)) = ?", [normalized.toLowerCase()])
     .first();
 };
 
