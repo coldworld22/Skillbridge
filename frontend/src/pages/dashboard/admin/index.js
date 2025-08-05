@@ -7,18 +7,13 @@ import useAuthStore from "@/store/auth/authStore";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
+import Link from "next/link";
 import { fetchAdminDashboardStats } from "@/services/admin/adminService";
 import { FaUsers, FaChalkboardTeacher, FaBook, FaVideo } from "react-icons/fa";
-import PendingApprovals from "@/components/admin/PendingApprovals";
-import RecentActivity from "@/components/admin/RecentActivity";
-import ManagementShortcuts from "@/components/admin/ManagementShortcuts";
 import RevenueChart from "@/components/admin/charts/RevenueChart";
 import SignupsChart from "@/components/admin/charts/SignupsChart";
 import CategoryPieChart from "@/components/admin/charts/CategoryPieChart";
 import InstructorActivityChart from "@/components/admin/charts/InstructorActivityChart";
-import SystemWarnings from "@/components/admin/widgets/SystemWarnings";
-import UpcomingEvents from "@/components/admin/widgets/UpcomingEvents";
-import MiniAuditLog from "@/components/admin/widgets/MiniAuditLog";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
@@ -86,7 +81,7 @@ function AdminDashboardHome() {
             <li>Flagged chat in Python class</li>
             <li>API key expiring soon</li>
           </ul>
-          <a href="/admin/alerts" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">View all alerts</a>
+          <Link href="/admin/alerts" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">View all alerts</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
@@ -95,14 +90,14 @@ function AdminDashboardHome() {
             <li>@ayman: “This is stupid”</li>
             <li>@maria: “Dumb answer...”</li>
           </ul>
-          <a href="/admin/moderation" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">Review messages</a>
+          <Link href="/admin/moderation" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">Review messages</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">🔒 License Check</h3>
           <p className="text-sm text-gray-800">Last check: 1 hour ago</p>
           <p className="text-sm text-red-600 mt-1">❌ 1 unauthorized instance detected</p>
-          <a href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">See details</a>
+          <Link href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">See details</Link>
         </div>
       </section>
 
@@ -134,30 +129,6 @@ function AdminDashboardHome() {
         )}
       </section>
 
-      {/* Approvals + Shortcuts */}
-      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow p-6">
-          <PendingApprovals />
-        </div>
-        <div className="bg-white rounded-xl shadow p-6">
-          <ManagementShortcuts />
-        </div>
-      </section>
-
-      {/* System Monitoring */}
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <SystemWarnings />
-        <UpcomingEvents />
-        <MiniAuditLog />
-      </section>
-
-      {/* Activity Feed */}
-      <section>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">📰 Recent Activity</h2>
-        <div className="bg-white rounded-xl shadow p-6 max-h-96 overflow-y-auto">
-          <RecentActivity />
-        </div>
-      </section>
     </div>
   );
 }
