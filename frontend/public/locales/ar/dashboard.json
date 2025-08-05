@@ -1039,6 +1039,7 @@
     "bookFileLabel": "ملف الكتاب (PDF)",
     "bookFileRequired": "ملف الكتاب مطلوب",
     "previewPagesLabel": "صفحات معاينة (اختياري)",
+    "allowPreview": "Allow Preview",
     "isFree": "مجاني",
     "priceLabel": "السعر",
     "priceRequired": "السعر مطلوب",

@@ -4,7 +4,7 @@ import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 
-export default function BookForm({ onSubmit, categories = [] }) {
+export default function BookForm({ onSubmit, categories = [], showCoverImage = true }) {
   const { t } = useTranslation("dashboard");
   const {
     register,
@@ -12,7 +12,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
     watch,
     formState: { errors },
     setValue,
-  } = useForm({ defaultValues: { tags: [], status: "pending", is_free: false } });
+  } = useForm({ defaultValues: { tags: [], status: "pending", is_free: false, allow_preview: false} });
   const [languages, setLanguages] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
@@ -96,6 +96,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
     formData.append("language", data.language);
     formData.append("license_type", data.license_type);
     formData.append("is_free", isFree ? 1 : 0);
+    formData.append("allow_preview", data.allow_preview ? 1 : 0);
     formData.append("status", "pending");
     setUploadProgress(0);
     onSubmit(formData, setUploadProgress);
@@ -240,6 +241,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
         )}
       </div>
 
+        {showCoverImage && (
       <div>
         <label className="block text-sm font-medium mb-1">
           {t("booksCreate.coverImageLabel")}
@@ -283,6 +285,7 @@ export default function BookForm({ onSubmit, categories = [] }) {
           </p>
         )}
       </div>
+        )}
 
       <div>
         <label className="block text-sm font-medium mb-1">
@@ -351,6 +354,22 @@ export default function BookForm({ onSubmit, categories = [] }) {
           </ul>
         )}
       </div>
+        <div className="flex items-center gap-2">
+          {(() => {
+            const reg = register("allow_preview");
+            return (
+              <input
+                type="checkbox"
+                {...reg}
+                className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+              />
+            );
+          })()}
+          <label className="text-sm font-medium">
+            {t("booksCreate.allowPreview")}
+          </label>
+        </div>
+
 
       <div className="flex items-center gap-2">
         {(() => {
