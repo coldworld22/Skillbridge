@@ -4,6 +4,8 @@ const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./ads.service");
 const userModel = require("../users/user.model");
+const notificationService = require("../notifications/notifications.service");
+const messageService = require("../messages/messages.service");
 const {
   sendAdSubmissionEmail,
   sendAdApprovalEmail,
@@ -91,21 +93,31 @@ exports.createAd = catchAsync(async (req, res) => {
       );
     }
     const admins = await userModel.findAdmins();
+    const notificationMessage = `New ad created: ${ad.title}`;
     await Promise.all(
       admins.map((admin) =>
-        sendNewAdAdminEmail(
-          admin.email,
-          req.user.full_name || "Instructor",
-          ad.title
-        )
+        Promise.all([
+          sendNewAdAdminEmail(
+            admin.email,
+            req.user.full_name || "Instructor",
+            ad.title
+          ),
+          notificationService.createNotification({
+            user_id: admin.id,
+            type: "ad",
+            message: notificationMessage,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: admin.id,
+            message: notificationMessage,
+          }),
+        ])
       )
     );
   } catch (err) {
     console.error("Error sending ad creation emails:", err);
   }
-
-  // Notifications and messages to all users were removed to simplify ad creation
-  // and avoid spamming the platform with global alerts.
 
   sendSuccess(res, ad, "Ad created");
 });
