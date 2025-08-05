@@ -99,9 +99,25 @@ exports.checkTitle = catchAsync(async (req, res) => {
 /**
  * Public endpoint: list only active ads.
  */
-exports.getAds = catchAsync(async (_req, res) => {
+exports.getAds = catchAsync(async (req, res) => {
+  const roles = req.user?.roles || (req.user?.role ? [req.user.role] : []);
+  const normalized = roles.map((r) => String(r).toLowerCase());
+
   const ads = await service.getAds(false);
-  sendSuccess(res, ads);
+
+  const filtered = normalized.length
+    ? ads.filter((ad) => {
+        const targets = Array.isArray(ad.target_roles)
+          ? ad.target_roles.map((r) => String(r).toLowerCase())
+          : [];
+        return (
+          targets.length === 0 ||
+          targets.some((role) => normalized.includes(role))
+        );
+      })
+    : ads;
+
+  sendSuccess(res, filtered);
 });
 
 /**

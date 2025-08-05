@@ -46,6 +46,23 @@ describe('GET /api/ads', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
   });
+
+  it('filters ads by target_roles for instructor', async () => {
+    const mock = [
+      { id: '1', target_roles: ['student'] },
+      { id: '2', target_roles: ['instructor'] },
+      { id: '3', target_roles: [] },
+      { id: '4', target_roles: ['student', 'instructor'] },
+    ];
+    service.getAds.mockResolvedValue(mock);
+    const res = await request(app).get('/api/ads');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([
+      mock[1],
+      mock[2],
+      mock[3],
+    ]);
+  });
 });
 
 describe('GET /api/ads/admin', () => {

@@ -27,7 +27,7 @@ router.get(
   isInstructorOrAdmin,
   controller.getAllAds
 );
-router.get("/", controller.getAds);
+router.get("/", verifyToken, controller.getAds);
 router.get("/:id/analytics", controller.getAdAnalytics);
 router.get("/:id", controller.getAdById);
 router.put(
