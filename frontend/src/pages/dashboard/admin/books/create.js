@@ -16,12 +16,14 @@ import Head from "next/head";
 
 function AdminCreateBookPage() {
   const router = useRouter();
-  const { t } = useTranslation(["common", "dashboard"]);
+  const { t } = useTranslation(["common", "dashboard", "validation", "errors"]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [fileError, setFileError] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
+
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
@@ -47,23 +49,20 @@ function AdminCreateBookPage() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       setFileError(t("validation.invalidFileType"));
       return;
     }
 
-    // Validate file size (10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       setFileError(t("validation.fileTooLarge", { size: "10MB" }));
       return;
     }
 
     setFileError(null);
-    
-    // Create preview
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setCoverPreview(reader.result);
@@ -74,9 +73,8 @@ function AdminCreateBookPage() {
   const handleRemoveImage = useCallback(() => {
     setCoverPreview(null);
     setFileError(null);
-    // You might need to clear the file input as well
-    const fileInput = document.getElementById('coverImage');
-    if (fileInput) fileInput.value = '';
+    const fileInput = document.getElementById("coverImage");
+    if (fileInput) fileInput.value = "";
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
@@ -88,17 +86,16 @@ function AdminCreateBookPage() {
           if (event.total) {
             const progress = Math.round((event.loaded * 100) / event.total);
             setProgress(progress);
+            setUploadProgress(progress);
           }
         },
       });
-      
+
       toast.success(t("booksCreate.success"));
-      // Refresh notifications and messages
       await Promise.all([fetchNotifications(), fetchMessages()]);
       router.push("/dashboard/admin/books");
     } catch (err) {
       console.error("Failed to create book", err);
-      
       let errorMessage = t("booksCreate.error");
       if (err.response) {
         if (err.response.data?.errors) {
@@ -107,14 +104,15 @@ function AdminCreateBookPage() {
           errorMessage = err.response.data.message;
         }
       }
-      
       toast.error(errorMessage);
     } finally {
       setProgress(null);
+      setUploadProgress(null);
     }
   };
 
   const handleCancel = () => {
+    handleRemoveImage();
     router.push("/dashboard/admin/books");
   };
 
@@ -123,7 +121,7 @@ function AdminCreateBookPage() {
       <Head>
         <title>{t("booksCreate.pageTitle")} | {t("common.adminPanel")}</title>
       </Head>
-      
+
       <section className="py-8 px-4 max-w-4xl mx-auto">
         <div className="mb-6">
           <button
@@ -139,7 +137,7 @@ function AdminCreateBookPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-6">
             {t("booksCreate.title")}
           </h1>
-          
+
           {error ? (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
               <div className="flex">
@@ -159,18 +157,17 @@ function AdminCreateBookPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Cover Image Upload Section */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700">
                   {t("booksCreate.coverImage")}
                 </label>
-                
+
                 {coverPreview ? (
                   <div className="relative group">
                     <div className="w-64 h-64 rounded-md overflow-hidden border border-gray-200">
-                      <img 
-                        src={coverPreview} 
-                        alt="Cover preview" 
+                      <img
+                        src={coverPreview}
+                        alt="Cover preview"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -208,19 +205,28 @@ function AdminCreateBookPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {fileError && (
                   <p className="mt-2 text-sm text-red-600">{fileError}</p>
                 )}
               </div>
 
-              <BookForm 
-                onSubmit={handleSubmit} 
-                categories={categories} 
+              {uploadProgress !== null && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
+
+              <BookForm
+                onSubmit={handleSubmit}
+                categories={categories}
                 submitText={t("booksCreate.submitButton")}
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
-                maxFileSize={10 * 1024 * 1024} // 10MB
+                maxFileSize={10 * 1024 * 1024}
                 allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
               />
             </div>
@@ -237,7 +243,7 @@ export async function getStaticProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(
-        locale, 
+        locale,
         ["common", "dashboard", "validation", "errors"],
         nextI18NextConfig
       )),
