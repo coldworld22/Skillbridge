@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
 import PageHead from "@/components/common/PageHead";
-import { fetchAdById } from "@/services/admin/adService";
+import { fetchAdById, fetchAdAnalytics } from "@/services/admin/adService";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, ResponsiveContainer
@@ -14,34 +14,12 @@ export default function InstructorAdAnalyticsPage() {
   const { id } = router.query;
   const [ad, setAd] = useState(null);
 
-  const generateMockAnalytics = () => ({
-    views: Math.floor(Math.random() * 300),
-    ctr: `${(Math.random() * 2).toFixed(1)}%`,
-    conversions: Math.floor(Math.random() * 50),
-    reach: Math.floor(Math.random() * 800),
-    devices: ["Mobile", "Desktop"],
-    locationStats: [
-      { country: "Egypt", views: Math.floor(Math.random() * 150) },
-      { country: "Saudi Arabia", views: Math.floor(Math.random() * 150) },
-      { country: "UAE", views: Math.floor(Math.random() * 150) },
-    ],
-    analytics: [
-      { day: "Mon", views: Math.floor(Math.random() * 100) },
-      { day: "Tue", views: Math.floor(Math.random() * 100) },
-      { day: "Wed", views: Math.floor(Math.random() * 100) },
-      { day: "Thu", views: Math.floor(Math.random() * 100) },
-      { day: "Fri", views: Math.floor(Math.random() * 100) },
-      { day: "Sat", views: Math.floor(Math.random() * 100) },
-      { day: "Sun", views: Math.floor(Math.random() * 100) },
-    ],
-  });
-
   useEffect(() => {
     if (!id) return;
-    fetchAdById(id)
-      .then((data) => {
-        if (data) {
-          setAd({ ...data, ...generateMockAnalytics() });
+    Promise.all([fetchAdById(id), fetchAdAnalytics(id)])
+      .then(([adData, analytics]) => {
+        if (adData) {
+          setAd({ ...adData, ...analytics });
         } else {
           setAd(null);
         }
@@ -89,7 +67,7 @@ export default function InstructorAdAnalyticsPage() {
         <div className="bg-white rounded-lg shadow p-6 space-y-6">
           <h2 className="text-xl font-semibold">📊 Performance Metrics</h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
-            {["Views", "CTR", "Conversions", "Reach"].map((label, i) => (
+            {["Views", "CTR", "Conversions", "Reach"].map((label) => (
               <div key={label} className="bg-gray-50 p-4 rounded border">
                 <div className="text-xs uppercase mb-1">{label}</div>
                 <div className="text-base font-bold">
