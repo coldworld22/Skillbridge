@@ -6,6 +6,8 @@ This page describes how advertisement banners are managed within the admin dashb
 
 - Routes and controllers live in `backend/src/modules/ads`.
 - Creating, updating or deleting an ad now sends a notification to the ad creator and to all admin users.
+- The `GET /api/ads/admin` endpoint accepts an optional `role` query to
+  filter ads targeted to `student` or `instructor` roles.
 
 ## Frontend
 

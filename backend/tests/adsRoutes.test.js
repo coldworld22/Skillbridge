@@ -82,8 +82,16 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1');
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined);
     expect(res.body.data).toEqual(mock);
+  });
+
+  it('filters ads by target role', async () => {
+    const mock = [{ id: '1', created_by: 'user1' }];
+    service.getAds.mockResolvedValue(mock);
+    const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
+    expect(res.status).toBe(200);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student');
   });
 });
 
