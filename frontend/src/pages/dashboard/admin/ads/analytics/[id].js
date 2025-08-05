@@ -1,7 +1,7 @@
 // pages/admin/ads/analytics/[id].js
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageHead from "@/components/common/PageHead";
 import { fetchAdById, fetchAdAnalytics, updateAd, deleteAd } from "@/services/admin/adService";
 import { toast } from "react-toastify";
@@ -9,58 +9,75 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, ResponsiveContainer
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
 } from "recharts";
+import Image from "next/image";
 
-export default function AdAnalyticsPage() {
+export default function AdAnalyticsPage({ ad: initialAd, error }) {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation('dashboard', { keyPrefix: 'adsAnalyticsPage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
-  const [ad, setAd] = useState(null);
 
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([fetchAdById(id), fetchAdAnalytics(id)])
-      .then(([adData, analytics]) => {
-        if (adData) {
-          setAd({ ...adData, ...(analytics || {}) });
-        } else {
-          setAd(null);
-        }
-      })
-      .catch(() => setAd(null));
-  }, [id]);
+  const [ad, setAd] = useState(initialAd);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6 text-center text-sm text-red-600">{t('error_loading') || 'Failed to load analytics'}</div>
+      </AdminLayout>
+    );
+  }
 
   if (!ad) {
     return (
       <AdminLayout>
-        <div className="p-6 text-center text-sm text-muted-foreground">{t('loading')}</div>
+        <div className="p-6 text-center text-sm text-muted-foreground">{t('not_found') || 'Ad not found'}</div>
       </AdminLayout>
     );
   }
 
   const handleEdit = () => router.push(`/dashboard/admin/ads/edit/${id}`);
   const toggleStatus = async () => {
+    setStatusLoading(true);
     try {
       await updateAd(id, { is_active: !ad.isActive });
       setAd((prev) => ({ ...prev, isActive: !prev.isActive }));
       toast.success(tp('status_updated'));
     } catch {
       toast.error(tp('error_generic'));
+    } finally {
+      setStatusLoading(false);
     }
   };
   const handleDelete = async () => {
-    if (!confirm(tp('confirm_delete', { title: ad.title }))) return;
+    setDeleting(true);
     try {
       await deleteAd(id);
       toast.success(tp('deleted'));
       router.push('/dashboard/admin/ads');
     } catch {
       toast.error(tp('delete_failed'));
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
   };
+
+  const analyticsData = ad.analytics ?? [];
+  const locationStats = ad.locationStats ?? [];
+  const deviceList = ad.devices ?? [];
 
   return (
     <AdminLayout>
@@ -75,8 +92,19 @@ export default function AdAnalyticsPage() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <button onClick={handleEdit} className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100 text-sm">{t('edit')}</button>
-            <button onClick={toggleStatus} className={`px-4 py-2 rounded text-sm text-white ${ad.isActive ? 'bg-gray-600 hover:bg-gray-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{ad.isActive ? t('deactivate') : t('activate')}</button>
-            <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">{t('delete')}</button>
+            <button
+              onClick={toggleStatus}
+              disabled={statusLoading}
+              className={`px-4 py-2 rounded text-sm text-white ${ad.isActive ? 'bg-gray-600 hover:bg-gray-700' : 'bg-blue-600 hover:bg-blue-700'} ${statusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {ad.isActive ? t('deactivate') : t('activate')}
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+            >
+              {t('delete')}
+            </button>
           </div>
         </div>
   
@@ -86,7 +114,14 @@ export default function AdAnalyticsPage() {
             {ad.video ? (
               <video src={ad.video} className="w-full h-48 object-cover rounded-md border" controls />
             ) : (
-              <img src={ad.image} alt={ad.title} className="w-full h-48 object-cover rounded-md border" />
+              <Image
+                src={ad.image}
+                alt={ad.title}
+                width={600}
+                height={192}
+                unoptimized
+                className="w-full h-48 object-cover rounded-md border"
+              />
             )}
           </div>
           <div className="flex flex-col gap-4 text-sm text-gray-700">
@@ -117,7 +152,7 @@ export default function AdAnalyticsPage() {
               { label: "CTR", value: ad.ctr, icon: "📈" },
               { label: "Conversions", value: ad.conversions, icon: "🎯" },
               { label: "Reach", value: ad.reach, icon: "📊" },
-              { label: "Top Devices", value: ad.devices?.join(", "), icon: "📱" }
+              { label: "Top Devices", value: deviceList.length ? deviceList.join(", ") : "-", icon: "📱" }
             ].map((item) => (
               <div key={item.label} className="bg-gray-50 p-4 rounded border">
                 <div className="text-xs uppercase mb-1">{item.icon} {item.label}</div>
@@ -131,7 +166,7 @@ export default function AdAnalyticsPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">📈 {t('views_over_time')}</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={ad.analytics}>
+            <LineChart data={analyticsData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" />
               <YAxis />
@@ -145,7 +180,7 @@ export default function AdAnalyticsPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">🌍 {t('views_by_country')}</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={ad.locationStats}>
+            <BarChart data={locationStats}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="country" />
               <YAxis />
@@ -154,20 +189,55 @@ export default function AdAnalyticsPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        {showDeleteModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded shadow space-y-4 max-w-sm">
+              <p className="text-sm">{tp('confirm_delete', { title: ad.title })}</p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 border rounded text-sm"
+                >
+                  {tp('close')}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded text-sm text-white bg-red-600 hover:bg-red-700"
+                >
+                  {deleting ? t('loading') : tp('delete_ad')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
-
 }
 
-export async function getStaticPaths() {
-  return { paths: [], fallback: 'blocking' };
-}
-
-export async function getStaticProps({ locale }) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
-    },
-  };
+export async function getServerSideProps({ params, locale }) {
+  try {
+    const [adData, analytics] = await Promise.all([
+      fetchAdById(params.id),
+      fetchAdAnalytics(params.id),
+    ]);
+    if (!adData) {
+      return { notFound: true };
+    }
+    return {
+      props: {
+        ad: { ...adData, ...(analytics || {}) },
+        ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      },
+    };
+  } catch (e) {
+    return {
+      props: {
+        error: true,
+        ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      },
+    };
+  }
 }

@@ -82,5 +82,14 @@ export const deleteAd = async (id) => {
 
 export const fetchAdAnalytics = async (id) => {
   const { data } = await api.get(`/ads/${id}/analytics`);
-  return data?.data ?? null;
+  const res = data?.data || {};
+  return {
+    views: res.views ?? 0,
+    ctr: res.ctr ?? 0,
+    conversions: res.conversions ?? 0,
+    reach: res.reach ?? 0,
+    devices: res.devices ?? [],
+    locationStats: res.locationStats ?? [],
+    analytics: res.analytics ?? [],
+  };
 };
