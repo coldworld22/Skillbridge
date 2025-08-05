@@ -320,7 +320,17 @@
     "image_too_large": "La taille de l'image doit être inférieure à 5 Mo.",
     "invalid_video_type": "Seuls les fichiers vidéo sont autorisés.",
     "video_too_large": "La taille de la vidéo doit être inférieure à 50 Mo.",
-    "preview_ad": "Aperçu de l'annonce"
+    "preview_ad": "Aperçu de l'annonce",
+    "back_to_ads": "Retour aux annonces",
+    "title_placeholder": "Entrer le titre de l'annonce",
+    "description_placeholder": "Entrer la description de l'annonce",
+    "remove_image": "Supprimer l'image",
+    "click_to_upload": "Cliquez pour téléverser",
+    "image_requirements": "PNG, JPG, WEBP jusqu'à 5 Mo",
+    "remove_video": "Supprimer la vidéo",
+    "video_requirements": "MP4, WEBM jusqu'à 50 Mo",
+    "target_audience_help": "Sélectionnez qui verra cette annonce",
+    "allow_branding_help": "Afficher la marque de l'organisation sur cette annonce"
   },
   "plansPage": {
     "title": "Subscription Plans",
