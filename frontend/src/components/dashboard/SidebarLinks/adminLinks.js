@@ -3,7 +3,7 @@ import {
   LayoutDashboard, CreditCard, Users, BadgeCheck, BookOpen, Brain, FileText, CalendarCheck2,
   UserCog, Megaphone, Settings, Phone, Plug, Globe, Mail, ImageIcon, ShieldCheck,
   Key, MessageCircleQuestion, BellRing, FileSignature, LayoutTemplate, Contact,
-  SearchCheck, ClipboardList, FolderKanban, DollarSign, Home, MessageCircle, Network, BookMarked,            // For Blogs
+  SearchCheck, ClipboardList, FolderKanban, DollarSign, Home, MessageCircle, Network, Book, BookMarked,            // For Blogs
   HelpCircle,            // For FAQs
   LifeBuoy,
   BadgePercent
@@ -25,6 +25,7 @@ export const adminNavLinks = [
       { label: 'Assignments', href: '/dashboard/admin/assignments', icon: FileText },
       { label: 'Certificates', href: '/dashboard/admin/certificates', icon: LayoutTemplate },
       { label: 'Categories', href: '/dashboard/admin/categories', icon: FolderKanban },
+      { label: 'Books', href: '/dashboard/admin/books', icon: Book },
     ]
   },
   {
