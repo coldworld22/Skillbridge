@@ -21,7 +21,7 @@ exports.getAdById = async (id) => {
 exports.findByTitle = async (title) => {
   if (!title) return null;
   return db("ads")
-    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .whereRaw('LOWER(title) = ?', [title.toLowerCase()])
     .first();
 };
 
