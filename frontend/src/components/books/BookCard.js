@@ -1,8 +1,22 @@
 import Link from "next/link";
 
-export default function BookCard({ book }) {
+export default function BookCard({
+  book,
+  isSelected = false,
+  onSelect,
+  onDelete,
+  onEditLink,
+}) {
   return (
-    <div className="border rounded p-4">
+    <div className="border rounded p-4 relative">
+      {onSelect && (
+        <input
+          type="checkbox"
+          className="absolute top-2 left-2"
+          checked={isSelected}
+          onChange={onSelect}
+        />
+      )}
       {book.cover_image_url && (
         <img
           src={book.cover_image_url}
@@ -12,9 +26,28 @@ export default function BookCard({ book }) {
       )}
       <h3 className="font-semibold mb-1">{book.title}</h3>
       <p className="text-sm mb-2">{`$${book.price}`}</p>
-      <Link href={`/marketplace/books/${book.id}`} className="text-blue-600 underline">
-        View
-      </Link>
+      <div className="flex gap-2">
+        <Link
+          href={`/marketplace/books/${book.id}`}
+          className="text-blue-600 underline"
+        >
+          View
+        </Link>
+        {onEditLink && (
+          <Link href={onEditLink} className="text-green-600 underline">
+            Edit
+          </Link>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-red-600 underline"
+          >
+            Delete
+          </button>
+        )}
+      </div>
     </div>
   );
 }

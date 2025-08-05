@@ -10,4 +10,9 @@ export const fetchBook = async (id) => {
   return data?.data;
 };
 
-export default { fetchBooks, fetchBook };
+export const deleteBook = async (id) => {
+  await api.delete(`/books/${id}`);
+  return true;
+};
+
+export default { fetchBooks, fetchBook, deleteBook };
