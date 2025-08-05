@@ -126,8 +126,9 @@ exports.checkTitle = catchAsync(async (req, res) => {
 /**
  * Public endpoint: list only active ads.
  */
-exports.getAds = catchAsync(async (_req, res) => {
-  const ads = await service.getAds(false);
+exports.getAds = catchAsync(async (req, res) => {
+  const role = req.query.role?.toLowerCase();
+  const ads = await service.getAds(false, undefined, role);
   sendSuccess(res, ads);
 });
 

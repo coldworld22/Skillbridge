@@ -6,12 +6,17 @@ exports.createAd = async (data) => {
 };
 
 // Fetch ads with optional inclusion of inactive ones and ability to
-// restrict results to a specific creator
-exports.getAds = async (includeInactive = false, createdBy) => {
+// restrict results to a specific creator or target role
+exports.getAds = async (includeInactive = false, createdBy, targetRole) => {
   return db("ads")
     .modify((qb) => {
       if (!includeInactive) qb.where({ is_active: true });
       if (createdBy) qb.where({ created_by: createdBy });
+      if (targetRole) {
+        qb.where(function () {
+          this.whereRaw("target_roles = '{}' OR ? = ANY(target_roles)", [targetRole]);
+        });
+      }
     })
     .orderBy("created_at", "desc");
 };
