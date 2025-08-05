@@ -27,6 +27,7 @@ import { API_BASE_URL } from "@/config/config";
 import { getAds } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
+import useAuthStore from "@/store/auth/authStore";
 
 
 const Hero = () => {
@@ -50,6 +51,7 @@ const Hero = () => {
   const fetchAppConfig = useAppConfigStore((s) => s.fetch);
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
+  const userRole = useAuthStore((s) => s.user?.roles?.[0] || s.user?.role);
 
   const [heroBg, setHeroBg] = useState("");
 
@@ -84,7 +86,7 @@ const Hero = () => {
     const fetchAds = async () => {
       setLoadingAds(true);
       try {
-        const data = await getAds();
+        const data = await getAds(userRole?.toLowerCase());
         setAds(data);
         setAdsError(false);
       } catch (_err) {
@@ -95,7 +97,7 @@ const Hero = () => {
       }
     };
     fetchAds();
-  }, []);
+  }, [userRole]);
 
   const AD_ROTATION_INTERVAL = 10000; // ms
   // Auto-rotate Ads Every 10 Seconds, pause when focused/hovered

@@ -1,9 +1,10 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-export const getAds = async () => {
+export const getAds = async (role) => {
   try {
-    const { data } = await api.get("/ads");
+    const config = role ? { params: { role } } : undefined;
+    const { data } = await api.get("/ads", config);
     // Backend already filters out inactive ads so simply map the returned list.
     const ads = data?.data ?? [];
 
