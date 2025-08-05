@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'next-i18next';
+import { toast } from 'react-toastify';
+import { updateInstructor } from '@/services/admin/instructorService';
 
 export default function InstructorDetailsModal({ instructor, onClose, onSave, useTabs }) {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const [activeTab, setActiveTab] = useState('profile');
   const [form, setForm] = useState({ ...instructor });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    onSave(form);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateInstructor(form.id, form);
+      onSave(updated);
+      toast.success(t('details_updated'));
+    } catch (err) {
+      toast.error(t('details_update_failed'));
+      console.error('Instructor update error:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -33,7 +46,7 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
                   activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
                 }`}
               >
-                {tab}
+                {t(`tab_${tab}`)}
               </button>
             ))}
           </div>
@@ -69,7 +82,7 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
           {activeTab === 'edit' && (
             <div className="space-y-3">
               <label className="block text-sm font-medium">
-                Name
+                {t('name_label')}
                 <input
                   type="text"
                   className="w-full mt-1 border rounded px-3 py-1"
@@ -78,7 +91,7 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
                 />
               </label>
               <label className="block text-sm font-medium">
-                Email
+                {t('email_label')}
                 <input
                   type="email"
                   className="w-full mt-1 border rounded px-3 py-1"
@@ -87,7 +100,7 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
                 />
               </label>
               <label className="block text-sm font-medium">
-                Bio
+                {t('bio_label')}
                 <textarea
                   className="w-full mt-1 border rounded px-3 py-1"
                   rows={3}
@@ -105,9 +118,10 @@ export default function InstructorDetailsModal({ instructor, onClose, onSave, us
               </label>
               <button
                 onClick={handleSave}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                disabled={saving}
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
               >
-                {t('save_changes')}
+                {saving ? t('processing') : t('save_changes')}
               </button>
             </div>
           )}

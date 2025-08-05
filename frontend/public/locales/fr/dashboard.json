@@ -136,8 +136,10 @@
   "instructorsPage": {
     "title": "Instructors",
     "search_placeholder": "Search instructors...",
+    "search_label": "Search",
     "sort_name": "Sort by Name",
     "sort_date": "Sort by Join Date",
+    "sort_label": "Sort",
     "status_label": "Status",
     "all": "All",
     "active": "Active",
@@ -156,7 +158,21 @@
     "joined": "Joined: {{date}}",
     "classes": "Classes",
     "save_changes": "Save Changes",
-    "details_title": "Instructor Details"
+    "details_title": "Instructor Details",
+    "select_instructor": "Select {{name}}",
+    "load_more": "Load More",
+    "activate_instructor": "Activate {{name}}",
+    "deactivate_instructor": "Deactivate {{name}}",
+    "delete_instructor": "Delete {{name}}",
+    "tab_profile": "Profile",
+    "tab_classes": "Classes",
+    "tab_edit": "Edit",
+    "name_label": "Name",
+    "email_label": "Email",
+    "bio_label": "Bio",
+    "details_updated": "Instructor updated",
+    "details_update_failed": "Failed to update instructor",
+    "processing": "Saving..."
   },
   "currenciesPage": {
     "title": "Gestion des devises",

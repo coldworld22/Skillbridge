@@ -17,13 +17,19 @@ export default function InstructorCard({ instructor, onToggle, onDelete }) {
       <div className="mt-3 flex gap-4">
         <button
           onClick={() => onToggle(instructor.id)}
-          className="text-blue-600 hover:text-blue-800"
+          className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          aria-label={
+            instructor.status
+              ? t('deactivate_instructor', { name: instructor.name })
+              : t('activate_instructor', { name: instructor.name })
+          }
         >
           {instructor.status ? <FaToggleOn size={20} /> : <FaToggleOff size={20} />}
         </button>
         <button
           onClick={() => onDelete(instructor.id)}
-          className="text-red-500 hover:text-red-700"
+          className="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          aria-label={t('delete_instructor', { name: instructor.name })}
         >
           <FaTrash size={18} />
         </button>
