@@ -37,27 +37,41 @@ export default function CreateAdPage() {
   const [error, setError] = useState(null);
   const [titleError, setTitleError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingTitle, setIsCheckingTitle] = useState(false);
   const [mediaType, setMediaType] = useState('image');
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
+  const isFormValid =
+    formData.title &&
+    formData.startAt &&
+    formData.endAt &&
+    ((mediaType === 'image' && formData.image) || (mediaType === 'video' && videoFile));
+  const disableSubmit = !isFormValid || isSubmitting || isCheckingTitle || titleError;
+
   useEffect(() => {
     if (!formData.title) {
       setTitleError(null);
+      setIsCheckingTitle(false);
       return;
     }
+    setIsCheckingTitle(true);
     const timeout = setTimeout(async () => {
       try {
         const exists = await checkAdTitle(formData.title);
-        if (exists) setTitleError(t('title_exists'));
-        else setTitleError(null);
+        setTitleError(exists ? t('title_exists') : null);
       } catch {
         /* ignore */
+      } finally {
+        setIsCheckingTitle(false);
       }
     }, 500);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      setIsCheckingTitle(false);
+    };
   }, [formData.title, t]);
 
   const handleImageChange = (e) => {
@@ -115,6 +129,20 @@ export default function CreateAdPage() {
     setError(null);
   };
 
+  const handleMediaTypeChange = (e) => {
+    const type = e.target.value;
+    setMediaType(type);
+    if (type === 'image') {
+      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      setVideoFile(null);
+      setVideoPreview('');
+    } else {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setFormData((prev) => ({ ...prev, image: null }));
+      setImagePreview('');
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (videoPreview) URL.revokeObjectURL(videoPreview);
@@ -138,11 +166,7 @@ export default function CreateAdPage() {
       setError(t('end_before_start'));
       return;
     }
-
-    if (await checkAdTitle(formData.title)) {
-      setTitleError(t('title_exists'));
-      return;
-    }
+    if (titleError || isCheckingTitle) return;
 
     setIsSubmitting(true);
 
@@ -180,13 +204,6 @@ export default function CreateAdPage() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-    };
-  }, [imagePreview, videoPreview]);
-
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto p-6" dir={i18n.dir()}>
@@ -207,16 +224,19 @@ export default function CreateAdPage() {
             <div className="px-5 py-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('title_label')} *</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={(e) => {
-                    setTitleError(null);
-                    handleChange(e);
-                  }}
-                  className={`w-full border px-3 py-2 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${titleError ? 'border-red-500' : 'border-gray-300'}`}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={(e) => {
+                      setTitleError(null);
+                      handleChange(e);
+                    }}
+                    className={`w-full border px-3 py-2 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 ${titleError ? 'border-red-500' : 'border-gray-300'}`}
+                  />
+                  {isCheckingTitle && <FaSpinner className="animate-spin text-gray-400" />}
+                </div>
                 {titleError && <p className="text-sm text-red-600 mt-1">{titleError}</p>}
               </div>
               <div>
@@ -233,7 +253,7 @@ export default function CreateAdPage() {
                 <label className="block text-sm font-medium mb-1">{t('media_type')}</label>
                 <select
                   value={mediaType}
-                  onChange={(e) => setMediaType(e.target.value)}
+                  onChange={handleMediaTypeChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="image">{t('image')}</option>
@@ -393,9 +413,9 @@ export default function CreateAdPage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={disableSubmit}
               className={`px-6 py-3 rounded-xl font-medium text-white text-sm transition-all ${
-                isSubmitting
+                disableSubmit
                   ? "bg-yellow-400 cursor-not-allowed"
                   : "bg-yellow-600 hover:bg-yellow-700"
               }`}

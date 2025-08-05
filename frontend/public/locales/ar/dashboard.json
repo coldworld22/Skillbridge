@@ -167,6 +167,7 @@
     "delete_failed": "فشل حذف المدرب",
     "selected_deleted": "تم حذف المدربين المحددين",
     "delete_selected_failed": "فشل حذف المحددين",
+    "confirm_bulk_delete": "حذف المدربين المحددين؟",
     "joined": "انضم في: {{date}}",
     "classes": "الدورات",
     "save_changes": "حفظ التغييرات",
