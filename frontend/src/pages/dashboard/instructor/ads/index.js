@@ -12,8 +12,12 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function InstructorAdsPage() {
+  const { t } = useTranslation("dashboard", { keyPrefix: "adsPage" });
   const [ads, setAds] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -58,14 +62,14 @@ export default function InstructorAdsPage() {
   };
 
   const handleDelete = async (ad) => {
-    if (confirm(`Delete "${ad.title}"?`)) {
+    if (confirm(t('confirm_delete', { title: ad.title }))) {
       try {
         await deleteAd(ad.id);
         setAds((prev) => prev.filter((a) => a.id !== ad.id));
-        toast.success("Ad deleted");
-        await notify("ad_deleted", `Ad "${ad.title}" deleted`);
+        toast.success(t('deleted'));
+        await notify('ad_deleted', `Ad "${ad.title}" deleted`);
       } catch {
-        toast.error("Failed to delete ad");
+        toast.error(t('delete_failed'));
       }
     }
   };
@@ -103,10 +107,10 @@ export default function InstructorAdsPage() {
     <InstructorLayout>
       <div className="p-6">
         <header className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <h1 className="text-3xl font-bold">📢 My Ads</h1>
+          <h1 className="text-3xl font-bold">📢 {t("title")}</h1>
           <Link href="/dashboard/instructor/ads/create">
             <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
-              <FaPlus /> New Ad
+              <FaPlus /> {t("new_ad")}
             </button>
           </Link>
         </header>
@@ -114,7 +118,7 @@ export default function InstructorAdsPage() {
         <section className="flex flex-wrap gap-4 mb-6">
           <input
             type="search"
-            placeholder="Search ads..."
+            placeholder={t("search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border rounded w-full md:w-1/3"
@@ -124,24 +128,24 @@ export default function InstructorAdsPage() {
             onChange={(e) => setFilterType(e.target.value)}
             className="px-4 py-2 border rounded"
           >
-            <option value="all">All Types</option>
-            <option value="promotion">Promotion</option>
-            <option value="event">Event</option>
-            <option value="announcement">Announcement</option>
+            <option value="all">{t("all_types")}</option>
+            <option value="promotion">{t("promotion")}</option>
+            <option value="event">{t("event")}</option>
+            <option value="announcement">{t("announcement")}</option>
           </select>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border rounded"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{t("all_status")}</option>
+            <option value="active">{t("active")}</option>
+            <option value="inactive">{t("inactive")}</option>
           </select>
         </section>
 
         {paginatedAds.length === 0 ? (
-          <p className="text-gray-500 text-center mt-10">No ads found.</p>
+          <p className="text-gray-500 text-center mt-10">{t("no_ads")}</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -180,5 +184,13 @@ export default function InstructorAdsPage() {
       <PreviewModal ad={previewAd} onClose={() => setPreviewAd(null)} />
     </InstructorLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
 

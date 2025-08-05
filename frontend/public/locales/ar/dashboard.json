@@ -1159,6 +1159,21 @@
       "save": "Save SEO Settings"
     }
   },
+  "adsAnalyticsPage": {
+    "title_prefix": "تحليلات الإعلان",
+    "overview": "نظرة عامة على تحليلات حملتك الإعلانية",
+    "loading": "جارٍ تحميل تحليلات الإعلان...",
+    "error_loading": "فشل تحميل التحليلات",
+    "not_found": "الإعلان غير موجود",
+    "description": "الوصف",
+    "target_roles": "الجمهور",
+    "duration": "المدة",
+    "ad_type": "نوع الإعلان",
+    "status": "الحالة",
+    "performance_metrics": "مقاييس الأداء",
+    "views_over_time": "المشاهدات مع مرور الوقت",
+    "views_by_country": "المشاهدات حسب البلد"
+  },
   "adsEditPage": {
     "title": "تعديل الإعلان",
     "ad_details": "Ad Details",

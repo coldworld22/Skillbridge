@@ -8,8 +8,13 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, ResponsiveContainer
 } from "recharts";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function InstructorAdAnalyticsPage() {
+  const { t } = useTranslation("dashboard", { keyPrefix: "adsAnalyticsPage" });
+  const { t: tp } = useTranslation("dashboard", { keyPrefix: "adsPage" });
   const router = useRouter();
   const { id } = router.query;
   const [ad, setAd] = useState(null);
@@ -31,7 +36,7 @@ export default function InstructorAdAnalyticsPage() {
     return (
       <InstructorLayout>
         <div className="p-6 text-center text-sm text-muted-foreground">
-          Loading ad analytics...
+          {t('loading')}
         </div>
       </InstructorLayout>
     );
@@ -39,14 +44,14 @@ export default function InstructorAdAnalyticsPage() {
 
   return (
     <InstructorLayout>
-      <PageHead title={`Ad Analytics - ${ad.title}`} />
+      <PageHead title={`${t('title_prefix')} - ${ad.title}`} />
 
       <div className="p-4 sm:p-6 space-y-8 max-w-screen-xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{ad.title}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Analytics overview for your ad campaign
+              {t('overview')}
             </p>
           </div>
         </div>
@@ -56,16 +61,16 @@ export default function InstructorAdAnalyticsPage() {
             <img src={ad.image} alt={ad.title} className="w-full h-48 object-cover rounded-md border" />
           </div>
           <div className="flex flex-col gap-4 text-sm text-gray-700">
-            <div><strong>Description:</strong> {ad.description}</div>
-            <div><strong>Audience:</strong> {ad.targetRoles.join(", ")}</div>
-            <div><strong>Duration:</strong> {ad.startAt} → {ad.endAt}</div>
-            <div><strong>Ad Type:</strong> {ad.adType}</div>
-            <div><strong>Status:</strong> {ad.isActive ? "Active" : "Inactive"}</div>
+            <div><strong>{t('description')}:</strong> {ad.description}</div>
+            <div><strong>{t('target_roles')}:</strong> {ad.targetRoles.join(", ")}</div>
+            <div><strong>{t('duration')}:</strong> {ad.startAt} → {ad.endAt}</div>
+            <div><strong>{t('ad_type')}:</strong> {ad.adType}</div>
+            <div><strong>{t('status')}:</strong> {ad.isActive ? tp('active') : tp('inactive')}</div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h2 className="text-xl font-semibold">📊 Performance Metrics</h2>
+          <h2 className="text-xl font-semibold">📊 {t('performance_metrics')}</h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
             {["Views", "CTR", "Conversions", "Reach"].map((label) => (
               <div key={label} className="bg-gray-50 p-4 rounded border">
@@ -81,7 +86,7 @@ export default function InstructorAdAnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">📈 Views Over Time</h2>
+          <h2 className="text-xl font-semibold mb-4">📈 {t('views_over_time')}</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={ad.analytics}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -94,7 +99,7 @@ export default function InstructorAdAnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">🌍 Views by Country</h2>
+          <h2 className="text-xl font-semibold mb-4">🌍 {t('views_by_country')}</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={ad.locationStats}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -108,4 +113,16 @@ export default function InstructorAdAnalyticsPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getStaticPaths() {
+  return { paths: [], fallback: true };
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
