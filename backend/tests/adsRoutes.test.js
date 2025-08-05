@@ -49,6 +49,8 @@ const {
   sendAdApprovalEmail,
   sendNewAdAdminEmail,
 } = require('../src/utils/email');
+const notificationService = require('../src/modules/notifications/notifications.service');
+const messageService = require('../src/modules/messages/messages.service');
 const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
@@ -124,6 +126,16 @@ describe('POST /api/ads/admin', () => {
       'Instructor One',
       'Test'
     );
+    expect(notificationService.createNotification).toHaveBeenCalledWith({
+      user_id: 'admin1',
+      type: 'ad',
+      message: 'New ad created: Test',
+    });
+    expect(messageService.createMessage).toHaveBeenCalledWith({
+      sender_id: 'user1',
+      receiver_id: 'admin1',
+      message: 'New ad created: Test',
+    });
   });
 });
 
