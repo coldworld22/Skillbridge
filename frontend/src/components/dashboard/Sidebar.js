@@ -14,6 +14,7 @@ import { studentNavLinks } from './SidebarLinks/studentLinks';
 
 const navMap = {
   admin: adminNavLinks,
+  superadmin: adminNavLinks,
   instructor: instructorNavLinks,
   student: studentNavLinks
 };
