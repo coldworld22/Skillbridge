@@ -83,15 +83,17 @@ export default function AdCard({
             <FaChartBar className="hover:text-purple-600" />
           </button>
         </div>
-        <label className="flex items-center gap-1 text-xs cursor-pointer">
-          <input
-            type="checkbox"
-            checked={ad.isActive}
-            onChange={() => toggleAdStatus(ad.id)}
-            className="w-3 h-3"
-          />
-          <span>{ad.isActive ? t('on') : t('off')}</span>
-        </label>
+        {typeof toggleAdStatus === 'function' && (
+          <label className="flex items-center gap-1 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={ad.isActive}
+              onChange={() => toggleAdStatus(ad.id)}
+              className="w-3 h-3"
+            />
+            <span>{ad.isActive ? t('on') : t('off')}</span>
+          </label>
+        )}
       </div>
     </div>
   );

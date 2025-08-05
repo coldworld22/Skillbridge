@@ -3,9 +3,15 @@ import { useState, useEffect, useMemo } from "react";
 import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import AdCard from "@/components/admin/ads/AdCard"; // You can reuse this
+import AdCard from "@/components/admin/ads/AdCard";
 import PreviewModal from "@/components/admin/ads/PreviewModalinstrutor";
-import { fetchAds, deleteAd, updateAd } from "@/services/admin/adService";
+import { fetchAds, deleteAd } from "@/services/admin/adService";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 export default function InstructorAdsPage() {
   const [ads, setAds] = useState([]);
@@ -16,22 +22,32 @@ export default function InstructorAdsPage() {
   const [selectedAds, setSelectedAds] = useState([]);
   const [previewAd, setPreviewAd] = useState(null);
   const ITEMS_PER_PAGE = 6;
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
 
-  useEffect(() => {
-    fetchAds().then(setAds).catch(() => setAds([]));
-  }, []);
-
-  const toggleAdStatus = async (id) => {
-    setAds((prev) =>
-      prev.map((ad) =>
-        ad.id === id ? { ...ad, isActive: !ad.isActive } : ad
-      )
-    );
-    const ad = ads.find((a) => a.id === id);
-    if (ad) {
-      await updateAd(id, { is_active: !ad.isActive }).catch(() => {});
+  const notify = async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error("[InstructorAdsPage] notification error", err);
     }
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchAds()
+      .then((data) => {
+        const mine = data.filter(
+          (ad) => ad.created_by === user.id || ad.createdBy === user.id
+        );
+        setAds(mine);
+      })
+      .catch(() => setAds([]));
+  }, [user?.id]);
 
   const handleEdit = (ad) => {
     window.location.href = `/dashboard/instructor/ads/edit/${ad.id}`;
@@ -43,8 +59,14 @@ export default function InstructorAdsPage() {
 
   const handleDelete = async (ad) => {
     if (confirm(`Delete "${ad.title}"?`)) {
-      await deleteAd(ad.id).catch(() => {});
-      setAds((prev) => prev.filter((a) => a.id !== ad.id));
+      try {
+        await deleteAd(ad.id);
+        setAds((prev) => prev.filter((a) => a.id !== ad.id));
+        toast.success("Ad deleted");
+        await notify("ad_deleted", `Ad "${ad.title}" deleted`);
+      } catch {
+        toast.error("Failed to delete ad");
+      }
     }
   };
 
@@ -127,7 +149,6 @@ export default function InstructorAdsPage() {
                 <AdCard
                   key={ad.id}
                   ad={ad}
-                  toggleAdStatus={toggleAdStatus}
                   handleEdit={handleEdit}
                   handleDelete={handleDelete}
                   handlePreview={handlePreview}

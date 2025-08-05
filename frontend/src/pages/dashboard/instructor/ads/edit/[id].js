@@ -1,10 +1,16 @@
-// pages/admin/ads/edit/[id].js
+// pages/dashboard/instructor/ads/edit/[id].js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import AdminLayout from "@/components/layouts/AdminLayout";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import plansConfig from "@/config/plansConfig";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
+import { toast } from "react-toastify";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 const currentUserPlan = "basic";
 const { maxAdDuration } = plansConfig[currentUserPlan];
@@ -14,6 +20,20 @@ export default function EditAdPage() {
   const { id } = router.query;
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
+  const user = useAuthStore((s) => s.user);
+  const refreshNotifications = useNotificationStore((s) => s.fetch);
+  const refreshMessages = useMessageStore((s) => s.fetch);
+
+  const notify = async (type, message) => {
+    try {
+      await createNotification({ user_id: user.id, type, message });
+      await sendChatMessage(user.id, { text: message });
+      refreshNotifications?.();
+      refreshMessages?.();
+    } catch (err) {
+      console.error("[EditAdPage] notification error", err);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -80,23 +100,25 @@ export default function EditAdPage() {
       payload.append("link_url", formData.link);
 
       await updateAd(id, payload);
-      alert("Ad updated successfully!");
+      toast.success("Ad updated successfully!");
+      await notify("ad_updated", `Ad "${formData.title}" updated`);
       router.push("/dashboard/instructor/ads");
     } catch (err) {
       setError("Failed to update ad");
+      toast.error("Failed to update ad");
     }
   };
 
   if (!formData) {
     return (
-      <AdminLayout>
+      <InstructorLayout>
         <div className="p-6">Loading ad data...</div>
-      </AdminLayout>
+      </InstructorLayout>
     );
   }
 
   return (
-    <AdminLayout>
+    <InstructorLayout>
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">✏️ Edit Advertisement</h1>
         {error && <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded mb-6">{error}</div>}
@@ -151,10 +173,6 @@ export default function EditAdPage() {
               <input type="checkbox" name="allowBranding" checked={formData.allowBranding} onChange={handleChange} />
               <span className="text-sm">Enable Custom Branding</span>
             </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} />
-              <span className="text-sm">Activate this ad</span>
-            </label>
           </section>
 
           <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
@@ -162,6 +180,6 @@ export default function EditAdPage() {
           </button>
         </form>
       </div>
-    </AdminLayout>
+    </InstructorLayout>
   );
 }
