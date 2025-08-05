@@ -1027,6 +1027,7 @@
     "bookFileLabel": "Fichier du livre (PDF)",
     "bookFileRequired": "Le fichier du livre est obligatoire",
     "previewPagesLabel": "Pages d'aperçu (optionnel)",
+    "allowPreview": "Allow Preview",
     "isFree": "Gratuit",
     "priceLabel": "Prix",
     "priceRequired": "Le prix est obligatoire",

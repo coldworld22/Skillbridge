@@ -20,9 +20,17 @@ exports.createBook = catchAsync(async (req, res) => {
     category_id: body.category_id,
     instructor_id: req.user.id,
     status: "pending",
+    allow_preview:
+      body.allow_preview === "1" ||
+      body.allow_preview === 1 ||
+      body.allow_preview === true ||
+      body.allow_preview === "true",
   };
   if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
   if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
+  if (req.files?.preview_pages?.length) {
+    data.preview_pages = req.files.preview_pages.map((f) => f.path);
+  }
 
   const book = await service.createBook(data);
 

@@ -6,7 +6,7 @@ import api from "@/services/api/api";
 import BookForm from "@/components/books/BookForm";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { fetchBookCategories } from "@/services/bookCategoryService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -20,8 +20,8 @@ function CreateBookPage() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    fetchBookCategories()
-      .then(setCategories)
+    fetchAllCategories()
+      .then((res) => setCategories(res?.data || res || []))
       .catch((e) => console.error("Failed to load categories", e));
   }, []);
 

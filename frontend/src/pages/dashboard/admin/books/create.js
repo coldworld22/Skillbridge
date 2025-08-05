@@ -6,7 +6,7 @@ import api from "@/services/api/api";
 import BookForm from "@/components/books/BookForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { fetchBookCategories } from "@/services/bookCategoryService";
+import { fetchAllCategories } from "@/services/admin/categoryService";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -31,8 +31,8 @@ function AdminCreateBookPage() {
     const loadCategories = async () => {
       try {
         setIsLoading(true);
-        const data = await fetchBookCategories();
-        setCategories(data);
+        const result = await fetchAllCategories();
+        setCategories(result?.data || result || []);
       } catch (err) {
         console.error("Failed to load categories", err);
         setError(t("errors.categoryLoad"));
@@ -78,6 +78,10 @@ function AdminCreateBookPage() {
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
+    const fileInput = document.getElementById("coverImage");
+    if (fileInput?.files?.[0]) {
+      formData.append("cover_image", fileInput.files[0]);
+    }
     try {
       setProgress(0);
       await api.post("/books", formData, {
@@ -223,6 +227,7 @@ function AdminCreateBookPage() {
               <BookForm
                 onSubmit={handleSubmit}
                 categories={categories}
+                showCoverImage={false}
                 submitText={t("booksCreate.submitButton")}
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
