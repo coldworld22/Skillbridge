@@ -5,10 +5,11 @@ exports.createBook = async (data) => {
   return row;
 };
 
-exports.listBooks = () =>
-  db("books")
-    .where({ status: "approved" })
-    .orderBy("created_at", "desc");
+exports.listBooks = (status) => {
+  const query = db("books").orderBy("created_at", "desc");
+  if (status) query.where({ status });
+  return query;
+};
 
 exports.getBookById = (id) => db("books").where({ id }).first();
 

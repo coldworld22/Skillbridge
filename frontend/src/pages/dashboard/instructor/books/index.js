@@ -80,8 +80,8 @@ function InstructorBooksPage() {
           >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
 
