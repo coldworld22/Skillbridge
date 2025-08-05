@@ -1005,6 +1005,21 @@
       "save": "Save SEO Settings"
     }
   },
+  "adsAnalyticsPage": {
+    "title_prefix": "Analítica de anuncios",
+    "overview": "Resumen analítico de tu campaña publicitaria",
+    "loading": "Cargando analíticas del anuncio...",
+    "error_loading": "Error al cargar las analíticas",
+    "not_found": "Anuncio no encontrado",
+    "description": "Descripción",
+    "target_roles": "Audiencia",
+    "duration": "Duración",
+    "ad_type": "Tipo de anuncio",
+    "status": "Estado",
+    "performance_metrics": "Métricas de rendimiento",
+    "views_over_time": "Vistas a lo largo del tiempo",
+    "views_by_country": "Vistas por país"
+  },
   "adsEditPage": {
     "title": "Editar anuncio",
     "ad_details": "Detalles del anuncio",

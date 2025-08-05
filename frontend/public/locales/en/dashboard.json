@@ -1182,6 +1182,21 @@
       "save": "Save SEO Settings"
     }
   },
+  "adsAnalyticsPage": {
+    "title_prefix": "Ad Analytics",
+    "overview": "Analytics overview for your ad campaign",
+    "loading": "Loading ad analytics...",
+    "error_loading": "Failed to load analytics",
+    "not_found": "Ad not found",
+    "description": "Description",
+    "target_roles": "Audience",
+    "duration": "Duration",
+    "ad_type": "Ad Type",
+    "status": "Status",
+    "performance_metrics": "Performance Metrics",
+    "views_over_time": "Views Over Time",
+    "views_by_country": "Views by Country"
+  },
   "adsEditPage": {
     "title": "Edit Advertisement",
     "ad_details": "Ad Details",

@@ -1005,6 +1005,21 @@
       "save": "Save SEO Settings"
     }
   },
+  "adsAnalyticsPage": {
+    "title_prefix": "Anzeigenanalyse",
+    "overview": "Analyseübersicht für Ihre Werbekampagne",
+    "loading": "Analysedaten werden geladen...",
+    "error_loading": "Analysen konnten nicht geladen werden",
+    "not_found": "Anzeige nicht gefunden",
+    "description": "Beschreibung",
+    "target_roles": "Zielgruppe",
+    "duration": "Dauer",
+    "ad_type": "Anzeigentyp",
+    "status": "Status",
+    "performance_metrics": "Leistungsmetriken",
+    "views_over_time": "Aufrufe im Zeitverlauf",
+    "views_by_country": "Aufrufe nach Land"
+  },
   "adsEditPage": {
     "title": "Anzeige bearbeiten",
     "ad_details": "Anzeigedetails",
