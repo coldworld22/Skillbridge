@@ -40,6 +40,7 @@ const Hero = () => {
   const [searchError, setSearchError] = useState(false);
   const [loadingAds, setLoadingAds] = useState(true);
   const [adsError, setAdsError] = useState(false);
+  const [isAdPaused, setIsAdPaused] = useState(false);
   const hasResults =
     results &&
     Object.values(results).some(
@@ -96,14 +97,14 @@ const Hero = () => {
     fetchAds();
   }, []);
 
-  // Auto-rotate Ads Every 5 Seconds
+  // Auto-rotate Ads Every 5 Seconds, pause when focused/hovered
   useEffect(() => {
-    if (!ads.length) return;
+    if (!ads.length || isAdPaused) return;
     const interval = setInterval(() => {
       setCurrentAd((prev) => (prev + 1) % ads.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [ads]);
+  }, [ads, isAdPaused]);
 
   // Auto search when user types with small debounce
   useEffect(() => {
@@ -419,6 +420,13 @@ const Hero = () => {
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.5 }}
               className="relative w-full lg:w-1/2 h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-500 group"
+              onMouseEnter={() => setIsAdPaused(true)}
+              onMouseLeave={() => setIsAdPaused(false)}
+              onFocus={() => setIsAdPaused(true)}
+              onBlur={() => setIsAdPaused(false)}
+              onTouchStart={() => setIsAdPaused(true)}
+              onTouchEnd={() => setIsAdPaused(false)}
+              tabIndex={0}
               {...handlers}
             >
             {ads[currentAd].video ? (
