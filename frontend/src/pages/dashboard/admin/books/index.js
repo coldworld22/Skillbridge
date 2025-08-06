@@ -19,7 +19,10 @@ function AdminBooksPage() {
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [languages, setLanguages] = useState([]);
   const [filters, setFilters] = useState({ search: "", category: "", status: "", priceRange: 0, language: "", tags: [] });
+  const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [allSelected, setAllSelected] = useState(false);
@@ -46,6 +49,7 @@ function AdminBooksPage() {
     const loadCategories = async () => {
       try {
         const cats = await fetchBookCategories();
+        const langs = await getLanguages();
         setCategories(cats);
         setLanguages(langs);
       } catch (err) {
@@ -54,6 +58,17 @@ function AdminBooksPage() {
     };
     loadCategories();
   }, [t]);
+
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+
+    fetchBookTags(tagInput)
+      .then(setTagSuggestions)
+      .catch(() => {});
+  }, [tagInput]);
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -76,6 +91,8 @@ function AdminBooksPage() {
     };
     loadBooks();
   }, [page, filters, sortBy, perPage, t]);
+
+  const filteredBooks = books;
 
   const totalPages = meta?.totalPages ?? 1;
 
