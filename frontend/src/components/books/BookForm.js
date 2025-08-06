@@ -278,7 +278,7 @@ export default function BookForm({
         {showCoverImage && (
       <div>
         <label className="block text-sm font-medium mb-1">
-          {t("booksCreate.coverImageLabel")}
+          {t("booksCreate.coverImage")}
         </label>
         {(() => {
           const reg = register("cover_image", {

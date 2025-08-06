@@ -1038,7 +1038,9 @@
     "shortDescriptionRequired": "الوصف القصير مطلوب",
     "detailedDescriptionLabel": "وصف مفصل",
     "detailedDescriptionRequired": "الوصف المفصل مطلوب",
-    "coverImageLabel": "صورة الغلاف",
+    "coverImage": "صورة الغلاف",
+    "uploadImage": "رفع صورة",
+    "imageRequirements": "PNG أو JPG أو WEBP بحد أقصى {{size}}",
     "coverImageRequired": "صورة الغلاف مطلوبة",
     "bookFileLabel": "ملف الكتاب (PDF)",
     "bookFileRequired": "ملف الكتاب مطلوب",
@@ -1053,6 +1055,12 @@
     "licenseTypeLabel": "نوع الترخيص",
     "selectLicenseType": "اختر نوع الترخيص",
     "licenseTypeRequired": "نوع الترخيص مطلوب"
+  },
+  "booksEdit": {
+    "pageTitle": "تعديل الكتاب",
+    "title": "تعديل الكتاب",
+    "success": "تم تحديث الكتاب بنجاح",
+    "error": "فشل في تحديث الكتاب"
   },
   "seoPage": {
     "title": "SEO Control Panel",
