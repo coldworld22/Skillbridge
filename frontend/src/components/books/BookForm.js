@@ -14,6 +14,7 @@ export default function BookForm({
   submitText,
   cancelText,
   onCancel,
+  showStatusSelector = false,
 }) {
   const { t } = useTranslation(["dashboard", "common"]);
   const {
@@ -26,10 +27,10 @@ export default function BookForm({
   } = useForm({
     defaultValues: {
       tags: [],
-      status: "pending",
       is_free: false,
       allow_preview: false,
       ...(defaultValues || {}),
+      status: defaultValues?.status ?? "pending",
     },
   });
   const [languages, setLanguages] = useState([]);
@@ -46,10 +47,10 @@ export default function BookForm({
     if (defaultValues) {
       reset({
         tags: defaultValues.tags || [],
-        status: "pending",
         is_free: defaultValues.is_free ?? false,
         allow_preview: defaultValues.allow_preview ?? false,
         ...defaultValues,
+        status: defaultValues.status ?? "pending",
       });
       setTags(defaultValues.tags || []);
     }
@@ -156,7 +157,7 @@ export default function BookForm({
     formData.append("license_type", data.license_type);
     formData.append("is_free", isFree ? 1 : 0);
     formData.append("allow_preview", data.allow_preview ? 1 : 0);
-    formData.append("status", "pending");
+    formData.append("status", data.status);
     setUploadProgress(0);
     onSubmit(formData, setUploadProgress);
   };
@@ -506,9 +507,9 @@ export default function BookForm({
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
           <option value="">{t("booksCreate.selectLicenseType")}</option>
-          <option value="personal">Personal use</option>
-          <option value="educational">Educational use</option>
-          <option value="commercial">Commercial resale not allowed</option>
+          <option value="personal">{t("booksCreate.licensePersonal")}</option>
+          <option value="educational">{t("booksCreate.licenseEducational")}</option>
+          <option value="commercial">{t("booksCreate.licenseCommercial")}</option>
         </select>
         {errors.license_type && (
           <p className="text-red-500 text-sm mt-1">
@@ -516,6 +517,30 @@ export default function BookForm({
           </p>
         )}
       </div>
+
+      {showStatusSelector ? (
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t("booksCreate.statusLabel", "Status")}
+          </label>
+          <select
+            {...register("status")}
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option value="pending">
+              {t("booksCreate.statusPending", "Pending")}
+            </option>
+            <option value="approved">
+              {t("booksCreate.statusApproved", "Approved")}
+            </option>
+            <option value="rejected">
+              {t("booksCreate.statusRejected", "Rejected")}
+            </option>
+          </select>
+        </div>
+      ) : (
+        <input type="hidden" {...register("status")} />
+      )}
 
       {uploadProgress !== null && (
         <div className="w-full bg-gray-200 rounded h-2 mb-4">

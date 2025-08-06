@@ -1042,7 +1042,10 @@
     "languageRequired": "La langue est obligatoire",
     "licenseTypeLabel": "Type de licence",
     "selectLicenseType": "Sélectionnez le type de licence",
-    "licenseTypeRequired": "Le type de licence est obligatoire"
+    "licenseTypeRequired": "Le type de licence est obligatoire",
+    "licensePersonal": "Usage personnel",
+    "licenseEducational": "Usage éducatif",
+    "licenseCommercial": "Revente commerciale interdite"
   },
   "booksEdit": {
     "pageTitle": "Modifier le livre",
