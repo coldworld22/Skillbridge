@@ -37,7 +37,7 @@ function AdminEditBookPage() {
         setIsLoading(true);
         const [catRes, bookData] = await Promise.all([
           fetchAllCategories(),
-          fetchBook(id),
+          fetchBook(id, { admin: true }),
         ]);
         setCategories(catRes?.data || catRes || []);
         const parsedBook = {
