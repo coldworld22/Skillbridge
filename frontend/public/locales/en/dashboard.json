@@ -1051,7 +1051,9 @@
     "shortDescriptionRequired": "Short description is required",
     "detailedDescriptionLabel": "Detailed Description",
     "detailedDescriptionRequired": "Detailed description is required",
-    "coverImageLabel": "Cover Image",
+    "coverImage": "Cover Image",
+    "uploadImage": "Upload Image",
+    "imageRequirements": "PNG, JPG or WEBP up to {{size}}",
     "coverImageRequired": "Cover image is required",
     "bookFileLabel": "Book File (PDF)",
     "bookFileRequired": "Book file is required",
@@ -1066,6 +1068,12 @@
     "licenseTypeLabel": "License Type",
     "selectLicenseType": "Select license type",
     "licenseTypeRequired": "License type is required"
+  },
+  "booksEdit": {
+    "pageTitle": "Edit Book",
+    "title": "Edit Book",
+    "success": "Book updated successfully",
+    "error": "Failed to update book"
   },
   "seoPage": {
     "title": "SEO Control Panel",

@@ -2,6 +2,18 @@ import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+
+const buildUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:/i.test(path)) return path;
+  const uploadsIndex = path.indexOf("/uploads");
+  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
+  return `${API_BASE}${normalized}`;
+};
+
+
 export default function BookCard({
   book,
   isSelected = false,
@@ -12,6 +24,8 @@ export default function BookCard({
   viewLink,
 }) {
   const { t } = useTranslation("dashboard");
+
+  const coverUrl = buildUrl(book.cover_image_url || book.cover_image);
 
   const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -38,9 +52,9 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      {book.cover_image_url && (
+      {coverUrl && (
         <img
-          src={book.cover_image_url}
+          src={coverUrl}
           alt={book.title}
           loading="lazy"
           className="w-full h-40 object-cover"
