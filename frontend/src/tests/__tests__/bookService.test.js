@@ -3,6 +3,10 @@ import { fetchBooks, fetchBook, updateBook } from "../../services/bookService";
 
 jest.mock("../../services/api/api", () => ({ get: jest.fn(), put: jest.fn() }));
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe("bookService", () => {
   it("fetches books", async () => {
     const apiData = [{ id: 1, title: "A" }];
@@ -28,6 +32,14 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1);
     expect(api.get).toHaveBeenCalledWith("/books/1");
+    expect(book).toEqual({ id: 1, title: "A", cover_image_url: null, pdf_url: null });
+  });
+
+  it("fetches single book as admin", async () => {
+    const apiData = { id: 1, title: "A" };
+    api.get.mockResolvedValueOnce({ data: { data: apiData } });
+    const book = await fetchBook(1, { admin: true });
+    expect(api.get).toHaveBeenCalledWith("/books/admin/1");
     expect(book).toEqual({ id: 1, title: "A", cover_image_url: null, pdf_url: null });
   });
 

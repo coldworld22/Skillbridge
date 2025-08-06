@@ -8,6 +8,7 @@ jest.mock('../src/modules/books/book.service', () => ({
   updateBook: jest.fn(),
   deleteBook: jest.fn(),
   clearBookTags: jest.fn(),
+  getBookTags: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -65,6 +66,20 @@ describe('GET /api/books/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(book);
     expect(service.getBookById).toHaveBeenCalledWith('1');
+  });
+});
+
+describe('GET /api/books/admin/:id', () => {
+  it('returns a book for admin', async () => {
+    const book = { id: '1', title: 'One', status: 'pending' };
+    const tags = [{ id: 1, name: 'tag' }];
+    service.getBookById.mockResolvedValue(book);
+    service.getBookTags.mockResolvedValue(tags);
+    const res = await request(app).get('/api/books/admin/1');
+    expect(res.status).toBe(200);
+    expect(service.getBookById).toHaveBeenCalledWith('1');
+    expect(service.getBookTags).toHaveBeenCalledWith('1');
+    expect(res.body.data).toEqual({ ...book, tags });
   });
 });
 

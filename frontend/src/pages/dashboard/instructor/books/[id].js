@@ -13,7 +13,7 @@ function InstructorBookDetailPage() {
     if (!id) return;
     const load = async () => {
       try {
-        const data = await fetchBook(id);
+        const data = await fetchBook(id, { admin: true });
         setBook(data);
       } catch (e) {
         console.error("Failed to load book", e);
