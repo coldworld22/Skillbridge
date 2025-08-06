@@ -247,6 +247,21 @@ function InstructorBooksPage() {
     filters.tags.length > 0
   );
 
+  const visibleBooks = sortedBooks.slice(0, visibleCount);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount((prev) => Math.min(prev + 3, sortedBooks.length));
+      }
+    }, { threshold: 1 });
+    if (loader.current) observer.observe(loader.current);
+    return () => loader.current && observer.unobserve(loader.current);
+  }, [loader, sortedBooks.length]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-yellow-400">⏳ Loading books...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+
   return (
     <InstructorLayout>
       <section className="py-8 px-4 max-w-7xl mx-auto">
@@ -882,7 +897,7 @@ function InstructorBooksPage() {
       />
     </InstructorLayout>
   );
-}
+};
 
 export default withAuthProtection(InstructorBooksPage, ["instructor"]);
 
