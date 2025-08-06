@@ -13,6 +13,7 @@ const buildUrl = (path) => {
   return `${API_BASE}${relative}`;
 };
 
+
 export default function BookCard({
   book,
   isSelected = false,
