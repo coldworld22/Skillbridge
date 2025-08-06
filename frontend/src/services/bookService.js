@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 
-export const fetchBooks = async () => {
-  const { data } = await api.get("/books");
+export const fetchBooks = async (params = {}) => {
+  const { data } = await api.get("/books", { params });
   return data?.data ?? [];
 };
 
