@@ -1067,7 +1067,10 @@
     "languageRequired": "Language is required",
     "licenseTypeLabel": "License Type",
     "selectLicenseType": "Select license type",
-    "licenseTypeRequired": "License type is required"
+    "licenseTypeRequired": "License type is required",
+    "licensePersonal": "Personal use",
+    "licenseEducational": "Educational use",
+    "licenseCommercial": "Commercial resale not allowed"
   },
   "booksEdit": {
     "pageTitle": "Edit Book",

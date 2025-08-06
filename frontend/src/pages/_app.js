@@ -4,8 +4,7 @@ import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // ✅ Toast notifications
+import { Toaster, toast } from "react-hot-toast";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";    
@@ -17,7 +16,6 @@ import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
 import CallOverlay from "@/components/video-call/CallOverlay";
 import { listenCalls, listenMessages } from "@/services/messageService";
-import { toast } from "react-toastify";
 import { fetchSEOConfig } from "@/services/admin/seoConfigService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
@@ -152,7 +150,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
       router.push(`/video-call?roomId=${callAccepted.roomId}`);
       clearCallStatus();
     } else if (callDeclined) {
-      toast.info("Call declined");
+      toast("Call declined");
       clearCallStatus();
     }
   }, [callAccepted, callDeclined, router, clearCallStatus]);
@@ -226,16 +224,15 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
             )}
 
             {/* Global Toast Message Container */}
-            <ToastContainer
+            <Toaster
               position="top-center"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+              }}
             />
           </motion.div>
         </AnimatePresence>

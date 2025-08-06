@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -23,6 +23,7 @@ function CreateBookPage() {
   const [coverPreview, setCoverPreview] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const fileInputRef = useRef(null);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
@@ -75,14 +76,12 @@ function CreateBookPage() {
   const handleRemoveImage = useCallback(() => {
     setCoverPreview(null);
     setFileError(null);
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput) fileInput.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput?.files?.[0]) {
-      formData.append("cover_image", fileInput.files[0]);
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {
       setProgress(0);
@@ -204,6 +203,7 @@ function CreateBookPage() {
                             name="cover_image"
                             type="file"
                             className="sr-only"
+                            ref={fileInputRef}
                             onChange={handleFileChange}
                             accept="image/jpeg, image/png, image/webp"
                           />

@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookForm from "@/components/books/BookForm";
@@ -26,6 +26,7 @@ function AdminEditBookPage() {
   const [coverPreview, setCoverPreview] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const fileInputRef = useRef(null);
 
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
@@ -229,6 +230,7 @@ function AdminEditBookPage() {
                             name="cover_image"
                             type="file"
                             className="sr-only"
+                            ref={fileInputRef}
                             onChange={handleFileChange}
                             accept="image/jpeg, image/png, image/webp"
                           />
