@@ -10,8 +10,11 @@ export default function BookForm({
   showCoverImage = true,
   defaultValues = {},
   isEdit = false,
+  submitText,
+  cancelText,
+  onCancel,
 }) {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation(["dashboard", "common"]);
   const {
     register,
     handleSubmit,
@@ -129,6 +132,9 @@ export default function BookForm({
     setUploadProgress(0);
     onSubmit(formData, setUploadProgress);
   };
+
+  const submitLabel = submitText || t("booksCreate.save");
+  const cancelLabel = cancelText || t("common.cancel");
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -492,12 +498,23 @@ export default function BookForm({
         </div>
       )}
 
-      <button
-        type="submit"
-        className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-      >
-        {t("booksCreate.save")}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        >
+          {submitLabel}
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            {cancelLabel}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

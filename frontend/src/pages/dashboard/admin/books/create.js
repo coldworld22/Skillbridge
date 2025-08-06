@@ -228,7 +228,7 @@ function AdminCreateBookPage() {
                 onSubmit={handleSubmit}
                 categories={categories}
                 showCoverImage={false}
-                submitText={t("booksCreate.submitButton")}
+                submitText={t("booksCreate.save")}
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
                 maxFileSize={10 * 1024 * 1024}

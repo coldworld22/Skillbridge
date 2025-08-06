@@ -262,6 +262,9 @@ function AdminEditBookPage() {
                 showCoverImage={false}
                 defaultValues={book}
                 isEdit
+                submitText={t("booksCreate.save")}
+                cancelText={t("common.cancel")}
+                onCancel={handleCancel}
               />
             </div>
           )}

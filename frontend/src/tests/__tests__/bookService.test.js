@@ -5,9 +5,9 @@ jest.mock("../../services/api/api", () => ({ get: jest.fn(), put: jest.fn() }));
 
 describe("bookService", () => {
   it("fetches books", async () => {
-    const mock = [{ id: 1, title: "A" }];
+    const apiData = [{ id: 1, title: "A" }];
     const meta = { total: 1 };
-    api.get.mockResolvedValueOnce({ data: { data: mock, meta } });
+    api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchBooks({
       page: 2,
       perPage: 5,
@@ -17,20 +17,23 @@ describe("bookService", () => {
     expect(api.get).toHaveBeenCalledWith("/books", {
       params: { page: 2, perPage: 5, search: "test", sortBy: "title" },
     });
-    expect(res).toEqual({ books: mock, meta });
+    expect(res).toEqual({
+      books: [{ id: 1, title: "A", cover_image_url: null, pdf_url: null }],
+      meta,
+    });
   });
 
   it("fetches single book", async () => {
-    const mock = { id: 1, title: "A" };
-    api.get.mockResolvedValueOnce({ data: { data: mock } });
+    const apiData = { id: 1, title: "A" };
+    api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1);
     expect(api.get).toHaveBeenCalledWith("/books/1");
-    expect(book).toEqual(mock);
+    expect(book).toEqual({ id: 1, title: "A", cover_image_url: null, pdf_url: null });
   });
 
   it("updates a book", async () => {
-    const mock = { id: 1 };
-    api.put.mockResolvedValueOnce({ data: { data: mock } });
+    const apiData = { id: 1 };
+    api.put.mockResolvedValueOnce({ data: { data: apiData } });
     const formData = new FormData();
     const book = await updateBook(1, formData);
     expect(api.put).toHaveBeenCalledWith(
@@ -38,6 +41,6 @@ describe("bookService", () => {
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
-    expect(book).toEqual(mock);
+    expect(book).toEqual({ id: 1, cover_image_url: null, pdf_url: null });
   });
 });
