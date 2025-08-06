@@ -131,7 +131,6 @@ function AdminBooksPage() {
     }
   }, [filters]);
 
-  const filteredBooks = books;
   const totalPages = meta?.totalPages ?? 1;
   const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
   const endIndex = books.length ? startIndex + books.length - 1 : 0;
@@ -141,7 +140,7 @@ function AdminBooksPage() {
       const updated = prev.includes(id)
         ? prev.filter((x) => x !== id)
         : [...prev, id];
-      setAllSelected(updated.length === filteredBooks.length);
+      setAllSelected(updated.length === books.length);
       return updated;
     });
   };
@@ -151,17 +150,16 @@ function AdminBooksPage() {
       setSelectedBooks([]);
       setAllSelected(false);
     } else {
-      setSelectedBooks(filteredBooks.map((b) => b.id));
+      setSelectedBooks(books.map((b) => b.id));
       setAllSelected(true);
     }
   };
 
   useEffect(() => {
     setAllSelected(
-      filteredBooks.length > 0 &&
-        selectedBooks.length === filteredBooks.length
+      books.length > 0 && selectedBooks.length === books.length
     );
-  }, [filteredBooks, selectedBooks]);
+  }, [books, selectedBooks]);
 
   const handleBulkDelete = async () => {
     openConfirmModal({
