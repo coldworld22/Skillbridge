@@ -90,7 +90,11 @@ function InstructorBooksPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <BookCard
+                key={book.id}
+                book={book}
+                viewLink={`/dashboard/instructor/books/${book.id}`}
+              />
             ))}
           </div>
         )}

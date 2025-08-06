@@ -8,6 +8,7 @@ export default function BookCard({
   onDelete,
   onEditLink,
   showReadLink = false,
+  viewLink,
 }) {
   const { t } = useTranslation("dashboard");
 
@@ -48,7 +49,7 @@ export default function BookCard({
       <p className="text-sm mb-2">{`$${book.price}`}</p>
       <div className="flex gap-2">
         <Link
-          href={`/marketplace/books/${book.id}`}
+          href={viewLink || `/marketplace/books/${book.id}`}
           className="text-blue-600 underline"
         >
           {t("view")}
