@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
@@ -102,12 +102,12 @@ function AdminBooksPage() {
       .catch(() => {});
   }, [tagInput]);
 
-  useEffect(() => {
-    const loadBooks = async () => {
+  const loadBooks = useCallback(
+    async (currentPage = page) => {
       try {
         setLoading(true);
         const { books: list, meta } = await fetchBooks({
-          page,
+          page: currentPage,
           perPage,
           filters,
           sort: { sortBy },
@@ -120,9 +120,13 @@ function AdminBooksPage() {
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [page, perPage, filters, sortBy, t]
+  );
+
+  useEffect(() => {
     loadBooks();
-  }, [page, filters, sortBy, perPage, t]);
+  }, [loadBooks]);
 
   // Remember filters in localStorage
   useEffect(() => {
@@ -171,10 +175,21 @@ function AdminBooksPage() {
         try {
           const deletePromises = selectedBooks.map(id => deleteBook(id));
           await Promise.all(deletePromises);
-          setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
-          setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
+
+          const remaining = books.filter((b) => !selectedBooks.includes(b.id));
+          const newTotal = (meta.total ?? 0) - selectedBooks.length;
+          const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
+
+          setBooks(remaining);
+          setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
           setSelectedBooks([]);
           toast.success(t("Books deleted successfully"));
+
+          if (remaining.length === 0 && page > 1) {
+            setPage((p) => p - 1);
+          } else {
+            await loadBooks();
+          }
         } catch (err) {
           toast.error(t("Failed to delete some books"));
         }
@@ -776,14 +791,26 @@ function AdminBooksPage() {
                           </Link>
                           <button
                             onClick={() =>
-                              openConfirmModal({
+                            openConfirmModal({
                                 title: t("Confirm Deletion"),
                                 message: t("Are you sure you want to delete this book?"),
                                 onConfirm: async () => {
                                   try {
                                     await deleteBook(book.id);
-                                    setBooks((prev) => prev.filter((b) => b.id !== book.id));
+
+                                    const remaining = books.filter((b) => b.id !== book.id);
+                                    const newTotal = (meta.total ?? 0) - 1;
+                                    const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
+
+                                    setBooks(remaining);
+                                    setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
                                     toast.success(t("Book deleted"));
+
+                                    if (remaining.length === 0 && page > 1) {
+                                      setPage((p) => p - 1);
+                                    } else {
+                                      await loadBooks();
+                                    }
                                   } catch {
                                     toast.error(t("Failed to delete"));
                                   }
