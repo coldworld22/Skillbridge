@@ -37,4 +37,15 @@ export const updateBook = async (id, formData, onUploadProgress) => {
   return data?.data;
 };
 
-export default { fetchBooks, fetchBook, deleteBook, updateBook };
+export const updateBookStatus = async (id, status) => {
+  const { data } = await api.patch(`/books/${id}/status`, { status });
+  return data?.data;
+};
+
+export default {
+  fetchBooks,
+  fetchBook,
+  deleteBook,
+  updateBook,
+  updateBookStatus,
+};

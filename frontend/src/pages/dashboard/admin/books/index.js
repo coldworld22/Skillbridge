@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCard from "@/components/books/BookCard";
-import { fetchBooks, deleteBook } from "@/services/bookService";
+import BookCardSkeleton from "@/components/books/BookCardSkeleton";
+import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";
@@ -20,7 +21,8 @@ function AdminBooksPage() {
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [filters, setFilters] = useState({ 
+  // TODO: Future - group multi-language book versions and add "View Translations"
+  const [filters, setFilters] = useState({
     search: "", 
     category: "", 
     status: "", 
@@ -39,6 +41,8 @@ function AdminBooksPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const perPage = 12;
 
+  const [bulkStatus, setBulkStatus] = useState("");
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -53,6 +57,16 @@ function AdminBooksPage() {
   const closeConfirmModal = () => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
+
+  // Load filters from localStorage on mount
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("adminBooksFilters") : null;
+    if (saved) {
+      try {
+        setFilters(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -101,8 +115,17 @@ function AdminBooksPage() {
     loadBooks();
   }, [page, filters, sortBy, perPage, t]);
 
+  // Remember filters in localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adminBooksFilters", JSON.stringify(filters));
+    }
+  }, [filters]);
+
   const filteredBooks = books;
   const totalPages = meta?.totalPages ?? 1;
+  const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
+  const endIndex = books.length ? startIndex + books.length - 1 : 0;
 
   const handleSelectBook = (id) => {
     setSelectedBooks((prev) => {
@@ -150,6 +173,30 @@ function AdminBooksPage() {
     });
   };
 
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus) return;
+    openConfirmModal({
+      title: t("Confirm Status Change"),
+      message: t("Change status of selected books?"),
+      onConfirm: async () => {
+        try {
+          const updatePromises = selectedBooks.map(id => updateBookStatus(id, bulkStatus));
+          await Promise.all(updatePromises);
+          setBooks(prev =>
+            prev.map(b =>
+              selectedBooks.includes(b.id) ? { ...b, status: bulkStatus } : b
+            )
+          );
+          toast.success(t("Status updated"));
+          setSelectedBooks([]);
+          setBulkStatus("");
+        } catch (err) {
+          toast.error(t("Failed to update status"));
+        }
+      }
+    });
+  };
+
   const resetFilters = () => {
     setFilters({ 
       search: "", 
@@ -179,7 +226,7 @@ function AdminBooksPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("Books")}</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-              {t("Showing")} {books.length} {t("of")} {meta.total ?? books.length} {t("books")}
+              {t("Showing")} {books.length ? `${startIndex}-${endIndex}` : 0} {t("of")} {meta.total ?? 0} {t("books")}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -538,20 +585,40 @@ function AdminBooksPage() {
                 {selectedBooks.length} {t("selected")}
               </span>
             </div>
-            <button
-              onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors shadow-sm"
-            >
-              <FiTrash2 className="text-sm" />
-              <span>{t("Delete Selected")}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
+              >
+                <option value="">{t("Change Status")}</option>
+                <option value="approved">{t("Approved")}</option>
+                <option value="pending">{t("Pending")}</option>
+                <option value="rejected">{t("Rejected")}</option>
+              </select>
+              <button
+                onClick={handleBulkStatusUpdate}
+                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              >
+                {t("Apply")}
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+              >
+                <FiTrash2 className="text-sm" />
+                <span>{t("Delete Selected")}</span>
+              </button>
+            </div>
           </div>
         )}
 
         {/* Content */}
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: perPage }).map((_, i) => (
+              <BookCardSkeleton key={i} />
+            ))}
           </div>
         ) : books.length === 0 ? (
           <div className="text-center py-12">
