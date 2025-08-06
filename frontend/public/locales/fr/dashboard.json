@@ -1026,7 +1026,9 @@
     "shortDescriptionRequired": "La description courte est obligatoire",
     "detailedDescriptionLabel": "Description détaillée",
     "detailedDescriptionRequired": "La description détaillée est obligatoire",
-    "coverImageLabel": "Image de couverture",
+    "coverImage": "Image de couverture",
+    "uploadImage": "Téléverser une image",
+    "imageRequirements": "PNG, JPG ou WEBP jusqu'à {{size}}",
     "coverImageRequired": "L'image de couverture est obligatoire",
     "bookFileLabel": "Fichier du livre (PDF)",
     "bookFileRequired": "Le fichier du livre est obligatoire",
@@ -1041,6 +1043,12 @@
     "licenseTypeLabel": "Type de licence",
     "selectLicenseType": "Sélectionnez le type de licence",
     "licenseTypeRequired": "Le type de licence est obligatoire"
+  },
+  "booksEdit": {
+    "pageTitle": "Modifier le livre",
+    "title": "Modifier le livre",
+    "success": "Livre mis à jour avec succès",
+    "error": "Échec de la mise à jour du livre"
   },
   "seoPage": {
     "title": "SEO Control Panel",
