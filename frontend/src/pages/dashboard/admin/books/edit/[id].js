@@ -94,12 +94,12 @@ function AdminEditBookPage() {
   const handleRemoveImage = useCallback(() => {
     setCoverPreview(null);
     setFileError(null);
-    const fileInput = document.getElementById("coverImage");
+    const fileInput = document.getElementById("cover_image");
     if (fileInput) fileInput.value = "";
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
-    const fileInput = document.getElementById("coverImage");
+    const fileInput = document.getElementById("cover_image");
     if (fileInput?.files?.[0]) {
       formData.append("cover_image", fileInput.files[0]);
     }
@@ -193,7 +193,7 @@ function AdminEditBookPage() {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700">
                   {t("booksCreate.coverImage")}
                 </label>
 
@@ -220,13 +220,13 @@ function AdminEditBookPage() {
                     <div className="space-y-1 text-center">
                       <div className="flex text-sm text-gray-600 justify-center">
                         <label
-                          htmlFor="coverImage"
+                          htmlFor="cover_image"
                           className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
                         >
                           <span>{t("booksCreate.uploadImage")}</span>
                           <input
-                            id="coverImage"
-                            name="coverImage"
+                            id="cover_image"
+                            name="cover_image"
                             type="file"
                             className="sr-only"
                             onChange={handleFileChange}
