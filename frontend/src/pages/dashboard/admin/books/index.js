@@ -208,15 +208,20 @@ function AdminBooksPage() {
 
   const toggleBookStatus = async (bookId, currentStatus) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
+    setBooks(prev =>
+      prev.map(book =>
+        book.id === bookId ? { ...book, status: newStatus } : book
+      )
+    );
     try {
       await updateBookStatus(bookId, newStatus);
-      setBooks(prev =>
-        prev.map(book =>
-          book.id === bookId ? { ...book, status: newStatus } : book
-        )
-      );
       toast.success(t("Status updated"));
     } catch (err) {
+      setBooks(prev =>
+        prev.map(book =>
+          book.id === bookId ? { ...book, status: currentStatus } : book
+        )
+      );
       toast.error(t("Failed to update status"));
     }
   };
@@ -675,7 +680,8 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  buildUrl(book.cover_image_url || book.cover_image) ||
+                  book.cover_image_url ||
+                  buildUrl(book.cover_image) ||
                   "/images/default-book-cover.jpg";
                 return (
                   <div
@@ -720,7 +726,7 @@ function AdminBooksPage() {
                       <div className="flex justify-between items-start mb-1">
                         <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
                         <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded">
-                          ${book.price}
+                          {Number(book.price) > 0 ? `$${book.price}` : t("free_label")}
                         </span>
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
