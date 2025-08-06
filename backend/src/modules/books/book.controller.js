@@ -89,8 +89,8 @@ exports.createBook = catchAsync(async (req, res) => {
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
-  const books = await service.listBooks(req.query.status);
-  sendSuccess(res, books);
+  const result = await service.listBooks(req.query);
+  sendSuccess(res, result.data, "Books fetched", result.meta);
 });
 
 exports.getBook = catchAsync(async (req, res) => {
@@ -99,4 +99,64 @@ exports.getBook = catchAsync(async (req, res) => {
     throw new AppError("Book not found", 404);
   }
   sendSuccess(res, book);
+});
+
+exports.updateBook = catchAsync(async (req, res) => {
+  const existing = await service.getBookById(req.params.id);
+  if (!existing) throw new AppError("Book not found", 404);
+
+  const { tags: rawTags, ...body } = req.body || {};
+  const data = { ...body };
+  if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
+  if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
+  if (req.files?.preview_pages?.length) {
+    data.preview_pages = JSON.stringify(
+      req.files.preview_pages.map((f) => f.path)
+    );
+  }
+  if (data.allow_preview !== undefined) {
+    data.allow_preview =
+      data.allow_preview === "1" ||
+      data.allow_preview === 1 ||
+      data.allow_preview === true ||
+      data.allow_preview === "true";
+  }
+
+  const book = await service.updateBook(req.params.id, data);
+
+  let tags = [];
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) tags = [];
+    } catch {
+      tags = [];
+    }
+  }
+  await service.clearBookTags(book.id);
+  if (tags.length) {
+    const tagIds = [];
+    for (const name of tags) {
+      const existingTag = await tagService.findByName(name);
+      const tag =
+        existingTag ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
+    }
+    await service.addBookTags(book.id, tagIds);
+    book.tags = await service.getBookTags(book.id);
+  } else {
+    book.tags = [];
+  }
+
+  sendSuccess(res, book, "Book updated");
+});
+
+exports.deleteBook = catchAsync(async (req, res) => {
+  await service.clearBookTags(req.params.id);
+  await service.deleteBook(req.params.id);
+  sendSuccess(res, null, "Book deleted");
 });
