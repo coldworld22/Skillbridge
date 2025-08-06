@@ -1,8 +1,22 @@
 import api from "@/services/api/api";
 
-export const fetchBooks = async (params = {}) => {
+export const fetchBooks = async ({
+  page,
+  perPage,
+  filters = {},
+  sort = {},
+} = {}) => {
+  const params = {
+    ...(page !== undefined && { page }),
+    ...(perPage !== undefined && { perPage }),
+    ...filters,
+    ...sort,
+  };
   const { data } = await api.get("/books", { params });
-  return data?.data ?? [];
+  return {
+    books: data?.data ?? [],
+    meta: data?.meta ?? {},
+  };
 };
 
 export const fetchBook = async (id) => {

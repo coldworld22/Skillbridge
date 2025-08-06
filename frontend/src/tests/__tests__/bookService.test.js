@@ -6,10 +6,18 @@ jest.mock("../../services/api/api", () => ({ get: jest.fn() }));
 describe("bookService", () => {
   it("fetches books", async () => {
     const mock = [{ id: 1, title: "A" }];
-    api.get.mockResolvedValueOnce({ data: { data: mock } });
-    const books = await fetchBooks();
-    expect(api.get).toHaveBeenCalledWith("/books", { params: {} });
-    expect(books).toEqual(mock);
+    const meta = { total: 1 };
+    api.get.mockResolvedValueOnce({ data: { data: mock, meta } });
+    const res = await fetchBooks({
+      page: 2,
+      perPage: 5,
+      filters: { search: "test" },
+      sort: { sortBy: "title" },
+    });
+    expect(api.get).toHaveBeenCalledWith("/books", {
+      params: { page: 2, perPage: 5, search: "test", sortBy: "title" },
+    });
+    expect(res).toEqual({ books: mock, meta });
   });
 
   it("fetches single book", async () => {

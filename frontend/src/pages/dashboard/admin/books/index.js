@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCard from "@/components/books/BookCard";
@@ -25,6 +25,7 @@ function AdminBooksPage() {
   const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
   const perPage = 9;
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -42,17 +43,30 @@ function AdminBooksPage() {
   };
 
   useEffect(() => {
-    const load = async () => {
+    const loadCategories = async () => {
       try {
-        setLoading(true);
-        const [data, cats, langs] = await Promise.all([
-          fetchBooks(),
-          fetchBookCategories(),
-          getLanguages(),
-        ]);
-        setBooks(data);
+        const cats = await fetchBookCategories();
         setCategories(cats);
         setLanguages(langs);
+      } catch (err) {
+        toast.error(t("Failed to load data"));
+      }
+    };
+    loadCategories();
+  }, [t]);
+
+  useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        setLoading(true);
+        const { books: list, meta } = await fetchBooks({
+          page,
+          perPage,
+          filters,
+          sort: { sortBy },
+        });
+        setBooks(list);
+        setMeta(meta);
       } catch (err) {
         toast.error(t("Failed to load data"));
         console.error("Error loading:", err);
@@ -60,75 +74,10 @@ function AdminBooksPage() {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+    loadBooks();
+  }, [page, filters, sortBy, perPage, t]);
 
-  useEffect(() => {
-    let ignore = false;
-    if (tagInput) {
-      fetchBookTags(tagInput).then((data) => {
-        if (!ignore) setTagSuggestions(data);
-      });
-    } else {
-      setTagSuggestions([]);
-    }
-    return () => {
-      ignore = true;
-    };
-  }, [tagInput]);
-
-  const filteredBooks = useMemo(() => {
-    let result = books;
-
-    if (filters.search) {
-      result = result.filter((b) =>
-        b.title.toLowerCase().includes(filters.search.toLowerCase())
-      );
-    }
-
-    if (filters.category) {
-      result = result.filter((b) => b.category_id === Number(filters.category));
-    }
-
-    if (filters.status) {
-      result = result.filter((b) => b.status === filters.status);
-    }
-
-    if (filters.priceRange) {
-      result = result.filter((b) => {
-        const price = Number(b.price) || 0;
-        return price <= Number(filters.priceRange);
-      });
-    }
-
-    if (filters.language) {
-      result = result.filter((b) => b.language === filters.language);
-    }
-
-    if (filters.tags.length) {
-      result = result.filter((b) => {
-        const bookTags = b.tags || [];
-        return filters.tags.every((tag) => bookTags.includes(tag));
-      });
-    }
-
-    if (sortBy === "title") {
-      result = [...result].sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === "oldest") {
-      result = [...result].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    } else {
-      result = [...result].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
-
-    return result;
-  }, [books, filters, sortBy]);
-
-  const paginatedBooks = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return filteredBooks.slice(start, start + perPage);
-  }, [filteredBooks, page]);
-
-  const totalPages = Math.ceil(filteredBooks.length / perPage);
+  const totalPages = meta?.totalPages ?? 1;
 
   const handleSelectBook = (id) => {
     setSelectedBooks((prev) => {
@@ -164,6 +113,7 @@ function AdminBooksPage() {
       const deletePromises = selectedBooks.map(id => deleteBook(id));
       await Promise.all(deletePromises);
       setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
+      setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
       setSelectedBooks([]);
       toast.success(t("Books deleted successfully"));
     } catch (err) {
@@ -178,7 +128,7 @@ function AdminBooksPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t("Books")}</h1>
             <p className="text-gray-500 text-sm mt-1">
-              {t("Showing")} {paginatedBooks.length} {t("of")} {filteredBooks.length} {t("books")}
+              {t("Showing")} {books.length} {t("of")} {meta.total ?? books.length} {t("books")}
             </p>
           </div>
           <Link
@@ -198,14 +148,20 @@ function AdminBooksPage() {
               type="text"
               placeholder={t("Search by title")}
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={(e) => {
+                setFilters({ ...filters, search: e.target.value });
+                setPage(1);
+              }}
               className="border border-gray-300 rounded-lg p-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
             />
           </div>
           
           <select
             value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            onChange={(e) => {
+              setFilters({ ...filters, category: e.target.value });
+              setPage(1);
+            }}
             className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="">{t("All Categories")}</option>
@@ -218,7 +174,10 @@ function AdminBooksPage() {
 
           <select
             value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            onChange={(e) => {
+              setFilters({ ...filters, status: e.target.value });
+              setPage(1);
+            }}
             className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="">{t("All Statuses")}</option>
@@ -317,7 +276,10 @@ function AdminBooksPage() {
           
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setPage(1);
+            }}
             className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
           >
             <option value="newest">{t("Newest First")}</option>
@@ -352,7 +314,7 @@ function AdminBooksPage() {
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : filteredBooks.length === 0 ? (
+        ) : books.length === 0 ? (
           <div className="text-center py-12">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <FiSearch className="text-3xl text-gray-400" />
@@ -367,7 +329,7 @@ function AdminBooksPage() {
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {paginatedBooks.map((book) => (
+              {books.map((book) => (
                 <BookCard
                   key={book.id}
                   book={book}
