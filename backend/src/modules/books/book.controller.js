@@ -161,6 +161,26 @@ exports.updateBook = catchAsync(async (req, res) => {
     book.tags = [];
   }
 
+  if (
+    req.user.role !== "instructor" &&
+    existing.instructor_id &&
+    existing.instructor_id !== req.user.id
+  ) {
+    const message = `Your book "${book.title}" was updated by an admin.`;
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: existing.instructor_id,
+        type: "book_updated",
+        message,
+      }),
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: existing.instructor_id,
+        message,
+      }),
+    ]);
+  }
+
   sendSuccess(res, book, "Book updated");
 });
 

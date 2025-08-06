@@ -40,10 +40,16 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 
 const service = require('../src/modules/books/book.service');
 const routes = require('../src/modules/books/book.routes');
+const messageService = require('../src/modules/messages/messages.service');
+const notificationService = require('../src/modules/notifications/notifications.service');
 
 const app = express();
 app.use(express.json());
 app.use('/api/books', routes);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('GET /api/books', () => {
   it('returns book list', async () => {
@@ -96,10 +102,21 @@ describe('POST /api/books', () => {
 describe('PUT /api/books/:id', () => {
   it('updates a book', async () => {
     const payload = { title: 'Updated' };
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2', title: 'Old' });
     service.updateBook.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/books/1').send(payload);
     expect(res.status).toBe(200);
     expect(service.updateBook).toHaveBeenCalledWith('1', expect.any(Object));
+    expect(notificationService.createNotification).toHaveBeenCalledWith({
+      user_id: '2',
+      type: 'book_updated',
+      message: expect.stringContaining('Updated'),
+    });
+    expect(messageService.createMessage).toHaveBeenCalledWith({
+      sender_id: '1',
+      receiver_id: '2',
+      message: expect.stringContaining('Updated'),
+    });
   });
 });
 
