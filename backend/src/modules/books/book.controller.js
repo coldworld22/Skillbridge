@@ -101,6 +101,15 @@ exports.getBook = catchAsync(async (req, res) => {
   sendSuccess(res, book);
 });
 
+exports.getBookAdmin = catchAsync(async (req, res) => {
+  const book = await service.getBookById(req.params.id);
+  if (!book) {
+    throw new AppError("Book not found", 404);
+  }
+  book.tags = await service.getBookTags(book.id);
+  sendSuccess(res, book);
+});
+
 exports.updateBook = catchAsync(async (req, res) => {
   const existing = await service.getBookById(req.params.id);
   if (!existing) throw new AppError("Book not found", 404);

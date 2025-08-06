@@ -37,8 +37,9 @@ export const fetchBooks = async ({
   };
 };
 
-export const fetchBook = async (id) => {
-  const { data } = await api.get(`/books/${id}`);
+export const fetchBook = async (id, { admin = false } = {}) => {
+  const endpoint = admin ? `/books/admin/${id}` : `/books/${id}`;
+  const { data } = await api.get(endpoint);
   return data?.data ? formatBook(data.data) : null;
 };
 
