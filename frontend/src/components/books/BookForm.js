@@ -393,7 +393,32 @@ export default function BookForm({
           {t("booksCreate.previewPagesLabel")}
         </label>
         {(() => {
-          const reg = register("preview_pages");
+          const reg = register("preview_pages", {
+            validate: {
+              fileType: (files) => {
+                if (!files || files.length === 0) return true;
+                return (
+                  Array.from(files).every(
+                    (file) =>
+                      file.type === "application/pdf" ||
+                      file.type.startsWith("image/")
+                  ) || "Only PDF or image files are allowed"
+                );
+              },
+              fileSize: (files) => {
+                if (!files || files.length === 0) return true;
+                return (
+                  Array.from(files).every(
+                    (file) => file.size <= 50 * 1024 * 1024
+                  ) || "Each file must be less than 50MB"
+                );
+              },
+              fileCount: (files) => {
+                if (!files || files.length === 0) return true;
+                return files.length <= 10 || "You can upload up to 10 files";
+              },
+            },
+          });
           return (
             <input
               type="file"
@@ -415,6 +440,11 @@ export default function BookForm({
               <li key={idx}>{file.name}</li>
             ))}
           </ul>
+        )}
+        {errors.preview_pages && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.preview_pages.message}
+          </p>
         )}
       </div>
         <div className="flex items-center gap-2">
