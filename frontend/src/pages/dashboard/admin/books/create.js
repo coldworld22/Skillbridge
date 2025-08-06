@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import api from "@/services/api/api";
 import BookForm from "@/components/books/BookForm";
