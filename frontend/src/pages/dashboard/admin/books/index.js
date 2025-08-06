@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import BookCard from "@/components/books/BookCard";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
 import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
@@ -15,6 +14,16 @@ import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const buildUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:/i.test(path)) return path;
+  const uploadsIndex = path.indexOf("/uploads");
+  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
+  return `${API_BASE}${normalized}`;
+};
 
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
@@ -664,121 +673,128 @@ function AdminBooksPage() {
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {books.map((book) => (
-                <div 
-                  key={book.id} 
-                  className={`relative rounded-xl overflow-hidden border dark:border-gray-700 transition-all duration-200 hover:shadow-lg ${
-                    selectedBooks.includes(book.id) 
-                      ? "ring-2 ring-blue-500 border-blue-500" 
-                      : "hover:border-gray-300 dark:hover:border-gray-600"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedBooks.includes(book.id)}
-                    onChange={() => handleSelectBook(book.id)}
-                    className="absolute top-3 left-3 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 z-10"
-                  />
-                  
-                  <div className="relative">
-                    <img
-                      src={book.coverImage || "/images/default-book-cover.jpg"}
-                      alt={book.title}
-                      className="w-full h-48 object-cover"
+              {books.map((book) => {
+                const coverUrl =
+                  buildUrl(book.cover_image_url || book.cover_image) ||
+                  "/images/default-book-cover.jpg";
+                return (
+                  <div
+                    key={book.id}
+                    className={`relative rounded-xl overflow-hidden border dark:border-gray-700 transition-all duration-200 hover:shadow-lg ${
+                      selectedBooks.includes(book.id)
+                        ? "ring-2 ring-blue-500 border-blue-500"
+                        : "hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBooks.includes(book.id)}
+                      onChange={() => handleSelectBook(book.id)}
+                      className="absolute top-3 left-3 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 z-10"
                     />
-                    <div className="absolute top-3 right-3">
-                      <Switch
-                        checked={book.status === "active"}
-                        onChange={() => toggleBookStatus(book.id, book.status)}
-                        className={`${
-                          book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
-                        } relative inline-flex h-6 w-11 items-center rounded-full`}
-                      >
-                        <span
+
+                    <div className="relative">
+                      <img
+                        src={coverUrl}
+                        alt={book.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <Switch
+                          checked={book.status === "active"}
+                          onChange={() => toggleBookStatus(book.id, book.status)}
                           className={`${
-                            book.status === "active" ? 'translate-x-6' : 'translate-x-1'
-                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-                        />
-                      </Switch>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
-                      <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded">
-                        ${book.price}
-                      </span>
-                    </div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
-                      {book.author}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {book.tags?.slice(0, 3).map((tag) => (
-                        <span 
-                          key={tag} 
-                          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded"
+                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                          } relative inline-flex h-6 w-11 items-center rounded-full`}
                         >
-                          {tag}
+                          <span
+                            className={`${
+                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                            } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                          />
+                        </Switch>
+                      </div>
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
+                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded">
+                          ${book.price}
                         </span>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        book.status === "active" 
-                          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                          : book.status === "pending"
-                          ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                          : book.status === "rejected"
-                          ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                      }`}>
-                        {t(book.status)}
-                      </span>
-                      
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/dashboard/admin/books/edit/${book.id}`}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                          title={t("Edit")}
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
+                        {book.author}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {book.tags?.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            book.status === "active"
+                              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                              : book.status === "pending"
+                              ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                              : book.status === "rejected"
+                              ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                          }`}
                         >
-                          <FiEdit className="text-lg" />
-                        </Link>
-                        <Link
-                          href={`/books/${book.slug}`}
-                          target="_blank"
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                          title={t("View")}
-                        >
-                          <FiEye className="text-lg" />
-                        </Link>
-                        <button
-                          onClick={() =>
-                            openConfirmModal({
-                              title: t("Confirm Deletion"),
-                              message: t("Are you sure you want to delete this book?"),
-                              onConfirm: async () => {
-                                try {
-                                  await deleteBook(book.id);
-                                  setBooks((prev) => prev.filter((b) => b.id !== book.id));
-                                  toast.success(t("Book deleted"));
-                                } catch {
-                                  toast.error(t("Failed to delete"));
-                                }
-                              },
-                            })
-                          }
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
-                          title={t("Delete")}
-                        >
-                          <FiTrash2 className="text-lg" />
-                        </button>
+                          {t(book.status)}
+                        </span>
+
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/dashboard/admin/books/edit/${book.id}`}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                            title={t("Edit")}
+                          >
+                            <FiEdit className="text-lg" />
+                          </Link>
+                          <Link
+                            href={`/books/${book.slug}`}
+                            target="_blank"
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                            title={t("View")}
+                          >
+                            <FiEye className="text-lg" />
+                          </Link>
+                          <button
+                            onClick={() =>
+                              openConfirmModal({
+                                title: t("Confirm Deletion"),
+                                message: t("Are you sure you want to delete this book?"),
+                                onConfirm: async () => {
+                                  try {
+                                    await deleteBook(book.id);
+                                    setBooks((prev) => prev.filter((b) => b.id !== book.id));
+                                    toast.success(t("Book deleted"));
+                                  } catch {
+                                    toast.error(t("Failed to delete"));
+                                  }
+                                },
+                              })
+                            }
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                            title={t("Delete")}
+                          >
+                            <FiTrash2 className="text-lg" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination */}
