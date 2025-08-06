@@ -12,7 +12,8 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX } from "react-icons/fi";
+import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
+import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 
 function AdminBooksPage() {
@@ -21,7 +22,6 @@ function AdminBooksPage() {
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
-  // TODO: Future - group multi-language book versions and add "View Translations"
   const [filters, setFilters] = useState({
     search: "", 
     category: "", 
@@ -197,6 +197,21 @@ function AdminBooksPage() {
     });
   };
 
+  const toggleBookStatus = async (bookId, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      await updateBookStatus(bookId, newStatus);
+      setBooks(prev =>
+        prev.map(book =>
+          book.id === bookId ? { ...book, status: newStatus } : book
+        )
+      );
+      toast.success(t("Status updated"));
+    } catch (err) {
+      toast.error(t("Failed to update status"));
+    }
+  };
+
   const resetFilters = () => {
     setFilters({ 
       search: "", 
@@ -308,6 +323,8 @@ function AdminBooksPage() {
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
                 <option value="">{t("All Statuses")}</option>
+                <option value="active">{t("Active")}</option>
+                <option value="inactive">{t("Inactive")}</option>
                 <option value="pending">{t("Pending")}</option>
                 <option value="approved">{t("Approved")}</option>
                 <option value="rejected">{t("Rejected")}</option>
@@ -496,6 +513,8 @@ function AdminBooksPage() {
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   >
                     <option value="">{t("All Statuses")}</option>
+                    <option value="active">{t("Active")}</option>
+                    <option value="inactive">{t("Inactive")}</option>
                     <option value="pending">{t("Pending")}</option>
                     <option value="approved">{t("Approved")}</option>
                     <option value="rejected">{t("Rejected")}</option>
@@ -592,6 +611,8 @@ function AdminBooksPage() {
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
               >
                 <option value="">{t("Change Status")}</option>
+                <option value="active">{t("Active")}</option>
+                <option value="inactive">{t("Inactive")}</option>
                 <option value="approved">{t("Approved")}</option>
                 <option value="pending">{t("Pending")}</option>
                 <option value="rejected">{t("Rejected")}</option>
@@ -644,29 +665,119 @@ function AdminBooksPage() {
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  isSelected={selectedBooks.includes(book.id)}
-                  onSelect={() => handleSelectBook(book.id)}
-                  onDelete={() =>
-                    openConfirmModal({
-                      title: t("Confirm Deletion"),
-                      message: t("Are you sure you want to delete this book?"),
-                      onConfirm: async () => {
-                        try {
-                          await deleteBook(book.id);
-                          setBooks((prev) => prev.filter((b) => b.id !== book.id));
-                          toast.success(t("Book deleted"));
-                        } catch {
-                          toast.error(t("Failed to delete"));
-                        }
-                      },
-                    })
-                  }
-                  onEditLink={`/dashboard/admin/books/edit/${book.id}`}
-                  showReadLink
-                />
+                <div 
+                  key={book.id} 
+                  className={`relative rounded-xl overflow-hidden border dark:border-gray-700 transition-all duration-200 hover:shadow-lg ${
+                    selectedBooks.includes(book.id) 
+                      ? "ring-2 ring-blue-500 border-blue-500" 
+                      : "hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedBooks.includes(book.id)}
+                    onChange={() => handleSelectBook(book.id)}
+                    className="absolute top-3 left-3 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 z-10"
+                  />
+                  
+                  <div className="relative">
+                    <img
+                      src={book.coverImage || "/images/default-book-cover.jpg"}
+                      alt={book.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <Switch
+                        checked={book.status === "active"}
+                        onChange={() => toggleBookStatus(book.id, book.status)}
+                        className={`${
+                          book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                        } relative inline-flex h-6 w-11 items-center rounded-full`}
+                      >
+                        <span
+                          className={`${
+                            book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                        />
+                      </Switch>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
+                      <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded">
+                        ${book.price}
+                      </span>
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
+                      {book.author}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {book.tags?.slice(0, 3).map((tag) => (
+                        <span 
+                          key={tag} 
+                          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        book.status === "active" 
+                          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                          : book.status === "pending"
+                          ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                          : book.status === "rejected"
+                          ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      }`}>
+                        {t(book.status)}
+                      </span>
+                      
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/dashboard/admin/books/edit/${book.id}`}
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                          title={t("Edit")}
+                        >
+                          <FiEdit className="text-lg" />
+                        </Link>
+                        <Link
+                          href={`/books/${book.slug}`}
+                          target="_blank"
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                          title={t("View")}
+                        >
+                          <FiEye className="text-lg" />
+                        </Link>
+                        <button
+                          onClick={() =>
+                            openConfirmModal({
+                              title: t("Confirm Deletion"),
+                              message: t("Are you sure you want to delete this book?"),
+                              onConfirm: async () => {
+                                try {
+                                  await deleteBook(book.id);
+                                  setBooks((prev) => prev.filter((b) => b.id !== book.id));
+                                  toast.success(t("Book deleted"));
+                                } catch {
+                                  toast.error(t("Failed to delete"));
+                                }
+                              },
+                            })
+                          }
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                          title={t("Delete")}
+                        >
+                          <FiTrash2 className="text-lg" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
