@@ -12,6 +12,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
@@ -24,9 +25,20 @@ function AdminBooksPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const perPage = 9;
-  const [languages, setLanguages] = useState([]);
-  const [tagInput, setTagInput] = useState("");
-  const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -123,18 +135,24 @@ function AdminBooksPage() {
     );
   };
 
-  const handleBulkDelete = async () => {
-    if (!confirm(t("Are you sure you want to delete selected books?"))) return;
-
-    try {
-      const deletePromises = selectedBooks.map(id => deleteBook(id));
-      await Promise.all(deletePromises);
-      setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
-      setSelectedBooks([]);
-      toast.success(t("Books deleted successfully"));
-    } catch (err) {
-      toast.error(t("Failed to delete some books"));
-    }
+  const handleBulkDelete = () => {
+    openConfirmModal({
+      title: t("Confirm Deletion"),
+      message: t("Are you sure you want to delete selected books?"),
+      onConfirm: async () => {
+        try {
+          const deletePromises = selectedBooks.map((id) => deleteBook(id));
+          await Promise.all(deletePromises);
+          setBooks((prev) =>
+            prev.filter((b) => !selectedBooks.includes(b.id))
+          );
+          setSelectedBooks([]);
+          toast.success(t("Books deleted successfully"));
+        } catch (err) {
+          toast.error(t("Failed to delete some books"));
+        }
+      },
+    });
   };
 
   return (
@@ -328,16 +346,25 @@ function AdminBooksPage() {
                   book={book}
                   isSelected={selectedBooks.includes(book.id)}
                   onSelect={() => handleSelectBook(book.id)}
-                  onDelete={async () => {
-                    if (!confirm(t("Are you sure?"))) return;
-                    try {
-                      await deleteBook(book.id);
-                      setBooks((prev) => prev.filter((b) => b.id !== book.id));
-                      toast.success(t("Book deleted"));
-                    } catch {
-                      toast.error(t("Failed to delete"));
-                    }
-                  }}
+                  onDelete={() =>
+                    openConfirmModal({
+                      title: t("Confirm Deletion"),
+                      message: t(
+                        "Are you sure you want to delete this book?"
+                      ),
+                      onConfirm: async () => {
+                        try {
+                          await deleteBook(book.id);
+                          setBooks((prev) =>
+                            prev.filter((b) => b.id !== book.id)
+                          );
+                          toast.success(t("Book deleted"));
+                        } catch {
+                          toast.error(t("Failed to delete"));
+                        }
+                      },
+                    })
+                  }
                   onEditLink={`/dashboard/admin/books/edit/${book.id}`}
                   showReadLink
                 />
@@ -397,6 +424,13 @@ function AdminBooksPage() {
           </>
         )}
       </section>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
 }
