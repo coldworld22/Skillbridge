@@ -9,7 +9,7 @@ export default function StudentBooksPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchBooks();
+        const { books: data } = await fetchBooks();
         setBooks(data);
       } catch (e) {
         console.error("Failed to load books", e);

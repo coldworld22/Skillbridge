@@ -42,7 +42,7 @@ const BooksPage = () => {
   useEffect(() => {
     const loadBooks = async () => {
       try {
-        const data = await fetchBooks();
+        const { books: data } = await fetchBooks();
         setBooks(data);
       } catch (err) {
         console.error(err);
