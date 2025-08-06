@@ -8,7 +8,7 @@ export default function BookForm({
   onSubmit,
   categories = [],
   showCoverImage = true,
-  defaultValues = {},
+  defaultValues = null,
   isEdit = false,
   submitText,
   cancelText,
@@ -28,11 +28,11 @@ export default function BookForm({
       status: "pending",
       is_free: false,
       allow_preview: false,
-      ...defaultValues,
+      ...(defaultValues || {}),
     },
   });
   const [languages, setLanguages] = useState([]);
-  const [tags, setTags] = useState(defaultValues.tags || []);
+  const [tags, setTags] = useState(defaultValues?.tags || []);
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);

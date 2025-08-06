@@ -242,7 +242,8 @@ function AdminCreateBookPage() {
   );
 }
 
-export default withAuthProtection(AdminCreateBookPage, ["admin", "superadmin"]);
+const ProtectedAdminCreateBookPage = withAuthProtection(AdminCreateBookPage, ["admin", "superadmin"]);
+export default ProtectedAdminCreateBookPage;
 
 export async function getStaticProps({ locale }) {
   return {
