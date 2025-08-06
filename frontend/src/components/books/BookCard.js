@@ -11,6 +11,12 @@ export default function BookCard({
 }) {
   const { t } = useTranslation("dashboard");
 
+  const statusClasses = {
+    pending: "bg-yellow-100 text-yellow-800",
+    approved: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
   return (
     <div className="border rounded p-4 relative">
       {onSelect && (
@@ -21,10 +27,20 @@ export default function BookCard({
           onChange={onSelect}
         />
       )}
+      {book.status && (
+        <span
+          className={`absolute top-2 right-2 px-2 py-0.5 rounded text-xs font-medium ${
+            statusClasses[book.status] || "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {t(book.status)}
+        </span>
+      )}
       {book.cover_image_url && (
         <img
           src={book.cover_image_url}
           alt={book.title}
+          loading="lazy"
           className="w-full h-40 object-cover mb-2"
         />
       )}
