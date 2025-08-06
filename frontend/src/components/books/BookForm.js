@@ -4,7 +4,13 @@ import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 
-export default function BookForm({ onSubmit, categories = [], showCoverImage = true }) {
+export default function BookForm({
+  onSubmit,
+  categories = [],
+  showCoverImage = true,
+  defaultValues = {},
+  isEdit = false,
+}) {
   const { t } = useTranslation("dashboard");
   const {
     register,
@@ -12,9 +18,18 @@ export default function BookForm({ onSubmit, categories = [], showCoverImage = t
     watch,
     formState: { errors },
     setValue,
-  } = useForm({ defaultValues: { tags: [], status: "pending", is_free: false, allow_preview: false} });
+    reset,
+  } = useForm({
+    defaultValues: {
+      tags: [],
+      status: "pending",
+      is_free: false,
+      allow_preview: false,
+      ...defaultValues,
+    },
+  });
   const [languages, setLanguages] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState(defaultValues.tags || []);
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
@@ -22,6 +37,19 @@ export default function BookForm({ onSubmit, categories = [], showCoverImage = t
   const [previewFiles, setPreviewFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
   const isFree = watch("is_free");
+
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        tags: defaultValues.tags || [],
+        status: "pending",
+        is_free: defaultValues.is_free ?? false,
+        allow_preview: defaultValues.allow_preview ?? false,
+        ...defaultValues,
+      });
+      setTags(defaultValues.tags || []);
+    }
+  }, [defaultValues, reset]);
 
   useEffect(() => {
     const load = async () => {
@@ -248,7 +276,7 @@ export default function BookForm({ onSubmit, categories = [], showCoverImage = t
         </label>
         {(() => {
           const reg = register("cover_image", {
-            required: t("booksCreate.coverImageRequired"),
+            required: !isEdit && t("booksCreate.coverImageRequired"),
             validate: {
               fileType: (files) =>
                 !files[0] ||
@@ -293,7 +321,7 @@ export default function BookForm({ onSubmit, categories = [], showCoverImage = t
         </label>
         {(() => {
           const reg = register("book_file", {
-            required: t("booksCreate.bookFileRequired"),
+            required: !isEdit && t("booksCreate.bookFileRequired"),
             validate: {
               fileType: (files) =>
                 !files[0] || files[0].type === "application/pdf" || "PDF only",

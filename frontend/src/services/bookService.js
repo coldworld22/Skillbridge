@@ -29,4 +29,12 @@ export const deleteBook = async (id) => {
   return true;
 };
 
-export default { fetchBooks, fetchBook, deleteBook };
+export const updateBook = async (id, formData, onUploadProgress) => {
+  const { data } = await api.put(`/books/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress,
+  });
+  return data?.data;
+};
+
+export default { fetchBooks, fetchBook, deleteBook, updateBook };
