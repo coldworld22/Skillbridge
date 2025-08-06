@@ -1,69 +1,251 @@
-// Updated Books Marketplace Page with Full Enhancements
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
+import BookCardSkeleton from "@/components/books/BookCardSkeleton";
+import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
+import { fetchBookCategories } from "@/services/bookCategoryService";
+import { getLanguages } from "@/services/languageService";
+import { fetchBookTags } from "@/services/bookTagService";
+import withAuthProtection from "@/hooks/withAuthProtection";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import toast from "react-hot-toast";
+import { useTranslation } from "next-i18next";
+import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
+import { Switch } from '@headlessui/react';
+import ConfirmModal from "@/components/common/ConfirmModal";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { FaSearch, FaFilter, FaArrowUp, FaShoppingCart } from "react-icons/fa";
-import Navbar from "@/components/website/sections/Navbar";
-import Footer from "@/components/website/sections/Footer";
-import BookCard from "@/components/books/BookCard";
-import BookFilterSidebar from "@/components/books/FilterSidebar";
-import { fetchBooks } from "@/services/bookService";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const buildUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:/i.test(path)) return path;
+  const uploadsIndex = path.indexOf("/uploads");
+  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
+  return `${API_BASE}${normalized}`;
+};
 
-const BooksPage = () => {
+function InstructorBooksPage() {
+  const { t } = useTranslation("dashboard");
+
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [filters, setFilters] = useState({
+    search: "", 
+    category: "", 
+    status: "", 
+    priceRange: 0, 
+    language: "", 
+    tags: [] 
+  });
+  const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState("default");
-  const [visibleCount, setVisibleCount] = useState(6);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showScrollToTop, setShowScrollToTop] = useState(false);
-  const [filters, setFilters] = useState({ categories: [], levels: [], price: 100 });
-  const loader = useRef(null);
+  const [selectedBooks, setSelectedBooks] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const perPage = 12;
 
-  useEffect(() => {
-    const handleScroll = () => setShowScrollToTop(window.scrollY > 300);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const [bulkStatus, setBulkStatus] = useState("");
 
-  const handleFilterChange = (f) => {
-    setFilters(f);
-    setVisibleCount(6);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
   };
 
-  const resetFilters = () => setFilters({ categories: [], levels: [], price: 100 });
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  // Load filters from localStorage on mount
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("instructorBooksFilters") : null;
+    if (saved) {
+      try {
+        setFilters(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await fetchBookCategories();
+        const langs = await getLanguages();
+        setCategories(cats);
+        setLanguages(langs);
+      } catch (err) {
+        toast.error(t("Failed to load data"));
+      }
+    };
+    loadCategories();
+  }, [t]);
+
+  useEffect(() => {
+    if (!tagInput) {
+      setTagSuggestions([]);
+      return;
+    }
+
+    fetchBookTags(tagInput)
+      .then(setTagSuggestions)
+      .catch(() => {});
+  }, [tagInput]);
 
   useEffect(() => {
     const loadBooks = async () => {
       try {
-        const { books: data } = await fetchBooks();
-        setBooks(data);
+        setLoading(true);
+        const { books: list, meta } = await fetchBooks({
+          page,
+          perPage,
+          filters,
+          sort: { sortBy },
+        });
+        setBooks(list);
+        setMeta(meta);
       } catch (err) {
-        console.error(err);
-        setError("Failed to load books");
+        toast.error(t("Failed to load data"));
+        console.error("Error loading:", err);
       } finally {
         setLoading(false);
       }
     };
     loadBooks();
-  }, []);
+  }, [page, filters, sortBy, perPage, t]);
 
-  const filteredBooks = books.filter((book) => {
-    const matchCategory =
-      !filters.categories.length || filters.categories.includes(book.category_name);
-    const matchLevel = !filters.levels.length || filters.levels.includes(book.level);
-    const matchPrice = !filters.price || !book.is_paid || (book.price && Number(book.price) <= Number(filters.price));
-    const matchSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (book.author || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchLevel && matchPrice && matchSearch;
-  });
+  // Remember filters in localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("instructorBooksFilters", JSON.stringify(filters));
+    }
+  }, [filters]);
 
-  const sortedBooks = [...filteredBooks].sort((a, b) => {
-    if (sortBy === "price") return (a.price || 0) - (b.price || 0);
-    if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
-    return 0;
-  });
+  const filteredBooks = books;
+  const totalPages = meta?.totalPages ?? 1;
+  const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
+  const endIndex = books.length ? startIndex + books.length - 1 : 0;
+
+  const handleSelectBook = (id) => {
+    setSelectedBooks((prev) => {
+      const updated = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+      setAllSelected(updated.length === filteredBooks.length);
+      return updated;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedBooks([]);
+      setAllSelected(false);
+    } else {
+      setSelectedBooks(filteredBooks.map((b) => b.id));
+      setAllSelected(true);
+    }
+  };
+
+  useEffect(() => {
+    setAllSelected(
+      filteredBooks.length > 0 &&
+        selectedBooks.length === filteredBooks.length
+    );
+  }, [filteredBooks, selectedBooks]);
+
+  const handleBulkDelete = async () => {
+    openConfirmModal({
+      title: t("Confirm Deletion"),
+      message: t("Are you sure you want to delete selected books?"),
+      onConfirm: async () => {
+        try {
+          const deletePromises = selectedBooks.map(id => deleteBook(id));
+          await Promise.all(deletePromises);
+          setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
+          setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
+          setSelectedBooks([]);
+          toast.success(t("Books deleted successfully"));
+        } catch (err) {
+          toast.error(t("Failed to delete some books"));
+        }
+      }
+    });
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatus) return;
+    openConfirmModal({
+      title: t("Confirm Status Change"),
+      message: t("Change status of selected books?"),
+      onConfirm: async () => {
+        try {
+          const updatePromises = selectedBooks.map(id => updateBookStatus(id, bulkStatus));
+          await Promise.all(updatePromises);
+          setBooks(prev =>
+            prev.map(b =>
+              selectedBooks.includes(b.id) ? { ...b, status: bulkStatus } : b
+            )
+          );
+          toast.success(t("Status updated"));
+          setSelectedBooks([]);
+          setBulkStatus("");
+        } catch (err) {
+          toast.error(t("Failed to update status"));
+        }
+      }
+    });
+  };
+
+  const toggleBookStatus = async (bookId, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    setBooks(prev =>
+      prev.map(book =>
+        book.id === bookId ? { ...book, status: newStatus } : book
+      )
+    );
+    try {
+      await updateBookStatus(bookId, newStatus);
+      toast.success(t("Status updated"));
+    } catch (err) {
+      setBooks(prev =>
+        prev.map(book =>
+          book.id === bookId ? { ...book, status: currentStatus } : book
+        )
+      );
+      toast.error(t("Failed to update status"));
+    }
+  };
+
+  const resetFilters = () => {
+    setFilters({ 
+      search: "", 
+      category: "", 
+      status: "", 
+      priceRange: 0, 
+      language: "", 
+      tags: [] 
+    });
+    setPage(1);
+  };
+
+  const hasActiveFilters = (
+    filters.search || 
+    filters.category || 
+    filters.status || 
+    filters.priceRange > 0 || 
+    filters.language || 
+    filters.tags.length > 0
+  );
 
   const visibleBooks = sortedBooks.slice(0, visibleCount);
 
@@ -81,79 +263,648 @@ const BooksPage = () => {
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
 
   return (
-    <section className="min-h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center opacity-10" />
-      <Navbar />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <motion.h2 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500" whileHover={{ scale: 1.02 }}>
-            📚 Books Marketplace
-          </motion.h2>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Discover our curated selection of books and purchase your favorites.
-          </p>
-        </motion.div>
-
-        <div className="lg:hidden mb-6 flex justify-between items-center">
-          <div className="relative w-full max-w-md">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search books..." className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+    <InstructorLayout>
+      <section className="py-8 px-4 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">{t("Books")}</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              {t("Showing")} {books.length ? `${startIndex}-${endIndex}` : 0} {t("of")} {meta.total ?? 0} {t("books")}
+            </p>
           </div>
-          <button className="ml-3 p-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 hover:bg-gray-700" onClick={() => document.getElementById('filter-sidebar').classList.toggle('translate-x-full')}>
-            <FaFilter className="text-yellow-400" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="sm:hidden flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            >
+              <FiFilter className="text-lg" />
+              <span>{t("Filters")}</span>
+            </button>
+            <Link
+              href="/dashboard/instructor/books/create"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg whitespace-nowrap"
+            >
+              <FiPlus className="text-lg" />
+              <span>{t("Add Book")}</span>
+            </Link>
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div id="filter-sidebar" className="fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/80 backdrop-blur-lg lg:backdrop-blur-none lg:bg-transparent p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 translate-x-full lg:translate-x-0">
-            <div className="flex justify-between items-center mb-6 lg:hidden">
-              <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
-              <button className="text-gray-400 hover:text-white" onClick={() => document.getElementById('filter-sidebar').classList.add('translate-x-full')}>✕</button>
+        {/* Filters - Desktop */}
+        <div className={`hidden sm:block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm`}>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="relative flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("Search")}</label>
+                {hasActiveFilters && (
+                  <button 
+                    onClick={resetFilters}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <FiX size={14} />
+                    {t("Clear filters")}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                <input
+                  type="text"
+                  placeholder={t("Search by title, author...")}
+                  value={filters.search}
+                  onChange={(e) => {
+                    setFilters({ ...filters, search: e.target.value });
+                    setPage(1);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                />
+              </div>
             </div>
-            <BookFilterSidebar onFilterChange={handleFilterChange} onResetFilters={resetFilters} />
+            
+            <div className="min-w-[160px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Category")}</label>
+              <select
+                value={filters.category}
+                onChange={(e) => {
+                  setFilters({ ...filters, category: e.target.value });
+                  setPage(1);
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              >
+                <option value="">{t("All Categories")}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="min-w-[160px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Status")}</label>
+              <select
+                value={filters.status}
+                onChange={(e) => {
+                  setFilters({ ...filters, status: e.target.value });
+                  setPage(1);
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              >
+                <option value="">{t("All Statuses")}</option>
+                <option value="active">{t("Active")}</option>
+                <option value="inactive">{t("Inactive")}</option>
+                <option value="pending">{t("Pending")}</option>
+                <option value="approved">{t("Approved")}</option>
+                <option value="rejected">{t("Rejected")}</option>
+              </select>
+            </div>
+
+            <div className="min-w-[180px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("Max Price")}: ${filters.priceRange}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="500"
+                step="10"
+                value={filters.priceRange}
+                onChange={(e) => {
+                  setFilters({ ...filters, priceRange: Number(e.target.value) });
+                  setPage(1);
+                }}
+                className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
           </div>
 
-          <div className="flex-grow">
-            <div className="hidden lg:flex items-center justify-between gap-4 mb-8">
-              <div className="relative w-full max-w-md">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search books, authors..." className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-400">Sort by:</span>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                  <option value="default">Default</option>
-                  <option value="price">Price</option>
-                  <option value="rating">Rating</option>
-                </select>
-              </div>
+          <div className="flex flex-wrap gap-4 mt-4 items-end">
+            <div className="min-w-[160px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Language")}</label>
+              <select
+                value={filters.language}
+                onChange={(e) => {
+                  setFilters({ ...filters, language: e.target.value });
+                  setPage(1);
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              >
+                <option value="">{t("All Languages")}</option>
+                {languages.map((l) => (
+                  <option key={l.id || l.code} value={l.code}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {visibleBooks.length === 0 ? (
-              <p className="text-gray-400">No books match the selected filters.</p>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleBooks.map((book) => (
-                  <BookCard key={book.id} book={book} showActions={true} />
+            <div className="flex-1 min-w-[240px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Tags")}</label>
+              <div className="flex flex-wrap gap-1 mb-1">
+                {filters.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-sm"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFilters({
+                          ...filters,
+                          tags: filters.tags.filter((t) => t !== tag),
+                        })
+                      }
+                      className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    >
+                      &times;
+                    </button>
+                  </span>
                 ))}
               </div>
-            )}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (tagInput && !filters.tags.includes(tagInput)) {
+                        setFilters({ ...filters, tags: [...filters.tags, tagInput] });
+                      }
+                      setTagInput("");
+                    }
+                  }}
+                  placeholder={t("Add tag and press Enter")}
+                  className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                />
+                {tagSuggestions.length > 0 && tagInput && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-40 overflow-auto">
+                    {tagSuggestions.map((tg) => (
+                      <div
+                        key={tg.id}
+                        onClick={() => {
+                          if (!filters.tags.includes(tg.name)) {
+                            setFilters({ ...filters, tags: [...filters.tags, tg.name] });
+                          }
+                          setTagInput("");
+                        }}
+                        className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                      >
+                        {tg.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="min-w-[160px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Sort By")}</label>
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setPage(1);
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              >
+                <option value="newest">{t("Newest First")}</option>
+                <option value="oldest">{t("Oldest First")}</option>
+                <option value="title">{t("Title A-Z")}</option>
+                <option value="price-high">{t("Price (High-Low)")}</option>
+                <option value="price-low">{t("Price (Low-High)")}</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-            <div ref={loader} />
+        {/* Filters - Mobile */}
+        {showMobileFilters && (
+          <div className="sm:hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium text-gray-700 dark:text-gray-300">{t("Filters")}</h3>
+              <button 
+                onClick={() => setShowMobileFilters(false)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Search")}</label>
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder={t("Search by title, author...")}
+                    value={filters.search}
+                    onChange={(e) => {
+                      setFilters({ ...filters, search: e.target.value });
+                      setPage(1);
+                    }}
+                    className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Category")}</label>
+                  <select
+                    value={filters.category}
+                    onChange={(e) => {
+                      setFilters({ ...filters, category: e.target.value });
+                      setPage(1);
+                    }}
+                    className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t("All Categories")}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {showScrollToTop && (
-              <button className="fixed bottom-8 right-8 p-3 rounded-full bg-yellow-500 text-gray-900 hover:bg-yellow-400 transition-all" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <FaArrowUp />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Status")}</label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => {
+                      setFilters({ ...filters, status: e.target.value });
+                      setPage(1);
+                    }}
+                    className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t("All Statuses")}</option>
+                    <option value="active">{t("Active")}</option>
+                    <option value="inactive">{t("Inactive")}</option>
+                    <option value="pending">{t("Pending")}</option>
+                    <option value="approved">{t("Approved")}</option>
+                    <option value="rejected">{t("Rejected")}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t("Max Price")}: ${filters.priceRange}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="500"
+                  step="10"
+                  value={filters.priceRange}
+                  onChange={(e) => {
+                    setFilters({ ...filters, priceRange: Number(e.target.value) });
+                    setPage(1);
+                  }}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Language")}</label>
+                <select
+                  value={filters.language}
+                  onChange={(e) => {
+                    setFilters({ ...filters, language: e.target.value });
+                    setPage(1);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                >
+                  <option value="">{t("All Languages")}</option>
+                  {languages.map((l) => (
+                    <option key={l.id || l.code} value={l.code}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Sort By")}</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                >
+                  <option value="newest">{t("Newest First")}</option>
+                  <option value="oldest">{t("Oldest First")}</option>
+                  <option value="title">{t("Title A-Z")}</option>
+                  <option value="price-high">{t("Price (High-Low)")}</option>
+                  <option value="price-low">{t("Price (Low-High)")}</option>
+                </select>
+              </div>
+
+              {hasActiveFilters && (
+                <button 
+                  onClick={resetFilters}
+                  className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1"
+                >
+                  <FiX size={16} />
+                  {t("Clear all filters")}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Actions */}
+        {selectedBooks.length > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {selectedBooks.length} {t("selected")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
+              >
+                <option value="">{t("Change Status")}</option>
+                <option value="active">{t("Active")}</option>
+                <option value="inactive">{t("Inactive")}</option>
+                <option value="approved">{t("Approved")}</option>
+                <option value="pending">{t("Pending")}</option>
+                <option value="rejected">{t("Rejected")}</option>
+              </select>
+              <button
+                onClick={handleBulkStatusUpdate}
+                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              >
+                {t("Apply")}
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+              >
+                <FiTrash2 className="text-sm" />
+                <span>{t("Delete Selected")}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: perPage }).map((_, i) => (
+              <BookCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+              <FiSearch className="text-3xl text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">{t("No books found")}</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              {filters.search || filters.category || filters.status 
+                ? t("Try adjusting your search or filter criteria")
+                : t("There are currently no books in the system")}
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="mt-4 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                {t("Clear all filters")}
               </button>
             )}
           </div>
-        </div>
-      </div>
+        ) : (
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {books.map((book) => {
+                const coverUrl =
+                  book.cover_image_url ||
+                  buildUrl(book.cover_image) ||
+                  "/images/default-book-cover.jpg";
+                return (
+                  <div
+                    key={book.id}
+                    className={`relative rounded-xl overflow-hidden border dark:border-gray-700 transition-all duration-200 hover:shadow-lg ${
+                      selectedBooks.includes(book.id)
+                        ? "ring-2 ring-blue-500 border-blue-500"
+                        : "hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBooks.includes(book.id)}
+                      onChange={() => handleSelectBook(book.id)}
+                      className="absolute top-3 left-3 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 z-10"
+                    />
 
-      <Footer />
-    </section>
+                    <div className="relative">
+                      <img
+                        src={coverUrl}
+                        alt={book.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <Switch
+                          checked={book.status === "active"}
+                          onChange={() => toggleBookStatus(book.id, book.status)}
+                          className={`${
+                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                          } relative inline-flex h-6 w-11 items-center rounded-full`}
+                        >
+                          <span
+                            className={`${
+                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                            } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                          />
+                        </Switch>
+                      </div>
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
+                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs px-2 py-1 rounded">
+                          {Number(book.price) > 0 ? `$${book.price}` : t("free_label")}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-1">
+                        {book.author}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {book.tags?.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            book.status === "active"
+                              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                              : book.status === "pending"
+                              ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                              : book.status === "rejected"
+                              ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                          }`}
+                        >
+                          {t(book.status)}
+                        </span>
+
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/dashboard/instructor/books/${book.id}`}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                            title={t("Edit")}
+                          >
+                            <FiEdit className="text-lg" />
+                          </Link>
+                          <Link
+                            href={`/books/${book.slug}`}
+                            target="_blank"
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                            title={t("View")}
+                          >
+                            <FiEye className="text-lg" />
+                          </Link>
+                          <button
+                            onClick={() =>
+                              openConfirmModal({
+                                title: t("Confirm Deletion"),
+                                message: t("Are you sure you want to delete this book?"),
+                                onConfirm: async () => {
+                                  try {
+                                    await deleteBook(book.id);
+                                    setBooks((prev) => prev.filter((b) => b.id !== book.id));
+                                    toast.success(t("Book deleted"));
+                                  } catch {
+                                    toast.error(t("Failed to delete"));
+                                  }
+                                },
+                              })
+                            }
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                            title={t("Delete")}
+                          >
+                            <FiTrash2 className="text-lg" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <nav className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <FiChevronLeft className="text-lg" />
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // Show first, last and nearby pages
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm ${
+                          page === pageNum 
+                            ? "bg-blue-600 text-white" 
+                            : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        } transition`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  {totalPages > 5 && page < totalPages - 2 && (
+                    <span className="px-2 text-gray-500">...</span>
+                  )}
+                  
+                  {totalPages > 5 && page < totalPages - 2 && (
+                    <button
+                      onClick={() => setPage(totalPages)}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm ${
+                        page === totalPages 
+                          ? "bg-blue-600 text-white" 
+                          : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      } transition`}
+                    >
+                      {totalPages}
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    <FiChevronRight className="text-lg" />
+                  </button>
+                </nav>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
+    </InstructorLayout>
   );
 };
 
-export default BooksPage;
+export default withAuthProtection(InstructorBooksPage, ["instructor"]);
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
