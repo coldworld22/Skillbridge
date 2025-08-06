@@ -19,6 +19,7 @@ import { toast } from 'react-toastify';
 
 export default function AdminInstructorsPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
+  const { t: tCommon } = useTranslation('common');
   const [instructors, setInstructors] = useState([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('name');
@@ -183,7 +184,7 @@ export default function AdminInstructorsPage() {
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-500 text-lg">{t('common:loading')}</p>
+        <p className="text-gray-500 text-lg">{tCommon('loading')}</p>
       </div>
     );
   }
@@ -271,7 +272,7 @@ export default function AdminInstructorsPage() {
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['dashboard', 'common'], nextI18NextConfig)),
     },
   };
 }
