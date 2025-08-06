@@ -750,7 +750,11 @@ function AdminBooksPage() {
                           <FiEdit className="text-lg" />
                         </Link>
                         <Link
-                          href={`/books/${book.slug}`}
+                          href={
+                            book.slug
+                              ? `/books/${book.slug}`
+                              : `/marketplace/books/${book.id}`
+                          }
                           target="_blank"
                           className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
                           title={t("View")}
