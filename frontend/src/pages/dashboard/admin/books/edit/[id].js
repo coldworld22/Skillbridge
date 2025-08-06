@@ -95,12 +95,14 @@ function AdminEditBookPage() {
   const handleRemoveImage = useCallback(() => {
     setCoverPreview(null);
     setFileError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const fileInput = document.getElementById("cover_image");
+    if (fileInput) fileInput.value = "";
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
-    if (fileInputRef.current?.files?.[0]) {
-      formData.append("cover_image", fileInputRef.current.files[0]);
+    const fileInput = document.getElementById("cover_image");
+    if (fileInput?.files?.[0]) {
+      formData.append("cover_image", fileInput.files[0]);
     }
     try {
       setProgress(0);
@@ -192,7 +194,7 @@ function AdminEditBookPage() {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700">
                   {t("booksCreate.coverImage")}
                 </label>
 
@@ -219,13 +221,13 @@ function AdminEditBookPage() {
                     <div className="space-y-1 text-center">
                       <div className="flex text-sm text-gray-600 justify-center">
                         <label
-                          htmlFor="coverImage"
+                          htmlFor="cover_image"
                           className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
                         >
                           <span>{t("booksCreate.uploadImage")}</span>
                           <input
-                            id="coverImage"
-                            name="coverImage"
+                            id="cover_image"
+                            name="cover_image"
                             type="file"
                             className="sr-only"
                             ref={fileInputRef}
