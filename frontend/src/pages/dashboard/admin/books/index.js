@@ -4,6 +4,8 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCard from "@/components/books/BookCard";
 import { fetchBooks, deleteBook } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
+import { getLanguages } from "@/services/languageService";
+import { fetchBookTags } from "@/services/bookTagService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
@@ -16,21 +18,28 @@ function AdminBooksPage() {
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({ search: "", category: "", status: "" });
+  const [filters, setFilters] = useState({ search: "", category: "", status: "", priceRange: 0, language: "", tags: [] });
   const [loading, setLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const perPage = 9;
+  const [languages, setLanguages] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await fetchBooks();
+        const [data, cats, langs] = await Promise.all([
+          fetchBooks(),
+          fetchBookCategories(),
+          getLanguages(),
+        ]);
         setBooks(data);
-        const cats = await fetchBookCategories();
         setCategories(cats);
+        setLanguages(langs);
       } catch (err) {
         toast.error(t("Failed to load data"));
         console.error("Error loading:", err);
@@ -40,6 +49,20 @@ function AdminBooksPage() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    if (tagInput) {
+      fetchBookTags(tagInput).then((data) => {
+        if (!ignore) setTagSuggestions(data);
+      });
+    } else {
+      setTagSuggestions([]);
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [tagInput]);
 
   const filteredBooks = useMemo(() => {
     let result = books;
@@ -56,6 +79,24 @@ function AdminBooksPage() {
 
     if (filters.status) {
       result = result.filter((b) => b.status === filters.status);
+    }
+
+    if (filters.priceRange) {
+      result = result.filter((b) => {
+        const price = Number(b.price) || 0;
+        return price <= Number(filters.priceRange);
+      });
+    }
+
+    if (filters.language) {
+      result = result.filter((b) => b.language === filters.language);
+    }
+
+    if (filters.tags.length) {
+      result = result.filter((b) => {
+        const bookTags = b.tags || [];
+        return filters.tags.every((tag) => bookTags.includes(tag));
+      });
     }
 
     if (sortBy === "title") {
@@ -140,7 +181,7 @@ function AdminBooksPage() {
               </option>
             ))}
           </select>
-          
+
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -151,6 +192,94 @@ function AdminBooksPage() {
             <option value="approved">{t("Approved")}</option>
             <option value="rejected">{t("Rejected")}</option>
           </select>
+
+          <div className="flex items-center gap-2 w-full sm:w-48">
+            <label className="text-sm text-gray-600 whitespace-nowrap">
+              {t("Max Price")}: ${filters.priceRange}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="500"
+              value={filters.priceRange}
+              onChange={(e) =>
+                setFilters({ ...filters, priceRange: Number(e.target.value) })
+              }
+              className="w-full"
+            />
+          </div>
+
+          <select
+            value={filters.language}
+            onChange={(e) => setFilters({ ...filters, language: e.target.value })}
+            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+            <option value="">{t("All Languages")}</option>
+            {languages.map((l) => (
+              <option key={l.id || l.code} value={l.code}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="relative w-full sm:w-60">
+            <div className="flex flex-wrap gap-1 mb-1">
+              {filters.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilters({
+                        ...filters,
+                        tags: filters.tags.filter((t) => t !== tag),
+                      })
+                    }
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (tagInput && !filters.tags.includes(tagInput)) {
+                    setFilters({ ...filters, tags: [...filters.tags, tagInput] });
+                  }
+                  setTagInput("");
+                }
+              }}
+              placeholder={t("Add tag")}
+              className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            />
+            {tagSuggestions.length > 0 && tagInput && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                {tagSuggestions.map((tg) => (
+                  <div
+                    key={tg.id}
+                    onClick={() => {
+                      if (!filters.tags.includes(tg.name)) {
+                        setFilters({ ...filters, tags: [...filters.tags, tg.name] });
+                      }
+                      setTagInput("");
+                    }}
+                    className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {tg.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           <select
             value={sortBy}

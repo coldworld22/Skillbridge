@@ -8,7 +8,7 @@ describe("bookService", () => {
     const mock = [{ id: 1, title: "A" }];
     api.get.mockResolvedValueOnce({ data: { data: mock } });
     const books = await fetchBooks();
-    expect(api.get).toHaveBeenCalledWith("/books");
+    expect(api.get).toHaveBeenCalledWith("/books", { params: {} });
     expect(books).toEqual(mock);
   });
 
