@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage"; // Helper function for cropping
 import { FaUpload, FaTimesCircle, FaCrop, FaCheck } from "react-icons/fa";
@@ -22,6 +22,9 @@ const PersonalDetails = ({ formData, setFormData, nextStep }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
       const imageUrl = URL.createObjectURL(file);
       setPreview(imageUrl);
       setFile(file);
@@ -38,6 +41,9 @@ const PersonalDetails = ({ formData, setFormData, nextStep }) => {
   const handleCropSave = async () => {
     try {
       const blob = await getCroppedImg(preview, croppedAreaPixels);
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
       const url = URL.createObjectURL(blob);
       setPreview(url);
       setFormData({ ...formData, profilePicture: blob });
@@ -48,10 +54,21 @@ const PersonalDetails = ({ formData, setFormData, nextStep }) => {
   };
 
   // ✅ Remove Profile Picture
-  const removeImage = () => {
+  const handleRemoveImage = () => {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
     setPreview("");
     setFormData({ ...formData, profilePicture: null });
   };
+
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   return (
     <div>
@@ -62,7 +79,7 @@ const PersonalDetails = ({ formData, setFormData, nextStep }) => {
         {preview && !showCropper ? (
           <div className="relative">
             <img src={preview} alt="Profile Preview" className="w-24 h-24 rounded-full border-2 border-yellow-500" />
-            <button onClick={removeImage} className="absolute top-0 right-0 bg-red-600 text-white p-1 rounded-full">
+            <button onClick={handleRemoveImage} className="absolute top-0 right-0 bg-red-600 text-white p-1 rounded-full">
               <FaTimesCircle />
             </button>
             <button
