@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 
 export default function BookCard({
   book,
@@ -8,6 +9,8 @@ export default function BookCard({
   onEditLink,
   showReadLink = false,
 }) {
+  const { t } = useTranslation("dashboard");
+
   return (
     <div className="border rounded p-4 relative">
       {onSelect && (
@@ -32,7 +35,7 @@ export default function BookCard({
           href={`/marketplace/books/${book.id}`}
           className="text-blue-600 underline"
         >
-          View
+          {t("view")}
         </Link>
         {showReadLink && book.pdf_url && (
           <a
@@ -41,12 +44,12 @@ export default function BookCard({
             rel="noopener noreferrer"
             className="text-blue-600 underline"
           >
-            Read
+            {t("read")}
           </a>
         )}
         {onEditLink && (
           <Link href={onEditLink} className="text-green-600 underline">
-            Edit
+            {t("edit")}
           </Link>
         )}
         {onDelete && (
@@ -55,7 +58,7 @@ export default function BookCard({
             onClick={onDelete}
             className="text-red-600 underline"
           >
-            Delete
+            {t("delete")}
           </button>
         )}
       </div>
