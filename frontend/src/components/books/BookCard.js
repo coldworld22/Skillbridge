@@ -1,5 +1,17 @@
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
+import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+
+const buildUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:/i.test(path)) return path;
+  const relative = path.startsWith("/uploads")
+    ? path
+    : path.substring(path.indexOf("/uploads"));
+  return `${API_BASE}${relative}`;
+};
 
 export default function BookCard({
   book,
@@ -12,6 +24,8 @@ export default function BookCard({
 }) {
   const { t } = useTranslation("dashboard");
 
+  const coverUrl = buildUrl(book.cover_image_url || book.cover_image);
+
   const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800",
     approved: "bg-green-100 text-green-800",
@@ -19,7 +33,7 @@ export default function BookCard({
   };
 
   return (
-    <div className="border rounded p-4 relative">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
       {onSelect && (
         <input
           type="checkbox"
@@ -37,47 +51,60 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      {book.cover_image_url && (
+      {coverUrl && (
         <img
-          src={book.cover_image_url}
+          src={coverUrl}
           alt={book.title}
           loading="lazy"
-          className="w-full h-40 object-cover mb-2"
+          className="w-full h-40 object-cover"
         />
       )}
-      <h3 className="font-semibold mb-1">{book.title}</h3>
-      <p className="text-sm mb-2">{`$${book.price}`}</p>
-      <div className="flex gap-2">
-        <Link
-          href={viewLink || `/marketplace/books/${book.id}`}
-          className="text-blue-600 underline"
-        >
-          {t("view")}
-        </Link>
-        {showReadLink && book.pdf_url && (
-          <a
-            href={book.pdf_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
+      <div className="p-4">
+        <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
+        <p className="text-sm mb-3">{`$${book.price}`}</p>
+        <div className="flex gap-2">
+          <Link
+            href={viewLink || `/marketplace/books/${book.id}`}
+            className="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+            aria-label={t("view")}
           >
-            {t("read")}
-          </a>
-        )}
-        {onEditLink && (
-          <Link href={onEditLink} className="text-green-600 underline">
-            {t("edit")}
+            <FiEye />
+            <span className="sr-only">{t("view")}</span>
           </Link>
-        )}
-        {onDelete && (
-          <button
-            type="button"
-            onClick={onDelete}
-            className="text-red-600 underline"
-          >
-            {t("delete")}
-          </button>
-        )}
+          {showReadLink && book.pdf_url && (
+            <a
+              href={book.pdf_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+              aria-label={t("read")}
+            >
+              <FiBookOpen />
+              <span className="sr-only">{t("read")}</span>
+            </a>
+          )}
+          {onEditLink && (
+            <Link
+              href={onEditLink}
+              className="p-2 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+              aria-label={t("edit")}
+            >
+              <FiEdit />
+              <span className="sr-only">{t("edit")}</span>
+            </Link>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              aria-label={t("delete")}
+            >
+              <FiTrash2 />
+              <span className="sr-only">{t("delete")}</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
