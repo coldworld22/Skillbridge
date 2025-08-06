@@ -32,12 +32,12 @@ function AdminBooksPage() {
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [filters, setFilters] = useState({
-    search: "", 
-    category: "", 
-    status: "", 
-    priceRange: 0, 
-    language: "", 
-    tags: [] 
+    search: "",
+    category: "",
+    status: "",
+    priceRange: null,
+    language: "",
+    tags: []
   });
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -106,10 +106,14 @@ function AdminBooksPage() {
     const loadBooks = async () => {
       try {
         setLoading(true);
+        const activeFilters = { ...filters };
+        if (activeFilters.priceRange === null || activeFilters.priceRange <= 0) {
+          delete activeFilters.priceRange;
+        }
         const { books: list, meta } = await fetchBooks({
           page,
           perPage,
-          filters,
+          filters: activeFilters,
           sort: { sortBy },
         });
         setBooks(list);
@@ -227,13 +231,13 @@ function AdminBooksPage() {
   };
 
   const resetFilters = () => {
-    setFilters({ 
-      search: "", 
-      category: "", 
-      status: "", 
-      priceRange: 0, 
-      language: "", 
-      tags: [] 
+    setFilters({
+      search: "",
+      category: "",
+      status: "",
+      priceRange: null,
+      language: "",
+      tags: []
     });
     setPage(1);
   };
@@ -347,14 +351,14 @@ function AdminBooksPage() {
 
             <div className="min-w-[180px]">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("Max Price")}: ${filters.priceRange}
+                {t("Max Price")}: ${filters.priceRange ?? 0}
               </label>
               <input
                 type="range"
                 min="0"
                 max="500"
                 step="10"
-                value={filters.priceRange}
+                value={filters.priceRange ?? 0}
                 onChange={(e) => {
                   setFilters({ ...filters, priceRange: Number(e.target.value) });
                   setPage(1);
@@ -538,14 +542,14 @@ function AdminBooksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t("Max Price")}: ${filters.priceRange}
+                  {t("Max Price")}: ${filters.priceRange ?? 0}
                 </label>
                 <input
                   type="range"
                   min="0"
                   max="500"
                   step="10"
-                  value={filters.priceRange}
+                  value={filters.priceRange ?? 0}
                   onChange={(e) => {
                     setFilters({ ...filters, priceRange: Number(e.target.value) });
                     setPage(1);
