@@ -4,31 +4,50 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCard from "@/components/books/BookCard";
 import { fetchBooks, deleteBook } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
+import { getLanguages } from "@/services/languageService";
+import { fetchBookTags } from "@/services/bookTagService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({ search: "", category: "", status: "" });
+  const [filters, setFilters] = useState({ search: "", category: "", status: "", priceRange: 0, language: "", tags: [] });
   const [loading, setLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
   const perPage = 9;
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const cats = await fetchBookCategories();
         setCategories(cats);
+        setLanguages(langs);
       } catch (err) {
         toast.error(t("Failed to load data"));
       }
@@ -61,10 +80,31 @@ function AdminBooksPage() {
   const totalPages = meta?.totalPages ?? 1;
 
   const handleSelectBook = (id) => {
-    setSelectedBooks((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedBooks((prev) => {
+      const updated = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+      setAllSelected(updated.length === filteredBooks.length);
+      return updated;
+    });
   };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedBooks([]);
+      setAllSelected(false);
+    } else {
+      setSelectedBooks(filteredBooks.map((b) => b.id));
+      setAllSelected(true);
+    }
+  };
+
+  useEffect(() => {
+    setAllSelected(
+      filteredBooks.length > 0 &&
+        selectedBooks.length === filteredBooks.length
+    );
+  }, [filteredBooks, selectedBooks]);
 
   const handleBulkDelete = async () => {
     if (!confirm(t("Are you sure you want to delete selected books?"))) return;
@@ -131,7 +171,7 @@ function AdminBooksPage() {
               </option>
             ))}
           </select>
-          
+
           <select
             value={filters.status}
             onChange={(e) => {
@@ -145,6 +185,94 @@ function AdminBooksPage() {
             <option value="approved">{t("Approved")}</option>
             <option value="rejected">{t("Rejected")}</option>
           </select>
+
+          <div className="flex items-center gap-2 w-full sm:w-48">
+            <label className="text-sm text-gray-600 whitespace-nowrap">
+              {t("Max Price")}: ${filters.priceRange}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="500"
+              value={filters.priceRange}
+              onChange={(e) =>
+                setFilters({ ...filters, priceRange: Number(e.target.value) })
+              }
+              className="w-full"
+            />
+          </div>
+
+          <select
+            value={filters.language}
+            onChange={(e) => setFilters({ ...filters, language: e.target.value })}
+            className="border border-gray-300 rounded-lg p-2 w-full sm:w-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+            <option value="">{t("All Languages")}</option>
+            {languages.map((l) => (
+              <option key={l.id || l.code} value={l.code}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="relative w-full sm:w-60">
+            <div className="flex flex-wrap gap-1 mb-1">
+              {filters.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilters({
+                        ...filters,
+                        tags: filters.tags.filter((t) => t !== tag),
+                      })
+                    }
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (tagInput && !filters.tags.includes(tagInput)) {
+                    setFilters({ ...filters, tags: [...filters.tags, tagInput] });
+                  }
+                  setTagInput("");
+                }
+              }}
+              placeholder={t("Add tag")}
+              className="border border-gray-300 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            />
+            {tagSuggestions.length > 0 && tagInput && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                {tagSuggestions.map((tg) => (
+                  <div
+                    key={tg.id}
+                    onClick={() => {
+                      if (!filters.tags.includes(tg.name)) {
+                        setFilters({ ...filters, tags: [...filters.tags, tg.name] });
+                      }
+                      setTagInput("");
+                    }}
+                    className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {tg.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           <select
             value={sortBy}
@@ -158,16 +286,27 @@ function AdminBooksPage() {
             <option value="oldest">{t("Oldest First")}</option>
             <option value="title">{t("Title A-Z")}</option>
           </select>
-          
-          {selectedBooks.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
-            >
-              <FiTrash2 className="text-lg" />
-              <span>{t("Delete")} ({selectedBooks.length})</span>
-            </button>
-          )}
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+            />
+            {t("select_all")}
+          </label>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedBooks.length === 0}
+            className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiTrash2 className="text-lg" />
+            <span>
+              {t("Delete")}
+              {selectedBooks.length > 0 && ` (${selectedBooks.length})`}
+            </span>
+          </button>
         </div>
 
         {/* Content */}
@@ -196,16 +335,25 @@ function AdminBooksPage() {
                   book={book}
                   isSelected={selectedBooks.includes(book.id)}
                   onSelect={() => handleSelectBook(book.id)}
-                  onDelete={async () => {
-                    if (!confirm(t("Are you sure?"))) return;
-                    try {
-                      await deleteBook(book.id);
-                      setBooks((prev) => prev.filter((b) => b.id !== book.id));
-                      toast.success(t("Book deleted"));
-                    } catch {
-                      toast.error(t("Failed to delete"));
-                    }
-                  }}
+                  onDelete={() =>
+                    openConfirmModal({
+                      title: t("Confirm Deletion"),
+                      message: t(
+                        "Are you sure you want to delete this book?"
+                      ),
+                      onConfirm: async () => {
+                        try {
+                          await deleteBook(book.id);
+                          setBooks((prev) =>
+                            prev.filter((b) => b.id !== book.id)
+                          );
+                          toast.success(t("Book deleted"));
+                        } catch {
+                          toast.error(t("Failed to delete"));
+                        }
+                      },
+                    })
+                  }
                   onEditLink={`/dashboard/admin/books/edit/${book.id}`}
                   showReadLink
                 />
@@ -265,6 +413,13 @@ function AdminBooksPage() {
           </>
         )}
       </section>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
 }
