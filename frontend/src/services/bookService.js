@@ -13,7 +13,7 @@ const buildUrl = (path) => {
 
 const formatBook = (book) => ({
   ...book,
-  cover_image_url: buildUrl(book?.cover_image_url),
+  cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
   pdf_url: buildUrl(book?.pdf_url),
 });
 
