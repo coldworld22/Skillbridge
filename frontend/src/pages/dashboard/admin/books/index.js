@@ -210,6 +210,7 @@ function AdminBooksPage() {
                     }
                   }}
                   onEditLink={`/dashboard/admin/books/edit/${book.id}`}
+                  showReadLink
                 />
               ))}
             </div>

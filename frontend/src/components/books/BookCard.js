@@ -6,6 +6,7 @@ export default function BookCard({
   onSelect,
   onDelete,
   onEditLink,
+  showReadLink = false,
 }) {
   return (
     <div className="border rounded p-4 relative">
@@ -33,6 +34,16 @@ export default function BookCard({
         >
           View
         </Link>
+        {showReadLink && book.pdf_url && (
+          <a
+            href={book.pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            Read
+          </a>
+        )}
         {onEditLink && (
           <Link href={onEditLink} className="text-green-600 underline">
             Edit
