@@ -682,7 +682,11 @@ function AdminBooksPage() {
                   
                   <div className="relative">
                     <img
-                      src={book.coverImage || "/images/default-book-cover.jpg"}
+                      src={
+                        book.cover_image_url ||
+                        book.cover_image ||
+                        "/images/default-book-cover.jpg"
+                      }
                       alt={book.title}
                       className="w-full h-48 object-cover"
                     />
