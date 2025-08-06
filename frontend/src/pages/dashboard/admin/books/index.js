@@ -19,6 +19,7 @@ function AdminBooksPage() {
   const [filters, setFilters] = useState({ search: "", category: "", status: "" });
   const [loading, setLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const perPage = 9;
@@ -77,10 +78,31 @@ function AdminBooksPage() {
   const totalPages = Math.ceil(filteredBooks.length / perPage);
 
   const handleSelectBook = (id) => {
-    setSelectedBooks((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedBooks((prev) => {
+      const updated = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+      setAllSelected(updated.length === filteredBooks.length);
+      return updated;
+    });
   };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedBooks([]);
+      setAllSelected(false);
+    } else {
+      setSelectedBooks(filteredBooks.map((b) => b.id));
+      setAllSelected(true);
+    }
+  };
+
+  useEffect(() => {
+    setAllSelected(
+      filteredBooks.length > 0 &&
+        selectedBooks.length === filteredBooks.length
+    );
+  }, [filteredBooks, selectedBooks]);
 
   const handleBulkDelete = async () => {
     if (!confirm(t("Are you sure you want to delete selected books?"))) return;
@@ -161,16 +183,27 @@ function AdminBooksPage() {
             <option value="oldest">{t("Oldest First")}</option>
             <option value="title">{t("Title A-Z")}</option>
           </select>
-          
-          {selectedBooks.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
-            >
-              <FiTrash2 className="text-lg" />
-              <span>{t("Delete")} ({selectedBooks.length})</span>
-            </button>
-          )}
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+            />
+            {t("select_all")}
+          </label>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedBooks.length === 0}
+            className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiTrash2 className="text-lg" />
+            <span>
+              {t("Delete")}
+              {selectedBooks.length > 0 && ` (${selectedBooks.length})`}
+            </span>
+          </button>
         </div>
 
         {/* Content */}
