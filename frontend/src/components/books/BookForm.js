@@ -479,9 +479,9 @@ export default function BookForm({
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
           <option value="">{t("booksCreate.selectLicenseType")}</option>
-          <option value="personal">Personal use</option>
-          <option value="educational">Educational use</option>
-          <option value="commercial">Commercial resale not allowed</option>
+          <option value="personal">{t("booksCreate.licensePersonal")}</option>
+          <option value="educational">{t("booksCreate.licenseEducational")}</option>
+          <option value="commercial">{t("booksCreate.licenseCommercial")}</option>
         </select>
         {errors.license_type && (
           <p className="text-red-500 text-sm mt-1">
