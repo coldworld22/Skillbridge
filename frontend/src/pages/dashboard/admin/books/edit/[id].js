@@ -12,7 +12,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 function AdminEditBookPage() {
   const router = useRouter();
