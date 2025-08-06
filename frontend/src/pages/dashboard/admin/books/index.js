@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
@@ -14,6 +14,7 @@ import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
+import debounce from "lodash/debounce";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 const buildUrl = (path) => {
@@ -91,16 +92,42 @@ function AdminBooksPage() {
     loadCategories();
   }, [t]);
 
+  const tagAbortRef = useRef(null);
+
+  const debouncedFetchTags = useMemo(
+    () =>
+      debounce(async (input, signal) => {
+        try {
+          const data = await fetchBookTags(input, { signal });
+          setTagSuggestions(data);
+        } catch (err) {
+          if (err.name !== "CanceledError" && err.name !== "AbortError") {
+            console.error("Failed to fetch tags", err);
+          }
+        }
+      }, 300),
+    []
+  );
+
   useEffect(() => {
     if (!tagInput) {
       setTagSuggestions([]);
+      tagAbortRef.current?.abort();
+      debouncedFetchTags.cancel();
       return;
     }
 
-    fetchBookTags(tagInput)
-      .then(setTagSuggestions)
-      .catch(() => {});
-  }, [tagInput]);
+    tagAbortRef.current?.abort();
+    debouncedFetchTags.cancel();
+    const controller = new AbortController();
+    tagAbortRef.current = controller;
+    debouncedFetchTags(tagInput, controller.signal);
+
+    return () => {
+      controller.abort();
+      debouncedFetchTags.cancel();
+    };
+  }, [tagInput, debouncedFetchTags]);
 
   const loadBooks = useCallback(
     async (currentPage = page) => {

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
+import debounce from "lodash/debounce";
 
 export default function BookForm({
   onSubmit,
@@ -78,19 +79,42 @@ export default function BookForm({
     setValue("tags", tags);
   }, [tags, setValue]);
 
+  const tagAbortRef = useRef(null);
+
+  const debouncedFetchTags = useMemo(
+    () =>
+      debounce(async (input, signal) => {
+        try {
+          const data = await fetchBookTags(input, { signal });
+          setTagSuggestions(data);
+        } catch (err) {
+          if (err.name !== "CanceledError" && err.name !== "AbortError") {
+            console.error("Failed to fetch tags", err);
+          }
+        }
+      }, 300),
+    []
+  );
+
   useEffect(() => {
-    let ignore = false;
-    if (tagInput) {
-      fetchBookTags(tagInput).then((data) => {
-        if (!ignore) setTagSuggestions(data);
-      });
-    } else {
+    if (!tagInput) {
       setTagSuggestions([]);
+      tagAbortRef.current?.abort();
+      debouncedFetchTags.cancel();
+      return;
     }
+
+    tagAbortRef.current?.abort();
+    debouncedFetchTags.cancel();
+    const controller = new AbortController();
+    tagAbortRef.current = controller;
+    debouncedFetchTags(tagInput, controller.signal);
+
     return () => {
-      ignore = true;
+      controller.abort();
+      debouncedFetchTags.cancel();
     };
-  }, [tagInput]);
+  }, [tagInput, debouncedFetchTags]);
 
   const addTag = (name) => {
     const value = name.trim();
@@ -98,9 +122,13 @@ export default function BookForm({
     if (!tags.includes(value)) {
       setTags([...tags, value]);
       if (!tagSuggestions.find((t) => t.name === value)) {
-        createBookTag({ name: value }).then((newTag) =>
-          setTagSuggestions((prev) => [...prev, newTag])
-        );
+        createBookTag({ name: value })
+          .then((newTag) =>
+            setTagSuggestions((prev) => [...prev, newTag])
+          )
+          .catch((err) =>
+            console.error("Failed to create tag", err)
+          );
       }
     }
     setTagInput("");
