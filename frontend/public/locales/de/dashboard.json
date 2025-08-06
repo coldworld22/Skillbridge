@@ -1085,5 +1085,13 @@
     "duration_exceeded": "Dauer darf {{days}} Tage nicht überschreiten.",
     "update_success": "Anzeige erfolgreich aktualisiert!",
     "update_failed": "Anzeige konnte nicht aktualisiert werden"
+  },
+  "booksCreate": {
+    "licenseTypeLabel": "Lizenztyp",
+    "selectLicenseType": "Lizenztyp auswählen",
+    "licenseTypeRequired": "Lizenztyp ist erforderlich",
+    "licensePersonal": "Persönliche Nutzung",
+    "licenseEducational": "Bildungsnutzung",
+    "licenseCommercial": "Kommerzieller Weiterverkauf nicht erlaubt"
   }
 }
