@@ -4,7 +4,7 @@ import {
   createBook,
   updateBook,
   deleteBook,
-  fetchAnalytics,
+  fetchBookAnalytics,
 } from "../../services/instructor/bookService";
 
 jest.mock("../../services/api/api", () => ({
@@ -25,7 +25,7 @@ describe("instructor bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchInstructorBooks();
     expect(api.get).toHaveBeenCalledWith("/instructor/books");
-    expect(res).toEqual({ books: apiData, meta: {} });
+    expect(res).toEqual({ books: apiData, meta });
   });
 
   it("creates a book", async () => {
@@ -69,11 +69,11 @@ describe("instructor bookService", () => {
     expect(res).toBe(true);
   });
 
-  it("fetches analytics", async () => {
+  it("fetches book analytics", async () => {
     const apiData = { sales: 10 };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const params = { year: 2023 };
-    const res = await fetchAnalytics(params);
+    const res = await fetchBookAnalytics(params);
     expect(api.get).toHaveBeenCalledWith("/instructor/books/analytics", { params });
     expect(res).toEqual(apiData);
   });

@@ -50,7 +50,8 @@ export const deleteBook = async (id) => {
   return true;
 };
 
-export const fetchAnalytics = async (params = {}) => {
+// Fetch analytics for instructor's books with optional query params
+export const fetchBookAnalytics = async (params = {}) => {
   const { data } = await api.get("/instructor/books/analytics", { params });
   return data?.data || [];
 };
@@ -60,5 +61,5 @@ export default {
   createBook,
   updateBook,
   deleteBook,
-  fetchAnalytics,
+  fetchBookAnalytics,
 };
