@@ -9,6 +9,7 @@ jest.mock('../src/modules/books/book.service', () => ({
   deleteBook: jest.fn(),
   clearBookTags: jest.fn(),
   getBookTags: jest.fn(),
+  updateBookStatus: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -126,5 +127,18 @@ describe('DELETE /api/books/:id', () => {
     expect(res.status).toBe(200);
     expect(service.clearBookTags).toHaveBeenCalledWith('1');
     expect(service.deleteBook).toHaveBeenCalledWith('1');
+  });
+});
+
+describe('PATCH /api/books/:id/status', () => {
+  it('updates book status', async () => {
+    const book = { id: '1', status: 'active' };
+    service.updateBookStatus.mockResolvedValue(book);
+    const res = await request(app)
+      .patch('/api/books/1/status')
+      .send({ status: 'active' });
+    expect(res.status).toBe(200);
+    expect(service.updateBookStatus).toHaveBeenCalledWith('1', 'active');
+    expect(res.body.data).toEqual(book);
   });
 });
