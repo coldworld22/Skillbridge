@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
+import { fetchBooks, deleteBook, updateBookStatus, buildUrl } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";
@@ -707,7 +707,9 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  book.cover_image_url || "/images/default-book-cover.jpg";
+                  book.cover_image_url ||
+                  buildUrl(book.cover_image) ||
+                  "/images/default-book-cover.jpg";
                 return (
                   <div
                     key={book.id}
