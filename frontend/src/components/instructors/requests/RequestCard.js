@@ -7,6 +7,7 @@ const statusColors = {
   pending: "bg-yellow-100 text-yellow-700",
   approved: "bg-green-100 text-green-700",
   declined: "bg-red-100 text-red-700",
+  default: "bg-gray-100 text-gray-700",
 };
 
 export default function RequestCard({ request, onAccept, onDecline, onChat }) {
@@ -26,7 +27,11 @@ export default function RequestCard({ request, onAccept, onDecline, onChat }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <span className={`px-3 py-1 rounded-full text-sm ${statusColors[request.status]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-sm ${
+            statusColors[request.status] || statusColors.default
+          }`}
+        >
           {request.status}
         </span>
 
