@@ -20,6 +20,13 @@ export default function AdminViewBookPage() {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const statusMap = {
+    approved: { label: 'Approved', className: 'bg-green-100 text-green-800' },
+    pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
+    active: { label: 'Active', className: 'bg-blue-100 text-blue-800' },
+    inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-800' },
+    rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800' },
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -117,11 +124,13 @@ export default function AdminViewBookPage() {
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{book.title}</h1>
                   {book.status && (
-                    <span className={`inline-block mt-1 px-2 py-1 text-xs font-semibold rounded-full 
-                      ${book.status === 'published' ? 'bg-green-100 text-green-800' : 
-                        book.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-gray-100 text-gray-800'}`}>
-                      {book.status.charAt(0).toUpperCase() + book.status.slice(1)}
+                    <span
+                      className={`inline-block mt-1 px-2 py-1 text-xs font-semibold rounded-full ${
+                        statusMap[book.status]?.className || 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {statusMap[book.status]?.label ||
+                        book.status.charAt(0).toUpperCase() + book.status.slice(1)}
                     </span>
                   )}
                 </div>
