@@ -43,7 +43,6 @@ exports.listBooks = async (params = {}) => {
         .whereIn("t.name", tagArr);
     });
   }
-  if (instructorId) query.where("b.instructor_id", instructorId);
 
   switch (sortBy) {
     case "oldest":
