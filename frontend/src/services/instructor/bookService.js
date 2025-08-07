@@ -17,7 +17,13 @@ export const fetchInstructorBooks = async ({
     ...(status ? { status } : {}),
   };
 
-  const { data } = await api.get("/instructor/books", { params });
+  let response;
+  if (Object.keys(params).length) {
+    response = await api.get("/instructor/books", { params });
+  } else {
+    response = await api.get("/instructor/books");
+  }
+  const { data } = response;
   const list = data?.data || [];
   return { books: list, meta: data?.meta ?? {} };
 

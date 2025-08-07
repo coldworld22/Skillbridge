@@ -14,6 +14,7 @@ router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getBookAdm
 router.get("/:id", controller.getBook);
 router.post("/", verifyToken, isInstructorOrAdmin, upload, controller.createBook);
 router.put("/:id", verifyToken, isInstructorOrAdmin, upload, controller.updateBook);
+router.patch("/:id/status", verifyToken, isInstructorOrAdmin, controller.updateBookStatus);
 router.delete("/:id", verifyToken, isInstructorOrAdmin, controller.deleteBook);
 
 module.exports = router;

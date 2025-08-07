@@ -24,8 +24,8 @@ describe("instructor bookService", () => {
     const meta = { page: 1 };
     api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchInstructorBooks();
-    expect(api.get).toHaveBeenCalledWith("/instructor/books", { params: {} });
-    expect(res).toEqual({ books: apiData, meta });
+    expect(api.get).toHaveBeenCalledWith("/instructor/books");
+    expect(res).toEqual({ books: apiData, meta: {} });
   });
 
   it("creates a book", async () => {
