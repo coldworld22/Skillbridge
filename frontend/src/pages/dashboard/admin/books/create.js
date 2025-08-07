@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import api from "@/services/api/api";
+import { createBook } from "@/services/bookService";
 import BookForm from "@/components/books/BookForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
@@ -85,15 +85,12 @@ function AdminCreateBookPage() {
     }
     try {
       setProgress(0);
-      await api.post("/books", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (event.total) {
-            const progress = Math.round((event.loaded * 100) / event.total);
-            setProgress(progress);
-            setUploadProgress(progress);
-          }
-        },
+      await createBook(formData, (event) => {
+        if (event.total) {
+          const progress = Math.round((event.loaded * 100) / event.total);
+          setProgress(progress);
+          setUploadProgress(progress);
+        }
       });
 
       toast.success(t("booksCreate.success"));
