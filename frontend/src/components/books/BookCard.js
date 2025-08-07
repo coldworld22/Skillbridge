@@ -1,18 +1,7 @@
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
-
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
-
-const buildUrl = (path) => {
-  if (!path) return null;
-  if (/^https?:/i.test(path)) return path;
-  const uploadsIndex = path.indexOf("/uploads");
-  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
-  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${API_BASE}${normalized}`;
-};
+import { buildUrl } from "@/services/bookService";
 
 
 export default function BookCard({
@@ -26,7 +15,10 @@ export default function BookCard({
 }) {
   const { t } = useTranslation("dashboard");
 
-  const coverUrl = buildUrl(book.cover_image_url || book.cover_image);
+  const coverUrl =
+    book.cover_image_url ||
+    buildUrl(book.cover_image) ||
+    "/images/default-book-cover.jpg";
 
   const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800",
@@ -53,14 +45,12 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      {coverUrl && (
-        <img
-          src={coverUrl}
-          alt={book.title}
-          loading="lazy"
-          className="w-full h-40 object-cover"
-        />
-      )}
+      <img
+        src={coverUrl}
+        alt={book.title}
+        loading="lazy"
+        className="w-full h-40 object-cover"
+      />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
         <p className="text-sm mb-3">{`$${book.price}`}</p>

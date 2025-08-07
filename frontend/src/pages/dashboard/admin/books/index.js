@@ -15,17 +15,6 @@ import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, Fi
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 import debounce from "lodash/debounce";
-
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
-const buildUrl = (path) => {
-  if (!path) return null;
-  if (/^https?:/i.test(path)) return path;
-  const uploadsIndex = path.indexOf("/uploads");
-  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
-  const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${API_BASE}${normalized}`;
-};
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 
@@ -718,8 +707,7 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  buildUrl(book.cover_image_url || book.cover_image) ||
-                  "/images/default-book-cover.jpg";
+                  book.cover_image_url || "/images/default-book-cover.jpg";
                 return (
                   <div
                     key={book.id}
