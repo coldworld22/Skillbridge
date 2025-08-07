@@ -48,5 +48,6 @@ describe('GET /api/instructor/books', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(list);
     expect(service.listBooks).toHaveBeenCalledWith({ instructorId: '1' });
+
   });
 });
