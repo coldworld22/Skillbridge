@@ -204,3 +204,16 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
   }
   sendSuccess(res, book, "Book status updated");
 });
+
+exports.listInstructorBooks = catchAsync(async (req, res) => {
+  const result = await service.listBooks({
+    ...req.query,
+    instructorId: req.user.id,
+  });
+  sendSuccess(res, result.data, "Books fetched", result.meta);
+});
+
+exports.getBookAnalytics = catchAsync(async (req, res) => {
+  const stats = await service.getInstructorBookAnalytics(req.user.id);
+  sendSuccess(res, stats, "Analytics fetched");
+});
