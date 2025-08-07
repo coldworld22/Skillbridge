@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/books/book.service', () => ({
   listBooks: jest.fn(),
+  getInstructorBookAnalytics: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({

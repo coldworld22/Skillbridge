@@ -1,13 +1,20 @@
 const service = require("./book.service");
-const tagService = require("./bookTag.service");
+const { processTags } = require("./book.utils");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
-const slugify = require("slugify");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
+
+const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
+const isAdminRole = (roles = []) => {
+  const arr = Array.isArray(roles) ? roles : [roles];
+  return arr
+    .map((r) => normalizeRole(r))
+    .some((r) => ["admin", "superadmin"].includes(r));
+};
 
 exports.createBook = catchAsync(async (req, res) => {
   const { tags: rawTags, ...body } = req.body || {};
@@ -40,32 +47,7 @@ exports.createBook = catchAsync(async (req, res) => {
 
   const book = await service.createBook(data);
 
-  let tags = [];
-  if (rawTags) {
-    try {
-      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
-      if (!Array.isArray(tags)) tags = [];
-    } catch {
-      tags = [];
-    }
-  }
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
-    }
-    await service.addBookTags(book.id, tagIds);
-    book.tags = await service.getBookTags(book.id);
-  } else {
-    book.tags = [];
-  }
+  book.tags = await processTags(rawTags, book.id);
 
   const userMessage =
     "Your book was submitted successfully and is under review.";
@@ -134,6 +116,11 @@ exports.listInstructorBooks = catchAsync(async (req, res) => {
   sendSuccess(res, result.data, "Books fetched", result.meta);
 });
 
+exports.getInstructorBookAnalytics = catchAsync(async (req, res) => {
+  const data = await service.getInstructorBookAnalytics(req.user.id);
+  sendSuccess(res, data);
+});
+
 exports.getBook = catchAsync(async (req, res) => {
   const book = await service.getBookById(req.params.id);
   if (!book || book.status !== "approved") {
@@ -154,6 +141,12 @@ exports.getBookAdmin = catchAsync(async (req, res) => {
 exports.updateBook = catchAsync(async (req, res) => {
   const existing = await service.getBookById(req.params.id);
   if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
 
   const { tags: rawTags, ...body } = req.body || {};
   const data = { ...body };
@@ -177,33 +170,8 @@ exports.updateBook = catchAsync(async (req, res) => {
 
   const book = await service.updateBook(req.params.id, data);
 
-  let tags = [];
-  if (rawTags) {
-    try {
-      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
-      if (!Array.isArray(tags)) tags = [];
-    } catch {
-      tags = [];
-    }
-  }
   await service.clearBookTags(book.id);
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existingTag = await tagService.findByName(name);
-      const tag =
-        existingTag ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
-    }
-    await service.addBookTags(book.id, tagIds);
-    book.tags = await service.getBookTags(book.id);
-  } else {
-    book.tags = [];
-  }
+  book.tags = await processTags(rawTags, book.id);
 
   if (
     req.user.role !== "instructor" &&
@@ -229,6 +197,14 @@ exports.updateBook = catchAsync(async (req, res) => {
 });
 
 exports.deleteBook = catchAsync(async (req, res) => {
+  const existing = await service.getBookById(req.params.id);
+  if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
   await service.clearBookTags(req.params.id);
   await service.deleteBook(req.params.id);
   sendSuccess(res, null, "Book deleted");
@@ -236,6 +212,14 @@ exports.deleteBook = catchAsync(async (req, res) => {
 
 exports.updateBookStatus = catchAsync(async (req, res) => {
   const { status } = req.body || {};
+  const existing = await service.getBookById(req.params.id);
+  if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
   const book = await service.updateBookStatus(req.params.id, status);
   if (!book) {
     throw new AppError("Book not found", 404);

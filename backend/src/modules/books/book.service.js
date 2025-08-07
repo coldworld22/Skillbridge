@@ -23,10 +23,7 @@ exports.listBooks = async (params = {}) => {
 
   if (search) {
     query.where(function () {
-      this.whereILike("b.title", `%${search}%`).orWhereILike(
-        "b.author",
-        `%${search}%`
-      );
+      this.whereILike("b.title", `%${search}%`);
     });
   }
   if (category) query.where("b.category_id", category);
