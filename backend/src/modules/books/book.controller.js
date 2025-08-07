@@ -9,6 +9,14 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
 
+const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
+const isAdminRole = (roles = []) => {
+  const arr = Array.isArray(roles) ? roles : [roles];
+  return arr
+    .map((r) => normalizeRole(r))
+    .some((r) => ["admin", "superadmin"].includes(r));
+};
+
 exports.createBook = catchAsync(async (req, res) => {
   const { tags: rawTags, ...body } = req.body || {};
   const data = {
@@ -154,6 +162,12 @@ exports.getBookAdmin = catchAsync(async (req, res) => {
 exports.updateBook = catchAsync(async (req, res) => {
   const existing = await service.getBookById(req.params.id);
   if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
 
   const { tags: rawTags, ...body } = req.body || {};
   const data = { ...body };
@@ -229,6 +243,14 @@ exports.updateBook = catchAsync(async (req, res) => {
 });
 
 exports.deleteBook = catchAsync(async (req, res) => {
+  const existing = await service.getBookById(req.params.id);
+  if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
   await service.clearBookTags(req.params.id);
   await service.deleteBook(req.params.id);
   sendSuccess(res, null, "Book deleted");
@@ -236,6 +258,14 @@ exports.deleteBook = catchAsync(async (req, res) => {
 
 exports.updateBookStatus = catchAsync(async (req, res) => {
   const { status } = req.body || {};
+  const existing = await service.getBookById(req.params.id);
+  if (!existing) throw new AppError("Book not found", 404);
+  if (
+    !isAdminRole(req.user.roles || req.user.role) &&
+    existing.instructor_id !== req.user.id
+  ) {
+    throw new AppError("Access denied", 403);
+  }
   const book = await service.updateBookStatus(req.params.id, status);
   if (!book) {
     throw new AppError("Book not found", 404);

@@ -38,11 +38,11 @@ jest.mock('../src/modules/users/user.model', () => ({
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
-    req.user = { id: '1' };
+  verifyToken: jest.fn((req, _res, next) => {
+    req.user = { id: '1', role: 'admin', roles: ['admin'] };
     next();
-  },
-  isAdmin: (_req, _res, next) => next(),
+  }),
+  isAdmin: jest.fn((_req, _res, next) => next()),
 }));
 
 const service = require('../src/modules/books/book.service');
@@ -50,6 +50,7 @@ const routes = require('../src/modules/books/book.routes');
 const messageService = require('../src/modules/messages/messages.service');
 const notificationService = require('../src/modules/notifications/notifications.service');
 const userModel = require('../src/modules/users/user.model');
+const auth = require('../src/middleware/auth/authMiddleware');
 
 const app = express();
 app.use(express.json());
@@ -127,20 +128,45 @@ describe('PUT /api/books/:id', () => {
       message: expect.stringContaining('Updated'),
     });
   });
+
+  it("returns 403 when instructor updates another instructor's book", async () => {
+    const payload = { title: 'Updated' };
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2', title: 'Old' });
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app).put('/api/books/1').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.updateBook).not.toHaveBeenCalled();
+  });
 });
 
 describe('DELETE /api/books/:id', () => {
   it('deletes a book', async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2' });
     const res = await request(app).delete('/api/books/1');
     expect(res.status).toBe(200);
     expect(service.clearBookTags).toHaveBeenCalledWith('1');
     expect(service.deleteBook).toHaveBeenCalledWith('1');
+  });
+
+  it("returns 403 when instructor deletes another instructor's book", async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2' });
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app).delete('/api/books/1');
+    expect(res.status).toBe(403);
+    expect(service.deleteBook).not.toHaveBeenCalled();
   });
 });
 
 describe('PATCH /api/books/:id/status', () => {
   it('updates book status', async () => {
     const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
+    service.getBookById.mockResolvedValue(book);
     service.updateBookStatus.mockResolvedValue(book);
     userModel.findAdmins.mockResolvedValue([]);
     userModel.findById.mockResolvedValue({ id: '2', email: 'user@example.com' });
@@ -150,5 +176,19 @@ describe('PATCH /api/books/:id/status', () => {
     expect(res.status).toBe(200);
     expect(service.updateBookStatus).toHaveBeenCalledWith('1', 'active');
     expect(res.body.data).toEqual(book);
+  });
+
+  it("returns 403 when instructor updates another instructor's book status", async () => {
+    const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
+    service.getBookById.mockResolvedValue(book);
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app)
+      .patch('/api/books/1/status')
+      .send({ status: 'active' });
+    expect(res.status).toBe(403);
+    expect(service.updateBookStatus).not.toHaveBeenCalled();
   });
 });
