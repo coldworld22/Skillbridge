@@ -22,7 +22,21 @@ app.use('/api/library', routes);
 
 describe('GET /api/library', () => {
   it('returns purchased books', async () => {
-    const items = [{ id: '1', title: 'Book' }];
+    const items = [
+      {
+        id: '1',
+        title: 'Book',
+        shortDescription: 'A cool book',
+        author: 'Author',
+        tags: ['tag'],
+        isFree: false,
+        price: 10,
+        purchasedAt: '2024-01-01T00:00:00Z',
+        coverUrl: '/cover',
+        pdfUrl: '/file.pdf',
+        previewUrl: '/preview',
+      },
+    ];
     service.listForStudent.mockResolvedValue(items);
     const res = await request(app).get('/api/library');
     expect(res.status).toBe(200);
