@@ -4,6 +4,7 @@ import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
+import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 export default function BookForm({
   onSubmit,
@@ -315,16 +316,22 @@ export default function BookForm({
             validate: {
               fileType: (files) =>
                 !files[0] ||
-                ["image/png", "image/jpeg"].includes(files[0].type) ||
-                "Only PNG or JPG",
+                [
+                  "image/png",
+                  "image/jpeg",
+                  "image/webp",
+                ].includes(files[0].type) ||
+                "Only PNG, JPG or WEBP",
               fileSize: (files) =>
-                !files[0] || files[0].size <= 2 * 1024 * 1024 || "Max 2MB",
+                !files[0] ||
+                files[0].size <= MAX_IMAGE_SIZE ||
+                t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` }),
             },
           });
           return (
             <input
               type="file"
-              accept=".png,.jpg,.jpeg"
+              accept=".png,.jpg,.jpeg,.webp"
               {...reg}
               onChange={(e) => {
                 reg.onChange(e);
