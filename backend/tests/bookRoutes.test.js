@@ -42,7 +42,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
     req.user = { id: '1' };
     next();
   },
-  isInstructorOrAdmin: (_req, _res, next) => next(),
+  isAdmin: (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/books/book.service');
