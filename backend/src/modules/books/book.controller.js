@@ -1,9 +1,8 @@
 const service = require("./book.service");
-const tagService = require("./bookTag.service");
+const { processTags } = require("./book.utils");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
-const slugify = require("slugify");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
@@ -48,32 +47,7 @@ exports.createBook = catchAsync(async (req, res) => {
 
   const book = await service.createBook(data);
 
-  let tags = [];
-  if (rawTags) {
-    try {
-      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
-      if (!Array.isArray(tags)) tags = [];
-    } catch {
-      tags = [];
-    }
-  }
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
-    }
-    await service.addBookTags(book.id, tagIds);
-    book.tags = await service.getBookTags(book.id);
-  } else {
-    book.tags = [];
-  }
+  book.tags = await processTags(rawTags, book.id);
 
   const userMessage =
     "Your book was submitted successfully and is under review.";
@@ -196,33 +170,8 @@ exports.updateBook = catchAsync(async (req, res) => {
 
   const book = await service.updateBook(req.params.id, data);
 
-  let tags = [];
-  if (rawTags) {
-    try {
-      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
-      if (!Array.isArray(tags)) tags = [];
-    } catch {
-      tags = [];
-    }
-  }
   await service.clearBookTags(book.id);
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existingTag = await tagService.findByName(name);
-      const tag =
-        existingTag ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
-    }
-    await service.addBookTags(book.id, tagIds);
-    book.tags = await service.getBookTags(book.id);
-  } else {
-    book.tags = [];
-  }
+  book.tags = await processTags(rawTags, book.id);
 
   if (
     req.user.role !== "instructor" &&
