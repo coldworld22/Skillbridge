@@ -72,6 +72,23 @@ describe("bookService", () => {
     });
   });
 
+  it("falls back to public endpoint if admin fetch fails", async () => {
+    const apiData = { id: 1, title: "A" };
+    api.get
+      .mockRejectedValueOnce(new Error("fail"))
+      .mockResolvedValueOnce({ data: { data: apiData } });
+    const book = await fetchBook(1, { admin: true });
+    expect(api.get).toHaveBeenNthCalledWith(1, "/books/admin/1");
+    expect(api.get).toHaveBeenNthCalledWith(2, "/books/1");
+    expect(book).toEqual({
+      id: 1,
+      title: "A",
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: [],
+    });
+  });
+
   it("updates a book", async () => {
     const apiData = { id: 1 };
     api.put.mockResolvedValueOnce({ data: { data: apiData } });
