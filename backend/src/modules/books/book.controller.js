@@ -134,6 +134,11 @@ exports.listInstructorBooks = catchAsync(async (req, res) => {
   sendSuccess(res, result.data, "Books fetched", result.meta);
 });
 
+exports.getInstructorBookAnalytics = catchAsync(async (req, res) => {
+  const data = await service.getInstructorBookAnalytics(req.user.id);
+  sendSuccess(res, data);
+});
+
 exports.getBook = catchAsync(async (req, res) => {
   const book = await service.getBookById(req.params.id);
   if (!book || book.status !== "approved") {

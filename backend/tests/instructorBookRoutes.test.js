@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/books/book.service', () => ({
   listBooks: jest.fn(),
+  getInstructorBookAnalytics: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -53,6 +54,20 @@ describe('GET /api/instructor/books', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(list);
     expect(service.listBooks).toHaveBeenCalledWith({ instructorId: '1' });
+  });
+});
 
+describe('GET /api/instructor/books/analytics', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns analytics data', async () => {
+    const analytics = { totalSales: 5, totalRevenue: 100, topBooks: [] };
+    service.getInstructorBookAnalytics.mockResolvedValue(analytics);
+
+    const res = await request(app).get('/api/instructor/books/analytics');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(analytics);
+    expect(service.getInstructorBookAnalytics).toHaveBeenCalledWith('1');
   });
 });
