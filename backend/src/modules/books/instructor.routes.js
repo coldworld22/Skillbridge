@@ -1,8 +1,10 @@
 const router = require("express").Router();
 const controller = require("./book.controller");
-const { verifyToken, isInstructorOrAdmin } = require("../../middleware/auth/authMiddleware");
+const { verifyToken, isInstructor } = require("../../middleware/auth/authMiddleware");
 
-router.get("/", verifyToken, isInstructorOrAdmin, controller.listInstructorBooks);
-router.get("/analytics", verifyToken, isInstructorOrAdmin, controller.getBookAnalytics);
+router.use(verifyToken, isInstructor);
+
+// GET /api/instructor/books
+router.get("/", controller.listInstructorBooks);
 
 module.exports = router;
