@@ -16,6 +16,7 @@ exports.listBooks = async (params = {}) => {
     language,
     tags = [],
     sortBy = "newest",
+    instructorId,
   } = params;
 
   const query = db("books as b");
@@ -32,6 +33,7 @@ exports.listBooks = async (params = {}) => {
   if (status) query.where("b.status", status);
   if (priceRange) query.where("b.price", "<=", priceRange);
   if (language) query.where("b.language", language);
+  if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
   if (tagArr.length) {
     query.whereIn("b.id", function () {
@@ -112,3 +114,36 @@ exports.updateBookStatus = async (id, status) => {
 };
 
 exports.deleteBook = (id) => db("books").where({ id }).del();
+
+exports.getInstructorBookAnalytics = async (instructorId) => {
+  const totalSalesRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .count("* as totalSales")
+    .first();
+
+  const totalRevenueRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .sum("p.price_paid as totalRevenue")
+    .first();
+
+  const topBooks = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .select("b.id", "b.title")
+    .count("* as sales")
+    .groupBy("b.id", "b.title")
+    .orderBy("sales", "desc")
+    .limit(5);
+
+  return {
+    totalSales: Number(totalSalesRow?.totalSales || 0),
+    totalRevenue: Number(totalRevenueRow?.totalRevenue || 0),
+    topBooks: topBooks.map((b) => ({
+      id: b.id,
+      title: b.title,
+      sales: Number(b.sales),
+    })),
+  };
+};
