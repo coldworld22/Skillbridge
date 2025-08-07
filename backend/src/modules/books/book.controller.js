@@ -189,3 +189,12 @@ exports.deleteBook = catchAsync(async (req, res) => {
   await service.deleteBook(req.params.id);
   sendSuccess(res, null, "Book deleted");
 });
+
+exports.updateBookStatus = catchAsync(async (req, res) => {
+  const { status } = req.body || {};
+  const book = await service.updateBookStatus(req.params.id, status);
+  if (!book) {
+    throw new AppError("Book not found", 404);
+  }
+  sendSuccess(res, book, "Book status updated");
+});

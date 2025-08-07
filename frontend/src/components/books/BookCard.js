@@ -2,7 +2,8 @@ import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
 
 const buildUrl = (path) => {
   if (!path) return null;
