@@ -13,6 +13,7 @@ import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 function AdminEditBookPage() {
   const router = useRouter();
@@ -75,9 +76,10 @@ function AdminEditBookPage() {
         return;
       }
 
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setFileError(t("validation.fileTooLarge", { size: "10MB" }));
+      if (file.size > MAX_IMAGE_SIZE) {
+        setFileError(
+          t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` })
+        );
         return;
       }
 
@@ -237,7 +239,9 @@ function AdminEditBookPage() {
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("booksCreate.imageRequirements", { size: "10MB" })}
+                        {t("booksCreate.imageRequirements", {
+                          size: `${MAX_IMAGE_SIZE_MB}MB`,
+                        })}
                       </p>
                     </div>
                   </div>
