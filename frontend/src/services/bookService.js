@@ -13,16 +13,22 @@ const API_BASE = rawApiBase.startsWith("http")
 export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
+  const base = API_BASE || (typeof window !== "undefined" ? window.location.origin : "");
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${API_BASE}${normalized}`;
+  return `${base}${normalized}`;
 };
 
 const formatBook = (book) => ({
   ...book,
   cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
   pdf_url: buildUrl(book?.pdf_url),
+  preview_pages: Array.isArray(book?.preview_pages)
+    ? book.preview_pages.map((p) => buildUrl(p))
+    : typeof book?.preview_pages === "string" && book.preview_pages
+    ? JSON.parse(book.preview_pages).map((p) => buildUrl(p))
+    : [],
 });
 
 export const fetchBooks = async ({
