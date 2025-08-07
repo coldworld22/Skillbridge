@@ -26,7 +26,6 @@ const buildUrl = (path) => {
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
   return `${API_BASE}${normalized}`;
 };
-
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 

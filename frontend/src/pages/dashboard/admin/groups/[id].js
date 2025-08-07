@@ -17,6 +17,7 @@ import {
   FaFolderOpen,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
+import { toast } from 'react-toastify';
 
 // ...imports (same as before)...
 
@@ -87,12 +88,15 @@ export default function AdminGroupDetailsPage() {
   const bulkRemove = async () => {
     if (!group) return;
     if (confirm('Are you sure you want to remove the selected members?')) {
-      for (const mid of selectedMembers) {
-        try {
-          await groupService.manageMember(group.id, mid, 'kick');
-        } catch {
-          // ignore errors per member
-        }
+      try {
+        await Promise.all(
+          selectedMembers.map((mid) =>
+            groupService.manageMember(group.id, mid, 'kick')
+          )
+        );
+      } catch (error) {
+        console.error('Bulk removal failed:', error);
+        alert('Some members could not be removed.');
       }
       setMembers(members.filter((m) => !selectedMembers.includes(m.id)));
       setSelectedMembers([]);
@@ -397,8 +401,9 @@ export default function AdminGroupDetailsPage() {
                                 const next = requests.filter((r) => r.id !== req.id);
                                 setRequests(next);
                                 setPendingCount(next.length);
-                              } catch {
-                                // ignore
+                              } catch (err) {
+                                console.error('Failed to approve request', err);
+                                toast.error('Failed to approve request');
                               }
                             }
                           }}
@@ -414,8 +419,9 @@ export default function AdminGroupDetailsPage() {
                                 const next = requests.filter((r) => r.id !== req.id);
                                 setRequests(next);
                                 setPendingCount(next.length);
-                              } catch {
-                                // ignore
+                              } catch (err) {
+                                console.error('Failed to reject request', err);
+                                toast.error('Failed to reject request');
                               }
                             }
                           }}

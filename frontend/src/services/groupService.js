@@ -64,6 +64,11 @@ const groupService = {
     return data?.data;
   },
 
+  cancelJoinRequest: async (groupId) => {
+    await api.delete(`/groups/${groupId}/join`);
+    return true;
+  },
+
   createGroup: async (payload) => {
     const { data } = await api.post("/groups", payload, {
       headers:
