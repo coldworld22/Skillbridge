@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
+import { deleteBook, updateBookStatus } from "@/services/bookService";
+import { fetchInstructorBooks } from "@/services/instructor/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";
@@ -12,7 +13,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
-import { Switch } from '@headlessui/react';
+// Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
@@ -106,7 +107,7 @@ function InstructorBooksPage() {
     const loadBooks = async () => {
       try {
         setLoading(true);
-        const { books: list, meta } = await fetchBooks({
+        const { books: list, meta } = await fetchInstructorBooks({
           page,
           perPage,
           filters,
@@ -206,8 +207,7 @@ function InstructorBooksPage() {
     });
   };
 
-  const toggleBookStatus = async (bookId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+  const handleStatusChange = async (bookId, newStatus, currentStatus) => {
     setBooks(prev =>
       prev.map(book =>
         book.id === bookId ? { ...book, status: newStatus } : book
@@ -352,8 +352,6 @@ function InstructorBooksPage() {
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               >
                 <option value="">{t("All Statuses")}</option>
-                <option value="active">{t("Active")}</option>
-                <option value="inactive">{t("Inactive")}</option>
                 <option value="pending">{t("Pending")}</option>
                 <option value="approved">{t("Approved")}</option>
                 <option value="rejected">{t("Rejected")}</option>
@@ -542,8 +540,6 @@ function InstructorBooksPage() {
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   >
                     <option value="">{t("All Statuses")}</option>
-                    <option value="active">{t("Active")}</option>
-                    <option value="inactive">{t("Inactive")}</option>
                     <option value="pending">{t("Pending")}</option>
                     <option value="approved">{t("Approved")}</option>
                     <option value="rejected">{t("Rejected")}</option>
@@ -640,10 +636,8 @@ function InstructorBooksPage() {
                 className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
               >
                 <option value="">{t("Change Status")}</option>
-                <option value="active">{t("Active")}</option>
-                <option value="inactive">{t("Inactive")}</option>
-                <option value="approved">{t("Approved")}</option>
                 <option value="pending">{t("Pending")}</option>
+                <option value="approved">{t("Approved")}</option>
                 <option value="rejected">{t("Rejected")}</option>
               </select>
               <button
@@ -721,19 +715,17 @@ function InstructorBooksPage() {
                         className="w-full h-48 object-cover"
                       />
                       <div className="absolute top-3 right-3">
-                        <Switch
-                          checked={book.status === "active"}
-                          onChange={() => toggleBookStatus(book.id, book.status)}
-                          className={`${
-                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
-                          } relative inline-flex h-6 w-11 items-center rounded-full`}
+                        <select
+                          value={book.status}
+                          onChange={(e) =>
+                            handleStatusChange(book.id, e.target.value, book.status)
+                          }
+                          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs rounded px-2 py-1"
                         >
-                          <span
-                            className={`${
-                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
-                            } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-                          />
-                        </Switch>
+                          <option value="pending">{t("Pending")}</option>
+                          <option value="approved">{t("Approved")}</option>
+                          <option value="rejected">{t("Rejected")}</option>
+                        </select>
                       </div>
                     </div>
 
@@ -761,7 +753,7 @@ function InstructorBooksPage() {
                       <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
                         <span
                           className={`text-xs px-2 py-1 rounded ${
-                            book.status === "active"
+                            book.status === "approved"
                               ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
                               : book.status === "pending"
                               ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
