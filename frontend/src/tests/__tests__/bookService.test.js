@@ -89,4 +89,14 @@ describe("bookService", () => {
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
+
+  it("buildUrl keeps relative api prefixes by default", () => {
+    const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.isolateModules(() => {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+      const { buildUrl } = require("../../services/bookService");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/api/uploads/test.jpg");
+    });
+    process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
+  });
 });
