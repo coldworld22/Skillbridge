@@ -3,6 +3,8 @@ const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./payments.service");
 const { v4: uuidv4 } = require("uuid");
+const smsService = require("../../services/smsService");
+const userModel = require("../users/user.model");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { user_id, method_id, item_type, item_id, amount, currency, status, reference_id } = req.body;
@@ -22,6 +24,15 @@ exports.createPayment = catchAsync(async (req, res) => {
     reference_id,
     paid_at: status === "paid" ? new Date() : null,
   });
+  try {
+    const user = await userModel.findById(user_id);
+    if (user?.phone) {
+      const text = `Payment of ${amount} received. Ref: ${payment.reference_id}`;
+      await smsService.sendSMS({ to: user.phone, text });
+    }
+  } catch (err) {
+    console.error("Failed to send payment SMS:", err);
+  }
 
   sendSuccess(res, payment, "Payment created");
 });
