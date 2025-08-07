@@ -1,21 +1,20 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import AdminLayout from "@/components/layouts/AdminLayout";
 import BookForm from "@/components/books/BookForm";
+import InstructorLayout from "@/components/layouts/InstructorLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
-import { fetchAllCategories } from "@/services/admin/categoryService";
-import { fetchBook, updateBook } from "@/services/bookService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
+import { fetchBook, updateBook } from "@/services/instructor/bookService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
-import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
-function AdminEditBookPage() {
+function EditBookPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation(["common", "dashboard", "validation", "errors"]);
@@ -39,15 +38,14 @@ function AdminEditBookPage() {
         setIsLoading(true);
         const [catRes, bookData] = await Promise.all([
           fetchAllCategories(),
-          fetchBook(id, { admin: true }),
+          fetchBook(id),
         ]);
         setCategories(catRes?.data || catRes || []);
         const parsedBook = {
           ...bookData,
           tags: bookData?.tags?.map((t) => t.name || t) || [],
           is_free:
-            bookData?.is_free === 1 ||
-            bookData?.is_free === true,
+            bookData?.is_free === 1 || bookData?.is_free === true,
           allow_preview:
             bookData?.allow_preview === 1 ||
             bookData?.allow_preview === true,
@@ -76,10 +74,9 @@ function AdminEditBookPage() {
         return;
       }
 
-      if (file.size > MAX_IMAGE_SIZE) {
-        setFileError(
-          t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` })
-        );
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        setFileError(t("validation.fileTooLarge", { size: "10MB" }));
         return;
       }
 
@@ -97,14 +94,12 @@ function AdminEditBookPage() {
   const handleRemoveImage = useCallback(() => {
     setCoverPreview(null);
     setFileError(null);
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput) fileInput.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const handleSubmit = async (formData, setProgress) => {
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput?.files?.[0]) {
-      formData.append("cover_image", fileInput.files[0]);
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {
       setProgress(0);
@@ -115,21 +110,17 @@ function AdminEditBookPage() {
           setUploadProgress(progress);
         }
       });
-      toast.success(
-        t("booksEdit.success", { defaultValue: "Book updated successfully" })
-      );
+      toast.success(t("booksEdit.success"));
       await Promise.all([fetchNotifications(), fetchMessages()]);
-      router.push("/dashboard/admin/books");
-    } catch (err) {
-      console.error("Failed to update book", err);
-      let errorMessage = t("booksEdit.error", {
-        defaultValue: "Failed to update book",
-      });
-      if (err.response) {
-        if (err.response.data?.errors) {
-          errorMessage = Object.values(err.response.data.errors).join(", ");
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
+      router.push("/dashboard/instructor/books");
+    } catch (e) {
+      console.error("Failed to update book", e);
+      let errorMessage = t("booksEdit.error");
+      if (e.response) {
+        if (e.response.data?.errors) {
+          errorMessage = Object.values(e.response.data.errors).join(", ");
+        } else if (e.response.data?.message) {
+          errorMessage = e.response.data.message;
         }
       }
       toast.error(errorMessage);
@@ -141,14 +132,14 @@ function AdminEditBookPage() {
 
   const handleCancel = () => {
     handleRemoveImage();
-    router.push("/dashboard/admin/books");
+    router.push("/dashboard/instructor/books");
   };
 
   return (
-    <AdminLayout>
+    <InstructorLayout>
       <Head>
         <title>
-          {t("booksEdit.pageTitle", { defaultValue: "Edit Book" })} | {t("common.adminPanel")}
+          {t("booksEdit.pageTitle")} | {t("common.instructor_dashboard")}
         </title>
       </Head>
 
@@ -165,7 +156,7 @@ function AdminEditBookPage() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">
-            {t("booksEdit.title", { defaultValue: "Edit Book" })}
+            {t("booksEdit.title")}
           </h1>
 
           {error ? (
@@ -196,7 +187,10 @@ function AdminEditBookPage() {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="cover_image"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   {t("booksCreate.coverImage")}
                 </label>
 
@@ -231,38 +225,26 @@ function AdminEditBookPage() {
                             id="cover_image"
                             name="cover_image"
                             type="file"
+                            accept="image/jpeg,image/png,image/webp"
                             className="sr-only"
                             ref={fileInputRef}
                             onChange={handleFileChange}
-                            accept="image/jpeg, image/png, image/webp"
                           />
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("booksCreate.imageRequirements", {
-                          size: `${MAX_IMAGE_SIZE_MB}MB`,
-                        })}
+                        {t("booksCreate.imageRequirements")}
                       </p>
                     </div>
                   </div>
                 )}
-
                 {fileError && (
-                  <p className="mt-2 text-sm text-red-600">{fileError}</p>
+                  <p className="text-red-500 text-sm mt-1">{fileError}</p>
                 )}
               </div>
 
-              {uploadProgress !== null && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                  <div
-                    className="bg-blue-600 h-2.5 rounded-full"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              )}
-
               <BookForm
-                key={book?.id || 'form'}
+                key={book?.id || "form"}
                 onSubmit={handleSubmit}
                 categories={categories}
                 showCoverImage={false}
@@ -272,15 +254,24 @@ function AdminEditBookPage() {
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
               />
+
+              {uploadProgress !== null && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                  <div
+                    className="bg-primary h-2.5 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </section>
-    </AdminLayout>
+    </InstructorLayout>
   );
 }
 
-export default withAuthProtection(AdminEditBookPage, ["admin", "superadmin"]);
+export default withAuthProtection(EditBookPage, ["instructor"]);
 
 export async function getServerSideProps({ locale }) {
   return {
@@ -293,3 +284,4 @@ export async function getServerSideProps({ locale }) {
     },
   };
 }
+
