@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
@@ -52,6 +52,33 @@ function InstructorBooksPage() {
   const perPage = 12;
 
   const [bulkStatus, setBulkStatus] = useState("");
+
+  const [visibleCount, setVisibleCount] = useState(perPage);
+  const loader = useRef(null);
+  const sortedBooks = useMemo(
+    () =>
+      [...books].sort((a, b) => {
+        switch (sortBy) {
+          case "oldest": {
+            const aDate = new Date(a.created_at || a.createdAt);
+            const bDate = new Date(b.created_at || b.createdAt);
+            return aDate - bDate;
+          }
+          case "title":
+            return (a.title || "").localeCompare(b.title || "");
+          case "price-high":
+            return Number(b.price) - Number(a.price);
+          case "price-low":
+            return Number(a.price) - Number(b.price);
+          default: {
+            const aDate = new Date(a.created_at || a.createdAt);
+            const bDate = new Date(b.created_at || b.createdAt);
+            return bDate - aDate;
+          }
+        }
+      }),
+    [books, sortBy]
+  );
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -687,7 +714,7 @@ function InstructorBooksPage() {
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {books.map((book) => {
+              {visibleBooks.map((book) => {
                 const coverUrl =
                   book.cover_image_url ||
                   buildUrl(book.cover_image) ||
@@ -809,6 +836,7 @@ function InstructorBooksPage() {
                 );
               })}
             </div>
+            <div ref={loader} />
 
             {/* Pagination */}
             {totalPages > 1 && (
