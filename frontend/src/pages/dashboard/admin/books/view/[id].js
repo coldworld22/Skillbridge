@@ -140,7 +140,11 @@ export default function AdminViewBookPage() {
                   <div className="space-y-1">
                     <h3 className="text-sm font-medium text-gray-500">Price</h3>
                     <p className="text-gray-900">
-                      {book.is_free ? "Free" : book.price ? `$${book.price.toFixed(2)}` : "Not specified"}
+                      {book.is_free
+                        ? "Free"
+                        : book.price != null
+                        ? `$${book.price.toFixed(2)}`
+                        : "Not specified"}
                     </p>
                   </div>
                   {book.license_type && (

@@ -89,6 +89,23 @@ describe("bookService", () => {
     });
   });
 
+  it("normalizes price and parses preview pages", async () => {
+    const apiData = {
+      id: 3,
+      price: "19.99",
+      preview_pages: '["/uploads/a.png"]',
+    };
+    api.get.mockResolvedValueOnce({ data: { data: apiData } });
+    const book = await fetchBook(3);
+    expect(book).toEqual({
+      id: 3,
+      price: 19.99,
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: ["/api/uploads/a.png"],
+    });
+  });
+
   it("updates a book", async () => {
     const apiData = { id: 1 };
     api.put.mockResolvedValueOnce({ data: { data: apiData } });
