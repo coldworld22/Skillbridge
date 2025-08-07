@@ -1,13 +1,7 @@
 // pages/website/books/index.js
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import {
-  FaSearch,
-  FaFilter,
-  FaArrowUp,
-  FaPlus,
-  FaRegTimesCircle,
-} from "react-icons/fa";
+import { FaSearch, FaFilter, FaArrowUp } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import BookCard from "@/components/books/BookCard";
@@ -19,7 +13,6 @@ export default function BooksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("default");
-  const [visibleCount, setVisibleCount] = useState(6);
   const [searchQuery, setSearchQuery] = useState("");
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [filters, setFilters] = useState({
@@ -30,7 +23,23 @@ export default function BooksPage() {
     license: "",
     tags: [],
   });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setBooks([]);
+    setPage(1);
+    setHasMore(true);
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    setBooks([]);
+    setPage(1);
+    setHasMore(true);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +51,9 @@ export default function BooksPage() {
 
   const handleFilterChange = (newFilters) => {
     setFilters({ ...filters, ...newFilters });
-    setVisibleCount(6);
+    setBooks([]);
+    setPage(1);
+    setHasMore(true);
   };
 
   const resetFilters = () => {
@@ -54,78 +65,49 @@ export default function BooksPage() {
       license: "",
       tags: [],
     });
+    setBooks([]);
+    setPage(1);
+    setHasMore(true);
   };
 
   useEffect(() => {
-    const loadBooks = async () => {
+    const load = async () => {
       try {
-        const { books: data } = await fetchBooks();
-        setBooks(data);
+        setLoading(true);
+        const { books: data } = await fetchBooks({
+          page,
+          perPage: 6,
+          filters: { ...filters, search: searchQuery },
+          sort: sortBy !== "default" ? { sortBy } : {},
+        });
+        setBooks((prev) => (page === 1 ? data : [...prev, ...data]));
+        setHasMore(data.length === 6);
       } catch (err) {
         console.error(err);
-        setError("❌ Failed to load books. Please try again later.");
+        if (page === 1) {
+          setError("❌ Failed to load books. Please try again later.");
+        }
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
-    loadBooks();
-  }, []);
-
-  const filteredBooks = books.filter((book) => {
-    const matchCategory =
-      !filters.categories.length ||
-      filters.categories.includes(book.category_name);
-    const matchLevel =
-      !filters.levels.length || filters.levels.includes(book.level);
-    const matchPrice =
-      !filters.price ||
-      !book.is_paid ||
-      (book.price != null && Number(book.price) <= Number(filters.price));
-    const matchLanguage =
-      !filters.language || filters.language === book.language;
-    const matchLicense =
-      !filters.license || filters.license === book.license_type;
-    const matchTags =
-      !filters.tags.length ||
-      filters.tags.every((tag) => book.tags?.includes(tag));
-    const matchSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (book.author || "").toLowerCase().includes(searchQuery.toLowerCase());
-
-    return (
-      matchCategory &&
-      matchLevel &&
-      matchPrice &&
-      matchLanguage &&
-      matchLicense &&
-      matchTags &&
-      matchSearch
-    );
-  });
-
-  const sortedBooks = [...filteredBooks].sort((a, b) => {
-    if (sortBy === "price") return (a.price || 0) - (b.price || 0);
-    if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
-    if (sortBy === "newest") return new Date(b.created_at) - new Date(a.created_at);
-    return 0;
-  });
-
-  const visibleBooks = sortedBooks.slice(0, visibleCount);
+    load();
+  }, [page, filters, sortBy, searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
-      const target = entries[0];
-      if (target.isIntersecting) {
-        setVisibleCount((prev) => Math.min(prev + 6, sortedBooks.length));
+      if (entries[0].isIntersecting && hasMore && !loading) {
+        setPage((prev) => prev + 1);
       }
     });
     if (loader.current) observer.observe(loader.current);
     return () => {
       if (loader.current) observer.unobserve(loader.current);
     };
-  }, [loader, sortedBooks.length]);
+  }, [hasMore, loading]);
 
-  if (loading) {
+  if (loading && books.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center text-yellow-400">
         ⏳ Loading books...
@@ -133,7 +115,7 @@ export default function BooksPage() {
     );
   }
 
-  if (error) {
+  if (error && books.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
         {error}
@@ -169,7 +151,7 @@ export default function BooksPage() {
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               placeholder="Search books..."
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white"
             />
@@ -218,7 +200,7 @@ export default function BooksPage() {
                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   placeholder="Search by title or author..."
                   className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white"
                 />
@@ -228,7 +210,7 @@ export default function BooksPage() {
                 <span className="text-gray-400">Sort by:</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={handleSortChange}
                   className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2"
                 >
                   <option value="default">Default</option>
@@ -240,14 +222,18 @@ export default function BooksPage() {
             </div>
 
             {/* Book Grid */}
-            {visibleBooks.length === 0 ? (
+            {books.length === 0 && !loading ? (
               <p className="text-gray-400">No books found with selected filters.</p>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleBooks.map((book) => (
+                {books.map((book) => (
                   <BookCard key={book.id} book={book} />
                 ))}
               </div>
+            )}
+
+            {loading && books.length > 0 && (
+              <p className="text-center text-gray-400 mt-4">Loading...</p>
             )}
 
             <div ref={loader} />
