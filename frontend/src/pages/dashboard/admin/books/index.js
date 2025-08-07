@@ -16,7 +16,8 @@ import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 import debounce from "lodash/debounce";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
 const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
@@ -251,21 +252,15 @@ function AdminBooksPage() {
   };
 
   const toggleBookStatus = async (bookId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
-    setBooks(prev =>
-      prev.map(book =>
-        book.id === bookId ? { ...book, status: newStatus } : book
-      )
-    );
+    const isActive = ["active", "approved"].includes(currentStatus);
+    const newStatus = isActive ? "inactive" : "active";
     try {
-      await updateBookStatus(bookId, newStatus);
+      const updated = await updateBookStatus(bookId, newStatus);
+      setBooks(prev =>
+        prev.map(book => (book.id === bookId ? updated : book))
+      );
       toast.success(t("Status updated"));
     } catch (err) {
-      setBooks(prev =>
-        prev.map(book =>
-          book.id === bookId ? { ...book, status: currentStatus } : book
-        )
-      );
       toast.error(t("Failed to update status"));
     }
   };
@@ -724,8 +719,7 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  book.cover_image_url ||
-                  buildUrl(book.cover_image) ||
+                  buildUrl(book.cover_image_url || book.cover_image) ||
                   "/images/default-book-cover.jpg";
                 return (
                   <div
@@ -751,15 +745,19 @@ function AdminBooksPage() {
                       />
                       <div className="absolute top-3 right-3">
                         <Switch
-                          checked={book.status === "active"}
+                          checked={["active", "approved"].includes(book.status)}
                           onChange={() => toggleBookStatus(book.id, book.status)}
                           className={`${
-                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                            ["active", "approved"].includes(book.status)
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-200'
                           } relative inline-flex h-6 w-11 items-center rounded-full`}
                         >
                           <span
                             className={`${
-                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                              ["active", "approved"].includes(book.status)
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
                             } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                           />
                         </Switch>

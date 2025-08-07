@@ -106,4 +106,9 @@ exports.updateBook = async (id, data) => {
   return row;
 };
 
+exports.updateBookStatus = async (id, status) => {
+  const [row] = await db("books").where({ id }).update({ status }).returning("*");
+  return row;
+};
+
 exports.deleteBook = (id) => db("books").where({ id }).del();
