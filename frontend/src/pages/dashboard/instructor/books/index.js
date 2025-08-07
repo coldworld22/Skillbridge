@@ -43,6 +43,7 @@ function InstructorBooksPage() {
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
@@ -114,6 +115,7 @@ function InstructorBooksPage() {
         setLanguages(langs);
       } catch (err) {
         toast.error(t("Failed to load data"));
+        setError(t("Failed to load data"));
       }
     };
     loadCategories();
@@ -134,6 +136,7 @@ function InstructorBooksPage() {
     const loadBooks = async () => {
       try {
         setLoading(true);
+        setError(null);
         const { books: list, meta } = await fetchInstructorBooks({
           page,
           perPage,
@@ -143,8 +146,10 @@ function InstructorBooksPage() {
         setBooks(list);
         setMeta(meta);
       } catch (err) {
-        toast.error(t("Failed to load data"));
+        const message = t("Failed to load data");
+        toast.error(message);
         console.error("Error loading:", err);
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -290,7 +295,7 @@ function InstructorBooksPage() {
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
 
   return (
-    <InstructorLayout>
+    <>
       <section className="py-8 px-4 max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
@@ -915,11 +920,17 @@ function InstructorBooksPage() {
         onClose={closeConfirmModal}
         onConfirm={confirmModal.onConfirm}
       />
-    </InstructorLayout>
+    </>
   );
 };
 
-export default withAuthProtection(InstructorBooksPage, ["instructor"]);
+const ProtectedInstructorBooksPage = withAuthProtection(InstructorBooksPage, ["instructor"]);
+
+ProtectedInstructorBooksPage.getLayout = (page) => (
+  <InstructorLayout>{page}</InstructorLayout>
+);
+
+export default ProtectedInstructorBooksPage;
 
 export async function getStaticProps({ locale }) {
   return {
