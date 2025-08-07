@@ -10,6 +10,7 @@ jest.mock('../src/modules/books/book.service', () => ({
   clearBookTags: jest.fn(),
   getBookTags: jest.fn(),
   updateBookStatus: jest.fn(),
+  getInstructorBookAnalytics: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({

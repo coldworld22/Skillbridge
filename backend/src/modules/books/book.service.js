@@ -114,3 +114,36 @@ exports.updateBookStatus = async (id, status) => {
 };
 
 exports.deleteBook = (id) => db("books").where({ id }).del();
+
+exports.getInstructorBookAnalytics = async (instructorId) => {
+  const totalSalesRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .count("* as totalSales")
+    .first();
+
+  const totalRevenueRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .sum("p.price_paid as totalRevenue")
+    .first();
+
+  const topBooks = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .select("b.id", "b.title")
+    .count("* as sales")
+    .groupBy("b.id", "b.title")
+    .orderBy("sales", "desc")
+    .limit(5);
+
+  return {
+    totalSales: Number(totalSalesRow?.totalSales || 0),
+    totalRevenue: Number(totalRevenueRow?.totalRevenue || 0),
+    topBooks: topBooks.map((b) => ({
+      id: b.id,
+      title: b.title,
+      sales: Number(b.sales),
+    })),
+  };
+};
