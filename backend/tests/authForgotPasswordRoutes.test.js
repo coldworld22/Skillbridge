@@ -31,7 +31,7 @@ describe('POST /api/auth/forgot-password', () => {
       .post('/api/auth/forgot-password')
       .send({ email: 'test@example.com' });
     expect(res.status).toBe(200);
-    expect(service.generateOtp).toHaveBeenCalledWith('test@example.com');
+    expect(service.generateOtp).toHaveBeenCalledWith('test@example.com', undefined);
     expect(res.body.message).toBeDefined();
   });
 

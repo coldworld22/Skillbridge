@@ -35,11 +35,11 @@ export const registerUser = async (payload) => {
 /**
  * 📧 Request OTP to reset password (step 1).
  * 
- * @param {string} email - Email to send OTP to
+ * @param {{email: string, via?: string}} payload
  * @returns {Promise<{ message: string }>}
  */
-export const requestPasswordReset = async (email) => {
-  const res = await api.post("/auth/forgot-password", { email });
+export const requestPasswordReset = async ({ email, via = "email" }) => {
+  const res = await api.post("/auth/forgot-password", { email, via });
   return res.data;
 };
 
