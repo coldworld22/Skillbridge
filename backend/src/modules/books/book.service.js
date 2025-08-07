@@ -16,6 +16,7 @@ exports.listBooks = async (params = {}) => {
     language,
     tags = [],
     sortBy = "newest",
+    instructorId,
   } = params;
 
   const query = db("books as b");
@@ -41,6 +42,7 @@ exports.listBooks = async (params = {}) => {
         .whereIn("t.name", tagArr);
     });
   }
+  if (instructorId) query.where("b.instructor_id", instructorId);
 
   switch (sortBy) {
     case "oldest":
