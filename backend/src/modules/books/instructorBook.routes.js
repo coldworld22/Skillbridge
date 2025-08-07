@@ -4,6 +4,7 @@ const { verifyToken, isInstructorOrAdmin } = require("../../middleware/auth/auth
 
 router.use(verifyToken, isInstructorOrAdmin);
 
+router.get("/analytics", controller.getInstructorBookAnalytics);
 router.get("/", controller.listInstructorBooks);
 
 module.exports = router;
