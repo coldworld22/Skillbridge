@@ -48,7 +48,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
     .map((m) => m.user_id)
     .filter((uid) => uid !== req.user.id);
   const note = `New message in group "${group.name}" from ${req.user.full_name}`;
-  await Promise.all(
+  const notifResults = await Promise.allSettled(
     recipients.map((uid) =>
       notificationService.createNotification({
         user_id: uid,
@@ -57,7 +57,16 @@ exports.sendMessage = catchAsync(async (req, res) => {
       })
     )
   );
-  await Promise.all(
+  notifResults.forEach((res, idx) => {
+    if (res.status === "rejected") {
+      console.error(
+        `Failed to create notification for user ${recipients[idx]}:`,
+        res.reason,
+      );
+    }
+  });
+
+  const msgResults = await Promise.allSettled(
     recipients.map((uid) =>
       messageService.createMessage({
         sender_id: req.user.id,
@@ -66,6 +75,14 @@ exports.sendMessage = catchAsync(async (req, res) => {
       })
     )
   );
+  msgResults.forEach((res, idx) => {
+    if (res.status === "rejected") {
+      console.error(
+        `Failed to create private message for user ${recipients[idx]}:`,
+        res.reason,
+      );
+    }
+  });
 
   sendSuccess(res, full, "Message sent");
 });
