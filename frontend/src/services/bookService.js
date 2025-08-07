@@ -1,8 +1,8 @@
 import api from "@/services/api/api";
 
-// Strip a trailing "/api" segment so media URLs resolve correctly
+// Strip any trailing "/api" segment (with optional subpaths) so media URLs resolve correctly
 const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
+const API_BASE = rawApiBase.replace(/\/api(?:\/.*)?$/, "");
 
 export const buildUrl = (path) => {
   if (!path) return null;
