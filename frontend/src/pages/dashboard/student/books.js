@@ -1,11 +1,14 @@
-// components/books/BookCard.js
+import { useEffect, useState } from "react";
 import { FiDownload, FiEye, FiStar, FiHeart } from "react-icons/fi";
+import { fetchLibrary } from "@/services/libraryService";
 
-export default function BookCard({ book }) {
+function BookCard({ book }) {
+  const cover = book.coverUrl || "/images/default-book-cover.jpg";
+
   return (
     <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
       <img
-        src={book.coverUrl}
+        src={cover}
         alt={book.title}
         className="w-full h-48 object-cover rounded-lg mb-4"
       />
@@ -58,6 +61,30 @@ export default function BookCard({ book }) {
           <FiHeart />
         </button>
       </div>
+    </div>
+  );
+}
+
+export default function BooksPage() {
+  const [books, setBooks] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchLibrary();
+        setBooks(data);
+      } catch (e) {
+        console.error("Failed to load books", e);
+      }
+    };
+    load();
+  }, []);
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {books.map((book) => (
+        <BookCard key={book.id} book={book} />
+      ))}
     </div>
   );
 }
