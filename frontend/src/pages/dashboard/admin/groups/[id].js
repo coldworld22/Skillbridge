@@ -87,12 +87,15 @@ export default function AdminGroupDetailsPage() {
   const bulkRemove = async () => {
     if (!group) return;
     if (confirm('Are you sure you want to remove the selected members?')) {
-      for (const mid of selectedMembers) {
-        try {
-          await groupService.manageMember(group.id, mid, 'kick');
-        } catch {
-          // ignore errors per member
-        }
+      try {
+        await Promise.all(
+          selectedMembers.map((mid) =>
+            groupService.manageMember(group.id, mid, 'kick')
+          )
+        );
+      } catch (error) {
+        console.error('Bulk removal failed:', error);
+        alert('Some members could not be removed.');
       }
       setMembers(members.filter((m) => !selectedMembers.includes(m.id)));
       setSelectedMembers([]);
