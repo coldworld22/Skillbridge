@@ -17,6 +17,7 @@ import {
   FaFolderOpen,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
+import { toast } from 'react-toastify';
 
 // ...imports (same as before)...
 
@@ -400,8 +401,9 @@ export default function AdminGroupDetailsPage() {
                                 const next = requests.filter((r) => r.id !== req.id);
                                 setRequests(next);
                                 setPendingCount(next.length);
-                              } catch {
-                                // ignore
+                              } catch (err) {
+                                console.error('Failed to approve request', err);
+                                toast.error('Failed to approve request');
                               }
                             }
                           }}
@@ -417,8 +419,9 @@ export default function AdminGroupDetailsPage() {
                                 const next = requests.filter((r) => r.id !== req.id);
                                 setRequests(next);
                                 setPendingCount(next.length);
-                              } catch {
-                                // ignore
+                              } catch (err) {
+                                console.error('Failed to reject request', err);
+                                toast.error('Failed to reject request');
                               }
                             }
                           }}
