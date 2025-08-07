@@ -77,4 +77,16 @@ describe("bookService", () => {
     );
     expect(book).toEqual({ id: 2, cover_image_url: null, pdf_url: null });
   });
+
+  it("buildUrl strips versioned API base paths", () => {
+    const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.isolateModules(() => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = "https://example.com/api/v1";
+      const { buildUrl } = require("../../services/bookService");
+      expect(buildUrl("/uploads/test.jpg")).toBe(
+        "https://example.com/uploads/test.jpg"
+      );
+    });
+    process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
+  });
 });
