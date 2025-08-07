@@ -1010,7 +1010,7 @@
   },
   "booksCreate": {
     "title": "Ajouter un nouveau livre",
-    "success": "Livre soumis pour examen",
+    "success": "Merci ! Votre livre a été ajouté avec succès et est en cours de révision. Une fois approuvé, vous le verrez publié dans la librairie",
     "error": "Échec de la création du livre",
     "save": "Enregistrer",
     "bookTitleLabel": "Titre du livre",

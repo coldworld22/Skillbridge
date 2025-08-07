@@ -1087,6 +1087,7 @@
     "update_failed": "No se pudo actualizar el anuncio"
   },
   "booksCreate": {
+    "success": "¡Gracias! Tu libro se añadió correctamente y está en revisión. Después de ser aprobado, lo verás publicado en la librería",
     "licenseTypeLabel": "Tipo de licencia",
     "selectLicenseType": "Selecciona el tipo de licencia",
     "licenseTypeRequired": "El tipo de licencia es obligatorio",
