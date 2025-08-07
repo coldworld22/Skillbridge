@@ -4,7 +4,7 @@ import api from "@/services/api/api";
 const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
 
-const buildUrl = (path) => {
+export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
   const uploadsIndex = path.indexOf("/uploads");
