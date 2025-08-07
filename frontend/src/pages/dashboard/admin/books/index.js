@@ -15,6 +15,8 @@ import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, Fi
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 import debounce from "lodash/debounce";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 
@@ -48,6 +50,9 @@ function AdminBooksPage() {
     message: "",
     onConfirm: null,
   });
+
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
   const openConfirmModal = ({ title, message, onConfirm }) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm });
@@ -202,6 +207,7 @@ function AdminBooksPage() {
           setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
           setSelectedBooks([]);
           toast.success(t("Books deleted successfully"));
+          await Promise.all([fetchNotifications(), fetchMessages()]);
 
           if (remaining.length === 0 && page > 1) {
             setPage((p) => p - 1);
@@ -232,6 +238,7 @@ function AdminBooksPage() {
           toast.success(t("Status updated"));
           setSelectedBooks([]);
           setBulkStatus("");
+          await Promise.all([fetchNotifications(), fetchMessages()]);
         } catch (err) {
           toast.error(t("Failed to update status"));
         }
@@ -248,6 +255,7 @@ function AdminBooksPage() {
         prev.map(book => (book.id === bookId ? updated : book))
       );
       toast.success(t("Status updated"));
+      await Promise.all([fetchNotifications(), fetchMessages()]);
     } catch (err) {
       toast.error(t("Failed to update status"));
     }

@@ -7,6 +7,7 @@ const slugify = require("slugify");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
+const userModel = require("../users/user.model");
 
 exports.createBook = catchAsync(async (req, res) => {
   const { tags: rawTags, ...body } = req.body || {};
@@ -66,26 +67,55 @@ exports.createBook = catchAsync(async (req, res) => {
     book.tags = [];
   }
 
-  const message =
+  const userMessage =
     "Your book was submitted successfully and is under review.";
+  const admins = await userModel.findAdmins();
+  const adminMessage =
+    `Instructor ${req.user.full_name || "Instructor"} submitted a new book "${
+      book.title
+    }" that is awaiting your review.`;
+
+  const senderAdmin = admins[0];
+
   await Promise.all([
     notificationService.createNotification({
       user_id: req.user.id,
       type: "book_submitted",
-      message,
+      message: userMessage,
     }),
     messageService.createMessage({
-      sender_id: req.user.id,
+      sender_id: senderAdmin ? senderAdmin.id : req.user.id,
       receiver_id: req.user.id,
-      message,
+      message: userMessage,
     }),
     req.user.email
       ? mailService.sendMail({
           to: req.user.email,
           subject: "Book submitted for review",
-          html: `<p>${message} We will notify you when it is published.</p>`,
+          html: `<p>${userMessage} We will notify you when it is published.</p>`,
         })
       : Promise.resolve(),
+    ...admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "new_book",
+          message: adminMessage,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: admin.id,
+          message: adminMessage,
+        }),
+        admin.email
+          ? mailService.sendMail({
+              to: admin.email,
+              subject: "New book submitted",
+              html: `<p>${adminMessage}</p>`,
+            })
+          : Promise.resolve(),
+      ])
+    ),
   ]);
 
   sendSuccess(res, book, "Book submitted for review");
@@ -210,6 +240,60 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
   if (!book) {
     throw new AppError("Book not found", 404);
   }
+
+  const [admins, instructor] = await Promise.all([
+    userModel.findAdmins(),
+    userModel.findById(book.instructor_id),
+  ]);
+
+  const instructorMessage = `Your book "${book.title}" status was updated to ${status}.`;
+  const adminMessage = `Book "${book.title}" status changed to ${status}.`;
+
+  await Promise.all([
+    instructor
+      ? Promise.all([
+          notificationService.createNotification({
+            user_id: instructor.id,
+            type: "book_status",
+            message: instructorMessage,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: instructor.id,
+            message: instructorMessage,
+          }),
+          instructor.email
+            ? mailService.sendMail({
+                to: instructor.email,
+                subject: `Book status updated`,
+                html: `<p>${instructorMessage}</p>`,
+              })
+            : Promise.resolve(),
+        ])
+      : Promise.resolve(),
+    ...admins.map((admin) =>
+      Promise.all([
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "book_status",
+          message: adminMessage,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: admin.id,
+          message: adminMessage,
+        }),
+        admin.email
+          ? mailService.sendMail({
+              to: admin.email,
+              subject: "Book status updated",
+              html: `<p>${adminMessage}</p>`,
+            })
+          : Promise.resolve(),
+      ])
+    ),
+  ]);
+
   sendSuccess(res, book, "Book status updated");
 });
 

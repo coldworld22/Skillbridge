@@ -17,6 +17,11 @@ jest.mock('../src/services/mailService', () => ({
   sendMail: jest.fn(),
 }));
 
+jest.mock('../src/modules/users/user.model', () => ({
+  findAdmins: jest.fn(() => []),
+  findById: jest.fn(),
+}));
+
 jest.mock('../src/modules/books/bookTag.service', () => ({
   findByName: jest.fn(),
   createTag: jest.fn(),
