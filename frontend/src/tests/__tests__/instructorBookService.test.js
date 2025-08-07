@@ -21,7 +21,8 @@ beforeEach(() => {
 describe("instructor bookService", () => {
   it("fetches instructor books", async () => {
     const apiData = [{ id: 1 }];
-    api.get.mockResolvedValueOnce({ data: { data: apiData } });
+    const meta = { page: 1 };
+    api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
     const res = await fetchInstructorBooks();
     expect(api.get).toHaveBeenCalledWith("/instructor/books");
     expect(res).toEqual({ books: apiData, meta: {} });
