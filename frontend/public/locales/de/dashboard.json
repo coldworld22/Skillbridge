@@ -1087,6 +1087,7 @@
     "update_failed": "Anzeige konnte nicht aktualisiert werden"
   },
   "booksCreate": {
+    "success": "Danke! Dein Buch wurde erfolgreich hinzugefügt und wird nun überprüft. Nach der Freigabe wird es im Buchladen veröffentlicht",
     "licenseTypeLabel": "Lizenztyp",
     "selectLicenseType": "Lizenztyp auswählen",
     "licenseTypeRequired": "Lizenztyp ist erforderlich",
