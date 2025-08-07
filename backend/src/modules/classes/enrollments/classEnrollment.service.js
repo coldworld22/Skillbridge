@@ -37,6 +37,7 @@ exports.getByClass = async (class_id) => {
       "u.id",
       "u.full_name",
       "u.email",
+      "u.phone",
       "ce.status",
       "ce.enrolled_at"
     )

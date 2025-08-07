@@ -14,6 +14,7 @@ const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
+const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
 require("dotenv").config();
 
@@ -304,6 +305,7 @@ async function startServer() {
       console.log(`✅ Server running on port ${PORT}`);
     });
     startLessonReminderJob();
+    startClassReminderJob();
     startCartReminderJob();
     startCleanupJob();
   } catch (err) {
