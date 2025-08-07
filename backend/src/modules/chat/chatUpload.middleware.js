@@ -20,7 +20,9 @@ const fileFilter = (_req, file, cb) => {
   };
   const allowed = fileTypes[file.fieldname] || [];
   if (allowed.includes(file.mimetype)) return cb(null, true);
-  cb(new Error("Invalid file type"));
+  const err = new Error("Invalid file type");
+  err.status = 400;
+  cb(err);
 };
 
 const upload = multer({
