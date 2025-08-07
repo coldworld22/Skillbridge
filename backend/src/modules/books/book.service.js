@@ -16,6 +16,7 @@ exports.listBooks = async (params = {}) => {
     language,
     tags = [],
     sortBy = "newest",
+    instructorId,
   } = params;
 
   const query = db("books as b");
@@ -32,6 +33,7 @@ exports.listBooks = async (params = {}) => {
   if (status) query.where("b.status", status);
   if (priceRange) query.where("b.price", "<=", priceRange);
   if (language) query.where("b.language", language);
+  if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
   if (tagArr.length) {
     query.whereIn("b.id", function () {
