@@ -20,16 +20,31 @@ export const buildUrl = (path) => {
   return `${base}${normalized}`;
 };
 
-const formatBook = (book) => ({
-  ...book,
-  cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
-  pdf_url: buildUrl(book?.pdf_url),
-  preview_pages: Array.isArray(book?.preview_pages)
-    ? book.preview_pages.map((p) => buildUrl(p))
-    : typeof book?.preview_pages === "string" && book.preview_pages
-    ? JSON.parse(book.preview_pages).map((p) => buildUrl(p))
-    : [],
-});
+const formatBook = (book) => {
+  let previewPages = [];
+  if (Array.isArray(book?.preview_pages)) {
+    previewPages = book.preview_pages.map((p) => buildUrl(p));
+  } else if (typeof book?.preview_pages === "string" && book.preview_pages) {
+    try {
+      previewPages = JSON.parse(book.preview_pages).map((p) => buildUrl(p));
+    } catch {
+      previewPages = [];
+    }
+  }
+
+  const formatted = {
+    ...book,
+    cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
+    pdf_url: buildUrl(book?.pdf_url),
+    preview_pages: previewPages,
+  };
+
+  if (book?.price !== undefined && book?.price !== null) {
+    formatted.price = Number(book.price);
+  }
+
+  return formatted;
+};
 
 export const fetchBooks = async ({
   page,
@@ -53,8 +68,16 @@ export const fetchBooks = async ({
 
 export const fetchBook = async (id, { admin = false } = {}) => {
   const endpoint = admin ? `/books/admin/${id}` : `/books/${id}`;
-  const { data } = await api.get(endpoint);
-  return data?.data ? formatBook(data.data) : null;
+  try {
+    const { data } = await api.get(endpoint);
+    return data?.data ? formatBook(data.data) : null;
+  } catch (err) {
+    if (admin) {
+      const { data } = await api.get(`/books/${id}`);
+      return data?.data ? formatBook(data.data) : null;
+    }
+    throw err;
+  }
 };
 
 export const deleteBook = async (id) => {
