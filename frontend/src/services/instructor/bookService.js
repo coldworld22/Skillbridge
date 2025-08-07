@@ -5,4 +5,9 @@ export const fetchInstructorBooks = async () => {
   return data?.data || [];
 };
 
-export default { fetchInstructorBooks };
+export const fetchBookAnalytics = async () => {
+  const { data } = await api.get("/instructor/books/analytics");
+  return data?.data ?? {};
+};
+
+export default { fetchInstructorBooks, fetchBookAnalytics };
