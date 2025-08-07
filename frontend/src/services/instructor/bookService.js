@@ -22,17 +22,9 @@ export const fetchInstructorBooks = async () => {
   return data?.data || [];
 };
 
-export const fetchBook = async (id) => {
-  const { data } = await api.get(`/books/${id}`);
-  return data?.data ? formatBook(data.data) : null;
+export const fetchBookAnalytics = async () => {
+  const { data } = await api.get("/instructor/books/analytics");
+  return data?.data ?? {};
 };
 
-export const updateBook = async (id, formData, onUploadProgress) => {
-  const { data } = await api.put(`/books/${id}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    onUploadProgress,
-  });
-  return data?.data ? formatBook(data.data) : null;
-};
-
-export default { fetchInstructorBooks, fetchBook, updateBook };
+export default { fetchInstructorBooks, fetchBookAnalytics };
