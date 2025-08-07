@@ -48,6 +48,14 @@ export const deleteBook = async (id) => {
   return true;
 };
 
+export const createBook = async (formData, onUploadProgress) => {
+  const { data } = await api.post("/books", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress,
+  });
+  return data?.data ? formatBook(data.data) : null;
+};
+
 export const updateBook = async (id, formData, onUploadProgress) => {
   const { data } = await api.put(`/books/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -65,6 +73,7 @@ export default {
   fetchBooks,
   fetchBook,
   deleteBook,
+  createBook,
   updateBook,
   updateBookStatus,
 };
