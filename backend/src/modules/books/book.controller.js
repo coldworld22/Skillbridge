@@ -26,11 +26,14 @@ exports.createBook = catchAsync(async (req, res) => {
       body.allow_preview === true ||
       body.allow_preview === "true",
   };
-  if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
-  if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
+  if (req.files?.cover_image?.[0])
+    data.cover_image_url =
+      "/uploads/books/" + req.files.cover_image[0].filename;
+  if (req.files?.book_file?.[0])
+    data.pdf_url = "/uploads/books/" + req.files.book_file[0].filename;
   if (req.files?.preview_pages?.length) {
     data.preview_pages = JSON.stringify(
-      req.files.preview_pages.map((f) => f.path)
+      req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
     );
   }
 
@@ -116,11 +119,14 @@ exports.updateBook = catchAsync(async (req, res) => {
 
   const { tags: rawTags, ...body } = req.body || {};
   const data = { ...body };
-  if (req.files?.cover_image?.[0]) data.cover_image_url = req.files.cover_image[0].path;
-  if (req.files?.book_file?.[0]) data.pdf_url = req.files.book_file[0].path;
+  if (req.files?.cover_image?.[0])
+    data.cover_image_url =
+      "/uploads/books/" + req.files.cover_image[0].filename;
+  if (req.files?.book_file?.[0])
+    data.pdf_url = "/uploads/books/" + req.files.book_file[0].filename;
   if (req.files?.preview_pages?.length) {
     data.preview_pages = JSON.stringify(
-      req.files.preview_pages.map((f) => f.path)
+      req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
     );
   }
   if (data.allow_preview !== undefined) {
