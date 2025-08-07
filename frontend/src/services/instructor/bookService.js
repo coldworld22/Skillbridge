@@ -50,15 +50,25 @@ export const deleteBook = async (id) => {
   return true;
 };
 
-export const fetchAnalytics = async (params = {}) => {
+// Fetch a single book by ID for the current instructor
+export const fetchBook = async (id) => {
+  const { data } = await api.get(`/books/${id}`);
+  return data?.data || null;
+};
+
+// Fetch aggregated analytics about the instructor's books
+export const fetchBookAnalytics = async (params = {}) => {
   const { data } = await api.get("/instructor/books/analytics", { params });
   return data?.data || [];
 };
 
-export default {
+const instructorBookService = {
   fetchInstructorBooks,
   createBook,
   updateBook,
   deleteBook,
-  fetchAnalytics,
+  fetchBook,
+  fetchBookAnalytics,
 };
+
+export default instructorBookService;
