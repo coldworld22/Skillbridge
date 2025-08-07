@@ -4,24 +4,35 @@ const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const AppError = require("../../utils/AppError");
 
-exports.createMessage = async ({
-  sender_id,
-  receiver_id,
-  message,
-  booking_id,
-  type,
-}) => {
-  const [row] = await db("messages")
-    .insert({ sender_id, receiver_id, message, booking_id, type })
-    .returning("*");
-  try {
-    if (global.io && global.userSockets?.[receiver_id]) {
-      global.io.to(global.userSockets[receiver_id]).emit("message-created");
+exports.createMessage = async (
+  { sender_id, receiver_id, message, booking_id, type },
+  trx = null,
+  emit = true,
+) => {
+  const run = async (transaction) => {
+    const [row] = await transaction("messages")
+      .insert({ sender_id, receiver_id, message, booking_id, type })
+      .returning("*");
+    try {
+      if (emit && global.io && global.userSockets?.[receiver_id]) {
+        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      }
+    } catch (err) {
+      console.error("Failed to emit message-created event", err.message);
+      throw err;
     }
+    return row;
+  };
+
+  try {
+    if (trx) {
+      return await run(trx);
+    }
+    return await db.transaction(async (transaction) => run(transaction));
   } catch (err) {
-    console.error("Failed to emit message-created event", err);
+    console.error("Failed to create message", err.message);
+    throw err;
   }
-  return row;
 };
 
 exports.getUserMessages = async (userId) => {
@@ -63,27 +74,71 @@ exports.deleteMessage = async (userId, id) => {
   return row;
 };
 
-exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) => {
-  const user = await db("users").select("email").where({ id: receiver_id }).first();
-  if (!user) throw new AppError("User not found", 404);
-  try {
-    await mailService.sendMail({ to: user.email, subject, html: message });
-  } catch (err) {
-    throw new AppError("Failed to send email", 502);
-  }
-  return exports.createMessage({ sender_id, receiver_id, message });
-};
+exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
+  db.transaction(async (trx) => {
+    const user = await trx("users")
+      .select("email")
+      .where({ id: receiver_id })
+      .first();
+    if (!user) throw new AppError("User not found", 404);
 
-exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) => {
-  const user = await db("users").select("phone").where({ id: receiver_id }).first();
-  if (!user || !user.phone) throw new AppError("User phone not found", 404);
-  try {
-    await whatsappService.sendWhatsApp({ to: user.phone, message });
-  } catch (err) {
-    throw new AppError("Failed to send WhatsApp message", 502);
-  }
-  return exports.createMessage({ sender_id, receiver_id, message });
-};
+    const msg = await exports.createMessage(
+      { sender_id, receiver_id, message },
+      trx,
+      false,
+    );
+
+    try {
+      await mailService.sendMail({ to: user.email, subject, html: message });
+    } catch (err) {
+      console.error("Failed to send email", err.message);
+      throw new AppError("Failed to send email", 502);
+    }
+
+    try {
+      if (global.io && global.userSockets?.[receiver_id]) {
+        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      }
+    } catch (err) {
+      console.error("Failed to emit message-created event", err.message);
+      throw err;
+    }
+
+    return msg;
+  });
+
+exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
+  db.transaction(async (trx) => {
+    const user = await trx("users")
+      .select("phone")
+      .where({ id: receiver_id })
+      .first();
+    if (!user || !user.phone) throw new AppError("User phone not found", 404);
+
+    const msg = await exports.createMessage(
+      { sender_id, receiver_id, message },
+      trx,
+      false,
+    );
+
+    try {
+      await whatsappService.sendWhatsApp({ to: user.phone, message });
+    } catch (err) {
+      console.error("Failed to send WhatsApp message", err.message);
+      throw new AppError("Failed to send WhatsApp message", 502);
+    }
+
+    try {
+      if (global.io && global.userSockets?.[receiver_id]) {
+        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      }
+    } catch (err) {
+      console.error("Failed to emit message-created event", err.message);
+      throw err;
+    }
+
+    return msg;
+  });
 
 exports.startVideoCall = async ({ sender_id, receiver_id }) => {
   const sender = await db("users")
