@@ -33,7 +33,6 @@ export default function BookDetailPage() {
     load();
   }, [id]);
 
-
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100">
       <Navbar />
@@ -45,6 +44,7 @@ export default function BookDetailPage() {
         >
           ← Back to books
         </button>
+
         {loading && !error && (
           <div className="min-h-[50vh] flex items-center justify-center text-yellow-400">
             Loading...
@@ -73,7 +73,7 @@ export default function BookDetailPage() {
                 <p className="text-yellow-400 mb-4">by {book.author}</p>
               )}
               {book.category_name && (
-                <p className="text-sm uppercase tracking-wide text-gray-400 mb-4">
+                <p className="text-sm uppercase tracking-wide text-gray-400 mb-2">
                   {book.category_name}
                 </p>
               )}
@@ -83,18 +83,53 @@ export default function BookDetailPage() {
                 </p>
               )}
               <p className="mb-6">{book.description}</p>
+
               <p className="text-xl font-semibold mb-6">
                 {book.is_paid ? `$${book.price}` : "Free"}
               </p>
+
+              {/* CTA based on access & paid status */}
               {book.pdf_url && (
-                <a
-                  href={book.pdf_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
-                >
-                  {book.is_paid ? "Preview" : "Read Now"}
-                </a>
+                <>
+                  {book.is_paid ? (
+                    book.user_has_access ? (
+                      <a
+                        href={book.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+                      >
+                        Download Book
+                      </a>
+                    ) : (
+                      <div className="flex flex-wrap gap-4">
+                        <a
+                          href={book.preview_url || book.pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+                        >
+                          Preview
+                        </a>
+                        <button
+                          onClick={() => router.push(`/checkout/book/${book.id}`)}
+                          className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors"
+                        >
+                          Buy Now
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <a
+                      href={book.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+                    >
+                      Read Now
+                    </a>
+                  )}
+                </>
               )}
             </div>
           </div>
