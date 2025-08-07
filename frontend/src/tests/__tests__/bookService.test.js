@@ -31,7 +31,15 @@ describe("bookService", () => {
       params: { page: 2, perPage: 5, search: "test", sortBy: "title" },
     });
     expect(res).toEqual({
-      books: [{ id: 1, title: "A", cover_image_url: null, pdf_url: null }],
+      books: [
+        {
+          id: 1,
+          title: "A",
+          cover_image_url: null,
+          pdf_url: null,
+          preview_pages: [],
+        },
+      ],
       meta,
     });
   });
@@ -41,7 +49,13 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1);
     expect(api.get).toHaveBeenCalledWith("/books/1");
-    expect(book).toEqual({ id: 1, title: "A", cover_image_url: null, pdf_url: null });
+    expect(book).toEqual({
+      id: 1,
+      title: "A",
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: [],
+    });
   });
 
   it("fetches single book as admin", async () => {
@@ -49,7 +63,13 @@ describe("bookService", () => {
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(1, { admin: true });
     expect(api.get).toHaveBeenCalledWith("/books/admin/1");
-    expect(book).toEqual({ id: 1, title: "A", cover_image_url: null, pdf_url: null });
+    expect(book).toEqual({
+      id: 1,
+      title: "A",
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: [],
+    });
   });
 
   it("updates a book", async () => {
@@ -62,7 +82,12 @@ describe("bookService", () => {
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
-    expect(book).toEqual({ id: 1, cover_image_url: null, pdf_url: null });
+    expect(book).toEqual({
+      id: 1,
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: [],
+    });
   });
 
   it("creates a book", async () => {
@@ -75,7 +100,12 @@ describe("bookService", () => {
       formData,
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
-    expect(book).toEqual({ id: 2, cover_image_url: null, pdf_url: null });
+    expect(book).toEqual({
+      id: 2,
+      cover_image_url: null,
+      pdf_url: null,
+      preview_pages: [],
+    });
   });
 
   it("buildUrl strips versioned API base paths", () => {
