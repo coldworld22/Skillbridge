@@ -241,7 +241,8 @@ function AdminBooksPage() {
   };
 
   const toggleBookStatus = async (bookId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const isActive = ["active", "approved"].includes(currentStatus);
+    const newStatus = isActive ? "inactive" : "active";
     setBooks(prev =>
       prev.map(book =>
         book.id === bookId ? { ...book, status: newStatus } : book
@@ -740,15 +741,19 @@ function AdminBooksPage() {
                       />
                       <div className="absolute top-3 right-3">
                         <Switch
-                          checked={book.status === "active"}
+                          checked={["active", "approved"].includes(book.status)}
                           onChange={() => toggleBookStatus(book.id, book.status)}
                           className={`${
-                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                            ["active", "approved"].includes(book.status)
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-200'
                           } relative inline-flex h-6 w-11 items-center rounded-full`}
                         >
                           <span
                             className={`${
-                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                              ["active", "approved"].includes(book.status)
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
                             } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                           />
                         </Switch>

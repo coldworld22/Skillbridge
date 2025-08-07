@@ -1,6 +1,8 @@
 import api from "@/services/api/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+// Strip a trailing "/api" segment so media URLs resolve correctly
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const API_BASE = rawApiBase.replace(/\/api\/?$/, "");
 
 const buildUrl = (path) => {
   if (!path) return null;
@@ -66,7 +68,7 @@ export const updateBook = async (id, formData, onUploadProgress) => {
 
 export const updateBookStatus = async (id, status) => {
   const { data } = await api.patch(`/books/${id}/status`, { status });
-  return data?.data;
+  return data?.data ? formatBook(data.data) : null;
 };
 
 export default {
