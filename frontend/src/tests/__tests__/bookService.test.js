@@ -1,7 +1,16 @@
 import api from "../../services/api/api";
-import { fetchBooks, fetchBook, updateBook } from "../../services/bookService";
+import {
+  fetchBooks,
+  fetchBook,
+  updateBook,
+  createBook,
+} from "../../services/bookService";
 
-jest.mock("../../services/api/api", () => ({ get: jest.fn(), put: jest.fn() }));
+jest.mock("../../services/api/api", () => ({
+  get: jest.fn(),
+  put: jest.fn(),
+  post: jest.fn(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -54,5 +63,18 @@ describe("bookService", () => {
       expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
     );
     expect(book).toEqual({ id: 1, cover_image_url: null, pdf_url: null });
+  });
+
+  it("creates a book", async () => {
+    const apiData = { id: 2 };
+    api.post.mockResolvedValueOnce({ data: { data: apiData } });
+    const formData = new FormData();
+    const book = await createBook(formData);
+    expect(api.post).toHaveBeenCalledWith(
+      "/books",
+      formData,
+      expect.objectContaining({ headers: { "Content-Type": "multipart/form-data" } })
+    );
+    expect(book).toEqual({ id: 2, cover_image_url: null, pdf_url: null });
   });
 });

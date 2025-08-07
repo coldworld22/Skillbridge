@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import api from "@/services/api/api";
+import { createBook } from "@/services/bookService";
 import BookForm from "@/components/books/BookForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
@@ -13,6 +13,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
+import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 function AdminCreateBookPage() {
   const router = useRouter();
@@ -56,9 +57,10 @@ function AdminCreateBookPage() {
       return;
     }
 
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setFileError(t("validation.fileTooLarge", { size: "10MB" }));
+    if (file.size > MAX_IMAGE_SIZE) {
+      setFileError(
+        t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` })
+      );
       return;
     }
 
@@ -83,15 +85,12 @@ function AdminCreateBookPage() {
     }
     try {
       setProgress(0);
-      await api.post("/books", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (event.total) {
-            const progress = Math.round((event.loaded * 100) / event.total);
-            setProgress(progress);
-            setUploadProgress(progress);
-          }
-        },
+      await createBook(formData, (event) => {
+        if (event.total) {
+          const progress = Math.round((event.loaded * 100) / event.total);
+          setProgress(progress);
+          setUploadProgress(progress);
+        }
       });
 
       toast.success(t("booksCreate.success"));
@@ -204,7 +203,9 @@ function AdminCreateBookPage() {
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("booksCreate.imageRequirements", { size: "10MB" })}
+                        {t("booksCreate.imageRequirements", {
+                          size: `${MAX_IMAGE_SIZE_MB}MB`,
+                        })}
                       </p>
                     </div>
                   </div>
