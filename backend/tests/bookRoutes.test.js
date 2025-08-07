@@ -32,6 +32,11 @@ jest.mock('../src/modules/books/bookTag.service', () => ({
   searchTags: jest.fn(),
 }));
 
+jest.mock('../src/modules/users/user.model', () => ({
+  findAdmins: jest.fn(() => []),
+  findById: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: '1' };
@@ -44,6 +49,7 @@ const service = require('../src/modules/books/book.service');
 const routes = require('../src/modules/books/book.routes');
 const messageService = require('../src/modules/messages/messages.service');
 const notificationService = require('../src/modules/notifications/notifications.service');
+const userModel = require('../src/modules/users/user.model');
 
 const app = express();
 app.use(express.json());
@@ -95,6 +101,7 @@ describe('POST /api/books', () => {
   it('creates a book', async () => {
     const payload = { title: 'New' };
     service.createBook.mockResolvedValue({ id: '1', ...payload });
+    userModel.findAdmins.mockResolvedValue([]);
     const res = await request(app).post('/api/books').send(payload);
     expect(res.status).toBe(200);
     expect(service.createBook).toHaveBeenCalled();
@@ -133,8 +140,10 @@ describe('DELETE /api/books/:id', () => {
 
 describe('PATCH /api/books/:id/status', () => {
   it('updates book status', async () => {
-    const book = { id: '1', status: 'active' };
+    const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
     service.updateBookStatus.mockResolvedValue(book);
+    userModel.findAdmins.mockResolvedValue([]);
+    userModel.findById.mockResolvedValue({ id: '2', email: 'user@example.com' });
     const res = await request(app)
       .patch('/api/books/1/status')
       .send({ status: 'active' });
