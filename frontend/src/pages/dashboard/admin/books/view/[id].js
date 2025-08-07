@@ -3,7 +3,14 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchBook, deleteBook } from "@/services/bookService";
-import { FiArrowLeft, FiEdit, FiTrash2, FiFileText, FiEye } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiEdit,
+  FiTrash2,
+  FiFileText,
+  FiEye,
+  FiImage,
+} from "react-icons/fi";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -93,13 +100,17 @@ export default function AdminViewBookPage() {
 
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6">
-              {book.cover_image_url && (
+              {book.cover_image_url ? (
                 <div className="flex-shrink-0 w-full md:w-48 lg:w-56 h-64 md:h-auto">
                   <img
                     src={book.cover_image_url}
                     alt={book.title}
                     className="w-full h-full object-cover rounded-lg shadow-sm"
                   />
+                </div>
+              ) : (
+                <div className="flex-shrink-0 w-full md:w-48 lg:w-56 h-64 md:h-auto bg-gray-100 flex items-center justify-center rounded-lg shadow-sm">
+                  <FiImage className="h-16 w-16 text-gray-300" />
                 </div>
               )}
               <div className="flex-1 space-y-4">

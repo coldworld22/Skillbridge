@@ -53,8 +53,16 @@ export const fetchBooks = async ({
 
 export const fetchBook = async (id, { admin = false } = {}) => {
   const endpoint = admin ? `/books/admin/${id}` : `/books/${id}`;
-  const { data } = await api.get(endpoint);
-  return data?.data ? formatBook(data.data) : null;
+  try {
+    const { data } = await api.get(endpoint);
+    return data?.data ? formatBook(data.data) : null;
+  } catch (err) {
+    if (admin) {
+      const { data } = await api.get(`/books/${id}`);
+      return data?.data ? formatBook(data.data) : null;
+    }
+    throw err;
+  }
 };
 
 export const deleteBook = async (id) => {
