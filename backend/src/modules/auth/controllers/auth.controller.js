@@ -130,9 +130,9 @@ exports.logout = catchAsync(async (req, res) => {
  * @access Public
  */
 exports.requestReset = catchAsync(async (req, res) => {
-  const { email } = req.body;
+  const { email, via } = req.body;
   try {
-    await authService.generateOtp(email);
+    await authService.generateOtp(email, via);
   } catch (err) {
     // swallow errors to avoid user enumeration
   }

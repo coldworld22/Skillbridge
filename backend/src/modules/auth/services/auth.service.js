@@ -15,6 +15,7 @@ const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const smsService = require("../../../services/smsService");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -252,7 +253,7 @@ exports.generateCsrfToken = generateCsrfToken;
  * @param {string} email - User email address
  * @returns {Promise<void>}
  */
-exports.generateOtp = async (email) => {
+exports.generateOtp = async (email, via = "email") => {
   const user = await userModel.findByEmail(email);
   if (!user) {
     // simulate work to prevent user enumeration timing attacks
@@ -274,7 +275,18 @@ exports.generateOtp = async (email) => {
     created_at: db.fn.now(),
   });
 
-  await sendOtpEmail(email, code);
+  if (via === "sms" && user.phone && user.is_phone_verified) {
+    try {
+      await smsService.sendSMS({
+        to: user.phone,
+        text: `Your SkillBridge OTP is: ${code}`,
+      });
+    } catch (err) {
+      console.error("Error sending OTP SMS:", err.message);
+    }
+  } else {
+    await sendOtpEmail(email, code);
+  }
 };
 
 /**

@@ -11,6 +11,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendViaSms, setSendViaSms] = useState(false);
   const router = useRouter();
   const { t } = useTranslation("auth");
 
@@ -24,10 +25,12 @@ export default function ForgotPassword() {
 
     setIsSubmitting(true);
     try {
-      await authService.requestPasswordReset(email);
+      const via = sendViaSms ? "sms" : "email";
+      await authService.requestPasswordReset({ email, via });
       toast.success(t("otp_sent_success"));
       localStorage.setItem("otp_email", email);
-      router.push({ pathname: "/auth/verify-otp", query: { email } });
+      localStorage.setItem("otp_via", via);
+      router.push({ pathname: "/auth/verify-otp", query: { email, via } });
     } catch (err) {
       const status = err?.response?.status;
       const message = err?.response?.data?.message || "";
@@ -71,6 +74,20 @@ export default function ForgotPassword() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+        </div>
+
+        {/* Send via SMS Option */}
+        <div className="w-full mb-4 flex items-center">
+          <input
+            id="viaSms"
+            type="checkbox"
+            className="mr-2"
+            checked={sendViaSms}
+            onChange={(e) => setSendViaSms(e.target.checked)}
+          />
+          <label htmlFor="viaSms" className="text-gray-400 text-sm">
+            Send via SMS (if phone verified)
+          </label>
         </div>
 
         {/* Send OTP Button */}

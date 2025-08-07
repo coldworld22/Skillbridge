@@ -19,6 +19,7 @@ import { otpSchema as createOtpSchema } from "@/utils/auth/validationSchemas";
 export default function VerifyOTP() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [via, setVia] = useState("email");
   const [resendTimer, setResendTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -44,7 +45,7 @@ export default function VerifyOTP() {
     }
   }, [resendTimer]);
 
-  // 🔁 Load email from query or storage
+  // 🔁 Load email and delivery method from query or storage
   useEffect(() => {
     const fromQuery = router.query.email;
     const fromStorage = localStorage.getItem("otp_email");
@@ -54,7 +55,12 @@ export default function VerifyOTP() {
       toast.error(t("email_not_found_start_reset"));
       router.push("/auth/forgot-password");
     }
-  }, [router.query.email]);
+
+    const viaQuery = router.query.via;
+    const viaStorage = localStorage.getItem("otp_via");
+    if (viaQuery) setVia(viaQuery);
+    else if (viaStorage) setVia(viaStorage);
+  }, [router.query.email, router.query.via]);
 
   // ✅ Handle OTP verification
   const onSubmit = async ({ code }) => {
@@ -84,7 +90,7 @@ export default function VerifyOTP() {
   // 🔁 Handle resend OTP
   const handleResendOTP = async () => {
     try {
-      await requestPasswordReset(email);
+      await requestPasswordReset({ email, via });
       toast.success(t("new_otp_sent"));
       setCanResend(false);
       setResendTimer(30);
