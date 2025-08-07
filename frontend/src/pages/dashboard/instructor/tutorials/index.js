@@ -21,6 +21,7 @@ import {
   deleteInstructorTutorial,
 } from "@/services/instructor/tutorialService";
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
@@ -32,6 +33,21 @@ export default function InstructorTutorialsPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [checklistTutorial, setChecklistTutorial] = useState(null);
   const [showChecklist, setShowChecklist] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -56,15 +72,20 @@ export default function InstructorTutorialsPage() {
     setStatusFilter(status);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this tutorial?")) return;
-    try {
-      await deleteInstructorTutorial(id);
-      setTutorials((prev) => prev.filter((tut) => tut.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete tutorial");
-    }
+  const handleDelete = (id) => {
+    openConfirmModal({
+      title: "Confirm Deletion",
+      message: "Are you sure you want to delete this tutorial?",
+      onConfirm: async () => {
+        try {
+          await deleteInstructorTutorial(id);
+          setTutorials((prev) => prev.filter((tut) => tut.id !== id));
+        } catch (err) {
+          console.error(err);
+          alert("Failed to delete tutorial");
+        }
+      },
+    });
   };
 
   const filteredTutorials = tutorials
@@ -420,6 +441,13 @@ export default function InstructorTutorialsPage() {
         isOpen={showChecklist}
         onClose={() => setShowChecklist(false)}
         tutorial={checklistTutorial}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
       />
     </InstructorLayout>
   );
