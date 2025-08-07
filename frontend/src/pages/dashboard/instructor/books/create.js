@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import { createBook } from "@/services/bookService";
+import { createBook } from "@/services/instructor/bookService";
 import BookForm from "@/components/books/BookForm";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
