@@ -7,6 +7,7 @@ const slugify = require("slugify");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
+const userModel = require("../users/user.model");
 
 exports.createBook = catchAsync(async (req, res) => {
   const { tags: rawTags, ...body } = req.body || {};
@@ -68,6 +69,8 @@ exports.createBook = catchAsync(async (req, res) => {
 
   const message =
     "Your book was submitted successfully and is under review.";
+  const instructor = await userModel.findById(req.user.id);
+  const admins = await userModel.findAdmins();
   await Promise.all([
     notificationService.createNotification({
       user_id: req.user.id,
@@ -86,6 +89,27 @@ exports.createBook = catchAsync(async (req, res) => {
           html: `<p>${message} We will notify you when it is published.</p>`,
         })
       : Promise.resolve(),
+    ...admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_book",
+        message: `Instructor ${instructor.full_name} added new book \"${book.title}\" waiting for review`,
+      })
+    ),
+    ...admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: admin.id,
+        message: `New book \"${book.title}\" created by ${instructor.full_name} and awaiting your review`,
+      })
+    ),
+    ...admins.map((admin) =>
+      mailService.sendMail({
+        to: admin.email,
+        subject: "New book awaiting review",
+        html: `<p>Instructor ${instructor.full_name} added a new book \"${book.title}\" that is pending your review.</p>`,
+      })
+    ),
   ]);
 
   sendSuccess(res, book, "Book submitted for review");
