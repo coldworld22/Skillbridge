@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -10,7 +10,13 @@ import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
 import { fetchAdminDashboardStats } from "@/services/admin/adminService";
-import { FaUsers, FaChalkboardTeacher, FaBook, FaVideo } from "react-icons/fa";
+import {
+  FaUsers,
+  FaChalkboardTeacher,
+  FaUserGraduate,
+  FaBook,
+  FaVideo,
+} from "react-icons/fa";
 import RevenueChart from "@/components/admin/charts/RevenueChart";
 import SignupsChart from "@/components/admin/charts/SignupsChart";
 import CategoryPieChart from "@/components/admin/charts/CategoryPieChart";
@@ -96,15 +102,19 @@ function AdminDashboardHome() {
     loadStats();
   }, []);
 
-  const statsArray = stats
-    ? [
-        { icon: <FaUsers />, label: t('totalUsers'), value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher />, label: t('instructors'), value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers />, label: t('students'), value: stats.students, color: "text-green-500" },
-        { icon: <FaBook />, label: t('tutorials'), value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo />, label: t('classes'), value: stats.classes, color: "text-yellow-500" },
-      ]
-    : [];
+  const statsArray = useMemo(
+    () =>
+      stats
+        ? [
+            { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
+            { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
+            { icon: <FaUserGraduate />, label: "Students", value: stats.students, color: "text-green-500" },
+            { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
+            { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+          ]
+        : [],
+    [stats]
+  );
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-10">
