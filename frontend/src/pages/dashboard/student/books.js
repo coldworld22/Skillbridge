@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FiDownload, FiEye, FiStar, FiHeart } from "react-icons/fi";
-import { fetchLibrary } from "@/services/libraryService";
+import useLibraryStore from "@/store/library/libraryStore";
 
 function BookCard({ book }) {
   const cover = book.coverUrl || "/images/default-book-cover.jpg";
@@ -66,19 +66,11 @@ function BookCard({ book }) {
 }
 
 export default function BooksPage() {
-  const [books, setBooks] = useState([]);
+  const { books, fetchLibrary } = useLibraryStore();
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchLibrary();
-        setBooks(data);
-      } catch (e) {
-        console.error("Failed to load books", e);
-      }
-    };
-    load();
-  }, []);
+    fetchLibrary();
+  }, [fetchLibrary]);
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
