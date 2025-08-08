@@ -132,6 +132,7 @@ exports.registerUser = async (data) => {
     console.error("Error sending registration emails:", err.message);
   }
 
+
   const safeUser = sanitizeUserFields(newUser);
   return { user: { ...safeUser, roles } };
 };
