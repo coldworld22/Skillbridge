@@ -715,7 +715,9 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  book.cover_image_url || "/images/default-book-cover.jpg";
+                  book.cover_image_url ||
+                  buildUrl(book.cover_image) ||
+                  "/images/default-book-cover.jpg";
                 return (
                   <div
                     key={book.id}
