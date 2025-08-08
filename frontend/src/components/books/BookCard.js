@@ -11,6 +11,13 @@ import {
 import { buildUrl } from "@/services/bookService";
 
 
+const priceFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export default function BookCard({
   book,
   isSelected = false,
@@ -62,7 +69,9 @@ export default function BookCard({
       />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
-        <p className="text-sm mb-3">{`$${book.price}`}</p>
+        <p className="text-sm mb-3">
+          {priceFormatter.format(Number(book.price ?? 0))}
+        </p>
         <div className="flex gap-2">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
