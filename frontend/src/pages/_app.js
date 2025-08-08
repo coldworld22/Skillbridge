@@ -24,6 +24,7 @@ import Head from "next/head";
 import { getLanguages } from "@/services/languageService";
 import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
+import { API_BASE_URL } from "@/config/config";
 
 const langFetcher = () => getLanguages();
 
@@ -101,7 +102,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   }, [configLoaded, fetchConfig]);
 
   useEffect(() => {
-    fetch('/api/google-analytics')
+    fetch(`${API_BASE_URL}/google-analytics`)
       .then((res) => {
         if (!res.ok) throw new Error(`Request failed with ${res.status}`);
         return res.json();
