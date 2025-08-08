@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -23,6 +23,7 @@ function AdminDashboardHome() {
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Wait for hydration to access Zustand state safely
   useEffect(() => {
@@ -39,26 +40,28 @@ function AdminDashboardHome() {
     }
   }, [user, hydrated]);
 
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAdminDashboardStats();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err);
+      setError(err.message || "Failed to load dashboard stats");
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadStats = async () => {
-      setStatsLoading(true);
-      try {
-        const data = await fetchAdminDashboardStats();
-        setStats(data);
-      } catch (err) {
-        console.error("Failed to load dashboard stats", err);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
       loadStats();
     }
-  }, [hydrated, user]);
+  }, [hydrated, user, loadStats]);
 
-  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-    return null;
-  }
+    loadStats();
+  }, []);
 
   const statsArray = stats
     ? [
