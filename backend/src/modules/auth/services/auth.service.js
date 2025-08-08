@@ -16,6 +16,7 @@ const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
+const sanitizeUser = require("../utils/sanitizeUser");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -131,7 +132,8 @@ exports.registerUser = async (data) => {
     console.error("Error sending registration emails:", err.message);
   }
 
-  return { user: { ...newUser, roles } };
+  const safeUser = sanitizeUser(newUser);
+  return { user: { ...safeUser, roles } };
 };
 
 
@@ -181,7 +183,8 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
 
-  return { accessToken, refreshToken, csrfToken, user: { ...user, roles } };
+  const safeUser = sanitizeUser(user);
+  return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles } };
 };
 
 /**
@@ -356,5 +359,5 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     receiver_id: user.id,
     message: "Your password was changed successfully",
   });
-
+  return sanitizeUser(user);
 };

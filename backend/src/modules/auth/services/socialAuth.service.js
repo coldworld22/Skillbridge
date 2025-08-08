@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const userModel = require("../../users/user.model");
 const { generateAccessToken, issueRefreshToken } = require("./auth.service");
 const AppError = require("../../../utils/AppError");
+const sanitizeUser = require("../utils/sanitizeUser");
 
 const SALT_ROUNDS = 12;
 
@@ -58,5 +59,6 @@ exports.loginOrRegister = async ({
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
 
-  return { accessToken, refreshToken, user: { ...user, roles } };
+  const safeUser = sanitizeUser({ ...user, roles });
+  return { accessToken, refreshToken, user: safeUser };
 };

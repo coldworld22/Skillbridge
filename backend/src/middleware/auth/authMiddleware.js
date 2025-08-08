@@ -51,9 +51,10 @@ const verifyToken = async (req, res, next) => {
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
+    const { password_hash, ...safeUser } = user;
     req.user = {
       ...decoded,
-      ...user,
+      ...safeUser,
       roles: userRoles,
       role: userRoles[0],
     };
