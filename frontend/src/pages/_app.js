@@ -193,6 +193,7 @@ function MyApp({ Component, pageProps, router }) {
           >
             <Head>
               <title>{defaultTitle}</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
               {settings.metaDescription && (
                 <meta name="description" content={settings.metaDescription} />
               )}
