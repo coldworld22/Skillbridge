@@ -32,12 +32,6 @@ const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000;
 
-function sanitizeUser(user) {
-  if (!user) return user;
-  const { password_hash, ...safe } = user;
-  return safe;
-}
-
 function recordFailedAttempt(email) {
   const info = failedLoginAttempts.get(email) || { count: 0 };
   const count = info.count + 1;
