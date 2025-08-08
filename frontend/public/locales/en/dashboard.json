@@ -1078,6 +1078,36 @@
     "success": "Book updated successfully",
     "error": "Failed to update book"
   },
+  "booksView": {
+    "back_to_books": "Back to Books",
+    "confirm_delete_title": "Confirm Deletion",
+    "confirm_delete": "Are you sure you want to delete this book?",
+    "deleted": "Book deleted successfully",
+    "delete_failed": "Failed to delete book",
+    "not_found": "Book not found",
+    "language": "Language",
+    "price": "Price",
+    "free": "Free",
+    "not_specified": "Not specified",
+    "license": "License",
+    "uploaded_by": "Uploaded By",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "tags": "Tags",
+    "categories": "Categories",
+    "documents": "Documents",
+    "full_pdf": "Full PDF",
+    "preview": "Preview",
+    "edit_book": "Edit Book",
+    "delete_book": "Delete Book",
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "active": "Active",
+      "inactive": "Inactive",
+      "rejected": "Rejected"
+    }
+  },
   "seoPage": {
     "title": "SEO Control Panel",
     "description": "Manage meta data, sitemap, and indexing rules.",

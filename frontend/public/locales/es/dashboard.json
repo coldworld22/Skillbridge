@@ -1094,5 +1094,35 @@
     "licensePersonal": "Uso personal",
     "licenseEducational": "Uso educativo",
     "licenseCommercial": "Reventa comercial no permitida"
+  },
+  "booksView": {
+    "back_to_books": "Volver a libros",
+    "confirm_delete_title": "Confirmar eliminación",
+    "confirm_delete": "¿Seguro que deseas eliminar este libro?",
+    "deleted": "Libro eliminado correctamente",
+    "delete_failed": "No se pudo eliminar el libro",
+    "not_found": "Libro no encontrado",
+    "language": "Idioma",
+    "price": "Precio",
+    "free": "Gratis",
+    "not_specified": "No especificado",
+    "license": "Licencia",
+    "uploaded_by": "Subido por",
+    "created_at": "Creado el",
+    "updated_at": "Actualizado el",
+    "tags": "Etiquetas",
+    "categories": "Categorías",
+    "documents": "Documentos",
+    "full_pdf": "PDF completo",
+    "preview": "Vista previa",
+    "edit_book": "Editar libro",
+    "delete_book": "Eliminar libro",
+    "status": {
+      "approved": "Aprobado",
+      "pending": "Pendiente",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "rejected": "Rechazado"
+    }
   }
 }

@@ -1065,6 +1065,36 @@
     "success": "تم تحديث الكتاب بنجاح",
     "error": "فشل في تحديث الكتاب"
   },
+  "booksView": {
+    "back_to_books": "العودة إلى الكتب",
+    "confirm_delete_title": "تأكيد الحذف",
+    "confirm_delete": "هل أنت متأكد أنك تريد حذف هذا الكتاب؟",
+    "deleted": "تم حذف الكتاب بنجاح",
+    "delete_failed": "فشل في حذف الكتاب",
+    "not_found": "الكتاب غير موجود",
+    "language": "اللغة",
+    "price": "السعر",
+    "free": "مجاني",
+    "not_specified": "غير محدد",
+    "license": "الترخيص",
+    "uploaded_by": "تم الرفع بواسطة",
+    "created_at": "تاريخ الإنشاء",
+    "updated_at": "تاريخ التحديث",
+    "tags": "الوسوم",
+    "categories": "الفئات",
+    "documents": "الوثائق",
+    "full_pdf": "ملف PDF كامل",
+    "preview": "معاينة",
+    "edit_book": "تعديل الكتاب",
+    "delete_book": "حذف الكتاب",
+    "status": {
+      "approved": "معتمد",
+      "pending": "قيد الانتظار",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "rejected": "مرفوض"
+    }
+  },
   "seoPage": {
     "title": "SEO Control Panel",
     "description": "Manage meta data, sitemap, and indexing rules.",

@@ -1094,5 +1094,35 @@
     "licensePersonal": "Persönliche Nutzung",
     "licenseEducational": "Bildungsnutzung",
     "licenseCommercial": "Kommerzieller Weiterverkauf nicht erlaubt"
+  },
+  "booksView": {
+    "back_to_books": "Zurück zu Büchern",
+    "confirm_delete_title": "Löschung bestätigen",
+    "confirm_delete": "Möchten Sie dieses Buch wirklich löschen?",
+    "deleted": "Buch erfolgreich gelöscht",
+    "delete_failed": "Buch konnte nicht gelöscht werden",
+    "not_found": "Buch nicht gefunden",
+    "language": "Sprache",
+    "price": "Preis",
+    "free": "Kostenlos",
+    "not_specified": "Nicht angegeben",
+    "license": "Lizenz",
+    "uploaded_by": "Hochgeladen von",
+    "created_at": "Erstellt am",
+    "updated_at": "Aktualisiert am",
+    "tags": "Tags",
+    "categories": "Kategorien",
+    "documents": "Dokumente",
+    "full_pdf": "Vollständiges PDF",
+    "preview": "Vorschau",
+    "edit_book": "Buch bearbeiten",
+    "delete_book": "Buch löschen",
+    "status": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "rejected": "Abgelehnt"
+    }
   }
 }
