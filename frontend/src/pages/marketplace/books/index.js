@@ -66,21 +66,22 @@ export default function BooksPage() {
   }, []);
 
   const handleFilterChange = (newFilters) => {
-    setFilters({ ...filters, ...newFilters });
+    setFilters((prev) => ({ ...prev, ...newFilters }));
     setBooks([]);
     setPage(1);
     setHasMore(true);
   };
 
   const resetFilters = () => {
-    setFilters({
+    setFilters((prev) => ({
+      ...prev,
       categories: [],
       levels: [],
       price: 100,
       language: "",
       license: "",
       tags: [],
-    });
+    }));
     setBooks([]);
     setPage(1);
     setHasMore(true);
