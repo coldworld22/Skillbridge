@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
+import api from "@/services/api/api";
 
 const GoogleAd = ({ slot }) => {
   const [adConfig, setAdConfig] = useState(null);
 
   useEffect(() => {
-    fetch("/api/adsense")
-      .then((res) => res.json())
-      .then((data) => setAdConfig(data))
-      .catch((err) => console.error("Failed to load AdSense settings:", err));
+    const fetchConfig = async () => {
+      try {
+        const { data } = await api.get("/adsense");
+        setAdConfig(data);
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Failed to load AdSense settings:", err);
+        }
+        setAdConfig(null);
+      }
+    };
+    fetchConfig();
   }, []);
 
   useEffect(() => {
@@ -15,7 +24,9 @@ const GoogleAd = ({ slot }) => {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       } catch (e) {
-        console.error("AdSense error:", e);
+        if (process.env.NODE_ENV !== "production") {
+          console.error("AdSense error:", e);
+        }
       }
     }
   }, [adConfig]);
