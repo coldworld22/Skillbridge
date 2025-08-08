@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -17,26 +16,9 @@ import InstructorActivityChart from "@/components/admin/charts/InstructorActivit
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
-  const router = useRouter();
-  const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
-
-  // Wait for hydration to access Zustand state safely
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      if (!user) {
-        router.replace("/auth/login");
-      } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-        router.replace("/error/403");
-      }
-    }
-  }, [user, hydrated]);
-
+  const [statsError, setStatsError] = useState(null);
   useEffect(() => {
     const loadStats = async () => {
       setStatsLoading(true);
@@ -45,18 +27,14 @@ function AdminDashboardHome() {
         setStats(data);
       } catch (err) {
         console.error("Failed to load dashboard stats", err);
+        setStatsError("Failed to load dashboard stats");
       } finally {
         setStatsLoading(false);
       }
     };
-    if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-      loadStats();
-    }
-  }, [hydrated, user]);
 
-  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-    return null;
-  }
+    loadStats();
+  }, []);
 
   const statsArray = stats
     ? [
@@ -124,6 +102,8 @@ function AdminDashboardHome() {
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
         {statsLoading ? (
           <p>Loading stats...</p>
+        ) : statsError ? (
+          <p>{statsError}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}
