@@ -16,7 +16,7 @@ const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
-const sanitizeUser = require("../utils/sanitizeUser");
+const verificationService = require("../../verify/verify.service");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -360,4 +360,23 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     message: "Your password was changed successfully",
   });
   return sanitizeUser(user);
+};
+
+/**
+ * Send an OTP for verifying a user's email or phone.
+ * Delegates to the verification service which handles storage and delivery.
+ * @param {{user_id:number,type:'email'|'phone'}} data
+ * @returns {Promise<void>}
+ */
+exports.sendVerificationOtp = async ({ user_id, type }) => {
+  await verificationService.sendOtp(user_id, type);
+};
+
+/**
+ * Confirm a verification OTP and mark the email or phone as verified.
+ * @param {{user_id:number,type:'email'|'phone',code:string}} data
+ * @returns {Promise<void>}
+ */
+exports.confirmVerificationOtp = async ({ user_id, type, code }) => {
+  await verificationService.verifyOtp(user_id, type, code);
 };
