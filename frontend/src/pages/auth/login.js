@@ -90,7 +90,9 @@ export default function Login() {
   // ─────────────────────────────
   const onSubmit = async (data) => {
   try {
-    console.log("➡️ login onSubmit", data.email);
+    if (process.env.NODE_ENV !== "production") {
+      console.log("➡️ login onSubmit invoked");
+    }
     let cfg = recaptchaCfg;
     if (!cfg && cfgLoading) {
       cfg = await fetchSocialLoginConfig().catch(() => null);
@@ -123,7 +125,9 @@ export default function Login() {
       router.push(targetPath);
     }, 500);
   } catch (err) {
-    console.error("❌ login onSubmit error", err);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("❌ login onSubmit error", { message: err?.message });
+    }
     let msg =
       err?.response?.data?.message ||
       err?.response?.data?.error ||
