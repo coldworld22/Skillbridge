@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import App from "next/app";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -16,7 +15,6 @@ import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
 import CallOverlay from "@/components/video-call/CallOverlay";
 import { listenCalls, listenMessages } from "@/services/messageService";
-import { fetchSEOConfig } from "@/services/admin/seoConfigService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
@@ -37,7 +35,7 @@ const langFetcher = () => getLanguages();
  * - Injects per-page layout support
  * - Includes global toast notifications
  */
-function MyApp({ Component, pageProps, router, seoSettings }) {
+function MyApp({ Component, pageProps, router }) {
   // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
 
@@ -58,10 +56,7 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   const clearCallStatus = useCallStore((s) => s.clearStatus);
   const seoLoaded = useSEOConfigStore((s) => s.loaded);
   const fetchSEO = useSEOConfigStore((s) => s.fetch);
-  const updateSEO = useSEOConfigStore((s) => s.update);
-  if (seoSettings && !useSEOConfigStore.getState().loaded) {
-    useSEOConfigStore.setState({ settings: seoSettings, loaded: true });
-  }
+  
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
@@ -127,13 +122,10 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
   }, []);
 
   useEffect(() => {
-    if (seoSettings && !seoLoaded) {
-      updateSEO(seoSettings);
-      useSEOConfigStore.setState({ loaded: true });
-    } else if (!seoLoaded) {
+    if (!seoLoaded) {
       fetchSEO();
     }
-  }, [seoSettings, seoLoaded, fetchSEO, updateSEO]);
+  }, [seoLoaded, fetchSEO]);
 
   useEffect(() => {
     if (user) {
@@ -240,15 +232,5 @@ function MyApp({ Component, pageProps, router, seoSettings }) {
       </>
     );
 }
-
-MyApp.getInitialProps = async (appContext) => {
-  const appProps = await App.getInitialProps(appContext);
-  try {
-    const data = await fetchSEOConfig();
-    return { ...appProps, seoSettings: data };
-  } catch {
-    return { ...appProps, seoSettings: null };
-  }
-};
 
 export default appWithTranslation(MyApp, nextI18NextConfig);
