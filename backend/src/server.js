@@ -18,6 +18,15 @@ const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
 require("dotenv").config();
 
+// Ensure required environment secrets are present
+const requiredSecrets = ["JWT_SECRET", "REFRESH_TOKEN_SECRET"];
+const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
+if (missingSecrets.length) {
+  throw new Error(
+    `Missing required environment variables: ${missingSecrets.join(", ")}`
+  );
+}
+
 
 // ─── Express and HTTP Setup ───
 
