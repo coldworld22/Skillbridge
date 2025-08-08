@@ -56,6 +56,7 @@ jest.mock('bcrypt', () => ({
 }));
 
 process.env.JWT_SECRET = 'testsecret';
+process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
 
 const authService = require('../src/modules/auth/services/auth.service');
 const authMiddleware = require('../src/middleware/auth/authMiddleware');
@@ -65,6 +66,7 @@ describe('Sensitive data sanitization', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'testsecret';
+    process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
   });
 
   it('registerUser does not return password_hash', async () => {
