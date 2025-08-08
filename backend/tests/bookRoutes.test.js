@@ -11,6 +11,11 @@ jest.mock('../src/modules/books/book.service', () => ({
   getBookTags: jest.fn(),
   updateBookStatus: jest.fn(),
   getInstructorBookAnalytics: jest.fn(),
+  addToCart: jest.fn(),
+  removeFromCart: jest.fn(),
+  checkout: jest.fn(),
+  addToWishlist: jest.fn(),
+  removeFromWishlist: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -43,6 +48,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
     next();
   }),
   isAdmin: jest.fn((_req, _res, next) => next()),
+  isStudent: jest.fn((_req, _res, next) => next()),
 }));
 
 const service = require('../src/modules/books/book.service');
@@ -192,3 +198,73 @@ describe('PATCH /api/books/:id/status', () => {
     expect(service.updateBookStatus).not.toHaveBeenCalled();
   });
 });
+
+describe('POST /api/books/cart', () => {
+  it('adds to cart', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.addToCart).toHaveBeenCalledWith('1', '10');
+  });
+
+  it('removes from cart', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10', action: 'remove' });
+    expect(res.status).toBe(200);
+    expect(service.removeFromCart).toHaveBeenCalledWith('1', '10');
+  });
+});
+
+describe('POST /api/books/checkout', () => {
+  it('processes checkout', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const purchases = [{ id: 1 }];
+    service.checkout.mockResolvedValue(purchases);
+    const res = await request(app).post('/api/books/checkout');
+    expect(res.status).toBe(200);
+    expect(service.checkout).toHaveBeenCalledWith('1');
+    expect(res.body.data).toEqual(purchases);
+  });
+});
+
+describe('POST /api/books/wishlist', () => {
+  it('adds to wishlist', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.addToWishlist).toHaveBeenCalledWith('1', '10');
+  });
+});
+
+describe('DELETE /api/books/wishlist', () => {
+  it('removes from wishlist', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .delete('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.removeFromWishlist).toHaveBeenCalledWith('1', '10');
+  });
+});
+

@@ -1,21 +1,13 @@
-import { useEffect, useState } from "react";
-import { fetchLibrary } from "@/services/libraryService";
+import { useEffect } from "react";
 import LibraryItem from "@/components/books/LibraryItem";
+import useLibraryStore from "@/store/libraryStore";
 
 export default function LibraryPage() {
-  const [items, setItems] = useState([]);
+  const { items, fetchLibrary } = useLibraryStore();
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchLibrary();
-        setItems(data);
-      } catch (e) {
-        console.error("Failed to load library", e);
-      }
-    };
-    load();
-  }, []);
+    fetchLibrary();
+  }, [fetchLibrary]);
 
   return (
     <div>

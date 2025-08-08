@@ -8,31 +8,35 @@ import { FaCheckCircle, FaArrowRight, FaCalendarAlt, FaChalkboardTeacher, FaDown
 import { enrollInClass, fetchClassDetails } from '@/services/classService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
+import useLibraryStore from '@/store/libraryStore';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const { classId } = router.query;
   const [classInfo, setClassInfo] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
+  const { fetchLibrary } = useLibraryStore();
 
   useEffect(() => {
-    if (!classId) return;
     const enroll = async () => {
-      try {
-        await enrollInClass(classId);
-        await removeItem(classId);
-      } catch (_) {
-        toast.error('Failed to register for class');
+      if (classId) {
+        try {
+          await enrollInClass(classId);
+          await removeItem(classId);
+        } catch (_) {
+          toast.error('Failed to register for class');
+        }
+        try {
+          const details = await fetchClassDetails(classId);
+          setClassInfo(details?.data ?? details);
+        } catch (_) {
+          setClassInfo(null);
+        }
       }
-      try {
-        const details = await fetchClassDetails(classId);
-        setClassInfo(details?.data ?? details);
-      } catch (_) {
-        setClassInfo(null);
-      }
+      await fetchLibrary();
     };
     enroll();
-  }, [classId]);
+  }, [classId, fetchLibrary, removeItem]);
 
   if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
 

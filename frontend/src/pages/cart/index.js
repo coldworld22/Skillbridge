@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import useCartStore from "@/store/cart/cartStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
-import { FaTrash, FaPlus, FaMinus, FaTag, FaGift } from "react-icons/fa";
+import { FaTag, FaGift } from "react-icons/fa";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import CartItem from "@/components/books/CartItem";
 
 const CartPage = () => {
   const {
@@ -87,55 +88,14 @@ const CartPage = () => {
             <ul className="space-y-6">
               <AnimatePresence>
                 {cartItems.map((item, index) => (
-                  <motion.li
+                  <CartItem
                     key={item.id}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex justify-between items-center border-b border-gray-700 pb-4"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <FaGift className="text-yellow-500 text-4xl" />
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {index + 1}. {item.name}
-                        </h3>
-                        <p className="text-gray-400">${item.price} per item</p>
-                      </div>
-                    </div>
-
-                    {/* Quantity Controls */}
-                    <div className="flex items-center space-x-4">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item.id, "decrease")}
-                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full"
-                      >
-                        <FaMinus />
-                      </motion.button>
-                      <span className="text-lg font-bold">{item.quantity}</span>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item.id, "increase")}
-                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full"
-                      >
-                        <FaPlus />
-                      </motion.button>
-                    </div>
-
-                    {/* Remove Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-red-500 hover:text-red-600"
-                    >
-                      <FaTrash />
-                    </motion.button>
-                  </motion.li>
+                    item={item}
+                    index={index}
+                    onIncrease={() => updateQuantity(item.id, "increase")}
+                    onDecrease={() => updateQuantity(item.id, "decrease")}
+                    onRemove={() => removeItem(item.id)}
+                  />
                 ))}
               </AnimatePresence>
             </ul>
