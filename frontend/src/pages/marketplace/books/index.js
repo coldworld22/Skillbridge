@@ -11,6 +11,16 @@ import useBookWishlistStore from "@/store/books/wishlistStore";
 import useBookCartStore from "@/store/books/cartStore";
 import { toast } from "react-toastify";
 
+const buildBookItem = (book) => ({
+  book_id: book.id,
+  title: book.title,
+  price: book.price,
+  cover_url:
+    book.cover_image_url ||
+    buildUrl(book.cover_image) ||
+    "/images/default-book-cover.jpg",
+});
+
 export default function BooksPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,30 +86,12 @@ export default function BooksPage() {
   };
 
   const handleAddToWishlist = (book) => {
-    const item = {
-      book_id: book.id,
-      title: book.title,
-      price: book.price,
-      cover_url:
-        book.cover_image_url ||
-        buildUrl(book.cover_image) ||
-        "/images/default-book-cover.jpg",
-    };
-    addToWishlist(item);
+    addToWishlist(buildBookItem(book));
     toast.success("Added to wishlist");
   };
 
   const handleAddToCart = (book) => {
-    const item = {
-      book_id: book.id,
-      title: book.title,
-      price: book.price,
-      cover_url:
-        book.cover_image_url ||
-        buildUrl(book.cover_image) ||
-        "/images/default-book-cover.jpg",
-    };
-    addToCart(item);
+    addToCart(buildBookItem(book));
     toast.success("Added to cart");
   };
 
