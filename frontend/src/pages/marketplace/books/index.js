@@ -28,6 +28,7 @@ export default function BooksPage() {
   });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const loader = useRef(null);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const addToCart = useBookCartStore((state) => state.addToCart);
@@ -191,11 +192,7 @@ export default function BooksPage() {
           </div>
           <button
             className="p-2 rounded-lg bg-gray-800 border border-gray-700"
-            onClick={() =>
-              document
-                .getElementById("filter-sidebar")
-                .classList.toggle("translate-x-full")
-            }
+            onClick={() => setIsFilterOpen((prev) => !prev)}
           >
             <FaFilter className="text-yellow-400" />
           </button>
@@ -204,17 +201,12 @@ export default function BooksPage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Filter Sidebar */}
           <div
-            id="filter-sidebar"
-            className="fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/90 backdrop-blur-lg p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 translate-x-full lg:translate-x-0"
+            className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/90 backdrop-blur-lg p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isFilterOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}
           >
             <div className="flex justify-between items-center mb-4 lg:hidden">
               <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
               <button
-                onClick={() =>
-                  document
-                    .getElementById("filter-sidebar")
-                    .classList.add("translate-x-full")
-                }
+                onClick={() => setIsFilterOpen(false)}
                 className="text-white text-lg"
               >
                 ✕
