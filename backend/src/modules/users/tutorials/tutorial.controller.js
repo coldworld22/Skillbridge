@@ -85,8 +85,8 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
-  // Save tutorial
-  const tutorial = {
+  // Prepare tutorial data
+  const tutorialData = {
     id,
     title,
     slug,
@@ -105,42 +105,58 @@ exports.createTutorial = catchAsync(async (req, res) => {
       ? `/uploads/tutorials/${roleDir}/${previewFile.filename}`
       : null,
   };
-  await service.createTutorial(tutorial);
 
-  const tags = rawTags
-    ? typeof rawTags === "string"
-      ? JSON.parse(rawTags)
-      : rawTags
-    : [];
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
+  // Parse tags safely
+  let tags = [];
+  if (rawTags) {
+    if (typeof rawTags === "string") {
+      try {
+        tags = JSON.parse(rawTags);
+      } catch (err) {
+        return res.status(400).json({ message: "Invalid tags JSON" });
+      }
+    } else if (Array.isArray(rawTags)) {
+      tags = rawTags;
     }
-    await service.addTutorialTags(id, tagIds);
-    tutorial.tags = await service.getTutorialTags(id);
   }
 
-  // Save chapters (if any)
-  for (let i = 0; i < parsedChapters.length; i++) {
-    const ch = parsedChapters[i];
-    await chapterService.create({
-      id: uuidv4(),
-      tutorial_id: id,
-      title: ch.title,
-      video_url: ch.video_url,
-      duration: ch.duration,
-      order: ch.order ?? i + 1,
-      is_preview: ch.is_preview ?? false,
-    });
-  }
+  let tutorial;
+  await db.transaction(async (trx) => {
+    tutorial = await service.createTutorial(tutorialData, trx);
+
+    if (tags.length) {
+      const tagIds = [];
+      for (const name of tags) {
+        const existing = await tagService.findByName(name, trx);
+        const tag =
+          existing ||
+          (await tagService.createTag(
+            { name, slug: slugify(name, { lower: true, strict: true }) },
+            trx
+          ));
+        tagIds.push(tag.id);
+      }
+      await service.addTutorialTags(id, tagIds, trx);
+      tutorial.tags = await service.getTutorialTags(id, trx);
+    }
+
+    // Save chapters (if any)
+    for (let i = 0; i < parsedChapters.length; i++) {
+      const ch = parsedChapters[i];
+      await chapterService.create(
+        {
+          id: uuidv4(),
+          tutorial_id: id,
+          title: ch.title,
+          video_url: ch.video_url,
+          duration: ch.duration,
+          order: ch.order ?? i + 1,
+          is_preview: ch.is_preview ?? false,
+        },
+        trx
+      );
+    }
+  });
 
   await notificationService.createNotification({
     user_id: instructor_id,
@@ -225,7 +241,18 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
 
-  const tags = rawTags ? (typeof rawTags === 'string' ? JSON.parse(rawTags) : rawTags) : null;
+  let tags = null;
+  if (rawTags) {
+    if (typeof rawTags === 'string') {
+      try {
+        tags = JSON.parse(rawTags);
+      } catch (err) {
+        return res.status(400).json({ message: "Invalid tags JSON" });
+      }
+    } else if (Array.isArray(rawTags)) {
+      tags = rawTags;
+    }
+  }
   if (tags) {
     await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
     const tagIds = [];

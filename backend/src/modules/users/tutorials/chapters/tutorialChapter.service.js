@@ -1,7 +1,7 @@
 const db = require("../../../../config/database");
 
-exports.create = async (data) => {
-  await db("tutorial_chapters").insert(data);
+exports.create = async (data, trx = db) => {
+  await trx("tutorial_chapters").insert(data);
   return data;
 };
 
