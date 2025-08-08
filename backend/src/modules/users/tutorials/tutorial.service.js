@@ -1,8 +1,8 @@
 // 📁 src/modules/users/tutorials/tutorial.service.js
 const db = require("../../../config/database");
 
-exports.createTutorial = async (data) => {
-  const [tutorial] = await db("tutorials").insert(data).returning("*");
+exports.createTutorial = async (data, trx = db) => {
+  const [tutorial] = await trx("tutorials").insert(data).returning("*");
   return tutorial;
 };
 
@@ -262,14 +262,14 @@ exports.getPublicTutorialDetails = async (id) => {
   return { ...tutorial, chapters, views };
 };
 
-exports.addTutorialTags = async (tutorialId, tagIds) => {
+exports.addTutorialTags = async (tutorialId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ tutorial_id: tutorialId, tag_id }));
-  await db("tutorial_tag_map").insert(rows);
+  await trx("tutorial_tag_map").insert(rows);
 };
 
-exports.getTutorialTags = async (tutorialId) => {
-  return db("tutorial_tag_map as m")
+exports.getTutorialTags = async (tutorialId, trx = db) => {
+  return trx("tutorial_tag_map as m")
     .join("tags as t", "m.tag_id", "t.id")
     .where("m.tutorial_id", tutorialId)
     .select("t.id", "t.name", "t.slug");
