@@ -20,6 +20,7 @@ const TutorialsSection = () => {
     levels: [],
     price: 100,
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const loader = useRef(null);
 
@@ -152,9 +153,9 @@ const TutorialsSection = () => {
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
-          <button 
+          <button
             className="ml-3 p-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 hover:bg-gray-700 transition-all"
-            onClick={() => document.getElementById('filter-sidebar').classList.toggle('translate-x-full')}
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
           >
             <FaFilter className="text-yellow-400" />
           </button>
@@ -162,15 +163,14 @@ const TutorialsSection = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filter Sidebar - Enhanced with glass effect */}
-          <div 
-            id="filter-sidebar"
-            className="fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/80 backdrop-blur-lg lg:backdrop-blur-none lg:bg-transparent p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 translate-x-full lg:translate-x-0"
+          <div
+            className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/80 backdrop-blur-lg lg:backdrop-blur-none lg:bg-transparent p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
           >
             <div className="flex justify-between items-center mb-6 lg:hidden">
               <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
-              <button 
+              <button
                 className="text-gray-400 hover:text-white"
-                onClick={() => document.getElementById('filter-sidebar').classList.add('translate-x-full')}
+                onClick={() => setIsSidebarOpen(false)}
               >
                 ✕
               </button>
