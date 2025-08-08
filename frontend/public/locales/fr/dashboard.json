@@ -1053,6 +1053,36 @@
     "success": "Livre mis à jour avec succès",
     "error": "Échec de la mise à jour du livre"
   },
+  "booksView": {
+    "back_to_books": "Retour aux livres",
+    "confirm_delete_title": "Confirmer la suppression",
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce livre ?",
+    "deleted": "Livre supprimé avec succès",
+    "delete_failed": "Échec de la suppression du livre",
+    "not_found": "Livre introuvable",
+    "language": "Langue",
+    "price": "Prix",
+    "free": "Gratuit",
+    "not_specified": "Non spécifié",
+    "license": "Licence",
+    "uploaded_by": "Téléversé par",
+    "created_at": "Créé le",
+    "updated_at": "Mis à jour le",
+    "tags": "Étiquettes",
+    "categories": "Catégories",
+    "documents": "Documents",
+    "full_pdf": "PDF complet",
+    "preview": "Aperçu",
+    "edit_book": "Modifier le livre",
+    "delete_book": "Supprimer le livre",
+    "status": {
+      "approved": "Approuvé",
+      "pending": "En attente",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "rejected": "Rejeté"
+    }
+  },
   "seoPage": {
     "title": "SEO Control Panel",
     "description": "Manage meta data, sitemap, and indexing rules.",

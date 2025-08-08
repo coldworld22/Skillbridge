@@ -13,19 +13,39 @@ import {
 } from "react-icons/fi";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminViewBookPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { t } = useTranslation(["dashboard", "errors"]);
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const statusMap = {
-    approved: { label: 'Approved', className: 'bg-green-100 text-green-800' },
-    pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
-    active: { label: 'Active', className: 'bg-blue-100 text-blue-800' },
-    inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-800' },
-    rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800' },
+    approved: { label: t("booksView.status.approved"), className: 'bg-green-100 text-green-800' },
+    pending: { label: t("booksView.status.pending"), className: 'bg-yellow-100 text-yellow-800' },
+    active: { label: t("booksView.status.active"), className: 'bg-blue-100 text-blue-800' },
+    inactive: { label: t("booksView.status.inactive"), className: 'bg-gray-100 text-gray-800' },
+    rejected: { label: t("booksView.status.rejected"), className: 'bg-red-100 text-red-800' },
   };
 
   useEffect(() => {
@@ -37,23 +57,28 @@ export default function AdminViewBookPage() {
         setLoading(false);
       } catch (err) {
         console.error("Failed to load book", err);
-        setError("Failed to load book. Please try again later.");
+        setError(t("errors.bookLoad"));
         setLoading(false);
       }
     };
     load();
   }, [id]);
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this book?")) return;
-    try {
-      await deleteBook(id);
-      toast.success("Book deleted successfully");
-      router.push("/dashboard/admin/books");
-    } catch (err) {
-      console.error("Delete failed", err);
-      toast.error("Failed to delete book");
-    }
+  const handleDelete = () => {
+    openConfirmModal({
+      title: t("booksView.confirm_delete_title", { defaultValue: "Confirm Deletion" }),
+      message: t("booksView.confirm_delete"),
+      onConfirm: async () => {
+        try {
+          await deleteBook(id);
+          toast.success(t("booksView.deleted"));
+          router.push("/dashboard/admin/books");
+        } catch (err) {
+          console.error("Delete failed", err);
+          toast.error(t("booksView.delete_failed"));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -83,7 +108,7 @@ export default function AdminViewBookPage() {
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded max-w-md">
-            Book not found
+            {t("booksView.not_found")}
           </div>
         </div>
       </AdminLayout>
@@ -102,7 +127,7 @@ export default function AdminViewBookPage() {
             onClick={() => router.push("/dashboard/admin/books")}
             className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200"
           >
-            <FiArrowLeft className="mr-2" /> Back to Books
+            <FiArrowLeft className="mr-2" /> {t("booksView.back_to_books")}
           </button>
 
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -143,40 +168,40 @@ export default function AdminViewBookPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-gray-500">Language</h3>
-                    <p className="text-gray-900">{book.language || "Not specified"}</p>
+                    <h3 className="text-sm font-medium text-gray-500">{t("booksView.language")}</h3>
+                    <p className="text-gray-900">{book.language || t("booksView.not_specified")}</p>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-gray-500">Price</h3>
+                    <h3 className="text-sm font-medium text-gray-500">{t("booksView.price")}</h3>
                     <p className="text-gray-900">
                       {book.is_free
-                        ? "Free"
+                        ? t("booksView.free")
                         : book.price != null
                         ? `$${book.price.toFixed(2)}`
-                        : "Not specified"}
+                        : t("booksView.not_specified")}
                     </p>
                   </div>
                   {book.license_type && (
                     <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-gray-500">License</h3>
+                      <h3 className="text-sm font-medium text-gray-500">{t("booksView.license")}</h3>
                       <p className="text-gray-900">{book.license_type}</p>
                     </div>
                   )}
                   {book.uploaded_by?.name && (
                     <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-gray-500">Uploaded By</h3>
+                      <h3 className="text-sm font-medium text-gray-500">{t("booksView.uploaded_by")}</h3>
                       <p className="text-gray-900">{book.uploaded_by.name}</p>
                     </div>
                   )}
                   {book.created_at && (
                     <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-gray-500">Created At</h3>
+                      <h3 className="text-sm font-medium text-gray-500">{t("booksView.created_at")}</h3>
                       <p className="text-gray-900">{new Date(book.created_at).toLocaleString()}</p>
                     </div>
                   )}
                   {book.updated_at && (
                     <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-gray-500">Updated At</h3>
+                      <h3 className="text-sm font-medium text-gray-500">{t("booksView.updated_at")}</h3>
                       <p className="text-gray-900">{new Date(book.updated_at).toLocaleString()}</p>
                     </div>
                   )}
@@ -189,7 +214,7 @@ export default function AdminViewBookPage() {
                 <div className="flex flex-col sm:flex-row gap-6">
                   {book.tags?.length > 0 && (
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">{t("booksView.tags")}</h3>
                       <div className="flex flex-wrap gap-2">
                         {book.tags.map((tag) => (
                           <span 
@@ -204,7 +229,7 @@ export default function AdminViewBookPage() {
                   )}
                   {book.categories?.length > 0 && (
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">Categories</h3>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">{t("booksView.categories")}</h3>
                       <div className="flex flex-wrap gap-2">
                         {book.categories.map((cat) => (
                           <span 
@@ -223,7 +248,7 @@ export default function AdminViewBookPage() {
 
             {(book.pdf_url || book.preview_url) && (
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Documents</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-3">{t("booksView.documents")}</h3>
                 <div className="flex flex-wrap gap-4">
                   {book.pdf_url && (
                     <a
@@ -233,7 +258,7 @@ export default function AdminViewBookPage() {
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
                     >
                       <FiFileText className="text-blue-600" />
-                      <span>Full PDF</span>
+                      <span>{t("booksView.full_pdf")}</span>
                     </a>
                   )}
                   {book.preview_url && (
@@ -244,7 +269,7 @@ export default function AdminViewBookPage() {
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
                     >
                       <FiEye className="text-green-600" />
-                      <span>Preview</span>
+                      <span>{t("booksView.preview")}</span>
                     </a>
                   )}
                 </div>
@@ -255,18 +280,33 @@ export default function AdminViewBookPage() {
           <div className="flex flex-wrap gap-3 justify-end">
             <Link href={`/dashboard/admin/books/edit/${book.id}`}>
               <button className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm">
-                <FiEdit size={16} /> Edit Book
+                <FiEdit size={16} /> {t("booksView.edit_book")}
               </button>
             </Link>
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
             >
-              <FiTrash2 size={16} /> Delete Book
+              <FiTrash2 size={16} /> {t("booksView.delete_book")}
             </button>
           </div>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["common", "dashboard", "errors"], nextI18NextConfig)),
+    },
+  };
 }
