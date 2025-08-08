@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
@@ -20,6 +21,7 @@ import { fetchLicenseStatus } from "@/services/admin/licenseService";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
+  const { t } = useTranslation(['common', 'dashboard']);
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
@@ -45,6 +47,20 @@ function AdminDashboardHome() {
       }
     }
   }, [user, hydrated]);
+
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAdminDashboardStats();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err);
+      setError(err.message || "Failed to load dashboard stats");
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,19 +91,18 @@ function AdminDashboardHome() {
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
       loadData();
     }
-  }, [hydrated, user]);
+  }, [hydrated, user, loadStats]);
 
-  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-    return null;
-  }
+    loadStats();
+  }, []);
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        { icon: <FaUsers />, label: t('totalUsers'), value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher />, label: t('instructors'), value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers />, label: t('students'), value: stats.students, color: "text-green-500" },
+        { icon: <FaBook />, label: t('tutorials'), value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo />, label: t('classes'), value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
@@ -181,9 +196,9 @@ function AdminDashboardHome() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 {t('platformInsights')}</h2>
         {statsLoading ? (
-          <p>Loading stats...</p>
+          <p>{t('loadingStats')}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}

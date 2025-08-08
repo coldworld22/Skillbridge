@@ -69,9 +69,27 @@ describe('Class assignment routes', () => {
     service.createAssignment.mockResolvedValue({ id: '1' });
     const res = await request(app)
       .post('/classes/assignments/class/abc')
-      .send({ title: 'New' });
+      .send({ title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
     expect(res.statusCode).toBe(200);
     expect(service.createAssignment).toHaveBeenCalled();
+  });
+
+  test('create assignment fails with invalid date', async () => {
+    const res = await request(app)
+      .post('/classes/assignments/class/abc')
+      .send({ title: 'New', due_date: 'not-a-date' });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+    expect(service.createAssignment).not.toHaveBeenCalled();
+  });
+
+  test('create assignment fails with missing title', async () => {
+    const res = await request(app)
+      .post('/classes/assignments/class/abc')
+      .send({ due_date: '2024-01-01T00:00:00.000Z' });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe('Validation error');
+    expect(service.createAssignment).not.toHaveBeenCalled();
   });
 
   test('update assignment', async () => {

@@ -83,13 +83,17 @@ const calculateForClass = async (classId) => {
     .join('users as u', 'ce.user_id', 'u.id')
     .where('ce.class_id', classId)
     .select('u.id as user_id', 'u.full_name');
-  const results = [];
-  for (const enr of enrollments) {
-    const score = await calculateForStudent(classId, enr.user_id);
-    results.push({ ...score, student_id: enr.user_id, full_name: enr.full_name });
 
-  }
-  return results;
+  const promises = enrollments.map(async (enr) => {
+    try {
+      const score = await module.exports.calculateForStudent(classId, enr.user_id);
+      return { ...score, student_id: enr.user_id, full_name: enr.full_name };
+    } catch (error) {
+      return { student_id: enr.user_id, full_name: enr.full_name, error: error.message };
+    }
+  });
+
+  return Promise.all(promises);
 };
 
 const getStudentScore = async (classId, studentId) => {

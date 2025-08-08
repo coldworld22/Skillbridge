@@ -66,6 +66,31 @@ export const fetchClassAssignments = async (classId) => {
   return data?.data ?? [];
 };
 
+export const fetchMyClassAssignments = async () => {
+  try {
+    const classes = await fetchMyEnrolledClasses();
+    const results = [];
+
+    for (const cls of classes) {
+      try {
+        const assignments = await fetchClassAssignments(cls.id);
+        results.push({
+          classId: cls.id,
+          className: cls.title,
+          assignments,
+        });
+      } catch (err) {
+        console.error(`Failed to fetch assignments for class ${cls.id}`, err);
+      }
+    }
+
+    return results;
+  } catch (err) {
+    console.error('Failed to fetch enrolled classes', err);
+    return [];
+  }
+};
+
 export const addClassToWishlist = async (id) => {
   const { data } = await api.post(`/users/classes/wishlist/${id}`);
   return data;
