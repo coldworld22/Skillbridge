@@ -14,6 +14,7 @@ import RevenueChart from "@/components/admin/charts/RevenueChart";
 import SignupsChart from "@/components/admin/charts/SignupsChart";
 import CategoryPieChart from "@/components/admin/charts/CategoryPieChart";
 import InstructorActivityChart from "@/components/admin/charts/InstructorActivityChart";
+import { useTranslation } from "next-i18next";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
@@ -21,6 +22,7 @@ function AdminDashboardHome() {
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const { t } = useTranslation('dashboard');
 
   // Wait for hydration to access Zustand state safely
   useEffect(() => {
@@ -60,11 +62,11 @@ function AdminDashboardHome() {
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: "Students", value: stats.students, color: "text-green-500" },
+        { icon: <FaBook aria-hidden="true" />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo aria-hidden="true" />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
@@ -75,7 +77,9 @@ function AdminDashboardHome() {
       {/* Alerts Summary */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🚨 Recent Alerts</h3>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🚨</span> {t('recentAlerts')}
+          </h3>
           <ul className="text-sm text-red-600 space-y-1">
             <li>Unauthorized usage detected</li>
             <li>Flagged chat in Python class</li>
@@ -85,7 +89,9 @@ function AdminDashboardHome() {
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🛡️ Flagged Messages</h3>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🛡️</span> {t('flaggedMessages')}
+          </h3>
           <ul className="text-sm text-red-500 space-y-1">
             <li>@ayman: “This is stupid”</li>
             <li>@maria: “Dumb answer...”</li>
@@ -94,9 +100,13 @@ function AdminDashboardHome() {
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🔒 License Check</h3>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🔒</span> {t('licenseCheck')}
+          </h3>
           <p className="text-sm text-gray-800">Last check: 1 hour ago</p>
-          <p className="text-sm text-red-600 mt-1">❌ 1 unauthorized instance detected</p>
+          <p className="text-sm text-red-600 mt-1">
+            <span aria-hidden="true">❌</span> 1 unauthorized instance detected
+          </p>
           <Link href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">See details</Link>
         </div>
       </section>
@@ -121,7 +131,9 @@ function AdminDashboardHome() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">
+          <span aria-hidden="true">📊</span> {t('platformInsights')}
+        </h2>
         {statsLoading ? (
           <p>Loading stats...</p>
         ) : (
