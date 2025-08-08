@@ -28,6 +28,7 @@ export default function BooksPage() {
   });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [loadMoreError, setLoadMoreError] = useState(null);
   const loader = useRef(null);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const addToCart = useBookCartStore((state) => state.addToCart);
@@ -115,10 +116,15 @@ export default function BooksPage() {
         });
         setBooks((prev) => (page === 1 ? data : [...prev, ...data]));
         setHasMore(data.length === 6);
+        setLoadMoreError(null);
       } catch (err) {
         console.error(err);
         if (page === 1) {
           setError("❌ Failed to load books. Please try again later.");
+        } else {
+          const msg = "❌ Failed to load more books. Please try again.";
+          toast.error(msg);
+          setLoadMoreError(msg);
         }
         setHasMore(false);
       } finally {
@@ -268,6 +274,10 @@ export default function BooksPage() {
                   />
                 ))}
               </div>
+            )}
+
+            {loadMoreError && (
+              <p className="text-center text-red-500 mt-4">{loadMoreError}</p>
             )}
 
             {loading && books.length > 0 && (
