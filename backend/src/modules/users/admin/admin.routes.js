@@ -12,6 +12,7 @@ const upload = require("./adminUploadMiddleware");
 const categoryRoutes = require("../categories/category.routes");
 const instructorAdminRoutes = require("./instructors/instructorAdmin.routes");
 // const classRoutes = require("../classes/class.routes");
+const logger = require("../../../utils/logger");
 
 
 
@@ -43,8 +44,7 @@ router.post(
         console.error("Multer upload error:", err.message);
         return res.status(400).json({ message: err.message });
       }
-
-      console.log("✅ File received:", req.file); // add this line
+      logger.debug("Identity document upload request received");
       next();
     });
   },
