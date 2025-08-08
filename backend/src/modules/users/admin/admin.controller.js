@@ -4,8 +4,8 @@
 const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
-
 const messageService = require("../../messages/messages.service");
+const handleControllerError = require("../../../utils/handleControllerError");
 
 
 /**
@@ -16,36 +16,40 @@ const messageService = require("../../messages/messages.service");
 exports.getProfile = async (req, res) => {
   const userId = req.user.id;
 
-  const [user] = await db("users")
-    .where({ id: userId })
-    .select(
-      "id",
-      "full_name",
-      "email",
-      "phone",
-      "gender",
-      "date_of_birth",
-      "avatar_url",
-      "is_email_verified",
-      "is_phone_verified",
-      "profile_complete",
-      "created_at",
-      "updated_at"
-    );
+  try {
+    const [user] = await db("users")
+      .where({ id: userId })
+      .select(
+        "id",
+        "full_name",
+        "email",
+        "phone",
+        "gender",
+        "date_of_birth",
+        "avatar_url",
+        "is_email_verified",
+        "is_phone_verified",
+        "profile_complete",
+        "created_at",
+        "updated_at"
+      );
 
-  const [adminProfile] = await db("admin_profiles")
-    .where({ user_id: userId })
-    .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
+    const [adminProfile] = await db("admin_profiles")
+      .where({ user_id: userId })
+      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
-  const socialLinks = await db("user_social_links")
-    .where({ user_id: userId })
-    .select("platform", "url");
+    const socialLinks = await db("user_social_links")
+      .where({ user_id: userId })
+      .select("platform", "url");
 
-  res.json({
-    ...user,
-    ...adminProfile,
-    social_links: socialLinks,
-  });
+    res.json({
+      ...user,
+      ...adminProfile,
+      social_links: socialLinks,
+    });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to load profile", { userId });
+  }
 };
 
 /**
@@ -67,52 +71,56 @@ exports.updateProfile = async (req, res) => {
     social_links = [],
   } = req.body;
 
-  // 1. Update core user fields
-  await db("users").where({ id: userId }).update({
-    email,
-    full_name,
-    phone,
-    gender,
-    date_of_birth,
-    avatar_url,
-    profile_complete: true,
-    updated_at: new Date(),
-  });
-
-  // 2. Upsert admin profile
-  const profileData = {
-    job_title,
-    department,
-    updated_at: new Date(),
-  };
-
-  const existing = await db("admin_profiles").where({ user_id: userId }).first();
-
-  if (existing) {
-    await db("admin_profiles").where({ user_id: userId }).update(profileData);
-  } else {
-    await db("admin_profiles").insert({
-      user_id: userId,
-      ...profileData,
-      created_at: new Date(),
+  try {
+    // 1. Update core user fields
+    await db("users").where({ id: userId }).update({
+      email,
+      full_name,
+      phone,
+      gender,
+      date_of_birth,
+      avatar_url,
+      profile_complete: true,
+      updated_at: new Date(),
     });
-  }
 
-  // 3. Replace social links
-  await db("user_social_links").where({ user_id: userId }).del();
+    // 2. Upsert admin profile
+    const profileData = {
+      job_title,
+      department,
+      updated_at: new Date(),
+    };
 
-  for (const link of social_links) {
-    if (link.url?.trim()) {
-      await db("user_social_links").insert({
+    const existing = await db("admin_profiles").where({ user_id: userId }).first();
+
+    if (existing) {
+      await db("admin_profiles").where({ user_id: userId }).update(profileData);
+    } else {
+      await db("admin_profiles").insert({
         user_id: userId,
-        platform: link.platform,
-        url: link.url.trim(),
+        ...profileData,
         created_at: new Date(),
       });
     }
-  }
 
-  res.json({ message: "Admin profile updated and marked as complete." });
+    // 3. Replace social links
+    await db("user_social_links").where({ user_id: userId }).del();
+
+    for (const link of social_links) {
+      if (link.url?.trim()) {
+        await db("user_social_links").insert({
+          user_id: userId,
+          platform: link.platform,
+          url: link.url.trim(),
+          created_at: new Date(),
+        });
+      }
+    }
+
+    res.json({ message: "Admin profile updated and marked as complete." });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to update profile", { userId });
+  }
 };
 
 /**
