@@ -14,10 +14,15 @@ export default function BookDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+
+    const controller = new AbortController();
+    let isMounted = true;
+
     const load = async () => {
       setLoading(true);
       try {
-        const data = await fetchBook(id);
+        const data = await fetchBook(id, { signal: controller.signal });
+        if (!isMounted) return;
         if (data) {
           setBook(data);
           setError(null);
@@ -25,13 +30,20 @@ export default function BookDetailPage() {
           setError("Book not found");
         }
       } catch (e) {
+        if (e.name === "AbortError" || e.name === "CanceledError") return;
         console.error("Failed to load book", e);
-        setError("Failed to load book");
+        if (isMounted) setError("Failed to load book");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
+
     load();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [id]);
 
   return (
