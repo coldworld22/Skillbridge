@@ -1,0 +1,22 @@
+{
+  "adminDashboardHome": {
+    "recentAlerts": "Alertes récentes",
+    "unauthorizedUsageDetected": "Utilisation non autorisée détectée",
+    "flaggedChatInPythonClass": "Discussion signalée dans le cours Python",
+    "apiKeyExpiringSoon": "Clé API expirant bientôt",
+    "viewAllAlerts": "Voir toutes les alertes",
+    "flaggedMessages": "Messages signalés",
+    "reviewMessages": "Examiner les messages",
+    "licenseCheck": "Vérification de licence",
+    "lastCheck": "Dernière vérification : il y a 1 heure",
+    "unauthorizedInstanceDetected": "1 instance non autorisée détectée",
+    "seeDetails": "Voir les détails",
+    "platformInsights": "Aperçus de la plateforme",
+    "loadingStats": "Chargement des statistiques...",
+    "totalUsers": "Utilisateurs totaux",
+    "instructors": "Instructeurs",
+    "students": "Étudiants",
+    "tutorials": "Tutoriels",
+    "classes": "Cours"
+  }
+}
