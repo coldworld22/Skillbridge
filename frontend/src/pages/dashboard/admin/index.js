@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -18,20 +19,42 @@ function AdminDashboardHome() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
-  const [statsError, setStatsError] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Wait for hydration to access Zustand state safely
   useEffect(() => {
-    const loadStats = async () => {
-      setStatsLoading(true);
-      try {
-        const data = await fetchAdminDashboardStats();
-        setStats(data);
-      } catch (err) {
-        console.error("Failed to load dashboard stats", err);
-        setStatsError("Failed to load dashboard stats");
-      } finally {
-        setStatsLoading(false);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      if (!user) {
+        router.replace("/auth/login");
+      } else if (!["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+        router.replace("/error/403");
       }
-    };
+    }
+  }, [user, hydrated]);
+
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAdminDashboardStats();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err);
+      setError(err.message || "Failed to load dashboard stats");
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
+      loadStats();
+    }
+  }, [hydrated, user, loadStats]);
 
     loadStats();
   }, []);
@@ -100,7 +123,17 @@ function AdminDashboardHome() {
         </div>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
-        {statsLoading ? (
+        {error ? (
+          <div className="text-red-600">
+            <p>{error}</p>
+            <button
+              onClick={loadStats}
+              className="mt-2 text-sm text-blue-500 underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : statsLoading ? (
           <p>Loading stats...</p>
         ) : statsError ? (
           <p>{statsError}</p>
