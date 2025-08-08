@@ -41,7 +41,7 @@ Allow instructors to upload and sell PDF books, and allow students to browse, pu
 
 ### Student
 - `/cart` → View cart
-- `/checkout` → Pay for books
+- `/payments/checkout` → Pay for books
 - `/dashboard/student/library` → Purchased books list (download access)
 
 ### Instructor
@@ -81,7 +81,7 @@ Allow instructors to upload and sell PDF books, and allow students to browse, pu
 - `<BookCard />` – Title, price, instructor, thumbnail
 - `<BookForm />` – Form to create/edit book
 - `<BookDetails />` – Full view + “Add to Cart” button
-- `<CartItem />` – Book row in cart
+- `<CartItem />` – Book row in cart with quantity controls
 - `<LibraryItem />` – Book row in student library
 - `<SecureDownload />` – Button for PDF access (with auth token check)
 - `<AdminBookRow />` – Approve/reject actions
