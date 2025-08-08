@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { FiDownload, FiEye, FiStar, FiHeart } from "react-icons/fi";
-import useLibraryStore from "@/store/libraryStore";
+import useLibraryStore from "@/store/library/libraryStore";
 
 function BookCard({ book }) {
   const cover = book.coverUrl || "/images/default-book-cover.jpg";
@@ -66,7 +66,7 @@ function BookCard({ book }) {
 }
 
 export default function BooksPage() {
-  const { items: books, fetchLibrary } = useLibraryStore();
+  const { books, fetchLibrary } = useLibraryStore();
 
   useEffect(() => {
     fetchLibrary();
