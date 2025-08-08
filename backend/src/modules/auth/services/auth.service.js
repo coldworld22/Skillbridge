@@ -11,6 +11,7 @@ const {
   sendNewUserAdminEmail,
 } = require("../../../utils/email");
 const { generateOtp } = require("../utils/otp");
+const sanitizeUser = require("../utils/sanitizeUser");
 const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
