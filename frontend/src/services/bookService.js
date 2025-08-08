@@ -36,6 +36,7 @@ const formatBook = (book) => {
     ...book,
     cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
     pdf_url: buildUrl(book?.pdf_url),
+    preview_url: buildUrl(book?.preview_url),
     preview_pages: previewPages,
   };
 

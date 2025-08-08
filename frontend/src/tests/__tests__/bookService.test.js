@@ -37,6 +37,7 @@ describe("bookService", () => {
           title: "A",
           cover_image_url: null,
           pdf_url: null,
+          preview_url: null,
           preview_pages: [],
         },
       ],
@@ -57,6 +58,7 @@ describe("bookService", () => {
           title: "A",
           cover_image_url: null,
           pdf_url: null,
+          preview_url: null,
           preview_pages: [],
         },
       ],
@@ -74,6 +76,7 @@ describe("bookService", () => {
       title: "A",
       cover_image_url: null,
       pdf_url: null,
+      preview_url: null,
       preview_pages: [],
     });
   });
@@ -88,6 +91,7 @@ describe("bookService", () => {
       title: "A",
       cover_image_url: null,
       pdf_url: null,
+      preview_url: null,
       preview_pages: [],
     });
   });
@@ -105,6 +109,7 @@ describe("bookService", () => {
       title: "A",
       cover_image_url: null,
       pdf_url: null,
+      preview_url: null,
       preview_pages: [],
     });
   });
@@ -114,6 +119,7 @@ describe("bookService", () => {
       id: 3,
       price: "19.99",
       preview_pages: '["/uploads/a.png"]',
+      preview_url: "/uploads/p.pdf",
     };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(3);
@@ -122,6 +128,7 @@ describe("bookService", () => {
       price: 19.99,
       cover_image_url: null,
       pdf_url: null,
+      preview_url: "/api/uploads/p.pdf",
       preview_pages: ["/api/uploads/a.png"],
     });
   });
@@ -140,6 +147,7 @@ describe("bookService", () => {
       id: 1,
       cover_image_url: null,
       pdf_url: null,
+      preview_url: null,
       preview_pages: [],
     });
   });
@@ -158,6 +166,7 @@ describe("bookService", () => {
       id: 2,
       cover_image_url: null,
       pdf_url: null,
+      preview_url: null,
       preview_pages: [],
     });
   });
