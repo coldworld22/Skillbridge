@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaTimesCircle } from "react-icons/fa";
 import { fetchBookCategories } from "@/services/bookCategoryService";
+import { toast } from "react-hot-toast";
 
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [priceRange, setPriceRange] = useState(100);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -16,6 +18,8 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
         setCategories(data);
       } catch (err) {
         console.error("Failed to fetch categories", err);
+        setError("Failed to load categories");
+        toast.error("Failed to load categories");
       }
     };
     loadCategories();
@@ -71,6 +75,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
       <div className="mb-6">
         <h3 className="text-gray-300 font-semibold">Categories</h3>
+        {error && <p className="text-red-500 mt-2">{error}</p>}
         {categories.map((cat) => (
           <label
             key={cat.id || cat.name || cat}
