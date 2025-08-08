@@ -136,6 +136,7 @@ function AdminBooksPage() {
           perPage,
           filters: activeFilters,
           sort: { sortBy },
+          admin: true,
         });
         setBooks(list);
         setMeta(meta);
