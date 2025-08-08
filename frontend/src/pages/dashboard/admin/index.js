@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
@@ -17,6 +18,9 @@ import InstructorActivityChart from "@/components/admin/charts/InstructorActivit
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
+  const { t } = useTranslation(['common', 'dashboard']);
+  const router = useRouter();
+  const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -61,11 +65,11 @@ function AdminDashboardHome() {
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        { icon: <FaUsers />, label: t('totalUsers'), value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher />, label: t('instructors'), value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers />, label: t('students'), value: stats.students, color: "text-green-500" },
+        { icon: <FaBook />, label: t('tutorials'), value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo />, label: t('classes'), value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
@@ -76,29 +80,29 @@ function AdminDashboardHome() {
       {/* Alerts Summary */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🚨 Recent Alerts</h3>
+          <h3 className="font-semibold mb-2">🚨 {t('recentAlerts')}</h3>
           <ul className="text-sm text-red-600 space-y-1">
-            <li>Unauthorized usage detected</li>
-            <li>Flagged chat in Python class</li>
-            <li>API key expiring soon</li>
+            <li>{t('unauthorizedUsageDetected')}</li>
+            <li>{t('flaggedChatInPythonClass')}</li>
+            <li>{t('apiKeyExpiringSoon')}</li>
           </ul>
-          <Link href="/admin/alerts" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">View all alerts</Link>
+          <Link href="/admin/alerts" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">{t('viewAllAlerts')}</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🛡️ Flagged Messages</h3>
+          <h3 className="font-semibold mb-2">🛡️ {t('flaggedMessages')}</h3>
           <ul className="text-sm text-red-500 space-y-1">
             <li>@ayman: “This is stupid”</li>
             <li>@maria: “Dumb answer...”</li>
           </ul>
-          <Link href="/admin/moderation" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">Review messages</Link>
+          <Link href="/admin/moderation" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">{t('reviewMessages')}</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🔒 License Check</h3>
-          <p className="text-sm text-gray-800">Last check: 1 hour ago</p>
-          <p className="text-sm text-red-600 mt-1">❌ 1 unauthorized instance detected</p>
-          <Link href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">See details</Link>
+          <h3 className="font-semibold mb-2">🔒 {t('licenseCheck')}</h3>
+          <p className="text-sm text-gray-800">{t('lastCheck')}</p>
+          <p className="text-sm text-red-600 mt-1">❌ {t('unauthorizedInstanceDetected')}</p>
+          <Link href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">{t('seeDetails')}</Link>
         </div>
       </section>
 
@@ -122,21 +126,9 @@ function AdminDashboardHome() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
-        {error ? (
-          <div className="text-red-600">
-            <p>{error}</p>
-            <button
-              onClick={loadStats}
-              className="mt-2 text-sm text-blue-500 underline"
-            >
-              Retry
-            </button>
-          </div>
-        ) : statsLoading ? (
-          <p>Loading stats...</p>
-        ) : statsError ? (
-          <p>{statsError}</p>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 {t('platformInsights')}</h2>
+        {statsLoading ? (
+          <p>{t('loadingStats')}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}

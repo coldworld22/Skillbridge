@@ -77,4 +77,25 @@
     "assignment_submitted": "تم تسليم الواجب بنجاح",
     "class_joined": "تم الانضمام إلى الدورة"
   }
+,
+  "adminDashboardHome": {
+    "recentAlerts": "التنبيهات الأخيرة",
+    "unauthorizedUsageDetected": "تم اكتشاف استخدام غير مصرح به",
+    "flaggedChatInPythonClass": "دردشة تم الإبلاغ عنها في صف بايثون",
+    "apiKeyExpiringSoon": "مفتاح API سينتهي قريبًا",
+    "viewAllAlerts": "عرض جميع التنبيهات",
+    "flaggedMessages": "الرسائل المبلغ عنها",
+    "reviewMessages": "مراجعة الرسائل",
+    "licenseCheck": "فحص الترخيص",
+    "lastCheck": "آخر فحص: قبل ساعة",
+    "unauthorizedInstanceDetected": "تم اكتشاف مثال غير مصرح به واحد",
+    "seeDetails": "عرض التفاصيل",
+    "platformInsights": "رؤى المنصة",
+    "loadingStats": "جارٍ تحميل الإحصاءات...",
+    "totalUsers": "إجمالي المستخدمين",
+    "instructors": "المدربون",
+    "students": "الطلاب",
+    "tutorials": "الدروس التعليمية",
+    "classes": "الفصول"
+  }
 }
