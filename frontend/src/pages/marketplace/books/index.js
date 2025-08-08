@@ -6,7 +6,10 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import BookCard from "@/components/books/BookCard";
 import BookFilterSidebar from "@/components/books/FilterSidebar";
-import { fetchBooks } from "@/services/bookService";
+import { fetchBooks, buildUrl } from "@/services/bookService";
+import useBookWishlistStore from "@/store/books/wishlistStore";
+import useBookCartStore from "@/store/books/cartStore";
+import { toast } from "react-toastify";
 
 export default function BooksPage() {
   const [books, setBooks] = useState([]);
@@ -26,6 +29,8 @@ export default function BooksPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
+  const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
+  const addToCart = useBookCartStore((state) => state.addToCart);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -68,6 +73,34 @@ export default function BooksPage() {
     setBooks([]);
     setPage(1);
     setHasMore(true);
+  };
+
+  const handleAddToWishlist = (book) => {
+    const item = {
+      book_id: book.id,
+      title: book.title,
+      price: book.price,
+      cover_url:
+        book.cover_image_url ||
+        buildUrl(book.cover_image) ||
+        "/images/default-book-cover.jpg",
+    };
+    addToWishlist(item);
+    toast.success("Added to wishlist");
+  };
+
+  const handleAddToCart = (book) => {
+    const item = {
+      book_id: book.id,
+      title: book.title,
+      price: book.price,
+      cover_url:
+        book.cover_image_url ||
+        buildUrl(book.cover_image) ||
+        "/images/default-book-cover.jpg",
+    };
+    addToCart(item);
+    toast.success("Added to cart");
   };
 
   useEffect(() => {
@@ -227,7 +260,12 @@ export default function BooksPage() {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {books.map((book) => (
-                  <BookCard key={book.id} book={book} />
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    onAddToWishlist={() => handleAddToWishlist(book)}
+                    onAddToCart={() => handleAddToCart(book)}
+                  />
                 ))}
               </div>
             )}
