@@ -17,8 +17,6 @@ import InstructorActivityChart from "@/components/admin/charts/InstructorActivit
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
-  const router = useRouter();
-  const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -58,9 +56,8 @@ function AdminDashboardHome() {
     }
   }, [hydrated, user, loadStats]);
 
-  if (!hydrated || !user || !["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-    return null;
-  }
+    loadStats();
+  }, []);
 
   const statsArray = stats
     ? [
@@ -138,6 +135,8 @@ function AdminDashboardHome() {
           </div>
         ) : statsLoading ? (
           <p>Loading stats...</p>
+        ) : statsError ? (
+          <p>{statsError}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}
