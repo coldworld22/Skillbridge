@@ -144,3 +144,50 @@ exports.getInstructorBookAnalytics = async (instructorId) => {
     })),
   };
 };
+
+exports.addToCart = async (studentId, bookId) => {
+  const [row] = await db('book_cart')
+    .insert({ student_id: studentId, book_id: bookId })
+    .onConflict(['student_id', 'book_id'])
+    .merge({ quantity: db.raw('book_cart.quantity + 1') })
+    .returning('*');
+  return row;
+};
+
+exports.removeFromCart = (studentId, bookId) =>
+  db('book_cart').where({ student_id: studentId, book_id: bookId }).del();
+
+exports.checkout = async (studentId) => {
+  return db.transaction(async (trx) => {
+    const items = await trx('book_cart')
+      .where({ student_id: studentId })
+      .select('book_id');
+    if (!items.length) return [];
+    const books = await trx('books')
+      .whereIn('id', items.map((i) => i.book_id))
+      .select('id', 'price');
+    const rows = books.map((b) => ({
+      student_id: studentId,
+      book_id: b.id,
+      price_paid: b.price,
+    }));
+    const purchases = await trx('book_purchases')
+      .insert(rows)
+      .returning('*');
+    await trx('book_cart').where({ student_id: studentId }).del();
+    return purchases;
+  });
+};
+
+exports.addToWishlist = async (studentId, bookId) => {
+  const [row] = await db('book_wishlist')
+    .insert({ student_id: studentId, book_id: bookId })
+    .onConflict(['student_id', 'book_id'])
+    .ignore()
+    .returning('*');
+  return row;
+};
+
+exports.removeFromWishlist = (studentId, bookId) =>
+  db('book_wishlist').where({ student_id: studentId, book_id: bookId }).del();
+

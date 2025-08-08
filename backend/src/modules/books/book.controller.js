@@ -280,3 +280,29 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
 
 sendSuccess(res, book, "Book status updated");
 });
+
+exports.updateCart = catchAsync(async (req, res) => {
+  const { bookId, action } = req.body || {};
+  if (action === 'remove') {
+    await service.removeFromCart(req.user.id, bookId);
+    return sendSuccess(res, null, 'Removed from cart');
+  }
+  const item = await service.addToCart(req.user.id, bookId);
+  sendSuccess(res, item, 'Added to cart');
+});
+
+exports.checkout = catchAsync(async (req, res) => {
+  const purchases = await service.checkout(req.user.id);
+  sendSuccess(res, purchases, 'Checkout complete');
+});
+
+exports.addWishlist = catchAsync(async (req, res) => {
+  await service.addToWishlist(req.user.id, req.body.bookId);
+  sendSuccess(res, null, 'Added to wishlist');
+});
+
+exports.removeWishlist = catchAsync(async (req, res) => {
+  await service.removeFromWishlist(req.user.id, req.body.bookId);
+  sendSuccess(res, null, 'Removed from wishlist');
+});
+
