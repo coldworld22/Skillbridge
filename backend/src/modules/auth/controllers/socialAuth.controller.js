@@ -1,7 +1,7 @@
 // Import the configured passport instance
 const { passport } = require('../../../config/passport');
 const { refreshCookieOptions } = require('../../../utils/cookie');
-const { frontendBase } = require('../../../utils/frontend');
+const { frontendBase, allowedOrigins } = require('../../../utils/frontend');
 
 
 // Google OAuth
@@ -14,10 +14,14 @@ exports.googleCallback = (req, res, next) => {
     if (err || !result) {
       return res.redirect(`${frontendBase}/auth/login?error=social`);
     }
-    const { accessToken, refreshToken } = result;
+    const { refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const host = req.query.origin || req.get('origin') || frontendBase;
-    const redirectUrl = `${host}/auth/social-success?token=${accessToken}`;
+    let origin = req.query.origin;
+    if (!allowedOrigins.includes(origin)) {
+      const headerOrigin = req.get('origin');
+      origin = allowedOrigins.includes(headerOrigin) ? headerOrigin : frontendBase;
+    }
+    const redirectUrl = `${origin}/auth/social-success`;
     res.redirect(redirectUrl);
   })(req, res, next);
 };
@@ -70,10 +74,14 @@ exports.githubCallback = (req, res, next) => {
     if (err || !result) {
       return res.redirect(`${frontendBase}/auth/login?error=social`);
     }
-    const { accessToken, refreshToken } = result;
+    const { refreshToken } = result;
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
-    const host = req.query.origin || req.get('origin') || frontendBase;
-    const redirectUrl = `${host}/auth/social-success?token=${accessToken}`;
+    let origin = req.query.origin;
+    if (!allowedOrigins.includes(origin)) {
+      const headerOrigin = req.get('origin');
+      origin = allowedOrigins.includes(headerOrigin) ? headerOrigin : frontendBase;
+    }
+    const redirectUrl = `${origin}/auth/social-success`;
     res.redirect(redirectUrl);
   })(req, res, next);
 };
