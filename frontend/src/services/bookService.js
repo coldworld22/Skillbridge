@@ -68,14 +68,19 @@ export const fetchBooks = async ({
   };
 };
 
-export const fetchBook = async (id, { admin = false } = {}) => {
+export const fetchBook = async (id, { admin = false, ...config } = {}) => {
   const endpoint = admin ? `/books/admin/${id}` : `/books/${id}`;
+  const hasConfig = Object.keys(config).length > 0;
   try {
-    const { data } = await api.get(endpoint);
+    const { data } = hasConfig
+      ? await api.get(endpoint, config)
+      : await api.get(endpoint);
     return data?.data ? formatBook(data.data) : null;
   } catch (err) {
-    if (admin) {
-      const { data } = await api.get(`/books/${id}`);
+    if (admin && err.name !== "CanceledError" && err.name !== "AbortError") {
+      const { data } = hasConfig
+        ? await api.get(`/books/${id}`, config)
+        : await api.get(`/books/${id}`);
       return data?.data ? formatBook(data.data) : null;
     }
     throw err;
