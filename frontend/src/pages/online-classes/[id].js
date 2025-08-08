@@ -424,7 +424,7 @@ export default function ClassDetailsPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isEnrolled ? (
                 <button
-                  onClick={() => router.push(`/dashboard/student/online-classe/${classInfo.id}`)}
+                  onClick={() => router.push(`/dashboard/student/online-classes/${classInfo.id}`)}
                   className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   Go to Class Dashboard
