@@ -212,6 +212,33 @@ exports.deleteAvatar = async (req, res) => {
 };
 
 /**
+ * @desc Upload instructor demo video
+ * @route PATCH /api/users/instructor/:id/demo
+ * @access Instructor
+ */
+exports.uploadDemoVideo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+            return res.status(400).json({ error: "Invalid user id" });
+        }
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+        await db("instructor_profiles")
+            .where({ user_id: id })
+            .update({ demo_video_url: demoVideoUrl });
+
+        res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+        console.error("Demo video upload error:", err);
+        res.status(500).json({ error: "Failed to upload demo video" });
+    }
+};
+
+/**
  * @desc Delete instructor demo video
  * @route DELETE /api/users/instructor/:id/demo
  * @access Instructor
