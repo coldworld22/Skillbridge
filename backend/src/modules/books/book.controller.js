@@ -123,7 +123,7 @@ exports.getInstructorBookAnalytics = catchAsync(async (req, res) => {
 
 exports.getBook = catchAsync(async (req, res) => {
   const book = await service.getBookById(req.params.id);
-  if (!book || book.status !== "approved") {
+  if (!book || !["approved", "active"].includes(book.status)) {
     throw new AppError("Book not found", 404);
   }
   sendSuccess(res, book);
