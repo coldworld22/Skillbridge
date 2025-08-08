@@ -93,6 +93,58 @@ exports.updateProfile = async (req, res) => {
 };
 
 /**
+ * @desc Update student avatar
+ * @route PATCH /api/users/student/:id/avatar
+ * @access Student
+ */
+exports.updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No avatar uploaded" });
+    }
+    const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
+    await db("users")
+      .where({ id: req.user.id })
+      .update({ avatar_url: avatarUrl });
+    res.json({ avatar_url: avatarUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update avatar" });
+  }
+};
+
+/**
+ * @desc Update student identity document
+ * @route PATCH /api/users/student/:id/identity
+ * @access Student
+ */
+exports.updateIdentity = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No identity document uploaded" });
+    }
+    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+    const exists = await db("student_profiles")
+      .where({ user_id: req.user.id })
+      .first();
+    if (exists) {
+      await db("student_profiles")
+        .where({ user_id: req.user.id })
+        .update({ identity_doc_url: identityUrl });
+    } else {
+      await db("student_profiles").insert({
+        user_id: req.user.id,
+        identity_doc_url: identityUrl,
+      });
+    }
+    res.json({ identity_doc_url: identityUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update identity document" });
+  }
+};
+
+/**
  * @desc Change student password
  * @route PATCH /api/users/student/change-password
  * @access Student
