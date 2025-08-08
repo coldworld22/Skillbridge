@@ -1,7 +1,15 @@
 import Link from "next/link";
+import { useEffect } from "react";
 import { FaCheckCircle } from "react-icons/fa";
+import useLibraryStore from "@/store/libraryStore";
 
 const ConfirmationPage = () => {
+  const fetchLibrary = useLibraryStore((state) => state.fetchLibrary);
+
+  useEffect(() => {
+    fetchLibrary();
+  }, [fetchLibrary]);
+
   return (
     <div className="bg-black min-h-screen text-white flex flex-col justify-center items-center">
       <FaCheckCircle className="text-6xl text-green-500 mb-4" />

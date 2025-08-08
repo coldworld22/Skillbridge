@@ -5,6 +5,7 @@ const service = require("./payments.service");
 const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
+const libraryService = require("../library/library.service");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const { user_id, method_id, item_type, item_id, amount, currency, status, reference_id } = req.body;
@@ -32,6 +33,14 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   } catch (err) {
     console.error("Failed to send payment SMS:", err);
+  }
+
+  if (item_type === "book" && payment.status === "paid") {
+    try {
+      await libraryService.recordPurchase(user_id, item_id, amount);
+    } catch (err) {
+      console.error("Failed to record book purchase:", err);
+    }
   }
 
   sendSuccess(res, payment, "Payment created");
