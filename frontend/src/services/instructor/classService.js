@@ -37,8 +37,8 @@ const computeScheduleStatus = (start, end) => {
 
 export const fetchInstructorClasses = async () => {
   // Fetch only classes belonging to the current instructor
-  // using the dedicated "/admin/my" endpoint
-  const { data } = await api.get("/users/classes/admin/my");
+  // using the dedicated "/instructor/my" endpoint
+  const { data } = await api.get("/users/classes/instructor/my");
   const list = data?.data ?? [];
   return list.map(formatClass);
 };

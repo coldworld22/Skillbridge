@@ -31,6 +31,7 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
+  isInstructor: (_req, _res, next) => next(),
 }));
 
 const routes = require('../../class.routes');

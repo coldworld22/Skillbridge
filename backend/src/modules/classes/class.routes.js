@@ -10,6 +10,7 @@ const {
   verifyToken,
   isInstructorOrAdmin,
   isAdmin,
+  isInstructor,
 } = require("../../middleware/auth/authMiddleware");
 
 // Student enrollments
@@ -40,6 +41,12 @@ router.get(
   "/admin/my",
   verifyToken,
   isInstructorOrAdmin,
+  controller.getMyClasses
+);
+router.get(
+  "/instructor/my",
+  verifyToken,
+  isInstructor,
   controller.getMyClasses
 );
 router.get(

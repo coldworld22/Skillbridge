@@ -18,6 +18,7 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isStudent: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
+  isInstructor: (_req, _res, next) => next(),
 }));
 
 const service = require('../classScore.service');
