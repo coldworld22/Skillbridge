@@ -17,7 +17,14 @@ export default function StudentTutorialsPage() {
         const data = await fetchPublishedTutorials();
         const enriched = data.map((tut) => {
           const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-          const progress = saved ? JSON.parse(saved) : { completedChapters: [], completedQuiz: false };
+          let progress = { completedChapters: [], completedQuiz: false };
+          if (saved) {
+            try {
+              progress = JSON.parse(saved);
+            } catch {
+              progress = { completedChapters: [], completedQuiz: false };
+            }
+          }
           return {
             ...tut,
             completedLessons: progress.completedChapters.length,
