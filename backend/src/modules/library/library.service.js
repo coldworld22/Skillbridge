@@ -62,3 +62,22 @@ exports.listForStudent = async (studentId) => {
     };
   });
 };
+
+exports.recordPurchase = async (studentId, bookId, pricePaid) => {
+  const [row] = await db("book_purchases")
+    .insert({
+      student_id: studentId,
+      book_id: bookId,
+      price_paid: pricePaid,
+    })
+    .returning("*");
+  return row;
+};
+
+exports.getBookForDownload = async (studentId, bookId) => {
+  return db("book_purchases as bp")
+    .join("books as b", "bp.book_id", "b.id")
+    .where({ "bp.student_id": studentId, "bp.book_id": bookId })
+    .select("b.pdf_url", "b.title")
+    .first();
+};
