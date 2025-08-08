@@ -11,7 +11,8 @@ const {
   sendNewUserAdminEmail,
 } = require("../../../utils/email");
 const { generateOtp } = require("../utils/otp");
-const sanitizeUser = require("../utils/sanitizeUser");
+// Renamed to avoid potential identifier conflicts during runtime
+const sanitizeUserUtil = require("../utils/sanitizeUser");
 const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
@@ -132,7 +133,7 @@ exports.registerUser = async (data) => {
     console.error("Error sending registration emails:", err.message);
   }
 
-  const safeUser = sanitizeUser(newUser);
+  const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles } };
 };
 
@@ -193,7 +194,7 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
 
-  const safeUser = sanitizeUser(user);
+  const safeUser = sanitizeUserUtil(user);
   return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles } };
 };
 
@@ -378,7 +379,7 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     receiver_id: user.id,
     message: "Your password was changed successfully",
   });
-  return sanitizeUser(user);
+  return sanitizeUserUtil(user);
 };
 
 /**
