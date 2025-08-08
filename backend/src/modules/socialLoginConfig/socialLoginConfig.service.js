@@ -5,11 +5,16 @@ const path = require("path");
 const SETTINGS_KEY = "social_login_settings";
 
 exports.getSettings = async () => {
-  const row = await db("settings").where({ key: SETTINGS_KEY }).first();
-  if (!row) return null;
   try {
-    return JSON.parse(row.value);
-  } catch (_err) {
+    const row = await db("settings").where({ key: SETTINGS_KEY }).first();
+    if (!row) return null;
+    try {
+      return JSON.parse(row.value);
+    } catch (_err) {
+      return null;
+    }
+  } catch (err) {
+    console.error("Failed to load social login settings", err);
     return null;
   }
 };

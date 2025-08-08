@@ -11,6 +11,7 @@ const {
   sendNewUserAdminEmail,
 } = require("../../../utils/email");
 const { generateOtp } = require("../utils/otp");
+const sanitizeUser = require("../utils/sanitizeUser");
 const { OTP_LENGTH } = require("../constants");
 const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
@@ -24,13 +25,18 @@ const verificationService = require("../../verify/verify.service");
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "60m";
 const REFRESH_EXPIRES_IN = "30d";
-const REFRESH_TOKEN_SECRET =
-  process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
 const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000;
+
+function sanitizeUser(user) {
+  if (!user) return user;
+  const { password_hash, ...safe } = user;
+  return safe;
+}
 
 function recordFailedAttempt(email) {
   const info = failedLoginAttempts.get(email) || { count: 0 };
@@ -141,6 +147,16 @@ exports.registerUser = async (data) => {
  * Login user and issue tokens
  */
 exports.loginUser = async ({ email, password }) => {
+  if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
+    const missing = [];
+    if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
+    if (!REFRESH_TOKEN_SECRET) missing.push("REFRESH_TOKEN_SECRET");
+    throw new AppError(
+      `Missing environment variable(s): ${missing.join(", ")}`,
+      500
+    );
+  }
+
   const attempt = failedLoginAttempts.get(email);
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
@@ -191,12 +207,18 @@ exports.loginUser = async ({ email, password }) => {
  * Generate JWT access token
  */
 function generateAccessToken(payload) {
+  if (!process.env.JWT_SECRET) {
+    throw new AppError("JWT_SECRET not configured", 500);
+  }
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
 }
 
 exports.generateAccessToken = generateAccessToken;
 
 function generateRefreshToken(payload, jti) {
+  if (!REFRESH_TOKEN_SECRET) {
+    throw new AppError("REFRESH_TOKEN_SECRET not configured", 500);
+  }
   return jwt.sign({ ...payload, jti }, REFRESH_TOKEN_SECRET, {
     expiresIn: REFRESH_EXPIRES_IN,
   });
@@ -220,6 +242,9 @@ async function issueRefreshToken(userId, role) {
 exports.issueRefreshToken = issueRefreshToken;
 
 exports.verifyRefreshToken = async (token) => {
+  if (!REFRESH_TOKEN_SECRET) {
+    throw new AppError("REFRESH_TOKEN_SECRET not configured", 500);
+  }
   const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
   const row = await db("refresh_tokens")
     .where({ id: decoded.jti, user_id: decoded.id })
