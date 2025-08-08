@@ -63,7 +63,7 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <Navbar />
       <IncompleteAlertModal />
 
@@ -74,7 +74,7 @@ export default function Home() {
       ))}
 
       {/* Scroll Progress Bar */}
-      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 w-2 h-40 bg-gray-800 rounded-full z-50">
+      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 w-2 h-40 bg-gray-800 rounded-full z-50 hidden md:block">
         <motion.div
           style={{ height: `${scrollProgress}%` }}
           className="w-full bg-white rounded-full"
@@ -82,7 +82,7 @@ export default function Home() {
       </div>
 
       {/* Smooth Scroll Buttons */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
+      <div className="fixed bottom-8 right-8 z-50 gap-4 hidden md:flex md:flex-col">
         {currentSection > 0 && (
           <motion.button whileHover={{ scale: 1.2 }} onClick={() => scrollToSection(currentSection - 1)}
             className="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition">
