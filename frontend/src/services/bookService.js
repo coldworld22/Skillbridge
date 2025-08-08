@@ -51,6 +51,7 @@ export const fetchBooks = async ({
   perPage,
   filters = {},
   sort = {},
+  admin = false,
 } = {}) => {
   const params = {
     ...(page !== undefined && { page }),
@@ -58,7 +59,8 @@ export const fetchBooks = async ({
     ...filters,
     ...sort,
   };
-  const { data } = await api.get("/books", { params });
+  const endpoint = admin ? "/books/admin" : "/books";
+  const { data } = await api.get(endpoint, { params });
   const list = data?.data ? data.data.map(formatBook) : [];
   return {
     books: list,

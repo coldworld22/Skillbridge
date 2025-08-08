@@ -44,6 +44,26 @@ describe("bookService", () => {
     });
   });
 
+  it("fetches books as admin", async () => {
+    const apiData = [{ id: 1, title: "A" }];
+    const meta = { total: 1 };
+    api.get.mockResolvedValueOnce({ data: { data: apiData, meta } });
+    const res = await fetchBooks({ admin: true });
+    expect(api.get).toHaveBeenCalledWith("/books/admin", { params: {} });
+    expect(res).toEqual({
+      books: [
+        {
+          id: 1,
+          title: "A",
+          cover_image_url: null,
+          pdf_url: null,
+          preview_pages: [],
+        },
+      ],
+      meta,
+    });
+  });
+
   it("fetches single book", async () => {
     const apiData = { id: 1, title: "A" };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
