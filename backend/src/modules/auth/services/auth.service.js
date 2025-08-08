@@ -132,7 +132,6 @@ exports.registerUser = async (data) => {
   } catch (err) {
     console.error("Error sending registration emails:", err.message);
   }
-
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles } };
 };
@@ -193,7 +192,6 @@ exports.loginUser = async ({ email, password }) => {
     type: "login",
     message: "You have logged in successfully",
   });
-
   const safeUser = sanitizeUserUtil(user);
   return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles } };
 };
