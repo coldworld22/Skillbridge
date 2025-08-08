@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
@@ -9,7 +10,13 @@ import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
 import { fetchAdminDashboardStats } from "@/services/admin/adminService";
-import { FaUsers, FaChalkboardTeacher, FaBook, FaVideo } from "react-icons/fa";
+import {
+  FaUsers,
+  FaChalkboardTeacher,
+  FaUserGraduate,
+  FaBook,
+  FaVideo,
+} from "react-icons/fa";
 import RevenueChart from "@/components/admin/charts/RevenueChart";
 import SignupsChart from "@/components/admin/charts/SignupsChart";
 import CategoryPieChart from "@/components/admin/charts/CategoryPieChart";
@@ -18,6 +25,7 @@ import { useTranslation } from "next-i18next";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
+  const { t } = useTranslation(['common', 'dashboard']);
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
@@ -39,20 +47,48 @@ function AdminDashboardHome() {
     }
   }, [user, hydrated]);
 
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAdminDashboardStats();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err);
+      setError(err.message || "Failed to load dashboard stats");
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadStats = async () => {
+    const loadData = async () => {
       setStatsLoading(true);
+      setAlertsLoading(true);
+      setFlagsLoading(true);
+      setLicenseLoading(true);
       try {
-        const data = await fetchAdminDashboardStats();
-        setStats(data);
+        const [statsData, alertsData, flagsData, licenseData] = await Promise.all([
+          fetchAdminDashboardStats(),
+          fetchRecentAlerts(),
+          fetchFlaggedMessages(),
+          fetchLicenseStatus(),
+        ]);
+        setStats(statsData);
+        setAlerts(alertsData);
+        setFlaggedMessages(flagsData);
+        setLicenseStatus(licenseData);
       } catch (err) {
-        console.error("Failed to load dashboard stats", err);
+        console.error("Failed to load dashboard data", err);
       } finally {
         setStatsLoading(false);
+        setAlertsLoading(false);
+        setFlagsLoading(false);
+        setLicenseLoading(false);
       }
     };
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-      loadStats();
+      loadData();
     }
   }, [hydrated, user]);
 
@@ -135,7 +171,7 @@ function AdminDashboardHome() {
           <span aria-hidden="true">📊</span> {t('platformInsights')}
         </h2>
         {statsLoading ? (
-          <p>Loading stats...</p>
+          <p>{t('loadingStats')}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}
