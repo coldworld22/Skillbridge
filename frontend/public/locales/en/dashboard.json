@@ -1305,4 +1305,25 @@
     "update_success": "Advertisement updated successfully!",
     "update_failed": "Failed to update advertisement"
   }
+,
+  "adminDashboardHome": {
+    "recentAlerts": "Recent Alerts",
+    "unauthorizedUsageDetected": "Unauthorized usage detected",
+    "flaggedChatInPythonClass": "Flagged chat in Python class",
+    "apiKeyExpiringSoon": "API key expiring soon",
+    "viewAllAlerts": "View all alerts",
+    "flaggedMessages": "Flagged Messages",
+    "reviewMessages": "Review messages",
+    "licenseCheck": "License Check",
+    "lastCheck": "Last check: 1 hour ago",
+    "unauthorizedInstanceDetected": "1 unauthorized instance detected",
+    "seeDetails": "See details",
+    "platformInsights": "Platform Insights",
+    "loadingStats": "Loading stats...",
+    "totalUsers": "Total Users",
+    "instructors": "Instructors",
+    "students": "Students",
+    "tutorials": "Tutorials",
+    "classes": "Classes"
+  }
 }
