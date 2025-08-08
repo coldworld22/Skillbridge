@@ -148,7 +148,7 @@ export default function MyEnrolledClassesPage() {
                 </Link>
                 {cls.status === 'Live' && cls.joined ? (
                   <Link
-                    href={`/dashboard/student/online-classe/${cls.linkId || cls.id}`}
+                    href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
                   >
                     <FaVideo className="inline mr-2" /> Join Class

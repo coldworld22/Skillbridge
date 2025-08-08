@@ -71,7 +71,7 @@ export default function PaymentSuccessPage() {
           </div>
 
           <Link
-            href="/dashboard/student/online-classe"
+            href="/dashboard/student/online-classes"
             className="inline-flex items-center gap-2 mt-6 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-6 py-3 rounded-full transition-all"
           >
             Go to My Classes <FaArrowRight />
