@@ -53,7 +53,7 @@ export default function BookDetails({ book }) {
             {book.category_name}
           </p>
         )}
-        {book.rating && (
+        {book.rating != null && (
           <p className="mb-4 text-yellow-400">
             ⭐ {Number(book.rating).toFixed(1)} / 5
           </p>
