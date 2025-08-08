@@ -23,6 +23,10 @@ module.exports = {
     append("INFO", args);
     console.log("[LOG]", ...args);
   },
+  debug: (...args) => {
+    append("DEBUG", args);
+    console.debug("[DEBUG]", ...args);
+  },
   warn: (...args) => {
     append("WARN", args);
     console.warn("[WARN]", ...args);
