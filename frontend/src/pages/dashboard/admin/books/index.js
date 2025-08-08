@@ -75,8 +75,10 @@ function AdminBooksPage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const cats = await fetchBookCategories();
-        const langs = await getLanguages();
+        const [cats, langs] = await Promise.all([
+          fetchBookCategories(),
+          getLanguages(),
+        ]);
         setCategories(cats);
         setLanguages(langs);
       } catch (err) {
