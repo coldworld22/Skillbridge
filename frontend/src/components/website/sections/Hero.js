@@ -24,7 +24,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import useAppConfigStore from "@/store/appConfigStore";
 import { API_BASE_URL } from "@/config/config";
-import { getAds, recordAdView } from "@/services/adsService";
+import { getAds, recordAdView, recordAdClick } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
@@ -471,7 +471,10 @@ const Hero = () => {
             )}
             {/* View Media Button */}
             <button
-              onClick={() => setShowMedia(true)}
+              onClick={() => {
+                setIsAdPaused(true);
+                setShowMedia(true);
+              }}
               className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white"
               aria-label={t('view_media')}
             >
@@ -540,7 +543,13 @@ const Hero = () => {
           <p className="text-white text-sm mt-2">{t('scroll_down')}</p>
         </motion.div>
         {showMedia && (
-          <AdMediaModal ad={ads[currentAd]} onClose={() => setShowMedia(false)} />
+          <AdMediaModal
+            ad={ads[currentAd]}
+            onClose={() => {
+              setShowMedia(false);
+              setIsAdPaused(false);
+            }}
+          />
         )}
       </section>
     </motion.section>

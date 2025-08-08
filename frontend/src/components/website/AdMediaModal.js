@@ -4,7 +4,13 @@ import { FaTimes } from "react-icons/fa";
 
 export default function AdMediaModal({ ad, onClose }) {
   const closeRef = useRef(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
   if (!ad) return null;
+
   const handleBackdrop = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -12,10 +18,6 @@ export default function AdMediaModal({ ad, onClose }) {
   const handleKeyDown = (e) => {
     if (e.key === "Escape") onClose();
   };
-
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
 
   return (
     <div

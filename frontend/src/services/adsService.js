@@ -52,3 +52,14 @@ export const recordAdView = async (id) => {
     }
   }
 };
+
+// Notify backend that an ad was clicked
+export const recordAdClick = async (id) => {
+  try {
+    await api.post(`/ads/${id}/click`);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Failed to record ad click", error);
+    }
+  }
+};
