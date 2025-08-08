@@ -22,6 +22,7 @@ import {
 } from "@/services/instructor/tutorialService";
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { toast } from "react-toastify";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
@@ -80,9 +81,12 @@ export default function InstructorTutorialsPage() {
         try {
           await deleteInstructorTutorial(id);
           setTutorials((prev) => prev.filter((tut) => tut.id !== id));
+          toast.success("Tutorial deleted successfully");
         } catch (err) {
           console.error(err);
-          alert("Failed to delete tutorial");
+          toast.error("Failed to delete tutorial");
+        } finally {
+          closeConfirmModal();
         }
       },
     });
