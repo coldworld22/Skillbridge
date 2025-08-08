@@ -187,6 +187,34 @@ exports.getProfileStatus = async (req, res) => {
 
 
 /**
+ * @desc Update instructor avatar
+ * @route PATCH /api/users/instructor/:id/avatar
+ * @access Instructor
+ */
+exports.updateAvatar = async (req, res) => {
+    console.log("📥 Incoming avatar upload");
+
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        if (req.params.id !== req.user.id) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
+
+        await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
+
+        res.json({ avatar_url: avatarUrl });
+    } catch (err) {
+        console.error("❌ Avatar upload error:", err.message);
+        res.status(500).json({ error: "Failed to upload avatar" });
+    }
+};
+
+/**
  * @desc Delete instructor avatar
  * @route DELETE /api/users/instructor/:id/avatar
  * @access Instructor
