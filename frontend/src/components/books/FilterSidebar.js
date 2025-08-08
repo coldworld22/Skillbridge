@@ -61,7 +61,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
           max="500"
           value={priceRange}
           onChange={(e) => {
-            const value = e.target.value;
+            const value = Number(e.target.value);
             setPriceRange(value);
             onFilterChange({ categories: selectedCategories, levels: selectedLevels, price: value });
           }}
