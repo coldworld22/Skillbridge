@@ -54,6 +54,8 @@ router.post(
 // 📊 Dashboard stats
 // ---------------------------------------------------------------------------
 router.get("/dashboard-stats", controller.getDashboardStats);
+router.get("/monthly-revenue", controller.getMonthlyRevenue);
+router.get("/monthly-signups", controller.getMonthlySignups);
 
 
 

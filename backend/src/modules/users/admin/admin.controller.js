@@ -218,3 +218,23 @@ exports.getDashboardStats = async (_req, res) => {
   const data = await require("./admin.service").getDashboardStats();
   res.status(200).json({ data });
 };
+
+/**
+ * @desc Get monthly revenue totals
+ * @route GET /api/users/admin/monthly-revenue
+ * @access Admin
+ */
+exports.getMonthlyRevenue = async (_req, res) => {
+  const data = await require("./admin.service").getMonthlyRevenue();
+  res.status(200).json({ data });
+};
+
+/**
+ * @desc Get monthly user signups
+ * @route GET /api/users/admin/monthly-signups
+ * @access Admin
+ */
+exports.getMonthlySignups = async (_req, res) => {
+  const data = await require("./admin.service").getMonthlySignups();
+  res.status(200).json({ data });
+};

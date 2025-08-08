@@ -57,3 +57,30 @@ exports.getDashboardStats = async () => {
     classes: parseInt(classRow.count, 10) || 0,
   };
 };
+
+// ---------------------------------------------------------------------------
+// 📈 Charts data
+// ---------------------------------------------------------------------------
+
+/**
+ * Get total paid revenue grouped by month
+ */
+exports.getMonthlyRevenue = () => {
+  return db("payments")
+    .select(db.raw("TO_CHAR(DATE_TRUNC('month', paid_at), 'Mon') as month"))
+    .sum({ revenue: "amount" })
+    .where({ status: "paid" })
+    .groupByRaw("DATE_TRUNC('month', paid_at)")
+    .orderByRaw("DATE_TRUNC('month', paid_at)");
+};
+
+/**
+ * Count user signups grouped by month
+ */
+exports.getMonthlySignups = () => {
+  return db("users")
+    .select(db.raw("TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month"))
+    .count("id as users")
+    .groupByRaw("DATE_TRUNC('month', created_at)")
+    .orderByRaw("DATE_TRUNC('month', created_at)");
+};

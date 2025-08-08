@@ -95,3 +95,29 @@ export const fetchAdminDashboardStats = async () => {
     throw err;
   }
 };
+
+/**
+ * 📈 Fetch monthly revenue totals
+ */
+export const fetchMonthlyRevenue = async () => {
+  try {
+    const res = await api.get("/users/admin/monthly-revenue");
+    return res.data?.data;
+  } catch (err) {
+    console.error("Failed to fetch monthly revenue", err);
+    throw err;
+  }
+};
+
+/**
+ * 👥 Fetch monthly user signups
+ */
+export const fetchMonthlySignups = async () => {
+  try {
+    const res = await api.get("/users/admin/monthly-signups");
+    return res.data?.data;
+  } catch (err) {
+    console.error("Failed to fetch monthly signups", err);
+    throw err;
+  }
+};
