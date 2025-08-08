@@ -265,14 +265,15 @@ function AdminBooksPage() {
   };
 
   const resetFilters = () => {
-    setFilters({
+    setFilters((prev) => ({
+      ...prev,
       search: "",
       category: "",
       status: "",
       priceRange: null,
       language: "",
       tags: []
-    });
+    }));
     setPage(1);
   };
 

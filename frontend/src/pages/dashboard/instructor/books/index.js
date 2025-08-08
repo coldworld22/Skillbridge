@@ -250,14 +250,15 @@ function InstructorBooksPage() {
   };
 
   const resetFilters = () => {
-    setFilters({ 
-      search: "", 
-      category: "", 
-      status: "", 
-      priceRange: 0, 
-      language: "", 
-      tags: [] 
-    });
+    setFilters((prev) => ({
+      ...prev,
+      search: "",
+      category: "",
+      status: "",
+      priceRange: 0,
+      language: "",
+      tags: []
+    }));
     setPage(1);
   };
 

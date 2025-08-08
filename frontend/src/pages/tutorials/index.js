@@ -33,12 +33,12 @@ const TutorialsSection = () => {
   }, []);
 
   const handleFilterChange = (f) => {
-    setFilters(f);
+    setFilters((prev) => ({ ...prev, ...f }));
     setVisibleCount(6);
   };
 
   const resetFilters = () => {
-    setFilters({ categories: [], levels: [], price: 100 });
+    setFilters((prev) => ({ ...prev, categories: [], levels: [], price: 100 }));
   };
 
   useEffect(() => {
