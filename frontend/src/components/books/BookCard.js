@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
-import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
+import {
+  FiEye,
+  FiBookOpen,
+  FiEdit,
+  FiTrash2,
+  FiHeart,
+  FiShoppingCart,
+} from "react-icons/fi";
 import { buildUrl } from "@/services/bookService";
 
 
@@ -12,6 +19,8 @@ export default function BookCard({
   onEditLink,
   showReadLink = false,
   viewLink,
+  onAddToWishlist,
+  onAddToCart,
 }) {
   const { t } = useTranslation("dashboard");
 
@@ -74,6 +83,28 @@ export default function BookCard({
               <FiBookOpen />
               <span className="sr-only">{t("read")}</span>
             </a>
+          )}
+          {onAddToWishlist && (
+            <button
+              type="button"
+              onClick={onAddToWishlist}
+              className="p-2 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors"
+              aria-label={t("wishlist")}
+            >
+              <FiHeart />
+              <span className="sr-only">{t("wishlist")}</span>
+            </button>
+          )}
+          {onAddToCart && (
+            <button
+              type="button"
+              onClick={onAddToCart}
+              className="p-2 rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors"
+              aria-label={t("add_to_cart")}
+            >
+              <FiShoppingCart />
+              <span className="sr-only">{t("add_to_cart")}</span>
+            </button>
           )}
           {onEditLink && (
             <Link
