@@ -6,7 +6,6 @@ const router = express.Router();
 const controller = require("./admin.controller");
 const validate = require("../../../middleware/validate");
 const { adminProfileSchema } = require("./admin.validator");
-const { adminChangePasswordSchema } = require("./admin.validator");
 const { verifyToken, isAdmin, isSuperAdmin } = require("../../../middleware/auth/authMiddleware");
 const upload = require("./adminUploadMiddleware");
 const categoryRoutes = require("../categories/category.routes");
