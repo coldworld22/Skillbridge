@@ -119,17 +119,20 @@ function AdminTutorialsPage() {
 
   const togglePublishStatus = async (id) => {
     try {
+      const existing = tutorials.find((tut) => tut.id === id);
+      if (!existing) {
+        toast.error("Tutorial not found");
+        return;
+      }
       await toggleTutorialStatus(id);
-      let target;
+      const newStatus = existing.status === "Published" ? "Draft" : "Published";
+      const target = { ...existing, status: newStatus };
       setTutorials((prev) =>
-        prev.map((tut) => {
-          if (tut.id === id) {
-            const newStatus = tut.status === "Published" ? "Draft" : "Published";
-            target = { ...tut, status: newStatus };
-            return { ...target, updatedAt: new Date().toISOString() };
-          }
-          return tut;
-        })
+        prev.map((tut) =>
+          tut.id === id
+            ? { ...target, updatedAt: new Date().toISOString() }
+            : tut
+        )
       );
       const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
       toast.success(t('status_updated'));
@@ -185,16 +188,23 @@ function AdminTutorialsPage() {
 
   const handleConfirmReject = async (reason) => {
     try {
+      const existing = tutorials.find((tut) => tut.id === tutorialToReject);
+      if (!existing) {
+        toast.error("Tutorial not found");
+        return;
+      }
       await rejectTutorial(tutorialToReject, reason);
-      let target;
+      const target = {
+        ...existing,
+        approvalStatus: "Rejected",
+        rejectionReason: reason,
+      };
       setTutorials((prev) =>
-        prev.map((tut) => {
-          if (tut.id === tutorialToReject) {
-            target = { ...tut, approvalStatus: "Rejected", rejectionReason: reason };
-            return { ...target, updatedAt: new Date().toISOString() };
-          }
-          return tut;
-        })
+        prev.map((tut) =>
+          tut.id === tutorialToReject
+            ? { ...target, updatedAt: new Date().toISOString() }
+            : tut
+        )
       );
       toast.success(t('rejected'));
       const message = `Tutorial "${target.title}" was rejected.`;
