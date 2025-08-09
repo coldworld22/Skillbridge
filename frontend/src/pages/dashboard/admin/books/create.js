@@ -73,7 +73,7 @@ function AdminCreateBookPage() {
       } catch (notifyErr) {
         console.error("Failed to refresh notifications or messages", notifyErr);
       }
-
+      handleRemoveImage();
       router.push("/dashboard/admin/books");
     } catch (err) {
       console.error("Failed to create book", err);
