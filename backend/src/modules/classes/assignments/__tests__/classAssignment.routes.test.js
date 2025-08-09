@@ -25,11 +25,24 @@ jest.mock('../../class.service', () => ({
 }));
 
 jest.mock('../../enrollments/classEnrollment.service', () => ({
-  getByClass: jest.fn(() => Promise.resolve([])),
+  getByClass: jest.fn(() =>
+    Promise.resolve([
+      { id: 's1', email: 's1@test.com', phone: '111' },
+      { id: 's2', email: 's2@test.com', phone: '222' },
+    ])
+  ),
 }));
 
 jest.mock('../../../notifications/notifications.service', () => ({
   createNotification: jest.fn(() => Promise.resolve({})),
+}));
+
+jest.mock('../../../../utils/email', () => ({
+  sendAssignmentEmail: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('../../../../services/smsService', () => ({
+  sendSMS: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
@@ -41,6 +54,8 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
 }));
 
 const routes = require('../../class.routes');
+const emailUtil = require('../../../../utils/email');
+const smsService = require('../../../../services/smsService');
 
 const app = express();
 app.use(express.json());
@@ -65,13 +80,15 @@ describe('Class assignment routes', () => {
     expect(res.body.data).toEqual(list);
   });
 
-  test('create assignment', async () => {
-    service.createAssignment.mockResolvedValue({ id: '1' });
+  test('create assignment sends messages', async () => {
+    service.createAssignment.mockResolvedValue({ id: '1', title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
     const res = await request(app)
       .post('/classes/assignments/class/abc')
       .send({ title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
     expect(res.statusCode).toBe(200);
     expect(service.createAssignment).toHaveBeenCalled();
+    expect(emailUtil.sendAssignmentEmail).toHaveBeenCalledTimes(2);
+    expect(smsService.sendSMS).toHaveBeenCalledTimes(2);
   });
 
   test('create assignment fails with invalid date', async () => {

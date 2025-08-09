@@ -65,7 +65,8 @@
   },
   "notifications": {
     "no_notifications": "لا توجد إشعارات حالياً",
-    "view_all": "عرض الكل"
+    "view_all": "عرض الكل",
+    "new_assignment": "تم نشر واجب جديد \"{{title}}\" للدورة \"{{classTitle}}\"."
   },
   "errors": {
     "required_field": "هذا الحقل مطلوب",

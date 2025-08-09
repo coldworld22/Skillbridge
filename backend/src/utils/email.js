@@ -384,6 +384,69 @@ exports.sendLessonReminderEmail = async (
   }
 };
 
+// Notify students of a new class assignment
+exports.sendAssignmentEmail = async (
+  to,
+  assignmentTitle,
+  classTitle,
+  dueDate
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  if (EMAILS_DISABLED) {
+    console.log(`[EMAIL DISABLED] Assignment notice for ${to}`);
+    return;
+  }
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
+
+  const due = dueDate
+    ? new Date(dueDate).toLocaleDateString("en-US", { dateStyle: "long" })
+    : null;
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New assignment for ${classTitle}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>A new assignment <strong>${assignmentTitle}</strong> has been posted for your class <strong>${classTitle}</strong>.</p>
+        ${due ? `<p><strong>Due Date:</strong> ${due}</p>` : ""}
+        <p>Please log in to view the details and submit your work.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Assignment notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending assignment email: ", error);
+  }
+};
+
 /**
  * Notify admins when a user submits a support ticket
  * @param {string} to - Admin email address
