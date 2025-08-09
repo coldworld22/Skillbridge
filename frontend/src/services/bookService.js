@@ -60,6 +60,9 @@ export const fetchBooks = async ({
     ...filters,
     ...sort,
   };
+  if (!admin && params.status === undefined) {
+    params.status = "active";
+  }
   const endpoint = admin ? "/books/admin" : "/books";
   const { data } = await api.get(endpoint, { params });
   const list = data?.data ? data.data.map(formatBook) : [];
