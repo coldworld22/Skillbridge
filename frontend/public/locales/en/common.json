@@ -68,6 +68,7 @@
   "student_dashboard": "Student Dashboard"
   ,"start_chat": "Start Chat"
   ,"start_new_message": "Start New Message"
-  ,"type_message_placeholder": "Type a message..."
+  ,"type_message_placeholder": "Type a message...",
+  "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
 }
   

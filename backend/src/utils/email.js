@@ -384,19 +384,19 @@ exports.sendLessonReminderEmail = async (
   }
 };
 
-// Reminder email 24h before a class starts
-exports.sendClassReminderEmail = async (
+// Notify students of a new class assignment
+exports.sendAssignmentEmail = async (
   to,
+  assignmentTitle,
   classTitle,
-  dateTime,
-  locale = "en-US"
+  dueDate
 ) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
   if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Class reminder for ${to}`);
+    console.log(`[EMAIL DISABLED] Assignment notice for ${to}`);
     return;
   }
 
@@ -416,43 +416,24 @@ exports.sendClassReminderEmail = async (
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
     : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
 
-  const templates = {
-    "en-US": {
-      subject: `Upcoming class reminder for ${classTitle}`,
-      greeting: "Hello,",
-      body: `This is a reminder that your class <strong>${classTitle}</strong> is scheduled to begin in 24 hours.`,
-      start: "Start Time",
-      closing: "Please be prepared and ensure all materials are ready.",
-    },
-    "es-ES": {
-      subject: `Recordatorio de la clase ${classTitle}`,
-      greeting: "Hola,",
-      body: `Este es un recordatorio de que su clase <strong>${classTitle}</strong> comenzará en 24 horas.`,
-      start: "Hora de inicio",
-      closing: "Por favor, prepárese y asegúrese de que todo el material esté listo.",
-    },
-  };
-
-  const t = templates[locale] || templates["en-US"];
-
-  const formatted = new Date(dateTime).toLocaleString(locale, {
-    dateStyle: "long",
-    timeStyle: "short",
-  });
+  const due = dueDate
+    ? new Date(dueDate).toLocaleDateString("en-US", { dateStyle: "long" })
+    : null;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
     replyTo: cfg.replyTo || fromEmail,
     to,
-    subject: t.subject,
+    subject: `New assignment for ${classTitle}`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
         <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
-        <p>${t.greeting}</p>
-        <p>${t.body}</p>
-        <p><strong>${t.start}:</strong> ${formatted}</p>
-        <p>${t.closing}</p>
+        <p>Hello,</p>
+        <p>A new assignment <strong>${assignmentTitle}</strong> has been posted for your class <strong>${classTitle}</strong>.</p>
+        ${due ? `<p><strong>Due Date:</strong> ${due}</p>` : ""}
+        <p>Please log in to view the details and submit your work.</p>
         <p>Thank you,<br/>The ${fromName} Team</p>
         ${EMAIL_FOOTER}
       </div>`,
@@ -460,9 +441,9 @@ exports.sendClassReminderEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Class reminder sent to ${to}`);
+    console.log(`Assignment notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending class reminder email: ", error);
+    console.error("Error sending assignment email: ", error);
   }
 };
 

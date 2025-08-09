@@ -68,5 +68,6 @@
   ,"system_messages": "Messages syst\u00e8me"
   ,"start_chat": "D\u00e9marrer le chat"
   ,"start_new_message": "Commencer un nouveau message"
-  ,"type_message_placeholder": "Tapez un message..."
+  ,"type_message_placeholder": "Tapez un message...",
+  "new_assignment": "Nouveau devoir \"{{title}}\" publi\u00e9 pour le cours \"{{classTitle}}\"."
 }
