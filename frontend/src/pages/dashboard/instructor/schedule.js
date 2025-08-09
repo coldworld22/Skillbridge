@@ -3,6 +3,7 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import CalendarView from "@/components/shared/CalendarView";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 import useScheduleStore from "@/store/schedule/scheduleStore";
+import { getLessonRoomLink } from "@/services/lessonService";
 
 export default function InstructorSchedule() {
   const { events, clear, addEvents, prunePastEvents } = useScheduleStore();
@@ -33,7 +34,23 @@ export default function InstructorSchedule() {
       <CalendarView
         title="My Teaching Schedule"
         events={events}
-        onEventClick={(info) => {
+        onEventClick={async (info) => {
+          const id = info.event.id || "";
+          if (id.startsWith("lesson-")) {
+            const lessonId = id.replace("lesson-", "");
+            const start = new Date(info.event.start);
+            const end = new Date(start.getTime() + 60 * 60 * 1000);
+            const now = new Date();
+            if (now >= start && now <= end) {
+              try {
+                const url = await getLessonRoomLink(lessonId);
+                window.open(url, "_blank");
+              } catch (err) {
+                alert("Failed to start live session");
+              }
+              return;
+            }
+          }
           const sub = info.event.extendedProps?.subject;
           const student = info.event.extendedProps?.student;
           if (sub && student) {
