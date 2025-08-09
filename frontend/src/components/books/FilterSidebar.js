@@ -50,7 +50,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   return (
     <motion.div
-      className="bg-gray-800 p-6 rounded-lg shadow-lg w-64"
+      className="bg-gray-800 p-6 rounded-lg shadow-lg w-full lg:w-64"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6 }}
