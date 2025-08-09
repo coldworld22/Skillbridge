@@ -10,6 +10,7 @@ const {
 
 router.get("/tags", verifyToken, isAdmin, tagController.listTags);
 router.post("/tags", verifyToken, isAdmin, tagController.createTag);
+router.get("/admin", verifyToken, isAdmin, controller.listBooks);
 router.get("/", controller.listBooks);
 router.get("/admin/:id", verifyToken, isAdmin, controller.getBookAdmin);
 router.get("/:id", controller.getBook);
