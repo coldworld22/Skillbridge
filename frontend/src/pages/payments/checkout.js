@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
+  const [allowInstallments, setAllowInstallments] = useState(false);
   const removeItem = useCartStore((state) => state.removeItem);
 
 
@@ -97,6 +98,13 @@ export default function CheckoutPage() {
 
   if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
   const finalPrice = classInfo.price - discount;
+  const installments = 3;
+  const perInstallment = finalPrice / installments;
+  const schedule = Array.from({ length: installments }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + i);
+    return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
+  });
   const availableMethods = methods.filter((m) => m.active);
 
   return (
@@ -152,6 +160,21 @@ export default function CheckoutPage() {
           {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
         </div>
 
+        <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Installments</h2>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={allowInstallments} onChange={(e) => setAllowInstallments(e.target.checked)} />
+            Pay in {installments} monthly installments
+          </label>
+          {allowInstallments && (
+            <ul className="mt-4 text-sm text-gray-300">
+              {schedule.map((s) => (
+                <li key={s.number}>Installment {s.number}: ${s.amount} due {s.date}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <div className="bg-gray-800 p-6 rounded-xl shadow-md">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Payment Details</h2>
 
@@ -197,7 +220,11 @@ export default function CheckoutPage() {
                 </>
               )}
               <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
-                {paymentStatus === 'processing' ? 'Processing...' : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
+                {paymentStatus === 'processing'
+                  ? 'Processing...'
+                  : allowInstallments
+                  ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`
+                  : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
               </button>
               <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
             </form>
