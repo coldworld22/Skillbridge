@@ -5,27 +5,27 @@ import {
   updateClassAttendance,
 } from "@/services/instructor/classAttendanceService";
 
-export default function StudentAttendancePanel({ classId }) {
+export default function StudentAttendancePanel({ lessonId }) {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    if (!classId) return;
+    if (!lessonId) return;
     const load = async () => {
       try {
-        const list = await fetchClassAttendance(classId);
+        const list = await fetchClassAttendance(lessonId);
         setStudents(list);
       } catch (err) {
         console.error("Failed to load attendance", err);
       }
     };
     load();
-  }, [classId]);
+  }, [lessonId]);
 
   const toggleAttendance = async (index) => {
     const student = students[index];
     const attended = !student.attended;
     try {
-      await updateClassAttendance(classId, student.user_id, attended);
+      await updateClassAttendance(lessonId, student.user_id, attended);
       const updated = [...students];
       updated[index].attended = attended;
       setStudents(updated);
