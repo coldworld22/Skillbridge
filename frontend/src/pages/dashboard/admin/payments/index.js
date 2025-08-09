@@ -248,7 +248,6 @@ export default function AdminPaymentsPage() {
     try {
       await updatePaymentConfig(form);
       toast.success(t('paymentsPage.config_saved'));
-      notify("payment_config_updated", "Payment configuration updated");
     } catch (err) {
       toast.error(err?.response?.data?.message || t('paymentsPage.config_save_failed'));
     }
