@@ -29,11 +29,9 @@ export default function BooksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [filters, setFilters] = useState({
-    categories: [],
-    levels: [],
-    price: 100,
+    category: "",
+    priceRange: 100,
     language: "",
-    license: "",
     tags: [],
   });
   const [page, setPage] = useState(1);
@@ -73,15 +71,12 @@ export default function BooksPage() {
   };
 
   const resetFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
-      categories: [],
-      levels: [],
-      price: 100,
+    setFilters({
+      category: "",
+      priceRange: 100,
       language: "",
-      license: "",
       tags: [],
-    }));
+    });
     setBooks([]);
     setPage(1);
     setHasMore(true);
