@@ -62,6 +62,21 @@ export default function BookCard({
       />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
+        {book.author && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            {t("by_author", { author: book.author })}
+          </p>
+        )}
+        {book.category_name && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            {book.category_name}
+          </p>
+        )}
+        {book.rating != null && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            ⭐ {Number(book.rating).toFixed(1)} / 5
+          </p>
+        )}
         <p className="text-sm mb-3">{formatCurrency(book.price)}</p>
         <div className="flex gap-2">
           <Link
