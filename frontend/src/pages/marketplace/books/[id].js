@@ -48,7 +48,7 @@ export default function BookDetailPage() {
       isMounted = false;
       controller.abort();
     };
-  }, [id]);
+  }, [id, t]);
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100">
@@ -86,5 +86,12 @@ export async function getStaticProps({ locale }) {
     props: {
       ...(await serverSideTranslations(locale, ["common", "website"], nextI18NextConfig)),
     },
+  };
+}
+
+export async function getStaticPaths() {
+  return {
+    paths: [],
+    fallback: "blocking",
   };
 }
