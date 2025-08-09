@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import useBookCartStore from "@/store/books/cartStore";
@@ -18,6 +19,7 @@ export default function BookDetails({ book }) {
   const router = useRouter();
   const addToCart = useBookCartStore((state) => state.addToCart);
   const { isAuthenticated, user } = useAuthStore();
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = () => {
     if (!isAuthenticated()) {
@@ -29,10 +31,61 @@ export default function BookDetails({ book }) {
       toast.error("Only students can purchase books");
       return;
     }
+    setIsAdding(true);
     addToCart(buildBookItem(book));
     toast.success("Added to cart");
+    setIsAdding(false);
     router.push("/cart");
   };
+
+  let actionButtons = null;
+  if (book.is_paid) {
+    if (book.user_has_access) {
+      actionButtons = (
+        <a
+          href={book.pdf_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+        >
+          Download Book
+        </a>
+      );
+    } else {
+      actionButtons = (
+        <div className="flex flex-wrap gap-4">
+          {book.preview_url && (
+            <a
+              href={book.preview_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+            >
+              Preview
+            </a>
+          )}
+          <button
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add to Cart
+          </button>
+        </div>
+      );
+    }
+  } else {
+    actionButtons = (
+      <a
+        href={book.pdf_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+      >
+        Read Now
+      </a>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
@@ -67,17 +120,45 @@ export default function BookDetails({ book }) {
           {Number(book.price) > 0 ? `$${book.price}` : "Free"}
         </p>
 
-        {book.pdf_url && (
-          <>
-            {book.is_paid ? (
-              book.user_has_access ? (
-                <a
+          {book.pdf_url && (
+            <>
+              {book.is_paid ? (
+                book.user_has_access ? (
+                  <a
+                    href={book.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+                  >
+                    Download Book
+                  </a>
+                  ) : (
+                  <div className="flex flex-wrap gap-4">
+                    {book.preview_url && (
+                      <a
+                        href={book.preview_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+                      >
+                        Preview
+                      </a>
+                    )}
+                    <button
+                      onClick={handleAddToCart}
+                      className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                    )) : (
+                  <a
                   href={book.pdf_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+                  className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
                 >
-                  Download Book
+                  Read Now
                 </a>
               ) : (
                 <div className="flex flex-wrap gap-4">
@@ -111,7 +192,6 @@ export default function BookDetails({ book }) {
               </>
             )}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
