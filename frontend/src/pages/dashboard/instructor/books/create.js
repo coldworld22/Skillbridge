@@ -94,7 +94,6 @@ function CreateBookPage() {
           setUploadProgress(progress);
         }
       });
-
       await Promise.all([fetchNotifications(), fetchMessages()]);
       router.push("/dashboard/instructor/books?created=1");
     } catch (e) {

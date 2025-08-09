@@ -8,6 +8,7 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
+const smsService = require("../../services/smsService");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 const isAdminRole = (roles = []) => {
@@ -268,6 +269,12 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
                 html: `<p>${instructorMessage}</p>`,
               })
             : Promise.resolve(),
+          instructor.phone
+            ? smsService.sendSMS({
+                to: instructor.phone,
+                text: instructorMessage,
+              })
+            : Promise.resolve(),
         ])
       : Promise.resolve(),
     ...admins.map((admin) =>
@@ -288,6 +295,9 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
               subject: "Book status updated",
               html: `<p>${adminMessage}</p>`,
             })
+          : Promise.resolve(),
+        admin.phone
+          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
           : Promise.resolve(),
       ])
     ),
