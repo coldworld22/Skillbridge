@@ -25,12 +25,16 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
     loadCategories();
   }, []);
 
-  const handleCategoryChange = (name) => {
-    const updated = selectedCategories.includes(name)
-      ? selectedCategories.filter((c) => c !== name)
-      : [...selectedCategories, name];
+  const handleCategoryChange = (id) => {
+    const updated = selectedCategories.includes(id)
+      ? selectedCategories.filter((c) => c !== id)
+      : [...selectedCategories, id];
     setSelectedCategories(updated);
-    onFilterChange({ categories: updated, levels: selectedLevels, price: priceRange });
+    onFilterChange({
+      categories: updated,
+      levels: selectedLevels,
+      price: priceRange,
+    });
   };
 
   const handleLevelChange = (level) => {
@@ -50,7 +54,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   return (
     <motion.div
-      className="bg-gray-800 p-6 rounded-lg shadow-lg w-64"
+      className="bg-gray-800 p-6 rounded-lg shadow-lg w-full"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.6 }}
@@ -83,9 +87,9 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
           >
             <input
               type="checkbox"
-              value={cat.name || cat}
-              checked={selectedCategories.includes(cat.name || cat)}
-              onChange={() => handleCategoryChange(cat.name || cat)}
+              value={cat.id || cat}
+              checked={selectedCategories.includes(cat.id || cat)}
+              onChange={() => handleCategoryChange(cat.id || cat)}
             />
             <span>{cat.name || cat}</span>
           </label>

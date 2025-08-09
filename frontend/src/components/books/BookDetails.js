@@ -1,36 +1,24 @@
 import { useRouter } from "next/router";
-import { useState } from "react";
 import { toast } from "react-toastify";
-import useCartStore from "@/store/cart/cartStore";
-import useAuthStore from "@/store/auth/authStore";
+import useBookCartStore from "@/store/books/cartStore";
+import { buildUrl } from "@/services/bookService";
+
+const buildBookItem = (b) => ({
+  book_id: b.id,
+  title: b.title,
+  price: b.price,
+  cover_url:
+    b.cover_image_url || buildUrl(b.cover_image) || "/images/default-book-cover.jpg",
+});
 
 export default function BookDetails({ book }) {
   const router = useRouter();
-  const addItem = useCartStore((state) => state.addItem);
-  const { isAuthenticated, user } = useAuthStore();
-  const [isAdding, setIsAdding] = useState(false);
+  const addToCart = useBookCartStore((state) => state.addToCart);
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated()) {
-      toast.info("Please log in to purchase");
-      router.push("/auth/login");
-      return;
-    }
-    if (user?.role?.toLowerCase() !== "student") {
-      toast.error("Only students can purchase books");
-      return;
-    }
-    setIsAdding(true);
-    try {
-      await addItem({ id: book.id, name: book.title, price: book.price });
-      toast.success("Added to cart");
-      router.push("/cart");
-    } catch (err) {
-      console.error("Failed to add to cart", err);
-      toast.error("Failed to add to cart");
-    } finally {
-      setIsAdding(false);
-    }
+  const handleAddToCart = () => {
+    addToCart(buildBookItem(book));
+    toast.success("Added to cart");
+    router.push("/cart");
   };
 
   return (
@@ -90,8 +78,7 @@ export default function BookDetails({ book }) {
                   )}
                   <button
                     onClick={handleAddToCart}
-                    disabled={isAdding}
-                    className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors"
                   >
                     Add to Cart
                   </button>

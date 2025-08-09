@@ -101,10 +101,20 @@ export default function BooksPage() {
     const load = async () => {
       try {
         setLoading(true);
+        const apiFilters = {
+          ...(filters.categories.length && { category: filters.categories[0] }),
+          ...(filters.price !== undefined && { priceRange: filters.price }),
+          ...(filters.language && { language: filters.language }),
+          ...(filters.license && { license: filters.license }),
+          ...(filters.tags.length && { tags: filters.tags }),
+          search: searchQuery,
+          status: "active",
+        };
+
         const { books: data } = await fetchBooks({
           page,
           perPage: 6,
-          filters: { ...filters, search: searchQuery, status: "active" },
+          filters: apiFilters,
           sort: sortBy !== "default" ? { sortBy } : {},
         });
         setBooks((prev) => (page === 1 ? data : [...prev, ...data]));
