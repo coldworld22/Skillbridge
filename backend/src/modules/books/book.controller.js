@@ -8,7 +8,6 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
-const smsService = require("../../services/smsService");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 const isAdminRole = (roles = []) => {
