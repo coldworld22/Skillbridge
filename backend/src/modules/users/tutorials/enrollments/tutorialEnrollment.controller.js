@@ -2,11 +2,17 @@ const db = require("../../../../config/database");
 const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
+const AppError = require("../../../../utils/AppError");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
   const user_id = req.user.id;
+
+  const tutorial = await db("tutorials").where({ id: tutorialId }).first();
+  if (!tutorial) throw new AppError("Tutorial not found", 404);
+  if (tutorial.status !== "published")
+    throw new AppError("Tutorial not published", 400);
 
   const exists = await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
@@ -19,7 +25,7 @@ exports.enroll = catchAsync(async (req, res) => {
     id,
     user_id,
     tutorial_id: tutorialId,
-    status: "enrolled"
+    status: "enrolled",
   });
 
   sendSuccess(res, { id }, "Enrolled successfully");
