@@ -12,7 +12,10 @@ const useLibraryStore = create(
         set({ isLoading: true, error: null });
         try {
           const data = await apiFetchLibrary();
-          set({ books: data, isLoading: false });
+          const activeBooks = Array.isArray(data)
+            ? data.filter((b) => b?.status === "active")
+            : [];
+          set({ books: activeBooks, isLoading: false });
         } catch (err) {
           set({ error: err.message, isLoading: false });
         }
