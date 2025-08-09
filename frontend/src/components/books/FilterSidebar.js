@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaTimesCircle } from "react-icons/fa";
 import { fetchBookCategories } from "@/services/bookCategoryService";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [categories, setCategories] = useState([]);
