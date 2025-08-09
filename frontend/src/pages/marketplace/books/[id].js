@@ -4,8 +4,12 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { fetchBook } from "@/services/bookService";
 import BookDetails from "@/components/books/BookDetails";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 export default function BookDetailPage() {
+  const { t } = useTranslation(["website", "common"]);
   const router = useRouter();
   const { id } = router.query;
   const [book, setBook] = useState(null);
@@ -27,12 +31,12 @@ export default function BookDetailPage() {
           setBook(data);
           setError(null);
         } else {
-          setError("Book not found");
+          setError(t("book_not_found"));
         }
       } catch (e) {
         if (e.name === "AbortError" || e.name === "CanceledError") return;
         console.error("Failed to load book", e);
-        if (isMounted) setError("Failed to load book");
+        if (isMounted) setError(t("failed_load_book"));
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -55,12 +59,12 @@ export default function BookDetailPage() {
           onClick={() => router.back()}
           className="mb-6 text-sm text-yellow-400 hover:underline"
         >
-          ← Back to books
+          {t("back_to_books")}
         </button>
 
         {loading && !error && (
           <div className="min-h-[50vh] flex items-center justify-center text-yellow-400">
-            Loading...
+            {t("loading")}
           </div>
         )}
 
@@ -75,4 +79,12 @@ export default function BookDetailPage() {
       <Footer />
     </section>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["common", "website"], nextI18NextConfig)),
+    },
+  };
 }

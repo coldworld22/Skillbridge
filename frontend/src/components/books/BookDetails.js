@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import useBookCartStore from "@/store/books/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
-import { formatCurrency } from "@/utils/currency";
+import { useTranslation } from "next-i18next";
 
 const buildBookItem = (b) => ({
   book_id: b.id,
@@ -17,6 +17,7 @@ const buildBookItem = (b) => ({
 });
 
 export default function BookDetails({ book }) {
+  const { t } = useTranslation(["website", "common"]);
   const router = useRouter();
   const addToCart = useBookCartStore((state) => state.addToCart);
   const { isAuthenticated, user } = useAuthStore();
@@ -24,17 +25,17 @@ export default function BookDetails({ book }) {
 
   const handleAddToCart = () => {
     if (!isAuthenticated()) {
-      toast.info("Please log in to purchase");
+      toast.info(t("please_login_to_purchase"));
       router.push("/auth/login");
       return;
     }
     if (user?.role?.toLowerCase() !== "student") {
-      toast.error("Only students can purchase books");
+      toast.error(t("only_students_can_purchase"));
       return;
     }
     setIsAdding(true);
     addToCart(buildBookItem(book));
-    toast.success("Added to cart");
+    toast.success(t("added_to_cart"));
     setIsAdding(false);
     router.push("/cart");
   };
@@ -49,7 +50,7 @@ export default function BookDetails({ book }) {
           rel="noopener noreferrer"
           className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
         >
-          Download Book
+          {t("download_book")}
         </a>
       );
     } else {
@@ -62,7 +63,7 @@ export default function BookDetails({ book }) {
               rel="noopener noreferrer"
               className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
             >
-              Preview
+              {t("preview")}
             </a>
           )}
           <button
@@ -70,7 +71,7 @@ export default function BookDetails({ book }) {
             disabled={isAdding}
             className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add to Cart
+            {t("add_to_cart")}
           </button>
         </div>
       );
@@ -83,7 +84,7 @@ export default function BookDetails({ book }) {
         rel="noopener noreferrer"
         className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
       >
-        Read Now
+        {t("read_now")}
       </a>
     );
   }
@@ -101,7 +102,7 @@ export default function BookDetails({ book }) {
       <div className="flex-1">
         <h1 className="text-3xl font-bold mb-2">{book.title}</h1>
         {book.author && (
-          <p className="text-yellow-400 mb-4">by {book.author}</p>
+          <p className="text-yellow-400 mb-4">{t("by_author", { author: book.author })}</p>
         )}
         {book.category_name && (
           <p className="text-sm uppercase tracking-wide text-gray-400 mb-2">
@@ -118,7 +119,7 @@ export default function BookDetails({ book }) {
         </p>
 
         <p className="text-xl font-semibold mb-6">
-          {Number(book.price) > 0 ? formatCurrency(book.price) : "Free"}
+          {Number(book.price) > 0 ? `$${book.price}` : t("free")}
         </p>
         {actionButtons}
       </div>
