@@ -115,8 +115,10 @@ export default function BooksPage() {
       try {
         setLoading(true);
         const apiFilters = {
-          ...(filters.categories.length && { category: filters.categories[0] }),
-          ...(filters.price !== undefined && { priceRange: filters.price }),
+          ...(filters.category && { category: filters.category }),
+          ...(filters.priceRange !== undefined && {
+            priceRange: filters.priceRange,
+          }),
           ...(filters.language && { language: filters.language }),
           ...(filters.license && { license: filters.license }),
           ...(filters.tags.length && { tags: filters.tags }),

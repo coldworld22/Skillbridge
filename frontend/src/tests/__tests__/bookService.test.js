@@ -24,7 +24,7 @@ describe("bookService", () => {
     const res = await fetchBooks({
       page: 2,
       perPage: 5,
-      filters: { search: "test" },
+      filters: { search: "test", category: "c1", priceRange: 25 },
       sort: { sortBy: "title" },
     });
     expect(api.get).toHaveBeenCalledWith("/books", {
@@ -32,6 +32,8 @@ describe("bookService", () => {
         page: 2,
         perPage: 5,
         search: "test",
+        category: "c1",
+        priceRange: 25,
         sortBy: "title",
         status: "active",
       },
