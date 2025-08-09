@@ -17,7 +17,7 @@ export default function BookForm({
   onCancel,
   showStatusSelector = false,
 }) {
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t } = useTranslation(["dashboard", "common", "validation"]);
   const {
     register,
     handleSubmit,
@@ -321,7 +321,7 @@ export default function BookForm({
                   "image/jpeg",
                   "image/webp",
                 ].includes(files[0].type) ||
-                "Only PNG, JPG or WEBP",
+                t("validation.pngJpgWebpOnly"),
               fileSize: (files) =>
                 !files[0] ||
                 files[0].size <= MAX_IMAGE_SIZE ||
@@ -366,9 +366,11 @@ export default function BookForm({
             required: !isEdit && t("booksCreate.bookFileRequired"),
             validate: {
               fileType: (files) =>
-                !files[0] || files[0].type === "application/pdf" || "PDF only",
+                !files[0] || files[0].type === "application/pdf" || t("validation.pdfOnly"),
               fileSize: (files) =>
-                !files[0] || files[0].size <= 50 * 1024 * 1024 || "Max 50MB",
+                !files[0] ||
+                files[0].size <= 50 * 1024 * 1024 ||
+                t("validation.fileTooLarge", { size: "50MB" }),
             },
           });
           return (
@@ -409,7 +411,7 @@ export default function BookForm({
                     (file) =>
                       file.type === "application/pdf" ||
                       file.type.startsWith("image/")
-                  ) || "Only PDF or image files are allowed"
+                  ) || t("validation.pdfOrImageOnly")
                 );
               },
               fileSize: (files) => {
@@ -417,12 +419,15 @@ export default function BookForm({
                 return (
                   Array.from(files).every(
                     (file) => file.size <= 50 * 1024 * 1024
-                  ) || "Each file must be less than 50MB"
+                  ) || t("validation.eachFileLessThan", { size: "50MB" })
                 );
               },
               fileCount: (files) => {
                 if (!files || files.length === 0) return true;
-                return files.length <= 10 || "You can upload up to 10 files";
+                return (
+                  files.length <= 10 ||
+                  t("validation.maxFiles", { count: 10 })
+                );
               },
             },
           });

@@ -1,0 +1,9 @@
+{
+  "fileTooLarge": "El tamaño del archivo debe ser menor que {{size}}",
+  "pngJpgWebpOnly": "Solo se permiten archivos PNG, JPG o WEBP",
+  "pdfOnly": "Solo PDF",
+  "pdfOrImageOnly": "Solo se permiten archivos PDF o de imagen",
+  "eachFileLessThan": "Cada archivo debe ser menor que {{size}}",
+  "maxFiles": "Puedes subir hasta {{count}} archivos",
+  "invalidFileType": "Tipo de archivo no válido"
+}
