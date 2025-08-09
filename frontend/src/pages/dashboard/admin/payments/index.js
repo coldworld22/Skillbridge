@@ -150,7 +150,8 @@ export default function AdminPaymentsPage() {
       setMethods((prev) =>
         prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
       );
-      toast.success(t('paymentsPage.status_updated'));
+      const action = method.active ? 'deactivated' : 'activated';
+      toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" status changed`;
       notify('payment_method_status_changed', msg);
     } catch (err) {
@@ -174,7 +175,8 @@ export default function AdminPaymentsPage() {
             : m
         )
       );
-      toast.success(t('paymentsPage.default_updated'));
+      const action = newState ? 'set as default' : 'removed from default';
+      toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" set as default`;
       notify('payment_method_default_changed', msg);
     } catch (err) {
@@ -185,10 +187,11 @@ export default function AdminPaymentsPage() {
 
   const handleDelete = async (id) => {
     try {
+      const methodName = methods.find(m=>m.id===id)?.name;
       await deleteMethod(id);
       setMethods((prev) => prev.filter((m) => m.id !== id));
-      toast.success(t('paymentsPage.method_deleted'));
-      const msg = `Payment method "${methods.find(m=>m.id===id)?.name}" deleted.`;
+      toast.success(`Payment method "${methodName}" deleted`);
+      const msg = `Payment method "${methodName}" deleted.`;
       notify('payment_method_deleted', msg);
     } catch (err) {
       console.error('Failed to delete method', err);
