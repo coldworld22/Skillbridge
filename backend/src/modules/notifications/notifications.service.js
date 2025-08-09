@@ -9,8 +9,10 @@ exports.createNotification = async ({ user_id, type, message }) => {
 
 exports.getUserNotifications = async (userId) => {
   const threshold = new Date(Date.now() - 60 * 60 * 1000);
+  // Cleanup read notifications older than an hour for this user
+  // If system-wide deletion is needed, consider moving cleanup to a scheduled job
   await db("notifications")
-    .where({ read: true })
+    .where({ read: true, user_id: userId })
     .andWhere("read_at", "<", threshold)
     .del();
   return db("notifications")
