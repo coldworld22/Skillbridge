@@ -191,10 +191,16 @@ export default function BooksPage() {
           </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 relative">
+          {isFilterOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+              onClick={() => setIsFilterOpen(false)}
+            />
+          )}
           {/* Filter Sidebar */}
           <div
-            className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/90 backdrop-blur-lg p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isFilterOpen ? "translate-x-0" : "translate-x-full"} lg:translate-x-0`}
+            className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-72 lg:w-1/4 bg-gray-900/90 backdrop-blur-lg p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
           >
             <div className="flex justify-between items-center mb-4 lg:hidden">
               <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
