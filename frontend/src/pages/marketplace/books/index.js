@@ -9,8 +9,8 @@ import BookFilterSidebar from "@/components/books/FilterSidebar";
 import { fetchBooks, buildUrl } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import useCartStore from "@/store/cart/cartStore";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// Use global react-hot-toast setup from _app.js
+import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
@@ -190,7 +190,6 @@ export default function BooksPage() {
     <section className="min-h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center opacity-10" />
       <Navbar />
-      <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <motion.div
