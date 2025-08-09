@@ -12,6 +12,7 @@ export default function StudentTutorialCard({ tutorial }) {
         src={tutorial.thumbnail || "/default-thumbnail.jpg"}
         alt={tutorial.title}
         className="w-full h-40 object-cover rounded-md"
+        loading="lazy"
       />
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">

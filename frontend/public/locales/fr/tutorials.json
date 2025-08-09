@@ -1,0 +1,45 @@
+{
+  "list": {
+    "loading": "Chargement des tutoriels...",
+    "load_error": "Échec du chargement des tutoriels",
+    "heading": "📺 Tutoriels Premium",
+    "subheading": "Maîtrisez de nouvelles compétences avec notre collection de tutoriels dirigés par des experts",
+    "search_placeholder": "Rechercher des tutoriels...",
+    "mobile_filters": "Filtres",
+    "desktop_search_placeholder": "Rechercher des tutoriels, des instructeurs...",
+    "sort_by": "Trier par :",
+    "featured": "En vedette",
+    "most_viewed": "Les plus vus",
+    "top_rated": "Les mieux notés",
+    "showing": "Affichage de",
+    "of": "sur",
+    "tutorials": "tutoriels",
+    "clear_filters": "Effacer tous les filtres",
+    "premium_badge": "PREMIUM",
+    "trending": "Tendance",
+    "free": "Gratuit",
+    "enrolled": "INSCRIT",
+    "empty_title": "Aucun tutoriel trouvé",
+    "empty_description": "Essayez d'ajuster vos filtres ou termes de recherche",
+    "reset_filters": "Réinitialiser les filtres"
+  },
+  "detail": {
+    "login_first": "Veuillez vous connecter d'abord",
+    "enroll_success": "Inscription réussie !",
+    "enroll_fail": "Échec de l'inscription",
+    "load_error": "Échec du chargement du tutoriel",
+    "not_found": "Tutoriel introuvable",
+    "share": "Partager",
+    "share_message": "Découvrez ce tutoriel sur SkillBridge !",
+    "share_success": "Partagé avec succès !",
+    "quiz_locked": "Quiz verrouillé",
+    "enroll_to_access_quiz": "Inscrivez-vous pour accéder au quiz",
+    "start_assignment": "Commencer le devoir",
+    "complete_quiz_unlock_assignments": "Terminez le quiz pour débloquer les devoirs",
+    "claim_certificate": "Réclamer votre certificat",
+    "pass_quiz_to_unlock_certificate": "Réussissez le quiz pour débloquer le certificat",
+    "certificate_locked": "Certificat verrouillé",
+    "free": "Gratuit"
+  }
+}
+

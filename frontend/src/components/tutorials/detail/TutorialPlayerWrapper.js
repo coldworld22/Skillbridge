@@ -5,16 +5,19 @@ import ChapterList from "./ChapterList";
 
 const chaptersData = [
   {
+    id: 1,
     title: "Intro to React",
     duration: "4",
     videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
   },
   {
+    id: 2,
     title: "JSX and Components",
     duration: "8",
     videoUrl: "https://www.w3schools.com/html/movie.mp4",
   },
   {
+    id: 3,
     title: "Hooks Deep Dive",
     duration: "5",
     videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
@@ -29,13 +32,24 @@ const TutorialPlayerWrapper = () => {
 
   // Load completed chapters from localStorage
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(`completed-${tutorialId}`) || "[]");
-    setCompleted(saved);
+    const saved = JSON.parse(
+      localStorage.getItem(`completed-${tutorialId}`) || "[]",
+    );
+    if (saved.length && typeof saved[0] === "number") {
+      const ids = saved
+        .map((idx) => chaptersData[idx]?.id)
+        .filter(Boolean);
+      setCompleted(ids);
+      localStorage.setItem(`completed-${tutorialId}`, JSON.stringify(ids));
+    } else {
+      setCompleted(saved);
+    }
   }, []);
 
   const handleComplete = () => {
-    if (!completed.includes(currentIndex)) {
-      const updated = [...completed, currentIndex];
+    const chId = chaptersData[currentIndex].id;
+    if (!completed.includes(chId)) {
+      const updated = [...completed, chId];
       setCompleted(updated);
       localStorage.setItem(`completed-${tutorialId}`, JSON.stringify(updated));
     }

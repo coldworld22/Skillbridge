@@ -9,7 +9,7 @@ const VideoPreviewList = ({ videos = [], onSelect = () => {}, currentIndex = 0, 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {videos.map((vid, idx) => (
           <div
-            key={idx}
+            key={vid.id ?? idx}
             onClick={() => onSelect(idx)}
             className={`cursor-pointer rounded overflow-hidden border ${currentIndex === idx ? "border-yellow-400" : "border-gray-700"}`}
           >
@@ -19,7 +19,7 @@ const VideoPreviewList = ({ videos = [], onSelect = () => {}, currentIndex = 0, 
                 muted
                 className="w-full h-32 object-cover"
               />
-              {completed.includes(idx) && (
+              {completed.includes(vid.id) && (
                 <span className="absolute top-1 right-1 bg-green-600 text-white text-xs px-1 rounded">✓</span>
               )}
             </div>
