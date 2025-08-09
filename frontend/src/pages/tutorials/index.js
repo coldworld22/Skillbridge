@@ -286,6 +286,7 @@ const TutorialsSection = () => {
                           src={tut.thumbnail}
                           alt={tut.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
                         />
                       )}
                       
@@ -322,6 +323,7 @@ const TutorialsSection = () => {
                                 src={avatar}
                                 alt={tut.instructor}
                                 className="w-8 h-8 rounded-full border-2 border-yellow-500"
+                                loading="lazy"
                               />
                             );
                           })()}
