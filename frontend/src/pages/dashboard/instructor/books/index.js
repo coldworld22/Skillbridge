@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
@@ -19,6 +20,7 @@ import { buildUrl } from "@/services/bookService";
 
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");
+  const router = useRouter();
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -86,6 +88,18 @@ function InstructorBooksPage() {
   const closeConfirmModal = () => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
+
+  useEffect(() => {
+    if (router.query.created) {
+      toast.success(
+        t("booksCreate.success", {
+          defaultValue:
+            "Thank you! Your book was added successfully and is under review. After it is approved, you will see it published in the bookstore",
+        })
+      );
+      router.replace("/dashboard/instructor/books", undefined, { shallow: true });
+    }
+  }, [router, t]);
 
   // Load filters from localStorage on mount
   useEffect(() => {
