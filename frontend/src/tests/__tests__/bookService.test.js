@@ -133,6 +133,14 @@ describe("bookService", () => {
     });
   });
 
+  it("returns null when book is not found", async () => {
+    const error = { response: { status: 404 } };
+    api.get.mockRejectedValueOnce(error);
+    const book = await fetchBook(999);
+    expect(api.get).toHaveBeenCalledWith("/books/999");
+    expect(book).toBeNull();
+  });
+
   it("updates a book", async () => {
     const apiData = { id: 1 };
     api.put.mockResolvedValueOnce({ data: { data: apiData } });

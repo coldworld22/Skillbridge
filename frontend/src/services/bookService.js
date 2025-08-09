@@ -78,6 +78,9 @@ export const fetchBook = async (id, { admin = false, ...config } = {}) => {
       : await api.get(endpoint);
     return data?.data ? formatBook(data.data) : null;
   } catch (err) {
+    // If the book doesn't exist, return null so callers can handle gracefully
+    if (err?.response?.status === 404) return null;
+
     if (admin && err.name !== "CanceledError" && err.name !== "AbortError") {
       const { data } = hasConfig
         ? await api.get(`/books/${id}`, config)
