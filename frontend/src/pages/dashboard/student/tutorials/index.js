@@ -86,7 +86,13 @@ export default function StudentTutorialsPage() {
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">{error}</div>;
+    return (
+      <StudentLayout>
+        <div className="p-6 text-red-500" role="alert">
+          {error}
+        </div>
+      </StudentLayout>
+    );
   }
 
   return (
