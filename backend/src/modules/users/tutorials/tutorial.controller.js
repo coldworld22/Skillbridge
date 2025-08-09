@@ -54,6 +54,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     status = "draft",
     tags: rawTags,
     chapters = [],
+    instructor_id: bodyInstructorId,
   } = req.body;
 
   // In case chapters came as a serialized JSON string, parse it
@@ -77,7 +78,21 @@ exports.createTutorial = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }
 
-  const instructor_id = req.user.id;
+  let instructor = null;
+  let instructor_id;
+  if (
+    ["admin", "superadmin"].includes(req.user.role) &&
+    bodyInstructorId
+  ) {
+    instructor = await userModel.findById(bodyInstructorId);
+    if (!instructor) {
+      return res.status(404).json({ message: "Instructor not found" });
+    }
+    instructor_id = bodyInstructorId;
+  } else {
+    instructor_id = req.user.id;
+  }
+
   const slug = await generateUniqueSlug(title);
   const id = uuidv4();
 
@@ -165,7 +180,9 @@ exports.createTutorial = catchAsync(async (req, res) => {
       "New tutorial added successfully. It's under review and will be available after we approve it",
   });
 
-  const instructor = await userModel.findById(instructor_id);
+  if (!instructor) {
+    instructor = await userModel.findById(instructor_id);
+  }
   const admins = await userModel.findAdmins();
   await Promise.all(
     admins.map((admin) =>
