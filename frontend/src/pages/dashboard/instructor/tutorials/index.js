@@ -377,12 +377,18 @@ export default function InstructorTutorialsPage() {
                   {tutorial.status === "Draft" && tutorial.progress === 100 && (
                     <button
                       onClick={async () => {
-                        await submitTutorialForReview(tutorial.id);
-                        setTutorials((prev) =>
-                          prev.map((t) =>
-                            t.id === tutorial.id ? { ...t, status: "Pending" } : t
-                          )
-                        );
+                        try {
+                          await submitTutorialForReview(tutorial.id);
+                          setTutorials((prev) =>
+                            prev.map((t) =>
+                              t.id === tutorial.id ? { ...t, status: "Pending" } : t
+                            )
+                          );
+                          toast.success("Tutorial submitted for review successfully");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Failed to submit tutorial for review");
+                        }
                       }}
                       className="bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                     >

@@ -15,12 +15,12 @@ const ChapterList = ({
       <ul className="space-y-4">
         {chapters.map((chapter, index) => {
           const isActive = index === currentIndex;
-          const isCompleted = completedChapters.includes(index);
+          const isCompleted = completedChapters.includes(chapter.id);
           const locked = !isEnrolled && index > 0;
 
           return (
             <li
-              key={index}
+              key={chapter.id ?? index}
               onClick={() => !locked && onSelect(index)}
               title={locked ? "Enroll to unlock" : ""}
               className={`flex items-start gap-3 p-4 rounded-lg transition border ${

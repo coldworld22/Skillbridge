@@ -146,8 +146,12 @@ const TutorialsSection = () => {
         {/* Mobile Filters Button */}
         <div className="lg:hidden mb-6 flex justify-between items-center">
           <div className="relative w-full max-w-md">
+            <label htmlFor="tutorial-search-mobile" className="sr-only">
+              Search tutorials
+            </label>
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
+              id="tutorial-search-mobile"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -187,8 +191,12 @@ const TutorialsSection = () => {
             {/* Desktop Search & Sort */}
             <div className="hidden lg:flex items-center justify-between gap-4 mb-8">
               <div className="relative w-full max-w-md">
+                <label htmlFor="tutorial-search-desktop" className="sr-only">
+                  Search tutorials
+                </label>
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
+                  id="tutorial-search-desktop"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -200,6 +208,7 @@ const TutorialsSection = () => {
               <div className="flex items-center space-x-4">
                 <span className="text-gray-400">{t("sort_by")}</span>
                 <select
+                  id="tutorial-sort"
                   onChange={(e) => setSortBy(e.target.value)}
                   className="py-2.5 px-4 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 >
@@ -287,6 +296,7 @@ const TutorialsSection = () => {
                           src={tut.thumbnail}
                           alt={tut.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
                         />
                       )}
                       
@@ -323,6 +333,7 @@ const TutorialsSection = () => {
                                 src={avatar}
                                 alt={tut.instructor}
                                 className="w-8 h-8 rounded-full border-2 border-yellow-500"
+                                loading="lazy"
                               />
                             );
                           })()}

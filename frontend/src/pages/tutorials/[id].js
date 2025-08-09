@@ -34,6 +34,29 @@ import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 import Link from "next/link";
 
+export async function handleShare(tutorial) {
+  const shareData = {
+    title: tutorial.title,
+    text: "Check out this tutorial on SkillBridge!",
+    url: typeof window !== "undefined" ? window.location.href : "",
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      toast.success("Shared successfully!");
+    } catch {
+      // ignore errors
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  }
+}
+
 export default function TutorialDetail() {
   const router = useRouter();
   const { id } = router.query;
@@ -183,6 +206,7 @@ export default function TutorialDetail() {
     : tutorial.chapters.slice(0, 1);
 
   const videoList = accessibleChapters.map((ch) => ({
+    id: ch.id,
     src: ch.videoUrl,
     title: ch.title,
   }));
@@ -218,7 +242,8 @@ export default function TutorialDetail() {
           onTimeUpdate={handleVideoTimeUpdate}
           locked={!isEnrolled}
           onEnded={(idx) => {
-            completeChapter(idx);
+            const ch = tutorial.chapters[idx];
+            completeChapter(idx, ch?.id);
           }}
         />
 

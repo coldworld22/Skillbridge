@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 
-export default function useTutorialProgress(tutorialId) {
+export default function useTutorialProgress(tutorialId, chapters = []) {
   const [progress, setProgress] = useState({
-    completedChapters: [],
+    completedChapters: [], // will now store chapter IDs
     lastIndex: 0,
     times: {},
   });
@@ -12,12 +12,32 @@ export default function useTutorialProgress(tutorialId) {
     const stored = localStorage.getItem(`progress-tutorial-${tutorialId}`);
     if (stored) {
       try {
-        setProgress(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Migration: if old numeric indices are stored, convert to chapter IDs
+        if (
+          Array.isArray(parsed.completedChapters) &&
+          parsed.completedChapters.length > 0 &&
+          typeof parsed.completedChapters[0] === "number" &&
+          Array.isArray(chapters) &&
+          chapters.length
+        ) {
+          const ids = parsed.completedChapters
+            .map((idx) => chapters[idx]?.id)
+            .filter(Boolean);
+          const migrated = { ...parsed, completedChapters: ids };
+          setProgress(migrated);
+          localStorage.setItem(
+            `progress-tutorial-${tutorialId}`,
+            JSON.stringify(migrated),
+          );
+        } else {
+          setProgress(parsed);
+        }
       } catch {
         // ignore parse errors
       }
     }
-  }, [tutorialId]);
+  }, [tutorialId, chapters]);
 
   const persist = (data) => {
     setProgress(data);
@@ -37,7 +57,10 @@ export default function useTutorialProgress(tutorialId) {
   };
 
   const completeChapter = (index, chapterId) => {
-    const updated = Array.from(new Set([...progress.completedChapters, index]));
+    if (!chapterId && chapterId !== 0) return;
+    const updated = Array.from(
+      new Set([...progress.completedChapters, chapterId]),
+    );
     persist({ ...progress, completedChapters: updated, lastIndex: index });
   };
 
