@@ -104,7 +104,12 @@ exports.createBook = catchAsync(async (req, res) => {
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
-  const result = await service.listBooks(req.query);
+  const isAdminRequest = req.user && isAdminRole(req.user.roles || req.user.role);
+  const query = { ...req.query };
+  if (!isAdminRequest && !query.status) {
+    query.status = "active";
+  }
+  const result = await service.listBooks(query);
   sendSuccess(res, result.data, "Books fetched", result.meta);
 });
 
