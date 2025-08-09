@@ -1,13 +1,13 @@
 import React from 'react';
 
-const urlRegex = /(https?:\/\/[^\s]+)/g;
+const urlRegex = /(https?:\/\/[^\s]+)/;
 
 export default function LinkText({ text }) {
   const parts = text.split(urlRegex);
   return (
     <>
       {parts.map((part, index) =>
-        urlRegex.test(part) ? (
+        new RegExp(urlRegex).test(part) ? (
           <a
             key={index}
             href={part}
