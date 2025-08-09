@@ -48,7 +48,7 @@ export default function TutorialDetail() {
   const [startTime, setStartTime] = useState(0);
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
-    useTutorialProgress(id);
+    useTutorialProgress(id, tutorial?.chapters);
 
   const enroll = async () => {
     if (!tutorial) return;
@@ -181,6 +181,7 @@ export default function TutorialDetail() {
     : tutorial.chapters.slice(0, 1);
 
   const videoList = accessibleChapters.map((ch) => ({
+    id: ch.id,
     src: ch.videoUrl,
     title: ch.title,
   }));
@@ -216,7 +217,8 @@ export default function TutorialDetail() {
           onTimeUpdate={handleVideoTimeUpdate}
           locked={!isEnrolled}
           onEnded={(idx) => {
-            completeChapter(idx);
+            const ch = tutorial.chapters[idx];
+            completeChapter(idx, ch?.id);
           }}
         />
 
