@@ -23,7 +23,7 @@ export default function ProgressChecklistModal({ isOpen, onClose, tutorial }) {
     { label: "Language & Level", valid: tutorial.language && tutorial.level },
     { label: "Price or Free", valid: tutorial.price !== undefined },
     { label: "Quiz/Test", valid: tutorial.has_quiz || tutorial.quiz_questions?.length > 0 },
-    { label: "Submitted/Approved", valid: ["Submitted", "Approved"].includes(tutorial.status) },
+    { label: "Pending/Approved", valid: ["Pending", "Approved"].includes(tutorial.status) },
   ];
 
   return (
