@@ -9,6 +9,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 const analyticsService = require("../../../services/analyticsService");
+const AppError = require("../../../utils/AppError");
 const {
   sendTutorialCreatedAdminEmail,
   sendTutorialCreatedInstructorEmail,
@@ -41,6 +42,13 @@ const generateUniqueSlug = async (title) => {
   }
 
   return slug;
+};
+
+// Ensure the acting instructor owns the tutorial
+const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
+  const tut = await service.getTutorialById(tutorialId);
+  if (!tut) throw new AppError("Tutorial not found", 404);
+  if (tut.instructor_id !== userId) throw new AppError("Access denied", 403);
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
@@ -231,6 +239,9 @@ exports.getTutorialById = catchAsync(async (req, res) => {
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, req.params.id);
+  }
   const { tags: rawTags, ...data } = req.body;
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
@@ -289,6 +300,9 @@ exports.restoreTutorial = catchAsync(async (req, res) => {
 
 
 exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, req.params.id);
+  }
   await service.permanentlyDeleteTutorial(req.params.id);
 
   sendSuccess(res, { message: "Permanently deleted" });
@@ -297,6 +311,9 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   const tutorialId = req.params.id;
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, tutorialId);
+  }
   await service.togglePublishStatus(tutorialId);
 
   const tut = await service.getTutorialById(tutorialId);
