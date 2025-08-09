@@ -184,7 +184,9 @@ export default function TutorialDetail() {
     src: ch.videoUrl,
     title: ch.title,
   }));
-  const currentVideo = videoList[currentIndex]?.src;
+  const currentVideoObj = videoList[currentIndex];
+  const currentVideo = currentVideoObj?.src || null;
+  const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
   const progressPercentage = tutorial.chapters.length
     ? (progress.completedChapters.length / tutorial.chapters.length) * 100
@@ -209,16 +211,25 @@ export default function TutorialDetail() {
 
         {!isEnrolled && <EnrollBanner onEnroll={enroll} />}
 
-        <CustomVideoPlayer
-          key={currentIndex}
-          videos={[{ src: currentVideo }]}
-          startTime={startTime}
-          onTimeUpdate={handleVideoTimeUpdate}
-          locked={!isEnrolled}
-          onEnded={(idx) => {
-            completeChapter(idx);
-          }}
-        />
+        {playerVideos.length > 0 ? (
+          <CustomVideoPlayer
+            key={currentIndex}
+            videos={playerVideos}
+            startTime={startTime}
+            onTimeUpdate={handleVideoTimeUpdate}
+            locked={!isEnrolled}
+            onEnded={(idx) => {
+              completeChapter(idx);
+            }}
+          />
+        ) : (
+          <div
+            className="bg-gray-800 text-gray-400 p-4 rounded"
+            data-testid="no-video"
+          >
+            No video available
+          </div>
+        )}
 
         <VideoPreviewList
           videos={videoList}
