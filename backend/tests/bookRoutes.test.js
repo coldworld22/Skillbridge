@@ -49,6 +49,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   }),
   isAdmin: jest.fn((_req, _res, next) => next()),
   isStudent: jest.fn((_req, _res, next) => next()),
+  isInstructorOrAdmin: jest.fn((_req, _res, next) => next()),
 }));
 
 const service = require('../src/modules/books/book.service');
