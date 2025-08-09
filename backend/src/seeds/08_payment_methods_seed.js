@@ -1,0 +1,22 @@
+exports.seed = async function(knex) {
+  await knex('payment_methods_config').del();
+  const now = knex.fn.now();
+  await knex('payment_methods_config').insert([
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'Bank Transfer',
+      type: 'bank',
+      icon: null,
+      active: true,
+      settings: {
+        bank_name: 'Sample Bank',
+        account_number: '123456789',
+        iban: 'DE89370400440532013000',
+        instructions: 'Transfer to the above account and upload your receipt for verification.'
+      },
+      is_default: true,
+      created_at: now,
+      updated_at: now
+    }
+  ]);
+};

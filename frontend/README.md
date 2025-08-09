@@ -38,3 +38,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Admin alerts page
 
 Visit `/admin/alerts` while logged in as an admin to monitor recent warnings and errors reported by the backend.
+
+### Bank transfer receipts
+
+The invoice page allows students selecting bank transfer to upload payment proof. Files are sent to the backend `POST /api/payments/student/receipts` endpoint.

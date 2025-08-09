@@ -7,6 +7,7 @@ const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
 const enrollmentService = require("../classes/enrollments/classEnrollment.service");
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -20,6 +21,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     reference_id,
     allow_installments,
     installments,
+    receipt_url,
   } = req.body;
   if (!user_id || !method_id || !item_type || !item_id || !amount) {
     throw new AppError("Missing required fields", 400);
@@ -41,24 +43,38 @@ exports.createPayment = catchAsync(async (req, res) => {
     next_due_date = schedules[0]?.due_date || null;
   }
 
-  const payment = await service.create(
-    {
-      id: uuidv4(),
-      user_id,
-      method_id,
-      item_type,
-      item_id,
-      amount,
-      currency: currency || "USD",
-      status: status || "pending",
-      reference_id,
-      paid_at: status === "paid" ? new Date() : null,
-      installments: totalInstallments,
-      installment_number: 1,
-      next_due_date,
-    },
-    schedules
-  );
+  let platform_fee = 0;
+  let instructor_amount = amount;
+  try {
+    const settings = await paymentConfigService.getSettings();
+    const cut = settings?.platformCut?.[item_type] || 0;
+    platform_fee = (amount * cut) / 100;
+    instructor_amount = amount - platform_fee;
+  } catch (err) {
+    console.error("Failed to load payment settings:", err);
+  }
+
+  const createData = {
+    id: uuidv4(),
+    user_id,
+    method_id,
+    item_type,
+    item_id,
+    amount,
+    currency: currency || "USD",
+    status: status || "pending",
+    reference_id,
+    receipt_url,
+    platform_fee,
+    instructor_amount,
+    paid_at: status === "paid" ? new Date() : null,
+    installments: totalInstallments,
+    installment_number: 1,
+    next_due_date,
+  };
+  const createArgs = [createData];
+  if (schedules.length) createArgs.push(schedules);
+  const payment = await service.create(...createArgs);
 
   try {
     const user = await userModel.findById(user_id);
@@ -92,6 +108,12 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   sendSuccess(res, payment, "Payment created");
+});
+
+exports.uploadReceipt = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError("No file uploaded", 400);
+  const url = `/uploads/payment-receipts/${req.file.filename}`;
+  sendSuccess(res, { url }, "Receipt uploaded");
 });
 
 exports.getPayments = catchAsync(async (_req, res) => {
