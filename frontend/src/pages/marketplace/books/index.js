@@ -8,10 +8,20 @@ import BookCard from "@/components/books/BookCard";
 import BookFilterSidebar from "@/components/books/FilterSidebar";
 import { fetchBooks, buildUrl } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
-import useBookCartStore from "@/store/books/cartStore";
+import useCartStore from "@/store/cart/cartStore";
 import { toast } from "react-toastify";
 
 const buildBookItem = (book) => ({
+  id: book.id,
+  name: book.title,
+  price: book.price,
+  cover_url:
+    book.cover_image_url ||
+    buildUrl(book.cover_image) ||
+    "/images/default-book-cover.jpg",
+});
+
+const buildWishlistItem = (book) => ({
   book_id: book.id,
   title: book.title,
   price: book.price,
@@ -43,7 +53,7 @@ export default function BooksPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const loader = useRef(null);
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
-  const addToCart = useBookCartStore((state) => state.addToCart);
+  const addItem = useCartStore((state) => state.addItem);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -87,12 +97,12 @@ export default function BooksPage() {
   };
 
   const handleAddToWishlist = (book) => {
-    addToWishlist(buildBookItem(book));
+    addToWishlist(buildWishlistItem(book));
     toast.success("Added to wishlist");
   };
 
-  const handleAddToCart = (book) => {
-    addToCart(buildBookItem(book));
+  const handleAddToCart = async (book) => {
+    await addItem(buildBookItem(book));
     toast.success("Added to cart");
   };
 

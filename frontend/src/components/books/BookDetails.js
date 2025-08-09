@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import useBookCartStore from "@/store/books/cartStore";
+import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
 
 const buildBookItem = (b) => ({
-  book_id: b.id,
-  title: b.title,
+  id: b.id,
+  name: b.title,
   price: b.price,
   cover_url:
     b.cover_image_url ||
@@ -17,11 +17,11 @@ const buildBookItem = (b) => ({
 
 export default function BookDetails({ book }) {
   const router = useRouter();
-  const addToCart = useBookCartStore((state) => state.addToCart);
+  const addItem = useCartStore((state) => state.addItem);
   const { isAuthenticated, user } = useAuthStore();
   const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!isAuthenticated()) {
       toast.info("Please log in to purchase");
       router.push("/auth/login");
@@ -31,11 +31,14 @@ export default function BookDetails({ book }) {
       toast.error("Only students can purchase books");
       return;
     }
-    setIsAdding(true);
-    addToCart(buildBookItem(book));
-    toast.success("Added to cart");
-    setIsAdding(false);
-    router.push("/cart");
+    try {
+      setIsAdding(true);
+      await addItem(buildBookItem(book));
+      toast.success("Added to cart");
+      router.push("/cart");
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   let actionButtons = null;
