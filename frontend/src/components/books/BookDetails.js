@@ -5,6 +5,7 @@ import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
 import { useTranslation } from "next-i18next";
+import { formatCurrency } from "@/utils/currency";
 
 const buildBookItem = (b) => ({
   id: b.id,
@@ -122,7 +123,7 @@ export default function BookDetails({ book }) {
         </p>
 
         <p className="text-xl font-semibold mb-6">
-          {Number(book.price) > 0 ? `$${book.price}` : t("free")}
+          {Number(book.price) > 0 ? formatCurrency(book.price) : t("free")}
         </p>
         {actionButtons}
       </div>
