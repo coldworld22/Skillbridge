@@ -6,8 +6,7 @@ import { toast } from "react-hot-toast";
 
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [categories, setCategories] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedLevels, setSelectedLevels] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [priceRange, setPriceRange] = useState(100);
   const [error, setError] = useState(null);
 
@@ -46,8 +45,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   };
 
   const resetFilters = () => {
-    setSelectedCategories([]);
-    setSelectedLevels([]);
+    setSelectedCategory("");
     setPriceRange(100);
     onResetFilters();
   };
@@ -71,14 +69,14 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
           onChange={(e) => {
             const value = Number(e.target.value);
             setPriceRange(value);
-            onFilterChange({ categories: selectedCategories, levels: selectedLevels, price: value });
+            onFilterChange({ category: selectedCategory, priceRange: value });
           }}
           className="w-full mt-2"
         />
       </div>
 
       <div className="mb-6">
-        <h3 className="text-gray-300 font-semibold">Categories</h3>
+        <h3 className="text-gray-300 font-semibold">Category</h3>
         {error && <p className="text-red-500 mt-2">{error}</p>}
         {categories.map((cat) => (
           <label
