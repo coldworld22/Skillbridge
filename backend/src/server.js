@@ -13,9 +13,11 @@ const { verifyToken } = require("./middleware/auth/authMiddleware");
 const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
+const { startLessonLiveJob } = require("./jobs/lessonLiveJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
 const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
+const { createLessonRoomLink } = require("./utils/roomLink");
 require("dotenv").config();
 
 // Ensure required environment secrets are present
@@ -148,6 +150,33 @@ app.use("/api/books", require("./modules/books/book.routes"));
 app.use("/api/instructor/books", require("./modules/books/instructorBook.routes"));
 app.use("/api/library", require("./modules/library/library.routes"));
 app.use("/api/search", require("./modules/search/search.routes"));
+
+// Generate secure video room link for a lesson
+app.post("/api/users/classes/lessons/:lessonId/room", verifyToken, async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const lesson = await db("class_lessons as l")
+      .join("online_classes as c", "l.class_id", "c.id")
+      .select("l.class_id", "c.instructor_id")
+      .where("l.id", lessonId)
+      .first();
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    const isInstructor = lesson.instructor_id === req.user.id;
+    let isStudent = false;
+    if (!isInstructor) {
+      const enrollment = await db("class_enrollments")
+        .where({ class_id: lesson.class_id, user_id: req.user.id })
+        .first();
+      if (enrollment) isStudent = true;
+    }
+    if (!isInstructor && !isStudent)
+      return res.status(403).json({ message: "Not allowed" });
+    const link = createLessonRoomLink(lessonId);
+    res.json(link);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to generate room link" });
+  }
+});
 
 app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
 
@@ -314,6 +343,7 @@ async function startServer() {
       console.log(`✅ Server running on port ${PORT}`);
     });
     startLessonReminderJob();
+    startLessonLiveJob();
     startClassReminderJob();
     startCartReminderJob();
     startCleanupJob();
