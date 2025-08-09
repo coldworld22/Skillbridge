@@ -7,6 +7,41 @@ import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
 
+/**
+ * Retrieves enrollment status and progress percentage for a tutorial from
+ * `localStorage`.
+ * @param {Object} tut - Tutorial information containing an `id` and optional
+ * chapter metadata.
+ * @returns {{enrolled: boolean, progressPercent: number}}
+ */
+export const loadTutorialStatus = (tut) => {
+  let enrolled = false;
+  let progressPercent = 0;
+
+  if (typeof window !== "undefined") {
+    enrolled = !!localStorage.getItem(`enrolled-${tut.id}`);
+    const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        const total = Array.isArray(tut.chapters)
+          ? tut.chapters.length
+          : tut.totalLessons ||
+            tut.total_chapters ||
+            tut.chapter_count ||
+            0;
+        if (total) {
+          progressPercent =
+            ((data.completedChapters?.length || 0) / total) * 100;
+        }
+      } catch {}
+    }
+  }
+
+  return { enrolled, progressPercent };
+};
+
 const TutorialsSection = () => {
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +56,7 @@ const TutorialsSection = () => {
     price: 100,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [statusMap, setStatusMap] = useState({});
   const router = useRouter();
   const loader = useRef(null);
 
@@ -55,6 +91,15 @@ const TutorialsSection = () => {
     };
     loadTutorials();
   }, []);
+
+  useEffect(() => {
+    if (!tutorials.length) return;
+    const cache = {};
+    tutorials.forEach((t) => {
+      cache[t.id] = loadTutorialStatus(t);
+    });
+    setStatusMap(cache);
+  }, [tutorials]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =
@@ -227,32 +272,7 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const enrolled =
-                  typeof window !== "undefined" &&
-                  localStorage.getItem(`enrolled-${tut.id}`);
-
-                let progressPercent = 0;
-                if (typeof window !== "undefined") {
-                  const saved = localStorage.getItem(
-                    `progress-tutorial-${tut.id}`
-                  );
-                  if (saved) {
-                    try {
-                      const data = JSON.parse(saved);
-                      const total = Array.isArray(tut.chapters)
-                        ? tut.chapters.length
-                        :
-                          tut.totalLessons ||
-                          tut.total_chapters ||
-                          tut.chapter_count ||
-                          0;
-                      if (total) {
-                        progressPercent =
-                          ((data.completedChapters?.length || 0) / total) * 100;
-                      }
-                    } catch {}
-                  }
-                }
+                const { enrolled, progressPercent = 0 } = statusMap[tut.id] || {};
 
                 return (
                   <motion.div
