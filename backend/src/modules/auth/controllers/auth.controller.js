@@ -131,11 +131,7 @@ exports.logout = catchAsync(async (req, res) => {
  */
 exports.requestReset = catchAsync(async (req, res) => {
   const { email, via } = req.body;
-  try {
-    await authService.generateOtp(email, via);
-  } catch (err) {
-    // swallow errors to avoid user enumeration
-  }
+  await authService.generateOtp(email, via);
   res.json({ message: "If that email exists, an OTP has been sent" });
 });
 

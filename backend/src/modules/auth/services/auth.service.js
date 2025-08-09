@@ -303,10 +303,14 @@ exports.generateOtp = async (email, via = "email") => {
         text: `Your SkillBridge OTP is: ${code}`,
       });
     } catch (err) {
-      console.error("Error sending OTP SMS:", err.message);
+      throw new AppError(err.message, 503);
     }
   } else {
-    await sendOtpEmail(email, code);
+    try {
+      await sendOtpEmail(email, code);
+    } catch (err) {
+      throw new AppError(err.message, 503);
+    }
   }
 };
 

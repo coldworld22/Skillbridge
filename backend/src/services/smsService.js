@@ -15,14 +15,12 @@ async function getActiveProvider() {
 
 exports.sendSMS = async ({ to, text }) => {
   if (SMS_DISABLED) {
-    console.log(`[SMS DISABLED] to ${to}: ${text}`);
-    return;
+    throw new Error("SMS service is disabled");
   }
 
   const provider = await getActiveProvider();
   if (!provider) {
-    console.log(`[SMS] No active provider. Message to ${to}: ${text}`);
-    return;
+    throw new Error("No active SMS gateway provider configured");
   }
 
   if (provider.name === 'Infobip') {
