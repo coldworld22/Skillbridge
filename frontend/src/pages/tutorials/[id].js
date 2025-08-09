@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
@@ -49,11 +50,12 @@ export default function TutorialDetail() {
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
+  const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
 
   const enroll = async () => {
     if (!tutorial) return;
     if (!isLoggedIn) {
-      toast.error("Please login first");
+      toast.error(t("login_first"));
       router.push("/auth/login");
       return;
     }
@@ -69,11 +71,11 @@ export default function TutorialDetail() {
           true,
       );
       setIsEnrolled(enrolledFlag);
-      if (enrolledFlag) toast.success("Enrolled successfully!");
-      else toast.error("Enrollment failed");
+      if (enrolledFlag) toast.success(t("enroll_success"));
+      else toast.error(t("enroll_fail"));
     } catch (err) {
       console.error("Enrollment failed", err);
-      toast.error("Enrollment failed");
+      toast.error(t("enroll_fail"));
     }
   };
 
@@ -86,7 +88,7 @@ export default function TutorialDetail() {
       try {
         const data = await fetchTutorialDetails(id);
         if (!data) {
-          setError("Tutorial not found");
+          setError(t("not_found"));
           setLoading(false);
           return;
         }
@@ -120,7 +122,7 @@ export default function TutorialDetail() {
         setRelated(others.slice(0, 3));
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t("load_error"));
       } finally {
         setLoading(false);
       }
@@ -167,7 +169,7 @@ export default function TutorialDetail() {
   if (!tutorial) {
     return (
       <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-300">Tutorial not found</p>
+        <p className="text-lg text-gray-300">{t("not_found")}</p>
       </div>
     );
   }
@@ -234,21 +236,21 @@ export default function TutorialDetail() {
               navigator
                 .share({
                   title: tutorial.title,
-                  text: "Check out this tutorial on SkillBridge!",
+                  text: t("share_message"),
                   url: typeof window !== "undefined" ? window.location.href : "",
                 })
-                .then(() => toast.success("Shared successfully!"))
+                .then(() => toast.success(t("share_success")))
                 .catch(() => {})
             }
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
-            🔗 Share
+            🔗 {t("share")}
           </button>
         </div>
 
         <TutorialHeader
           {...tutorial}
-          price={tutorial.is_paid && tutorial.price ? `$${tutorial.price}` : "Free"}
+          price={tutorial.is_paid && tutorial.price ? `$${tutorial.price}` : t("free")}
         />
         <InstructorBio
           name={tutorial.instructor}
@@ -273,8 +275,8 @@ export default function TutorialDetail() {
             }}
           />
         ) : (
-          <div className="text-center text-gray-400" title="Enroll to access quiz">
-            Quiz locked
+          <div className="text-center text-gray-400" title={t("enroll_to_access_quiz")}> 
+            {t("quiz_locked")}
           </div>
         )}
 
@@ -285,10 +287,10 @@ export default function TutorialDetail() {
                 href={`/dashboard/student/assignments/${assignments[0].id}`}
                 className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition"
               >
-                📚 Start Assignment
+                📚 {t("start_assignment")}
               </Link>
             ) : (
-              <div className="text-gray-400">Complete the quiz to unlock assignments</div>
+              <div className="text-gray-400">{t("complete_quiz_unlock_assignments")}</div>
             )}
           </div>
         )}
@@ -299,15 +301,15 @@ export default function TutorialDetail() {
               onClick={() => router.push(`/certificate/${tutorial.id}`)}
               className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition"
             >
-              🎉 Claim Your Certificate
+              🎉 {t("claim_certificate")}
             </button>
           </div>
         ) : (
           <div
             className="mt-6 text-center text-gray-400"
-            title="Pass quiz to unlock certificate"
+            title={t("pass_quiz_to_unlock_certificate")}
           >
-            Certificate locked
+            {t("certificate_locked")}
           </div>
         )}
 
@@ -326,7 +328,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'tutorials'], nextI18NextConfig)),
     },
   };
 }

@@ -1,0 +1,45 @@
+{
+  "list": {
+    "loading": "جارٍ تحميل الدروس...",
+    "load_error": "فشل تحميل الدروس",
+    "heading": "📺 دروس مميزة",
+    "subheading": "أتقن مهارات جديدة من خلال مجموعتنا المختارة من الدروس بقيادة الخبراء",
+    "search_placeholder": "ابحث عن الدروس...",
+    "mobile_filters": "عوامل التصفية",
+    "desktop_search_placeholder": "ابحث عن الدروس أو المدرسين...",
+    "sort_by": "ترتيب حسب:",
+    "featured": "مميز",
+    "most_viewed": "الأكثر مشاهدة",
+    "top_rated": "الأعلى تقييماً",
+    "showing": "عرض",
+    "of": "من",
+    "tutorials": "درساً",
+    "clear_filters": "مسح جميع عوامل التصفية",
+    "premium_badge": "متميز",
+    "trending": "رائج",
+    "free": "مجاني",
+    "enrolled": "مسجل",
+    "empty_title": "لم يتم العثور على دروس",
+    "empty_description": "حاول تغيير عوامل التصفية أو كلمات البحث",
+    "reset_filters": "إعادة تعيين عوامل التصفية"
+  },
+  "detail": {
+    "login_first": "يرجى تسجيل الدخول أولاً",
+    "enroll_success": "تم التسجيل بنجاح!",
+    "enroll_fail": "فشل التسجيل",
+    "load_error": "فشل تحميل الدرس",
+    "not_found": "الدرس غير موجود",
+    "share": "مشاركة",
+    "share_message": "اطلع على هذا الدرس على SkillBridge!",
+    "share_success": "تمت المشاركة بنجاح!",
+    "quiz_locked": "الاختبار مقفل",
+    "enroll_to_access_quiz": "سجّل للوصول إلى الاختبار",
+    "start_assignment": "بدء الواجب",
+    "complete_quiz_unlock_assignments": "أكمل الاختبار لفتح الواجبات",
+    "claim_certificate": "احصل على الشهادة",
+    "pass_quiz_to_unlock_certificate": "اجتز الاختبار لفتح الشهادة",
+    "certificate_locked": "الشهادة مقفلة",
+    "free": "مجاني"
+  }
+}
+
