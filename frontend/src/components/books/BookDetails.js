@@ -59,10 +59,12 @@ export default function BookDetails({ book }) {
             ⭐ {Number(book.rating).toFixed(1)} / 5
           </p>
         )}
-        <p className="mb-6">{book.description}</p>
+        <p className="mb-6">
+          {book.detailed_description || book.short_description || book.description}
+        </p>
 
         <p className="text-xl font-semibold mb-6">
-          {book.is_paid ? `$${book.price}` : "Free"}
+          {Number(book.price) > 0 ? `$${book.price}` : "Free"}
         </p>
 
         {book.pdf_url && (
@@ -93,10 +95,17 @@ export default function BookDetails({ book }) {
                     onClick={handleAddToCart}
                     className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors"
                   >
-                    Add to Cart
-                  </button>
-                </div>
-              )
+                    Preview
+                  </a>
+                )}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAdding}
+                  className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add to Cart
+                </button>
+              </div>
             ) : (
               <a
                 href={book.pdf_url}

@@ -61,7 +61,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-gray-300 font-semibold">Categories</h3>
+        <h3 className="text-gray-300 font-semibold">Category</h3>
         {error && <p className="text-red-500 mt-2">{error}</p>}
         {categories.map((cat) => (
           <label
