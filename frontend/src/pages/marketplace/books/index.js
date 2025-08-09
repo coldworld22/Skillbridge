@@ -10,6 +10,9 @@ import { fetchBooks, buildUrl } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import useBookCartStore from "@/store/books/cartStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 const buildBookItem = (book) => ({
   book_id: book.id,
@@ -22,6 +25,7 @@ const buildBookItem = (book) => ({
 });
 
 export default function BooksPage() {
+  const { t } = useTranslation(["website", "common"]);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,12 +92,12 @@ export default function BooksPage() {
 
   const handleAddToWishlist = (book) => {
     addToWishlist(buildBookItem(book));
-    toast.success("Added to wishlist");
+    toast.success(t("added_to_wishlist"));
   };
 
   const handleAddToCart = (book) => {
     addToCart(buildBookItem(book));
-    toast.success("Added to cart");
+    toast.success(t("added_to_cart"));
   };
 
   useEffect(() => {
@@ -121,7 +125,7 @@ export default function BooksPage() {
       } catch (err) {
         console.error(err);
         if (page === 1) {
-          setError("❌ Failed to load books. Please try again later.");
+          setError(t("failed_load_books"));
         }
         setHasMore(false);
       } finally {
@@ -143,13 +147,13 @@ export default function BooksPage() {
     };
   }, [hasMore, loading]);
 
-  if (loading && books.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-yellow-400">
-        ⏳ Loading books...
-      </div>
-    );
-  }
+    if (loading && books.length === 0) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-yellow-400">
+          {t("loading_books")}
+        </div>
+      );
+    }
 
   if (error && books.length === 0) {
     return (
@@ -174,10 +178,10 @@ export default function BooksPage() {
             className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500"
             whileHover={{ scale: 1.02 }}
           >
-            📚 Books Marketplace
+            {t("books_marketplace_title")}
           </motion.h2>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Discover free and paid books created by verified instructors.
+            {t("books_marketplace_description")}
           </p>
         </motion.div>
 
@@ -188,7 +192,7 @@ export default function BooksPage() {
             <input
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search books..."
+              placeholder={t("search_books_placeholder")}
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white"
             />
           </div>
@@ -212,7 +216,7 @@ export default function BooksPage() {
             className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/90 backdrop-blur-lg p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isFilterOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
           >
             <div className="flex justify-between items-center mb-4 lg:hidden">
-              <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
+              <h3 className="text-xl font-bold text-yellow-400">{t("filters")}</h3>
               <button
                 onClick={() => setIsFilterOpen(false)}
                 className="text-white text-lg"
@@ -234,29 +238,29 @@ export default function BooksPage() {
                 <input
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder="Search by title or author..."
+                  placeholder={t("search_title_author_placeholder")}
                   className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white"
                 />
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-gray-400">Sort by:</span>
+                <span className="text-gray-400">{t("sort_by")}</span>
                 <select
                   value={sortBy}
                   onChange={handleSortChange}
                   className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2"
                 >
-                  <option value="default">Default</option>
-                  <option value="price">Price</option>
-                  <option value="rating">Rating</option>
-                  <option value="newest">Newest</option>
+                  <option value="default">{t("sort_default")}</option>
+                  <option value="price">{t("sort_price")}</option>
+                  <option value="rating">{t("sort_rating")}</option>
+                  <option value="newest">{t("sort_newest")}</option>
                 </select>
               </div>
             </div>
 
             {/* Book Grid */}
             {books.length === 0 && !loading ? (
-              <p className="text-gray-400">No books found with selected filters.</p>
+              <p className="text-gray-400">{t("no_books_found")}</p>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {books.map((book) => (
@@ -271,7 +275,7 @@ export default function BooksPage() {
             )}
 
             {loading && books.length > 0 && (
-              <p className="text-center text-gray-400 mt-4">Loading...</p>
+              <p className="text-center text-gray-400 mt-4">{t("loading")}</p>
             )}
 
             <div ref={loader} />
@@ -293,4 +297,12 @@ export default function BooksPage() {
       <Footer />
     </section>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["common", "website"], nextI18NextConfig)),
+    },
+  };
 }

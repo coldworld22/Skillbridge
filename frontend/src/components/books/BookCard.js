@@ -29,7 +29,7 @@ export default function BookCard({
   onAddToWishlist,
   onAddToCart,
 }) {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation("website");
 
   const coverUrl =
     book.cover_image_url ||
