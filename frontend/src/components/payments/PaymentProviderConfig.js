@@ -52,11 +52,25 @@ export default function PaymentProviderConfig({ providerId }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    let parsed;
     try {
-      const parsed = settings ? JSON.parse(settings) : {};
+      parsed = settings ? JSON.parse(settings) : {};
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        toast.error("Invalid JSON format");
+        return;
+      }
+      throw err;
+    }
+
+    try {
       await updateMethod(providerId, { settings: parsed });
       toast.success(t('paymentsPage.config_saved'));
-      notify("payment_method_updated", `Payment method \"${providerId}\" configuration updated`);
+      notify(
+        "payment_method_updated",
+        `Payment method \"${providerId}\" configuration updated`
+      );
     } catch (err) {
       console.error("Failed to save settings", err);
       toast.error(t('paymentsPage.config_save_failed'));
