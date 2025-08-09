@@ -129,10 +129,19 @@ function AdminBooksPage() {
     async (currentPage = page) => {
       try {
         setLoading(true);
-        const activeFilters = { ...filters };
-        if (activeFilters.priceRange === null || activeFilters.priceRange <= 0) {
-          delete activeFilters.priceRange;
-        }
+        const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+          if (
+            value === "" ||
+            value === null ||
+            value === undefined ||
+            (Array.isArray(value) && value.length === 0) ||
+            (key === "priceRange" && (value === null || value <= 0))
+          ) {
+            return acc;
+          }
+          acc[key] = value;
+          return acc;
+        }, {});
         const { books: list, meta } = await fetchBooks({
           page: currentPage,
           perPage,
