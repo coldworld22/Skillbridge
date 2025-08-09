@@ -28,7 +28,7 @@ export default function StudentTutorialsPage() {
           return {
             ...tut,
             completedLessons: progress.completedChapters.length,
-            totalLessons: tut.chapters?.length || 0,
+            totalLessons: tut.chapter_count || 0,
             isCompleted: progress.completedQuiz,
           };
         });
