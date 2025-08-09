@@ -28,7 +28,13 @@ describe("bookService", () => {
       sort: { sortBy: "title" },
     });
     expect(api.get).toHaveBeenCalledWith("/books", {
-      params: { page: 2, perPage: 5, search: "test", sortBy: "title" },
+      params: {
+        page: 2,
+        perPage: 5,
+        search: "test",
+        sortBy: "title",
+        status: "active",
+      },
     });
     expect(res).toEqual({
       books: [
