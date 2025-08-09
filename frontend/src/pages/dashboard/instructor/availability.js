@@ -112,10 +112,11 @@ export default function InstructorAvailabilityPage() {
             onClick={async () => {
               const newStatus = !available;
               try {
-                await toggleInstructorStatus(newStatus);
-                setAvailable(newStatus);
-                setUser({ ...user, is_online: newStatus });
-                toast.success(newStatus ? 'You are now available' : 'You are now unavailable');
+                const res = await toggleInstructorStatus(newStatus);
+                const updated = res?.is_online ?? newStatus;
+                setAvailable(updated);
+                setUser({ ...user, is_online: updated });
+                toast.success(updated ? 'You are now available' : 'You are now unavailable');
               } catch (err) {
                 toast.error('Failed to update availability');
               }

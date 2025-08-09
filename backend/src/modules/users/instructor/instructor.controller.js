@@ -58,10 +58,15 @@ exports.toggleStatus = async (req, res) => {
     if (typeof is_online !== "boolean") {
         return res.status(400).json({ message: "is_online must be true or false." });
     }
+    const [updated] = await db("users")
+        .where({ id: userId })
+        .update({ is_online })
+        .returning(["id", "is_online"]);
 
-    await db("users").where({ id: userId }).update({ is_online });
-
-    res.json({ message: `Status set to ${is_online ? "online" : "offline"}` });
+    res.json({
+        message: `Status set to ${updated.is_online ? "online" : "offline"}`,
+        is_online: updated.is_online,
+    });
 };
 
 /**
