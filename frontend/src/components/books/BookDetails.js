@@ -95,29 +95,21 @@ export default function BookDetails({ book }) {
                     onClick={handleAddToCart}
                     className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors"
                   >
-                    Preview
+                    Add to Cart
+                  </button>
+                </div>
+                )) : (
+                  <a
+                    href={book.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
+                  >
+                    Read Now
                   </a>
                 )}
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isAdding}
-                  className="inline-block px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            ) : (
-              <a
-                href={book.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
-              >
-                Read Now
-              </a>
+              </>
             )}
-          </>
-        )}
       </div>
     </div>
   );
