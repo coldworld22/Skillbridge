@@ -4,6 +4,7 @@ const service = require("./tutorialChapter.service");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const uploadChapterVideo = require("./uploadChapterVideo");
+const db = require("../../../../config/database");
 
 // Handle chapter video uploads
 exports.uploadVideo = (req, res) => {
@@ -62,12 +63,22 @@ exports.deleteChapter = catchAsync(async (req, res) => {
 // List chapters by tutorial
 exports.getChaptersByTutorial = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
-  const isGuest = !req.user;
+  const tutorial = await db("tutorials")
+    .where({ id: tutorialId, status: "published" })
+    .first();
+
+  if (!tutorial) throw new AppError("Tutorial not found or not published", 404);
 
   let chapters = await service.getByTutorial(tutorialId);
 
-  // Filter only previews if guest
-  if (isGuest) {
+  if (req.user) {
+    const enrollment = await db("tutorial_enrollments")
+      .where({ tutorial_id: tutorialId, user_id: req.user.id })
+      .first();
+    if (!enrollment) {
+      chapters = chapters.filter((ch) => ch.is_preview);
+    }
+  } else {
     chapters = chapters.filter((ch) => ch.is_preview);
   }
 
