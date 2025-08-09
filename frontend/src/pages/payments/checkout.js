@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const removeItem = useCartStore((state) => state.removeItem);
 
 
@@ -70,28 +71,67 @@ export default function CheckoutPage() {
     }
   };
 
+  const completePayment = async () => {
+    const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
+    const newClass = {
+      id: classInfo.id,
+      title: classInfo.title,
+      instructor: classInfo.instructor,
+      startDate: new Date().toISOString(),
+      status: "Live",
+      joined: true,
+    };
+    localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
+    try {
+      await removeItem(classInfo.id);
+    } catch (err) {
+      console.error('Failed to remove from cart', err);
+    }
+    setPaymentStatus('success');
+    setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
+  };
+
   const handlePayment = () => {
     setPaymentStatus('processing');
-    setTimeout(async () => {
-      const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
-      const newClass = {
-        id: classInfo.id,
-        title: classInfo.title,
-        instructor: classInfo.instructor,
-        startDate: new Date().toISOString(),
-        status: "Live",
-        joined: true,
-      };
-      localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
-      try {
-        await removeItem(classInfo.id);
-      } catch (err) {
-        console.error('Failed to remove from cart', err);
-      }
-      setPaymentStatus('success');
-      setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
-    }, 1500);
+    setTimeout(completePayment, 1500);
   };
+
+  const renderPayPalButton = (amount) => {
+    if (!window.paypal) return;
+    const container = document.getElementById('paypal-button-container');
+    if (container) container.innerHTML = '';
+    window.paypal.Buttons({
+      createOrder: (_, actions) =>
+        actions.order.create({
+          purchase_units: [{ amount: { value: amount } }],
+        }),
+      onApprove: async (_, actions) => {
+        setPaymentStatus('processing');
+        await actions.order.capture();
+        completePayment();
+      },
+      onError: (err) => {
+        console.error('PayPal error', err);
+        setPaymentStatus('idle');
+      },
+    }).render('#paypal-button-container');
+  };
+
+  useEffect(() => {
+    if (selectedMethod !== 'paypal' || !classInfo) return;
+    const amount = (classInfo.price - discount).toString();
+    if (!paypalLoaded) {
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test'}`;
+      script.addEventListener('load', () => {
+        setPaypalLoaded(true);
+        renderPayPalButton(amount);
+      });
+      document.body.appendChild(script);
+    } else {
+      renderPayPalButton(amount);
+    }
+  }, [selectedMethod, classInfo, discount, paypalLoaded]);
 
   const handleFileChange = (e) => setReceipt(e.target.files[0]);
   const generatePDF = () => alert('Invoice PDF downloaded (mocked)');
@@ -212,20 +252,23 @@ export default function CheckoutPage() {
             <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
               <input type="text" placeholder="Full Name" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
               <input type="email" placeholder="Email Address" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-              {selectedMethod !== 'bank' && (
+              {selectedMethod !== 'bank' && selectedMethod !== 'paypal' && (
                 <>
                   <input type="tel" placeholder="Card Number" required inputMode="numeric" className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
                   <input type="text" placeholder="Expiration Date (MM/YY)" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
                   <input type="text" placeholder="CVC" required className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white" />
                 </>
               )}
-              <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
-                {paymentStatus === 'processing'
-                  ? 'Processing...'
-                  : allowInstallments
-                  ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`
-                  : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
-              </button>
+              {selectedMethod === 'paypal' && <div id="paypal-button-container" className="mb-4"></div>}
+              {selectedMethod !== 'paypal' && (
+                <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
+                  {paymentStatus === 'processing'
+                    ? 'Processing...'
+                    : allowInstallments
+                    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`
+                    : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
+                </button>
+              )}
               <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
             </form>
           )}
