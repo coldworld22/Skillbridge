@@ -7,6 +7,7 @@ const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
+const smsService = require("../../services/smsService");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 const isAdminRole = (roles = []) => {
@@ -77,6 +78,9 @@ exports.createBook = catchAsync(async (req, res) => {
           html: `<p>${userMessage} We will notify you when it is published.</p>`,
         })
       : Promise.resolve(),
+    req.user.phone
+      ? smsService.sendSMS({ to: req.user.phone, text: userMessage })
+      : Promise.resolve(),
     ...admins.map((admin) =>
       Promise.all([
         notificationService.createNotification({
@@ -95,6 +99,9 @@ exports.createBook = catchAsync(async (req, res) => {
               subject: "New book submitted",
               html: `<p>${adminMessage}</p>`,
             })
+          : Promise.resolve(),
+        admin.phone
+          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
           : Promise.resolve(),
       ])
     ),
@@ -261,6 +268,12 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
                 html: `<p>${instructorMessage}</p>`,
               })
             : Promise.resolve(),
+          instructor.phone
+            ? smsService.sendSMS({
+                to: instructor.phone,
+                text: instructorMessage,
+              })
+            : Promise.resolve(),
         ])
       : Promise.resolve(),
     ...admins.map((admin) =>
@@ -281,6 +294,9 @@ exports.updateBookStatus = catchAsync(async (req, res) => {
               subject: "Book status updated",
               html: `<p>${adminMessage}</p>`,
             })
+          : Promise.resolve(),
+        admin.phone
+          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
           : Promise.resolve(),
       ])
     ),
