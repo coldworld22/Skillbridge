@@ -1,9 +1,11 @@
 const router = require("express").Router();
 const controller = require("./payments.controller");
+const upload = require("./paymentReceiptUpload.middleware");
 const { verifyToken, isStudent } = require("../../middleware/auth/authMiddleware");
 
 router.use(verifyToken, isStudent);
 
 router.get("/", controller.getMyPayments);
+router.post("/receipts", upload.single("receipt"), controller.uploadReceipt);
 
 module.exports = router;

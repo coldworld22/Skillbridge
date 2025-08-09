@@ -16,6 +16,7 @@ exports.seed = async function(knex) {
         currency: 'USD',
         status: 'paid',
         paid_at: knex.fn.now(),
+        receipt_url: null,
       },
     ]);
   }
