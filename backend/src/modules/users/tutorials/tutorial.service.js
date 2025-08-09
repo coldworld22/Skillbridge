@@ -211,15 +211,22 @@ exports.getPublishedTutorials = async () => {
     .avg({ avg_rating: "rating" })
     .groupBy("tutorial_id");
 
+  const chapterCountSubquery = db("tutorial_chapters")
+    .select("tutorial_id")
+    .count({ chapter_count: "id" })
+    .groupBy("tutorial_id");
+
   return db({ t: "tutorials" })
     .leftJoin("users as u", "t.instructor_id", "u.id")
     .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
+    .leftJoin(chapterCountSubquery.as("c"), "c.tutorial_id", "t.id")
     .where({ "t.status": "published", "t.moderation_status": "Approved" })
     .select(
       "t.*",
       "u.full_name as instructor_name",
       "u.avatar_url as instructor_avatar",
-      db.raw("COALESCE(r.avg_rating, 0) as rating")
+      db.raw("COALESCE(r.avg_rating, 0) as rating"),
+      db.raw("COALESCE(c.chapter_count, 0) as chapter_count")
     )
     .orderBy("t.created_at", "desc");
 };
