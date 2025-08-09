@@ -1,35 +1,65 @@
-const cart = [];
+const db = require("../../config/database");
 
-exports.list = (userId) => cart.filter((c) => c.user_id === userId);
+exports.list = async (userId) => {
+  return db("cart_items")
+    .where({ user_id: userId })
+    .select("item_id as id", "name", "quantity", "added_at", "reminder_sent");
+};
 
-exports.getAll = () => cart;
+exports.add = async (userId, item) => {
+  return db.transaction(async (trx) => {
+    const cartExists = await trx("carts").where({ user_id: userId }).first();
+    if (!cartExists) {
+      await trx("carts").insert({ user_id: userId });
+    }
+    const existing = await trx("cart_items").where({ user_id: userId, item_id: item.id }).first();
+    if (existing) {
+      const quantity = existing.quantity + (item.quantity || 1);
+      await trx("cart_items").where({ id: existing.id }).update({ quantity });
+    } else {
+      await trx("cart_items").insert({
+        user_id: userId,
+        item_id: item.id,
+        name: item.name,
+        quantity: item.quantity || 1,
+        added_at: new Date(),
+        reminder_sent: false,
+      });
+    }
+    const row = await trx("cart_items").where({ user_id: userId, item_id: item.id }).first();
+    return {
+      id: row.item_id,
+      name: row.name,
+      quantity: row.quantity,
+      added_at: row.added_at,
+      reminder_sent: row.reminder_sent,
+    };
+  });
+};
 
-exports.add = (userId, item) => {
-  const existing = cart.find((c) => c.id === item.id && c.user_id === userId);
-  if (existing) {
-    existing.quantity += item.quantity || 1;
-    return existing;
-  }
-  const newItem = {
-    ...item,
-    user_id: userId,
-    quantity: item.quantity || 1,
-    added_at: new Date(),
-    reminder_sent: false,
+exports.update = async (userId, id, quantity) => {
+  const existing = await db("cart_items").where({ user_id: userId, item_id: id }).first();
+  if (!existing) return null;
+  await db("cart_items").where({ id: existing.id }).update({ quantity });
+  const updated = await db("cart_items").where({ id: existing.id }).first();
+  return {
+    id: updated.item_id,
+    name: updated.name,
+    quantity: updated.quantity,
+    added_at: updated.added_at,
+    reminder_sent: updated.reminder_sent,
   };
-  cart.push(newItem);
-  return newItem;
 };
 
-exports.update = (userId, id, quantity) => {
-  const item = cart.find((c) => c.id === id && c.user_id === userId);
-  if (!item) return null;
-  item.quantity = quantity;
-  return item;
-};
-
-exports.remove = (userId, id) => {
-  const index = cart.findIndex((c) => c.id === id && c.user_id === userId);
-  if (index === -1) return null;
-  return cart.splice(index, 1)[0];
+exports.remove = async (userId, id) => {
+  const existing = await db("cart_items").where({ user_id: userId, item_id: id }).first();
+  if (!existing) return null;
+  await db("cart_items").where({ id: existing.id }).del();
+  return {
+    id: existing.item_id,
+    name: existing.name,
+    quantity: existing.quantity,
+    added_at: existing.added_at,
+    reminder_sent: existing.reminder_sent,
+  };
 };
