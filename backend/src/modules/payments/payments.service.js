@@ -1,8 +1,14 @@
 const db = require("../../config/database");
 
-exports.create = async (data) => {
-  const [row] = await db("payments").insert(data).returning("*");
-  return row;
+exports.create = async (data, schedules = []) => {
+  return db.transaction(async (trx) => {
+    const [row] = await trx("payments").insert(data).returning("*");
+    if (schedules.length) {
+      const records = schedules.map((s) => ({ ...s, payment_id: row.id }));
+      await trx("payment_schedules").insert(records);
+    }
+    return row;
+  });
 };
 
 exports.getAll = async () => {
