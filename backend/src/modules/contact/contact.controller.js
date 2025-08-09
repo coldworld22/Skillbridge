@@ -26,7 +26,7 @@ exports.submitForm = catchAsync(async (req, res) => {
   });
   const admins = await userModel.findAdmins();
   const note = `New contact message from ${name} (${email})`;
-  await Promise.all(
+  const results = await Promise.allSettled(
     admins.map((admin) =>
       notificationService.createNotification({
         user_id: admin.id,
@@ -35,5 +35,13 @@ exports.submitForm = catchAsync(async (req, res) => {
       })
     )
   );
+  results.forEach((r, idx) => {
+    if (r.status === "rejected") {
+      console.error(
+        `Failed to notify admin ${admins[idx].id}:`,
+        r.reason?.message || r.reason
+      );
+    }
+  });
   sendSuccess(res, null, "Message sent");
 });

@@ -45,22 +45,29 @@ exports.create = catchAsync(async (req, res) => {
 
   const admins = await userModel.findAdmins();
   const senderId = req.user?.id;
-  await Promise.all(
-    admins.map((admin) =>
-      Promise.all([
-        notificationService.createNotification({
-          user_id: admin.id,
-          type: "popup_announcement_created",
-          message: `New popup announcement: ${title}`,
-        }),
-        messageService.createMessage({
-          sender_id: senderId || admin.id,
-          receiver_id: admin.id,
-          message: `New popup announcement: ${title}`,
-        }),
-      ])
-    )
-  );
+  Promise.allSettled(
+    admins.flatMap((admin) => [
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "popup_announcement_created",
+        message: `New popup announcement: ${title}`,
+      }),
+      messageService.createMessage({
+        sender_id: senderId || admin.id,
+        receiver_id: admin.id,
+        message: `New popup announcement: ${title}`,
+      }),
+    ])
+  ).then((results) => {
+    results.forEach((r) => {
+      if (r.status === "rejected") {
+        console.error(
+          "Failed to dispatch popup announcement notification:",
+          r.reason?.message || r.reason
+        );
+      }
+    });
+  });
 });
 
 exports.update = catchAsync(async (req, res) => {

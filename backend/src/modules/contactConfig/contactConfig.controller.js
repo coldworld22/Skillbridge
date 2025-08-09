@@ -16,20 +16,27 @@ exports.updateSettings = catchAsync(async (req, res) => {
 
   const admins = await userModel.findAdmins();
   const senderId = req.user?.id;
-  await Promise.all(
-    admins.map((admin) =>
-      Promise.all([
-        notificationService.createNotification({
-          user_id: admin.id,
-          type: "contact_settings_updated",
-          message: "Contact settings were updated",
-        }),
-        messageService.createMessage({
-          sender_id: senderId || admin.id,
-          receiver_id: admin.id,
-          message: "Contact settings were updated",
-        }),
-      ])
-    )
-  );
+  Promise.allSettled(
+    admins.flatMap((admin) => [
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "contact_settings_updated",
+        message: "Contact settings were updated",
+      }),
+      messageService.createMessage({
+        sender_id: senderId || admin.id,
+        receiver_id: admin.id,
+        message: "Contact settings were updated",
+      }),
+    ])
+  ).then((results) => {
+    results.forEach((r) => {
+      if (r.status === "rejected") {
+        console.error(
+          "Failed to dispatch contact settings update notification:",
+          r.reason?.message || r.reason
+        );
+      }
+    });
+  });
 });
