@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import useBookCartStore from "@/store/books/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
+import { formatCurrency } from "@/utils/currency";
 
 const buildBookItem = (b) => ({
   book_id: b.id,
@@ -117,7 +118,7 @@ export default function BookDetails({ book }) {
         </p>
 
         <p className="text-xl font-semibold mb-6">
-          {Number(book.price) > 0 ? `$${book.price}` : "Free"}
+          {Number(book.price) > 0 ? formatCurrency(book.price) : "Free"}
         </p>
         {actionButtons}
       </div>
