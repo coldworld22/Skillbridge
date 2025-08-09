@@ -67,7 +67,13 @@ function AdminCreateBookPage() {
       });
 
       toast.success(t("booksCreate.success"));
-      await Promise.all([fetchNotifications(), fetchMessages()]);
+
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (notifyErr) {
+        console.error("Failed to refresh notifications or messages", notifyErr);
+      }
+      handleRemoveImage();
       router.push("/dashboard/admin/books");
     } catch (err) {
       console.error("Failed to create book", err);
