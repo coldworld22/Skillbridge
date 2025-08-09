@@ -33,6 +33,7 @@ exports.loginSchema = z.object({
  */
 exports.otpRequestSchema = z.object({
   email: z.string().email("Invalid email"),
+  via: z.enum(["email", "sms"]).optional(),
 });
 
 /**
