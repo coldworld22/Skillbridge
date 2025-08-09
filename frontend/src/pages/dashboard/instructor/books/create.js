@@ -94,10 +94,8 @@ function CreateBookPage() {
           setUploadProgress(progress);
         }
       });
-
-      toast.success(t("booksCreate.success"));
       await Promise.all([fetchNotifications(), fetchMessages()]);
-      router.push("/dashboard/instructor/books");
+      router.push("/dashboard/instructor/books?created=1");
     } catch (e) {
       console.error("Failed to create book", e);
       let errorMessage = t("booksCreate.error");

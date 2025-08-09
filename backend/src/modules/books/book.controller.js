@@ -6,6 +6,7 @@ const AppError = require("../../utils/AppError");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
+const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
@@ -77,6 +78,9 @@ exports.createBook = catchAsync(async (req, res) => {
           html: `<p>${userMessage} We will notify you when it is published.</p>`,
         })
       : Promise.resolve(),
+    req.user.phone
+      ? smsService.sendSMS({ to: req.user.phone, text: userMessage })
+      : Promise.resolve(),
     ...admins.map((admin) =>
       Promise.all([
         notificationService.createNotification({
@@ -95,6 +99,9 @@ exports.createBook = catchAsync(async (req, res) => {
               subject: "New book submitted",
               html: `<p>${adminMessage}</p>`,
             })
+          : Promise.resolve(),
+        admin.phone
+          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
           : Promise.resolve(),
       ])
     ),
