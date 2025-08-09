@@ -102,6 +102,8 @@ export default function AdminPaymentsPage() {
             role: t.user_role,
             method: t.method_name,
             type: t.item_type,
+            platformFee: parseFloat(t.platform_fee ?? 0),
+            instructorAmount: parseFloat(t.instructor_amount ?? t.amount),
           }))
         );
         setMethods(
@@ -332,6 +334,8 @@ export default function AdminPaymentsPage() {
                     <th className="px-4 py-2">{t('paymentsPage.type')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.method')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                    <th className="px-4 py-2">Platform Fee</th>
+                    <th className="px-4 py-2">Net Amount</th>
                     <th className="px-4 py-2">{t('paymentsPage.status')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
                   </tr>
@@ -350,6 +354,8 @@ export default function AdminPaymentsPage() {
                       <td className="px-4 py-2">{txn.type}</td>
                       <td className="px-4 py-2">{txn.method}</td>
                       <td className="px-4 py-2 font-semibold text-green-600">${txn.amount.toFixed(2)}</td>
+                      <td className="px-4 py-2">${txn.platformFee.toFixed(2)}</td>
+                      <td className="px-4 py-2">${txn.instructorAmount.toFixed(2)}</td>
                       <td className="px-4 py-2">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${txn.status === "Success"
