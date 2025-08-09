@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import useBookCartStore from "@/store/books/cartStore";
+import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
 
 const buildBookItem = (b) => ({
@@ -8,14 +9,26 @@ const buildBookItem = (b) => ({
   title: b.title,
   price: b.price,
   cover_url:
-    b.cover_image_url || buildUrl(b.cover_image) || "/images/default-book-cover.jpg",
+    b.cover_image_url ||
+    buildUrl(b.cover_image) ||
+    "/images/default-book-cover.jpg",
 });
 
 export default function BookDetails({ book }) {
   const router = useRouter();
   const addToCart = useBookCartStore((state) => state.addToCart);
+  const { isAuthenticated, user } = useAuthStore();
 
   const handleAddToCart = () => {
+    if (!isAuthenticated()) {
+      toast.info("Please log in to purchase");
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role?.toLowerCase() !== "student") {
+      toast.error("Only students can purchase books");
+      return;
+    }
     addToCart(buildBookItem(book));
     toast.success("Added to cart");
     router.push("/cart");

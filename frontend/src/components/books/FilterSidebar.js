@@ -25,23 +25,8 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   }, []);
 
   const handleCategoryChange = (id) => {
-    const updated = selectedCategories.includes(id)
-      ? selectedCategories.filter((c) => c !== id)
-      : [...selectedCategories, id];
-    setSelectedCategories(updated);
-    onFilterChange({
-      categories: updated,
-      levels: selectedLevels,
-      price: priceRange,
-    });
-  };
-
-  const handleLevelChange = (level) => {
-    const updated = selectedLevels.includes(level)
-      ? selectedLevels.filter((l) => l !== level)
-      : [...selectedLevels, level];
-    setSelectedLevels(updated);
-    onFilterChange({ categories: selectedCategories, levels: updated, price: priceRange });
+    setSelectedCategory(id);
+    onFilterChange({ category: id, priceRange });
   };
 
   const resetFilters = () => {
@@ -80,34 +65,17 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
         {error && <p className="text-red-500 mt-2">{error}</p>}
         {categories.map((cat) => (
           <label
-            key={cat.id || cat.name || cat}
+            key={cat.id}
             className="flex items-center space-x-2 text-gray-300 mt-2"
           >
             <input
-              type="checkbox"
-              value={cat.id || cat}
-              checked={selectedCategories.includes(cat.id || cat)}
-              onChange={() => handleCategoryChange(cat.id || cat)}
+              type="radio"
+              name="category"
+              value={cat.id}
+              checked={selectedCategory === cat.id}
+              onChange={() => handleCategoryChange(cat.id)}
             />
-            <span>{cat.name || cat}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-gray-300 font-semibold">Difficulty Level</h3>
-        {["Beginner", "Intermediate", "Advanced"].map((level) => (
-          <label
-            key={level}
-            className="flex items-center space-x-2 text-gray-300 mt-2"
-          >
-            <input
-              type="checkbox"
-              value={level}
-              checked={selectedLevels.includes(level)}
-              onChange={() => handleLevelChange(level)}
-            />
-            <span>{level}</span>
+            <span>{cat.name}</span>
           </label>
         ))}
       </div>

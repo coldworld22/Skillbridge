@@ -36,7 +36,6 @@ export default function BooksPage() {
     category: "",
     priceRange: 100,
     language: "",
-    license: "",
     tags: [],
   });
   const [page, setPage] = useState(1);
@@ -76,14 +75,12 @@ export default function BooksPage() {
   };
 
   const resetFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
+    setFilters({
       category: "",
       priceRange: 100,
       language: "",
-      license: "",
       tags: [],
-    }));
+    });
     setBooks([]);
     setPage(1);
     setHasMore(true);
