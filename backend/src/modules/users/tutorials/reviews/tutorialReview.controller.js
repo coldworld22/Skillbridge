@@ -1,12 +1,23 @@
 const db = require("../../../../config/database");
 const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
+const AppError = require("../../../../utils/AppError");
 
 // Submit or update a review
 exports.submitReview = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
   const { rating, comment } = req.body;
   const userId = req.user.id;
+
+  const enrolled = await db("tutorial_enrollments")
+    .where({ tutorial_id: tutorialId, user_id: userId })
+    .first();
+
+  if (!enrolled)
+    throw new AppError(
+      "You must enroll in the tutorial before submitting a review.",
+      403
+    );
 
   const exists = await db("tutorial_reviews")
     .where({ tutorial_id: tutorialId, user_id: userId })
