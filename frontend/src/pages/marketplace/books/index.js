@@ -104,7 +104,7 @@ export default function BooksPage() {
         const { books: data } = await fetchBooks({
           page,
           perPage: 6,
-          filters: { ...filters, search: searchQuery },
+          filters: { ...filters, search: searchQuery, status: "active" },
           sort: sortBy !== "default" ? { sortBy } : {},
         });
         setBooks((prev) => (page === 1 ? data : [...prev, ...data]));
