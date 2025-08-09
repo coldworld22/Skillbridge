@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
 import LinkText from "@/components/shared/LinkText";
-import { getNotifications, markNotificationAsRead, deleteNotification } from "@/services/notificationService";
+import { useTranslation } from "next-i18next";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+} from "@/services/notificationService";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -12,6 +17,7 @@ const useNotificationStore = create((set, get) => ({
   poller: null,
 
   fetch: async (showAlert = false) => {
+    const { t } = useTranslation("common");
     set({ loading: true });
     try {
       const data = await getNotifications();
@@ -26,7 +32,7 @@ const useNotificationStore = create((set, get) => ({
           const note = filtered.find((n) => !n.read);
           toast.info(<LinkText text={note.message} />);
         } else {
-          toast.info(`You have ${diff} new notifications`);
+          toast.info(t("you_have_new_notifications", { count: diff }));
         }
       }
       set({ items: filtered, loading: false });
@@ -36,6 +42,7 @@ const useNotificationStore = create((set, get) => ({
   },
 
   markRead: async (id) => {
+    const { t } = useTranslation("common");
     const idStr = String(id);
     const prevItems = get().items;
     const tempReadAt = new Date().toISOString();
@@ -74,7 +81,7 @@ const useNotificationStore = create((set, get) => ({
     } catch (err) {
       // Revert on failure
       set({ items: prevItems });
-      toast.error("Failed to mark notification as read");
+      toast.error(t("failed_to_mark_notification_as_read"));
       return false;
     }
   },
