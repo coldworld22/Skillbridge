@@ -2,10 +2,10 @@ import { useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 
 const mockHistory = [
-  { id: 1, title: "React Basics", amount: 120, date: "2025-04-10", method: "Bank Transfer", status: "Paid" },
-  { id: 2, title: "Next.js Bootcamp", amount: 200, date: "2025-04-20", method: "PayPal", status: "Pending" },
-  { id: 3, title: "Node.js Fundamentals", amount: 150, date: "2025-05-01", method: "Bank Transfer", status: "Paid" },
-  { id: 4, title: "AI with Python", amount: 180, date: "2025-05-03", method: "PayPal", status: "Paid" },
+  { id: 1, title: "React Basics", amount: 120, platformFee: 24, netAmount: 96, date: "2025-04-10", method: "Bank Transfer", status: "Paid" },
+  { id: 2, title: "Next.js Bootcamp", amount: 200, platformFee: 40, netAmount: 160, date: "2025-04-20", method: "PayPal", status: "Pending" },
+  { id: 3, title: "Node.js Fundamentals", amount: 150, platformFee: 30, netAmount: 120, date: "2025-05-01", method: "Bank Transfer", status: "Paid" },
+  { id: 4, title: "AI with Python", amount: 180, platformFee: 36, netAmount: 144, date: "2025-05-03", method: "PayPal", status: "Paid" },
 ];
 
 export default function InstructorPaymentsHistoryPage() {
@@ -22,8 +22,16 @@ export default function InstructorPaymentsHistoryPage() {
   });
 
   const exportCSV = () => {
-    const headers = ["Class", "Amount", "Date", "Method", "Status"];
-    const rows = filteredHistory.map(({ title, amount, date, method, status }) => [title, amount, date, method, status]);
+    const headers = ["Class", "Amount", "Platform Fee", "Net Amount", "Date", "Method", "Status"];
+    const rows = filteredHistory.map(({ title, amount, platformFee, netAmount, date, method, status }) => [
+      title,
+      amount,
+      platformFee,
+      netAmount,
+      date,
+      method,
+      status,
+    ]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const link = document.createElement("a");
@@ -84,6 +92,8 @@ export default function InstructorPaymentsHistoryPage() {
               <tr className="bg-gray-100 text-left">
                 <th className="p-3">Class</th>
                 <th className="p-3">Amount</th>
+                <th className="p-3">Platform Fee</th>
+                <th className="p-3">Net Amount</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Method</th>
                 <th className="p-3">Status</th>
@@ -94,6 +104,8 @@ export default function InstructorPaymentsHistoryPage() {
                 <tr key={entry.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{entry.title}</td>
                   <td className="p-3">${entry.amount}</td>
+                  <td className="p-3">${entry.platformFee}</td>
+                  <td className="p-3">${entry.netAmount}</td>
                   <td className="p-3">{entry.date}</td>
                   <td className="p-3">{entry.method}</td>
                   <td className={`p-3 font-medium ${entry.status === "Paid" ? "text-green-600" : "text-yellow-600"}`}>{entry.status}</td>
