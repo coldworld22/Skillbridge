@@ -27,6 +27,7 @@ import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
   fetchTutorialAssignments,
+  enrollInTutorial,
 } from "@/services/tutorialService";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
@@ -49,16 +50,31 @@ export default function TutorialDetail() {
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
 
-  const enroll = () => {
+  const enroll = async () => {
     if (!tutorial) return;
     if (!isLoggedIn) {
       toast.error("Please login first");
       router.push("/auth/login");
       return;
     }
-    localStorage.setItem(`enrolled-${tutorial.id}`, true);
-    setIsEnrolled(true);
-    toast.success("Enrolled successfully!");
+
+    try {
+      const res = await enrollInTutorial(tutorial.id);
+      const enrolledFlag = Boolean(
+        res?.is_enrolled ??
+          res?.enrolled ??
+          res?.data?.is_enrolled ??
+          res?.data?.enrolled ??
+          res?.success ??
+          true,
+      );
+      setIsEnrolled(enrolledFlag);
+      if (enrolledFlag) toast.success("Enrolled successfully!");
+      else toast.error("Enrollment failed");
+    } catch (err) {
+      console.error("Enrollment failed", err);
+      toast.error("Enrollment failed");
+    }
   };
 
 
@@ -85,6 +101,11 @@ export default function TutorialDetail() {
           };
         });
         setTutorial({ ...data, chapters });
+        setIsEnrolled(
+          Boolean(
+            data?.is_enrolled || data?.enrolled || data?.isEnrolled,
+          ),
+        );
         try {
           const assignList = await fetchTutorialAssignments(id);
           setAssignments(assignList);
@@ -107,11 +128,7 @@ export default function TutorialDetail() {
     load();
   }, [id]);
 
-  useEffect(() => {
-    if (!tutorial) return;
-    const enrolled = localStorage.getItem(`enrolled-${tutorial.id}`);
-    if (enrolled) setIsEnrolled(true);
-  }, [tutorial]);
+
 
   // Load saved progress when chapter changes
   useEffect(() => {

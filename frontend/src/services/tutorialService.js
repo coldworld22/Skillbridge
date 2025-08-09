@@ -42,6 +42,11 @@ export const fetchTutorialDetails = async (id) => {
   return tut ? formatTutorial(tut) : tut;
 };
 
+export const enrollInTutorial = async (tutorialId) => {
+  const { data } = await api.post(`/users/tutorials/enroll/${tutorialId}`);
+  return data;
+};
+
 export const addTutorialToWishlist = async (id) => {
   const { data } = await api.post(`/users/tutorials/wishlist/${id}`);
   return data;
