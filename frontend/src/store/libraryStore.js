@@ -8,7 +8,10 @@ const useLibraryStore = create((set) => ({
     set({ loading: true });
     try {
       const items = await apiFetchLibrary();
-      set({ items, loading: false });
+      const activeItems = Array.isArray(items)
+        ? items.filter((b) => b?.status === "active")
+        : [];
+      set({ items: activeItems, loading: false });
     } catch (err) {
       set({ loading: false });
     }
