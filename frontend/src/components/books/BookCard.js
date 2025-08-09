@@ -9,14 +9,7 @@ import {
   FiShoppingCart,
 } from "react-icons/fi";
 import { buildUrl } from "@/services/bookService";
-
-
-const priceFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { formatCurrency } from "@/utils/currency";
 
 export default function BookCard({
   book,
@@ -29,7 +22,7 @@ export default function BookCard({
   onAddToWishlist,
   onAddToCart,
 }) {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation("website");
 
   const coverUrl =
     book.cover_image_url ||
@@ -69,9 +62,7 @@ export default function BookCard({
       />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
-        <p className="text-sm mb-3">
-          {priceFormatter.format(Number(book.price ?? 0))}
-        </p>
+        <p className="text-sm mb-3">{formatCurrency(book.price)}</p>
         <div className="flex gap-2">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
