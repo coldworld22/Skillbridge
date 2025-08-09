@@ -5,6 +5,8 @@ const service = require("./classAssignment.service");
 const classService = require("../class.service");
 const enrollmentService = require("../enrollments/classEnrollment.service");
 const notificationService = require("../../notifications/notifications.service");
+const smsService = require("../../../services/smsService");
+const { sendAssignmentEmail } = require("../../../utils/email");
 
 exports.getAssignmentsByClass = catchAsync(async (req, res) => {
   const assignments = await service.getByClass(req.params.classId);
@@ -32,6 +34,25 @@ exports.createAssignment = catchAsync(async (req, res) => {
             message,
           })
         )
+      );
+      await Promise.all(
+        students.map(async (s) => {
+          try {
+            if (s.email) {
+              await sendAssignmentEmail(
+                s.email,
+                assignment.title,
+                cls.title,
+                assignment.due_date
+              );
+            }
+            if (s.phone) {
+              await smsService.sendSMS({ to: s.phone, text: message });
+            }
+          } catch (err) {
+            console.error("Error sending assignment email/SMS:", err.message);
+          }
+        })
       );
     }
   } catch (err) {

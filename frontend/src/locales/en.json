@@ -18,5 +18,8 @@
     "students": "Students",
     "tutorials": "Tutorials",
     "classes": "Classes"
+  },
+  "notifications": {
+    "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
   }
 }

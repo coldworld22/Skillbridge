@@ -59,6 +59,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     },
     schedules
   );
+
   try {
     const user = await userModel.findById(user_id);
     if (user?.phone) {

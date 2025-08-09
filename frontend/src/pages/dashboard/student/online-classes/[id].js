@@ -131,7 +131,12 @@ export default function StudentClassRoom() {
             {assignments.map((assignment) => (
               <li key={assignment.id} className="flex justify-between items-center bg-gray-700 px-4 py-3 rounded hover:bg-gray-600">
                 <div>
-                  <p className="font-semibold">{assignment.title}</p>
+                  <div className="flex items-center space-x-2">
+                    <p className="font-semibold">{assignment.title}</p>
+                    {assignment.createdAt && Date.now() - new Date(assignment.createdAt).getTime() < 3 * 24 * 60 * 60 * 1000 && (
+                      <span className="bg-green-500 text-black text-xs px-2 py-0.5 rounded">New</span>
+                    )}
+                  </div>
                   <small className="text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</small>
                 </div>
                 <div>

@@ -18,5 +18,8 @@
     "students": "Étudiants",
     "tutorials": "Tutoriels",
     "classes": "Cours"
+  },
+  "notifications": {
+    "new_assignment": "Nouveau devoir \"{{title}}\" publié pour le cours \"{{classTitle}}\"."
   }
 }
