@@ -297,7 +297,7 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   const tutorialId = req.params.id;
-  await service.togglePublishStatus(tutorialId);
+  const updated = await service.togglePublishStatus(tutorialId);
 
   const tut = await service.getTutorialById(tutorialId);
   if (
@@ -320,7 +320,11 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
     ]);
   }
 
-  sendSuccess(res, { message: "Status toggled" });
+  sendSuccess(res, {
+    message: "Status toggled",
+    status: updated.status,
+    moderation_status: updated.moderation_status,
+  });
 });
 
 

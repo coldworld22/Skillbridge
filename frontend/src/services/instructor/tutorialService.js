@@ -22,7 +22,7 @@ const mapStatus = (tut) =>
     ? "Approved"
     : tut.moderation_status === "Rejected"
     ? "Rejected"
-    : "Submitted";
+    : "Pending";
 
 export const fetchInstructorTutorials = async () => {
   const { data } = await api.get("/users/tutorials/admin/my");
