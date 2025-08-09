@@ -1,0 +1,18 @@
+-- carts table
+CREATE TABLE IF NOT EXISTS carts (
+  user_id VARCHAR PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- cart_items table
+CREATE TABLE IF NOT EXISTS cart_items (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR NOT NULL REFERENCES carts(user_id) ON DELETE CASCADE,
+  item_id VARCHAR NOT NULL,
+  name VARCHAR,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reminder_sent BOOLEAN DEFAULT FALSE,
+  UNIQUE (user_id, item_id)
+);
+
