@@ -190,7 +190,7 @@ exports.getClassAnalytics = async (classId) => {
     .countDistinct({ count: "user_id" });
 
   const [attendanceRow] = await db("class_attendance")
-    .where({ lesson_id: classId, attended: true })
+    .where({ class_id: classId, attended: true })
     .countDistinct({ count: "user_id" });
 
   const viewAgents = await db("class_views")

@@ -105,7 +105,7 @@ function InstructorClassRoom() {
         {/* Attendance Panel */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">🧑‍🎓 Attendance</h2>
-          <StudentAttendancePanel classId={id} />
+          <StudentAttendancePanel lessonId={lessons[0]?.id} />
         </div>
 
         {/* Certificate Issuance */}
