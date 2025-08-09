@@ -150,7 +150,19 @@ exports.permanentlyDeleteTutorial = async (id) => {
 exports.togglePublishStatus = async (id) => {
   const tutorial = await db("tutorials").where({ id }).first();
   const newStatus = tutorial.status === "published" ? "draft" : "published";
-  return db("tutorials").where({ id }).update({ status: newStatus });
+  const updateData = { status: newStatus };
+
+  if (newStatus === "published") {
+    updateData.moderation_status = "Pending";
+    updateData.rejection_reason = null;
+  }
+
+  const [updated] = await db("tutorials")
+    .where({ id })
+    .update(updateData)
+    .returning(["status", "moderation_status"]);
+
+  return updated;
 };
 
 exports.updateModeration = async (id, status, reason = null) => {

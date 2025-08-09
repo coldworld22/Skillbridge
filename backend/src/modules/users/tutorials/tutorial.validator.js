@@ -23,6 +23,7 @@ exports.create = z.object({
     title: z.string().min(3),
     description: z.string().optional(),
     category_id: z.string(), // assuming UUID
+    instructor_id: z.string().uuid().optional(),
     level: z.string(),
     status: z.enum(["draft", "published", "archived"]).optional(),
     price: z.preprocess(
