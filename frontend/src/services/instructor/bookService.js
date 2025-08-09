@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { buildUrl } from "@/services/bookService";
 
 // Fetch books belonging to the current instructor with
 // optional pagination, filtering and status parameters
@@ -24,7 +25,12 @@ export const fetchInstructorBooks = async ({
     response = await api.get("/instructor/books");
   }
   const { data } = response;
-  const list = data?.data || [];
+  const list = data?.data
+    ? data.data.map((book) => ({
+        ...book,
+        cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
+      }))
+    : [];
   return { books: list, meta: data?.meta ?? {} };
 
 };
@@ -53,7 +59,13 @@ export const deleteBook = async (id) => {
 // Fetch a single book by ID for the current instructor
 export const fetchBook = async (id) => {
   const { data } = await api.get(`/books/${id}`);
-  return data?.data || null;
+  const book = data?.data || null;
+  return book
+    ? {
+        ...book,
+        cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
+      }
+    : null;
 };
 
 // Fetch aggregated analytics about the instructor's books
