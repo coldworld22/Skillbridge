@@ -18,6 +18,9 @@ import nextI18NextConfig from "../../../../next-i18next.config.js";
 const buildBookItem = (book) => ({
   id: book.id,
   name: book.title,
+  author: book.author,
+  category_name: book.category_name,
+  rating: book.rating,
   price: book.price,
   cover_url:
     book.cover_image_url ||
@@ -28,6 +31,9 @@ const buildBookItem = (book) => ({
 const buildWishlistItem = (book) => ({
   book_id: book.id,
   title: book.title,
+  author: book.author,
+  category_name: book.category_name,
+  rating: book.rating,
   price: book.price,
   cover_url:
     book.cover_image_url ||
@@ -133,8 +139,12 @@ export default function BooksPage() {
           filters: apiFilters,
           sort: sortBy !== "default" ? { sortBy } : {},
         });
-        setBooks((prev) => (page === 1 ? data : [...prev, ...data]));
-        setHasMore(data.length === 6);
+        const normalized = data.map((b) => ({
+          ...b,
+          rating: b.rating != null ? Number(b.rating) : b.rating,
+        }));
+        setBooks((prev) => (page === 1 ? normalized : [...prev, ...normalized]));
+        setHasMore(normalized.length === 6);
       } catch (err) {
         console.error(err);
         if (page === 1) {
