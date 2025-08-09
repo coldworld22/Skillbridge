@@ -282,6 +282,13 @@ exports.generateOtp = async (email, via = "email") => {
     return;
   }
 
+  if (via === "sms" && (!user.phone || !user.is_phone_verified)) {
+    throw new AppError(
+      "A verified phone number is required before SMS OTPs can be sent",
+      400
+    );
+  }
+
   const code = generateOtp(OTP_LENGTH);
   const codeHash = await bcrypt.hash(code, SALT_ROUNDS);
 
@@ -296,7 +303,7 @@ exports.generateOtp = async (email, via = "email") => {
     created_at: db.fn.now(),
   });
 
-  if (via === "sms" && user.phone && user.is_phone_verified) {
+  if (via === "sms") {
     try {
       await smsService.sendSMS({
         to: user.phone,
