@@ -26,6 +26,10 @@ jest.mock('../src/services/mailService', () => ({
   sendMail: jest.fn(),
 }));
 
+jest.mock('../src/services/smsService', () => ({
+  sendSMS: jest.fn(),
+}));
+
 jest.mock('../src/modules/notifications/notifications.service', () => ({
   createNotification: jest.fn(),
 }));

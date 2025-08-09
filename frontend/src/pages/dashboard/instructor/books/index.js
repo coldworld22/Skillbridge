@@ -91,10 +91,15 @@ function InstructorBooksPage() {
 
   useEffect(() => {
     if (router.query.created) {
-      toast.success(t("booksCreate.success"));
+      toast.success(
+        t("booksCreate.success", {
+          defaultValue:
+            "Thank you! Your book was added successfully and is under review. After it is approved, you will see it published in the bookstore",
+        })
+      );
       router.replace("/dashboard/instructor/books", undefined, { shallow: true });
     }
-  }, [router, router.query.created, t]);
+  }, [router, t]);
 
   // Load filters from localStorage on mount
   useEffect(() => {
