@@ -33,6 +33,29 @@ import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 import Link from "next/link";
 
+export async function handleShare(tutorial) {
+  const shareData = {
+    title: tutorial.title,
+    text: "Check out this tutorial on SkillBridge!",
+    url: typeof window !== "undefined" ? window.location.href : "",
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      toast.success("Shared successfully!");
+    } catch {
+      // ignore errors
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  }
+}
+
 export default function TutorialDetail() {
   const router = useRouter();
   const { id } = router.query;
@@ -230,16 +253,7 @@ export default function TutorialDetail() {
         <div className="flex justify-end mb-4 gap-3">
 
           <button
-            onClick={() =>
-              navigator
-                .share({
-                  title: tutorial.title,
-                  text: "Check out this tutorial on SkillBridge!",
-                  url: typeof window !== "undefined" ? window.location.href : "",
-                })
-                .then(() => toast.success("Shared successfully!"))
-                .catch(() => {})
-            }
+            onClick={() => handleShare(tutorial)}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
             🔗 Share
