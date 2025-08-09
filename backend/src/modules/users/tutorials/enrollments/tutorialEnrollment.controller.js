@@ -3,7 +3,6 @@ const catchAsync = require("../../../../utils/catchAsync");
 const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
-const AppError = require("../../../../utils/AppError");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
