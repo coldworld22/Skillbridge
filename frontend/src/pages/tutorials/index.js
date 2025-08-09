@@ -144,8 +144,12 @@ const TutorialsSection = () => {
         {/* Mobile Filters Button */}
         <div className="lg:hidden mb-6 flex justify-between items-center">
           <div className="relative w-full max-w-md">
+            <label htmlFor="tutorial-search-mobile" className="sr-only">
+              Search tutorials
+            </label>
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
+              id="tutorial-search-mobile"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -185,8 +189,12 @@ const TutorialsSection = () => {
             {/* Desktop Search & Sort */}
             <div className="hidden lg:flex items-center justify-between gap-4 mb-8">
               <div className="relative w-full max-w-md">
+                <label htmlFor="tutorial-search-desktop" className="sr-only">
+                  Search tutorials
+                </label>
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
+                  id="tutorial-search-desktop"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -196,8 +204,11 @@ const TutorialsSection = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-gray-400">Sort by:</span>
+                <label htmlFor="tutorial-sort" className="text-gray-400">
+                  Sort by:
+                </label>
                 <select
+                  id="tutorial-sort"
                   onChange={(e) => setSortBy(e.target.value)}
                   className="py-2.5 px-4 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 >
