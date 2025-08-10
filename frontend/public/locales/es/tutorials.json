@@ -40,6 +40,9 @@
     "pass_quiz_to_unlock_certificate": "Pass quiz to unlock certificate",
     "certificate_locked": "Certificate locked",
     "free": "Free"
+  },
+  "create": {
+    "thumbnail_size_error": "❌ Please upload a JPG/PNG file less than 10MB."
   }
 }
 
