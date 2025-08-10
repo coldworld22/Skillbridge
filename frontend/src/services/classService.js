@@ -154,3 +154,8 @@ export const postClassComment = async (classId, payload) => {
   const { data } = await api.post(`/users/classes/comments/${classId}`, payload);
   return data;
 };
+
+export const subscribeToClassReminder = async (classId) => {
+  const { data } = await api.post(`/users/classes/notifications/${classId}`);
+  return data;
+};

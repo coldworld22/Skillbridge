@@ -15,7 +15,8 @@ import {
   FaSortAmountDown
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { fetchMyEnrolledClasses } from '@/services/classService';
+import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
+import { toast } from 'react-toastify';
 
 export default function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
@@ -128,7 +129,18 @@ export default function MyEnrolledClassesPage() {
                 </span>
 
                 {cls.status === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await subscribeToClassReminder(cls.id);
+                        toast.success('Reminder set');
+                      } catch (err) {
+                        console.error('Failed to subscribe to reminder', err);
+                        toast.error('Failed to set reminder');
+                      }
+                    }}
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                  >
                     <FaBell /> Notify Me
                   </button>
                 )}
