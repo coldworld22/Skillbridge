@@ -31,6 +31,7 @@ function EditTutorialPage() {
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [error, setError] = useState(null);
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
@@ -50,6 +51,7 @@ function EditTutorialPage() {
 
     const load = async () => {
       try {
+        setError(null);
         const [tutorial, chapters, cats] = await Promise.all([
           fetchTutorialById(id),
           fetchChaptersByTutorial(id),
@@ -81,6 +83,7 @@ function EditTutorialPage() {
         setCategories(cats?.data || cats);
       } catch (err) {
         console.error(err);
+        setError("Failed to load tutorial.");
       }
     };
 
@@ -95,6 +98,11 @@ function EditTutorialPage() {
 
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
+
+  if (error)
+    return (
+      <div className="p-6 max-w-4xl mx-auto text-red-600">{error}</div>
+    );
 
   if (!tutorialData)
     return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
