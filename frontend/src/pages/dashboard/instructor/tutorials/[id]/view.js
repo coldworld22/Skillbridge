@@ -1,6 +1,7 @@
 // ViewTutorialPage.js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
 import {
@@ -21,6 +22,7 @@ import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const { t } = useTranslation(["dashboard", "tutorials"]);
   const [tutorial, setTutorial] = useState(null);
@@ -28,6 +30,20 @@ export default function ViewTutorialPage() {
   const [error, setError] = useState(null);
   const [curriculumOpen, setCurriculumOpen] = useState(true); // For mobile accordion
   const [showChecklist, setShowChecklist] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -51,7 +67,7 @@ export default function ViewTutorialPage() {
 
   return (
     <InstructorLayout>
-      <motion.div 
+      <motion.div
         className="p-6 space-y-8 max-w-5xl mx-auto" 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,9 +141,11 @@ export default function ViewTutorialPage() {
 
         {/* Thumbnail */}
         <div className="w-full h-52 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-lg">
-          <img
+          <Image
             src={tutorial.thumbnail}
             alt={tutorial.title}
+            width={1280}
+            height={720}
             className="w-full h-full object-cover"
           />
         </div>
@@ -257,8 +275,23 @@ export default function ViewTutorialPage() {
             {tutorial.progress === 100 && (
               <button
                 onClick={async () => {
-                  await submitTutorialForReview(tutorial.id);
-                  setTutorial({ ...tutorial, status: "Pending" });
+                  try {
+                    await submitTutorialForReview(tutorial.id);
+                    setTutorial({ ...tutorial, status: "Pending" });
+                    toast.success(
+                      t("tutorialCreatePage.submit_success", {
+                        defaultValue:
+                          "Tutorial submitted successfully! Waiting for admin approval.",
+                      })
+                    );
+                  } catch (err) {
+                    console.error(err);
+                    toast.error(
+                      t("tutorialViewPage.submit_failed", {
+                        defaultValue: "Failed to submit tutorial",
+                      })
+                    );
+                  }
                 }}
                 className="mt-3 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-md text-sm"
               >
@@ -284,6 +317,13 @@ export default function ViewTutorialPage() {
         isOpen={showChecklist}
         onClose={() => setShowChecklist(false)}
         tutorial={tutorial}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={closeConfirmModal}
       />
     </InstructorLayout>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { FaStar, FaClock, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
@@ -312,11 +313,12 @@ const TutorialsSection = () => {
                           loop
                         />
                       ) : (
-                        <img
+                        <Image
                           src={tut.thumbnail}
                           alt={tut.title}
+                          width={640}
+                          height={256}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          loading="lazy"
                         />
                       )}
                       

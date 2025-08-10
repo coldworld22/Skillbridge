@@ -8,8 +8,8 @@ import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
 import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
-import { updateTutorial } from "@/services/admin/tutorialService";
-import { fetchAllCategories } from "@/services/admin/categoryService";
+import { updateTutorial } from "@/services/instructor/tutorialService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
@@ -21,6 +21,7 @@ import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function EditTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const { t } = useTranslation(["dashboard", "tutorials"]);
 
@@ -33,6 +34,7 @@ export default function EditTutorialPage() {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
 
   useEffect(() => {
     if (!id) return;

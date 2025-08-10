@@ -728,11 +728,13 @@
     "submit_success": "تم إرسال الدرس بنجاح! بانتظار موافقة المسؤول.",
     "video_required": "يرجى تحميل فيديو لكل درس قبل الإرسال.",
     "creation_failed": "فشل إنشاء الدرس",
+    "creation_notification": "تم إنشاء الدرس \"{{title}}\".",
     "load_categories_failed": "فشل تحميل التصنيفات"
   },
   "tutorialEditPage": {
     "update_success": "تم تحديث الدرس بنجاح!",
-    "update_failed": "فشل تحديث الدرس"
+    "update_failed": "فشل تحديث الدرس",
+    "update_notification": "تم تحديث الدرس \"{{title}}\"."
   },
   "usersPage": {
     "title": "إدارة المستخدمين",

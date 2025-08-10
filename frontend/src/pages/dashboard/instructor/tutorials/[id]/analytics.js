@@ -17,6 +17,7 @@ const EMPTY_STATS = {
 
 export default function TutorialAnalyticsPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [stats, setStats] = useState(null);
   const { t } = useTranslation(["dashboard", "tutorials"]);
