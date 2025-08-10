@@ -36,43 +36,39 @@ exports.complete = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
   const user_id = req.user.id;
 
+  // Ensure enrollment exists
+  const enrollment = await db("tutorial_enrollments")
+    .where({ user_id, tutorial_id: tutorialId })
+    .first();
+  if (!enrollment) throw new AppError("Enrollment not found", 404);
+
   // Verify all chapters completed
-  let allChaptersCompleted = true;
-  const hasChapters = await db.schema.hasTable("tutorial_chapters");
-  const hasCompletions = await db.schema.hasTable("tutorial_chapter_completions");
+  const [{ count: totalChapters }] = await db("tutorial_chapters")
+    .where({ tutorial_id: tutorialId })
+    .count("id as count");
 
-  if (hasChapters && hasCompletions) {
-    const [{ count: totalChapters }] = await db("tutorial_chapters")
-      .where({ tutorial_id: tutorialId })
-      .count("id as count");
+  const [{ count: completedChapters }] = await db(
+    "tutorial_chapter_completions as tcc"
+  )
+    .join("tutorial_chapters as tc", "tcc.chapter_id", "tc.id")
+    .where("tc.tutorial_id", tutorialId)
+    .andWhere("tcc.user_id", user_id)
+    .count("tcc.id as count");
 
-    const [{ count: completedChapters }] = await db(
-      "tutorial_chapter_completions as tcc"
-    )
-      .join("tutorial_chapters as tc", "tcc.chapter_id", "tc.id")
-      .where("tc.tutorial_id", tutorialId)
-      .andWhere("tcc.user_id", user_id)
-      .count("tcc.id as count");
-
-    allChaptersCompleted = Number(totalChapters) === Number(completedChapters);
-  }
+  const allChaptersCompleted =
+    Number(totalChapters) === Number(completedChapters);
 
   // Verify quiz passed if any
   let quizPassed = true;
-  const hasQuizzes = await db.schema.hasTable("tutorial_quizzes");
-  const hasAttempts = await db.schema.hasTable("quiz_attempts");
+  const quiz = await db("tutorial_quizzes")
+    .where({ tutorial_id: tutorialId })
+    .first();
 
-  if (hasQuizzes && hasAttempts) {
-    const quiz = await db("tutorial_quizzes")
-      .where({ tutorial_id: tutorialId })
+  if (quiz) {
+    const attempt = await db("quiz_attempts")
+      .where({ tutorial_id: tutorialId, user_id, passed: true })
       .first();
-
-    if (quiz) {
-      const attempt = await db("quiz_attempts")
-        .where({ tutorial_id: tutorialId, user_id, passed: true })
-        .first();
-      quizPassed = Boolean(attempt);
-    }
+    quizPassed = Boolean(attempt);
   }
 
   if (!allChaptersCompleted || !quizPassed) {
