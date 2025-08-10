@@ -164,24 +164,30 @@ function EditTutorialPage() {
               try {
                 await updateTutorial(id, formData);
                 toast.success(t('update_success'));
-                await createNotification({
-                  user_id: user.id,
-                  type: "tutorial_updated",
-                  message: `Tutorial "${tutorialData.title}" was updated.`,
-                });
-                if (tutorialData.instructorId) {
+
+                try {
                   await createNotification({
-                    user_id: tutorialData.instructorId,
+                    user_id: user.id,
                     type: "tutorial_updated",
-                    message: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    message: `Tutorial "${tutorialData.title}" was updated.`,
                   });
-                  await sendChatMessage(tutorialData.instructorId, {
-                    text: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                  if (tutorialData.instructorId) {
+                    await createNotification({
+                      user_id: tutorialData.instructorId,
+                      type: "tutorial_updated",
+                      message: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    });
+                    await sendChatMessage(tutorialData.instructorId, {
+                      text: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    });
+                  }
+                  await sendChatMessage(user.id, {
+                    text: `Tutorial "${tutorialData.title}" was updated.`,
                   });
+                } catch (err) {
+                  console.error(err);
+                  toast.error('Failed to send notification or message');
                 }
-                await sendChatMessage(user.id, {
-                  text: `Tutorial "${tutorialData.title}" was updated.`,
-                });
                 refreshNotifications?.();
                 refreshMessages?.();
                 localStorage.removeItem(`editTutorialDraft-${id}`);
