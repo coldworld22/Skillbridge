@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function useTutorialProgress(tutorialId, chapters = []) {
+  const userId = useAuthStore((s) => s.user?.id);
   const [progress, setProgress] = useState({
     completedChapters: [], // will now store chapter IDs
     lastIndex: 0,
@@ -9,7 +11,8 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
 
   useEffect(() => {
     if (!tutorialId) return;
-    const stored = localStorage.getItem(`progress-tutorial-${tutorialId}`);
+    const key = `progress-tutorial-${userId ? `${userId}-` : ""}${tutorialId}`;
+    const stored = localStorage.getItem(key);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -26,10 +29,7 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
             .filter(Boolean);
           const migrated = { ...parsed, completedChapters: ids };
           setProgress(migrated);
-          localStorage.setItem(
-            `progress-tutorial-${tutorialId}`,
-            JSON.stringify(migrated),
-          );
+          localStorage.setItem(key, JSON.stringify(migrated));
         } else {
           setProgress(parsed);
         }
@@ -37,15 +37,15 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
         // ignore parse errors
       }
     }
-  }, [tutorialId, chapters]);
+  }, [tutorialId, chapters, userId]);
 
   const persist = (data) => {
     setProgress(data);
     if (tutorialId) {
-      localStorage.setItem(
-        `progress-tutorial-${tutorialId}`,
-        JSON.stringify(data),
-      );
+      const key = `progress-tutorial-${
+        userId ? `${userId}-` : ""
+      }${tutorialId}`;
+      localStorage.setItem(key, JSON.stringify(data));
     }
   };
 
