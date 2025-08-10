@@ -105,5 +105,47 @@ describe('createTutorial', () => {
     const data = service.createTutorial.mock.calls[0][0];
     expect(data.instructor_id).toBe(myId);
   });
+
+  it('sets is_paid to false when price is 0', async () => {
+    service.createTutorial.mockResolvedValue({ id: 'tutFree' });
+
+    const req = {
+      body: {
+        title: 'Free Tut',
+        category_id: 'cat',
+        level: 'beginner',
+        price: 0,
+      },
+      user: { id: 'inst1', role: 'instructor' },
+      files: {},
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await controller.createTutorial(req, res, jest.fn());
+    await new Promise((resolve) => setImmediate(resolve));
+    const data = service.createTutorial.mock.calls[0][0];
+    expect(data.is_paid).toBe(false);
+  });
+
+  it('sets is_paid to true when price is greater than 0', async () => {
+    service.createTutorial.mockResolvedValue({ id: 'tutPaid' });
+
+    const req = {
+      body: {
+        title: 'Paid Tut',
+        category_id: 'cat',
+        level: 'beginner',
+        price: 10,
+      },
+      user: { id: 'inst1', role: 'instructor' },
+      files: {},
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await controller.createTutorial(req, res, jest.fn());
+    await new Promise((resolve) => setImmediate(resolve));
+    const data = service.createTutorial.mock.calls[0][0];
+    expect(data.is_paid).toBe(true);
+  });
 });
 

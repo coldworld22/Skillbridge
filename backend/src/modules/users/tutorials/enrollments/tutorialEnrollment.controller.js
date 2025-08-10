@@ -16,7 +16,7 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
-  if (tutorial.is_paid) {
+  if (Number(tutorial.price) > 0) {
     const payment = await db("payments")
       .where({ user_id, item_type: "tutorial", item_id: tutorialId })
       .first();

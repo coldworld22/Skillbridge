@@ -33,7 +33,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
             first: () =>
               Promise.resolve({
                 id: 't1',
-                is_paid: false,
+                price: 0,
                 moderation_status: 'Approved',
                 status: 'published',
               }),
@@ -59,7 +59,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
             first: () =>
               Promise.resolve({
                 id: 't2',
-                is_paid: true,
+                price: 100,
                 moderation_status: 'Approved',
                 status: 'published',
               }),
@@ -89,7 +89,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
             first: () =>
               Promise.resolve({
                 id: 't3',
-                is_paid: true,
+                price: 50,
                 moderation_status: 'Approved',
                 status: 'published',
               }),
