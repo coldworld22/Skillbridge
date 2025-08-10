@@ -4,8 +4,8 @@
 // ─────────────────────────────────────────────────────────
 import api from "@/services/api/api";
 
-export const fetchAllCategories = async (params = {}) => {
-  const { data } = await api.get("/users/categories", { params });
+export const fetchAllCategories = async (params = {}, config = {}) => {
+  const { data } = await api.get("/users/categories", { params, ...config });
   return data?.data;
 };
 
