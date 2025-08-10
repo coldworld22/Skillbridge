@@ -58,37 +58,54 @@ const LandingTutorialsSection = () => {
     if (typeof navigator !== "undefined") {
       setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
     }
+    let isMounted = true;
 
     const load = async () => {
-      try {
-        const data = await fetchFeaturedTutorials();
-        setTutorials(data || []);
-      } catch (err) {
-        const msg =
-          err.code === "ERR_NETWORK"
-            ? t('network_error')
-            : t('tutorials_load_error');
-        toast.error(msg);
-      }
-      try {
-        const cats = await fetchAllCategories({ limit: 100 });
-        setCategories(cats?.data || cats || []);
-      } catch (err) {
-        const msg =
-          err.code === "ERR_NETWORK"
-            ? t('network_error')
-            : t('categories_load_error');
-        toast.error(msg);
-        console.error(t('categories_load_error'), err);
-      }
-      try {
-        const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-        setProgress(stored);
-      } catch {
-        setProgress({});
+      const tutorialsPromise = fetchFeaturedTutorials().catch((err) => ({ error: err }));
+      const categoriesPromise = fetchAllCategories({ limit: 100 }).catch((err) => ({ error: err }));
+
+      const [tutorialRes, categoryRes] = await Promise.all([
+        tutorialsPromise,
+        categoriesPromise,
+      ]);
+
+      if (isMounted) {
+        if (tutorialRes?.error) {
+          const err = tutorialRes.error;
+          const msg =
+            err.code === "ERR_NETWORK"
+              ? "Network error: please check API_BASE_URL and backend server."
+              : "Failed to load tutorials";
+          toast.error(msg);
+        } else {
+          setTutorials(tutorialRes || []);
+        }
+
+        if (categoryRes?.error) {
+          const err = categoryRes.error;
+          const msg =
+            err.code === "ERR_NETWORK"
+              ? "Network error: please check API_BASE_URL and backend server."
+              : "Failed to load categories";
+          toast.error(msg);
+          console.error("Failed to load categories", err);
+        } else {
+          setCategories(categoryRes?.data || categoryRes || []);
+        }
+
+        try {
+          const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+          setProgress(stored);
+        } catch {
+          setProgress({});
+        }
       }
     };
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
