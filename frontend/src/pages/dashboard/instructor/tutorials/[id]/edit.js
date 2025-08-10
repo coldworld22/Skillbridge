@@ -40,6 +40,7 @@ export default function EditTutorialPage() {
       const parsed = JSON.parse(draft);
       setTutorialData({
         ...parsed,
+        language: parsed.language || "",
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
       });
       setLoading(false);
@@ -56,6 +57,7 @@ export default function EditTutorialPage() {
         if (formatted) {
           setTutorialData({
             ...formatted,
+            language: formatted.language || "",
             lessonCount: formatted.chapters?.length || 1,
           });
         } else {
@@ -123,6 +125,7 @@ export default function EditTutorialPage() {
               formData.append("description", tutorialData.shortDescription);
               formData.append("category_id", tutorialData.category);
               formData.append("level", tutorialData.level);
+              formData.append("language", tutorialData.language);
               formData.append("is_paid", (!tutorialData.isFree).toString());
               if (!tutorialData.isFree) {
                 formData.append("price", tutorialData.price);
