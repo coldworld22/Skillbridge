@@ -8,6 +8,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
+import useCartStore from "@/store/cart/cartStore";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial from
@@ -62,6 +63,7 @@ const TutorialsSection = () => {
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
+  const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -386,7 +388,7 @@ const TutorialsSection = () => {
                             <FaEye className="text-gray-400 mr-1" /> {tut.views}
                           </span>
                         </div>
-                        <div className="text-sm font-medium">
+                        <div className="text-sm font-medium flex items-center gap-2">
                           {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
                               ${tut.price}
@@ -394,6 +396,20 @@ const TutorialsSection = () => {
                           ) : (
                             <span className="text-green-400">{t("free")}</span>
                           )}
+                          <button
+                            className="px-2 py-1 text-xs rounded bg-yellow-500 text-black hover:bg-yellow-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addItem({
+                                id: tut.id,
+                                name: tut.title,
+                                item_type: "tutorial",
+                                price: tut.price || 0,
+                              });
+                            }}
+                          >
+                            Add to Cart
+                          </button>
                         </div>
                       </div>
                     </div>
