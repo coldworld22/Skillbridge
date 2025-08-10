@@ -25,16 +25,12 @@ export const loadTutorialStatus = (tut) => {
   if (typeof window !== "undefined") {
     enrolled = !!localStorage.getItem(`enrolled-${tut.id}`);
     const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-
     if (saved) {
       try {
         const data = JSON.parse(saved);
         const total = Array.isArray(tut.chapters)
           ? tut.chapters.length
-          : tut.totalLessons ||
-            tut.total_chapters ||
-            tut.chapter_count ||
-            0;
+          : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
         if (total) {
           progressPercent =
             ((data.completedChapters?.length || 0) / total) * 100;
@@ -60,7 +56,6 @@ const TutorialsSection = () => {
     price: null,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [statusMap, setStatusMap] = useState({});
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
@@ -76,6 +71,7 @@ const TutorialsSection = () => {
   useEffect(() => {
     loadLists();
   }, [user]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,13 +106,13 @@ const TutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    if (!tutorials.length) return;
-    const cache = {};
-    tutorials.forEach((t) => {
-      cache[t.id] = loadTutorialStatus(t);
-    });
-    setStatusMap(cache);
-  }, [tutorials]);
+    if (!tutorials.length || !user || !isStudent) return;
+    const loadStatuses = async () => {
+      await syncOffline();
+      tutorials.forEach((t) => fetchStatus(t.id));
+    };
+    loadStatuses();
+  }, [tutorials, user, isStudent]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =
@@ -298,7 +294,8 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const { enrolled, progressPercent = 0 } = statusMap[tut.id] || {};
+                const { enrolled, progress: progressPercent = 0 } =
+                  statusMap[tut.id] || {};
 
                 return (
                   <motion.div
@@ -359,14 +356,31 @@ const TutorialsSection = () => {
                         />
                       )}
                       
-                      {/* Progress bar */}
-                      {enrolled && (
+                      {/* Progress bar or Enroll button */}
+                      {enrolled ? (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
                           <div
                             className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
                             style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
+                      ) : (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!user) return router.push('/auth/login');
+                            if (!isStudent) {
+                              return;
+                            }
+                            try {
+                              await enrollInTutorial(tut.id);
+                              await fetchStatus(tut.id);
+                            } catch {}
+                          }}
+                          className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
+                        >
+                          Enroll
+                        </button>
                       )}
                     </div>
 

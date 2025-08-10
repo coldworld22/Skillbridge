@@ -109,3 +109,48 @@ exports.getMyEnrollments = catchAsync(async (req, res) => {
 
   sendSuccess(res, rows);
 });
+
+// Get enrollment status and progress for a tutorial
+exports.getStatus = catchAsync(async (req, res) => {
+  const { tutorialId } = req.params;
+  const user_id = req.user.id;
+
+  const enrollment = await db("tutorial_enrollments")
+    .where({ user_id, tutorial_id: tutorialId })
+    .first();
+
+  if (!enrollment) {
+    return sendSuccess(res, { enrolled: false, progress: 0, status: null });
+  }
+
+  const progress =
+    enrollment.progress != null
+      ? Number(enrollment.progress)
+      : enrollment.status === "completed"
+      ? 100
+      : 0;
+
+  sendSuccess(res, {
+    enrolled: true,
+    status: enrollment.status,
+    progress,
+  });
+});
+
+// Update progress percentage for a tutorial
+exports.updateProgress = catchAsync(async (req, res) => {
+  const { tutorialId } = req.params;
+  const { progress } = req.body;
+  const user_id = req.user.id;
+
+  const enrollment = await db("tutorial_enrollments")
+    .where({ user_id, tutorial_id: tutorialId })
+    .first();
+  if (!enrollment) throw new AppError("Enrollment not found", 404);
+
+  await db("tutorial_enrollments")
+    .where({ user_id, tutorial_id: tutorialId })
+    .update({ progress });
+
+  sendSuccess(res, { progress }, "Progress updated");
+});
