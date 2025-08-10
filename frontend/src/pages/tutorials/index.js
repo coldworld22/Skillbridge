@@ -115,8 +115,8 @@ const TutorialsSection = () => {
 
     const matchPrice =
       !filters.price ||
-      !tut.is_paid ||
-      (tut.price != null && Number(tut.price) <= Number(filters.price));
+      tut.price == null ||
+      Number(tut.price) <= Number(filters.price);
 
     const matchSearch =
       tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -295,7 +295,7 @@ const TutorialsSection = () => {
                     onClick={() => router.push(`/tutorials/${tut.id}`)}
                   >
                     {/* Premium Badge */}
-                    {tut.is_paid && (
+                    {Number(tut.price) > 0 && (
                       <div className="absolute top-3 right-3 z-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full">
                         {t("premium_badge")}
                       </div>
@@ -386,7 +386,7 @@ const TutorialsSection = () => {
                           </span>
                         </div>
                         <div className="text-sm font-medium">
-                          {tut.is_paid && tut.price ? (
+                          {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
                               ${tut.price}
                             </span>

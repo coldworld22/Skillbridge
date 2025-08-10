@@ -69,7 +69,7 @@ const TutorialCard = ({ tutorial = {} }) => {
           {tutorial.category || "General"} &middot; {tutorial.level || "N/A"}
         </div>
         <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          {tutorial.price ? `$${tutorial.price}` : "Free"} &middot;{" "}
+          {Number(tutorial.price) > 0 ? `$${tutorial.price}` : "Free"} &middot;{" "}
           {tutorial.duration || "Unknown Duration"}
         </div>
 

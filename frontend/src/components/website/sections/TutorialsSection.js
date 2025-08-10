@@ -305,12 +305,12 @@ const LandingTutorialsSection = () => {
               <div className="mt-2">
                 <span
                   className={`px-2 py-1 rounded-full text-sm font-semibold ${
-                    tut.is_paid && tut.price
+                    Number(tut.price) > 0
                       ? 'bg-yellow-500 text-black'
                       : 'bg-green-500 text-black'
                   }`}
                 >
-                  {tut.is_paid && tut.price ? '$' + tut.price : t('free')}
+                  {Number(tut.price) > 0 ? '$' + tut.price : t('free')}
                 </span>
               </div>
 
