@@ -251,6 +251,10 @@ exports.getMyTutorials = catchAsync(async (req, res) => {
 exports.getTutorialById = catchAsync(async (req, res) => {
   const tutorial = await service.getTutorialById(req.params.id);
 
+  if (!tutorial) {
+    throw new AppError("Tutorial not found", 404);
+  }
+
   sendSuccess(res, tutorial);
 });
 
@@ -268,6 +272,9 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
+  if (!tutorial) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
   let tags = null;
   if (rawTags) {
