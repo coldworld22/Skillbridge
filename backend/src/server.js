@@ -291,7 +291,13 @@ io.on("connection", (socket) => {
 app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) => {
   try {
     const rows = await db("video_call_participants")
-      .select("name", "role", "is_muted", "joined_at")
+      .select(
+        "socket_id as id",
+        "name",
+        "role",
+        "is_muted as isMuted",
+        "joined_at"
+      )
       .where({ room_id: req.params.roomId })
       .andWhere("left_at", null);
     res.json(rows);
@@ -299,6 +305,67 @@ app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) =
     res.status(500).json({ message: "Failed to fetch participants" });
   }
 });
+
+app.patch(
+  "/api/video-calls/:roomId/participants/:id",
+  verifyToken,
+  async (req, res) => {
+    const { roomId, id } = req.params;
+    const { isMuted, role } = req.body || {};
+    const updateData = {};
+    if (typeof isMuted === "boolean") updateData.is_muted = isMuted;
+    if (role) updateData.role = role;
+    if (Object.keys(updateData).length === 0)
+      return res.status(400).json({ message: "No fields to update" });
+    try {
+      await db("video_call_participants")
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null)
+        .update(updateData);
+      if (participants[roomId]) {
+        const p = participants[roomId].find((p) => p.id === id);
+        if (p) {
+          if (typeof isMuted === "boolean") p.isMuted = isMuted;
+          if (role) p.role = role;
+        }
+      }
+      const [participant] = await db("video_call_participants")
+        .select(
+          "socket_id as id",
+          "name",
+          "role",
+          "is_muted as isMuted"
+        )
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null);
+      io.to(roomId).emit("participant-updated", participant);
+      res.json(participant);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to update participant" });
+    }
+  }
+);
+
+app.delete(
+  "/api/video-calls/:roomId/participants/:id",
+  verifyToken,
+  async (req, res) => {
+    const { roomId, id } = req.params;
+    try {
+      await db("video_call_participants")
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null)
+        .update({ left_at: new Date() });
+      if (participants[roomId]) {
+        participants[roomId] = participants[roomId].filter((p) => p.id !== id);
+      }
+      io.to(roomId).emit("participant-removed", { id });
+      res.status(204).end();
+    } catch (err) {
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  }
+);
 
 app.get("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
   try {
