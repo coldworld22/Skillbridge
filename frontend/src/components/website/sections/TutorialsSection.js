@@ -12,17 +12,10 @@ import {
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
+import useTutorialListsStore from "@/store/tutorials/tutorialListsStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
-import {
-  fetchFeaturedTutorials,
-  addTutorialToWishlist,
-  removeTutorialFromWishlist,
-  getMyTutorialWishlist,
-  addTutorialToFavorites,
-  removeTutorialFromFavorites,
-  getMyTutorialFavorites,
-} from "@/services/tutorialService";
+import { fetchFeaturedTutorials } from "@/services/tutorialService";
 
 const PROGRESS_KEY = "skillbridge_tutorialProgress";
 
@@ -53,8 +46,13 @@ const LandingTutorialsSection = () => {
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
   const isStudent = user?.role?.toLowerCase() === 'student';
-  const [wishlistIds, setWishlistIds] = useState([]);
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const {
+    wishlistIds,
+    favoriteIds,
+    loadLists,
+    toggleWishlist,
+    toggleFavorite,
+  } = useTutorialListsStore();
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -114,21 +112,8 @@ const LandingTutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || !isStudent) return;
-    const loadLists = async () => {
-      try {
-        const [w, f] = await Promise.all([
-          getMyTutorialWishlist(),
-          getMyTutorialFavorites(),
-        ]);
-        setWishlistIds(w.map((t) => t.id));
-        setFavoriteIds(f.map((t) => t.id));
-      } catch (err) {
-        console.error('Failed to load user lists', err);
-      }
-    };
     loadLists();
-  }, [user, isStudent]);
+  }, [user]);
 
   const filteredTutorials =
     activeTab === "All"
@@ -215,25 +200,9 @@ const LandingTutorialsSection = () => {
                 </span>
               )}
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  if (!user) return router.push('/auth/login');
-                  if (!isStudent) {
-                    toast.error('Only students can save tutorials.');
-                    return;
-                  }
-                  try {
-                    if (favoriteIds.includes(tut.id)) {
-                      await removeTutorialFromFavorites(tut.id);
-                      setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
-                    } else {
-                      await addTutorialToFavorites(tut.id);
-                      setFavoriteIds([...favoriteIds, tut.id]);
-                      toast.success('Added to favorites');
-                    }
-                  } catch (err) {
-                    toast.error('Failed to update favorites');
-                  }
+                  toggleFavorite(tut.id);
                 }}
                 aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
                 className="absolute top-2 right-10 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
@@ -242,25 +211,9 @@ const LandingTutorialsSection = () => {
               </button>
 
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  if (!user) return router.push('/auth/login');
-                  if (!isStudent) {
-                    toast.error('Only students can save tutorials.');
-                    return;
-                  }
-                  try {
-                    if (wishlistIds.includes(tut.id)) {
-                      await removeTutorialFromWishlist(tut.id);
-                      setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
-                    } else {
-                      await addTutorialToWishlist(tut.id);
-                      setWishlistIds([...wishlistIds, tut.id]);
-                      toast.success(t('added_to_wishlist'));
-                    }
-                  } catch (err) {
-                    toast.error('Failed to update wishlist');
-                  }
+                  toggleWishlist(tut.id);
                 }}
                 aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                 className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
