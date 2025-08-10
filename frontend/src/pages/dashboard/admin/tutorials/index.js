@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
+import {
+  FaEdit,
+  FaTrash,
+  FaPlus,
+  FaSearch,
+  FaCheck,
+  FaTimes,
+  FaSpinner,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -27,7 +35,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
 function AdminTutorialsPage() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialsPage' });
+  const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,17 +95,17 @@ function AdminTutorialsPage() {
   const tutorialsPerPage = 10;
 
   // Filtering
-  const filteredTutorials = tutorials
-    .filter((tut) => {
-      const matchesSearch =
-        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        filterCategory === "All" || tut.category === filterCategory;
-      const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
-      const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
-      return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
-    });
+  const filteredTutorials = tutorials.filter((tut) => {
+    const matchesSearch =
+      tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      filterCategory === "All" || tut.category === filterCategory;
+    const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
+    const matchesApproval =
+      filterApproval === "All" || tut.approvalStatus === filterApproval;
+    return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
+  });
 
   const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage);
   const startIndex = (currentPage - 1) * tutorialsPerPage;
@@ -107,7 +115,7 @@ function AdminTutorialsPage() {
   // Functions
   const toggleSelectOne = (id) => {
     setSelectedTutorials((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -119,8 +127,8 @@ function AdminTutorialsPage() {
       ]);
     } else {
       const pageIds = paginatedTutorials.map((tut) => tut.id);
-      setSelectedTutorials((prevSelected) =>
-        prevSelected.filter((id) => !pageIds.includes(id)) // Remove only current page IDs
+      setSelectedTutorials(
+        (prevSelected) => prevSelected.filter((id) => !pageIds.includes(id)), // Remove only current page IDs
       );
     }
   };
@@ -141,32 +149,44 @@ function AdminTutorialsPage() {
         prev.map((tut) =>
           tut.id === id
             ? { ...target, updatedAt: new Date().toISOString() }
-            : tut
-        )
+            : tut,
+        ),
       );
       const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
-      toast.success(t('status_updated'));
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_status_changed",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      toast.success(t("status_updated"));
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_status_changed",
-          message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_status_changed",
+            message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Status updated but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('update_failed'));
+      toast.error(t("update_failed"));
     }
   };
 
@@ -185,12 +205,14 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
-      toast.success(t('deleted'));
+      toast.success(t("deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('delete_failed'));
+      toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
+      setSelectedTutorials((prev) =>
+        prev.filter((id) => id !== tutorialToDelete),
+      );
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -213,32 +235,46 @@ function AdminTutorialsPage() {
         prev.map((tut) =>
           tut.id === tutorialToReject
             ? { ...target, updatedAt: new Date().toISOString() }
-            : tut
-        )
+            : tut,
+        ),
       );
-      toast.success(t('rejected'));
+      toast.success(t("rejected"));
       const message = `Tutorial "${target.title}" was rejected.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_rejected",
-        message,
-      });
-      await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_rejected",
-          message: `Your tutorial "${target.title}" was rejected.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: `${message} Reason: ${reason}` }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_rejected",
+            message: `Your tutorial "${target.title}" was rejected.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn(
+          "Rejection processed but failed to send some notifications.",
+        );
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('reject_failed'));
+      toast.error(t("reject_failed"));
     } finally {
       setIsRejectionModalOpen(false);
       setTutorialToReject(null);
@@ -256,31 +292,43 @@ function AdminTutorialsPage() {
             return { ...target, updatedAt: new Date().toISOString() };
           }
           return tut;
-        })
+        }),
       );
-      toast.success(t('approved'));
+      toast.success(t("approved"));
       const message = `Tutorial "${target.title}" approved.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_approved",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_approved",
-          message: `Your tutorial "${target.title}" was approved!`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was approved!`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_approved",
+            message: `Your tutorial "${target.title}" was approved!`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was approved!`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Tutorial approved but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('approval_failed'));
+      toast.error(t("approval_failed"));
     }
   };
 
@@ -288,11 +336,13 @@ function AdminTutorialsPage() {
     if (selectedTutorials.length === 0) return;
     try {
       await bulkDeleteTutorials(selectedTutorials);
-      setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
-      toast.success(t('bulk_deleted'));
+      setTutorials((prev) =>
+        prev.filter((tut) => !selectedTutorials.includes(tut.id)),
+      );
+      toast.success(t("bulk_deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_delete_failed'));
+      toast.error(t("bulk_delete_failed"));
     } finally {
       setSelectedTutorials([]);
     }
@@ -305,14 +355,18 @@ function AdminTutorialsPage() {
       setTutorials((prev) =>
         prev.map((tut) =>
           selectedTutorials.includes(tut.id)
-            ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
-            : tut
-        )
+            ? {
+                ...tut,
+                approvalStatus: "Approved",
+                updatedAt: new Date().toISOString(),
+              }
+            : tut,
+        ),
       );
-      toast.success(t('bulk_approved'));
+      toast.success(t("bulk_approved"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_approve_failed'));
+      toast.error(t("bulk_approve_failed"));
     }
     setSelectedTutorials([]);
   };
@@ -336,7 +390,7 @@ function AdminTutorialsPage() {
     } else {
       const maxPagesBeforeCurrent = Math.floor(maxPagesToShow / 2);
       const maxPagesAfterCurrent = Math.ceil(maxPagesToShow / 2) - 1;
-      
+
       if (currentPage <= maxPagesBeforeCurrent) {
         startPage = 1;
         endPage = maxPagesToShow;
@@ -361,7 +415,7 @@ function AdminTutorialsPage() {
           }`}
         >
           {i}
-        </button>
+        </button>,
       );
     }
 
@@ -371,18 +425,19 @@ function AdminTutorialsPage() {
   return (
     <AdminLayout>
       <div className="p-6 bg-gray-50 min-h-screen space-y-6">
-
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">📚 {t('title')}</h1>
-            <p className="text-gray-600 mt-1">{t('description')}</p>
+            <h1 className="text-3xl font-bold text-gray-800">
+              📚 {t("title")}
+            </h1>
+            <p className="text-gray-600 mt-1">{t("description")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
             className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-2.5 px-6 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
           >
-            <FaPlus className="mr-2" /> {t('create_tutorial')}
+            <FaPlus className="mr-2" /> {t("create_tutorial")}
           </Button>
         </div>
 
@@ -390,7 +445,9 @@ function AdminTutorialsPage() {
         {selectedTutorials.length > 0 && (
           <div className="flex flex-wrap gap-3 items-center p-4 bg-white rounded-xl shadow-md border border-yellow-100 transition-all animate-fade-in">
             <span className="font-semibold text-gray-700">
-              {selectedTutorials.length} {selectedTutorials.length === 1 ? "tutorial" : "tutorials"} selected
+              {selectedTutorials.length}{" "}
+              {selectedTutorials.length === 1 ? "tutorial" : "tutorials"}{" "}
+              selected
             </span>
 
             <Button
@@ -435,7 +492,7 @@ function AdminTutorialsPage() {
                 className="pl-10 p-2.5 w-full border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
               />
             </div>
-            
+
             <select
               value={filterCategory}
               onChange={(e) => {
@@ -451,7 +508,7 @@ function AdminTutorialsPage() {
                 </option>
               ))}
             </select>
-            
+
             <select
               value={filterStatus}
               onChange={(e) => {
@@ -464,7 +521,7 @@ function AdminTutorialsPage() {
               <option value="Published">Published</option>
               <option value="Draft">Draft</option>
             </select>
-            
+
             <select
               value={filterApproval}
               onChange={(e) => {
@@ -478,7 +535,7 @@ function AdminTutorialsPage() {
               <option value="Pending">Pending</option>
               <option value="Rejected">Rejected</option>
             </select>
-            
+
             <Button
               onClick={() => {
                 setSearchQuery("");
@@ -502,15 +559,21 @@ function AdminTutorialsPage() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.approvalStatus === "Pending").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
             <p className="text-gray-600">Published</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Published").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Published").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
             <p className="text-gray-600">Drafts</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Draft").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Draft").length}
+            </p>
           </div>
         </div>
 
@@ -523,18 +586,37 @@ function AdminTutorialsPage() {
                   <th className="py-4 px-4 text-left w-12">
                     <input
                       type="checkbox"
-                      checked={paginatedTutorials.length > 0 && paginatedTutorials.every((tut) => selectedTutorials.includes(tut.id))}
+                      checked={
+                        paginatedTutorials.length > 0 &&
+                        paginatedTutorials.every((tut) =>
+                          selectedTutorials.includes(tut.id),
+                        )
+                      }
                       onChange={(e) => toggleSelectAll(e.target.checked)}
                       className="h-4 w-4 rounded text-yellow-500 focus:ring-yellow-400"
                     />
                   </th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Thumbnail</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Title</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Instructor</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Category</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Approval</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Thumbnail
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Instructor
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Approval
+                  </th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -555,9 +637,12 @@ function AdminTutorialsPage() {
                         <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-400 mb-4">
                           <FaSearch className="text-2xl" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No tutorials found</h3>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          No tutorials found
+                        </h3>
                         <p className="mt-1 text-gray-500 max-w-md">
-                          Try adjusting your search or filter to find what you're looking for.
+                          Try adjusting your search or filter to find what
+                          you're looking for.
                         </p>
                         <Button
                           onClick={() => {
@@ -576,8 +661,8 @@ function AdminTutorialsPage() {
                   </tr>
                 ) : (
                   paginatedTutorials.map((tutorial) => (
-                    <tr 
-                      key={tutorial.id} 
+                    <tr
+                      key={tutorial.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="py-4 px-4">
@@ -600,13 +685,17 @@ function AdminTutorialsPage() {
                         />
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium text-gray-900">{tutorial.title}</div>
+                        <div className="font-medium text-gray-900">
+                          {tutorial.title}
+                        </div>
                         <div className="text-sm text-gray-500">
                           {new Date(tutorial.createdAt).toLocaleDateString()}
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="text-gray-900">{tutorial.instructor}</div>
+                        <div className="text-gray-900">
+                          {tutorial.instructor}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -655,16 +744,24 @@ function AdminTutorialsPage() {
                             {tutorial.approvalStatus}
                           </Button>
                         )}
-                        {tutorial.approvalStatus === "Rejected" && tutorial.rejectionReason && (
-                          <div className="text-xs text-red-600 mt-1 max-w-xs truncate" title={tutorial.rejectionReason}>
-                            {tutorial.rejectionReason}
-                          </div>
-                        )}
+                        {tutorial.approvalStatus === "Rejected" &&
+                          tutorial.rejectionReason && (
+                            <div
+                              className="text-xs text-red-600 mt-1 max-w-xs truncate"
+                              title={tutorial.rejectionReason}
+                            >
+                              {tutorial.rejectionReason}
+                            </div>
+                          )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => router.push(`/dashboard/admin/tutorials/${tutorial.id}/edit`)}
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/admin/tutorials/${tutorial.id}/edit`,
+                              )
+                            }
                             className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg"
                             title="Edit"
                           >
@@ -691,10 +788,14 @@ function AdminTutorialsPage() {
             <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between">
               <div className="text-sm text-gray-700 mb-4 sm:mb-0">
                 Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
-                <span className="font-medium">{Math.min(endIndex, filteredTutorials.length)}</span> of{" "}
-                <span className="font-medium">{filteredTutorials.length}</span> results
+                <span className="font-medium">
+                  {Math.min(endIndex, filteredTutorials.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium">{filteredTutorials.length}</span>{" "}
+                results
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={() => goToPage(currentPage - 1)}
@@ -703,11 +804,9 @@ function AdminTutorialsPage() {
                 >
                   Previous
                 </Button>
-                
-                <div className="flex space-x-1">
-                  {renderPageNumbers()}
-                </div>
-                
+
+                <div className="flex space-x-1">{renderPageNumbers()}</div>
+
                 <Button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
@@ -725,15 +824,15 @@ function AdminTutorialsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          title={t('confirm_title')}
-          message={t('confirm_delete')}
+          title={t("confirm_title")}
+          message={t("confirm_delete")}
         />
-        
+
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
-          title={t('reject_title')}
+          title={t("reject_title")}
         />
       </div>
     </AdminLayout>
@@ -745,7 +844,11 @@ export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard"],
+        nextI18NextConfig,
+      )),
     },
   };
 }

@@ -73,7 +73,7 @@ function CreateTutorialPage() {
       try {
         const result = await fetchAllCategories();
 
-        setCategories(result?.data || []);
+        setCategories(result || []);
 
       
       } catch (err) {
