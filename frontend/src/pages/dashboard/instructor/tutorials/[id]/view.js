@@ -14,16 +14,38 @@ import {
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
-import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import {
+  fetchInstructorTutorialById,
+  submitTutorialForReview,
+  deleteInstructorTutorial,
+} from "@/services/instructor/tutorialService";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { t } = useTranslation();
   const [tutorial, setTutorial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [curriculumOpen, setCurriculumOpen] = useState(true); // For mobile accordion
   const [showChecklist, setShowChecklist] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -84,16 +106,33 @@ export default function ViewTutorialPage() {
             📈 Analytics
           </button>
           <button
-            onClick={async () => {
-              if (!window.confirm('Are you sure you want to delete this tutorial?')) return;
-              try {
-                await deleteInstructorTutorial(tutorial.id);
-                router.push('/dashboard/instructor/tutorials');
-              } catch (err) {
-                console.error(err);
-                alert('Failed to delete tutorial');
-              }
-            }}
+            onClick={() =>
+              openConfirmModal({
+                title: t("tutorialsPage.confirm_title", { defaultValue: "Confirm Deletion" }),
+                message: t("tutorialsPage.confirm_delete", {
+                  defaultValue:
+                    "Are you sure you want to delete this tutorial?",
+                }),
+                onConfirm: async () => {
+                  try {
+                    await deleteInstructorTutorial(tutorial.id);
+                    toast.success(
+                      t("tutorialsPage.deleted", {
+                        defaultValue: "Tutorial deleted successfully",
+                      })
+                    );
+                    router.push("/dashboard/instructor/tutorials");
+                  } catch (err) {
+                    console.error(err);
+                    toast.error(
+                      t("tutorialsPage.delete_failed", {
+                        defaultValue: "Failed to delete tutorial",
+                      })
+                    );
+                  }
+                },
+              })
+            }
             className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
             🗑 Delete
@@ -253,12 +292,27 @@ export default function ViewTutorialPage() {
             {tutorial.progress === 100 && (
               <button
                 onClick={async () => {
-                  await submitTutorialForReview(tutorial.id);
-                  setTutorial({ ...tutorial, status: "Pending" });
+                  try {
+                    await submitTutorialForReview(tutorial.id);
+                    setTutorial({ ...tutorial, status: "Pending" });
+                    toast.success(
+                      t("tutorialCreatePage.submit_success", {
+                        defaultValue:
+                          "Tutorial submitted successfully! Waiting for admin approval.",
+                      })
+                    );
+                  } catch (err) {
+                    console.error(err);
+                    toast.error(
+                      t("tutorialViewPage.submit_failed", {
+                        defaultValue: "Failed to submit tutorial",
+                      })
+                    );
+                  }
                 }}
                 className="mt-3 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-md text-sm"
               >
-                🚀 Submit for Review
+                🚀 {t("submit_for_review", { defaultValue: "Submit for Review" })}
               </button>
             )}
           </div>
@@ -280,6 +334,13 @@ export default function ViewTutorialPage() {
         isOpen={showChecklist}
         onClose={() => setShowChecklist(false)}
         tutorial={tutorial}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={closeConfirmModal}
       />
     </InstructorLayout>
   );
