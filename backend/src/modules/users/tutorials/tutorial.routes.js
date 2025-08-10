@@ -77,6 +77,7 @@ router.post(
 
 router.use("/enroll", require("./enrollments/tutorialEnrollment.routes"));
 router.use("/wishlist", require("./wishlist/tutorialWishlist.routes"));
+router.use("/favorites", require("./favorites/tutorialFavorite.routes"));
 
 router.use("/certificate", require("./certificate/tutorialCertificate.routes"));
 
