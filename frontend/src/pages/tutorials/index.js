@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { FaStar, FaClock, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
+import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
