@@ -325,12 +325,23 @@ export default function TutorialDetail() {
         {assignments.length > 0 && (
           <div className="mt-6 text-center">
             {testPassed && isEnrolled ? (
-              <Link
-                href={`/dashboard/student/assignments/${assignments[0].id}`}
-                className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition"
-              >
-                📚 {t("start_assignment")}
-              </Link>
+              <div className="space-y-4">
+                {assignments.map((assignment) => (
+                  <div key={assignment.id}>
+                    <Link
+                      href={`/dashboard/student/assignments/${assignment.id}`}
+                      className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition inline-block"
+                    >
+                      📚 {assignment.title || t("start_assignment")}
+                    </Link>
+                    {(assignment.due_date || assignment.dueDate) && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        Due: {new Date(assignment.due_date || assignment.dueDate).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-gray-400">{t("complete_quiz_unlock_assignments")}</div>
             )}
