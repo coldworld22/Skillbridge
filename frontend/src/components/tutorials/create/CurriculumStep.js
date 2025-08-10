@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
 import { FaPlus, FaTrash, FaPlay } from "react-icons/fa";
 import { uploadChapterVideo } from "@/services/admin/tutorialChapterService";
 
 export default function CurriculumStep({ tutorialData, setTutorialData, onNext, onBack }) {
+  const { t } = useTranslation("tutorials");
   const [uploadingIndex, setUploadingIndex] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -53,9 +55,9 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
       const previewUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}${serverPath}`;
       handleChange(index, "video", previewUrl);
       handleChange(index, "videoUrl", serverPath);
-      toast.success("🎬 Video uploaded successfully!");
+      toast.success(t("create.curriculum.video_upload_success"));
     } catch (err) {
-      toast.error("Failed to upload video");
+      toast.error(t("create.curriculum.video_upload_error"));
     } finally {
       setUploadingIndex(null);
       setUploadProgress(0);
@@ -65,7 +67,9 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
   return (
     <div className="space-y-8">
       {/* Heading */}
-      <h2 className="text-2xl font-bold text-gray-800">📚 Curriculum</h2>
+      <h2 className="text-2xl font-bold text-gray-800">
+        {t("create.curriculum.heading")}
+      </h2>
 
       {/* List of Chapters */}
       {tutorialData.chapters.map((chapter, index) => (
@@ -74,38 +78,46 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
           <button
             onClick={() => handleRemoveChapter(index)}
             className="absolute top-3 right-3 text-red-500 hover:text-red-700"
-            title="Remove Chapter"
+            title={t("create.curriculum.remove_chapter")}
           >
             <FaTrash />
           </button>
 
           {/* Chapter Title */}
           <div>
-            <label className="block mb-1 font-semibold text-gray-700">Chapter Title</label>
+            <label className="block mb-1 font-semibold text-gray-700">
+              {t("create.curriculum.chapter_title")}
+            </label>
             <input
               type="text"
               value={chapter.title}
               onChange={(e) => handleChange(index, "title", e.target.value)}
               className="p-2 border rounded w-full"
-              placeholder="e.g. Introduction to React"
+              placeholder={t(
+                "create.curriculum.chapter_title_placeholder"
+              )}
             />
           </div>
 
           {/* Chapter Duration */}
           <div>
-            <label className="block mb-1 font-semibold text-gray-700">Duration (e.g. 5 min)</label>
+            <label className="block mb-1 font-semibold text-gray-700">
+              {t("create.curriculum.duration_label")}
+            </label>
             <input
               type="number"
               value={chapter.duration}
               onChange={(e) => handleChange(index, "duration", e.target.value)}
               className="p-2 border rounded w-full"
-              placeholder="e.g. 10"
+              placeholder={t("create.curriculum.duration_placeholder")}
             />
           </div>
 
           {/* Chapter Video Upload */}
           <div>
-            <label className="block mb-1 font-semibold text-gray-700">Upload Chapter Video</label>
+            <label className="block mb-1 font-semibold text-gray-700">
+              {t("create.curriculum.upload_video")}
+            </label>
             {uploadingIndex === index ? (
               <div className="w-full bg-gray-300 rounded-full h-4">
                 <div
@@ -137,7 +149,9 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
               onChange={(e) => handleChange(index, "preview", e.target.checked)}
               className="form-checkbox text-yellow-500"
             />
-            <label className="text-gray-700">Allow Free Preview</label>
+            <label className="text-gray-700">
+              {t("create.curriculum.allow_preview")}
+            </label>
           </div>
         </div>
       ))}
@@ -147,7 +161,7 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
         onClick={handleAddChapter}
         className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-full transition"
       >
-        <FaPlus /> Add New Chapter
+        <FaPlus /> {t("create.curriculum.add_chapter")}
       </button>
 
       {/* Navigation Buttons */}
@@ -156,13 +170,13 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
           onClick={onBack}
           className="px-6 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-full font-bold"
         >
-          ⬅️ Back
+          {t("create.curriculum.back")}
         </button>
         <button
           onClick={onNext}
           className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full font-bold"
         >
-          Next ➡️
+          {t("create.curriculum.next")}
         </button>
       </div>
     </div>
