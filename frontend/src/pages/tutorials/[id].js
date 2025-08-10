@@ -82,6 +82,7 @@ export default function TutorialDetail() {
   const [startTime, setStartTime] = useState(0);
   const [inWishlist, setInWishlist] = useState(false);
   const [inFavorites, setInFavorites] = useState(false);
+  const addItem = useCartStore((state) => state.addItem);
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
