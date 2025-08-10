@@ -8,6 +8,8 @@ const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
 const enrollmentService = require("../classes/enrollments/classEnrollment.service");
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
+const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
+const paypalService = require("../../services/paypalService");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -43,13 +45,35 @@ exports.createPayment = catchAsync(async (req, res) => {
     next_due_date = schedules[0]?.due_date || null;
   }
 
+  const method = await paymentMethodsService.getById(method_id);
+  if (!method) throw new AppError("Invalid payment method", 400);
+
+  let verifiedAmount = amount;
+  let verifiedCurrency = currency || "USD";
+  let finalStatus = status || "pending";
+  let verifiedReference = reference_id;
+
+  if (method.type === "paypal") {
+    if (!reference_id) throw new AppError("Missing PayPal order ID", 400);
+    const capture = await paypalService.captureOrder(reference_id);
+    if (capture.status !== "COMPLETED") {
+      throw new AppError("PayPal transaction not completed", 400);
+    }
+    const info =
+      capture.purchase_units?.[0]?.payments?.captures?.[0] || {};
+    verifiedAmount = parseFloat(info.amount?.value || amount);
+    verifiedCurrency = info.amount?.currency_code || verifiedCurrency;
+    verifiedReference = info.id || reference_id;
+    finalStatus = "paid";
+  }
+
   let platform_fee = 0;
-  let instructor_amount = amount;
+  let instructor_amount = verifiedAmount;
   try {
     const settings = await paymentConfigService.getSettings();
     const cut = settings?.platformCut?.[item_type] || 0;
-    platform_fee = (amount * cut) / 100;
-    instructor_amount = amount - platform_fee;
+    platform_fee = (verifiedAmount * cut) / 100;
+    instructor_amount = verifiedAmount - platform_fee;
   } catch (err) {
     console.error("Failed to load payment settings:", err);
   }
@@ -60,14 +84,14 @@ exports.createPayment = catchAsync(async (req, res) => {
     method_id,
     item_type,
     item_id,
-    amount,
-    currency: currency || "USD",
-    status: status || "pending",
-    reference_id,
+    amount: verifiedAmount,
+    currency: verifiedCurrency,
+    status: finalStatus,
+    reference_id: verifiedReference,
     receipt_url,
     platform_fee,
     instructor_amount,
-    paid_at: status === "paid" ? new Date() : null,
+    paid_at: finalStatus === "paid" ? new Date() : null,
     installments: totalInstallments,
     installment_number: 1,
     next_due_date,
@@ -79,7 +103,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   try {
     const user = await userModel.findById(user_id);
     if (user?.phone) {
-      const text = `Payment of ${amount} received. Ref: ${payment.reference_id}`;
+      const text = `Payment of ${verifiedAmount} received. Ref: ${payment.reference_id}`;
       await smsService.sendSMS({ to: user.phone, text });
     }
   } catch (err) {
@@ -88,7 +112,7 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (item_type === "book" && payment.status === "paid") {
     try {
-      await libraryService.recordPurchase(user_id, item_id, amount);
+      await libraryService.recordPurchase(user_id, item_id, verifiedAmount);
     } catch (err) {
       console.error("Failed to record book purchase:", err);
     }
@@ -96,12 +120,12 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (item_type === "class" && payment.status === "paid") {
     try {
-      await enrollmentService.createEnrollment({
-        id: uuidv4(),
-        user_id,
-        class_id: item_id,
-        status: "enrolled",
-      });
+        await enrollmentService.createEnrollment({
+          id: uuidv4(),
+          user_id,
+          class_id: item_id,
+          status: "enrolled",
+        });
     } catch (err) {
       console.error("Failed to enroll after payment:", err);
     }

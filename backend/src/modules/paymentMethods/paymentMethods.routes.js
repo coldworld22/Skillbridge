@@ -8,6 +8,8 @@ router.use(verifyToken, isAdmin);
 
 router.post("/", upload.single("icon"), controller.createMethod);
 router.get("/", controller.getMethods);
+router.get("/paypal/credentials", controller.getPayPalCredentials);
+router.put("/paypal/credentials", controller.updatePayPalCredentials);
 router.get("/:id", controller.getMethod);
 router.patch("/:id", upload.single("icon"), controller.updateMethod);
 router.delete("/:id", controller.deleteMethod);

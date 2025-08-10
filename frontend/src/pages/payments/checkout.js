@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { fetchPaymentMethods } from '@/services/paymentMethodService';
+import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { validateCode } from '@/services/couponService';
 import useCartStore from '@/store/cart/cartStore';
@@ -37,6 +37,7 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [paypalClientId, setPaypalClientId] = useState('');
   const removeItem = useCartStore((state) => state.removeItem);
 
 
@@ -59,6 +60,18 @@ export default function CheckoutPage() {
     };
     load();
   }, [classId]);
+
+  useEffect(() => {
+    const loadId = async () => {
+      try {
+        const id = await fetchPayPalClientId();
+        setPaypalClientId(id || '');
+      } catch (err) {
+        console.error('Failed to load PayPal client ID', err);
+      }
+    };
+    loadId();
+  }, []);
 
   const handleApplyPromo = async () => {
     try {
@@ -118,11 +131,11 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (selectedMethod !== 'paypal' || !classInfo) return;
+    if (selectedMethod !== 'paypal' || !classInfo || !paypalClientId) return;
     const amount = (classInfo.price - discount).toString();
     if (!paypalLoaded) {
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test'}`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
       script.addEventListener('load', () => {
         setPaypalLoaded(true);
         renderPayPalButton(amount);
@@ -131,7 +144,7 @@ export default function CheckoutPage() {
     } else {
       renderPayPalButton(amount);
     }
-  }, [selectedMethod, classInfo, discount, paypalLoaded]);
+  }, [selectedMethod, classInfo, discount, paypalLoaded, paypalClientId]);
 
   const handleFileChange = (e) => setReceipt(e.target.files[0]);
   const generatePDF = () => alert('Invoice PDF downloaded (mocked)');

@@ -5,6 +5,18 @@ jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(),
 }));
 
+jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
+  getSettings: jest.fn(),
+}));
+
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getById: jest.fn().mockResolvedValue({ type: 'card' }),
+}));
+
+jest.mock('../src/services/paypalService', () => ({
+  captureOrder: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),

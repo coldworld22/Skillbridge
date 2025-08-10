@@ -40,7 +40,8 @@
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "yamljs": "^0.3.0",
-    "zod": "^3.25.20"
+    "zod": "^3.25.20",
+    "@paypal/checkout-server-sdk": "^1.0.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",
