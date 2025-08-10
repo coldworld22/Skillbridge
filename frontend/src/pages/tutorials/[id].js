@@ -76,6 +76,7 @@ export default function TutorialDetail() {
   const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const user = useAuthStore((state) => state.user);
+  const addItem = useCartStore((state) => state.addItem);
   const isStudent = user?.role?.toLowerCase() === "student";
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
