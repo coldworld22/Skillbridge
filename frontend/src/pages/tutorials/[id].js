@@ -214,7 +214,7 @@ export default function TutorialDetail() {
 
   // Resume last position
   useEffect(() => {
-    if (progress.lastIndex && tutorial) {
+    if (progress.lastIndex !== undefined && tutorial) {
       setCurrentIndex(progress.lastIndex);
     }
   }, [progress.lastIndex, tutorial]);
