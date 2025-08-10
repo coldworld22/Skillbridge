@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatTutorial = (tut) => ({
+export const formatTutorial = (tut) => ({
   ...tut,
   thumbnail:
     tut.thumbnail_url || tut.cover_image
@@ -17,7 +17,10 @@ const formatTutorial = (tut) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
     : null,
   instructorBio: tut.instructor_bio || tut.instructorBio,
-  price: tut.price != null ? Number(tut.price) : 0,
+  price:
+    tut.price === null || tut.price === undefined
+      ? null
+      : parseFloat(tut.price),
   rating: typeof tut.rating === "string" || typeof tut.rating === "number"
     ? parseFloat(tut.rating)
     : 0,
