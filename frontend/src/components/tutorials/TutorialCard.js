@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Star, Eye, PlayCircle } from "lucide-react";
 import Link from "next/link";
+import { formatCurrency } from "@/utils/currency";
 
 const DEFAULT_IMAGE =
   "https://www.classcentral.com/report/wp-content/uploads/2022/06/C-Programming-BCG-Banner.png";
@@ -69,8 +70,30 @@ const TutorialCard = ({ tutorial = {} }) => {
           {tutorial.category || "General"} &middot; {tutorial.level || "N/A"}
         </div>
         <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          {Number(tutorial.price) > 0 ? `$${tutorial.price}` : "Free"} &middot;{" "}
-          {tutorial.duration || "Unknown Duration"}
+          {(() => {
+            const currency = tutorial.currency;
+            const originalPrice =
+              tutorial.originalPrice ?? tutorial.original_price ?? tutorial.price;
+            const discountPrice =
+              tutorial.discountPrice ?? tutorial.discount_price;
+
+            if (Number(originalPrice) <= 0) {
+              return "Free";
+            }
+
+            if (discountPrice && Number(discountPrice) < Number(originalPrice)) {
+              return (
+                <>
+                  <span className="line-through mr-2 text-gray-400">
+                    {formatCurrency(originalPrice, { currency })}
+                  </span>
+                  <span>{formatCurrency(discountPrice, { currency })}</span>
+                </>
+              );
+            }
+
+            return formatCurrency(originalPrice, { currency });
+          })()} &middot; {tutorial.duration || "Unknown Duration"}
         </div>
 
         {/* Explore Button */}
