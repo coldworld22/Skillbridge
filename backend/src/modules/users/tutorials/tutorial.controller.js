@@ -1,6 +1,4 @@
 // 📁 src/modules/users/tutorials/tutorial.controller.js
-const path = require("path");
-const fs = require("fs");
 const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
@@ -340,6 +338,9 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
   const updated = await service.togglePublishStatus(tutorialId);
+  if (!updated) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
   const tut = await service.getTutorialById(tutorialId);
   if (

@@ -149,6 +149,10 @@ exports.permanentlyDeleteTutorial = async (id) => {
 
 exports.togglePublishStatus = async (id) => {
   const tutorial = await db("tutorials").where({ id }).first();
+  if (!tutorial) {
+    return null;
+  }
+
   const newStatus = tutorial.status === "published" ? "draft" : "published";
   const updateData = { status: newStatus };
 
