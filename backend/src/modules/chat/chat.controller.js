@@ -51,3 +51,13 @@ exports.togglePin = catchAsync(async (req, res) => {
   if (!msg) throw new AppError("Message not found", 404);
   sendSuccess(res, msg, msg.pinned ? "Pinned" : "Unpinned");
 });
+
+exports.logModerationEvent = catchAsync(async (req, res) => {
+  const { message, matchedWords } = req.body || {};
+  await service.logModerationEvent({
+    userId: req.user.id,
+    message,
+    matchedWords,
+  });
+  sendSuccess(res, null, "Moderation event logged");
+});

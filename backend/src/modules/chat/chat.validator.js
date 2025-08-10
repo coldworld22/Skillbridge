@@ -48,3 +48,10 @@ exports.sendMessage = {
       path: ["file"],
     }),
 };
+
+exports.logModerationEvent = {
+  body: z.object({
+    message: z.string().min(1),
+    matchedWords: z.array(z.string()).nonempty(),
+  }),
+};

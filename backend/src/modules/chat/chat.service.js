@@ -1,4 +1,6 @@
 const db = require("../../config/database");
+const notificationService = require("../notifications/notifications.service");
+const userModel = require("../users/user.model");
 
 exports.searchUsers = async (currentUserId, term) => {
   const subquery = db("messages")
@@ -85,4 +87,37 @@ exports.togglePin = async (userId, id) => {
     .update({ pinned: !msg.pinned })
     .returning("*");
   return updated;
+};
+
+exports.logModerationEvent = async ({ userId, message, matchedWords }) => {
+  const [row] = await db("chat_moderation")
+    .insert({
+      user_id: userId,
+      message,
+      matched_words: JSON.stringify(matchedWords),
+      created_at: new Date(),
+    })
+    .returning("*");
+
+  const admins = await userModel.findAdmins();
+  const note = `Flagged chat message from user ${userId}: ${matchedWords.join(", ")}`;
+  const results = await Promise.allSettled(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "chat_moderation",
+        message: note,
+      })
+    )
+  );
+  results.forEach((r, idx) => {
+    if (r.status === "rejected") {
+      console.error(
+        `Failed to notify admin ${admins[idx].id}:`,
+        r.reason?.message || r.reason
+      );
+    }
+  });
+
+  return row;
 };

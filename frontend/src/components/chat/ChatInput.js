@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { filterMessage } from './MessageFilter';
 import { toast } from 'react-toastify';
+import { logModerationEvent } from '@/services/chatService';
 
 function ChatInput() {
   const [message, setMessage] = useState('');
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const { isClean, matchedWords } = filterMessage(message);
 
     if (!isClean) {
       alert(`⚠️ Inappropriate language detected: ${matchedWords.join(', ')}`);
-      // TODO: log to moderation system or send to admin
+      try {
+        await logModerationEvent({ message, matchedWords });
+      } catch (err) {
+        console.error('Failed to log moderation event', err);
+      }
       return;
     }
 

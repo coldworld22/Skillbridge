@@ -8,6 +8,7 @@ jest.mock('../src/modules/chat/chat.service', () => ({
   sendMessage: jest.fn(),
   deleteMessage: jest.fn(),
   togglePin: jest.fn(),
+  logModerationEvent: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -109,5 +110,19 @@ describe('PATCH /api/chat/messages/:id/pin', () => {
     const res = await request(app).patch('/api/chat/messages/1/pin');
     expect(res.status).toBe(200);
     expect(service.togglePin).toHaveBeenCalledWith('user1', '1');
+  });
+});
+
+describe('POST /api/chat/moderation', () => {
+  it('logs moderation event', async () => {
+    service.logModerationEvent.mockResolvedValue({});
+    const payload = { message: 'bad word here', matchedWords: ['bad'] };
+    const res = await request(app).post('/api/chat/moderation').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.logModerationEvent).toHaveBeenCalledWith({
+      userId: 'user1',
+      message: 'bad word here',
+      matchedWords: ['bad'],
+    });
   });
 });
