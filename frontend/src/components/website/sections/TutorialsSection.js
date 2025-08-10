@@ -332,7 +332,12 @@ const LandingTutorialsSection = () => {
                   onClick={async (e) => {
                     e.stopPropagation();
                     try {
-                      await addItem({ id: tut.id, name: tut.title, price: tut.price || 0 });
+                      await addItem({
+                        id: tut.id,
+                        name: tut.title,
+                        item_type: 'tutorial',
+                        price: tut.price || 0,
+                      });
                       toast.success('Added to cart');
                     } catch (err) {
 
