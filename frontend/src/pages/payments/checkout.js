@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
+import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
@@ -25,8 +26,14 @@ const iconMap = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { classId } = router.query;
-  const [classInfo, setClassInfo] = useState(null);
+  const { itemId: queryItemId, itemType: queryItemType } = router.query;
+  const { items: cartItems, removeItem } = useCartStore((state) => ({
+    items: state.items,
+    removeItem: state.removeItem,
+  }));
+  const [itemId, setItemId] = useState();
+  const [itemType, setItemType] = useState();
+  const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState('stripe');
   const [promoCode, setPromoCode] = useState('');
@@ -37,17 +44,25 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
-  const removeItem = useCartStore((state) => state.removeItem);
-
+  useEffect(() => {
+    const id = queryItemId || cartItems[0]?.id;
+    const type = queryItemType || cartItems[0]?.item_type || 'class';
+    if (!id) return;
+    setItemId(id);
+    setItemType(type);
+  }, [queryItemId, queryItemType, cartItems]);
 
   useEffect(() => {
-    if (!classId) return;
+    if (!itemId || !itemType) return;
     const load = async () => {
       try {
-        const details = await fetchClassDetails(classId);
-        setClassInfo(details?.data ?? details);
+        const details =
+          itemType === 'tutorial'
+            ? await fetchTutorialDetails(itemId)
+            : await fetchClassDetails(itemId);
+        setItemInfo(details?.data ?? details);
       } catch (err) {
-        console.error('Failed to load class', err);
+        console.error('Failed to load item', err);
       }
       try {
         const data = await fetchPaymentMethods();
@@ -58,7 +73,7 @@ export default function CheckoutPage() {
       }
     };
     load();
-  }, [classId]);
+  }, [itemId, itemType]);
 
   const handleApplyPromo = async () => {
     try {
@@ -72,23 +87,27 @@ export default function CheckoutPage() {
   };
 
   const completePayment = async () => {
-    const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
-    const newClass = {
-      id: classInfo.id,
-      title: classInfo.title,
-      instructor: classInfo.instructor,
+    const storageKey = itemType === 'tutorial' ? 'enrolledTutorials' : 'enrolledClasses';
+    const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const newItem = {
+      id: itemInfo.id,
+      title: itemInfo.title,
+      instructor: itemInfo.instructor,
       startDate: new Date().toISOString(),
-      status: "Live",
+      status: 'Live',
       joined: true,
     };
-    localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
+    localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
-      await removeItem(classInfo.id);
+      await removeItem(itemInfo.id);
     } catch (err) {
       console.error('Failed to remove from cart', err);
     }
     setPaymentStatus('success');
-    setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
+    setTimeout(
+      () => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`),
+      1500
+    );
   };
 
   const handlePayment = () => {
@@ -118,8 +137,8 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (selectedMethod !== 'paypal' || !classInfo) return;
-    const amount = (classInfo.price - discount).toString();
+    if (selectedMethod !== 'paypal' || !itemInfo) return;
+    const amount = (itemInfo.price - discount).toString();
     if (!paypalLoaded) {
       const script = document.createElement('script');
       script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test'}`;
@@ -131,13 +150,13 @@ export default function CheckoutPage() {
     } else {
       renderPayPalButton(amount);
     }
-  }, [selectedMethod, classInfo, discount, paypalLoaded]);
+  }, [selectedMethod, itemInfo, discount, paypalLoaded]);
 
   const handleFileChange = (e) => setReceipt(e.target.files[0]);
   const generatePDF = () => alert('Invoice PDF downloaded (mocked)');
 
-  if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const finalPrice = classInfo.price - discount;
+  if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
+  const finalPrice = itemInfo.price - discount;
   const installments = 3;
   const perInstallment = finalPrice / installments;
   const schedule = Array.from({ length: installments }, (_, i) => {
@@ -154,11 +173,15 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-bold mb-6 text-yellow-400">Checkout</h1>
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
-          <img src={classInfo.cover_image} alt={classInfo.title} className="w-32 h-32 object-cover rounded-lg" />
+          <img
+            src={itemType === 'tutorial' ? itemInfo.thumbnail : itemInfo.cover_image}
+            alt={itemInfo.title}
+            className="w-32 h-32 object-cover rounded-lg"
+          />
           <div>
-            <h2 className="text-xl font-semibold">{classInfo.title}</h2>
-            <p className="text-sm text-gray-400">Instructor: {classInfo.instructor}</p>
-            <p className="mt-2 font-bold text-lg">Price: ${classInfo.price}</p>
+            <h2 className="text-xl font-semibold">{itemInfo.title}</h2>
+            <p className="text-sm text-gray-400">Instructor: {itemInfo.instructor}</p>
+            <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
             {discount > 0 && <p className="text-green-400">Discount Applied: -${discount}</p>}
           </div>
         </div>
@@ -234,7 +257,7 @@ export default function CheckoutPage() {
           ) : invoicePreview && selectedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Invoice</strong></p>
-              <p className="mt-2">Class: {classInfo.title}</p>
+              <p className="mt-2">{itemType === 'tutorial' ? 'Tutorial' : 'Class'}: {itemInfo.title}</p>
               <p>Price: ${finalPrice}</p>
               <p>Bank: Al Rajhi</p>
               <p>IBAN: SA442000000123456789</p>
@@ -245,7 +268,7 @@ export default function CheckoutPage() {
               </button>
               <button
                 className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-                onClick={() => router.push(`/payments/success?classId=${classInfo.id}`)}
+                onClick={() => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`)}
               >Done</button>
             </div>
           ) : (

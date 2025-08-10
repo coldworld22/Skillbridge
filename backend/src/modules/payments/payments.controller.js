@@ -7,6 +7,7 @@ const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
 const enrollmentService = require("../classes/enrollments/classEnrollment.service");
+const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutorialEnrollment.service");
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 
 exports.createPayment = catchAsync(async (req, res) => {
@@ -104,6 +105,19 @@ exports.createPayment = catchAsync(async (req, res) => {
       });
     } catch (err) {
       console.error("Failed to enroll after payment:", err);
+    }
+  }
+
+  if (item_type === "tutorial" && payment.status === "paid") {
+    try {
+      await tutorialEnrollmentService.createEnrollment({
+        id: uuidv4(),
+        user_id,
+        tutorial_id: item_id,
+        status: "enrolled",
+      });
+    } catch (err) {
+      console.error("Failed to enroll in tutorial after payment:", err);
     }
   }
 
