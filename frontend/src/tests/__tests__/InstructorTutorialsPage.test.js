@@ -43,16 +43,16 @@ describe('InstructorTutorialsPage', () => {
     submitTutorialForReview.mockRejectedValue(new Error('fail'));
 
     render(<InstructorTutorialsPage />);
-    const submitButton = await screen.findByText('Submit');
+    const submitButton = await screen.findByText('dashboard:tutorialsPage.submit');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(submitTutorialForReview).toHaveBeenCalledWith(1);
     });
 
-    expect(toast.error).toHaveBeenCalledWith('Failed to submit tutorial for review');
+    expect(toast.error).toHaveBeenCalledWith('dashboard:tutorialsPage.submit_for_review_failed');
     expect(toast.success).not.toHaveBeenCalled();
     // Button remains because state wasn't updated
-    expect(screen.getByText('Submit')).toBeInTheDocument();
+    expect(screen.getByText('dashboard:tutorialsPage.submit')).toBeInTheDocument();
   });
 });
