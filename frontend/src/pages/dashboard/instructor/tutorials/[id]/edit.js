@@ -127,19 +127,18 @@ export default function EditTutorialPage() {
               if (!tutorialData.isFree) {
                 formData.append("price", tutorialData.price);
               }
-              if (tutorialData.tags.length) {
-                formData.append("tags", JSON.stringify(tutorialData.tags));
-              }
-              if (tutorialData.chapters.length) {
-                const chapters = tutorialData.chapters.map((ch, idx) => ({
-                  title: ch.title,
-                  duration: ch.duration,
-                  video_url: ch.videoUrl,
-                  order: idx + 1,
-                  is_preview: ch.preview,
-                }));
-                formData.append("chapters", JSON.stringify(chapters));
-              }
+              formData.append(
+                "tags",
+                JSON.stringify(tutorialData.tags || [])
+              );
+              const chapters = (tutorialData.chapters || []).map((ch, idx) => ({
+                title: ch.title,
+                duration: ch.duration,
+                video_url: ch.videoUrl,
+                order: idx + 1,
+                is_preview: ch.preview,
+              }));
+              formData.append("chapters", JSON.stringify(chapters));
               if (tutorialData.thumbnail instanceof File) {
                 formData.append("thumbnail", tutorialData.thumbnail);
               }
