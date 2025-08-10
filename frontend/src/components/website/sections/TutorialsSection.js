@@ -3,17 +3,13 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
-import {
-  FaStar,
-  FaClock,
-  FaBookmark,
-  FaHeart,
-} from "react-icons/fa";
+import { FaStar, FaClock, FaBookmark, FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
+import useTutorialListsStore from "@/store/tutorials/tutorialListsStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
-
+import { formatCurrency } from "@/utils/currency";
 import {
   fetchFeaturedTutorials,
   addTutorialToWishlist,
@@ -50,7 +46,8 @@ const LandingTutorialsSection = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [progress, setProgress] = useState({});
+  const { status: progress, fetchStatus, syncOffline } =
+    useTutorialProgressStore();
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
@@ -58,6 +55,7 @@ const LandingTutorialsSection = () => {
   const [wishlistIds, setWishlistIds] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState([]);
+
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -108,7 +106,7 @@ const LandingTutorialsSection = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user, isStudent]);
 
   useEffect(() => {
     if (!user) {
@@ -142,7 +140,7 @@ const LandingTutorialsSection = () => {
       }
     };
     loadLists();
-  }, [user, isStudent]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -250,25 +248,9 @@ const LandingTutorialsSection = () => {
                 </span>
               )}
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  if (!user) return router.push('/auth/login');
-                  if (!isStudent) {
-                    toast.error('Only students can save tutorials.');
-                    return;
-                  }
-                  try {
-                    if (favoriteIds.includes(tut.id)) {
-                      await removeTutorialFromFavorites(tut.id);
-                      setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
-                    } else {
-                      await addTutorialToFavorites(tut.id);
-                      setFavoriteIds([...favoriteIds, tut.id]);
-                      toast.success('Added to favorites');
-                    }
-                  } catch (err) {
-                    toast.error('Failed to update favorites');
-                  }
+                  toggleFavorite(tut.id);
                 }}
                 aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
                 className="absolute top-2 right-10 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
@@ -277,25 +259,9 @@ const LandingTutorialsSection = () => {
               </button>
 
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
-                  if (!user) return router.push('/auth/login');
-                  if (!isStudent) {
-                    toast.error('Only students can save tutorials.');
-                    return;
-                  }
-                  try {
-                    if (wishlistIds.includes(tut.id)) {
-                      await removeTutorialFromWishlist(tut.id);
-                      setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
-                    } else {
-                      await addTutorialToWishlist(tut.id);
-                      setWishlistIds([...wishlistIds, tut.id]);
-                      toast.success(t('added_to_wishlist'));
-                    }
-                  } catch (err) {
-                    toast.error('Failed to update wishlist');
-                  }
+                  toggleWishlist(tut.id);
                 }}
                 aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                 className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
@@ -345,7 +311,9 @@ const LandingTutorialsSection = () => {
                       : 'bg-green-500 text-black'
                   }`}
                 >
-                  {Number(tut.price) > 0 ? '$' + tut.price : t('free')}
+                  {Number(tut.price) > 0
+                    ? formatCurrency(tut.price, { currency: tut.currencyCode })
+                    : t('free')}
                 </span>
               </div>
 
