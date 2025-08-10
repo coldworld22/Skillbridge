@@ -16,6 +16,7 @@ exports.createMethod = catchAsync(async (req, res) => {
     data.icon = `/uploads/payment-methods/${req.file.filename}`;
   }
   const method = await service.create(data);
+  if (method.settings) delete method.settings.client_secret;
   sendSuccess(res, method, "Method created");
 
   const admins = await userModel.findAdmins();
@@ -41,17 +42,26 @@ exports.createMethod = catchAsync(async (req, res) => {
 
 exports.getMethods = catchAsync(async (_req, res) => {
   const data = await service.getAll();
-  sendSuccess(res, data);
+  const sanitized = data.map((m) => {
+    if (m.settings) delete m.settings.client_secret;
+    return m;
+  });
+  sendSuccess(res, sanitized);
 });
 
 exports.getActiveMethods = catchAsync(async (_req, res) => {
   const data = await service.getActive();
-  sendSuccess(res, data);
+  const sanitized = data.map((m) => {
+    if (m.settings) delete m.settings.client_secret;
+    return m;
+  });
+  sendSuccess(res, sanitized);
 });
 
 exports.getMethod = catchAsync(async (req, res) => {
   const method = await service.getById(req.params.id);
   if (!method) throw new AppError("Payment method not found", 404);
+  if (method.settings) delete method.settings.client_secret;
   sendSuccess(res, method);
 });
 
@@ -69,6 +79,7 @@ exports.updateMethod = catchAsync(async (req, res) => {
   }
 
   const method = await service.update(req.params.id, data);
+  if (method.settings) delete method.settings.client_secret;
   sendSuccess(res, method, "Method updated");
 
   const admins = await userModel.findAdmins();
@@ -116,4 +127,23 @@ exports.deleteMethod = catchAsync(async (req, res) => {
       ])
     )
   );
+});
+
+exports.getPayPalClientId = catchAsync(async (_req, res) => {
+  const clientId = await service.getPayPalClientId();
+  sendSuccess(res, { clientId });
+});
+
+exports.getPayPalCredentials = catchAsync(async (_req, res) => {
+  const settings = await service.getPayPalSettings();
+  sendSuccess(res, { client_id: settings.client_id || null });
+});
+
+exports.updatePayPalCredentials = catchAsync(async (req, res) => {
+  const { client_id, client_secret } = req.body;
+  if (!client_id || !client_secret) {
+    throw new AppError("Client ID and secret are required", 400);
+  }
+  await service.updatePayPalSettings({ client_id, client_secret });
+  sendSuccess(res, { client_id }, "PayPal credentials updated");
 });

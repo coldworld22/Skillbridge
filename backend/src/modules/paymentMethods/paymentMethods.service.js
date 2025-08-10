@@ -25,6 +25,10 @@ exports.getById = (id) => {
   return db("payment_methods_config").where({ id }).first();
 };
 
+exports.getByType = (type) => {
+  return db("payment_methods_config").where({ type }).first();
+};
+
 exports.update = async (id, data) => {
   return db.transaction(async (trx) => {
     if (data.is_default) {
@@ -42,4 +46,25 @@ exports.update = async (id, data) => {
 
 exports.delete = (id) => {
   return db("payment_methods_config").where({ id }).del();
+};
+
+exports.getPayPalSettings = async () => {
+  const row = await exports.getByType("paypal");
+  return row?.settings || {};
+};
+
+exports.updatePayPalSettings = async (settings) => {
+  const row = await exports.getByType("paypal");
+  if (!row) throw new Error("PayPal method not found");
+  const newSettings = { ...(row.settings || {}), ...settings };
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: newSettings })
+    .returning("settings");
+  return updated;
+};
+
+exports.getPayPalClientId = async () => {
+  const settings = await exports.getPayPalSettings();
+  return settings.client_id || null;
 };

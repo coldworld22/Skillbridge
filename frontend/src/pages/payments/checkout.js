@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { fetchPaymentMethods } from '@/services/paymentMethodService';
+import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
@@ -75,6 +75,18 @@ export default function CheckoutPage() {
     load();
   }, [itemId, itemType]);
 
+  useEffect(() => {
+    const loadId = async () => {
+      try {
+        const id = await fetchPayPalClientId();
+        setPaypalClientId(id || '');
+      } catch (err) {
+        console.error('Failed to load PayPal client ID', err);
+      }
+    };
+    loadId();
+  }, []);
+
   const handleApplyPromo = async () => {
     try {
       const data = await validateCode(promoCode);
@@ -141,7 +153,7 @@ export default function CheckoutPage() {
     const amount = (itemInfo.price - discount).toString();
     if (!paypalLoaded) {
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test'}`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
       script.addEventListener('load', () => {
         setPaypalLoaded(true);
         renderPayPalButton(amount);
@@ -150,6 +162,7 @@ export default function CheckoutPage() {
     } else {
       renderPayPalButton(amount);
     }
+
   }, [selectedMethod, itemInfo, discount, paypalLoaded]);
 
   const handleFileChange = (e) => setReceipt(e.target.files[0]);

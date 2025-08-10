@@ -11,6 +11,14 @@ jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
   getSettings: jest.fn(),
 }));
 
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getById: jest.fn().mockResolvedValue({ type: 'card' }),
+}));
+
+jest.mock('../src/services/paypalService', () => ({
+  captureOrder: jest.fn(),
+}));
+
 jest.mock('../src/services/smsService', () => ({
   sendSMS: jest.fn(),
 }));
