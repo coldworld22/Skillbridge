@@ -741,11 +741,13 @@
     "submit_success": "Tutorial submitted successfully! Waiting for admin approval.",
     "video_required": "Please upload a video for each lesson before submitting.",
     "creation_failed": "Failed to create tutorial",
+    "creation_notification": "Your tutorial \"{{title}}\" was created.",
     "load_categories_failed": "Failed to load categories"
   },
   "tutorialEditPage": {
     "update_success": "Tutorial updated successfully!",
-    "update_failed": "Failed to update tutorial"
+    "update_failed": "Failed to update tutorial",
+    "update_notification": "Your tutorial \"{{title}}\" was updated."
   },
   "usersPage": {
     "title": "User Management",
