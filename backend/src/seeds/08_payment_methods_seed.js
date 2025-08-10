@@ -17,6 +17,20 @@ exports.seed = async function(knex) {
       is_default: true,
       created_at: now,
       updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'paypal',
+      type: 'paypal',
+      icon: 'paypal',
+      active: true,
+      settings: {
+        client_id: '',
+        client_secret: ''
+      },
+      is_default: false,
+      created_at: now,
+      updated_at: now
     }
   ]);
 };
