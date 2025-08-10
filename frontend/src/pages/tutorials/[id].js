@@ -235,7 +235,13 @@ export default function TutorialDetail() {
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
         <BackButton />
 
-        {!isEnrolled && <EnrollBanner onEnroll={enroll} />}
+        {!isEnrolled && (
+          <EnrollBanner
+            onEnroll={enroll}
+            isPaid={Number(tutorial.price) > 0}
+            price={tutorial.price}
+          />
+        )}
 
 
         {playerVideos.length > 0 ? (
