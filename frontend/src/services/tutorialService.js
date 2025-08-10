@@ -62,6 +62,21 @@ export const getMyTutorialWishlist = async () => {
   return data?.data ?? [];
 };
 
+export const addTutorialToFavorites = async (id) => {
+  const { data } = await api.post(`/users/tutorials/favorites/${id}`);
+  return data;
+};
+
+export const removeTutorialFromFavorites = async (id) => {
+  const { data } = await api.delete(`/users/tutorials/favorites/${id}`);
+  return data;
+};
+
+export const getMyTutorialFavorites = async () => {
+  const { data } = await api.get('/users/tutorials/favorites/my');
+  return data?.data ?? [];
+};
+
 export const fetchTutorialReviews = async (tutorialId) => {
   const { data } = await api.get(`/users/tutorials/reviews/${tutorialId}`);
   return data?.data ?? [];

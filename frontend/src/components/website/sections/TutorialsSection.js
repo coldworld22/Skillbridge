@@ -7,6 +7,7 @@ import {
   FaStar,
   FaClock,
   FaBookmark,
+  FaHeart,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
@@ -18,6 +19,9 @@ import {
   addTutorialToWishlist,
   removeTutorialFromWishlist,
   getMyTutorialWishlist,
+  addTutorialToFavorites,
+  removeTutorialFromFavorites,
+  getMyTutorialFavorites,
 } from "@/services/tutorialService";
 
 const PROGRESS_KEY = "skillbridge_tutorialProgress";
@@ -50,6 +54,7 @@ const LandingTutorialsSection = () => {
   const user = useAuthStore((state) => state.user);
   const isStudent = user?.role?.toLowerCase() === 'student';
   const [wishlistIds, setWishlistIds] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -110,15 +115,19 @@ const LandingTutorialsSection = () => {
 
   useEffect(() => {
     if (!user || !isStudent) return;
-    const loadWishlist = async () => {
+    const loadLists = async () => {
       try {
-        const w = await getMyTutorialWishlist();
+        const [w, f] = await Promise.all([
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+        ]);
         setWishlistIds(w.map((t) => t.id));
+        setFavoriteIds(f.map((t) => t.id));
       } catch (err) {
-        console.error('Failed to load wishlist', err);
+        console.error('Failed to load user lists', err);
       }
     };
-    loadWishlist();
+    loadLists();
   }, [user, isStudent]);
 
   const filteredTutorials =
@@ -203,6 +212,33 @@ const LandingTutorialsSection = () => {
                   {tut.tags.includes("Top Rated") ? "🔥 Top Rated" : "🔥 Trending"}
                 </span>
               ) : null}
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!user) return router.push('/auth/login');
+                  if (!isStudent) {
+                    toast.error('Only students can save tutorials.');
+                    return;
+                  }
+                  try {
+                    if (favoriteIds.includes(tut.id)) {
+                      await removeTutorialFromFavorites(tut.id);
+                      setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
+                    } else {
+                      await addTutorialToFavorites(tut.id);
+                      setFavoriteIds([...favoriteIds, tut.id]);
+                      toast.success('Added to favorites');
+                    }
+                  } catch (err) {
+                    toast.error('Failed to update favorites');
+                  }
+                }}
+                aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                className="absolute top-2 right-10 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+              >
+                <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+              </button>
+
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
