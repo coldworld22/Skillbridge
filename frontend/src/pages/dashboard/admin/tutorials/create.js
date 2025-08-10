@@ -59,14 +59,19 @@ function CreateTutorialPage() {
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      setTutorialData({
-        ...draft,
-        thumbnail: null,
-        preview: null,
-        language: draft.language || "",
-        lessonCount: draft.lessonCount || draft.chapters?.length || 1,
-      });
+      try {
+        const draft = JSON.parse(savedDraft);
+        setTutorialData({
+          ...draft,
+          thumbnail: null,
+          preview: null,
+          language: draft.language || "",
+          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+        });
+      } catch (err) {
+        console.error("Failed to parse tutorialDraft", err);
+        localStorage.removeItem("tutorialDraft");
+      }
     }
 
     const loadCategories = async () => {
