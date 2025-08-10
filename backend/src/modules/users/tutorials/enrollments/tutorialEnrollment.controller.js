@@ -16,6 +16,17 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
+  if (tutorial.is_paid) {
+    const payment = await db("payments")
+      .where({ user_id, item_type: "tutorial", item_id: tutorialId })
+      .first();
+    if (!payment) throw new AppError("Payment required", 402);
+    const hasPlan = payment.installments > 1;
+    const isPaid = payment.status === "paid";
+    if (!isPaid && !hasPlan)
+      throw new AppError("Payment incomplete", 402);
+  }
+
   const exists = await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
     .first();

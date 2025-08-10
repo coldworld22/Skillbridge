@@ -1,0 +1,115 @@
+const request = require('supertest');
+const express = require('express');
+const errorHandler = require('../src/middleware/errorHandler');
+
+jest.mock('../src/config/database');
+const db = require('../src/config/database');
+
+jest.mock('../src/middleware/auth/authMiddleware', () => ({
+  verifyToken: (req, _res, next) => {
+    req.user = { id: 'user1' };
+    next();
+  },
+  isStudent: (_req, _res, next) => next(),
+}));
+
+const routes = require('../src/modules/users/tutorials/enrollments/tutorialEnrollment.routes');
+
+const app = express();
+app.use(express.json());
+app.use('/api/users/tutorials/enrollments', routes);
+app.use(errorHandler);
+
+describe('POST /api/users/tutorials/enrollments/:id', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('enrolls in a free tutorial', async () => {
+    db.mockImplementation((table) => {
+      if (table === 'tutorials')
+        return {
+          where: () => ({
+            first: () =>
+              Promise.resolve({
+                id: 't1',
+                is_paid: false,
+                moderation_status: 'Approved',
+                status: 'published',
+              }),
+          }),
+        };
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve(null) }),
+          insert: jest.fn(() => Promise.resolve()),
+        };
+    });
+
+    const res = await request(app).post('/api/users/tutorials/enrollments/t1');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Enrolled successfully');
+  });
+
+  it('returns error when payment missing for paid tutorial', async () => {
+    db.mockImplementation((table) => {
+      if (table === 'tutorials')
+        return {
+          where: () => ({
+            first: () =>
+              Promise.resolve({
+                id: 't2',
+                is_paid: true,
+                moderation_status: 'Approved',
+                status: 'published',
+              }),
+          }),
+        };
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve(null) }),
+          insert: jest.fn(() => Promise.resolve()),
+        };
+      if (table === 'payments')
+        return {
+          where: () => ({ first: () => Promise.resolve(null) }),
+        };
+    });
+
+    const res = await request(app).post('/api/users/tutorials/enrollments/t2');
+    expect(res.status).toBe(402);
+    expect(res.body.message).toBe('Payment required');
+  });
+
+  it('enrolls in paid tutorial with existing payment', async () => {
+    db.mockImplementation((table) => {
+      if (table === 'tutorials')
+        return {
+          where: () => ({
+            first: () =>
+              Promise.resolve({
+                id: 't3',
+                is_paid: true,
+                moderation_status: 'Approved',
+                status: 'published',
+              }),
+          }),
+        };
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve(null) }),
+          insert: jest.fn(() => Promise.resolve()),
+        };
+      if (table === 'payments')
+        return {
+          where: () =>
+            ({ first: () => Promise.resolve({ status: 'paid', installments: 1 }) }),
+        };
+    });
+
+    const res = await request(app).post('/api/users/tutorials/enrollments/t3');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Enrolled successfully');
+  });
+});
+
