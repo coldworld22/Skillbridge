@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
@@ -142,11 +143,14 @@ const LandingTutorialsSection = () => {
                   className="w-full h-full object-cover group-hover:brightness-75"
                 />
               ) : (
-                <img
+                <Image
                   src={tut.thumbnail || "/images/logo.png"}
                   alt={tut.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:brightness-75"
+                  fill
+                  className="object-cover group-hover:brightness-75"
+                  placeholder="blur"
+                  blurDataURL="/images/logo.png"
+                  sizes="100vw"
                 />
               )}
               {tut.tags.includes("Top Rated") || tut.trending ? (
