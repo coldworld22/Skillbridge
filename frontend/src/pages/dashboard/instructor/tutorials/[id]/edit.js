@@ -16,8 +16,6 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
-import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function EditTutorialPage() {
   const router = useRouter();
@@ -33,6 +31,7 @@ export default function EditTutorialPage() {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
 
   useEffect(() => {
     if (!id) return;
@@ -150,22 +149,32 @@ export default function EditTutorialPage() {
 
               try {
                 await updateTutorial(id, formData);
-                toast.success("Tutorial updated successfully!");
-                await createNotification({
-                  user_id: user.id,
-                  type: "tutorial_updated",
-                  message: `Your tutorial "${tutorialData.title}" was updated.`,
-                });
-                await sendChatMessage(user.id, {
-                  text: `Your tutorial "${tutorialData.title}" was updated.`,
-                });
-                refreshNotifications?.();
-                refreshMessages?.();
+                toast.success(t('update_success'));
+                const message = t('update_notification', { title: tutorialData.title });
+
+                try {
+                  await createNotification({
+                    user_id: user.id,
+                    type: "tutorial_updated",
+                    message,
+                  });
+                  refreshNotifications?.();
+                } catch (notifyErr) {
+                  console.error(notifyErr);
+                }
+
+                try {
+                  await sendChatMessage(user.id, { text: message });
+                  refreshMessages?.();
+                } catch (msgErr) {
+                  console.error(msgErr);
+                }
+
                 localStorage.removeItem(`editTutorialDraft-${id}`);
                 router.push("/dashboard/instructor/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error(t('tutorialEditPage.update_failed', { ns: 'dashboard' }));
+                toast.error(t('update_failed'));
               }
             }}
           />
