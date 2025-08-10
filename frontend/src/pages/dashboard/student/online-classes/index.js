@@ -15,7 +15,8 @@ import {
   FaSortAmountDown
 } from 'react-icons/fa';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { fetchMyEnrolledClasses } from '@/services/classService';
+import { fetchMyEnrolledClasses, subscribeToClassReminder } from '@/services/classService';
+import { toast } from 'react-toastify';
 
 export default function MyEnrolledClassesPage() {
   const [classes, setClasses] = useState([]);
