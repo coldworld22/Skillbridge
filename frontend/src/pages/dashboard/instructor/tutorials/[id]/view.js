@@ -1,6 +1,7 @@
 // ViewTutorialPage.js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
 import {
@@ -121,9 +122,11 @@ export default function ViewTutorialPage() {
 
         {/* Thumbnail */}
         <div className="w-full h-52 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-lg">
-          <img
+          <Image
             src={tutorial.thumbnail}
             alt={tutorial.title}
+            width={1280}
+            height={720}
             className="w-full h-full object-cover"
           />
         </div>
