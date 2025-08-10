@@ -150,14 +150,21 @@ export default function EditTutorialPage() {
               try {
                 await updateTutorial(id, formData);
                 toast.success(t("dashboard:tutorialEditPage.update_success"));
-                await createNotification({
-                  user_id: user.id,
-                  type: "tutorial_updated",
-                  message: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
-                });
-                await sendChatMessage(user.id, {
-                  text: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
-                });
+
+                try {
+                  await createNotification({
+                    user_id: user.id,
+                    type: "tutorial_updated",
+                    message: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
+                  });
+                  await sendChatMessage(user.id, {
+                    text: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
+                  });
+                } catch (err) {
+                  console.error(err);
+                  toast.error('Failed to send notification or message');
+                }
+
                 refreshNotifications?.();
                 refreshMessages?.();
                 localStorage.removeItem(`editTutorialDraft-${id}`);
