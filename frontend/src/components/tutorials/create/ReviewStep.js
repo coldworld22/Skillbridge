@@ -1,22 +1,27 @@
-import { FaCheckCircle, FaEdit } from "react-icons/fa";
+import { FaCheckCircle } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 export default function ReviewStep({
   tutorialData,
   onBack,
   onPublish,
-  actionLabel = "Publish Tutorial",
+  actionLabel,
 }) {
+  const { t } = useTranslation("tutorials");
+  const publishText = actionLabel || t("create.review.publish_tutorial");
   return (
     <div className="space-y-8">
 
       {/* Review Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">✅ Review & Publish</h2>
+        <h2 className="text-2xl font-bold text-gray-800">
+          {t("create.review.heading")}
+        </h2>
         <button
           onClick={onBack}
           className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-full font-bold"
         >
-          ⬅️ Back
+          {t("create.review.back")}
         </button>
       </div>
 
@@ -26,24 +31,35 @@ export default function ReviewStep({
         {/* Basic Info */}
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-yellow-600 flex items-center gap-2">
-            <FaCheckCircle /> Basic Info
+            <FaCheckCircle /> {t("create.review.sections.basic_info")}
           </h3>
-          <p><strong>Title:</strong> {tutorialData.title}</p>
-          <p><strong>Short Description:</strong> {tutorialData.shortDescription}</p>
           <p>
-            <strong>Category:</strong>{" "}
+            <strong>{t("create.review.labels.title")}</strong> {tutorialData.title}
+          </p>
+          <p>
+            <strong>{t("create.review.labels.short_description")}</strong>
+            {" "}
+            {tutorialData.shortDescription}
+          </p>
+          <p>
+            <strong>{t("create.review.labels.category")}</strong>{" "}
             {tutorialData.categoryName || tutorialData.category}
           </p>
-          <p><strong>Level:</strong> {tutorialData.level}</p>
+          <p>
+            <strong>{t("create.review.labels.level")}</strong> {tutorialData.level}
+          </p>
           {tutorialData.tags.length > 0 && (
-            <p><strong>Tags:</strong> {tutorialData.tags.join(", ")}</p>
+            <p>
+              <strong>{t("create.review.labels.tags")}</strong>{" "}
+              {tutorialData.tags.join(", ")}
+            </p>
           )}
         </div>
 
         {/* Curriculum */}
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-yellow-600 flex items-center gap-2">
-            <FaCheckCircle /> Curriculum
+            <FaCheckCircle /> {t("create.review.sections.curriculum")}
           </h3>
           {tutorialData.chapters.length > 0 ? (
             <ul className="list-disc pl-5">
@@ -54,14 +70,14 @@ export default function ReviewStep({
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">No chapters added yet.</p>
+            <p className="text-gray-500">{t("create.review.no_chapters")}</p>
           )}
         </div>
 
         {/* Media */}
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-yellow-600 flex items-center gap-2">
-            <FaCheckCircle /> Media
+            <FaCheckCircle /> {t("create.review.sections.media")}
           </h3>
           <div className="flex gap-6 items-center">
             {tutorialData.thumbnail && (
@@ -71,7 +87,7 @@ export default function ReviewStep({
                     ? URL.createObjectURL(tutorialData.thumbnail)
                     : tutorialData.thumbnail
                 }
-                alt="Thumbnail Preview"
+                alt={t("create.media.thumbnail_preview_alt")}
                 className="w-32 h-20 object-cover rounded shadow"
               />
             )}
@@ -92,13 +108,13 @@ export default function ReviewStep({
         {/* Pricing */}
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-yellow-600 flex items-center gap-2">
-            <FaCheckCircle /> Pricing
+            <FaCheckCircle /> {t("create.review.sections.pricing")}
           </h3>
           {tutorialData.isFree ? (
-            <p className="text-green-600 font-semibold">This tutorial will be FREE</p>
+            <p className="text-green-600 font-semibold">{t("create.review.free")}</p>
           ) : (
             <p className="text-gray-800">
-              <strong>Price:</strong> ${tutorialData.price}
+              <strong>{t("create.review.price_label")}</strong> ${tutorialData.price}
             </p>
           )}
         </div>
@@ -111,7 +127,7 @@ export default function ReviewStep({
           onClick={onPublish}
           className="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-full font-bold text-xl transition-all shadow-lg"
         >
-          🚀 {actionLabel}
+          🚀 {publishText}
         </button>
       </div>
 
