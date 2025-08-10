@@ -10,6 +10,7 @@ const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const { verifyToken } = require("./middleware/auth/authMiddleware");
+const verifyEnrollment = require("./middleware/auth/verifyEnrollment");
 const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
@@ -288,48 +289,64 @@ io.on("connection", (socket) => {
   });
 });
 
-app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) => {
-  try {
-    const rows = await db("video_call_participants")
-      .select("name", "role", "is_muted", "joined_at")
-      .where({ room_id: req.params.roomId })
-      .andWhere("left_at", null);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch participants" });
-  }
-});
+app.get(
+  "/api/video-calls/:roomId/participants",
+  verifyToken,
+  verifyEnrollment,
+  async (req, res) => {
+    try {
+      const rows = await db("video_call_participants")
+        .select("name", "role", "is_muted", "joined_at")
+        .where({ room_id: req.params.roomId })
+        .andWhere("left_at", null);
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch participants" });
+    }
+  },
+);
 
-app.get("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
-  try {
-    const messages = await db("video_call_messages")
-      .where({ room_id: req.params.roomId })
-      .orderBy("timestamp", "asc");
-    res.json(messages);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch messages" });
-  }
-});
+app.get(
+  "/api/video-calls/:roomId/messages",
+  verifyToken,
+  verifyEnrollment,
+  async (req, res) => {
+    try {
+      const messages = await db("video_call_messages")
+        .where({ room_id: req.params.roomId })
+        .orderBy("timestamp", "asc");
+      res.json(messages);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  },
+);
 
-app.post("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
-  const { text } = req.body || {};
-  const roomId = req.params.roomId;
-  if (!text?.trim()) return res.status(400).json({ message: "Message text required" });
-  try {
-    const [message] = await db("video_call_messages")
-      .insert({
-        room_id: roomId,
-        sender_id: req.user.id,
-        sender: req.user.full_name,
-        text: text.trim(),
-      })
-      .returning("*");
-    io.to(roomId).emit("call-message", message);
-    res.status(201).json(message);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to store message" });
-  }
-});
+app.post(
+  "/api/video-calls/:roomId/messages",
+  verifyToken,
+  verifyEnrollment,
+  async (req, res) => {
+    const { text } = req.body || {};
+    const roomId = req.params.roomId;
+    if (!text?.trim())
+      return res.status(400).json({ message: "Message text required" });
+    try {
+      const [message] = await db("video_call_messages")
+        .insert({
+          room_id: roomId,
+          sender_id: req.user.id,
+          sender: req.user.full_name,
+          text: text.trim(),
+        })
+        .returning("*");
+      io.to(roomId).emit("call-message", message);
+      res.status(201).json(message);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to store message" });
+    }
+  },
+);
 
 app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
