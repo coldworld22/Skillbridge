@@ -2,12 +2,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
+import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter, FaBookmark, FaHeart } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import {
+  fetchPublishedTutorials,
+  addTutorialToWishlist,
+  removeTutorialFromWishlist,
+  addTutorialToFavorites,
+  removeTutorialFromFavorites,
+  getMyTutorialWishlist,
+  getMyTutorialFavorites,
+} from "@/services/tutorialService";
+import { toast } from "react-toastify";
+import useAuthStore from "@/store/auth/authStore";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial from
@@ -59,6 +69,10 @@ const TutorialsSection = () => {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [statusMap, setStatusMap] = useState({});
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const isStudent = user?.role?.toLowerCase() === "student";
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
@@ -103,6 +117,23 @@ const TutorialsSection = () => {
     });
     setStatusMap(cache);
   }, [tutorials]);
+
+  useEffect(() => {
+    if (!user || !isStudent) return;
+    const loadLists = async () => {
+      try {
+        const [w, f] = await Promise.all([
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+        ]);
+        setWishlistIds(w.map((t) => t.id));
+        setFavoriteIds(f.map((t) => t.id));
+      } catch (err) {
+        console.error("Failed to load user lists", err);
+      }
+    };
+    loadLists();
+  }, [user, isStudent]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =
@@ -322,7 +353,61 @@ const TutorialsSection = () => {
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       )}
-                      
+
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!user) return router.push('/auth/login');
+                          if (!isStudent) {
+                            toast.error('Only students can save tutorials.');
+                            return;
+                          }
+                          try {
+                            if (favoriteIds.includes(tut.id)) {
+                              await removeTutorialFromFavorites(tut.id);
+                              setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
+                            } else {
+                              await addTutorialToFavorites(tut.id);
+                              setFavoriteIds([...favoriteIds, tut.id]);
+                              toast.success('Added to favorites');
+                            }
+                          } catch (err) {
+                            toast.error('Failed to update favorites');
+                          }
+                        }}
+                        aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        className="absolute top-2 right-10 bg-gray-800/80 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+                      >
+                        <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+                      </button>
+
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!user) return router.push('/auth/login');
+                          if (!isStudent) {
+                            toast.error('Only students can save tutorials.');
+                            return;
+                          }
+                          try {
+                            if (wishlistIds.includes(tut.id)) {
+                              await removeTutorialFromWishlist(tut.id);
+                              setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
+                            } else {
+                              await addTutorialToWishlist(tut.id);
+                              setWishlistIds([...wishlistIds, tut.id]);
+                              toast.success(t('added_to_wishlist'));
+                            }
+                          } catch (err) {
+                            toast.error('Failed to update wishlist');
+                          }
+                        }}
+                        aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        className="absolute top-2 right-2 bg-gray-800/80 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                      >
+                        <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                      </button>
+
                       {/* Progress bar */}
                       {enrolled && (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
