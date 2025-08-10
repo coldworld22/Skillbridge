@@ -225,14 +225,18 @@ const LandingTutorialsSection = () => {
                   try {
                     if (favoriteIds.includes(tut.id)) {
                       await removeTutorialFromFavorites(tut.id);
-                      setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
+                      const updated = await getMyTutorialFavorites();
+                      setFavoriteIds(updated.map((t) => t.id));
+                      toast.success('Removed from favorites');
                     } else {
                       await addTutorialToFavorites(tut.id);
-                      setFavoriteIds([...favoriteIds, tut.id]);
+                      const updated = await getMyTutorialFavorites();
+                      setFavoriteIds(updated.map((t) => t.id));
                       toast.success('Added to favorites');
                     }
                   } catch (err) {
-                    toast.error('Failed to update favorites');
+                    const message = err?.response?.data?.message || 'Failed to update favorites';
+                    toast.error(message);
                   }
                 }}
                 aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
@@ -249,23 +253,27 @@ const LandingTutorialsSection = () => {
                     toast.error('Only students can save tutorials.');
                     return;
                   }
-                  try {
-                    if (wishlistIds.includes(tut.id)) {
-                      await removeTutorialFromWishlist(tut.id);
-                      setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
-                    } else {
-                      await addTutorialToWishlist(tut.id);
-                      setWishlistIds([...wishlistIds, tut.id]);
-                      toast.success(t('added_to_wishlist'));
+                    try {
+                      if (wishlistIds.includes(tut.id)) {
+                        await removeTutorialFromWishlist(tut.id);
+                        const updated = await getMyTutorialWishlist();
+                        setWishlistIds(updated.map((t) => t.id));
+                        toast.success('Removed from wishlist');
+                      } else {
+                        await addTutorialToWishlist(tut.id);
+                        const updated = await getMyTutorialWishlist();
+                        setWishlistIds(updated.map((t) => t.id));
+                        toast.success(t('added_to_wishlist'));
+                      }
+                    } catch (err) {
+                      const message = err?.response?.data?.message || 'Failed to update wishlist';
+                      toast.error(message);
                     }
-                  } catch (err) {
-                    toast.error('Failed to update wishlist');
-                  }
-                }}
-                aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
-              >
-                <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                  }}
+                  aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                >
+                  <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
               </button>
             </div>
 
