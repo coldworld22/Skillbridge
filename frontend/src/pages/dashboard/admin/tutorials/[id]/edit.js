@@ -72,6 +72,7 @@ function EditTutorialPage() {
           level: tutorial.level,
           language: tutorial.language || "",
           instructorId: tutorial.instructorId,
+          status: tutorial.status,
           lessonCount: mappedChapters.length,
           tags: tutorial.tags || [],
           chapters: mappedChapters,
@@ -145,6 +146,8 @@ function EditTutorialPage() {
               formData.append("description", tutorialData.shortDescription);
               formData.append("category_id", tutorialData.category);
               formData.append("level", tutorialData.level);
+              formData.append("language", tutorialData.language);
+              formData.append("status", tutorialData.status);
               formData.append("is_paid", (!tutorialData.isFree).toString());
               if (!tutorialData.isFree) {
                 formData.append("price", tutorialData.price);

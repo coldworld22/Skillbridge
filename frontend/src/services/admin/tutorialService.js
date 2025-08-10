@@ -85,6 +85,7 @@ export const fetchTutorialById = async (id) => {
     categoryName: t.category_name,
     level: t.level,
     language: t.language,
+    status: t.status,
     instructorId: t.instructor_id,
     instructorName: t.instructor_name,
     tags: t.tags || [],
