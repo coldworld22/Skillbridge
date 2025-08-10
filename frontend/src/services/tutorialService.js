@@ -55,6 +55,35 @@ export const enrollInTutorial = async (tutorialId) => {
   return data;
 };
 
+export const getMyEnrolledTutorials = async () => {
+  try {
+    const { data } = await api.get('/users/tutorials/enroll/my');
+    const list = data?.data ?? [];
+    return list.map(formatTutorial);
+  } catch (err) {
+    if (err.response && [401, 403].includes(err.response.status)) {
+      return [];
+    }
+    throw err;
+  }
+};
+
+export const saveTutorialProgress = async (tutorialId, progress) => {
+  try {
+    const { data } = await api.post(
+      `/users/tutorials/progress/${tutorialId}`,
+      { progress },
+    );
+    return data;
+  } catch (err) {
+    // Ignore if API not supported
+    if (err.response && [404, 500, 501].includes(err.response.status)) {
+      return null;
+    }
+    throw err;
+  }
+};
+
 export const addTutorialToWishlist = async (id) => {
   const { data } = await api.post(`/users/tutorials/wishlist/${id}`);
   return data;
