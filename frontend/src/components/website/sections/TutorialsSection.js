@@ -3,15 +3,11 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
-import {
-  FaStar,
-  FaClock,
-  FaBookmark,
-  FaHeart,
-} from "react-icons/fa";
+import { FaStar, FaClock, FaBookmark, FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
+import useTutorialProgressStore from "@/store/tutorialProgressStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
 import {
@@ -22,9 +18,8 @@ import {
   addTutorialToFavorites,
   removeTutorialFromFavorites,
   getMyTutorialFavorites,
+  enrollInTutorial,
 } from "@/services/tutorialService";
-
-const PROGRESS_KEY = "skillbridge_tutorialProgress";
 
 
 export const getStars = (rating) => {
@@ -48,7 +43,8 @@ const LandingTutorialsSection = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [progress, setProgress] = useState({});
+  const { status: progress, fetchStatus, syncOffline } =
+    useTutorialProgressStore();
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
@@ -98,11 +94,9 @@ const LandingTutorialsSection = () => {
           setCategories(categoryRes?.data || categoryRes || []);
         }
 
-        try {
-          const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-          setProgress(stored);
-        } catch {
-          setProgress({});
+        if (user && isStudent) {
+          await syncOffline();
+          (tutorialRes || []).forEach((t) => fetchStatus(t.id));
         }
       }
     };
@@ -111,7 +105,7 @@ const LandingTutorialsSection = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user, isStudent]);
 
   useEffect(() => {
     if (!user || !isStudent) return;
@@ -314,18 +308,43 @@ const LandingTutorialsSection = () => {
                 </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mt-3">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-400"
-                    style={{ width: `${progress[tut.id] || 0}%` }}
-                  />
+              {progress[tut.id]?.enrolled ? (
+                <div className="mt-3">
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-yellow-400"
+                      style={{ width: `${progress[tut.id]?.progress || 0}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Watched: {progress[tut.id]?.progress || 0}%
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Watched: {progress[tut.id] || 0}%
+              ) : (
+                <div className="mt-3">
+                  <button
+                    aria-label="Enroll in tutorial"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!user) return router.push('/auth/login');
+                      if (!isStudent) {
+                        toast.error('Only students can enroll.');
+                        return;
+                      }
+                      try {
+                        await enrollInTutorial(tut.id);
+                        await fetchStatus(tut.id);
+                        toast.success('Enrolled');
+                      } catch (err) {
+                        toast.error('Enrollment failed');
+                      }
+                    }}
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-1 rounded"
+                  >
+                    Enroll
+                  </button>
                 </div>
-              </div>
+              )}
 
               <div className="flex gap-2 mt-4">
                 <button
