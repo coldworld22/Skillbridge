@@ -114,9 +114,11 @@ const TutorialsSection = () => {
       !filters.levels.length || filters.levels.includes(tut.level);
 
     const matchPrice =
-      !filters.price ||
-      tut.price == null ||
-      Number(tut.price) <= Number(filters.price);
+      filters.price === 0
+        ? Number(tut.price) === 0
+        : filters.price == null ||
+          tut.price == null ||
+          Number(tut.price) <= Number(filters.price);
 
     const matchSearch =
       tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
