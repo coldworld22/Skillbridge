@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import {
   FaPlus,
   FaEdit,
@@ -26,6 +29,7 @@ import { toast } from "react-toastify";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
+  const { t } = useTranslation(["dashboard", "tutorials"]);
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,7 +61,7 @@ export default function InstructorTutorialsPage() {
         setTutorials(data?.data || data || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorials");
+        setError(t("tutorials:list.load_error"));
       } finally {
         setLoading(false);
       }
@@ -75,16 +79,16 @@ export default function InstructorTutorialsPage() {
 
   const handleDelete = (id) => {
     openConfirmModal({
-      title: "Confirm Deletion",
-      message: "Are you sure you want to delete this tutorial?",
+      title: t("dashboard:tutorialsPage.delete_confirm_title"),
+      message: t("dashboard:tutorialsPage.delete_confirm_message"),
       onConfirm: async () => {
         try {
           await deleteInstructorTutorial(id);
           setTutorials((prev) => prev.filter((tut) => tut.id !== id));
-          toast.success("Tutorial deleted successfully");
+          toast.success(t("dashboard:tutorialsPage.delete_success"));
         } catch (err) {
           console.error(err);
-          toast.error("Failed to delete tutorial");
+          toast.error(t("dashboard:tutorialsPage.delete_failed"));
         } finally {
           closeConfirmModal();
         }
@@ -111,6 +115,7 @@ export default function InstructorTutorialsPage() {
       <InstructorLayout>
         <div className="p-6 flex justify-center items-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+          <span className="sr-only">{t('loading', { ns: 'common' })}</span>
         </div>
       </InstructorLayout>
     );
@@ -133,17 +138,17 @@ export default function InstructorTutorialsPage() {
         <div className="flex flex-col md:flex-row md:justify-between items-center mb-8 gap-4">
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              My Tutorials
+              {t("dashboard:tutorialsPage.heading")}
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage and create your educational content
+              {t("dashboard:tutorialsPage.subheading")}
             </p>
           </div>
           <button
             onClick={() => router.push("/dashboard/instructor/tutorials/create")}
             className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-3 px-6 rounded-xl flex items-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
           >
-            <FaPlus className="mr-2" /> Create Tutorial
+            <FaPlus className="mr-2" /> {t("dashboard:tutorialsPage.create_tutorial")}
           </button>
         </div>
 
@@ -156,7 +161,7 @@ export default function InstructorTutorialsPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search tutorials..."
+                placeholder={t("tutorials:list.search_placeholder")}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -170,11 +175,11 @@ export default function InstructorTutorialsPage() {
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 onChange={(e) => handleFilter(e.target.value)}
               >
-                <option value="">All Statuses</option>
-                <option value="Draft">Draft</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
+                <option value="">{t("dashboard:tutorialsPage.status_all")}</option>
+                <option value="Draft">{t("dashboard:tutorialsPage.status_label.draft")}</option>
+                <option value="Pending">{t("dashboard:tutorialsPage.status_label.pending")}</option>
+                <option value="Approved">{t("dashboard:tutorialsPage.status_label.approved")}</option>
+                <option value="Rejected">{t("dashboard:tutorialsPage.status_label.rejected")}</option>
               </select>
             </div>
             
@@ -187,10 +192,10 @@ export default function InstructorTutorialsPage() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
-                <option value="newest">Sort: Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="views">Most Viewed</option>
-                <option value="enrollments">Most Enrolled</option>
+                <option value="newest">{t("dashboard:tutorialsPage.sort_newest")}</option>
+                <option value="oldest">{t("dashboard:tutorialsPage.sort_oldest")}</option>
+                <option value="views">{t("dashboard:tutorialsPage.sort_views")}</option>
+                <option value="enrollments">{t("dashboard:tutorialsPage.sort_enrollments")}</option>
               </select>
             </div>
           </div>
@@ -199,23 +204,23 @@ export default function InstructorTutorialsPage() {
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-sm text-gray-500">Total Tutorials</div>
+            <div className="text-sm text-gray-500">{t("dashboard:tutorialsPage.total_tutorials")}</div>
             <div className="text-2xl font-bold text-indigo-600">{tutorials.length}</div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-sm text-gray-500">Published</div>
+            <div className="text-sm text-gray-500">{t("dashboard:tutorialsPage.published")}</div>
             <div className="text-2xl font-bold text-green-600">
               {tutorials.filter(t => t.status === 'Approved').length}
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-sm text-gray-500">Drafts</div>
+            <div className="text-sm text-gray-500">{t("dashboard:tutorialsPage.drafts")}</div>
             <div className="text-2xl font-bold text-yellow-600">
               {tutorials.filter(t => t.status === 'Draft').length}
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-sm text-gray-500">Pending</div>
+            <div className="text-sm text-gray-500">{t("dashboard:tutorialsPage.pending")}</div>
             <div className="text-2xl font-bold text-blue-600">
               {tutorials.filter(t => t.status === 'Pending').length}
             </div>
@@ -247,7 +252,7 @@ export default function InstructorTutorialsPage() {
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {tutorial.status}
+                    {t(`dashboard:tutorialsPage.status_label.${tutorial.status.toLowerCase()}`)}
                   </span>
                 </div>
               </div>
@@ -259,7 +264,7 @@ export default function InstructorTutorialsPage() {
                       {tutorial.title}
                     </h2>
                     <span className="font-bold text-indigo-700 whitespace-nowrap ml-2">
-                      {tutorial.price ? `$${tutorial.price}` : "Free"}
+                      {tutorial.price ? `$${tutorial.price}` : t("tutorials:list.free")}
                     </span>
                   </div>
                   
@@ -268,15 +273,15 @@ export default function InstructorTutorialsPage() {
                       {new Date(tutorial.updatedAt).toLocaleDateString()}
                     </span>
                     <div className="h-1 w-1 bg-gray-400 rounded-full mr-3"></div>
-                    <span>{tutorial.language || "English"}</span>
+                    <span>{tutorial.language || t("dashboard:tutorialsPage.default_language")}</span>
                   </div>
                   
                   <div className="mt-3 flex flex-wrap gap-1">
                     <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-xs">
-                      {tutorial.category_name || "General"}
+                      {tutorial.category_name || t("dashboard:tutorialsPage.category_general")}
                     </span>
                     <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs">
-                      {tutorial.level || "All Levels"}
+                      {tutorial.level || t("dashboard:tutorialsPage.all_levels")}
                     </span>
                   </div>
                   
@@ -317,7 +322,7 @@ export default function InstructorTutorialsPage() {
                   {tutorial.status === "Draft" && (
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Progress</span>
+                        <span>{t("dashboard:tutorialsPage.progress")}</span>
                         <span>{tutorial.progress || 40}%</span>
                       </div>
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -332,7 +337,7 @@ export default function InstructorTutorialsPage() {
                   {/* Submission Banner */}
                   {tutorial.status === "Pending" && (
                     <div className="mt-4 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-2 rounded-lg">
-                      ⏳ Pending Approval
+                      ⏳ {t("dashboard:tutorialsPage.pending_approval")}
                     </div>
                   )}
                   {tutorial.status === "Rejected" && tutorial.rejection_reason && (
@@ -350,7 +355,7 @@ export default function InstructorTutorialsPage() {
                     }
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                   >
-                    <FaEye className="mr-2" /> View
+                    <FaEye className="mr-2" /> {t("dashboard:tutorialsPage.view")}
                   </button>
 
                   {(tutorial.status === "Draft" || tutorial.status === "Rejected") && (
@@ -360,7 +365,7 @@ export default function InstructorTutorialsPage() {
                       }
                       className="bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                     >
-                      <FaEdit className="mr-2" /> Edit
+                      <FaEdit className="mr-2" /> {t("dashboard:tutorialsPage.edit")}
                     </button>
                   )}
 
@@ -371,7 +376,7 @@ export default function InstructorTutorialsPage() {
                     }}
                     className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                   >
-                    <span className="mr-2">📋</span> Checklist
+                    <span className="mr-2">📋</span> {t("dashboard:tutorialsPage.checklist")}
                   </button>
 
                   {tutorial.status === "Draft" && tutorial.progress === 100 && (
@@ -384,15 +389,15 @@ export default function InstructorTutorialsPage() {
                               t.id === tutorial.id ? { ...t, status: "Pending" } : t
                             )
                           );
-                          toast.success("Tutorial submitted for review successfully");
+                          toast.success(t("dashboard:tutorialsPage.submit_for_review_success"));
                         } catch (err) {
                           console.error(err);
-                          toast.error("Failed to submit tutorial for review");
+                          toast.error(t("dashboard:tutorialsPage.submit_for_review_failed"));
                         }
                       }}
                       className="bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                     >
-                      Submit
+                      {t("dashboard:tutorialsPage.submit")}
                     </button>
                   )}
 
@@ -401,7 +406,7 @@ export default function InstructorTutorialsPage() {
                       onClick={() => handleDelete(tutorial.id)}
                       className="bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                     >
-                      <FaTrash className="mr-2" /> Delete
+                      <FaTrash className="mr-2" /> {t("dashboard:tutorialsPage.delete")}
                     </button>
                   )}
 
@@ -418,7 +423,7 @@ export default function InstructorTutorialsPage() {
                     }}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                   >
-                    <FaDownload className="mr-2" /> Export
+                    <FaDownload className="mr-2" /> {t("dashboard:tutorialsPage.export")}
                   </button>
                 </div>
               </div>
@@ -433,15 +438,15 @@ export default function InstructorTutorialsPage() {
               <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mx-auto flex items-center justify-center text-gray-400 mb-4">
                 <FaPlus className="text-2xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">No tutorials found</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">{t("dashboard:tutorialsPage.no_tutorials")}</h3>
               <p className="text-gray-600 mb-6">
-                Try adjusting your search or create a new tutorial
+                {t("dashboard:tutorialsPage.no_tutorials_description")}
               </p>
               <button
                 onClick={() => router.push("/dashboard/instructor/tutorials/create")}
                 className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-medium py-2 px-6 rounded-xl inline-flex items-center shadow transition-all"
               >
-                <FaPlus className="mr-2" /> Create First Tutorial
+                <FaPlus className="mr-2" /> {t("dashboard:tutorialsPage.create_first_tutorial")}
               </button>
             </div>
           </div>
@@ -461,4 +466,12 @@ export default function InstructorTutorialsPage() {
       />
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
+    },
+  };
 }

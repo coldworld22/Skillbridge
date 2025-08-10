@@ -18,6 +18,29 @@ const formatClass = (cls) => ({
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
 
+const computeScheduleStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return "Upcoming";
+  if (s && e && now >= s && now <= e) return "Live";
+  if (e && now > e) return "Completed";
+  return "Upcoming";
+};
+
+const formatEnrolledClass = (cls) => {
+  const base = formatClass(cls);
+  const { start_date, end_date, status, ...rest } = base;
+  return {
+    ...rest,
+    startDate: start_date,
+    endDate: end_date,
+    enrollmentStatus: status,
+    scheduleStatus: computeScheduleStatus(start_date, end_date),
+    progress: status === "completed" ? 100 : 0,
+  };
+};
+
 export const fetchPublishedClasses = async () => {
   const { data } = await api.get("/users/classes");
   const list = data?.data ?? [];
@@ -47,7 +70,8 @@ export const markClassCompleted = async (id) => {
 export const fetchMyEnrolledClasses = async () => {
   try {
     const { data } = await api.get("/users/classes/enroll/my");
-    return data?.data ?? [];
+    const list = data?.data ?? [];
+    return list.map(formatEnrolledClass);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
       return [];
@@ -152,5 +176,10 @@ export const fetchClassComments = async (classId) => {
 
 export const postClassComment = async (classId, payload) => {
   const { data } = await api.post(`/users/classes/comments/${classId}`, payload);
+  return data;
+};
+
+export const subscribeToClassReminder = async (classId) => {
+  const { data } = await api.post(`/users/classes/notifications/${classId}`);
   return data;
 };

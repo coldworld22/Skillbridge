@@ -169,7 +169,7 @@ export default function ClassDetailsPage() {
           const record = enrolled.find((c) => String(c.id) === String(id));
           if (record) {
             setIsEnrolled(true);
-            setEnrollmentStatus(record.status);
+            setEnrollmentStatus(record.enrollmentStatus);
           } else {
             setIsEnrolled(false);
             setEnrollmentStatus(null);

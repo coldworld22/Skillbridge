@@ -8,17 +8,22 @@ import CurriculumStep from '@/components/tutorials/create/CurriculumStep';
 import MediaStep from '@/components/tutorials/create/MediaStep';
 import ReviewStep from '@/components/tutorials/create/ReviewStep';
 import { fetchInstructorTutorialById } from "@/services/instructor/tutorialService";
-import { updateTutorial } from "@/services/admin/tutorialService";
-import { fetchAllCategories } from "@/services/admin/categoryService";
+import { updateTutorial } from "@/services/instructor/tutorialService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function EditTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
+  const { t } = useTranslation(["dashboard", "tutorials"]);
 
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
@@ -29,6 +34,7 @@ export default function EditTutorialPage() {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
 
   useEffect(() => {
     if (!id) return;
@@ -61,7 +67,7 @@ export default function EditTutorialPage() {
         setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t("tutorials:detail.load_error"));
       } finally {
         setLoading(false);
       }
@@ -78,9 +84,9 @@ export default function EditTutorialPage() {
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (loading) return <div className="p-6">{t("dashboard:tutorialEditPage.loading")}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorialData) return <div className="p-6">Tutorial not found.</div>;
+  if (!tutorialData) return <div className="p-6">{t("dashboard:tutorialEditPage.not_found")}</div>;
 
   return (
     <InstructorLayout>
@@ -113,7 +119,7 @@ export default function EditTutorialPage() {
           <ReviewStep
             tutorialData={tutorialData}
             onBack={onPrev}
-            actionLabel="Save Changes"
+            actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
               const formData = new FormData();
               formData.append("title", tutorialData.title);
@@ -146,14 +152,14 @@ export default function EditTutorialPage() {
 
               try {
                 await updateTutorial(id, formData);
-                toast.success("Tutorial updated successfully!");
+                toast.success(t("dashboard:tutorialEditPage.update_success"));
                 await createNotification({
                   user_id: user.id,
                   type: "tutorial_updated",
-                  message: `Your tutorial "${tutorialData.title}" was updated.`,
+                  message: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
                 });
                 await sendChatMessage(user.id, {
-                  text: `Your tutorial "${tutorialData.title}" was updated.`,
+                  text: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
                 });
                 refreshNotifications?.();
                 refreshMessages?.();
@@ -161,7 +167,7 @@ export default function EditTutorialPage() {
                 router.push("/dashboard/instructor/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error("Failed to update tutorial");
+                toast.error(t("dashboard:tutorialEditPage.update_failed"));
               }
             }}
           />
@@ -169,6 +175,14 @@ export default function EditTutorialPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
+    },
+  };
 }
 
 
