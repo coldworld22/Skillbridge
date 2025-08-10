@@ -23,8 +23,6 @@ export default function EditTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
-  const { t } = useTranslation(["dashboard", "tutorials"]);
-
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +32,6 @@ export default function EditTutorialPage() {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
 
   useEffect(() => {
     if (!id) return;

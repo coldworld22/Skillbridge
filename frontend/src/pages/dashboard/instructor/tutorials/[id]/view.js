@@ -24,7 +24,6 @@ export default function ViewTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
-  const { t } = useTranslation(["dashboard", "tutorials"]);
   const [tutorial, setTutorial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

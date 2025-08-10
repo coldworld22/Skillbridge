@@ -20,7 +20,6 @@ export default function TutorialAnalyticsPage() {
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [stats, setStats] = useState(null);
-  const { t } = useTranslation(["dashboard", "tutorials"]);
 
   useEffect(() => {
     if (!id) return;

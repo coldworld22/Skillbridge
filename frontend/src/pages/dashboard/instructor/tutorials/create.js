@@ -8,7 +8,6 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import { useTranslation } from "next-i18next";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
@@ -43,7 +42,6 @@ export default function CreateTutorialPage() {
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
