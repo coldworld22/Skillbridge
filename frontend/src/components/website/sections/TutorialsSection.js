@@ -23,8 +23,10 @@ import {
 const PROGRESS_KEY = "skillbridge_tutorialProgress";
 
 
-const getStars = (rating) => {
-  const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
+export const getStars = (rating) => {
+  const safeRating = Number.isFinite(rating)
+    ? Math.min(Math.max(rating, 0), 5)
+    : 0;
   const full = Math.floor(safeRating);
   const half = safeRating % 1 >= 0.5;
   return (
