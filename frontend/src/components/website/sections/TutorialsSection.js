@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
+import { formatCurrency } from "@/utils/currency";
 
 import {
   fetchFeaturedTutorials,
@@ -310,7 +311,9 @@ const LandingTutorialsSection = () => {
                       : 'bg-green-500 text-black'
                   }`}
                 >
-                  {Number(tut.price) > 0 ? '$' + tut.price : t('free')}
+                  {Number(tut.price) > 0
+                    ? formatCurrency(tut.price, { currency: tut.currencyCode })
+                    : t('free')}
                 </span>
               </div>
 
