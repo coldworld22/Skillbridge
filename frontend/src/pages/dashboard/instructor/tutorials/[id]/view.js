@@ -15,20 +15,16 @@ import {
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
-import ConfirmModal from "@/components/common/ConfirmModal";
-import { toast } from "react-toastify";
+import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
 import { useTranslation } from "next-i18next";
-import {
-  fetchInstructorTutorialById,
-  submitTutorialForReview,
-  deleteInstructorTutorial,
-} from "@/services/instructor/tutorialService";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
-  const { t } = useTranslation();
+  const { t } = useTranslation(["dashboard", "tutorials"]);
   const [tutorial, setTutorial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,7 +53,7 @@ export default function ViewTutorialPage() {
         setTutorial(data?.data || data || null);
       } catch (err) {
         console.error(err);
-        setError(t('detail.load_error', { ns: 'tutorials' }));
+        setError(t("tutorials:detail.load_error"));
       } finally {
         setLoading(false);
       }
@@ -65,9 +61,9 @@ export default function ViewTutorialPage() {
     load();
   }, [id]);
 
-  if (loading) return <div className="p-6">{t('loading', { ns: 'common' })}</div>;
+  if (loading) return <div className="p-6">{t("dashboard:tutorialViewPage.loading")}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorial) return <div className="p-6">{t('detail.not_found', { ns: 'tutorials' })}</div>;
+  if (!tutorial) return <div className="p-6">{t("dashboard:tutorialViewPage.not_found")}</div>;
 
   return (
     <InstructorLayout>
@@ -83,7 +79,7 @@ export default function ViewTutorialPage() {
             onClick={() => router.push("/dashboard/instructor/tutorials")}
             className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1"
           >
-            ← Back to Tutorials
+            ← {t("dashboard:tutorialViewPage.back_to_tutorials")}
           </button>
         </div>
 
@@ -93,51 +89,34 @@ export default function ViewTutorialPage() {
             onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/edit`)}
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            ✏️ Edit Tutorial
+            ✏️ {t("dashboard:tutorialViewPage.edit_tutorial")}
           </button>
           <button
             onClick={() => setShowChecklist(true)}
             className="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            📋 Checklist
+            📋 {t("dashboard:tutorialViewPage.checklist")}
           </button>
           <button
             onClick={() => router.push(`/dashboard/instructor/tutorials/${tutorial.id}/analytics`)}
             className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            📈 Analytics
+            📈 {t("dashboard:tutorialViewPage.analytics")}
           </button>
           <button
-            onClick={() =>
-              openConfirmModal({
-                title: t("tutorialsPage.confirm_title", { defaultValue: "Confirm Deletion" }),
-                message: t("tutorialsPage.confirm_delete", {
-                  defaultValue:
-                    "Are you sure you want to delete this tutorial?",
-                }),
-                onConfirm: async () => {
-                  try {
-                    await deleteInstructorTutorial(tutorial.id);
-                    toast.success(
-                      t("tutorialsPage.deleted", {
-                        defaultValue: "Tutorial deleted successfully",
-                      })
-                    );
-                    router.push("/dashboard/instructor/tutorials");
-                  } catch (err) {
-                    console.error(err);
-                    toast.error(
-                      t("tutorialsPage.delete_failed", {
-                        defaultValue: "Failed to delete tutorial",
-                      })
-                    );
-                  }
-                },
-              })
-            }
+            onClick={async () => {
+              if (!window.confirm(t('dashboard:tutorialViewPage.delete_confirm'))) return;
+              try {
+                await deleteInstructorTutorial(tutorial.id);
+                router.push('/dashboard/instructor/tutorials');
+              } catch (err) {
+                console.error(err);
+                alert(t('dashboard:tutorialViewPage.delete_failed'));
+              }
+            }}
             className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            🗑 Delete
+            🗑 {t("dashboard:tutorialViewPage.delete")}
           </button>
           <button
             onClick={() => {
@@ -149,14 +128,14 @@ export default function ViewTutorialPage() {
             }}
             className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >
-            <FaDownload /> Export
+            <FaDownload /> {t("dashboard:tutorialViewPage.export")}
           </button>
         </div>
 
         {/* Draft Reminder */}
         {tutorial.status === "Draft" && (
           <div className="p-4 bg-yellow-100 text-yellow-700 rounded-lg shadow mb-6">
-            📢 This tutorial is currently in <strong>Draft</strong> mode. Complete and submit it for approval!
+            {t("dashboard:tutorialViewPage.draft_notice")}
           </div>
         )}
 
@@ -180,28 +159,28 @@ export default function ViewTutorialPage() {
                 tutorial.status === 'Pending' ? 'bg-blue-100 text-blue-700' :
                 tutorial.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
                 'bg-red-100 text-red-700'}`}>
-              {tutorial.status}
+              {t(`dashboard:tutorialsPage.status_label.${tutorial.status.toLowerCase()}`)}
             </span>
-            <span>Last updated: {new Date(tutorial.updatedAt).toLocaleDateString()}</span>
+            <span>{t("dashboard:tutorialViewPage.last_updated", { date: new Date(tutorial.updatedAt).toLocaleDateString() })}</span>
             {tutorial.createdAt && (
-              <span>Created: {new Date(tutorial.createdAt).toLocaleDateString()}</span>
+              <span>{t("dashboard:tutorialViewPage.created", { date: new Date(tutorial.createdAt).toLocaleDateString() })}</span>
             )}
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Course Description</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">{t("dashboard:tutorialViewPage.course_description")}</h2>
           <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
             {tutorial.description || tutorial.shortDescription ||
-              "No description provided yet."}
+              t("dashboard:tutorialViewPage.no_description")}
           </p>
         </div>
 
         {/* Tags */}
         {tutorial.tags && tutorial.tags.length > 0 && (
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Tags</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">{t("dashboard:tutorialViewPage.tags")}</h2>
             <div className="flex flex-wrap gap-2">
               {tutorial.tags.map((tag, idx) => (
                 <span key={idx} className="bg-gray-200 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-600">
@@ -237,7 +216,7 @@ export default function ViewTutorialPage() {
         {tutorial.chapters && tutorial.chapters.length > 0 && (
           <div>
             <div className="flex items-center justify-between cursor-pointer" onClick={() => setCurriculumOpen(!curriculumOpen)}>
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-700">Curriculum</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-700">{t("dashboard:tutorialViewPage.curriculum")}</h2>
               <span className="text-gray-500">{curriculumOpen ? '−' : '+'}</span>
             </div>
             {curriculumOpen && (
@@ -254,7 +233,7 @@ export default function ViewTutorialPage() {
                   >
                     <h3 className="font-semibold text-gray-800">
                       {chapter.title}
-                      {chapter.duration ? ` (${chapter.duration} min)` : ""}
+                      {chapter.duration ? ` (${t("dashboard:tutorialViewPage.minutes", { count: chapter.duration })})` : ""}
                     </h3>
                     {chapter.content && (
                       <p className="text-gray-600 text-sm sm:text-base">
@@ -270,14 +249,14 @@ export default function ViewTutorialPage() {
 
         {/* Media Preview */}
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Preview</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">{t("dashboard:tutorialViewPage.preview")}</h2>
           {tutorial.preview ? (
             <CustomVideoPlayer
               videos={[{ src: safeEncodeURI(tutorial.preview) }]}
             />
           ) : (
             <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-              No preview available
+              {t("dashboard:tutorialViewPage.no_preview")}
             </div>
           )}
         </div>
@@ -285,14 +264,14 @@ export default function ViewTutorialPage() {
         {/* Progress (only if Draft) */}
         {tutorial.status === "Draft" && (
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Progress</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">{t("dashboard:tutorialViewPage.progress")}</h2>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
                 className="bg-yellow-500 h-3 rounded-full"
                 style={{ width: `${tutorial.progress || 40}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{tutorial.progress || 40}% Completed</p>
+            <p className="text-xs text-gray-500 mt-1">{t("dashboard:tutorialViewPage.completed_percent", { percent: tutorial.progress || 40 })}</p>
             {tutorial.progress === 100 && (
               <button
                 onClick={async () => {
@@ -316,7 +295,7 @@ export default function ViewTutorialPage() {
                 }}
                 className="mt-3 bg-purple-100 hover:bg-purple-200 text-purple-800 py-2 px-3 rounded-md text-sm"
               >
-                🚀 {t("submit_for_review", { defaultValue: "Submit for Review" })}
+                🚀 {t("dashboard:tutorialViewPage.submit_for_review")}
               </button>
             )}
           </div>
@@ -324,13 +303,13 @@ export default function ViewTutorialPage() {
 
         {tutorial.status === "Rejected" && tutorial.rejection_reason && (
           <div className="mt-4 bg-red-50 text-red-700 px-3 py-2 rounded-lg">
-            ❌ Rejection Reason: <strong>{tutorial.rejection_reason}</strong>
+            {t("dashboard:tutorialViewPage.rejection_reason", { reason: tutorial.rejection_reason })}
           </div>
         )}
 
         {tutorial.status === "Pending" && (
           <div className="mt-4 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg">
-            ⏳ Pending Approval
+            ⏳ {t("dashboard:tutorialViewPage.pending_approval")}
           </div>
         )}
       </motion.div>
@@ -353,11 +332,7 @@ export default function ViewTutorialPage() {
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(
-        locale,
-        ["common", "dashboard", "tutorials"],
-        nextI18NextConfig
-      )),
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
     },
   };
 }

@@ -16,11 +16,14 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function EditTutorialPage() {
   const router = useRouter();
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
+  const { t } = useTranslation(["dashboard", "tutorials"]);
 
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
@@ -64,7 +67,7 @@ export default function EditTutorialPage() {
         setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
-        setError(t('detail.load_error', { ns: 'tutorials' }));
+        setError(t("tutorials:detail.load_error"));
       } finally {
         setLoading(false);
       }
@@ -81,9 +84,9 @@ export default function EditTutorialPage() {
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (loading) return <div className="p-6">{t('loading', { ns: 'common' })}</div>;
+  if (loading) return <div className="p-6">{t("dashboard:tutorialEditPage.loading")}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorialData) return <div className="p-6">{t('detail.not_found', { ns: 'tutorials' })}</div>;
+  if (!tutorialData) return <div className="p-6">{t("dashboard:tutorialEditPage.not_found")}</div>;
 
   return (
     <InstructorLayout>
@@ -116,7 +119,7 @@ export default function EditTutorialPage() {
           <ReviewStep
             tutorialData={tutorialData}
             onBack={onPrev}
-            actionLabel="Save Changes"
+            actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
               const formData = new FormData();
               formData.append("title", tutorialData.title);
@@ -149,32 +152,22 @@ export default function EditTutorialPage() {
 
               try {
                 await updateTutorial(id, formData);
-                toast.success(t('update_success'));
-                const message = t('update_notification', { title: tutorialData.title });
-
-                try {
-                  await createNotification({
-                    user_id: user.id,
-                    type: "tutorial_updated",
-                    message,
-                  });
-                  refreshNotifications?.();
-                } catch (notifyErr) {
-                  console.error(notifyErr);
-                }
-
-                try {
-                  await sendChatMessage(user.id, { text: message });
-                  refreshMessages?.();
-                } catch (msgErr) {
-                  console.error(msgErr);
-                }
-
+                toast.success(t("dashboard:tutorialEditPage.update_success"));
+                await createNotification({
+                  user_id: user.id,
+                  type: "tutorial_updated",
+                  message: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
+                });
+                await sendChatMessage(user.id, {
+                  text: t("dashboard:tutorialEditPage.notification_updated", { title: tutorialData.title }),
+                });
+                refreshNotifications?.();
+                refreshMessages?.();
                 localStorage.removeItem(`editTutorialDraft-${id}`);
                 router.push("/dashboard/instructor/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error(t('update_failed'));
+                toast.error(t("dashboard:tutorialEditPage.update_failed"));
               }
             }}
           />
@@ -187,11 +180,7 @@ export default function EditTutorialPage() {
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(
-        locale,
-        ["common", "dashboard", "tutorials"],
-        nextI18NextConfig
-      )),
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
     },
   };
 }

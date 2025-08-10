@@ -20,6 +20,7 @@ export default function TutorialAnalyticsPage() {
   const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [stats, setStats] = useState(null);
+  const { t } = useTranslation(["dashboard", "tutorials"]);
 
   useEffect(() => {
     if (!id) return;
@@ -32,7 +33,7 @@ export default function TutorialAnalyticsPage() {
   if (!stats) {
     return (
       <InstructorLayout>
-        <div className="p-6 text-center text-sm text-muted-foreground">{t('loading', { ns: 'common' })}</div>
+        <div className="p-6 text-center text-sm text-muted-foreground">{t("dashboard:tutorialAnalyticsPage.loading")}</div>
       </InstructorLayout>
     );
   }
@@ -43,25 +44,25 @@ export default function TutorialAnalyticsPage() {
   return (
     <InstructorLayout>
       <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">📊 Tutorial Analytics - {id}</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t("dashboard:tutorialAnalyticsPage.title", { id })}</h1>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow border">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">👥 Total Students</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">{t("dashboard:tutorialAnalyticsPage.total_students")}</h2>
             <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow border">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">💰 Total Revenue</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">{t("dashboard:tutorialAnalyticsPage.total_revenue")}</h2>
             <p className="text-3xl font-bold text-indigo-600">${stats.totalRevenue}</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow border">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">🎯 Completion Rate</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">{t("dashboard:tutorialAnalyticsPage.completion_rate")}</h2>
             <p className="text-3xl font-bold text-purple-600">{completionRate}%</p>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">📈 Enrollment Trend</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">{t("dashboard:tutorialAnalyticsPage.enrollment_trend")}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={stats.registrationTrend}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -80,11 +81,7 @@ export default function TutorialAnalyticsPage() {
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(
-        locale,
-        ["common", "dashboard", "tutorials"],
-        nextI18NextConfig
-      )),
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
     },
   };
 }
