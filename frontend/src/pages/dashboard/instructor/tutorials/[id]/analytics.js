@@ -4,6 +4,9 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const EMPTY_STATS = {
   totalStudents: 0,
@@ -14,6 +17,7 @@ const EMPTY_STATS = {
 
 export default function TutorialAnalyticsPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [stats, setStats] = useState(null);
 
@@ -28,7 +32,7 @@ export default function TutorialAnalyticsPage() {
   if (!stats) {
     return (
       <InstructorLayout>
-        <div className="p-6 text-center text-sm text-muted-foreground">Loading analytics...</div>
+        <div className="p-6 text-center text-sm text-muted-foreground">{t('loading', { ns: 'common' })}</div>
       </InstructorLayout>
     );
   }
@@ -71,4 +75,16 @@ export default function TutorialAnalyticsPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }

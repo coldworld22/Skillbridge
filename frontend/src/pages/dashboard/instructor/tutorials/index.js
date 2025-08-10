@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import {
   FaPlus,
   FaEdit,
@@ -26,6 +29,7 @@ import { toast } from "react-toastify";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,7 +61,7 @@ export default function InstructorTutorialsPage() {
         setTutorials(data?.data || data || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorials");
+        setError(t('tutorialsPage.load_error', { ns: 'dashboard' }));
       } finally {
         setLoading(false);
       }
@@ -75,16 +79,16 @@ export default function InstructorTutorialsPage() {
 
   const handleDelete = (id) => {
     openConfirmModal({
-      title: "Confirm Deletion",
-      message: "Are you sure you want to delete this tutorial?",
+      title: t('tutorialsPage.confirm_title', { ns: 'dashboard' }),
+      message: t('tutorialsPage.confirm_delete', { ns: 'dashboard' }),
       onConfirm: async () => {
         try {
           await deleteInstructorTutorial(id);
           setTutorials((prev) => prev.filter((tut) => tut.id !== id));
-          toast.success("Tutorial deleted successfully");
+          toast.success(t('tutorialsPage.deleted', { ns: 'dashboard' }));
         } catch (err) {
           console.error(err);
-          toast.error("Failed to delete tutorial");
+          toast.error(t('tutorialsPage.delete_failed', { ns: 'dashboard' }));
         } finally {
           closeConfirmModal();
         }
@@ -111,6 +115,7 @@ export default function InstructorTutorialsPage() {
       <InstructorLayout>
         <div className="p-6 flex justify-center items-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+          <span className="sr-only">{t('loading', { ns: 'common' })}</span>
         </div>
       </InstructorLayout>
     );
@@ -133,17 +138,17 @@ export default function InstructorTutorialsPage() {
         <div className="flex flex-col md:flex-row md:justify-between items-center mb-8 gap-4">
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              My Tutorials
+              {t('instructorDashboardPage.my_tutorials', { ns: 'dashboard' })}
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage and create your educational content
+              {t('tutorialsPage.description', { ns: 'dashboard' })}
             </p>
           </div>
           <button
             onClick={() => router.push("/dashboard/instructor/tutorials/create")}
             className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-3 px-6 rounded-xl flex items-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
           >
-            <FaPlus className="mr-2" /> Create Tutorial
+            <FaPlus className="mr-2" /> {t('instructorDashboardPage.create_tutorial', { ns: 'dashboard' })}
           </button>
         </div>
 
@@ -156,7 +161,7 @@ export default function InstructorTutorialsPage() {
               </div>
               <input
                 type="text"
-                placeholder="Search tutorials..."
+                placeholder={t('list.search_placeholder', { ns: 'tutorials' })}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -461,4 +466,16 @@ export default function InstructorTutorialsPage() {
       />
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }

@@ -1,6 +1,7 @@
 // ViewTutorialPage.js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
 import {
@@ -25,6 +26,7 @@ import {
 
 export default function ViewTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const { t } = useTranslation();
   const [tutorial, setTutorial] = useState(null);
@@ -55,7 +57,7 @@ export default function ViewTutorialPage() {
         setTutorial(data?.data || data || null);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t('detail.load_error', { ns: 'tutorials' }));
       } finally {
         setLoading(false);
       }
@@ -63,13 +65,13 @@ export default function ViewTutorialPage() {
     load();
   }, [id]);
 
-  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (loading) return <div className="p-6">{t('loading', { ns: 'common' })}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorial) return <div className="p-6">Tutorial not found.</div>;
+  if (!tutorial) return <div className="p-6">{t('detail.not_found', { ns: 'tutorials' })}</div>;
 
   return (
     <InstructorLayout>
-      <motion.div 
+      <motion.div
         className="p-6 space-y-8 max-w-5xl mx-auto" 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -160,9 +162,11 @@ export default function ViewTutorialPage() {
 
         {/* Thumbnail */}
         <div className="w-full h-52 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-lg">
-          <img
+          <Image
             src={tutorial.thumbnail}
             alt={tutorial.title}
+            width={1280}
+            height={720}
             className="w-full h-full object-cover"
           />
         </div>
@@ -344,5 +348,17 @@ export default function ViewTutorialPage() {
       />
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
 

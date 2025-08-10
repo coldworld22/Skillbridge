@@ -3,16 +3,26 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { createTutorial } from "@/services/admin/tutorialService";
+import { createNotification } from "@/services/notificationService";
+import { sendChatMessage } from "@/services/messageService";
+import useAuthStore from "@/store/auth/authStore";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
 import ReviewStep from "@/components/tutorials/create/ReviewStep";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function CreateTutorialPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const [tutorialData, setTutorialData] = useState({
     title: "",
     shortDescription: "",
@@ -30,6 +40,10 @@ export default function CreateTutorialPage() {
   });
 
   const [categories, setCategories] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const refreshNotifications = useNotificationStore((state) => state.fetch);
+  const refreshMessages = useMessageStore((state) => state.fetch);
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialCreatePage' });
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
@@ -51,7 +65,7 @@ export default function CreateTutorialPage() {
         setCategories(result?.data || []);
 
       } catch (err) {
-        console.error("Failed to load categories", err);
+        console.error(t('tutorialCreatePage.load_categories_failed', { ns: 'dashboard' }), err);
       }
     };
 
@@ -63,7 +77,7 @@ export default function CreateTutorialPage() {
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error("Please upload a video for each lesson before submitting.");
+      toast.error(t('video_required'));
       return;
     }
     const formData = new FormData();
@@ -95,16 +109,32 @@ export default function CreateTutorialPage() {
 
     try {
       await createTutorial(formData);
-      toast.success(
-        status === "draft"
-          ? "Tutorial saved as draft!"
-          : "Tutorial submitted successfully! Waiting for admin approval."
-      );
+      toast.success(status === "draft" ? t('draft_success') : t('submit_success'));
+      const message = t('creation_notification', { title: tutorialData.title });
+
+      try {
+        await createNotification({
+          user_id: user.id,
+          type: "tutorial_created",
+          message,
+        });
+        refreshNotifications?.();
+      } catch (notifyErr) {
+        console.error(notifyErr);
+      }
+
+      try {
+        await sendChatMessage(user.id, { text: message });
+        refreshMessages?.();
+      } catch (msgErr) {
+        console.error(msgErr);
+      }
+
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/instructor/tutorials");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to create tutorial");
+      toast.error(err.response?.data?.message || t('creation_failed'));
     }
   };
 
@@ -115,7 +145,7 @@ export default function CreateTutorialPage() {
   return (
     <InstructorLayout>
       <div className="p-8 bg-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 {t('tutorialCreatePage.title', { ns: 'dashboard' })}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
@@ -191,4 +221,16 @@ export default function CreateTutorialPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
