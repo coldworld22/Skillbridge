@@ -332,7 +332,7 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
   if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
-  await service.togglePublishStatus(tutorialId);
+  const updated = await service.togglePublishStatus(tutorialId);
 
   const tut = await service.getTutorialById(tutorialId);
   if (
