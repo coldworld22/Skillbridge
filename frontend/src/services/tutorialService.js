@@ -17,6 +17,7 @@ const formatTutorial = (tut) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
     : null,
   instructorBio: tut.instructor_bio || tut.instructorBio,
+  price: tut.price != null ? Number(tut.price) : 0,
   rating: typeof tut.rating === "string" || typeof tut.rating === "number"
     ? parseFloat(tut.rating)
     : 0,

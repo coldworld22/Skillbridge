@@ -406,7 +406,7 @@ export default function TutorialDetail() {
 
         <TutorialHeader
           {...tutorial}
-          price={tutorial.is_paid && tutorial.price ? `$${tutorial.price}` : t("free")}
+          price={Number(tutorial.price) > 0 ? `$${tutorial.price}` : t("free")}
         />
         <InstructorBio
           name={tutorial.instructor}
