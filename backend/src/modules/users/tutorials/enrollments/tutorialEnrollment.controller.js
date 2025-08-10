@@ -11,6 +11,8 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const tutorial = await db("tutorials").where({ id: tutorialId }).first();
   if (!tutorial) throw new AppError("Tutorial not found", 404);
+  if (tutorial.moderation_status !== "Approved")
+    throw new AppError("Tutorial not approved", 400);
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
