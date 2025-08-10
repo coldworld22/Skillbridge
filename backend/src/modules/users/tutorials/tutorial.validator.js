@@ -25,6 +25,7 @@ exports.create = z.object({
     category_id: z.string(), // assuming UUID
     instructor_id: z.string().uuid().optional(),
     level: z.string(),
+    language: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
     price: z.preprocess(
       (val) => (val === '' || val === undefined ? undefined : Number(val)),
