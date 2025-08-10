@@ -7,23 +7,51 @@ import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
-import { formatCurrency } from "@/utils/currency";
+import {
+  fetchPublishedTutorials,
+  fetchTutorialProgress,
+} from "@/services/tutorialService";
+import useAuthStore from "@/store/auth/authStore";
 
 /**
- * Retrieves enrollment status and progress percentage for a tutorial from
- * `localStorage`.
+ * Retrieves enrollment status and progress percentage for a tutorial.
+ * Prefers backend API data and falls back to `localStorage` if unavailable.
  * @param {Object} tut - Tutorial information containing an `id` and optional
  * chapter metadata.
- * @returns {{enrolled: boolean, progressPercent: number}}
+ * @returns {Promise<{enrolled: boolean, progressPercent: number}>}
  */
-export const loadTutorialStatus = (tut) => {
+export const loadTutorialStatus = async (tut) => {
+  const userId = useAuthStore.getState().user?.id;
   let enrolled = false;
   let progressPercent = 0;
 
+  try {
+    const apiData = await fetchTutorialProgress(tut.id);
+    if (apiData) {
+      enrolled = !!apiData.enrolled;
+      if (apiData.progressPercent != null) {
+        progressPercent = Number(apiData.progressPercent);
+      } else if (apiData.progress != null) {
+        progressPercent = Number(apiData.progress);
+      } else if (
+        apiData.completedChapters != null &&
+        apiData.totalChapters
+      ) {
+        progressPercent =
+          (apiData.completedChapters / apiData.totalChapters) * 100;
+      }
+      return { enrolled, progressPercent };
+    }
+  } catch (err) {
+    // Ignore API errors and fall back to localStorage
+  }
+
   if (typeof window !== "undefined") {
-    enrolled = !!localStorage.getItem(`enrolled-${tut.id}`);
-    const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+    const prefix = userId ? `${userId}-` : "";
+    enrolled = !!localStorage.getItem(`enrolled-${prefix}${tut.id}`);
+    const saved = localStorage.getItem(
+      `progress-tutorial-${prefix}${tut.id}`
+    );
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -105,13 +133,15 @@ const TutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    if (!tutorials.length || !user || !isStudent) return;
+    if (!tutorials.length) return;
     const loadStatuses = async () => {
-      await syncOffline();
-      tutorials.forEach((t) => fetchStatus(t.id));
+      const entries = await Promise.all(
+        tutorials.map(async (t) => [t.id, await loadTutorialStatus(t)])
+      );
+      setStatusMap(Object.fromEntries(entries));
     };
     loadStatuses();
-  }, [tutorials, user, isStudent]);
+  }, [tutorials]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =

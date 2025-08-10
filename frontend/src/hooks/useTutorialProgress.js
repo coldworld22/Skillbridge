@@ -3,10 +3,6 @@ import useAuthStore from "@/store/auth/authStore";
 
 export default function useTutorialProgress(tutorialId, chapters = []) {
   const userId = useAuthStore((s) => s.user?.id);
-  const storageKey = userId
-    ? `progress-tutorial-${tutorialId}-${userId}`
-    : `progress-tutorial-${tutorialId}`;
-
   const [progress, setProgress] = useState({
     completedChapters: [], // will now store chapter IDs
     lastIndex: 0,
@@ -15,7 +11,8 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
 
   useEffect(() => {
     if (!tutorialId) return;
-    const stored = localStorage.getItem(storageKey);
+    const key = `progress-tutorial-${userId ? `${userId}-` : ""}${tutorialId}`;
+    const stored = localStorage.getItem(key);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -32,7 +29,7 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
             .filter(Boolean);
           const migrated = { ...parsed, completedChapters: ids };
           setProgress(migrated);
-          localStorage.setItem(storageKey, JSON.stringify(migrated));
+          localStorage.setItem(key, JSON.stringify(migrated));
         } else {
           setProgress(parsed);
         }
@@ -40,23 +37,15 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
         // ignore parse errors
       }
     }
-  }, [tutorialId, chapters, storageKey]);
+  }, [tutorialId, chapters, userId]);
 
   const persist = (data) => {
     setProgress(data);
     if (tutorialId) {
-      localStorage.setItem(storageKey, JSON.stringify(data));
-      const total = Array.isArray(chapters) ? chapters.length : 0;
-      const percent = total
-        ? Math.round((data.completedChapters.length / total) * 100)
-        : 0;
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("tutorial-progress", {
-            detail: { tutorialId, percent },
-          }),
-        );
-      }
+      const key = `progress-tutorial-${
+        userId ? `${userId}-` : ""
+      }${tutorialId}`;
+      localStorage.setItem(key, JSON.stringify(data));
     }
   };
 

@@ -140,19 +140,8 @@ export const fetchTutorialAssignments = async (tutorialId) => {
   return res.data?.data ?? [];
 };
 
-// Fetch enrollment status and progress for a tutorial
-export const fetchEnrollmentStatus = async (tutorialId) => {
-  const { data } = await api.get(`/users/tutorials/enroll/${tutorialId}/status`);
-  const payload = data?.data ?? data;
-  return {
-    enrolled: payload.enrolled ?? !!payload.status,
-    status: payload.status ?? null,
-    progress: payload.progress ?? 0,
-  };
-};
-
-// Update progress percentage for a tutorial
-export const updateTutorialProgress = async (tutorialId, progress) => {
-  const { data } = await api.patch(`/users/tutorials/enroll/${tutorialId}/progress`, { progress });
-  return data;
+// Retrieve the current user's enrollment status and progress for a tutorial
+export const fetchTutorialProgress = async (tutorialId) => {
+  const { data } = await api.get(`/users/tutorials/progress/${tutorialId}`);
+  return data?.data ?? null;
 };
