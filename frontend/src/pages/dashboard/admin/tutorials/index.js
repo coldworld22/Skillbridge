@@ -50,6 +50,10 @@ function AdminTutorialsPage() {
   const [tutorialToReject, setTutorialToReject] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
+  useEffect(() => {
+    setSelectedTutorials([]);
+  }, [searchQuery, filterCategory, filterStatus, filterApproval]);
+
   // Load tutorials and categories from backend on mount
   useEffect(() => {
     const loadData = async () => {
