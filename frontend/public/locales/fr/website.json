@@ -162,5 +162,8 @@
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
-  "by_author": "by {{author}}"
+  "by_author": "by {{author}}",
+  "network_error": "Erreur réseau : veuillez vérifier API_BASE_URL et le serveur backend.",
+  "tutorials_load_error": "Échec du chargement des tutoriels.",
+  "categories_load_error": "Échec du chargement des catégories."
  }

@@ -54,8 +54,8 @@ const LandingTutorialsSection = () => {
       } catch (err) {
         const msg =
           err.code === "ERR_NETWORK"
-            ? "Network error: please check API_BASE_URL and backend server."
-            : "Failed to load tutorials";
+            ? t('network_error')
+            : t('tutorials_load_error');
         toast.error(msg);
       }
       try {
@@ -64,10 +64,10 @@ const LandingTutorialsSection = () => {
       } catch (err) {
         const msg =
           err.code === "ERR_NETWORK"
-            ? "Network error: please check API_BASE_URL and backend server."
-            : "Failed to load categories";
+            ? t('network_error')
+            : t('categories_load_error');
         toast.error(msg);
-        console.error("Failed to load categories", err);
+        console.error(t('categories_load_error'), err);
       }
       try {
         const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
