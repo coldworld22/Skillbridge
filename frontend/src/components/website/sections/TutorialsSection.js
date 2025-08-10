@@ -343,6 +343,11 @@ const LandingTutorialsSection = () => {
 
                   onClick={async (e) => {
                     e.stopPropagation();
+                    if (!user) return router.push('/auth/login');
+                    if (!isStudent) {
+                      toast.error('Only students can purchase tutorials.');
+                      return;
+                    }
                     try {
                       await addItem({
                         id: tut.id,
@@ -352,7 +357,6 @@ const LandingTutorialsSection = () => {
                       });
                       toast.success('Added to cart');
                     } catch (err) {
-
                       toast.error('Failed to add to cart');
                     }
                   }}
