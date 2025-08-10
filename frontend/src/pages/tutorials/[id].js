@@ -18,6 +18,7 @@ import useCartStore from "@/store/cart/cartStore";
 import useTutorialProgress from "@/hooks/useTutorialProgress";
 import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
 import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
+import { FaBookmark, FaHeart } from "react-icons/fa";
 
 const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
 const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
@@ -30,6 +31,12 @@ import {
   fetchPublishedTutorials,
   fetchTutorialAssignments,
   enrollInTutorial,
+  addTutorialToWishlist,
+  removeTutorialFromWishlist,
+  getMyTutorialWishlist,
+  addTutorialToFavorites,
+  removeTutorialFromFavorites,
+  getMyTutorialFavorites,
 } from "@/services/tutorialService";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
@@ -69,10 +76,12 @@ export default function TutorialDetail() {
   const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const user = useAuthStore((state) => state.user);
-  const addItem = useCartStore((state) => state.addItem);
+  const isStudent = user?.role?.toLowerCase() === "student";
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [inFavorites, setInFavorites] = useState(false);
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
@@ -172,6 +181,18 @@ export default function TutorialDetail() {
           (t) => String(t.id) !== String(data.id),
         );
         setRelated(others.slice(0, 3));
+        if (isLoggedIn && isStudent) {
+          try {
+            const [w, f] = await Promise.all([
+              getMyTutorialWishlist(),
+              getMyTutorialFavorites(),
+            ]);
+            setInWishlist(w.some((t) => String(t.id) === String(data.id)));
+            setInFavorites(f.some((t) => String(t.id) === String(data.id)));
+          } catch (err) {
+            console.error('Failed to load user lists', err);
+          }
+        }
       } catch (err) {
         console.error(err);
         setError(t("load_error"));
@@ -180,7 +201,7 @@ export default function TutorialDetail() {
       }
     };
     load();
-  }, [id]);
+  }, [id, isLoggedIn, isStudent]);
 
 
 
@@ -254,6 +275,54 @@ export default function TutorialDetail() {
     setIndex(currentIndex);
   };
 
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inWishlist) {
+        await removeTutorialFromWishlist(tutorial.id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addTutorialToWishlist(tutorial.id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (err) {
+      toast.error('Failed to update wishlist');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inFavorites) {
+        await removeTutorialFromFavorites(tutorial.id);
+        setInFavorites(false);
+        toast.success('Removed from favorites');
+      } else {
+        await addTutorialToFavorites(tutorial.id);
+        setInFavorites(true);
+        toast.success('Added to favorites');
+      }
+    } catch (err) {
+      toast.error('Failed to update favorites');
+    }
+  };
+
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <Head>
@@ -302,6 +371,21 @@ export default function TutorialDetail() {
         />
 
         <div className="flex justify-end mb-4 gap-3">
+          <button
+            onClick={handleToggleFavorite}
+            aria-label={inFavorites ? "Remove from favorites" : "Add to favorites"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaHeart className={inFavorites ? "text-red-500" : "text-white"} />
+          </button>
+
+          <button
+            onClick={handleToggleWishlist}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaBookmark className={inWishlist ? "text-yellow-400" : "text-white"} />
+          </button>
 
           <button
             onClick={() =>
