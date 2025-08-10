@@ -339,6 +339,9 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
   const updated = await service.togglePublishStatus(tutorialId);
+  if (!updated) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
   const tut = await service.getTutorialById(tutorialId);
   if (
