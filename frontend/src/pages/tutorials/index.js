@@ -55,7 +55,7 @@ const TutorialsSection = () => {
   const [filters, setFilters] = useState({
     categories: [],
     levels: [],
-    price: 100,
+    price: null,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [statusMap, setStatusMap] = useState({});
@@ -77,7 +77,7 @@ const TutorialsSection = () => {
   };
 
   const resetFilters = () => {
-    setFilters((prev) => ({ ...prev, categories: [], levels: [], price: 100 }));
+    setFilters((prev) => ({ ...prev, categories: [], levels: [], price: null }));
   };
 
   useEffect(() => {
@@ -114,7 +114,8 @@ const TutorialsSection = () => {
       !filters.levels.length || filters.levels.includes(tut.level);
 
     const matchPrice =
-      !filters.price ||
+      filters.price == null ||
+      filters.price === Infinity ||
       tut.price == null ||
       Number(tut.price) <= Number(filters.price);
 
