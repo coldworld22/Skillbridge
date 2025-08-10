@@ -25,6 +25,11 @@ function CreateTutorialPage() {
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const notify = async (type, message) => {
+    if (!user?.id) {
+      toast.warn('Notification skipped: missing user data.');
+      return;
+    }
+
     try {
       await createNotification({ user_id: user.id, type, message });
       await sendChatMessage(user.id, { text: message });
