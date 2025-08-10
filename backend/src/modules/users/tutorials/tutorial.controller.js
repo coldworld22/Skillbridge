@@ -116,6 +116,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     level,
     duration: duration ?? null,
     price,
+    is_paid: Number(price) > 0,
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
