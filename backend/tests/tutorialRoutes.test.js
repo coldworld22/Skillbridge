@@ -75,6 +75,24 @@ describe('PUT /api/users/tutorials/admin/:id', () => {
     expect(res.status).toBe(403);
     expect(service.updateTutorial).not.toHaveBeenCalled();
   });
+
+  it('updates tutorial with language and status', async () => {
+    const payload = {
+      title: 'New',
+      category_id: 'cat',
+      level: 'beginner',
+      language: 'en',
+      status: 'published',
+    };
+    const updated = { id: '1', ...payload };
+    service.updateTutorial.mockResolvedValue(updated);
+    const res = await request(app)
+      .put('/api/users/tutorials/admin/1')
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(service.updateTutorial).toHaveBeenCalledWith('1', expect.objectContaining(payload));
+    expect(res.body.data).toEqual(updated);
+  });
 });
 
 describe('DELETE /api/users/tutorials/admin/:id', () => {

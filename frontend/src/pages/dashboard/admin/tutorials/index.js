@@ -31,7 +31,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
 function AdminTutorialsPage() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialsPage' });
+  const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,24 +56,34 @@ function AdminTutorialsPage() {
 
   // Load tutorials and categories from backend on mount
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+
     const loadData = async () => {
       try {
         setLoading(true);
         const [tuts, cats] = await Promise.all([
-          fetchAllTutorials(),
-          fetchAllCategories(),
+          fetchAllTutorials({ signal: controller.signal }),
+          fetchAllCategories({}, { signal: controller.signal }),
         ]);
+        if (!isMounted) return;
         setTutorials(tuts);
         setCategories(cats?.data || cats || []);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
-        toast.error(t('load_error'));
+        if (isMounted) toast.error(t('load_error'));
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   // Pagination
@@ -81,17 +91,17 @@ function AdminTutorialsPage() {
   const tutorialsPerPage = 10;
 
   // Filtering
-  const filteredTutorials = tutorials
-    .filter((tut) => {
-      const matchesSearch =
-        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        filterCategory === "All" || tut.category === filterCategory;
-      const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
-      const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
-      return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
-    });
+  const filteredTutorials = tutorials.filter((tut) => {
+    const matchesSearch =
+      tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      filterCategory === "All" || tut.category === filterCategory;
+    const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
+    const matchesApproval =
+      filterApproval === "All" || tut.approvalStatus === filterApproval;
+    return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
+  });
 
   const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage);
   const startIndex = (currentPage - 1) * tutorialsPerPage;
@@ -101,7 +111,7 @@ function AdminTutorialsPage() {
   // Functions
   const toggleSelectOne = (id) => {
     setSelectedTutorials((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -113,8 +123,8 @@ function AdminTutorialsPage() {
       ]);
     } else {
       const pageIds = paginatedTutorials.map((tut) => tut.id);
-      setSelectedTutorials((prevSelected) =>
-        prevSelected.filter((id) => !pageIds.includes(id)) // Remove only current page IDs
+      setSelectedTutorials(
+        (prevSelected) => prevSelected.filter((id) => !pageIds.includes(id)), // Remove only current page IDs
       );
     }
   };
@@ -135,32 +145,44 @@ function AdminTutorialsPage() {
         prev.map((tut) =>
           tut.id === id
             ? { ...target, updatedAt: new Date().toISOString() }
-            : tut
-        )
+            : tut,
+        ),
       );
       const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
-      toast.success(t('status_updated'));
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_status_changed",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      toast.success(t("status_updated"));
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_status_changed",
-          message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_status_changed",
+            message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Status updated but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('update_failed'));
+      toast.error(t("update_failed"));
     }
   };
 
@@ -179,12 +201,14 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
-      toast.success(t('deleted'));
+      toast.success(t("deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('delete_failed'));
+      toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
+      setSelectedTutorials((prev) =>
+        prev.filter((id) => id !== tutorialToDelete),
+      );
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -207,32 +231,46 @@ function AdminTutorialsPage() {
         prev.map((tut) =>
           tut.id === tutorialToReject
             ? { ...target, updatedAt: new Date().toISOString() }
-            : tut
-        )
+            : tut,
+        ),
       );
-      toast.success(t('rejected'));
+      toast.success(t("rejected"));
       const message = `Tutorial "${target.title}" was rejected.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_rejected",
-        message,
-      });
-      await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_rejected",
-          message: `Your tutorial "${target.title}" was rejected.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: `${message} Reason: ${reason}` }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_rejected",
+            message: `Your tutorial "${target.title}" was rejected.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn(
+          "Rejection processed but failed to send some notifications.",
+        );
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('reject_failed'));
+      toast.error(t("reject_failed"));
     } finally {
       setIsRejectionModalOpen(false);
       setTutorialToReject(null);
@@ -250,31 +288,43 @@ function AdminTutorialsPage() {
             return { ...target, updatedAt: new Date().toISOString() };
           }
           return tut;
-        })
+        }),
       );
-      toast.success(t('approved'));
+      toast.success(t("approved"));
       const message = `Tutorial "${target.title}" approved.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_approved",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_approved",
-          message: `Your tutorial "${target.title}" was approved!`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was approved!`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_approved",
+            message: `Your tutorial "${target.title}" was approved!`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was approved!`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Tutorial approved but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('approval_failed'));
+      toast.error(t("approval_failed"));
     }
   };
 
@@ -282,11 +332,13 @@ function AdminTutorialsPage() {
     if (selectedTutorials.length === 0) return;
     try {
       await bulkDeleteTutorials(selectedTutorials);
-      setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
-      toast.success(t('bulk_deleted'));
+      setTutorials((prev) =>
+        prev.filter((tut) => !selectedTutorials.includes(tut.id)),
+      );
+      toast.success(t("bulk_deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_delete_failed'));
+      toast.error(t("bulk_delete_failed"));
     } finally {
       setSelectedTutorials([]);
     }
@@ -299,14 +351,18 @@ function AdminTutorialsPage() {
       setTutorials((prev) =>
         prev.map((tut) =>
           selectedTutorials.includes(tut.id)
-            ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
-            : tut
-        )
+            ? {
+                ...tut,
+                approvalStatus: "Approved",
+                updatedAt: new Date().toISOString(),
+              }
+            : tut,
+        ),
       );
-      toast.success(t('bulk_approved'));
+      toast.success(t("bulk_approved"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_approve_failed'));
+      toast.error(t("bulk_approve_failed"));
     }
     setSelectedTutorials([]);
   };
@@ -321,18 +377,19 @@ function AdminTutorialsPage() {
   return (
     <AdminLayout>
       <div className="p-6 bg-gray-50 min-h-screen space-y-6">
-
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">📚 {t('title')}</h1>
-            <p className="text-gray-600 mt-1">{t('description')}</p>
+            <h1 className="text-3xl font-bold text-gray-800">
+              📚 {t("title")}
+            </h1>
+            <p className="text-gray-600 mt-1">{t("description")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
             className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-2.5 px-6 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
           >
-            <FaPlus className="mr-2" /> {t('create_tutorial')}
+            <FaPlus className="mr-2" /> {t("create_tutorial")}
           </Button>
         </div>
 
@@ -366,15 +423,21 @@ function AdminTutorialsPage() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.approvalStatus === "Pending").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
             <p className="text-gray-600">Published</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Published").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Published").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
             <p className="text-gray-600">Drafts</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Draft").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Draft").length}
+            </p>
           </div>
         </div>
 
@@ -398,6 +461,7 @@ function AdminTutorialsPage() {
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
 
+
           {filteredTutorials.length > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
@@ -415,15 +479,15 @@ function AdminTutorialsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          title={t('confirm_title')}
-          message={t('confirm_delete')}
+          title={t("confirm_title")}
+          message={t("confirm_delete")}
         />
-        
+
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
-          title={t('reject_title')}
+          title={t("reject_title")}
         />
       </div>
     </AdminLayout>
@@ -435,7 +499,11 @@ export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard"],
+        nextI18NextConfig,
+      )),
     },
   };
 }
