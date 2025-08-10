@@ -1,49 +1,36 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatTutorial = (tut) => {
-  const priceInfo =
-    tut.price && typeof tut.price === "object"
-      ? {
-          price: Number(tut.price.amount ?? 0),
-          currencyCode:
-            tut.price.currency ||
-            tut.price.currencyCode ||
-            tut.price.currency_code,
-        }
-      : {
-          price: tut.price != null ? Number(tut.price) : 0,
-          currencyCode: tut.currencyCode || tut.currency_code,
-        };
-
-  return {
-    ...tut,
-    thumbnail:
-      tut.thumbnail_url || tut.cover_image
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${
-            tut.thumbnail_url || tut.cover_image
-          }`
-        : null,
-    preview: tut.preview_video
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
+export const formatTutorial = (tut) => ({
+  ...tut,
+  thumbnail:
+    tut.thumbnail_url || tut.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${
+          tut.thumbnail_url || tut.cover_image
+        }`
       : null,
-    instructor: tut.instructor_name || tut.instructor,
-    instructorAvatar: tut.instructor_avatar
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
-      : null,
-    instructorBio: tut.instructor_bio || tut.instructorBio,
-    ...priceInfo,
-    rating: typeof tut.rating === "string" || typeof tut.rating === "number"
-      ? parseFloat(tut.rating)
-      : 0,
-    tags: Array.isArray(tut.tags)
-      ? tut.tags
-      : typeof tut.tags === "string"
-        ? tut.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
-        : [],
-    trending: Boolean(tut.trending),
-  };
-};
+  preview: tut.preview_video
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
+    : null,
+  instructor: tut.instructor_name || tut.instructor,
+  instructorAvatar: tut.instructor_avatar
+    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
+    : null,
+  instructorBio: tut.instructor_bio || tut.instructorBio,
+  price:
+    tut.price === null || tut.price === undefined
+      ? null
+      : parseFloat(tut.price),
+  rating: typeof tut.rating === "string" || typeof tut.rating === "number"
+    ? parseFloat(tut.rating)
+    : 0,
+  tags: Array.isArray(tut.tags)
+    ? tut.tags
+    : typeof tut.tags === "string"
+      ? tut.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+      : [],
+  trending: Boolean(tut.trending),
+});
 
 export const fetchFeaturedTutorials = async () => {
   const res = await api.get("/users/tutorials/featured");
