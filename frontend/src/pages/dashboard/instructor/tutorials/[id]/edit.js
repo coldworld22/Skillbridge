@@ -42,7 +42,19 @@ export default function EditTutorialPage() {
         ...parsed,
         lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
       });
-      setLoading(false);
+
+      const loadCats = async () => {
+        try {
+          const cats = await fetchAllCategories();
+          setCategories(cats?.data || cats || []);
+        } catch (err) {
+          console.error(err);
+          setError(t("tutorials:detail.load_error"));
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadCats();
       return;
     }
 
