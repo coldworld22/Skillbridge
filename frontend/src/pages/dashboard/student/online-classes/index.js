@@ -37,7 +37,7 @@ export default function MyEnrolledClassesPage() {
   }, []);
 
   const filteredClasses = classes
-    .filter(cls => filter === 'all' || cls.status.toLowerCase() === filter)
+    .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
     .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       const dateA = new Date(a.startDate);
@@ -86,7 +86,9 @@ export default function MyEnrolledClassesPage() {
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)} ({
-                status === 'all' ? classes.length : classes.filter(c => c.status.toLowerCase() === status).length
+                status === 'all'
+                  ? classes.length
+                  : classes.filter(c => c.scheduleStatus.toLowerCase() === status).length
               })
             </button>
           ))}
@@ -118,21 +120,21 @@ export default function MyEnrolledClassesPage() {
                 <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
 
                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                  cls.status === 'Live'
+                  cls.scheduleStatus === 'Live'
                     ? 'bg-green-100 text-green-800'
-                    : cls.status === 'Upcoming'
+                    : cls.scheduleStatus === 'Upcoming'
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-200 text-gray-600'
                 }`}>
-                  {cls.status}
+                  {cls.scheduleStatus}
                 </span>
 
-                {cls.status === 'Upcoming' && (
+                {cls.scheduleStatus === 'Upcoming' && (
                   <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
                     <FaBell /> Notify Me
                   </button>
                 )}
-                {cls.status === 'Completed' && (
+                {cls.enrollmentStatus === 'completed' && (
                   <Link
                     href={`/dashboard/student/certificates/${cls.id}`}
                     className="text-xs text-green-600 underline mb-2 block text-center"
@@ -146,21 +148,27 @@ export default function MyEnrolledClassesPage() {
                 >
                   <FaClipboardList className="inline mr-1" /> View Assignments
                 </Link>
-                {cls.status === 'Live' && cls.joined ? (
+                {cls.scheduleStatus === 'Live' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"
                   >
                     <FaVideo className="inline mr-2" /> Join Class
                   </Link>
-                ) : cls.status === 'Upcoming' ? (
+                ) : cls.scheduleStatus === 'Upcoming' ? (
                   <p className="text-center text-sm text-yellow-600">
                     <FaHourglassHalf className="inline mr-1" /> Starts Soon
                   </p>
                 ) : (
-                  <p className="text-center text-sm text-gray-500">
-                    <FaCheckCircle className="inline mr-1" /> Completed
-                  </p>
+                  cls.enrollmentStatus === 'completed' ? (
+                    <p className="text-center text-sm text-gray-500">
+                      <FaCheckCircle className="inline mr-1" /> Completed
+                    </p>
+                  ) : (
+                    <p className="text-center text-sm text-gray-500">
+                      <FaHourglassHalf className="inline mr-1" /> Class Ended
+                    </p>
+                  )
                 )}
               </div>
             ))}
