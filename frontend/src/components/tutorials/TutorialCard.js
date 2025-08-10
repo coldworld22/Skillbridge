@@ -9,6 +9,20 @@ const DEFAULT_IMAGE =
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 
 const TutorialCard = ({ tutorial = {} }) => {
+  const addItem = useCartStore((state) => state.addItem);
+
+  const formattedPrice =
+    Number(tutorial.price) > 0 ? formatCurrency(tutorial.price) : "Free";
+
+  const handleAddToCart = async () => {
+    await addItem({
+      id: tutorial.id,
+      name: tutorial.title,
+      price: tutorial.price || 0,
+      item_type: "tutorial",
+    });
+  };
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
@@ -96,15 +110,26 @@ const TutorialCard = ({ tutorial = {} }) => {
           })()} &middot; {tutorial.duration || "Unknown Duration"}
         </div>
 
-        {/* Explore Button */}
-        <Link href={`/tutorials/${tutorial.id || 0}`} passHref>
-          <motion.button
-            className="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-full transition"
-            whileHover={{ scale: 1.03 }}
-          >
-            Explore Tutorial
-          </motion.button>
-        </Link>
+        {/* Actions */}
+        <div className="mt-4 flex gap-2">
+          <Link href={`/tutorials/${tutorial.id || 0}`} passHref>
+            <motion.button
+              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-full transition"
+              whileHover={{ scale: 1.03 }}
+            >
+              Explore Tutorial
+            </motion.button>
+          </Link>
+          {Number(tutorial.price) > 0 && (
+            <motion.button
+              onClick={handleAddToCart}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition"
+              whileHover={{ scale: 1.03 }}
+            >
+              Add to Cart
+            </motion.button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
