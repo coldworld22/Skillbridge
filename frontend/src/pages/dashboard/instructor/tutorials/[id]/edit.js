@@ -79,7 +79,7 @@ export default function EditTutorialPage() {
   }, [tutorialData, id]);
 
   const onNext = () => setStep((prev) => prev + 1);
-  const onPrev = () => setStep((prev) => prev - 1);
+  const onBack = () => setStep((prev) => prev - 1);
 
   if (loading) return <div className="p-6">{t("dashboard:tutorialEditPage.loading")}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
@@ -101,7 +101,7 @@ export default function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onBack}
           />
         )}
         {step === 3 && (
@@ -109,13 +109,13 @@ export default function EditTutorialPage() {
             tutorialData={tutorialData}
             setTutorialData={setTutorialData}
             onNext={onNext}
-            onPrev={onPrev}
+            onBack={onBack}
           />
         )}
         {step === 4 && (
           <ReviewStep
             tutorialData={tutorialData}
-            onBack={onPrev}
+            onBack={onBack}
             actionLabel={t("dashboard:tutorialEditPage.save_changes")}
             onPublish={async () => {
               const formData = new FormData();

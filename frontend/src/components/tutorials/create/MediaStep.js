@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "next-i18next";
 
@@ -7,6 +7,24 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [previewVideo, setPreviewVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    if (tutorialData?.thumbnail && !thumbnailPreview) {
+      if (tutorialData.thumbnail instanceof File) {
+        setThumbnailPreview(URL.createObjectURL(tutorialData.thumbnail));
+      } else {
+        setThumbnailPreview(tutorialData.thumbnail);
+      }
+    }
+    if (tutorialData?.preview && !previewVideo) {
+      if (tutorialData.preview instanceof File) {
+        setPreviewVideo(URL.createObjectURL(tutorialData.preview));
+      } else {
+        setPreviewVideo(tutorialData.preview);
+      }
+      setUploadProgress(100);
+    }
+  }, [tutorialData.thumbnail, tutorialData.preview, thumbnailPreview, previewVideo]);
 
   const handleThumbnailUpload = (e) => {
     const file = e.target.files[0];
