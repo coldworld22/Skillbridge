@@ -17,6 +17,11 @@ const mapFilesToBody = (req, _res, next) => {
 router.use(verifyToken);
 
 router.get("/users", controller.searchUsers);
+router.post(
+  "/moderation",
+  validate(validator.logModerationEvent),
+  controller.logModerationEvent
+);
 router.get("/:userId", controller.getConversation);
 router.post(
   "/:userId",
