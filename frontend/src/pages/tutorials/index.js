@@ -8,8 +8,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
 import { fetchPublishedTutorials } from "@/services/tutorialService";
-import useTutorialListsStore from "@/store/tutorials/tutorialListsStore";
-import useAuthStore from "@/store/auth/authStore";
+import { formatCurrency } from "@/utils/currency";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial from
@@ -439,7 +438,7 @@ const TutorialsSection = () => {
                         <div className="text-sm font-medium">
                           {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
-                              ${tut.price}
+                              {formatCurrency(tut.price, { currency: tut.currencyCode })}
                             </span>
                           ) : (
                             <span className="text-green-400">{t("free")}</span>

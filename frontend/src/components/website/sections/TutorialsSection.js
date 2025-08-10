@@ -9,6 +9,7 @@ import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import useTutorialListsStore from "@/store/tutorials/tutorialListsStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
+import { formatCurrency } from "@/utils/currency";
 
 import { fetchFeaturedTutorials } from "@/services/tutorialService";
 
@@ -255,7 +256,9 @@ const LandingTutorialsSection = () => {
                       : 'bg-green-500 text-black'
                   }`}
                 >
-                  {Number(tut.price) > 0 ? '$' + tut.price : t('free')}
+                  {Number(tut.price) > 0
+                    ? formatCurrency(tut.price, { currency: tut.currencyCode })
+                    : t('free')}
                 </span>
               </div>
 
