@@ -65,5 +65,15 @@
       "certificate_locked": "Certificat verrouillé",
       "free": "Gratuit"
     }
+  },
+  "dashboard": {
+    "tutorialEditPage": {
+      "loading": "Chargement du tutoriel...",
+      "not_found": "Tutoriel introuvable",
+      "save_changes": "Enregistrer les modifications",
+      "update_success": "Tutoriel mis à jour avec succès",
+      "notification_updated": "Notification mise à jour",
+      "update_failed": "Échec de la mise à jour du tutoriel"
+    }
   }
 }

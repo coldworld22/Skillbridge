@@ -65,5 +65,15 @@
       "certificate_locked": "Certificate locked",
       "free": "Free"
     }
+  },
+  "dashboard": {
+    "tutorialEditPage": {
+      "loading": "Loading tutorial...",
+      "not_found": "Tutorial not found",
+      "save_changes": "Save Changes",
+      "update_success": "Tutorial updated successfully",
+      "notification_updated": "Notification updated",
+      "update_failed": "Failed to update tutorial"
+    }
   }
 }
