@@ -9,10 +9,14 @@ import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
 import MediaStep from "@/components/tutorials/create/MediaStep";
 import ReviewStep from "@/components/tutorials/create/ReviewStep";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function CreateTutorialPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const { t } = useTranslation(["dashboard", "tutorials"]);
   const [tutorialData, setTutorialData] = useState({
     title: "",
     shortDescription: "",
@@ -63,7 +67,7 @@ export default function CreateTutorialPage() {
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
-      toast.error("Please upload a video for each lesson before submitting.");
+      toast.error(t("dashboard:tutorialCreatePage.upload_video_each_lesson"));
       return;
     }
     const formData = new FormData();
@@ -97,14 +101,14 @@ export default function CreateTutorialPage() {
       await createTutorial(formData);
       toast.success(
         status === "draft"
-          ? "Tutorial saved as draft!"
-          : "Tutorial submitted successfully! Waiting for admin approval."
+          ? t("dashboard:tutorialCreatePage.draft_saved")
+          : t("dashboard:tutorialCreatePage.submitted_success")
       );
       localStorage.removeItem("tutorialDraft");
       router.push("/dashboard/instructor/tutorials");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to create tutorial");
+      toast.error(err.response?.data?.message || t("dashboard:tutorialCreatePage.failed_create"));
     }
   };
 
@@ -115,11 +119,16 @@ export default function CreateTutorialPage() {
   return (
     <InstructorLayout>
       <div className="p-8 bg-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">🎬 Create New Tutorial</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">{t("dashboard:tutorialCreatePage.title")}</h1>
 
         {/* Step Progress */}
         <StepProgressBar
-          steps={["Basic Info", "Curriculum", "Media", "Pricing & Publish"]}
+          steps={[
+            t("dashboard:tutorialCreatePage.step_basic_info"),
+            t("dashboard:tutorialCreatePage.step_curriculum"),
+            t("dashboard:tutorialCreatePage.step_media"),
+            t("dashboard:tutorialCreatePage.step_pricing_publish"),
+          ]}
           currentStep={step}
           onStepClick={(s) => {
             if (s < step) setStep(s);
@@ -169,14 +178,14 @@ export default function CreateTutorialPage() {
                 onClick={prevStep}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-full font-bold"
               >
-                ⬅️ Back
+                {t("dashboard:tutorialCreatePage.back")}
               </button>
             )}
             <button
               onClick={saveDraft}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              💾 Save Draft
+              {t("dashboard:tutorialCreatePage.save_draft")}
             </button>
           </div>
           {step < 4 && (
@@ -184,11 +193,19 @@ export default function CreateTutorialPage() {
               onClick={nextStep}
               className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-full font-bold"
             >
-              Next ➡️
+              {t("dashboard:tutorialCreatePage.next")}
             </button>
           )}
         </div>
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard", "tutorials"], nextI18NextConfig)),
+    },
+  };
 }
