@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "next-i18next";
 
 export default function MediaStep({ tutorialData, setTutorialData, onNext, onBack }) {
+  const { t } = useTranslation("tutorials");
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [previewVideo, setPreviewVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleThumbnailUpload = (e) => {
     const file = e.target.files[0];
-    if (file && file.size < 2 * 1024 * 1024 && ["image/jpeg", "image/png"].includes(file.type)) {
+    if (
+      file &&
+      file.size < 10 * 1024 * 1024 &&
+      ["image/jpeg", "image/png"].includes(file.type)
+    ) {
       const url = URL.createObjectURL(file);
       setThumbnailPreview(url);
       setTutorialData((prev) => ({ ...prev, thumbnail: file }));
     } else {
-      alert("❌ Please upload a JPG/PNG file less than 2MB.");
+      alert(t("create.thumbnail_size_error"));
     }
   };
 
