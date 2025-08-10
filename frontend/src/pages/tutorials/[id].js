@@ -14,6 +14,7 @@ import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
 import CourseProgress from "@/components/classes/CourseProgress";
 import toast from "react-hot-toast";
 import useAuthStore from "@/store/auth/authStore";
+import useCartStore from "@/store/cart/cartStore";
 import useTutorialProgress from "@/hooks/useTutorialProgress";
 import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
 import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
@@ -67,6 +68,8 @@ export default function TutorialDetail() {
   const [testPassed, setTestPassed] = useState(false);
   const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
+  const user = useAuthStore((state) => state.user);
+  const addItem = useCartStore((state) => state.addItem);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
@@ -99,6 +102,32 @@ export default function TutorialDetail() {
     } catch (err) {
       console.error("Enrollment failed", err);
       toast.error(t("enroll_fail"));
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!tutorial) return;
+    if (!isLoggedIn) {
+      toast.error(t("login_first"));
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role?.toLowerCase() !== "student") {
+      toast.error("Only students can purchase");
+      return;
+    }
+
+    try {
+      await addItem({
+        id: tutorial.id,
+        name: tutorial.title,
+        price: tutorial.price,
+      });
+      toast.success("Added to cart");
+      router.push("/cart");
+    } catch (err) {
+      console.error("Failed to add to cart", err);
+      toast.error("Failed to add to cart");
     }
   };
 
@@ -240,6 +269,7 @@ export default function TutorialDetail() {
             onEnroll={enroll}
             isPaid={Number(tutorial.price) > 0}
             price={tutorial.price}
+            onAddToCart={handleAddToCart}
           />
         )}
 
