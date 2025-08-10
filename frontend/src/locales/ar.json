@@ -142,5 +142,15 @@
       "certificate_locked": "الشهادة مقفلة",
       "free": "مجاني"
     }
+  },
+  "dashboard": {
+    "tutorialEditPage": {
+      "loading": "جارٍ تحميل الدرس...",
+      "not_found": "الدرس غير موجود",
+      "save_changes": "حفظ التغييرات",
+      "update_success": "تم تحديث الدرس بنجاح",
+      "notification_updated": "تم تحديث الإشعار",
+      "update_failed": "فشل تحديث الدرس"
+    }
   }
 }
