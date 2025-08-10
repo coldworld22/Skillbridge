@@ -299,6 +299,18 @@ const LandingTutorialsSection = () => {
                 </span>
               </div>
 
+              <div className="mt-2">
+                <span
+                  className={`px-2 py-1 rounded-full text-sm font-semibold ${
+                    tut.is_paid && tut.price
+                      ? 'bg-yellow-500 text-black'
+                      : 'bg-green-500 text-black'
+                  }`}
+                >
+                  {tut.is_paid && tut.price ? '$' + tut.price : t('free')}
+                </span>
+              </div>
+
               {/* Progress Bar */}
               <div className="mt-3">
                 <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
