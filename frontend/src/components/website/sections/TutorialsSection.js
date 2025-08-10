@@ -170,7 +170,9 @@ const LandingTutorialsSection = () => {
 
       {/* Tutorial Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
-        {filteredTutorials.map((tut, index) => (
+        {filteredTutorials.map((tut, index) => {
+          const isTopRated = Array.isArray(tut.tags) && tut.tags.includes("Top Rated");
+          return (
           <motion.div
             key={tut.id}
             whileHover={{ scale: 1.03 }}
@@ -203,15 +205,15 @@ const LandingTutorialsSection = () => {
                   sizes="100vw"
                 />
               )}
-              {tut.tags.includes("Top Rated") || tut.trending ? (
+              {(isTopRated || tut.trending) && (
                 <span
                   className={`absolute top-2 left-2 px-2 py-1 text-xs rounded-full shadow text-white ${
-                    tut.tags.includes("Top Rated") ? "bg-red-600" : "bg-orange-600"
+                    isTopRated ? "bg-red-600" : "bg-orange-600"
                   }`}
                 >
-                  {tut.tags.includes("Top Rated") ? "🔥 Top Rated" : "🔥 Trending"}
+                  {isTopRated ? "🔥 Top Rated" : "🔥 Trending"}
                 </span>
-              ) : null}
+              )}
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
@@ -279,15 +281,16 @@ const LandingTutorialsSection = () => {
                 <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">
                   {tut.level}
                 </span>
-                {tut.tags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300"
-                    title={`Tag: ${tag}`}
-                  >
-                    #{tag}
-                  </span>
-                ))}
+                {Array.isArray(tut.tags) &&
+                  tut.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="bg-gray-700 px-2 py-1 rounded-full text-yellow-300"
+                      title={`Tag: ${tag}`}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
               </div>
 
               <div className="flex justify-between mt-4 text-sm text-gray-400">
@@ -367,7 +370,8 @@ const LandingTutorialsSection = () => {
               </div>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Explore Button */}
