@@ -1,6 +1,7 @@
 // ViewTutorialPage.js
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { motion } from "framer-motion"; // Smooth animation
 import {
@@ -15,9 +16,13 @@ import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
 import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function ViewTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
   const [tutorial, setTutorial] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +38,7 @@ export default function ViewTutorialPage() {
         setTutorial(data?.data || data || null);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t('detail.load_error', { ns: 'tutorials' }));
       } finally {
         setLoading(false);
       }
@@ -41,13 +46,13 @@ export default function ViewTutorialPage() {
     load();
   }, [id]);
 
-  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (loading) return <div className="p-6">{t('loading', { ns: 'common' })}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorial) return <div className="p-6">Tutorial not found.</div>;
+  if (!tutorial) return <div className="p-6">{t('detail.not_found', { ns: 'tutorials' })}</div>;
 
   return (
     <InstructorLayout>
-      <motion.div 
+      <motion.div
         className="p-6 space-y-8 max-w-5xl mx-auto" 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,13 +90,13 @@ export default function ViewTutorialPage() {
           </button>
           <button
             onClick={async () => {
-              if (!window.confirm('Are you sure you want to delete this tutorial?')) return;
+              if (!window.confirm(t('tutorialsPage.confirm_delete', { ns: 'dashboard' }))) return;
               try {
                 await deleteInstructorTutorial(tutorial.id);
                 router.push('/dashboard/instructor/tutorials');
               } catch (err) {
                 console.error(err);
-                alert('Failed to delete tutorial');
+                alert(t('tutorialsPage.delete_failed', { ns: 'dashboard' }));
               }
             }}
             className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
@@ -121,9 +126,11 @@ export default function ViewTutorialPage() {
 
         {/* Thumbnail */}
         <div className="w-full h-52 sm:h-80 md:h-96 overflow-hidden rounded-2xl shadow-lg">
-          <img
+          <Image
             src={tutorial.thumbnail}
             alt={tutorial.title}
+            width={1280}
+            height={720}
             className="w-full h-full object-cover"
           />
         </div>
@@ -283,5 +290,17 @@ export default function ViewTutorialPage() {
       />
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
 
