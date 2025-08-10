@@ -14,7 +14,7 @@ exports.listTags = catchAsync(async (req, res) => {
 exports.createTag = catchAsync(async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    return sendSuccess(res, null, "Name required");
+    return res.status(400).json({ message: "Name required" });
   }
   let tag = await service.findByName(name);
   if (!tag) {
