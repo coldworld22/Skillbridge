@@ -63,8 +63,8 @@ function StudentDashboardHome() {
         const formatted = list.map((cls) => ({
           id: cls.id,
           title: cls.title,
-          progress: cls.status === "completed" ? 100 : 0,
-          nextSession: cls.start_date,
+          progress: cls.progress,
+          nextSession: cls.startDate,
         }));
         setClasses(formatted);
       } catch (err) {
