@@ -20,10 +20,11 @@ export const createTutorial = async (formData) => {
 /**
  * Fetch all tutorials for admin dashboard view.
  *
+ * @param {object} config - Optional Axios config (e.g. abort signal)
  * @returns {Promise<Array>} Array of tutorial objects
  */
-export const fetchAllTutorials = async () => {
-  const { data } = await api.get("/users/tutorials/admin");
+export const fetchAllTutorials = async (config = {}) => {
+  const { data } = await api.get("/users/tutorials/admin", config);
   const tutorials = data?.data ?? [];
   return tutorials.map((t) => ({
     id: t.id,

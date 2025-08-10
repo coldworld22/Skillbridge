@@ -52,24 +52,34 @@ function AdminTutorialsPage() {
 
   // Load tutorials and categories from backend on mount
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+
     const loadData = async () => {
       try {
         setLoading(true);
         const [tuts, cats] = await Promise.all([
-          fetchAllTutorials(),
-          fetchAllCategories(),
+          fetchAllTutorials({ signal: controller.signal }),
+          fetchAllCategories({}, { signal: controller.signal }),
         ]);
+        if (!isMounted) return;
         setTutorials(tuts);
         setCategories(cats?.data || cats || []);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
-        toast.error(t('load_error'));
+        if (isMounted) toast.error(t('load_error'));
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   // Pagination
