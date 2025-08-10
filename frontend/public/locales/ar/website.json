@@ -162,5 +162,8 @@
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
-  "by_author": "by {{author}}"
+  "by_author": "by {{author}}",
+  "network_error": "خطأ في الشبكة: يرجى التحقق من API_BASE_URL وخادم الخلفية.",
+  "tutorials_load_error": "فشل تحميل الدروس.",
+  "categories_load_error": "فشل تحميل الفئات."
  }

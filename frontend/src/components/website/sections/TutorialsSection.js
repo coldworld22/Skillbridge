@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
@@ -9,15 +10,23 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 
-import { fetchFeaturedTutorials } from "@/services/tutorialService";
+import {
+  fetchFeaturedTutorials,
+  addTutorialToWishlist,
+  removeTutorialFromWishlist,
+  getMyTutorialWishlist,
+} from "@/services/tutorialService";
 
 const PROGRESS_KEY = "skillbridge_tutorialProgress";
 
 
-const getStars = (rating) => {
-  const safeRating = Number.isFinite(rating) && rating > 0 ? rating : 0;
+export const getStars = (rating) => {
+  const safeRating = Number.isFinite(rating)
+    ? Math.min(Math.max(rating, 0), 5)
+    : 0;
   const full = Math.floor(safeRating);
   const half = safeRating % 1 >= 0.5;
   return (
@@ -38,6 +47,9 @@ const LandingTutorialsSection = () => {
   const [progress, setProgress] = useState({});
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const user = useAuthStore((state) => state.user);
+  const isStudent = user?.role?.toLowerCase() === 'student';
+  const [wishlistIds, setWishlistIds] = useState([]);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -95,6 +107,19 @@ const LandingTutorialsSection = () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!user || !isStudent) return;
+    const loadWishlist = async () => {
+      try {
+        const w = await getMyTutorialWishlist();
+        setWishlistIds(w.map((t) => t.id));
+      } catch (err) {
+        console.error('Failed to load wishlist', err);
+      }
+    };
+    loadWishlist();
+  }, [user, isStudent]);
 
   const filteredTutorials =
     activeTab === "All"
@@ -159,11 +184,14 @@ const LandingTutorialsSection = () => {
                   className="w-full h-full object-cover group-hover:brightness-75"
                 />
               ) : (
-                <img
+                <Image
                   src={tut.thumbnail || "/images/logo.png"}
                   alt={tut.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:brightness-75"
+                  fill
+                  className="object-cover group-hover:brightness-75"
+                  placeholder="blur"
+                  blurDataURL="/images/logo.png"
+                  sizes="100vw"
                 />
               )}
               {tut.tags.includes("Top Rated") || tut.trending ? (
@@ -175,7 +203,32 @@ const LandingTutorialsSection = () => {
                   {tut.tags.includes("Top Rated") ? "🔥 Top Rated" : "🔥 Trending"}
                 </span>
               ) : null}
-              <FaBookmark className="absolute top-2 right-2 text-white bg-gray-700 rounded-full p-1 w-6 h-6 hover:text-yellow-400" />
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!user) return router.push('/auth/login');
+                  if (!isStudent) {
+                    toast.error('Only students can save tutorials.');
+                    return;
+                  }
+                  try {
+                    if (wishlistIds.includes(tut.id)) {
+                      await removeTutorialFromWishlist(tut.id);
+                      setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
+                    } else {
+                      await addTutorialToWishlist(tut.id);
+                      setWishlistIds([...wishlistIds, tut.id]);
+                      toast.success(t('added_to_wishlist'));
+                    }
+                  } catch (err) {
+                    toast.error('Failed to update wishlist');
+                  }
+                }}
+                aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+              >
+                <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+              </button>
             </div>
 
             <div className="p-4">

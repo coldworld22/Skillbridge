@@ -162,5 +162,8 @@
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
-  "by_author": "by {{author}}"
+  "by_author": "by {{author}}",
+  "network_error": "Error de red: verifique API_BASE_URL y el servidor backend.",
+  "tutorials_load_error": "No se pudieron cargar los tutoriales.",
+  "categories_load_error": "No se pudieron cargar las categorías."
  }

@@ -162,6 +162,9 @@
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
-  "by_author": "by {{author}}"
+  "by_author": "by {{author}}",
+  "network_error": "Network error: please check API_BASE_URL and backend server.",
+  "tutorials_load_error": "Failed to load tutorials.",
+  "categories_load_error": "Failed to load categories."
 
 }
