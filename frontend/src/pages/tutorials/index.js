@@ -20,29 +20,50 @@ import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 
 /**
- * Retrieves enrollment status and progress percentage for a tutorial from
- * `localStorage`.
+ * Retrieves enrollment status and progress percentage for a tutorial.
+ * Prefers backend API data and falls back to `localStorage` if unavailable.
  * @param {Object} tut - Tutorial information containing an `id` and optional
  * chapter metadata.
- * @returns {{enrolled: boolean, progressPercent: number}}
+ * @returns {Promise<{enrolled: boolean, progressPercent: number}>}
  */
-export const loadTutorialStatus = (tut) => {
+export const loadTutorialStatus = async (tut) => {
+  const userId = useAuthStore.getState().user?.id;
   let enrolled = false;
   let progressPercent = 0;
 
-  if (typeof window !== "undefined") {
-    enrolled = !!localStorage.getItem(`enrolled-${tut.id}`);
-    const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+  try {
+    const apiData = await fetchTutorialProgress(tut.id);
+    if (apiData) {
+      enrolled = !!apiData.enrolled;
+      if (apiData.progressPercent != null) {
+        progressPercent = Number(apiData.progressPercent);
+      } else if (apiData.progress != null) {
+        progressPercent = Number(apiData.progress);
+      } else if (
+        apiData.completedChapters != null &&
+        apiData.totalChapters
+      ) {
+        progressPercent =
+          (apiData.completedChapters / apiData.totalChapters) * 100;
+      }
+      return { enrolled, progressPercent };
+    }
+  } catch (err) {
+    // Ignore API errors and fall back to localStorage
+  }
 
+  if (typeof window !== "undefined") {
+    const prefix = userId ? `${userId}-` : "";
+    enrolled = !!localStorage.getItem(`enrolled-${prefix}${tut.id}`);
+    const saved = localStorage.getItem(
+      `progress-tutorial-${prefix}${tut.id}`
+    );
     if (saved) {
       try {
         const data = JSON.parse(saved);
         const total = Array.isArray(tut.chapters)
           ? tut.chapters.length
-          : tut.totalLessons ||
-            tut.total_chapters ||
-            tut.chapter_count ||
-            0;
+          : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
         if (total) {
           progressPercent =
             ((data.completedChapters?.length || 0) / total) * 100;
@@ -76,6 +97,19 @@ const TutorialsSection = () => {
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
+  const {
+    wishlistIds,
+    favoriteIds,
+    loadLists,
+    toggleWishlist,
+    toggleFavorite,
+  } = useTutorialListsStore();
+  const user = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    loadLists();
+  }, [user]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -111,11 +145,13 @@ const TutorialsSection = () => {
 
   useEffect(() => {
     if (!tutorials.length) return;
-    const cache = {};
-    tutorials.forEach((t) => {
-      cache[t.id] = loadTutorialStatus(t);
-    });
-    setStatusMap(cache);
+    const loadStatuses = async () => {
+      const entries = await Promise.all(
+        tutorials.map(async (t) => [t.id, await loadTutorialStatus(t)])
+      );
+      setStatusMap(Object.fromEntries(entries));
+    };
+    loadStatuses();
   }, [tutorials]);
 
   useEffect(() => {
@@ -315,7 +351,8 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const { enrolled, progressPercent = 0 } = statusMap[tut.id] || {};
+                const { enrolled, progress: progressPercent = 0 } =
+                  statusMap[tut.id] || {};
 
                 return (
                   <motion.div
@@ -336,6 +373,28 @@ const TutorialsSection = () => {
                     {/* Thumbnail */}
                     <div className="relative h-44 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
+                      <div className="absolute top-2 right-2 z-20 flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(tut.id);
+                          }}
+                          aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+                        >
+                          <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(tut.id);
+                          }}
+                          aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                        >
+                          <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                        </button>
+                      </div>
                       {tut.preview ? (
                         <video
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -416,6 +475,23 @@ const TutorialsSection = () => {
                             style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
+                      ) : (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!user) return router.push('/auth/login');
+                            if (!isStudent) {
+                              return;
+                            }
+                            try {
+                              await enrollInTutorial(tut.id);
+                              await fetchStatus(tut.id);
+                            } catch {}
+                          }}
+                          className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
+                        >
+                          Enroll
+                        </button>
                       )}
                     </div>
 
@@ -474,7 +550,7 @@ const TutorialsSection = () => {
                         <div className="text-sm font-medium">
                           {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
-                              ${tut.price}
+                              {formatCurrency(tut.price, { currency: tut.currencyCode })}
                             </span>
                           ) : (
                             <span className="text-green-400">{t("free")}</span>
