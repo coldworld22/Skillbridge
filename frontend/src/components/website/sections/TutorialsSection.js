@@ -22,9 +22,11 @@ import {
   addTutorialToFavorites,
   removeTutorialFromFavorites,
   getMyTutorialFavorites,
+  getMyEnrolledTutorials,
+  saveTutorialProgress,
 } from "@/services/tutorialService";
-
-const PROGRESS_KEY = "skillbridge_tutorialProgress";
+const PROGRESS_KEY_BASE = "skillbridge_tutorialProgress";
+const getProgressKey = (uid) => `${PROGRESS_KEY_BASE}_${uid}`;
 
 
 export const getStars = (rating) => {
@@ -55,6 +57,7 @@ const LandingTutorialsSection = () => {
   const isStudent = user?.role?.toLowerCase() === 'student';
   const [wishlistIds, setWishlistIds] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
+  const [enrolledIds, setEnrolledIds] = useState([]);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -98,12 +101,6 @@ const LandingTutorialsSection = () => {
           setCategories(categoryRes?.data || categoryRes || []);
         }
 
-        try {
-          const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-          setProgress(stored);
-        } catch {
-          setProgress({});
-        }
       }
     };
     load();
@@ -114,21 +111,59 @@ const LandingTutorialsSection = () => {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setProgress({});
+      return;
+    }
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem(getProgressKey(user.id)) || "{}",
+      );
+      setProgress(stored);
+    } catch {
+      setProgress({});
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!user || !isStudent) return;
     const loadLists = async () => {
       try {
-        const [w, f] = await Promise.all([
+        const [w, f, e] = await Promise.all([
           getMyTutorialWishlist(),
           getMyTutorialFavorites(),
+          getMyEnrolledTutorials(),
         ]);
         setWishlistIds(w.map((t) => t.id));
         setFavoriteIds(f.map((t) => t.id));
+        setEnrolledIds(e.map((t) => t.id));
       } catch (err) {
         console.error('Failed to load user lists', err);
       }
     };
     loadLists();
   }, [user, isStudent]);
+
+  useEffect(() => {
+    if (!user) return;
+    const key = getProgressKey(user.id);
+    const handler = async (e) => {
+      const { tutorialId, percent } = e.detail || {};
+      if (!tutorialId || !enrolledIds.includes(tutorialId)) return;
+      setProgress((prev) => {
+        const updated = { ...prev, [tutorialId]: percent };
+        localStorage.setItem(key, JSON.stringify(updated));
+        return updated;
+      });
+      try {
+        await saveTutorialProgress(tutorialId, percent);
+      } catch (err) {
+        console.error('Failed to sync progress', err);
+      }
+    };
+    window.addEventListener('tutorial-progress', handler);
+    return () => window.removeEventListener('tutorial-progress', handler);
+  }, [user, enrolledIds]);
 
   const filteredTutorials =
     activeTab === "All"
@@ -314,18 +349,24 @@ const LandingTutorialsSection = () => {
                 </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mt-3">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-400"
-                    style={{ width: `${progress[tut.id] || 0}%` }}
-                  />
+              {/* Progress Bar or Enroll Prompt */}
+              {enrolledIds.includes(tut.id) ? (
+                <div className="mt-3">
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-yellow-400"
+                      style={{ width: `${progress[tut.id] || 0}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Watched: {progress[tut.id] || 0}%
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Watched: {progress[tut.id] || 0}%
+              ) : (
+                <div className="mt-3 text-center text-sm text-yellow-400 font-semibold">
+                  Enroll
                 </div>
-              </div>
+              )}
 
               <div className="flex gap-2 mt-4">
                 <button
