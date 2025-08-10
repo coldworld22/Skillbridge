@@ -90,6 +90,12 @@ function AdminTutorialsPage() {
     });
 
   const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(Math.min(currentPage, totalPages) || 1);
+    }
+  }, [currentPage, totalPages]);
   const startIndex = (currentPage - 1) * tutorialsPerPage;
   const endIndex = startIndex + tutorialsPerPage;
   const paginatedTutorials = filteredTutorials.slice(startIndex, endIndex);
