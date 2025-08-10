@@ -15,9 +15,13 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function EditTutorialPage() {
   const router = useRouter();
+  const { t } = useTranslation(["common", "dashboard", "tutorials"]);
   const { id } = router.query;
 
   const [step, setStep] = useState(1);
@@ -61,7 +65,7 @@ export default function EditTutorialPage() {
         setCategories(cats?.data || cats || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t('detail.load_error', { ns: 'tutorials' }));
       } finally {
         setLoading(false);
       }
@@ -78,9 +82,9 @@ export default function EditTutorialPage() {
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
 
-  if (loading) return <div className="p-6">Loading tutorial...</div>;
+  if (loading) return <div className="p-6">{t('loading', { ns: 'common' })}</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (!tutorialData) return <div className="p-6">Tutorial not found.</div>;
+  if (!tutorialData) return <div className="p-6">{t('detail.not_found', { ns: 'tutorials' })}</div>;
 
   return (
     <InstructorLayout>
@@ -161,7 +165,7 @@ export default function EditTutorialPage() {
                 router.push("/dashboard/instructor/tutorials");
               } catch (err) {
                 console.error(err);
-                toast.error("Failed to update tutorial");
+                toast.error(t('tutorialEditPage.update_failed', { ns: 'dashboard' }));
               }
             }}
           />
@@ -169,6 +173,18 @@ export default function EditTutorialPage() {
       </div>
     </InstructorLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(
+        locale,
+        ["common", "dashboard", "tutorials"],
+        nextI18NextConfig
+      )),
+    },
+  };
 }
 
 
