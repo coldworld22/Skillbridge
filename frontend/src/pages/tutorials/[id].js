@@ -132,8 +132,8 @@ export default function TutorialDetail() {
           ),
         );
         try {
-          const assignList = await fetchTutorialAssignments(id);
-          setAssignments(assignList);
+          const assignmentList = await fetchTutorialAssignments(id);
+          setAssignments(assignmentList);
         } catch (err) {
           console.error('Failed to load assignments', err);
         }

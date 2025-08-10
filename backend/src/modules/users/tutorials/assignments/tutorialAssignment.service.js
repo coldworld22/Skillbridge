@@ -1,0 +1,37 @@
+const db = require('../../../../config/database');
+
+exports.getByTutorial = async (tutorial_id) => {
+  return db('tutorial_assignments')
+    .where({ tutorial_id })
+    .orderBy('created_at', 'asc');
+};
+
+exports.createAssignment = async (data) => {
+  const [row] = await db('tutorial_assignments').insert(data).returning('*');
+  return row;
+};
+
+exports.updateAssignment = async (id, data) => {
+  const [row] = await db('tutorial_assignments').where({ id }).update(data).returning('*');
+  return row;
+};
+
+exports.deleteAssignment = async (id) => {
+  return db('tutorial_assignments').where({ id }).del();
+};
+
+exports.getAllAssignments = async () => {
+  return db('tutorial_assignments as a')
+    .leftJoin('tutorials as t', 'a.tutorial_id', 't.id')
+    .leftJoin('users as u', 't.instructor_id', 'u.id')
+    .select(
+      'a.id',
+      'a.title',
+      'a.description',
+      'a.due_date',
+      'a.tutorial_id',
+      't.title as tutorial_title',
+      'u.full_name as instructor'
+    )
+    .orderBy('a.created_at', 'desc');
+};
