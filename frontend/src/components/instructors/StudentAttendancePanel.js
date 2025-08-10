@@ -9,7 +9,10 @@ export default function StudentAttendancePanel({ lessonId }) {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    if (!lessonId) return;
+    if (!lessonId) {
+      setStudents([]);
+      return;
+    }
     const load = async () => {
       try {
         const list = await fetchClassAttendance(lessonId);
