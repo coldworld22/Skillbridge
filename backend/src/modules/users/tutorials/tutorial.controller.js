@@ -1,6 +1,5 @@
 // 📁 src/modules/users/tutorials/tutorial.controller.js
 const path = require("path");
-const fs = require("fs");
 const db = require("../../../config/database"); // ✅ Required for slug check
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
