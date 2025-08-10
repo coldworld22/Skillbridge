@@ -107,3 +107,9 @@ export const fetchTutorialAssignments = async (tutorialId) => {
   const res = await api.get(`/users/tutorials/assignments/${tutorialId}`);
   return res.data?.data ?? [];
 };
+
+// Retrieve the current user's enrollment status and progress for a tutorial
+export const fetchTutorialProgress = async (tutorialId) => {
+  const { data } = await api.get(`/users/tutorials/progress/${tutorialId}`);
+  return data?.data ?? null;
+};
