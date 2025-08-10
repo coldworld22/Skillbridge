@@ -15,6 +15,8 @@ import {
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import ProgressChecklistModal from '@/components/tutorials/ProgressChecklistModal';
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { toast } from "react-toastify";
 import { fetchInstructorTutorialById, submitTutorialForReview, deleteInstructorTutorial } from "@/services/instructor/tutorialService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
