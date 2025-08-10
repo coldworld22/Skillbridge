@@ -20,7 +20,11 @@ const formatTutorial = (tut) => ({
   rating: typeof tut.rating === "string" || typeof tut.rating === "number"
     ? parseFloat(tut.rating)
     : 0,
-  tags: tut.tags || [],
+  tags: Array.isArray(tut.tags)
+    ? tut.tags
+    : typeof tut.tags === "string"
+      ? tut.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+      : [],
   trending: Boolean(tut.trending),
 });
 
