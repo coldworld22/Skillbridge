@@ -13,14 +13,20 @@ jest.mock('../src/modules/classes/wishlist/classWishlist.service', () => ({
 }));
 
 jest.mock('../src/modules/cart/cart.service', () => {
-  const cart = [];
+  const carts = {};
   return {
-    list: jest.fn(() => cart),
-    add: jest.fn((item) => { cart.push(item); return item; }),
-    remove: jest.fn((id) => {
-      const idx = cart.findIndex(c => c.id === id);
-      if (idx !== -1) cart.splice(idx,1);
-    })
+    _carts: carts,
+    list: jest.fn((userId) => carts[userId] || []),
+    add: jest.fn((userId, item) => {
+      carts[userId] = carts[userId] || [];
+      carts[userId].push(item);
+      return item;
+    }),
+    remove: jest.fn((userId, id) => {
+      const arr = carts[userId] || [];
+      const idx = arr.findIndex((c) => c.id === id);
+      if (idx !== -1) arr.splice(idx, 1);
+    }),
   };
 });
 
@@ -44,7 +50,7 @@ describe('Student class', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    cartService.list().length = 0;
+    cartService._carts['user1'] = [];
   });
 
   test('discoverClasses calls class service', async () => {
@@ -53,11 +59,13 @@ describe('Student class', () => {
   });
 
   test('checkout enrolls and pays', async () => {
-    student.addToCart('c1');
+    student.addToCart('c1', 10);
     const result = await student.checkout(1);
     expect(enrollmentService.createEnrollment).toHaveBeenCalled();
-    expect(paymentsService.create).toHaveBeenCalled();
+    expect(paymentsService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ item_type: 'class', amount: 10 })
+    );
     expect(result.length).toBe(1);
-    expect(cartService.list().length).toBe(0);
+    expect(cartService.list('user1').length).toBe(0);
   });
 });

@@ -30,16 +30,21 @@ class Student {
     return wishlistService.listByUser(this.userId);
   }
 
-  addToCart(classId, quantity = 1) {
-    return cartService.add({ id: classId, quantity });
+  addToCart(classId, price = 0, quantity = 1) {
+    return cartService.add(this.userId, {
+      id: classId,
+      quantity,
+      item_type: "class",
+      price,
+    });
   }
 
   viewCart() {
-    return cartService.list();
+    return cartService.list(this.userId);
   }
 
   removeFromCart(classId) {
-    return cartService.remove(classId);
+    return cartService.remove(this.userId, classId);
   }
 
   async listEnrolledClasses() {
@@ -47,7 +52,7 @@ class Student {
   }
 
   async checkout(paymentMethodId) {
-    const cartItems = cartService.list();
+    const cartItems = await cartService.list(this.userId);
     const results = [];
     for (const item of cartItems) {
       const cls = await classService.getClassById(item.id);
@@ -61,13 +66,13 @@ class Student {
       const payment = await paymentsService.create({
         user_id: this.userId,
         method_id: paymentMethodId,
-        item_type: "class",
+        item_type: item.item_type,
         item_id: item.id,
-        amount: cls.price || 0,
+        amount: item.price || 0,
         status: "paid",
         paid_at: new Date(),
       });
-      cartService.remove(item.id);
+      await cartService.remove(this.userId, item.id);
       results.push({ enrollment, payment });
     }
     return results;
