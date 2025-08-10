@@ -20,8 +20,9 @@ exports.add = async (userId, item) => {
     if (!cartExists) {
       await trx("carts").insert({ user_id: userId });
     }
+    const itemType = item.item_type || "class";
     const existing = await trx("cart_items")
-      .where({ user_id: userId, item_id: item.id })
+      .where({ user_id: userId, item_id: item.id, item_type: itemType })
       .first();
     if (existing) {
       const quantity = existing.quantity + (item.quantity || 1);
@@ -31,14 +32,16 @@ exports.add = async (userId, item) => {
         user_id: userId,
         item_id: item.id,
         name: item.name,
-        item_type: item.item_type || "class",
+        item_type: itemType,
         price: item.price || 0,
         quantity: item.quantity || 1,
         added_at: new Date(),
         reminder_sent: false,
       });
     }
-    const row = await trx("cart_items").where({ user_id: userId, item_id: item.id }).first();
+    const row = await trx("cart_items")
+      .where({ user_id: userId, item_id: item.id, item_type: itemType })
+      .first();
     return {
       id: row.item_id,
       name: row.name,
@@ -51,8 +54,10 @@ exports.add = async (userId, item) => {
   });
 };
 
-exports.update = async (userId, id, quantity) => {
-  const existing = await db("cart_items").where({ user_id: userId, item_id: id }).first();
+exports.update = async (userId, id, quantity, itemType) => {
+  const whereClause = { user_id: userId, item_id: id };
+  if (itemType) whereClause.item_type = itemType;
+  const existing = await db("cart_items").where(whereClause).first();
   if (!existing) return null;
   await db("cart_items").where({ id: existing.id }).update({ quantity });
   const updated = await db("cart_items").where({ id: existing.id }).first();
@@ -67,8 +72,10 @@ exports.update = async (userId, id, quantity) => {
   };
 };
 
-exports.remove = async (userId, id) => {
-  const existing = await db("cart_items").where({ user_id: userId, item_id: id }).first();
+exports.remove = async (userId, id, itemType) => {
+  const whereClause = { user_id: userId, item_id: id };
+  if (itemType) whereClause.item_type = itemType;
+  const existing = await db("cart_items").where(whereClause).first();
   if (!existing) return null;
   await db("cart_items").where({ id: existing.id }).del();
   return {

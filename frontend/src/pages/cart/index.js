@@ -142,15 +142,19 @@ const CartPage = () => {
 
             {/* Checkout Button */}
             <div className="mt-6 flex justify-end">
-              <Link href="/payments/checkout">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
+              {cartItems.length > 0 && (
+                <Link
+                  href={`/payments/checkout?itemType=${cartItems[0].item_type}&itemId=${cartItems[0].id}`}
                 >
-                  Proceed to Checkout
-                </motion.button>
-              </Link>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
+                  >
+                    Proceed to Checkout
+                  </motion.button>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
