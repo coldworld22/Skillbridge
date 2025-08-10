@@ -1,7 +1,7 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatTutorial = (tut) => ({
+export const formatTutorial = (tut) => ({
   ...tut,
   thumbnail:
     tut.thumbnail_url || tut.cover_image
@@ -17,7 +17,10 @@ const formatTutorial = (tut) => ({
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
     : null,
   instructorBio: tut.instructor_bio || tut.instructorBio,
-  price: tut.price != null ? Number(tut.price) : 0,
+  price:
+    tut.price === null || tut.price === undefined
+      ? null
+      : parseFloat(tut.price),
   rating: typeof tut.rating === "string" || typeof tut.rating === "number"
     ? parseFloat(tut.rating)
     : 0,
@@ -50,6 +53,35 @@ export const fetchTutorialDetails = async (id) => {
 export const enrollInTutorial = async (tutorialId) => {
   const { data } = await api.post(`/users/tutorials/enroll/${tutorialId}`);
   return data;
+};
+
+export const getMyEnrolledTutorials = async () => {
+  try {
+    const { data } = await api.get('/users/tutorials/enroll/my');
+    const list = data?.data ?? [];
+    return list.map(formatTutorial);
+  } catch (err) {
+    if (err.response && [401, 403].includes(err.response.status)) {
+      return [];
+    }
+    throw err;
+  }
+};
+
+export const saveTutorialProgress = async (tutorialId, progress) => {
+  try {
+    const { data } = await api.post(
+      `/users/tutorials/progress/${tutorialId}`,
+      { progress },
+    );
+    return data;
+  } catch (err) {
+    // Ignore if API not supported
+    if (err.response && [404, 500, 501].includes(err.response.status)) {
+      return null;
+    }
+    throw err;
+  }
 };
 
 export const addTutorialToWishlist = async (id) => {

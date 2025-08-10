@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
+import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter, FaBookmark, FaHeart } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
@@ -52,16 +52,12 @@ export const loadTutorialStatus = async (tut) => {
     const saved = localStorage.getItem(
       `progress-tutorial-${prefix}${tut.id}`
     );
-
     if (saved) {
       try {
         const data = JSON.parse(saved);
         const total = Array.isArray(tut.chapters)
           ? tut.chapters.length
-          : tut.totalLessons ||
-            tut.total_chapters ||
-            tut.chapter_count ||
-            0;
+          : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
         if (total) {
           progressPercent =
             ((data.completedChapters?.length || 0) / total) * 100;
@@ -87,10 +83,22 @@ const TutorialsSection = () => {
     price: null,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [statusMap, setStatusMap] = useState({});
   const router = useRouter();
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
+  const {
+    wishlistIds,
+    favoriteIds,
+    loadLists,
+    toggleWishlist,
+    toggleFavorite,
+  } = useTutorialListsStore();
+  const user = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    loadLists();
+  }, [user]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -315,7 +323,8 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const { enrolled, progressPercent = 0 } = statusMap[tut.id] || {};
+                const { enrolled, progress: progressPercent = 0 } =
+                  statusMap[tut.id] || {};
 
                 return (
                   <motion.div
@@ -336,6 +345,28 @@ const TutorialsSection = () => {
                     {/* Thumbnail */}
                     <div className="relative h-44 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
+                      <div className="absolute top-2 right-2 z-20 flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(tut.id);
+                          }}
+                          aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+                        >
+                          <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(tut.id);
+                          }}
+                          aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                        >
+                          <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                        </button>
+                      </div>
                       {tut.preview ? (
                         <video
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -354,14 +385,31 @@ const TutorialsSection = () => {
                         />
                       )}
                       
-                      {/* Progress bar */}
-                      {enrolled && (
+                      {/* Progress bar or Enroll button */}
+                      {enrolled ? (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
                           <div
                             className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
                             style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
+                      ) : (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!user) return router.push('/auth/login');
+                            if (!isStudent) {
+                              return;
+                            }
+                            try {
+                              await enrollInTutorial(tut.id);
+                              await fetchStatus(tut.id);
+                            } catch {}
+                          }}
+                          className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
+                        >
+                          Enroll
+                        </button>
                       )}
                     </div>
 
@@ -420,7 +468,7 @@ const TutorialsSection = () => {
                         <div className="text-sm font-medium">
                           {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
-                              ${tut.price}
+                              {formatCurrency(tut.price, { currency: tut.currencyCode })}
                             </span>
                           ) : (
                             <span className="text-green-400">{t("free")}</span>
