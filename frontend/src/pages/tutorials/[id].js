@@ -86,6 +86,7 @@ export default function TutorialDetail() {
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
   const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
+  const addItem = useCartStore((state) => state.addItem);
 
   const enroll = async () => {
     if (!tutorial) return;
@@ -97,14 +98,12 @@ export default function TutorialDetail() {
 
     try {
       const res = await enrollInTutorial(tutorial.id);
-      const enrolledFlag = Boolean(
-        res?.is_enrolled ??
-          res?.enrolled ??
-          res?.data?.is_enrolled ??
-          res?.data?.enrolled ??
-          res?.success ??
-          true,
-      );
+      const enrolledFlag =
+        res?.is_enrolled === true ||
+        res?.enrolled === true ||
+        res?.data?.is_enrolled === true ||
+        res?.data?.enrolled === true ||
+        res?.success === true;
       setIsEnrolled(enrolledFlag);
       if (enrolledFlag) toast.success(t("enroll_success"));
       else toast.error(t("enroll_fail"));
