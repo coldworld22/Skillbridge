@@ -246,6 +246,12 @@ exports.joinGroup = catchAsync(async (req, res) => {
   sendSuccess(res, reqRow, "Request sent");
 });
 
+exports.cancelJoin = catchAsync(async (req, res) => {
+  const groupId = req.params.id;
+  await service.cancelJoinRequest(groupId, req.user.id);
+  sendSuccess(res, null, "Request cancelled");
+});
+
 exports.listTags = catchAsync(async (_req, res) => {
   const data = await service.listTags();
   sendSuccess(res, data);
