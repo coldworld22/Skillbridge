@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Star, Eye, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/utils/currency";
+import useCartStore from "@/store/cart/cartStore";
 
 const DEFAULT_IMAGE =
   "https://www.classcentral.com/report/wp-content/uploads/2022/06/C-Programming-BCG-Banner.png";
