@@ -18,21 +18,27 @@ const useTutorialProgressStore = create((set, get) => ({
         try {
           const offline = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "{}");
           const progress = offline[id] || 0;
-          const data = { enrolled: false, progress };
+          const data = { enrolled: false, status: null, progress };
           set((state) => ({ status: { ...state.status, [id]: data } }));
           return data;
         } catch {}
       }
-      return { enrolled: false, progress: 0 };
+      return { enrolled: false, status: null, progress: 0 };
     }
   },
   async updateProgress(id, progress) {
     try {
-      await saveTutorialProgress(id, progress);
+      const data = await saveTutorialProgress(id, progress);
       set((state) => ({
         status: {
           ...state.status,
-          [id]: { ...(state.status[id] || {}), enrolled: true, progress },
+          [id]:
+            data || {
+              ...(state.status[id] || {}),
+              enrolled: true,
+              status: data?.status ?? state.status[id]?.status ?? null,
+              progress,
+            },
         },
       }));
       if (typeof window !== "undefined") {
@@ -60,11 +66,17 @@ const useTutorialProgressStore = create((set, get) => ({
     for (const id of ids) {
       try {
         const progress = offline[id];
-        await saveTutorialProgress(id, progress);
+        const data = await saveTutorialProgress(id, progress);
         set((state) => ({
           status: {
             ...state.status,
-            [id]: { ...(state.status[id] || {}), enrolled: true, progress },
+            [id]:
+              data || {
+                ...(state.status[id] || {}),
+                enrolled: true,
+                status: data?.status ?? state.status[id]?.status ?? null,
+                progress,
+              },
           },
         }));
         delete offline[id];

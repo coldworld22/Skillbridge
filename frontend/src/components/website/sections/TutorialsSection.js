@@ -152,7 +152,14 @@ const LandingTutorialsSection = () => {
         return updated;
       });
       try {
-        await saveTutorialProgress(tutorialId, percent);
+        const res = await saveTutorialProgress(tutorialId, percent);
+        if (res?.progress != null && res.progress !== percent) {
+          setProgress((prev) => {
+            const updated = { ...prev, [tutorialId]: res.progress };
+            localStorage.setItem(key, JSON.stringify(updated));
+            return updated;
+          });
+        }
       } catch (err) {
         console.error('Failed to sync progress', err);
       }

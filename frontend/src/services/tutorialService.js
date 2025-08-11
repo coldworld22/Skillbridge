@@ -120,11 +120,11 @@ export const getMyEnrolledTutorials = async () => {
 
 export const saveTutorialProgress = async (tutorialId, progress) => {
   try {
-    const { data } = await api.post(
-      `/users/tutorials/progress/${tutorialId}`,
+    const { data } = await api.patch(
+      `/users/tutorials/enroll/${tutorialId}/progress`,
       { progress },
     );
-    return data;
+    return data?.data ?? data;
   } catch (err) {
     // Ignore if API not supported
     if (err.response && [404, 500, 501].includes(err.response.status)) {
@@ -192,6 +192,16 @@ export const fetchTutorialAssignments = async (tutorialId) => {
 
 // Retrieve the current user's enrollment status and progress for a tutorial
 export const fetchTutorialProgress = async (tutorialId) => {
-  const { data } = await api.get(`/users/tutorials/progress/${tutorialId}`);
-  return data?.data ?? null;
+  try {
+    const { data } = await api.get(
+      `/users/tutorials/enroll/${tutorialId}/status`,
+    );
+    return data?.data ?? data ?? null;
+  } catch (err) {
+    // Ignore if API not supported
+    if (err.response && [404, 500, 501].includes(err.response.status)) {
+      return null;
+    }
+    throw err;
+  }
 };
