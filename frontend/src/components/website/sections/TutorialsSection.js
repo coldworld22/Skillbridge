@@ -165,9 +165,8 @@ const LandingTutorialsSection = () => {
     activeTab === "All"
       ? tutorials
       : tutorials.filter((t) => {
-          const categoryName =
-            t.category || t.categoryName || t.category_name;
-          return categoryName === activeTab;
+          const id = t.categoryId ?? t.category_id;
+          return id === activeTab;
         });
 
   return (
@@ -188,7 +187,10 @@ const LandingTutorialsSection = () => {
 
         {/* Category Tabs */}
         <div className="flex justify-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-2 px-2">
-          {[{ label: "All", value: "All" }, ...categories.map((c) => ({ label: c.name, value: c.name }))].map((tab) => (
+          {[
+            { label: "All", value: "All" },
+            ...categories.map((c) => ({ label: c.name, value: c.id })),
+          ].map((tab) => (
             <button
               key={tab.value}
               className={`flex-shrink-0 px-4 py-2 rounded-full border transition-colors ${
