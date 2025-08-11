@@ -16,29 +16,23 @@ import useAuthStore from "@/store/auth/authStore";
  * Prefers backend API data and falls back to `localStorage` if unavailable.
  * @param {Object} tut - Tutorial information containing an `id` and optional
  * chapter metadata.
- * @returns {Promise<{enrolled: boolean, progressPercent: number}>}
+ * @returns {Promise<{enrolled: boolean, status: string | null, progress: number}>}
  */
 export const loadTutorialStatus = async (tut) => {
   const userId = useAuthStore.getState().user?.id;
   let enrolled = false;
   let progressPercent = 0;
+  let status = null;
 
   try {
     const apiData = await fetchTutorialProgress(tut.id);
     if (apiData) {
       enrolled = !!apiData.enrolled;
-      if (apiData.progressPercent != null) {
-        progressPercent = Number(apiData.progressPercent);
-      } else if (apiData.progress != null) {
+      status = apiData.status ?? null;
+      if (apiData.progress != null) {
         progressPercent = Number(apiData.progress);
-      } else if (
-        apiData.completedChapters != null &&
-        apiData.totalChapters
-      ) {
-        progressPercent =
-          (apiData.completedChapters / apiData.totalChapters) * 100;
       }
-      return { enrolled, progressPercent };
+      return { enrolled, status, progress: progressPercent };
     }
   } catch (err) {
     // Ignore API errors and fall back to localStorage
@@ -64,7 +58,7 @@ export const loadTutorialStatus = async (tut) => {
     }
   }
 
-  return { enrolled, progressPercent };
+  return { enrolled, status, progress: progressPercent };
 };
 
 const TutorialsSection = () => {
@@ -331,8 +325,11 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const { enrolled, progress: progressPercent = 0 } =
-                  statusMap[tut.id] || {};
+                const {
+                  enrolled,
+                  status: enrollStatus,
+                  progress: progressPercent = 0,
+                } = statusMap[tut.id] || {};
 
                 return (
                   <motion.div

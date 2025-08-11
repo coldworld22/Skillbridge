@@ -1,6 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 const catchAsync = require('../../../../utils/catchAsync');
 const { sendSuccess } = require('../../../../utils/response');
+const AppError = require('../../../../utils/AppError');
+const db = require('../../../../config/database');
 const service = require('./tutorialAssignment.service');
 
 exports.getAssignmentsByTutorial = catchAsync(async (req, res) => {
