@@ -165,9 +165,8 @@ const LandingTutorialsSection = () => {
     activeTab === "All"
       ? tutorials
       : tutorials.filter((t) => {
-          const categoryName =
-            t.category || t.categoryName || t.category_name;
-          return categoryName === activeTab;
+          const id = t.categoryId ?? t.category_id;
+          return id === activeTab;
         });
 
   return (
@@ -188,7 +187,10 @@ const LandingTutorialsSection = () => {
 
         {/* Category Tabs */}
         <div className="flex justify-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-2 px-2">
-          {[{ label: "All", value: "All" }, ...categories.map((c) => ({ label: c.name, value: c.name }))].map((tab) => (
+          {[
+            { label: "All", value: "All" },
+            ...categories.map((c) => ({ label: c.name, value: c.id })),
+          ].map((tab) => (
             <button
               key={tab.value}
               className={`flex-shrink-0 px-4 py-2 rounded-full border transition-colors ${
@@ -298,8 +300,7 @@ const LandingTutorialsSection = () => {
                             toast.success(t('removed_from_wishlist'));
                           } else {
                             await addTutorialToWishlist(tut.id);
-                            const updated = await getMyTutorialWishlist();
-                            setWishlistIds(updated.map((t) => t.id));
+                            setWishlistIds([...wishlistIds, tut.id]);
                             toast.success(t('added_to_wishlist'));
                           }
                         } catch (err) {
@@ -428,12 +429,22 @@ const LandingTutorialsSection = () => {
                           return;
                         }
                         try {
+                          const price = tut.discountPrice ?? tut.price;
+                          if (price == null) {
+                            console.error(
+                              `Cannot add tutorial ${tut.id} to cart: missing price`,
+                            );
+                            return;
+                          }
                           await addItem({
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
-                            price: tut.price || 0,
+                            price,
                             quantity: 1,
+                            ...(tut.currency || tut.currencyCode
+                              ? { currency: tut.currency || tut.currencyCode }
+                              : {}),
                           });
                           toast.success('Added to cart');
                         } catch (err) {

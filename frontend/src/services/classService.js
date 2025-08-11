@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { extractData } from "@/services/api/helpers";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 
@@ -42,13 +43,13 @@ const formatEnrolledClass = (cls) => {
 };
 
 export const fetchPublishedClasses = async () => {
-  const { data } = await api.get("/users/classes");
-  const list = data?.data ?? [];
+  const res = await api.get("/users/classes");
+  const list = extractData(res);
   const formatted = list.map((cls) => ({
     ...formatClass(cls),
     trending: Boolean(cls.trending),
   }));
-  return { ...data, data: formatted };
+  return { ...res.data, data: formatted };
 };
 
 export const fetchClassDetails = async (id) => {
@@ -69,8 +70,8 @@ export const markClassCompleted = async (id) => {
 
 export const fetchMyEnrolledClasses = async () => {
   try {
-    const { data } = await api.get("/users/classes/enroll/my");
-    const list = data?.data ?? [];
+    const res = await api.get("/users/classes/enroll/my");
+    const list = extractData(res);
     return list.map(formatEnrolledClass);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
@@ -81,13 +82,13 @@ export const fetchMyEnrolledClasses = async () => {
 };
 
 export const fetchClassLessons = async (classId) => {
-  const { data } = await api.get(`/users/classes/lessons/class/${classId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/classes/lessons/class/${classId}`);
+  return extractData(res);
 };
 
 export const fetchClassAssignments = async (classId) => {
-  const { data } = await api.get(`/users/classes/assignments/class/${classId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/classes/assignments/class/${classId}`);
+  return extractData(res);
 };
 
 export const fetchMyClassAssignments = async () => {
@@ -127,8 +128,8 @@ export const removeClassFromWishlist = async (id) => {
 
 export const getMyClassWishlist = async () => {
   try {
-    const { data } = await api.get('/users/classes/wishlist/my');
-    return data?.data ?? [];
+    const res = await api.get('/users/classes/wishlist/my');
+    return extractData(res);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
       return [];
@@ -149,8 +150,8 @@ export const unlikeClass = async (id) => {
 
 export const getMyLikedClasses = async () => {
   try {
-    const { data } = await api.get('/users/classes/likes/my');
-    return data?.data ?? [];
+    const res = await api.get('/users/classes/likes/my');
+    return extractData(res);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
       return [];
@@ -160,8 +161,8 @@ export const getMyLikedClasses = async () => {
 };
 
 export const fetchClassReviews = async (classId) => {
-  const { data } = await api.get(`/users/classes/reviews/${classId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/classes/reviews/${classId}`);
+  return extractData(res);
 };
 
 export const submitClassReview = async (classId, payload) => {
@@ -170,8 +171,8 @@ export const submitClassReview = async (classId, payload) => {
 };
 
 export const fetchClassComments = async (classId) => {
-  const { data } = await api.get(`/users/classes/comments/${classId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/classes/comments/${classId}`);
+  return extractData(res);
 };
 
 export const postClassComment = async (classId, payload) => {

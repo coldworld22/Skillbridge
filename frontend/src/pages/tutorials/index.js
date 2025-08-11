@@ -539,11 +539,21 @@ const TutorialsSection = () => {
                             className="px-2 py-1 text-xs rounded bg-yellow-500 text-black hover:bg-yellow-400"
                             onClick={(e) => {
                               e.stopPropagation();
+                              const price = tut.discountPrice ?? tut.price;
+                              if (price == null) {
+                                console.error(
+                                  `Cannot add tutorial ${tut.id} to cart: missing price`,
+                                );
+                                return;
+                              }
                               addItem({
                                 id: tut.id,
                                 name: tut.title,
                                 item_type: "tutorial",
-                                price: tut.price || 0,
+                                price,
+                                ...(tut.currency || tut.currencyCode
+                                  ? { currency: tut.currency || tut.currencyCode }
+                                  : {}),
                               });
                             }}
                           >
