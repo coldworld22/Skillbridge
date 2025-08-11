@@ -125,6 +125,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'groups_create',
+      value: 'false',
+      description: 'Cannot create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'groups_join_limit',
+      value: '1',
+      description: 'Join up to 1 group'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
       feature_key: 'ads_limit',
       value: '3',
