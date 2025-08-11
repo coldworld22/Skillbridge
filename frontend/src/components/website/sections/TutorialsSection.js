@@ -262,13 +262,11 @@ const LandingTutorialsSection = () => {
                         try {
                           if (favoriteIds.includes(tut.id)) {
                             await removeTutorialFromFavorites(tut.id);
-                            const updated = await getMyTutorialFavorites();
-                            setFavoriteIds(updated.map((t) => t.id));
+                            setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
                             toast.success('Removed from favorites');
                           } else {
                             await addTutorialToFavorites(tut.id);
-                            const updated = await getMyTutorialFavorites();
-                            setFavoriteIds(updated.map((t) => t.id));
+                            setFavoriteIds([...favoriteIds, tut.id]);
                             toast.success('Added to favorites');
                           }
                         } catch (err) {
@@ -293,13 +291,11 @@ const LandingTutorialsSection = () => {
                         try {
                           if (wishlistIds.includes(tut.id)) {
                             await removeTutorialFromWishlist(tut.id);
-                            const updated = await getMyTutorialWishlist();
-                            setWishlistIds(updated.map((t) => t.id));
+                            setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
                             toast.success('Removed from wishlist');
                           } else {
                             await addTutorialToWishlist(tut.id);
-                            const updated = await getMyTutorialWishlist();
-                            setWishlistIds(updated.map((t) => t.id));
+                            setWishlistIds([...wishlistIds, tut.id]);
                             toast.success(t('added_to_wishlist'));
                           }
                         } catch (err) {
