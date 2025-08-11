@@ -8,6 +8,7 @@ const msgUpload = require("./groupMessageUpload.middleware");
 router.get("/tags", ctrl.listTags);
 router.get("/my", verifyToken, ctrl.getMyGroups);
 router.post("/:id/join", verifyToken, ctrl.joinGroup);
+router.delete("/:id/join", verifyToken, ctrl.cancelJoin);
 router.get("/:id/members", verifyToken, ctrl.listMembers);
 router.post("/:id/members/:memberId/manage", verifyToken, ctrl.manageMember);
 router.get("/:id/requests", verifyToken, ctrl.listJoinRequests);

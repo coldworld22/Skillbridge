@@ -115,6 +115,14 @@ exports.requestJoin = async (groupId, userId) => {
   return row;
 };
 
+exports.cancelJoinRequest = async (groupId, userId) => {
+  const [row] = await db("group_join_requests")
+    .where({ group_id: groupId, user_id: userId })
+    .del()
+    .returning("*");
+  return row;
+};
+
 exports.getUserGroups = async (userId) => {
   const memberQuery = db("group_members as gm")
     .join("groups as g", "gm.group_id", "g.id")
