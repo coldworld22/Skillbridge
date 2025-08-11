@@ -432,7 +432,7 @@ const LandingTutorialsSection = () => {
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
-                            price: tut.price || 0,
+                            price: (tut.discountPrice ?? tut.price) || 0,
                             quantity: 1,
                           });
                           toast.success('Added to cart');
