@@ -248,7 +248,7 @@ const LandingTutorialsSection = () => {
                 </span>
               )}
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
                   if (!user) return router.push('/auth/login');
                   if (!isStudent) {
@@ -279,7 +279,7 @@ const LandingTutorialsSection = () => {
               </button>
 
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
                   if (!user) return router.push('/auth/login');
                   if (!isStudent) {

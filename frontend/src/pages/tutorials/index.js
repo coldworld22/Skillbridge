@@ -447,7 +447,7 @@ const TutorialsSection = () => {
                       </button>
 
                       {/* Progress bar */}
-                      {enrolled && (
+                      {enrolled ? (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
                           <div
                             className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
