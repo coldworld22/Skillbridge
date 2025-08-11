@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTag, FaGift } from "react-icons/fa";
 import Link from "next/link";
@@ -15,6 +16,7 @@ const CartPage = () => {
     updateItem: updateCartItemAction,
     removeItem: removeCartItemAction,
   } = useCartStore();
+  const user = useAuthStore((state) => state.user);
   const loading = isLoading;
   const [discountCode, setDiscountCode] = useState(""); // ✅ State for Discount Code
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -22,8 +24,8 @@ const CartPage = () => {
   const validDiscounts = { SAVE10: 10, "قسيمة10": 10, "DISCOUNT20": 20 }; // ✅ Support Arabic Discount Code
 
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    if (user) fetchCart();
+  }, [user, fetchCart]);
 
   // Update quantity
   const updateQuantity = (id, type) => {
