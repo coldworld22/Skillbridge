@@ -64,8 +64,19 @@ export const formatTutorial = (tut) => {
     tags: tagArray,
     trending: Boolean(tut.trending),
     // Normalize category fields so components can filter reliably
+    categoryId: (() => {
+      const id =
+        tut.category_id != null
+          ? tut.category_id
+          : tut.categoryId != null
+            ? tut.categoryId
+            : null;
+      return id != null ? Number(id) : null;
+    })(),
+    categoryName:
+      tut.category || tut.category_name || tut.categoryName || null,
+    // Keep legacy `category` field for backward compatibility
     category: tut.category || tut.category_name || tut.categoryName || null,
-    categoryId: tut.category_id || tut.categoryId || null,
   };
 };
 
