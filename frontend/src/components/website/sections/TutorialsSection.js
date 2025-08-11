@@ -7,8 +7,6 @@ import { FaStar, FaClock, FaBookmark, FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
-import useTutorialListsStore from "@/store/tutorials/tutorialListsStore";
-import useTutorialProgressStore from "@/store/tutorialProgressStore";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { formatCurrency } from "@/utils/currency";
 import {
@@ -47,8 +45,7 @@ const LandingTutorialsSection = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [tutorials, setTutorials] = useState([]);
   const [categories, setCategories] = useState([]);
-  const { status: progress, fetchStatus, syncOffline } =
-    useTutorialProgressStore();
+  const [progress, setProgress] = useState({});
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
