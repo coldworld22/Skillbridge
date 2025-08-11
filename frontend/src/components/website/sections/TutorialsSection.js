@@ -287,27 +287,27 @@ const LandingTutorialsSection = () => {
                     toast.error('Only students can save tutorials.');
                     return;
                   }
-                    try {
-                      if (wishlistIds.includes(tut.id)) {
-                        await removeTutorialFromWishlist(tut.id);
-                        const updated = await getMyTutorialWishlist();
-                        setWishlistIds(updated.map((t) => t.id));
-                        toast.success('Removed from wishlist');
-                      } else {
-                        await addTutorialToWishlist(tut.id);
-                        const updated = await getMyTutorialWishlist();
-                        setWishlistIds(updated.map((t) => t.id));
-                        toast.success(t('added_to_wishlist'));
-                      }
-                    } catch (err) {
-                      const message = err?.response?.data?.message || 'Failed to update wishlist';
-                      toast.error(message);
+                  try {
+                    if (wishlistIds.includes(tut.id)) {
+                      await removeTutorialFromWishlist(tut.id);
+                      const updated = await getMyTutorialWishlist();
+                      setWishlistIds(updated.map((t) => t.id));
+                      toast.success('Removed from wishlist');
+                    } else {
+                      await addTutorialToWishlist(tut.id);
+                      const updated = await getMyTutorialWishlist();
+                      setWishlistIds(updated.map((t) => t.id));
+                      toast.success(t('added_to_wishlist'));
                     }
-                  }}
-                  aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                  className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
-                >
-                  <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                  } catch (err) {
+                    const message = err?.response?.data?.message || 'Failed to update wishlist';
+                    toast.error(message);
+                  }
+                }}
+                aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                className="absolute top-2 right-2 bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+              >
+                <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
               </button>
             </div>
 
