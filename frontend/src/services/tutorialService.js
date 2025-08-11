@@ -30,6 +30,9 @@ export const formatTutorial = (tut) => ({
       ? tut.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
       : [],
   trending: Boolean(tut.trending),
+  // Normalize category fields so components can filter reliably
+  category: tut.category || tut.category_name || tut.categoryName || null,
+  categoryId: tut.category_id || tut.categoryId || null,
 });
 
 export const fetchFeaturedTutorials = async () => {

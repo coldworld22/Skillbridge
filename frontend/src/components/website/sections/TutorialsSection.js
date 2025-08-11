@@ -28,6 +28,7 @@ export const getStars = (rating) => {
   const safeRating = Number.isFinite(rating)
     ? Math.min(Math.max(rating, 0), 5)
     : 0;
+  if (safeRating <= 0) return null;
   const full = Math.floor(safeRating);
   const half = safeRating % 1 >= 0.5;
   return (
@@ -163,7 +164,11 @@ const LandingTutorialsSection = () => {
   const filteredTutorials =
     activeTab === "All"
       ? tutorials
-      : tutorials.filter((t) => t.category === activeTab);
+      : tutorials.filter((t) => {
+          const categoryName =
+            t.category || t.categoryName || t.category_name;
+          return categoryName === activeTab;
+        });
 
   return (
     <section className="bg-gray-950 py-16 text-white px-4 sm:px-6">
