@@ -9,7 +9,8 @@ const generateCode = () => {
 // Check if user completed the tutorial
 const isUserCompletedTutorial = async (userId, tutorialId) => {
   const enrollment = await db("tutorial_enrollments")
-    .where({ user_id: userId, tutorial_id: tutorialId, status: "completed" })
+    .where({ user_id: userId, tutorial_id: tutorialId })
+    .where("progress", 100)
     .first();
   return !!enrollment;
 };

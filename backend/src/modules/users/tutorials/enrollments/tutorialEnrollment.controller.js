@@ -93,7 +93,7 @@ exports.complete = catchAsync(async (req, res) => {
 
   await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
-    .update({ status: "completed" });
+    .update({ status: "completed", progress: 100 });
 
   sendSuccess(res, null, "Marked as completed");
 });
