@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
 import { toast } from 'react-toastify';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 // ...imports (same as before)...
 
@@ -36,6 +37,21 @@ export default function AdminGroupDetailsPage() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
+
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     if (!router.isReady || !id) return;
@@ -85,50 +101,111 @@ export default function AdminGroupDetailsPage() {
     setSelectedMembers(allSelected ? selectedMembers.filter(id => !ids.includes(id)) : [...new Set([...selectedMembers, ...ids])]);
   };
 
-  const bulkRemove = async () => {
+  const bulkRemove = () => {
     if (!group) return;
-    if (confirm('Are you sure you want to remove the selected members?')) {
-      try {
-        await Promise.all(
-          selectedMembers.map((mid) =>
-            groupService.manageMember(group.id, mid, 'kick')
-          )
-        );
-      } catch (error) {
-        console.error('Bulk removal failed:', error);
-        alert('Some members could not be removed.');
-      }
-      setMembers(members.filter((m) => !selectedMembers.includes(m.id)));
-      setSelectedMembers([]);
-    }
+    openConfirmModal({
+      title: 'Confirm Removal',
+      message: 'Are you sure you want to remove the selected members?',
+      onConfirm: async () => {
+        try {
+          await Promise.all(
+            selectedMembers.map((mid) =>
+              groupService.manageMember(group.id, mid, 'kick')
+            )
+          );
+          setMembers((prev) => prev.filter((m) => !selectedMembers.includes(m.id)));
+          setSelectedMembers([]);
+          toast.success('Selected members removed');
+        } catch (error) {
+          console.error('Bulk removal failed:', error);
+          toast.error('Some members could not be removed.');
+        }
+      },
+    });
   };
 
-  const handleRemove = async (id) => {
+  const handleRemove = (mid) => {
     if (!group) return;
-    if (confirm('Remove this member?')) {
-      try {
-        await groupService.manageMember(group.id, id, 'kick');
-        setMembers(members.filter((m) => m.id !== id));
-      } catch {
-        // ignore
-      }
-    }
+    openConfirmModal({
+      title: 'Confirm Removal',
+      message: 'Remove this member?',
+      onConfirm: async () => {
+        try {
+          await groupService.manageMember(group.id, mid, 'kick');
+          setMembers((prev) => prev.filter((m) => m.id !== mid));
+          toast.success('Member removed');
+        } catch (err) {
+          toast.error('Failed to remove member');
+        }
+      },
+    });
   };
 
-  const handlePromote = async (id) => {
+  const handlePromote = (mid) => {
     if (!group) return;
-    if (confirm('Promote this member to Moderator?')) {
-      try {
-        await groupService.manageMember(group.id, id, 'promote');
-        setMembers(
-          members.map((m) =>
-            m.id === id && m.role === 'member' ? { ...m, role: 'admin' } : m
-          )
-        );
-      } catch {
-        // ignore
-      }
-    }
+    openConfirmModal({
+      title: 'Confirm Promotion',
+      message: 'Promote this member to Moderator?',
+      onConfirm: async () => {
+        try {
+          await groupService.manageMember(group.id, mid, 'promote');
+          setMembers((prev) =>
+            prev.map((m) =>
+              m.id === mid && m.role === 'member' ? { ...m, role: 'admin' } : m
+            )
+          );
+          toast.success('Member promoted');
+        } catch (err) {
+          toast.error('Failed to promote member');
+        }
+      },
+    });
+  };
+
+  const handleApproveRequest = (req) => {
+    openConfirmModal({
+      title: 'Approve Request',
+      message: `Approve ${req.name}?`,
+      onConfirm: async () => {
+        try {
+          await groupService.approveRequest(req.id);
+          setMembers((prev) => [
+            ...prev,
+            { id: req.userId, name: req.name, role: 'member' },
+          ]);
+          setRequests((prev) => {
+            const next = prev.filter((r) => r.id !== req.id);
+            setPendingCount(next.length);
+            return next;
+          });
+          toast.success('Request approved');
+        } catch (err) {
+          console.error('Failed to approve request', err);
+          toast.error('Failed to approve request');
+        }
+      },
+    });
+  };
+
+  const handleRejectRequest = (req) => {
+    openConfirmModal({
+      title: 'Reject Request',
+      message: `Reject ${req.name}?`,
+      onConfirm: async () => {
+        try {
+          await groupService.rejectRequest(req.id);
+          setRequests((prev) => {
+            const next = prev.filter((r) => r.id !== req.id);
+            setPendingCount(next.length);
+            return next;
+          });
+          toast.success('Request rejected');
+        } catch (err) {
+          console.error('Failed to reject request', err);
+          toast.error('Failed to reject request');
+        }
+      },
+    });
   };
 
   const exportMembersToCSV = () => {
@@ -390,41 +467,13 @@ export default function AdminGroupDetailsPage() {
                       <td className="p-2 text-center flex justify-center gap-2">
                         <button
                           className="bg-green-600 text-white px-2 py-1 rounded"
-                          onClick={async () => {
-                            if (confirm(`Approve ${req.name}?`)) {
-                              try {
-                                await groupService.approveRequest(req.id);
-                                setMembers([
-                                  ...members,
-                                  { id: req.userId, name: req.name, role: 'member' },
-                                ]);
-                                const next = requests.filter((r) => r.id !== req.id);
-                                setRequests(next);
-                                setPendingCount(next.length);
-                              } catch (err) {
-                                console.error('Failed to approve request', err);
-                                toast.error('Failed to approve request');
-                              }
-                            }
-                          }}
+                          onClick={() => handleApproveRequest(req)}
                         >
                           ✅ Approve
                         </button>
                         <button
                           className="bg-red-500 text-white px-2 py-1 rounded"
-                          onClick={async () => {
-                            if (confirm(`Reject ${req.name}?`)) {
-                              try {
-                                await groupService.rejectRequest(req.id);
-                                const next = requests.filter((r) => r.id !== req.id);
-                                setRequests(next);
-                                setPendingCount(next.length);
-                              } catch (err) {
-                                console.error('Failed to reject request', err);
-                                toast.error('Failed to reject request');
-                              }
-                            }
-                          }}
+                          onClick={() => handleRejectRequest(req)}
                         >
                           ❌ Reject
                         </button>
@@ -437,6 +486,13 @@ export default function AdminGroupDetailsPage() {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
 }
