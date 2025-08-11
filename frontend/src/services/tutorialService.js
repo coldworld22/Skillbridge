@@ -1,5 +1,7 @@
 import api from "@/services/api/api";
+import { extractData } from "@/services/api/helpers";
 import { API_BASE_URL } from "@/config/config";
+import { joinUrl } from "@/utils/url";
 
 export const formatTutorial = (tut) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -49,11 +51,11 @@ export const formatTutorial = (tut) => {
 
   return {
     ...tut,
-    thumbnail: thumbnailPath ? `${baseUrl}${thumbnailPath}` : null,
-    preview: previewPath ? `${baseUrl}${previewPath}` : null,
+    thumbnail: thumbnailPath ? joinUrl(baseUrl, thumbnailPath) : null,
+    preview: previewPath ? joinUrl(baseUrl, previewPath) : null,
     instructor: tut.instructor_name || tut.instructor,
     instructorAvatar: tut.instructor_avatar
-      ? `${baseUrl}${tut.instructor_avatar}`
+      ? joinUrl(baseUrl, tut.instructor_avatar)
       : null,
     instructorBio: tut.instructor_bio || tut.instructorBio,
     price: rawPrice == null ? null : parseFloat(rawPrice),
@@ -64,20 +66,31 @@ export const formatTutorial = (tut) => {
     tags: tagArray,
     trending: Boolean(tut.trending),
     // Normalize category fields so components can filter reliably
+    categoryId: (() => {
+      const id =
+        tut.category_id != null
+          ? tut.category_id
+          : tut.categoryId != null
+            ? tut.categoryId
+            : null;
+      return id != null ? Number(id) : null;
+    })(),
+    categoryName:
+      tut.category || tut.category_name || tut.categoryName || null,
+    // Keep legacy `category` field for backward compatibility
     category: tut.category || tut.category_name || tut.categoryName || null,
-    categoryId: tut.category_id || tut.categoryId || null,
   };
 };
 
 export const fetchFeaturedTutorials = async () => {
   const res = await api.get("/users/tutorials/featured");
-  const list = res.data?.data ?? res.data ?? [];
+  const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
 export const fetchPublishedTutorials = async () => {
   const res = await api.get("/users/tutorials");
-  const list = res.data?.data ?? res.data ?? [];
+  const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
@@ -94,8 +107,8 @@ export const enrollInTutorial = async (tutorialId) => {
 
 export const getMyEnrolledTutorials = async () => {
   try {
-    const { data } = await api.get('/users/tutorials/enroll/my');
-    const list = data?.data ?? [];
+    const res = await api.get('/users/tutorials/enroll/my');
+    const list = extractData(res);
     return list.map(formatTutorial);
   } catch (err) {
     if (err.response && [401, 403].includes(err.response.status)) {
@@ -132,8 +145,8 @@ export const removeTutorialFromWishlist = async (id) => {
 };
 
 export const getMyTutorialWishlist = async () => {
-  const { data } = await api.get('/users/tutorials/wishlist/my');
-  return data?.data ?? [];
+  const res = await api.get('/users/tutorials/wishlist/my');
+  return extractData(res);
 };
 
 export const addTutorialToFavorites = async (id) => {
@@ -147,13 +160,13 @@ export const removeTutorialFromFavorites = async (id) => {
 };
 
 export const getMyTutorialFavorites = async () => {
-  const { data } = await api.get('/users/tutorials/favorites/my');
-  return data?.data ?? [];
+  const res = await api.get('/users/tutorials/favorites/my');
+  return extractData(res);
 };
 
 export const fetchTutorialReviews = async (tutorialId) => {
-  const { data } = await api.get(`/users/tutorials/reviews/${tutorialId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/tutorials/reviews/${tutorialId}`);
+  return extractData(res);
 };
 
 export const submitTutorialReview = async (tutorialId, payload) => {
@@ -162,8 +175,8 @@ export const submitTutorialReview = async (tutorialId, payload) => {
 };
 
 export const fetchTutorialComments = async (tutorialId) => {
-  const { data } = await api.get(`/users/tutorials/comments/${tutorialId}`);
-  return data?.data ?? [];
+  const res = await api.get(`/users/tutorials/comments/${tutorialId}`);
+  return extractData(res);
 };
 
 export const postTutorialComment = async (tutorialId, payload) => {
@@ -174,7 +187,7 @@ export const postTutorialComment = async (tutorialId, payload) => {
 // Fetch assignments linked to a tutorial
 export const fetchTutorialAssignments = async (tutorialId) => {
   const res = await api.get(`/users/tutorials/assignments/${tutorialId}`);
-  return res.data?.data ?? [];
+  return extractData(res);
 };
 
 // Retrieve the current user's enrollment status and progress for a tutorial
