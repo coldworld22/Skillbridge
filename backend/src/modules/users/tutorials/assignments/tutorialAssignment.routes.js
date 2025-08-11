@@ -5,7 +5,7 @@ const validate = require('../../../../middleware/validate');
 const validator = require('./tutorialAssignment.validator');
 
 router.get('/admin', verifyToken, isInstructorOrAdmin, ctrl.getAllAssignments);
-router.get('/:tutorialId', ctrl.getAssignmentsByTutorial);
+router.get('/:tutorialId', verifyToken, ctrl.getAssignmentsByTutorial);
 router.post(
   '/:tutorialId',
   verifyToken,
