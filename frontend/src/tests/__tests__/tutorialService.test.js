@@ -15,4 +15,40 @@ describe("formatTutorial", () => {
     expect(formatTutorial({ price: null }).price).toBeNull();
     expect(formatTutorial({}).price).toBeNull();
   });
+
+  describe("URL joining", () => {
+    const base = "https://api.example.com";
+
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = base;
+    });
+
+    afterEach(() => {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    });
+
+    it("handles asset paths with leading slashes", () => {
+      const formatted = formatTutorial({
+        thumbnail_url: "/img.png",
+        preview_video: "/preview.mp4",
+        instructor_avatar: "/avatar.png",
+      });
+
+      expect(formatted.thumbnail).toBe(`${base}/img.png`);
+      expect(formatted.preview).toBe(`${base}/preview.mp4`);
+      expect(formatted.instructorAvatar).toBe(`${base}/avatar.png`);
+    });
+
+    it("handles asset paths without leading slashes", () => {
+      const formatted = formatTutorial({
+        thumbnail_url: "img.png",
+        preview_video: "preview.mp4",
+        instructor_avatar: "avatar.png",
+      });
+
+      expect(formatted.thumbnail).toBe(`${base}/img.png`);
+      expect(formatted.preview).toBe(`${base}/preview.mp4`);
+      expect(formatted.instructorAvatar).toBe(`${base}/avatar.png`);
+    });
+  });
 });

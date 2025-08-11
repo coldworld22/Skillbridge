@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
+import { joinUrl } from "@/utils/url";
 
 export const formatTutorial = (tut) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -49,11 +50,11 @@ export const formatTutorial = (tut) => {
 
   return {
     ...tut,
-    thumbnail: thumbnailPath ? `${baseUrl}${thumbnailPath}` : null,
-    preview: previewPath ? `${baseUrl}${previewPath}` : null,
+    thumbnail: thumbnailPath ? joinUrl(baseUrl, thumbnailPath) : null,
+    preview: previewPath ? joinUrl(baseUrl, previewPath) : null,
     instructor: tut.instructor_name || tut.instructor,
     instructorAvatar: tut.instructor_avatar
-      ? `${baseUrl}${tut.instructor_avatar}`
+      ? joinUrl(baseUrl, tut.instructor_avatar)
       : null,
     instructorBio: tut.instructor_bio || tut.instructorBio,
     price: rawPrice == null ? null : parseFloat(rawPrice),
