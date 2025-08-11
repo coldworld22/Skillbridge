@@ -440,7 +440,7 @@ const LandingTutorialsSection = () => {
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
-                            price,
+                            price: (tut.discountPrice ?? tut.price) || 0,
                             quantity: 1,
                             ...(tut.currency || tut.currencyCode
                               ? { currency: tut.currency || tut.currencyCode }
