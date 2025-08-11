@@ -769,7 +769,8 @@
     "sort_az": "A-Z",
     "view_group": "View Group",
     "back_to_my_groups": "Back to My Groups",
-    "pending_requests": "pending join request{{count}}",
+    "pending_requests": "{{count}} pending join request",
+    "pending_requests_plural": "{{count}} pending join requests",
     "join_pending": "⏳ Join request pending approval",
     "joined": "✅ You are a member of this group"
   },
