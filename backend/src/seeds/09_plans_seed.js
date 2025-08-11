@@ -1,0 +1,142 @@
+exports.seed = async function (knex) {
+  await knex('plan_features').del();
+  await knex('plans').del();
+
+  const now = knex.fn.now();
+
+  const plans = [
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'Basic',
+      slug: 'basic',
+      price_monthly: 0,
+      price_yearly: 0,
+      currency: 'USD',
+      recommended: false,
+      active: true,
+      color: '#1F2937',
+      style: JSON.stringify({
+        gradientStart: '#1F2937',
+        gradientEnd: '#374151',
+        buttonColor: '#2563EB',
+        buttonTextColor: '#FFFFFF'
+      }),
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'Regular',
+      slug: 'regular',
+      price_monthly: 9.99,
+      price_yearly: 99.99,
+      currency: 'USD',
+      recommended: true,
+      active: true,
+      color: '#4F46E5',
+      style: JSON.stringify({
+        gradientStart: '#4338CA',
+        gradientEnd: '#3B82F6',
+        buttonColor: '#3B82F6',
+        buttonTextColor: '#FFFFFF'
+      }),
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'Prime',
+      slug: 'prime',
+      price_monthly: 19.99,
+      price_yearly: 199.99,
+      currency: 'USD',
+      recommended: false,
+      active: true,
+      color: '#F59E0B',
+      style: JSON.stringify({
+        gradientStart: '#F59E0B',
+        gradientEnd: '#D97706',
+        textColor: '#1F2937',
+        buttonColor: '#FBBF24',
+        buttonTextColor: '#1F2937'
+      }),
+      created_at: now,
+      updated_at: now
+    }
+  ];
+
+  await knex('plans').insert(plans);
+
+  const planRows = await knex('plans').select('id', 'slug');
+  const ids = planRows.reduce((acc, row) => {
+    acc[row.slug] = row.id;
+    return acc;
+  }, {});
+
+  await knex('plan_features').insert([
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'ads',
+      value: '1',
+      description: '1 advertisement for 3 days'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'placement',
+      value: 'dashboard',
+      description: 'Dashboard placement only'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'branding',
+      value: 'none',
+      description: 'No branding or analytics'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'ads',
+      value: '3',
+      description: '3 advertisements for 7 days'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'placement',
+      value: 'dashboard,homepage',
+      description: 'Dashboard & homepage placements'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'analytics',
+      value: 'true',
+      description: 'Analytics access'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads',
+      value: '10',
+      description: '10 advertisements for 30 days'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'placement',
+      value: 'dashboard,homepage,email,sidebar',
+      description: 'All placements including email & sidebar'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'branding',
+      value: 'true',
+      description: 'Custom branding & analytics'
+    }
+  ]);
+};
+
