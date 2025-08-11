@@ -28,6 +28,7 @@ export const getStars = (rating) => {
   const safeRating = Number.isFinite(rating)
     ? Math.min(Math.max(rating, 0), 5)
     : 0;
+  if (safeRating <= 0) return null;
   const full = Math.floor(safeRating);
   const half = safeRating % 1 >= 0.5;
   return (
@@ -163,7 +164,11 @@ const LandingTutorialsSection = () => {
   const filteredTutorials =
     activeTab === "All"
       ? tutorials
-      : tutorials.filter((t) => t.category === activeTab);
+      : tutorials.filter((t) => {
+          const categoryName =
+            t.category || t.categoryName || t.category_name;
+          return categoryName === activeTab;
+        });
 
   return (
     <section className="bg-gray-950 py-16 text-white px-4 sm:px-6">
@@ -340,10 +345,14 @@ const LandingTutorialsSection = () => {
                   </div>
 
                   <div className="flex justify-between items-center mt-4 text-sm">
-                    <div className="flex items-center gap-1 text-yellow-400">
-                      {getStars(tut.rating)}
-                      <span className="text-gray-400 ml-1">({tut.ratingCount || 0})</span>
-                    </div>
+                    {tut.rating > 0 && (
+                      <div className="flex items-center gap-1 text-yellow-400">
+                        {getStars(tut.rating)}
+                        {tut.ratingCount > 0 && (
+                          <span className="text-gray-400 ml-1">({tut.ratingCount})</span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1 text-gray-400">
                       <FaClock size={12} /> {tut.duration}
                     </div>
@@ -352,14 +361,27 @@ const LandingTutorialsSection = () => {
                   <div className="mt-3 flex justify-between items-center">
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        Number(tut.price) > 0
+                        Number(tut.discountPrice ?? tut.price) > 0
                           ? 'bg-yellow-500 text-black'
                           : 'bg-green-500 text-black'
                       }`}
                     >
-                      {Number(tut.price) > 0
-                        ? formatCurrency(tut.price, { currency: tut.currencyCode })
-                        : t('free')}
+                      {Number(tut.discountPrice ?? tut.price) > 0 ? (
+                        tut.discountPrice && Number(tut.discountPrice) < Number(tut.price) ? (
+                          <>
+                            <span className="line-through mr-1">
+                              {formatCurrency(tut.price, { currency: tut.currency })}
+                            </span>
+                            <span>
+                              {formatCurrency(tut.discountPrice, { currency: tut.currency })}
+                            </span>
+                          </>
+                        ) : (
+                          formatCurrency(tut.price, { currency: tut.currency })
+                        )
+                      ) : (
+                        t('free')
+                      )}
                     </span>
                     
                     {enrolledIds.includes(tut.id) && (
@@ -411,6 +433,7 @@ const LandingTutorialsSection = () => {
                             name: tut.title,
                             item_type: 'tutorial',
                             price: tut.price || 0,
+                            quantity: 1,
                           });
                           toast.success('Added to cart');
                         } catch (err) {

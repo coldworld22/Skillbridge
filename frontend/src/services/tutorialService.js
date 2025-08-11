@@ -1,36 +1,73 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-export const formatTutorial = (tut) => ({
-  ...tut,
-  thumbnail:
-    tut.thumbnail_url || tut.cover_image
-      ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${
-          tut.thumbnail_url || tut.cover_image
-        }`
-      : null,
-  preview: tut.preview_video
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.preview_video}`
-    : null,
-  instructor: tut.instructor_name || tut.instructor,
-  instructorAvatar: tut.instructor_avatar
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${tut.instructor_avatar}`
-    : null,
-  instructorBio: tut.instructor_bio || tut.instructorBio,
-  price:
-    tut.price === null || tut.price === undefined
-      ? null
-      : parseFloat(tut.price),
-  rating: typeof tut.rating === "string" || typeof tut.rating === "number"
-    ? parseFloat(tut.rating)
-    : 0,
-  tags: Array.isArray(tut.tags)
+export const formatTutorial = (tut) => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+  const thumbnailPath = tut.thumbnail_url || tut.cover_image;
+  const previewPath = tut.preview_video;
+
+  const rawPrice =
+    tut.price ??
+    tut.originalPrice ??
+    tut.original_price ??
+    tut.cost ??
+    null;
+
+  const rawDiscount = tut.discountPrice ?? tut.discount_price ?? null;
+
+  const currency =
+    tut.currency || tut.currency_code || tut.currencyCode || undefined;
+
+  const tagArray = Array.isArray(tut.tags)
     ? tut.tags
+        .map((tag) =>
+          typeof tag === "string" ? tag : tag.name || tag.slug || tag.tag_name
+        )
+        .filter(Boolean)
     : typeof tut.tags === "string"
-      ? tut.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
-      : [],
-  trending: Boolean(tut.trending),
-});
+      ? tut.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+      : Array.isArray(tut.tag_list || tut.tagList || tut.tutorial_tags)
+        ? (tut.tag_list || tut.tagList || tut.tutorial_tags)
+            .map((tag) =>
+              typeof tag === "string" ? tag : tag.name || tag.slug || tag.tag_name
+            )
+            .filter(Boolean)
+        : [];
+
+  const rating =
+    typeof tut.rating === "string" || typeof tut.rating === "number"
+      ? parseFloat(tut.rating)
+      : 0;
+
+  const ratingCount = parseInt(
+    tut.ratingCount ?? tut.rating_count ?? tut.reviews_count ?? 0,
+    10,
+  );
+
+  return {
+    ...tut,
+    thumbnail: thumbnailPath ? `${baseUrl}${thumbnailPath}` : null,
+    preview: previewPath ? `${baseUrl}${previewPath}` : null,
+    instructor: tut.instructor_name || tut.instructor,
+    instructorAvatar: tut.instructor_avatar
+      ? `${baseUrl}${tut.instructor_avatar}`
+      : null,
+    instructorBio: tut.instructor_bio || tut.instructorBio,
+    price: rawPrice == null ? null : parseFloat(rawPrice),
+    discountPrice: rawDiscount == null ? null : parseFloat(rawDiscount),
+    currency,
+    rating,
+    ratingCount,
+    tags: tagArray,
+    trending: Boolean(tut.trending),
+    // Normalize category fields so components can filter reliably
+    category: tut.category || tut.category_name || tut.categoryName || null,
+    categoryId: tut.category_id || tut.categoryId || null,
+  };
+};
 
 export const fetchFeaturedTutorials = async () => {
   const res = await api.get("/users/tutorials/featured");
