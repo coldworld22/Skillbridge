@@ -4,6 +4,7 @@ import { Star, Eye, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/utils/currency";
 import useCartStore from "@/store/cart/cartStore";
+import { toast } from "react-toastify";
 
 const DEFAULT_IMAGE =
   "https://www.classcentral.com/report/wp-content/uploads/2022/06/C-Programming-BCG-Banner.png";
@@ -16,12 +17,19 @@ const TutorialCard = ({ tutorial = {} }) => {
     Number(tutorial.price) > 0 ? formatCurrency(tutorial.price) : "Free";
 
   const handleAddToCart = async () => {
-    await addItem({
+    const success = await addItem({
       id: tutorial.id,
       name: tutorial.title,
       price: tutorial.price || 0,
       item_type: "tutorial",
+      quantity: 1,
+      ...(tutorial.currency ? { currency: tutorial.currency } : {}),
     });
+    if (success) {
+      toast.success("Added to cart");
+    } else {
+      toast.error("Failed to add to cart");
+    }
   };
 
   return (

@@ -27,11 +27,14 @@ const useCartStore = create(
       addItem: async (item) => {
         set({ isLoading: true, error: null });
         try {
-          await apiAddToCart(item);
+          const res = await apiAddToCart(item);
+          if (!res) throw new Error("Failed to add item");
           const data = await getCartItems();
           set({ items: data, isLoading: false });
+          return true;
         } catch (err) {
           set({ error: err.message, isLoading: false });
+          return false;
         }
       },
 
