@@ -17,8 +17,7 @@ import {
   FaFolderOpen,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
-import { toast } from 'react-toastify';
-import ConfirmModal from '@/components/common/ConfirmModal';
+import toast from 'react-hot-toast';
 
 // ...imports (same as before)...
 
