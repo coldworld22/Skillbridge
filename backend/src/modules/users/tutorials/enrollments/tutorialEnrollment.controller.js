@@ -140,13 +140,16 @@ exports.getStatus = catchAsync(async (req, res) => {
 // Update progress percentage for a tutorial
 exports.updateProgress = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
-  const { progress } = req.body;
+  let { progress } = req.body;
   const user_id = req.user.id;
 
   const enrollment = await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
     .first();
   if (!enrollment) throw new AppError("Enrollment not found", 404);
+
+  // Clamp progress to [0, 100] to ensure valid range
+  progress = Math.min(Math.max(Number(progress), 0), 100);
 
   await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
