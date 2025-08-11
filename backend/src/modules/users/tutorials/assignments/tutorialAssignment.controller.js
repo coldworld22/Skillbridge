@@ -7,28 +7,6 @@ const service = require('./tutorialAssignment.service');
 
 exports.getAssignmentsByTutorial = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
-  const userId = req.user.id;
-
-  // Fetch tutorial to confirm ownership/instructor
-  const tutorial = await db('tutorials')
-    .select('instructor_id')
-    .where({ id: tutorialId })
-    .first();
-
-  if (!tutorial) throw new AppError('Tutorial not found', 404);
-
-  const roles = req.user.roles || [req.user.role];
-  const normalized = roles.map((r) => r.toLowerCase().replace(/\s+/g, ''));
-  const isAdmin = normalized.some((r) => ['admin', 'superadmin'].includes(r));
-  const isInstructor = normalized.includes('instructor') && tutorial.instructor_id === userId;
-
-  if (!isAdmin && !isInstructor) {
-    const enrolled = await db('tutorial_enrollments')
-      .where({ tutorial_id: tutorialId, user_id: userId })
-      .first();
-    if (!enrolled) throw new AppError('Access denied', 403);
-  }
-
   const assignments = await service.getByTutorial(tutorialId);
   sendSuccess(res, assignments);
 });
