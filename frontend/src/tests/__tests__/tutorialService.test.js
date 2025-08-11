@@ -1,4 +1,5 @@
 import { formatTutorial } from "../../services/tutorialService";
+import { extractData } from "../../services/api/helpers";
 
 describe("formatTutorial", () => {
   it("parses numeric price strings", () => {
@@ -50,5 +51,19 @@ describe("formatTutorial", () => {
       expect(formatted.preview).toBe(`${base}/preview.mp4`);
       expect(formatted.instructorAvatar).toBe(`${base}/avatar.png`);
     });
+  });
+});
+
+describe("extractData", () => {
+  it("prefers nested data", () => {
+    expect(extractData({ data: { data: [1, 2] } })).toEqual([1, 2]);
+  });
+
+  it("falls back to top-level data", () => {
+    expect(extractData({ data: [3] })).toEqual([3]);
+  });
+
+  it("defaults to empty array", () => {
+    expect(extractData({})).toEqual([]);
   });
 });
