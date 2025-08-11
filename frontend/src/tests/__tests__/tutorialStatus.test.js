@@ -22,19 +22,24 @@ describe('loadTutorialStatus', () => {
       JSON.stringify({ completedChapters: [1, 2] })
     );
 
-    const { enrolled, progressPercent } = await loadTutorialStatus(tut);
+    const { enrolled, progress } = await loadTutorialStatus(tut);
     expect(enrolled).toBe(true);
-    expect(progressPercent).toBeCloseTo(50);
+    expect(progress).toBeCloseTo(50);
   });
 
   it('uses API data when available', async () => {
     const tut = { id: 2 };
-    fetchTutorialProgress.mockResolvedValue({ enrolled: true, progress: 80 });
+    fetchTutorialProgress.mockResolvedValue({
+      enrolled: true,
+      status: 'in_progress',
+      progress: 80,
+    });
 
     const res = await loadTutorialStatus(tut);
     expect(fetchTutorialProgress).toHaveBeenCalledWith(2);
     expect(res.enrolled).toBe(true);
-    expect(res.progressPercent).toBe(80);
+    expect(res.status).toBe('in_progress');
+    expect(res.progress).toBe(80);
   });
 });
 
