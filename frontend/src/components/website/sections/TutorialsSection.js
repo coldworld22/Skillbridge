@@ -79,8 +79,8 @@ const LandingTutorialsSection = () => {
           const err = tutorialRes.error;
           const msg =
             err.code === "ERR_NETWORK"
-              ? "Network error: please check API_BASE_URL and backend server."
-              : "Failed to load tutorials";
+              ? t('network_error')
+              : t('tutorials_load_error');
           toast.error(msg);
         } else {
           setTutorials(tutorialRes || []);
@@ -90,10 +90,10 @@ const LandingTutorialsSection = () => {
           const err = categoryRes.error;
           const msg =
             err.code === "ERR_NETWORK"
-              ? "Network error: please check API_BASE_URL and backend server."
-              : "Failed to load categories";
+              ? t('network_error')
+              : t('categories_load_error');
           toast.error(msg);
-          console.error("Failed to load categories", err);
+          console.error(t('categories_load_error'), err);
         } else {
           setCategories(categoryRes?.data || categoryRes || []);
         }
@@ -258,21 +258,23 @@ const LandingTutorialsSection = () => {
                         e.stopPropagation();
                         if (!user) return router.push('/auth/login');
                         if (!isStudent) {
-                          toast.error('Only students can save tutorials.');
+                          toast.error(t('only_students_save_tutorials'));
                           return;
                         }
                         try {
                           if (favoriteIds.includes(tut.id)) {
                             await removeTutorialFromFavorites(tut.id);
-                            setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
-                            toast.success('Removed from favorites');
+                            const updated = await getMyTutorialFavorites();
+                            setFavoriteIds(updated.map((t) => t.id));
+                            toast.success(t('removed_from_favorites'));
                           } else {
                             await addTutorialToFavorites(tut.id);
-                            setFavoriteIds([...favoriteIds, tut.id]);
-                            toast.success('Added to favorites');
+                            const updated = await getMyTutorialFavorites();
+                            setFavoriteIds(updated.map((t) => t.id));
+                            toast.success(t('added_to_favorites'));
                           }
                         } catch (err) {
-                          const message = err?.response?.data?.message || 'Failed to update favorites';
+                          const message = err?.response?.data?.message || t('failed_to_update_favorites');
                           toast.error(message);
                         }
                       }}
@@ -287,21 +289,22 @@ const LandingTutorialsSection = () => {
                         e.stopPropagation();
                         if (!user) return router.push('/auth/login');
                         if (!isStudent) {
-                          toast.error('Only students can save tutorials.');
+                          toast.error(t('only_students_save_tutorials'));
                           return;
                         }
                         try {
                           if (wishlistIds.includes(tut.id)) {
                             await removeTutorialFromWishlist(tut.id);
-                            setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
-                            toast.success('Removed from wishlist');
+                            const updated = await getMyTutorialWishlist();
+                            setWishlistIds(updated.map((t) => t.id));
+                            toast.success(t('removed_from_wishlist'));
                           } else {
                             await addTutorialToWishlist(tut.id);
                             setWishlistIds([...wishlistIds, tut.id]);
                             toast.success(t('added_to_wishlist'));
                           }
                         } catch (err) {
-                          const message = err?.response?.data?.message || 'Failed to update wishlist';
+                          const message = err?.response?.data?.message || t('failed_to_update_wishlist');
                           toast.error(message);
                         }
                       }}
@@ -384,7 +387,7 @@ const LandingTutorialsSection = () => {
                     
                     {enrolledIds.includes(tut.id) && (
                       <span className="text-xs text-green-400 font-medium">
-                        Enrolled
+                        {t('enrolled')}
                       </span>
                     )}
                   </div>
@@ -399,7 +402,7 @@ const LandingTutorialsSection = () => {
                         />
                       </div>
                       <div className="text-xs text-gray-400 mt-1 flex justify-between">
-                        <span>Progress</span>
+                        <span>{t('progress')}</span>
                         <span>{progress[tut.id] || 0}%</span>
                       </div>
                     </div>

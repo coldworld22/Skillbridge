@@ -165,5 +165,18 @@
   "by_author": "by {{author}}",
   "network_error": "Error de red: verifique API_BASE_URL y el servidor backend.",
   "tutorials_load_error": "No se pudieron cargar los tutoriales.",
-  "categories_load_error": "No se pudieron cargar las categorías."
+  "categories_load_error": "No se pudieron cargar las categorías.",
+  "enrolled": "Inscrito",
+  "progress": "Progreso",
+  "only_students_save_tutorials": "Solo los estudiantes pueden guardar tutoriales.",
+  "removed_from_favorites": "Eliminado de favoritos",
+  "added_to_favorites": "Agregado a favoritos",
+  "failed_to_update_favorites": "Error al actualizar favoritos",
+  "removed_from_wishlist": "Eliminado de la lista de deseos",
+  "failed_to_update_wishlist": "Error al actualizar la lista de deseos",
+  "login_or_register_to_enroll": "Por favor, inicia sesión o regístrate para inscribirte.",
+  "only_students_enroll": "Solo los estudiantes pueden inscribirse en clases.",
+  "already_enrolled_class": "Ya estás inscrito en esta clase",
+  "failed_to_add_to_cart": "Error al agregar al carrito",
+  "failed_to_enroll": "Error al inscribirse"
  }
