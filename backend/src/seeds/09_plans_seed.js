@@ -97,6 +97,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'groups_create',
+      value: 'false',
+      description: 'Cannot create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'groups_join_limit',
+      value: '1',
+      description: 'Join up to 1 group'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
       feature_key: 'ads',
       value: '3',
@@ -118,6 +132,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'groups_create',
+      value: 'true',
+      description: 'Can create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'groups_join_limit',
+      value: '5',
+      description: 'Join up to 5 groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.prime,
       feature_key: 'ads',
       value: '10',
@@ -136,6 +164,20 @@ exports.seed = async function (knex) {
       feature_key: 'branding',
       value: 'true',
       description: 'Custom branding & analytics'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'groups_create',
+      value: 'true',
+      description: 'Can create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'groups_join_limit',
+      value: 'unlimited',
+      description: 'Join unlimited groups'
     }
   ]);
 };
