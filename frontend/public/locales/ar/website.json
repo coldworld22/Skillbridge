@@ -165,5 +165,18 @@
   "by_author": "by {{author}}",
   "network_error": "خطأ في الشبكة: يرجى التحقق من API_BASE_URL وخادم الخلفية.",
   "tutorials_load_error": "فشل تحميل الدروس.",
-  "categories_load_error": "فشل تحميل الفئات."
+  "categories_load_error": "فشل تحميل الفئات.",
+  "enrolled": "مسجل",
+  "progress": "التقدم",
+  "only_students_save_tutorials": "يمكن للطلاب فقط حفظ الدروس.",
+  "removed_from_favorites": "تمت الإزالة من المفضلة",
+  "added_to_favorites": "تمت الإضافة إلى المفضلة",
+  "failed_to_update_favorites": "فشل تحديث المفضلة",
+  "removed_from_wishlist": "تمت الإزالة من قائمة الرغبات",
+  "failed_to_update_wishlist": "فشل تحديث قائمة الرغبات",
+  "login_or_register_to_enroll": "يرجى تسجيل الدخول أو التسجيل للالتحاق.",
+  "only_students_enroll": "يمكن للطلاب فقط الالتحاق بالفصول.",
+  "already_enrolled_class": "أنت مسجل بالفعل في هذه الحصة",
+  "failed_to_add_to_cart": "فشل الإضافة إلى السلة",
+  "failed_to_enroll": "فشل التسجيل"
  }

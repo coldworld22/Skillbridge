@@ -165,5 +165,18 @@
   "by_author": "by {{author}}",
   "network_error": "Netzwerkfehler: Bitte API_BASE_URL und Backend-Server prüfen.",
   "tutorials_load_error": "Laden der Tutorials fehlgeschlagen.",
-  "categories_load_error": "Laden der Kategorien fehlgeschlagen."
+  "categories_load_error": "Laden der Kategorien fehlgeschlagen.",
+  "enrolled": "Eingeschrieben",
+  "progress": "Fortschritt",
+  "only_students_save_tutorials": "Nur Schüler können Tutorials speichern.",
+  "removed_from_favorites": "Aus Favoriten entfernt",
+  "added_to_favorites": "Zu Favoriten hinzugefügt",
+  "failed_to_update_favorites": "Favoriten konnten nicht aktualisiert werden",
+  "removed_from_wishlist": "Von der Wunschliste entfernt",
+  "failed_to_update_wishlist": "Wunschliste konnte nicht aktualisiert werden",
+  "login_or_register_to_enroll": "Bitte einloggen oder registrieren, um sich einzuschreiben.",
+  "only_students_enroll": "Nur Studenten können sich für Kurse einschreiben.",
+  "already_enrolled_class": "Du bist bereits in diesem Kurs eingeschrieben",
+  "failed_to_add_to_cart": "Zum Warenkorb hinzufügen fehlgeschlagen",
+  "failed_to_enroll": "Einschreibung fehlgeschlagen"
  }

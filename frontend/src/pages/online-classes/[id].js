@@ -17,6 +17,7 @@ import {
 import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'next-i18next';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
 
@@ -47,6 +48,7 @@ const StatusBadge = ({ status }) => {
 export default function ClassDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { t } = useTranslation(['website', 'tutorials']);
   const [classInfo, setClassInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -62,12 +64,12 @@ export default function ClassDetailsPage() {
   const isStudent = user?.role?.toLowerCase() === 'student';
 
   const handleGuestRedirect = () => {
-    toast.info('Please log in or register to enroll.');
+    toast.info(t('login_or_register_to_enroll'));
     router.push('/auth/login');
   };
 
   const handleRoleBlocked = () => {
-    toast.error('Only students can enroll in classes.');
+    toast.error(t('only_students_enroll'));
   };
 
   const handleAddToCart = async () => {
@@ -80,17 +82,17 @@ export default function ClassDetailsPage() {
       return;
     }
     if (isEnrolled) {
-      toast.info('You are already enrolled in this class');
+      toast.info(t('already_enrolled_class'));
       return;
     }
 
     try {
       await addItem({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
-      toast.success('Added to cart');
+      toast.success(t('added_to_cart'));
       router.push('/cart');
     } catch (err) {
       console.error('Failed to add to cart', err);
-      toast.error('Failed to add to cart');
+      toast.error(t('failed_to_add_to_cart'));
     }
   };
 
@@ -104,18 +106,18 @@ export default function ClassDetailsPage() {
       return;
     }
     if (isEnrolled) {
-      toast.info('You are already enrolled in this class');
+      toast.info(t('already_enrolled_class'));
       return;
     }
 
     if (classInfo.price === 0) {
       try {
         await enrollInClass(classInfo.id);
-        toast.success('Enrolled successfully');
+        toast.success(t('tutorials:enroll_success'));
         router.push(`/payments/success?classId=${classInfo.id}`);
       } catch (err) {
         console.error('Failed to enroll', err);
-        toast.error('Failed to enroll');
+        toast.error(t('failed_to_enroll'));
       }
     } else {
       router.push(`/payments/checkout?classId=${classInfo.id}`);
@@ -136,15 +138,15 @@ export default function ClassDetailsPage() {
       if (inWishlist) {
         await removeClassFromWishlist(classInfo.id);
         setInWishlist(false);
-        toast.success('Removed from wishlist');
+        toast.success(t('removed_from_wishlist'));
       } else {
         await addClassToWishlist(classInfo.id);
         setInWishlist(true);
-        toast.success('Added to wishlist');
+        toast.success(t('added_to_wishlist'));
       }
     } catch (err) {
       console.error('Wishlist update failed', err);
-      toast.error('Failed to update wishlist');
+      toast.error(t('failed_to_update_wishlist'));
     }
   };
 

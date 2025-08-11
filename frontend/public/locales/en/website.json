@@ -165,6 +165,18 @@
   "by_author": "by {{author}}",
   "network_error": "Network error: please check API_BASE_URL and backend server.",
   "tutorials_load_error": "Failed to load tutorials.",
-  "categories_load_error": "Failed to load categories."
-
+  "categories_load_error": "Failed to load categories.",
+  "enrolled": "Enrolled",
+  "progress": "Progress",
+  "only_students_save_tutorials": "Only students can save tutorials.",
+  "removed_from_favorites": "Removed from favorites",
+  "added_to_favorites": "Added to favorites",
+  "failed_to_update_favorites": "Failed to update favorites",
+  "removed_from_wishlist": "Removed from wishlist",
+  "failed_to_update_wishlist": "Failed to update wishlist",
+  "login_or_register_to_enroll": "Please log in or register to enroll.",
+  "only_students_enroll": "Only students can enroll in classes.",
+  "already_enrolled_class": "You are already enrolled in this class",
+  "failed_to_add_to_cart": "Failed to add to cart",
+  "failed_to_enroll": "Failed to enroll"
 }
