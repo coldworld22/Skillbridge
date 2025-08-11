@@ -4,7 +4,8 @@ const { sendSuccess } = require('../../../../utils/response');
 const service = require('./tutorialAssignment.service');
 
 exports.getAssignmentsByTutorial = catchAsync(async (req, res) => {
-  const assignments = await service.getByTutorial(req.params.tutorialId);
+  const { tutorialId } = req.params;
+  const assignments = await service.getByTutorial(tutorialId);
   sendSuccess(res, assignments);
 });
 
