@@ -684,7 +684,8 @@
     "sort_az": "A-Z",
     "view_group": "Gruppe anzeigen",
     "back_to_my_groups": "Zurück zu meinen Gruppen",
-    "pending_requests": "ausstehende Beitrittsanfrage",
+    "pending_requests": "{{count}} ausstehende Beitrittsanfrage",
+    "pending_requests_plural": "{{count}} ausstehende Beitrittsanfragen",
     "join_pending": "⏳ Beitrittsanfrage ausstehend",
     "joined": "✅ Du bist Mitglied dieser Gruppe"
   },

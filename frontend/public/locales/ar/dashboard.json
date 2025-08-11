@@ -756,7 +756,8 @@
     "sort_az": "أ-ي",
     "view_group": "عرض المجموعة",
     "back_to_my_groups": "العودة إلى مجموعاتي",
-    "pending_requests": "طلب انضمام معلق",
+    "pending_requests": "{{count}} طلب انضمام معلق",
+    "pending_requests_plural": "{{count}} طلبات انضمام معلقة",
     "join_pending": "⏳ جاري موافقة طلب الانضمام",
     "joined": "✅ أنت عضو في هذه المجموعة"
   },

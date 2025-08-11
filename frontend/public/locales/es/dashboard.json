@@ -684,7 +684,8 @@
     "sort_az": "A-Z",
     "view_group": "Ver grupo",
     "back_to_my_groups": "Volver a mis grupos",
-    "pending_requests": "solicitud de unión pendiente",
+    "pending_requests": "{{count}} solicitud de unión pendiente",
+    "pending_requests_plural": "{{count}} solicitudes de unión pendientes",
     "join_pending": "⏳ Solicitud de unión pendiente",
     "joined": "✅ Eres miembro de este grupo"
   },

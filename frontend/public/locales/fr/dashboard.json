@@ -696,7 +696,8 @@
     "sort_az": "A-Z",
     "view_group": "Voir le groupe",
     "back_to_my_groups": "Retour à mes groupes",
-    "pending_requests": "demande en attente",
+    "pending_requests": "{{count}} demande en attente",
+    "pending_requests_plural": "{{count}} demandes en attente",
     "join_pending": "⏳ Demande d'adhésion en attente",
     "joined": "✅ Vous êtes membre de ce groupe"
   },
