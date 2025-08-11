@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fetchEnrollmentStatus, updateTutorialProgress } from "@/services/tutorialService";
+import { fetchTutorialProgress, saveTutorialProgress } from "@/services/tutorialService";
 
 const OFFLINE_KEY = "skillbridge_offlineProgress";
 
@@ -9,7 +9,7 @@ const useTutorialProgressStore = create((set, get) => ({
     const existing = get().status[id];
     if (existing) return existing;
     try {
-      const data = await fetchEnrollmentStatus(id);
+      const data = await fetchTutorialProgress(id);
       set((state) => ({ status: { ...state.status, [id]: data } }));
       return data;
     } catch (err) {
@@ -28,7 +28,7 @@ const useTutorialProgressStore = create((set, get) => ({
   },
   async updateProgress(id, progress) {
     try {
-      await updateTutorialProgress(id, progress);
+      await saveTutorialProgress(id, progress);
       set((state) => ({
         status: {
           ...state.status,
@@ -60,7 +60,7 @@ const useTutorialProgressStore = create((set, get) => ({
     for (const id of ids) {
       try {
         const progress = offline[id];
-        await updateTutorialProgress(id, progress);
+        await saveTutorialProgress(id, progress);
         set((state) => ({
           status: {
             ...state.status,

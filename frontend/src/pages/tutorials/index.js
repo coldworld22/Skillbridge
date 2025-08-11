@@ -7,8 +7,9 @@ import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import { fetchPublishedTutorials, fetchTutorialProgress } from "@/services/tutorialService";
 import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial.
@@ -447,7 +448,7 @@ const TutorialsSection = () => {
                       </button>
 
                       {/* Progress bar */}
-                      {enrolled && (
+                      {enrolled ? (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
                           <div
                             className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
