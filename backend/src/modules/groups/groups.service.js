@@ -102,8 +102,13 @@ exports.deleteGroup = (id) => db("groups").where({ id }).del();
 exports.addMember = async (groupId, userId, role = "admin") => {
   const [row] = await db("group_members")
     .insert({ id: uuidv4(), group_id: groupId, user_id: userId, role })
+    .onConflict(["group_id", "user_id"])
+    .ignore()
     .returning("*");
-  return row;
+  if (row) return row;
+  return db("group_members")
+    .where({ group_id: groupId, user_id: userId })
+    .first();
 };
 
 exports.requestJoin = async (groupId, userId) => {
