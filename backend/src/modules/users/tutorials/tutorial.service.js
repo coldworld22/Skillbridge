@@ -316,7 +316,8 @@ exports.getTutorialAnalytics = async (tutorialId) => {
     .where({ tutorial_id: tutorialId })
     .count();
   const [completedRow] = await db('tutorial_enrollments')
-    .where({ tutorial_id: tutorialId, status: 'completed' })
+    .where({ tutorial_id: tutorialId })
+    .where('progress', 100)
     .count();
   const [commentRow] = await db('tutorial_comments')
     .where({ tutorial_id: tutorialId })

@@ -113,3 +113,38 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
   });
 });
 
+describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('marks tutorial as completed and sets progress to 100', async () => {
+    const update = jest.fn(() => Promise.resolve());
+
+    db.mockImplementation((table) => {
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve({ id: 'e1' }), update }),
+        };
+      if (table === 'tutorial_chapters')
+        return {
+          where: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+        };
+      if (table === 'tutorial_chapter_completions as tcc')
+        return {
+          join: () => ({
+            where: () => ({
+              andWhere: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+            }),
+          }),
+        };
+      if (table === 'tutorial_quizzes')
+        return { where: () => ({ first: () => Promise.resolve(null) }) };
+    });
+
+    const res = await request(app).post('/api/users/tutorials/enrollments/t1/complete');
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ status: 'completed', progress: 100 });
+  });
+});
+
