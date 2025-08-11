@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useAuthStore from '@/store/auth/authStore';
 import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import userService from '@/services/profile/userService';
@@ -162,7 +162,7 @@ export default function GroupForm() {
         }
 
         if (inviteMethods.includes('email') || inviteMethods.includes('whatsapp')) {
-          toast.info(`Additional invite methods: ${inviteMethods.join(', ')}`);
+          toast(`Additional invite methods: ${inviteMethods.join(', ')}`);
         }
 
         toast.success(

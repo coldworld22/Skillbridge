@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 export default function JoinRequestCard({ groupId, onCountChange }) {
   const [requests, setRequests] = useState([]);
@@ -23,7 +23,7 @@ export default function JoinRequestCard({ groupId, onCountChange }) {
         toast.success('Request approved');
       } else {
         await groupService.rejectRequest(id);
-        toast.info('Request rejected');
+        toast('Request rejected');
       }
 
       setRequests(prev => {
