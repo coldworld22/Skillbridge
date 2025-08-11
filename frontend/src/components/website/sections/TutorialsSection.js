@@ -426,12 +426,22 @@ const LandingTutorialsSection = () => {
                           return;
                         }
                         try {
+                          const price = tut.discountPrice ?? tut.price;
+                          if (price == null) {
+                            console.error(
+                              `Cannot add tutorial ${tut.id} to cart: missing price`,
+                            );
+                            return;
+                          }
                           await addItem({
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
-                            price: tut.price || 0,
+                            price,
                             quantity: 1,
+                            ...(tut.currency || tut.currencyCode
+                              ? { currency: tut.currency || tut.currencyCode }
+                              : {}),
                           });
                           toast.success('Added to cart');
                         } catch (err) {
