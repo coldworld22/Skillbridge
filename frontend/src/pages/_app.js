@@ -4,6 +4,8 @@ import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";    
@@ -217,7 +219,7 @@ function MyApp({ Component, pageProps, router }) {
               />
             )}
 
-            {/* Global Toast Message Container */}
+            {/* Global Toast Message Containers */}
             <Toaster
               position="top-center"
               toastOptions={{
@@ -228,6 +230,7 @@ function MyApp({ Component, pageProps, router }) {
                 },
               }}
             />
+            <ToastContainer position="top-right" autoClose={3000} />
           </motion.div>
         </AnimatePresence>
       </>

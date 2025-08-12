@@ -48,7 +48,14 @@ export default function CheckoutPage() {
   const parsedItems = useMemo(() => {
     if (!queryItems) return [];
     try {
-      return JSON.parse(decodeURIComponent(queryItems));
+      const raw = Array.isArray(queryItems) ? queryItems[0] : queryItems;
+      let decoded = decodeURIComponent(raw);
+      try {
+        decoded = decodeURIComponent(decoded);
+      } catch {
+        // already decoded
+      }
+      return JSON.parse(decoded);
     } catch {
       return [];
     }

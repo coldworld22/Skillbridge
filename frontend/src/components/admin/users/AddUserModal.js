@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import "react-toastify/dist/ReactToastify.css";
 
 export default function AddUserModal({ isOpen, onClose, onSubmit }) {
   const { t } = useTranslation("dashboard");
