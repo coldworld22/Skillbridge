@@ -1,23 +1,27 @@
 import api from "@/services/api/api";
 
-// Determine the base URL for media assets. If an absolute URL is provided
-// (e.g. "https://example.com/api"), strip any trailing API segment so media
-// files resolve correctly. For relative paths (like the default "/api" used
-// during development), keep the prefix so requests are routed through the same
-// proxy that handles API calls.
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+// Determine the base URL for media assets. When an absolute API URL is
+// provided (e.g. "https://example.com/api"), strip the trailing `/api` so that
+// uploaded files resolve correctly. If a relative path like "/api" is used
+// (common in local development where Next.js proxies API requests), we prefix
+// media requests with that base so the proxy forwards them to the backend.
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 const API_BASE = rawApiBase.startsWith("http")
   ? rawApiBase.replace(/\/api(?:\/.*)?$/, "")
-  : rawApiBase;
+  : "";
+const RELATIVE_API_BASE = !API_BASE && rawApiBase
+  ? rawApiBase.replace(/\/$/, "")
+  : "";
 
 export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
-  const base = API_BASE || (typeof window !== "undefined" ? window.location.origin : "");
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${base}${normalized}`;
+  if (API_BASE) return `${API_BASE}${normalized}`;
+  if (RELATIVE_API_BASE) return `${RELATIVE_API_BASE}${normalized}`;
+  return normalized;
 };
 
 const formatBook = (book) => {
