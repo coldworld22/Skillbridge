@@ -1,10 +1,12 @@
 // pages/payments/checkout.js
 import { useState } from "react";
+import { useRouter } from "next/router";
 import { BrowserProvider, parseEther } from "ethers";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
