@@ -47,7 +47,7 @@ jest.mock('../../../../../services/smsService', () => ({
 
 jest.mock('../../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'test-user' };
+    req.user = { id: 'test-user', role: 'Instructor', roles: ['Instructor'] };
     next();
   },
   isInstructorOrAdmin: (_req, _res, next) => next(),
@@ -56,11 +56,13 @@ jest.mock('../../../../../middleware/auth/authMiddleware', () => ({
   isInstructor: (_req, _res, next) => next(),
 }));
 
-jest.mock('../../../../../middleware/auth/verifyTutorialAccess', () => (
-  _req,
-  _res,
-  next
-) => next());
+jest.mock(
+  '../../../../../middleware/auth/verifyTutorialAccess',
+  () => jest.fn((_req, _res, next) => next())
+);
+
+const verifyTutorialAccess = require('../../../../../middleware/auth/verifyTutorialAccess');
+const db = require('../../../../../config/database');
 
 const routes = require('../../tutorial.routes');
 const emailUtil = require('../../../../../utils/email');
@@ -138,6 +140,20 @@ describe('Tutorial assignment routes', () => {
     const res = await request(app).delete('/api/users/tutorials/assignments/1');
     expect(res.statusCode).toBe(200);
     expect(service.deleteAssignment).toHaveBeenCalled();
+  });
+
+  test('instructor without ownership cannot create assignment', async () => {
+    verifyTutorialAccess.mockImplementationOnce(
+      jest.requireActual('../../../../../middleware/auth/verifyTutorialAccess')
+    );
+    db.first
+      .mockResolvedValueOnce({ instructor_id: 'other-user' })
+      .mockResolvedValueOnce(null);
+    const res = await request(app)
+      .post('/api/users/tutorials/assignments/t1')
+      .send({ title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
+    expect([403, 404]).toContain(res.statusCode);
+    expect(service.createAssignment).not.toHaveBeenCalled();
   });
 });
 
