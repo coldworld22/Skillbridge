@@ -96,11 +96,11 @@ describe('Tutorial assignment routes', () => {
     service.createAssignment.mockResolvedValue({
       id: '1',
       title: 'New',
-      due_date: '2024-01-01T00:00:00.000Z',
+      due_date: '2024-01-01',
     });
     const res = await request(app)
       .post('/api/users/tutorials/assignments/t1')
-      .send({ title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
+      .send({ title: 'New', due_date: '2024-01-01' });
     expect(res.statusCode).toBe(200);
     expect(service.createAssignment).toHaveBeenCalled();
     expect(emailUtil.sendAssignmentEmail).toHaveBeenCalledTimes(2);
@@ -120,7 +120,7 @@ describe('Tutorial assignment routes', () => {
   test('create assignment fails with missing title', async () => {
     const res = await request(app)
       .post('/api/users/tutorials/assignments/t1')
-      .send({ due_date: '2024-01-01T00:00:00.000Z' });
+      .send({ due_date: '2024-01-01' });
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('Validation error');
     expect(service.createAssignment).not.toHaveBeenCalled();

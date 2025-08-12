@@ -220,7 +220,7 @@ export default function CreateAssignmentPage() {
 
           {/* Due Date */}
           <input
-            type="datetime-local"
+            type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             className="w-full p-3 bg-gray-100 rounded-md"
