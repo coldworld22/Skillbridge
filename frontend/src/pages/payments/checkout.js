@@ -44,6 +44,7 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [paypalClientId, setPaypalClientId] = useState('');
   useEffect(() => {
     const id = queryItemId || cartItems[0]?.id;
     const type = queryItemType || cartItems[0]?.item_type || 'class';
