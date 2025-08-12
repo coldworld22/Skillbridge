@@ -24,3 +24,19 @@ exports.getByUser = async (user_id) => {
     .select("tutorials.*", "tutorial_enrollments.status", "tutorial_enrollments.enrolled_at");
 };
 
+// List all students enrolled in a tutorial
+exports.getByTutorial = async (tutorial_id) => {
+  return db("tutorial_enrollments as te")
+    .join("users as u", "te.user_id", "u.id")
+    .where("te.tutorial_id", tutorial_id)
+    .select(
+      "u.id",
+      "u.full_name",
+      "u.email",
+      "u.phone",
+      "te.status",
+      "te.enrolled_at"
+    )
+    .orderBy("te.enrolled_at");
+};
+
