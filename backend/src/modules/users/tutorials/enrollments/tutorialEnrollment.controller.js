@@ -84,9 +84,21 @@ exports.complete = catchAsync(async (req, res) => {
     quizPassed = Boolean(attempt);
   }
 
-  if (!allChaptersCompleted || !quizPassed) {
+  // Verify all assignments submitted
+  const [{ count: pendingAssignments }] = await db("tutorial_assignments")
+    .where({ tutorial_id: tutorialId })
+    .whereNotIn("id", function () {
+      this.select("assignment_id")
+        .from("assignment_submissions")
+        .where({ user_id });
+    })
+    .count("id as count");
+
+  const assignmentsCompleted = Number(pendingAssignments) === 0;
+
+  if (!allChaptersCompleted || !quizPassed || !assignmentsCompleted) {
     throw new AppError(
-      "Complete all chapters and pass the required quiz before finishing the tutorial",
+      "Complete all chapters, assignments, and pass the required quiz before finishing the tutorial",
       400
     );
   }

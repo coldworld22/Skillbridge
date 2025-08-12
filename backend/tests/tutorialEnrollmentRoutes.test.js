@@ -140,11 +140,52 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
         };
       if (table === 'tutorial_quizzes')
         return { where: () => ({ first: () => Promise.resolve(null) }) };
+      if (table === 'tutorial_assignments')
+        return {
+          where: () => ({
+            whereNotIn: () => ({ count: () => Promise.resolve([{ count: 0 }]) }),
+          }),
+        };
     });
 
     const res = await request(app).post('/api/users/tutorials/enrollments/t1/complete');
     expect(res.status).toBe(200);
     expect(update).toHaveBeenCalledWith({ status: 'completed', progress: 100 });
+  });
+
+  it('prevents completion when assignments are unfinished', async () => {
+    db.mockImplementation((table) => {
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve({ id: 'e1' }) }),
+        };
+      if (table === 'tutorial_chapters')
+        return {
+          where: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+        };
+      if (table === 'tutorial_chapter_completions as tcc')
+        return {
+          join: () => ({
+            where: () => ({
+              andWhere: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+            }),
+          }),
+        };
+      if (table === 'tutorial_quizzes')
+        return { where: () => ({ first: () => Promise.resolve(null) }) };
+      if (table === 'tutorial_assignments')
+        return {
+          where: () => ({
+            whereNotIn: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+          }),
+        };
+    });
+
+    const res = await request(app).post('/api/users/tutorials/enrollments/t1/complete');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe(
+      'Complete all chapters, assignments, and pass the required quiz before finishing the tutorial'
+    );
   });
 });
 
