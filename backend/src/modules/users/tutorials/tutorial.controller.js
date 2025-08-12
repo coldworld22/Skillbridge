@@ -249,7 +249,8 @@ exports.getMyTutorials = catchAsync(async (req, res) => {
 
 
 exports.getTutorialById = catchAsync(async (req, res) => {
-  const tutorial = await service.getTutorialById(req.params.id);
+  const userId = req.user?.id || null;
+  const tutorial = await service.getTutorialById(req.params.id, userId);
 
   if (!tutorial) {
     throw new AppError("Tutorial not found", 404);
