@@ -61,7 +61,7 @@ export default function EditAssignmentPage() {
             ></textarea>
 
             <input
-              type="datetime-local"
+              type="date"
               value={assignment.dueDate}
               onChange={(e) => setAssignment({ ...assignment, dueDate: e.target.value })}
               className="w-full p-3 bg-white border rounded"
