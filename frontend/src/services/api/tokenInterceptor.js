@@ -73,9 +73,11 @@ api.interceptors.response.use(
       lastNetworkToast = Date.now();
     }
 
-    const isAuthRoute =
-      originalRequest?.url?.includes("/auth/login") ||
-      originalRequest?.url?.includes("/auth/register");
+    const isAuthRoute = [
+      "/auth/login",
+      "/auth/register",
+      "/auth/refresh",
+    ].some((route) => originalRequest?.url?.includes(route));
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       const refreshCookie = getCookie("refreshToken");
