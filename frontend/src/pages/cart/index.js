@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animation
 import { FaTag, FaGift } from "react-icons/fa";
 import { toast } from "react-toastify";
 import CartItem from "@/components/books/CartItem";
+import Link from "next/link";
 
 const CartPage = () => {
   const {
