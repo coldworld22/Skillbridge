@@ -101,7 +101,7 @@ exports.complete = catchAsync(async (req, res) => {
 
   if (!allChaptersCompleted || !quizPassed || !allAssignmentsSubmitted) {
     throw new AppError(
-      "Complete all chapters and pass the required quiz before finishing the tutorial",
+      "Complete all chapters, assignments, and pass the required quiz before finishing the tutorial",
       400
     );
   }
