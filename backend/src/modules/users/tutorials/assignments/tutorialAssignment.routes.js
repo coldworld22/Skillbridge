@@ -10,6 +10,7 @@ router.get('/:tutorialId', verifyToken, verifyTutorialAccess, ctrl.getAssignment
 router.post(
   '/:tutorialId',
   verifyToken,
+  verifyTutorialAccess,
   isInstructorOrAdmin,
   validate(validator.create),
   ctrl.createAssignment
