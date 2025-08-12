@@ -53,15 +53,22 @@ export default function CheckoutPage() {
       return [];
     }
   }, [queryItems]);
-  const firstItemId = parsedItems[0]?.id || cartItems[0]?.id;
-  const firstItemType = parsedItems[0]?.itemType || cartItems[0]?.item_type;
+  // Determine the item to checkout. When coming from the cart page the
+  // selected items are passed in the `items` query param. Previously this
+  // information was parsed but never used, leaving the checkout page without
+  // an `itemId` and causing it to crash. We now prioritise the parsed query
+  // items before falling back to individual query params or the cart store.
   useEffect(() => {
-    const id = queryItemId || cartItems[0]?.id;
-    const type = queryItemType || cartItems[0]?.item_type || 'class';
+    const id = queryItemId || parsedItems[0]?.id || cartItems[0]?.id;
+    const type =
+      queryItemType ||
+      parsedItems[0]?.itemType ||
+      cartItems[0]?.item_type ||
+      'class';
     if (!id) return;
     setItemId(id);
     setItemType(type);
-  }, [queryItemId, queryItemType, cartItems]);
+  }, [queryItemId, queryItemType, parsedItems, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
