@@ -45,15 +45,13 @@ export default function CheckoutPage() {
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [paypalClientId, setPaypalClientId] = useState('');
-  const firstItemId = cartItems[0]?.id;
-  const firstItemType = cartItems[0]?.item_type;
   useEffect(() => {
-    const id = queryItemId || firstItemId;
-    const type = queryItemType || firstItemType || 'class';
+    const id = queryItemId || cartItems[0]?.id;
+    const type = queryItemType || cartItems[0]?.item_type || 'class';
     if (!id) return;
-    if (id !== itemId) setItemId(id);
-    if (type !== itemType) setItemType(type);
-  }, [queryItemId, queryItemType, firstItemId, firstItemType, itemId, itemType]);
+    setItemId(id);
+    setItemType(type);
+  }, [queryItemId, queryItemType, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
