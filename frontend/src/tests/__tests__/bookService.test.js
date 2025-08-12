@@ -136,8 +136,8 @@ describe("bookService", () => {
       price: 19.99,
       cover_image_url: null,
       pdf_url: null,
-      preview_url: "/api/uploads/p.pdf",
-      preview_pages: ["/api/uploads/a.png"],
+      preview_url: "/uploads/p.pdf",
+      preview_pages: ["/uploads/a.png"],
     });
   });
 
@@ -199,12 +199,12 @@ describe("bookService", () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
 
-  it("buildUrl keeps relative api prefixes by default", () => {
+  it("buildUrl returns a same-origin path when API base is relative", () => {
     const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/api/uploads/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });

@@ -14,7 +14,7 @@ export const buildUrl = (path) => {
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${base}${normalized}`;
+  return API_BASE ? `${API_BASE}${normalized}` : normalized;
 };
 
 const formatBook = (book) => {
