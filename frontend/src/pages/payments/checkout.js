@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
@@ -26,7 +26,7 @@ const iconMap = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { itemId: queryItemId, itemType: queryItemType } = router.query;
+  const { itemId: queryItemId, itemType: queryItemType, items: queryItems } = router.query;
   const { items: cartItems, removeItem } = useCartStore((state) => ({
     items: state.items,
     removeItem: state.removeItem,
@@ -45,6 +45,16 @@ export default function CheckoutPage() {
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [paypalClientId, setPaypalClientId] = useState('');
+  const parsedItems = useMemo(() => {
+    if (!queryItems) return [];
+    try {
+      return JSON.parse(decodeURIComponent(queryItems));
+    } catch {
+      return [];
+    }
+  }, [queryItems]);
+  const firstItemId = parsedItems[0]?.id || cartItems[0]?.id;
+  const firstItemType = parsedItems[0]?.itemType || cartItems[0]?.item_type;
   useEffect(() => {
     const id = queryItemId || cartItems[0]?.id;
     const type = queryItemType || cartItems[0]?.item_type || 'class';

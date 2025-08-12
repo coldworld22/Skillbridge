@@ -16,11 +16,15 @@ const RELATIVE_API_BASE = !API_BASE && rawApiBase
 export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  const mediaPath = normalized.replace(/^\/uploads/, "/media");
-  if (API_BASE) return `${API_BASE}${mediaPath}`;
-  if (RELATIVE_API_BASE) return `${RELATIVE_API_BASE}${mediaPath}`;
-  return mediaPath;
+  const base = API_BASE || RELATIVE_API_BASE;
+  let normalized = path.startsWith("/") ? path : `/${path}`;
+  if (normalized.startsWith("/uploads")) {
+    normalized = normalized.replace(
+      "/uploads",
+      base ? "/media" : "/uploads"
+    );
+  }
+  return base ? `${base}${normalized}` : normalized;
 };
 
 const formatBook = (book) => {

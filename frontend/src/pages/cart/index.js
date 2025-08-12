@@ -57,6 +57,11 @@ const CartPage = () => {
   // Calculate total price
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const totalPrice = Math.max(0, subtotal - discountAmount);
+  const checkoutQuery = encodeURIComponent(
+    JSON.stringify(
+      cartItems.map(({ id, item_type }) => ({ id, itemType: item_type }))
+    )
+  );
 
   return (
     <div className="bg-black min-h-screen text-white">
@@ -141,6 +146,20 @@ const CartPage = () => {
               </div>
             </div>
 
+            {/* Checkout Button */}
+            <div className="mt-6 flex justify-end">
+              {cartItems.length > 0 && (
+                <Link href={`/payments/checkout?items=${checkoutQuery}`}>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
+                  >
+                    Proceed to Checkout
+                  </motion.button>
+                </Link>
+              )}
+            </div>
           </motion.div>
         )}
       </main>
