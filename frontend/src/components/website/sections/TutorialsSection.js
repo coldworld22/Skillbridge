@@ -53,7 +53,12 @@ const LandingTutorialsSection = () => {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const user = useAuthStore((state) => state.user);
-  const isStudent = user?.role?.toLowerCase() === 'student';
+  // Some APIs return a single `role` while others return an array `roles`.
+  // Normalize to an array so we can reliably check if the user is a student.
+  const userRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : [user?.role].filter(Boolean);
+  const isStudent = userRoles.some((r) => r?.toLowerCase() === 'student');
   const [wishlistIds, setWishlistIds] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState([]);
@@ -432,7 +437,7 @@ const LandingTutorialsSection = () => {
                         e.stopPropagation();
                         if (!user) return router.push('/auth/login');
                         if (!isStudent) {
-                          toast.error('Only students can purchase tutorials.');
+                          toast.error(t('only_students_can_purchase'));
                           return;
                         }
                         try {
@@ -443,7 +448,7 @@ const LandingTutorialsSection = () => {
                             );
                             return;
                           }
-                          await addItem({
+                          const added = await addItem({
                             id: tut.id,
                             name: tut.title,
                             item_type: 'tutorial',
@@ -453,9 +458,13 @@ const LandingTutorialsSection = () => {
                               ? { currency: tut.currency || tut.currencyCode }
                               : {}),
                           });
-                          toast.success('Added to cart');
+                          if (added) {
+                            toast.success(t('added_to_cart'));
+                          } else {
+                            toast.error(t('failed_to_add_to_cart'));
+                          }
                         } catch (err) {
-                          toast.error('Failed to add to cart');
+                          toast.error(t('failed_to_add_to_cart'));
                         }
                       }}
                       className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded font-medium transition"
