@@ -48,19 +48,28 @@ export default function CheckoutPage() {
   const parsedItems = useMemo(() => {
     if (!queryItems) return [];
     try {
-      return JSON.parse(decodeURIComponent(queryItems));
+      const raw = Array.isArray(queryItems) ? queryItems[0] : queryItems;
+      let decoded = decodeURIComponent(raw);
+      try {
+        decoded = decodeURIComponent(decoded);
+      } catch {
+        // already decoded
+      }
+      return JSON.parse(decoded);
     } catch {
       return [];
     }
   }, [queryItems]);
+
   useEffect(() => {
-    const id = queryItemId || parsedItems[0]?.id || cartItems[0]?.id;
+    const source = parsedItems[0];
+    const id = queryItemId || source?.id || cartItems[0]?.id;
     const type =
-      queryItemType || parsedItems[0]?.itemType || cartItems[0]?.item_type || 'class';
+      queryItemType || source?.itemType || cartItems[0]?.item_type || 'class';
     if (!id) return;
     setItemId(id);
     setItemType(type);
-  }, [queryItemId, queryItemType, parsedItems, cartItems]);
+  }, [queryItemId, queryItemType, cartItems, parsedItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
