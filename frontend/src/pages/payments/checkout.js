@@ -211,7 +211,7 @@ export default function CheckoutPage() {
                   ${selectedMethod === method.name ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
               >
                 <div className="text-2xl">
-                  {iconMap[method.icon.toLowerCase()] || <FaMoneyCheckAlt />}
+                  {iconMap[method.icon?.toLowerCase()] || <FaMoneyCheckAlt />}
                 </div>
                 <div>{method.label}</div>
               </button>
