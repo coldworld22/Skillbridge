@@ -4,7 +4,6 @@ import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTag, FaGift } from "react-icons/fa";
-import Link from "next/link";
 import { toast } from "react-toastify";
 import CartItem from "@/components/books/CartItem";
 
@@ -142,22 +141,6 @@ const CartPage = () => {
               </div>
             </div>
 
-            {/* Checkout Button */}
-            <div className="mt-6 flex justify-end">
-              {cartItems.length > 0 && (
-                <Link
-                  href={`/payments/checkout?itemType=${cartItems[0].item_type}&itemId=${cartItems[0].id}`}
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
-                  >
-                    Proceed to Checkout
-                  </motion.button>
-                </Link>
-              )}
-            </div>
           </motion.div>
         )}
       </main>
