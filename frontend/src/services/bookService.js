@@ -19,10 +19,13 @@ export const buildUrl = (path) => {
   const base = API_BASE || RELATIVE_API_BASE;
   let normalized = path.startsWith("/") ? path : `/${path}`;
   if (normalized.startsWith("/uploads")) {
-    normalized = normalized.replace(
-      "/uploads",
-      base ? "/media" : "/uploads"
-    );
+    // Always convert legacy `/uploads` paths to the backend's `/media` endpoint
+    // so that assets are consistently served via the media route regardless of
+    // whether a base URL is configured. When a relative API base (e.g. `/api`)
+    // is used, this path will be prefixed below so that the proxy forwards the
+    // request correctly. Without a base, the application should still request
+    // assets from `/media` rather than the deprecated `/uploads` path.
+    normalized = normalized.replace("/uploads", "/media");
   }
   return base ? `${base}${normalized}` : normalized;
 };
