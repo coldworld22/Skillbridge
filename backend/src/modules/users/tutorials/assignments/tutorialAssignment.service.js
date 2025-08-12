@@ -6,6 +6,10 @@ exports.getByTutorial = async (tutorial_id) => {
     .orderBy('created_at', 'asc');
 };
 
+exports.getById = async (id) => {
+  return db('tutorial_assignments').where({ id }).first();
+};
+
 exports.createAssignment = async (data) => {
   const [row] = await db('tutorial_assignments').insert(data).returning('*');
   return row;
