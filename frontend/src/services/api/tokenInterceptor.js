@@ -78,6 +78,20 @@ api.interceptors.response.use(
       originalRequest?.url?.includes("/auth/register");
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+      const refreshCookie = getCookie("refreshToken");
+      const hasAuthState = !!authStore.accessToken || !!authStore.user;
+
+      if (!refreshCookie && !hasAuthState) {
+        authStore.setToken(null);
+        authStore.setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth");
+          Router.push("/auth/login");
+        }
+        toast.error("Session expired. Please log in again.");
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
