@@ -9,9 +9,13 @@ exports.generateCertificate = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
   const userId = req.user.id;
 
-  // 1. Validate completion
+  // 1. Validate completion (including assignments)
   const completed = await service.isUserCompletedTutorial(userId, tutorialId);
-  if (!completed) throw new AppError("You must complete the tutorial to receive a certificate.", 403);
+  if (!completed)
+    throw new AppError(
+      "You must complete the tutorial and all assignments to receive a certificate.",
+      403,
+    );
 
   // 2. Avoid duplicates
   const existing = await service.findExisting(userId, tutorialId);
