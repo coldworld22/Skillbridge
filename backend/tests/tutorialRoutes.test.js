@@ -24,6 +24,11 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
 
 jest.mock('../src/modules/users/tutorials/certificate/certificate.service', () => ({
   findExisting: jest.fn(),
+  isUserCompletedTutorial: jest.fn(),
+}));
+
+jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service', () => ({
+  findEnrollment: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -40,6 +45,7 @@ const service = require('../src/modules/users/tutorials/tutorial.service');
 const routes = require('../src/modules/users/tutorials/tutorial.routes');
 const auth = require('../src/middleware/auth/authMiddleware');
 const certificateService = require('../src/modules/users/tutorials/certificate/certificate.service');
+const enrollmentService = require('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service');
 
 const app = express();
 app.use(express.json());
@@ -66,7 +72,9 @@ describe('GET /api/users/tutorials/:id', () => {
   it('returns tutorial details with assignment count and certificate info', async () => {
     service.getPublicTutorialDetails.mockResolvedValue({ id: '1', title: 'T' });
     service.getAssignmentCount.mockResolvedValue(3);
+    enrollmentService.findEnrollment.mockResolvedValue({ progress: 100 });
     certificateService.findExisting.mockResolvedValue({ id: 'cert1' });
+    certificateService.isUserCompletedTutorial.mockResolvedValue(true);
 
     const appWithUser = express();
     appWithUser.use(express.json());
@@ -81,9 +89,15 @@ describe('GET /api/users/tutorials/:id', () => {
     expect(res.status).toBe(200);
     expect(service.getPublicTutorialDetails).toHaveBeenCalledWith('1');
     expect(service.getAssignmentCount).toHaveBeenCalledWith('1');
+    expect(enrollmentService.findEnrollment).toHaveBeenCalledWith('student1', '1');
     expect(certificateService.findExisting).toHaveBeenCalledWith('student1', '1');
+    expect(certificateService.isUserCompletedTutorial).toHaveBeenCalledWith('student1', '1');
     expect(res.body.data.assignment_count).toBe(3);
     expect(res.body.data.certificate_id).toBe('cert1');
+    expect(res.body.data.is_enrolled).toBe(true);
+    expect(res.body.data.progress).toBe(100);
+    expect(res.body.data.assignments_locked).toBe(false);
+    expect(res.body.data.certificate_locked).toBe(false);
   });
 });
 

@@ -8,6 +8,7 @@ const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 const analyticsService = require("../../../services/analyticsService");
 const certificateService = require("./certificate/certificate.service");
+const enrollmentService = require("./enrollments/tutorialEnrollment.service");
 const AppError = require("../../../utils/AppError");
 const {
   sendTutorialCreatedAdminEmail,
@@ -525,9 +526,18 @@ exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
     tutorial.views = await service.getTutorialViewCount(req.params.id);
 
     if (req.user?.id) {
+      const enrollment = await enrollmentService.findEnrollment(
+        req.user.id,
+        req.params.id
+      );
+      tutorial.is_enrolled = !!enrollment;
+      tutorial.progress = enrollment?.progress || 0;
+
       tutorial.assignment_count = await service.getAssignmentCount(
         req.params.id
       );
+      tutorial.assignments_locked = !enrollment;
+
       const cert = await certificateService.findExisting(
         req.user.id,
         req.params.id
@@ -535,6 +545,11 @@ exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
       if (cert) {
         tutorial.certificate_id = cert.id;
       }
+      const completed = await certificateService.isUserCompletedTutorial(
+        req.user.id,
+        req.params.id
+      );
+      tutorial.certificate_locked = !completed;
     }
   }
 
