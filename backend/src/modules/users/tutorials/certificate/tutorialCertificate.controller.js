@@ -2,6 +2,8 @@ const service = require("./certificate.service");
 const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
 const AppError = require("../../../../utils/AppError");
+const db = require("../../../../config/database");
+const notificationService = require("../../../notifications/notifications.service");
 
 exports.generateCertificate = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
@@ -17,5 +19,14 @@ exports.generateCertificate = catchAsync(async (req, res) => {
 
   // 3. Create new
   const newCert = await service.issueCertificate({ userId, tutorialId });
+
+  // 4. Notify user
+  const tutorial = await db("tutorials").where({ id: tutorialId }).first();
+  await notificationService.createNotification({
+    user_id: userId,
+    type: "certificate_issued",
+    message: `Your certificate for "${tutorial?.title || "tutorial"}" is now available.`,
+  });
+
   sendSuccess(res, newCert, "Certificate issued successfully");
 });
