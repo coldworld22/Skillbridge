@@ -145,9 +145,7 @@ const CartPage = () => {
             {/* Checkout Button */}
             <div className="mt-6 flex justify-end">
               {cartItems.length > 0 && (
-                <Link
-                  href={`/payments/checkout?itemType=${cartItems[0].item_type}&itemId=${cartItems[0].id}`}
-                >
+                <Link href="/payments/checkout">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
