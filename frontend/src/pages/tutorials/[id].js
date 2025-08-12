@@ -30,6 +30,7 @@ import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
   fetchTutorialAssignments,
+  fetchTutorialProgress,
   enrollInTutorial,
   addTutorialToWishlist,
   removeTutorialFromWishlist,
@@ -167,11 +168,20 @@ export default function TutorialDetail() {
           };
         });
         setTutorial({ ...data, chapters });
-        setIsEnrolled(
-          Boolean(
-            data?.is_enrolled || data?.enrolled || data?.isEnrolled,
-          ),
+        let enrolled = Boolean(
+          data?.is_enrolled || data?.enrolled || data?.isEnrolled,
         );
+        if (!enrolled && isLoggedIn) {
+          try {
+            const status = await fetchTutorialProgress(id);
+            enrolled = Boolean(
+              status?.is_enrolled || status?.enrolled || status?.success,
+            );
+          } catch (err) {
+            console.error('Failed to fetch enrollment status', err);
+          }
+        }
+        setIsEnrolled(enrolled);
         try {
           const assignmentList = await fetchTutorialAssignments(id);
           setAssignments(assignmentList);

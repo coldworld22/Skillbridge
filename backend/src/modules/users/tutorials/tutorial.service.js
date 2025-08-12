@@ -20,8 +20,8 @@ exports.getAllTutorials = async () => {
     );
 };
 
-exports.getTutorialById = async (id) => {
-  return db({ t: 'tutorials' })
+exports.getTutorialById = async (id, userId = null) => {
+  const query = db({ t: 'tutorials' })
     .leftJoin('categories as c', 't.category_id', 'c.id')
     .leftJoin('users as u', 't.instructor_id', 'u.id')
     .leftJoin(
@@ -59,18 +59,38 @@ exports.getTutorialById = async (id) => {
         .as('v'),
       'v.tutorial_id',
       't.id'
-    )
-    .where('t.id', id)
-    .first(
-      't.*',
-      'c.name as category_name',
-      'c.image_url as category_image_url',
-      'u.full_name as instructor_name',
-      db.raw('COALESCE(r.avg_rating,0) as rating'),
-      db.raw('COALESCE(com.comment_count,0) as comment_count'),
-      db.raw('COALESCE(en.enrollments,0) as enrollments'),
-      db.raw('COALESCE(v.views,0) as views')
     );
+
+  if (userId) {
+    query.leftJoin('tutorial_enrollments as te', function () {
+      this.on('te.tutorial_id', 't.id').andOn('te.user_id', '=', userId);
+    });
+  }
+
+  query.where('t.id', id);
+
+  const columns = [
+    't.*',
+    'c.name as category_name',
+    'c.image_url as category_image_url',
+    'u.full_name as instructor_name',
+    db.raw('COALESCE(r.avg_rating,0) as rating'),
+    db.raw('COALESCE(com.comment_count,0) as comment_count'),
+    db.raw('COALESCE(en.enrollments,0) as enrollments'),
+    db.raw('COALESCE(v.views,0) as views'),
+  ];
+
+  if (userId) {
+    columns.push(
+      db.raw(
+        'CASE WHEN te.user_id IS NULL THEN false ELSE true END as is_enrolled'
+      )
+    );
+  } else {
+    columns.push(db.raw('false as is_enrolled'));
+  }
+
+  return query.select(columns).first();
 };
 
 exports.getTutorialsByInstructor = async (instructorId) => {
