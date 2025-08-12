@@ -66,6 +66,7 @@ export default function CheckoutPage() {
   // an `itemId` and causing it to crash. We now prioritise the parsed query
   // items before falling back to individual query params or the cart store.
   useEffect(() => {
+    if (!router.isReady) return;
     const id = queryItemId || parsedItems[0]?.id || cartItems[0]?.id;
     const type =
       queryItemType ||
@@ -75,7 +76,7 @@ export default function CheckoutPage() {
     if (!id) return;
     setItemId(id);
     setItemType(type);
-  }, [queryItemId, queryItemType, parsedItems, cartItems]);
+  }, [router.isReady, queryItemId, queryItemType, parsedItems, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
