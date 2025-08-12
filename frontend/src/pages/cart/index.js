@@ -73,7 +73,7 @@ const CartPage = () => {
           <div className="text-center py-10">
             <FaGift className="mx-auto text-6xl mb-4 text-yellow-500" />
             <p className="text-lg">Your cart is empty.</p>
-            <Link href="/marketplace">
+            <Link href="/website">
               <button className="mt-4 px-6 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition">
                 Browse Courses
               </button>
