@@ -20,7 +20,7 @@ function shuffleArray(array) {
     return [...array].sort(() => Math.random() - 0.5);
 }
 
-const TestQuiz = ({ onComplete }) => {
+const TestQuiz = ({ onComplete, tutorialId = "default" }) => {
     const [questions, setQuestions] = useState([]);
     const [current, setCurrent] = useState(0);
     const [score, setScore] = useState(0);
@@ -28,6 +28,8 @@ const TestQuiz = ({ onComplete }) => {
     const [submitted, setSubmitted] = useState(false);
     const [showExplanation, setShowExplanation] = useState(false);
     const [attempted, setAttempted] = useState(false);
+
+    const storageKey = `quiz-passed-${tutorialId}`;
 
     // Initialize and shuffle questions
     useEffect(() => {
@@ -37,10 +39,10 @@ const TestQuiz = ({ onComplete }) => {
         }));
         setQuestions(shuffledQuestions);
 
-        if (localStorage.getItem("quiz-passed")) {
+        if (localStorage.getItem(storageKey)) {
             setAttempted(true);
         }
-    }, []);
+    }, [storageKey]);
 
     const handleSubmit = () => {
         if (!selected) return;
@@ -60,7 +62,7 @@ const TestQuiz = ({ onComplete }) => {
             setCurrent((prev) => prev + 1);
         } else {
             setSubmitted(true);
-            localStorage.setItem("quiz-passed", true);
+            localStorage.setItem(storageKey, true);
             onComplete(score + (selected === questions[current].answer ? 1 : 0));
         }
     };

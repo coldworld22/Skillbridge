@@ -425,6 +425,7 @@ export default function TutorialDetail() {
 
         {isEnrolled ? (
           <TestQuiz
+            tutorialId={tutorial.id}
             onComplete={(finalScore) => {
               if (finalScore >= 2) setTestPassed(true);
             }}
