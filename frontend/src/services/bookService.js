@@ -1,19 +1,16 @@
 import api from "@/services/api/api";
 
-// Determine the base URL for media assets. When an absolute API URL is
-// provided (e.g. "https://example.com/api"), strip the trailing `/api` so that
-// uploaded files resolve correctly. If a relative path like "/api" is used
-// (common in local development where Next.js proxies API requests), we fall
-// back to a relative media path so files are requested from the same origin
-// without the `/api` prefix.
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const API_BASE = rawApiBase.startsWith("http")
-  ? rawApiBase.replace(/\/api(?:\/.*)?$/, "")
-  : "";
+// Base URL for media assets. We keep the configured API prefix intact so that
+// environments which proxy the backend under `/api` can still access uploads
+// through `/api/uploads/*`.
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+).replace(/\/$/, "");
 
 export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
+  const base = API_BASE;
   const uploadsIndex = path.indexOf("/uploads");
   const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
