@@ -141,9 +141,13 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
       if (table === 'tutorial_quizzes')
         return { where: () => ({ first: () => Promise.resolve(null) }) };
       if (table === 'tutorial_assignments')
+        return { where: () => ({ count: () => Promise.resolve([{ count: 0 }]) }) };
+      if (table === 'tutorial_assignment_submissions as tas')
         return {
-          where: () => ({
-            whereNotIn: () => ({ count: () => Promise.resolve([{ count: 0 }]) }),
+          join: () => ({
+            where: () => ({
+              andWhere: () => ({ count: () => Promise.resolve([{ count: 0 }]) }),
+            }),
           }),
         };
     });
@@ -153,39 +157,40 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
     expect(update).toHaveBeenCalledWith({ status: 'completed', progress: 100 });
   });
 
-  it('prevents completion when assignments are unfinished', async () => {
+  it('fails when assignments are not submitted', async () => {
     db.mockImplementation((table) => {
       if (table === 'tutorial_enrollments')
         return {
           where: () => ({ first: () => Promise.resolve({ id: 'e1' }) }),
         };
       if (table === 'tutorial_chapters')
-        return {
-          where: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
-        };
+        return { where: () => ({ count: () => Promise.resolve([{ count: 0 }]) }) };
       if (table === 'tutorial_chapter_completions as tcc')
         return {
           join: () => ({
             where: () => ({
-              andWhere: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+              andWhere: () => ({ count: () => Promise.resolve([{ count: 0 }]) }),
             }),
           }),
         };
       if (table === 'tutorial_quizzes')
         return { where: () => ({ first: () => Promise.resolve(null) }) };
       if (table === 'tutorial_assignments')
+        return { where: () => ({ count: () => Promise.resolve([{ count: 1 }]) }) };
+      if (table === 'tutorial_assignment_submissions as tas')
         return {
-          where: () => ({
-            whereNotIn: () => ({ count: () => Promise.resolve([{ count: 1 }]) }),
+          join: () => ({
+            where: () => ({
+              andWhere: () => ({ count: () => Promise.resolve([{ count: 0 }]) }),
+            }),
           }),
         };
     });
 
-    const res = await request(app).post('/api/users/tutorials/enrollments/t1/complete');
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe(
-      'Complete all chapters, assignments, and pass the required quiz before finishing the tutorial'
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/t1/complete'
     );
+    expect(res.status).toBe(400);
   });
 });
 

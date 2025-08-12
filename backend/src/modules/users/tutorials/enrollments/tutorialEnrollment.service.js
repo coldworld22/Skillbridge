@@ -40,3 +40,44 @@ exports.getByTutorial = async (tutorial_id) => {
     .orderBy("te.enrolled_at");
 };
 
+exports.recalculateProgress = async (user_id, tutorial_id) => {
+  const [{ count: totalChapters }] = await db("tutorial_chapters")
+    .where({ tutorial_id })
+    .count("id as count");
+
+  const [{ count: completedChapters }] = await db(
+    "tutorial_chapter_completions as tcc"
+  )
+    .join("tutorial_chapters as tc", "tcc.chapter_id", "tc.id")
+    .where("tc.tutorial_id", tutorial_id)
+    .andWhere("tcc.user_id", user_id)
+    .count("tcc.id as count");
+
+  const [{ count: totalAssignments }] = await db("tutorial_assignments")
+    .where({ tutorial_id })
+    .count("id as count");
+
+  const [{ count: submittedAssignments }] = await db(
+    "tutorial_assignment_submissions as tas"
+  )
+    .join("tutorial_assignments as ta", "tas.assignment_id", "ta.id")
+    .where("ta.tutorial_id", tutorial_id)
+    .andWhere("tas.user_id", user_id)
+    .count("tas.id as count");
+
+  const total =
+    Number(totalChapters) + Number(totalAssignments);
+  let progress = 0;
+  if (total > 0) {
+    progress =
+      ((Number(completedChapters) + Number(submittedAssignments)) / total) *
+      100;
+  }
+
+  await db("tutorial_enrollments")
+    .where({ user_id, tutorial_id })
+    .update({ progress });
+
+  return progress;
+};
+

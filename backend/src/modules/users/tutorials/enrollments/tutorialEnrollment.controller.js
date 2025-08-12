@@ -71,6 +71,21 @@ exports.complete = catchAsync(async (req, res) => {
   const allChaptersCompleted =
     Number(totalChapters) === Number(completedChapters);
 
+  const [{ count: totalAssignments }] = await db("tutorial_assignments")
+    .where({ tutorial_id: tutorialId })
+    .count("id as count");
+
+  const [{ count: submittedAssignments }] = await db(
+    "tutorial_assignment_submissions as tas"
+  )
+    .join("tutorial_assignments as ta", "tas.assignment_id", "ta.id")
+    .where("ta.tutorial_id", tutorialId)
+    .andWhere("tas.user_id", user_id)
+    .count("tas.id as count");
+
+  const allAssignmentsSubmitted =
+    Number(totalAssignments) === Number(submittedAssignments);
+
   // Verify quiz passed if any
   let quizPassed = true;
   const quiz = await db("tutorial_quizzes")
@@ -84,19 +99,7 @@ exports.complete = catchAsync(async (req, res) => {
     quizPassed = Boolean(attempt);
   }
 
-  // Verify all assignments submitted
-  const [{ count: pendingAssignments }] = await db("tutorial_assignments")
-    .where({ tutorial_id: tutorialId })
-    .whereNotIn("id", function () {
-      this.select("assignment_id")
-        .from("assignment_submissions")
-        .where({ user_id });
-    })
-    .count("id as count");
-
-  const assignmentsCompleted = Number(pendingAssignments) === 0;
-
-  if (!allChaptersCompleted || !quizPassed || !assignmentsCompleted) {
+  if (!allChaptersCompleted || !quizPassed || !allAssignmentsSubmitted) {
     throw new AppError(
       "Complete all chapters, assignments, and pass the required quiz before finishing the tutorial",
       400
