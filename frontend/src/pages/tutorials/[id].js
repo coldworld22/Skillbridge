@@ -38,6 +38,10 @@ import {
   removeTutorialFromFavorites,
   getMyTutorialFavorites,
 } from "@/services/tutorialService";
+import {
+  getNotifications,
+  markNotificationAsRead,
+} from "@/services/notificationService";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 import Link from "next/link";
@@ -201,6 +205,43 @@ export default function TutorialDetail() {
     };
     load();
   }, [id, isLoggedIn, isStudent]);
+  useEffect(() => {
+    if (!isEnrolled || !tutorial?.title) return;
+    const fetchNotifications = async () => {
+      try {
+        const notes = await getNotifications();
+        const note = notes.find(
+          (n) =>
+            n.type === "new_assignment" &&
+            n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
+        );
+        if (note) {
+          toast((t) => (
+            <span>
+              {note.message}{" "}
+              <Link
+                href="/dashboard/student/assignments"
+                className="underline text-blue-400"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                View
+              </Link>
+            </span>
+          ));
+          try {
+            await markNotificationAsRead(note.id);
+          } catch (err) {
+            // ignore mark read errors
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [isEnrolled, tutorial]);
+
 
 
 
