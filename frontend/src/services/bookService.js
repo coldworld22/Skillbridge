@@ -13,11 +13,13 @@ const API_BASE = rawApiBase.startsWith("http")
 export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
-  const base = API_BASE || (typeof window !== "undefined" ? window.location.origin : "");
+  const base =
+    API_BASE || (typeof window !== "undefined" ? window.location.origin : "");
   const uploadsIndex = path.indexOf("/uploads");
-  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const relative =
+    uploadsIndex !== -1 ? path.substring(uploadsIndex + 8) : path; // 8 = '/uploads'.length
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
-  return `${base}${normalized}`;
+  return `${base}/media${normalized}`;
 };
 
 const formatBook = (book) => {

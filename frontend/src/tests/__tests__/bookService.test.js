@@ -131,14 +131,14 @@ describe("bookService", () => {
     };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(3);
-    expect(book).toEqual({
-      id: 3,
-      price: 19.99,
-      cover_image_url: null,
-      pdf_url: null,
-      preview_url: "/api/uploads/p.pdf",
-      preview_pages: ["/api/uploads/a.png"],
-    });
+      expect(book).toEqual({
+        id: 3,
+        price: 19.99,
+        cover_image_url: null,
+        pdf_url: null,
+        preview_url: "/api/media/p.pdf",
+        preview_pages: ["/api/media/a.png"],
+      });
   });
 
   it("returns null when book is not found", async () => {
@@ -193,7 +193,7 @@ describe("bookService", () => {
       process.env.NEXT_PUBLIC_API_BASE_URL = "https://example.com/api/v1";
       const { buildUrl } = require("../../services/bookService");
       expect(buildUrl("/uploads/test.jpg")).toBe(
-        "https://example.com/uploads/test.jpg"
+        "https://example.com/media/test.jpg"
       );
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
@@ -204,7 +204,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/api/uploads/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/api/media/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
