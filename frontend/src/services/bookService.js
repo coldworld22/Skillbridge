@@ -17,7 +17,8 @@ export const buildUrl = (path) => {
   if (!path) return null;
   if (/^https?:/i.test(path)) return path;
   const uploadsIndex = path.indexOf("/uploads");
-  const relative = uploadsIndex !== -1 ? path.substring(uploadsIndex) : path;
+  const relative =
+    uploadsIndex !== -1 ? path.substring(uploadsIndex + 8) : path; // 8 = '/uploads'.length
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
   if (API_BASE) return `${API_BASE}${normalized}`;
   if (RELATIVE_API_BASE) return `${RELATIVE_API_BASE}${normalized}`;

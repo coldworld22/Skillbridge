@@ -3,7 +3,11 @@ const path = require('path');
 const mime = require('mime-types');
 
 exports.stream = (req, res) => {
-  const filePath = path.join(__dirname, '../../../uploads', req.params.filename);
+  const requested = req.params[0] || req.params.filename || '';
+  const safePath = path
+    .normalize(requested)
+    .replace(/^([\.]{2}[\/])+/, '');
+  const filePath = path.join(__dirname, '../../../uploads', safePath);
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
       return res.status(404).json({ message: 'File not found' });
