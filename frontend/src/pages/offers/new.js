@@ -3,8 +3,7 @@ import { useRouter } from "next/router";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { FaTag } from "react-icons/fa";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { createOffer } from "@/services/offerService";
 
 const availableTags = ["Urgent", "LiveClass", "Discount", "Flexible", "OneOnOne"];
@@ -46,7 +45,6 @@ const CreateOffer = () => {
   return (
     <div className="bg-gray-950 text-white min-h-screen">
       <Navbar />
-      <ToastContainer position="top-right" autoClose={3000} />
       <section className="pt-24 pb-16 px-4">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-extrabold text-yellow-400 text-center mb-6">
