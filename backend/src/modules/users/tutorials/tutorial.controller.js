@@ -7,6 +7,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 const analyticsService = require("../../../services/analyticsService");
+const certificateService = require("./certificate/certificate.service");
 const AppError = require("../../../utils/AppError");
 const {
   sendTutorialCreatedAdminEmail,
@@ -521,6 +522,19 @@ exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
       req.headers["user-agent"]
     );
     tutorial.views = await service.getTutorialViewCount(req.params.id);
+
+    if (req.user?.id) {
+      tutorial.assignment_count = await service.getAssignmentCount(
+        req.params.id
+      );
+      const cert = await certificateService.findExisting(
+        req.user.id,
+        req.params.id
+      );
+      if (cert) {
+        tutorial.certificate_id = cert.id;
+      }
+    }
   }
 
   analyticsService.logEvent(req.user?.id || null, 'view_tutorial', {

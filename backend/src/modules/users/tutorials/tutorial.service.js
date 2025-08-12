@@ -352,3 +352,10 @@ exports.getTutorialAnalytics = async (tutorialId) => {
     })),
   };
 };
+
+exports.getAssignmentCount = async (tutorialId) => {
+  const [row] = await db('tutorial_assignments')
+    .where({ tutorial_id: tutorialId })
+    .count();
+  return parseInt(row.count, 10) || 0;
+};
