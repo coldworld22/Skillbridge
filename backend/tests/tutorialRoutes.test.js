@@ -5,6 +5,10 @@ jest.mock('../src/config/database', () => ({
   raw: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('../src/services/analyticsService', () => ({
+  logEvent: jest.fn(),
+}));
+
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   getTutorialsByCategory: jest.fn(),
   getTutorialAnalytics: jest.fn(),
@@ -12,6 +16,14 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   updateTutorial: jest.fn(),
   permanentlyDeleteTutorial: jest.fn(),
   togglePublishStatus: jest.fn(),
+  getPublicTutorialDetails: jest.fn(),
+  getAssignmentCount: jest.fn(),
+  recordTutorialView: jest.fn(),
+  getTutorialViewCount: jest.fn(),
+}));
+
+jest.mock('../src/modules/users/tutorials/certificate/certificate.service', () => ({
+  findExisting: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -27,6 +39,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 const service = require('../src/modules/users/tutorials/tutorial.service');
 const routes = require('../src/modules/users/tutorials/tutorial.routes');
 const auth = require('../src/middleware/auth/authMiddleware');
+const certificateService = require('../src/modules/users/tutorials/certificate/certificate.service');
 
 const app = express();
 app.use(express.json());
@@ -46,6 +59,31 @@ describe('GET /api/users/tutorials/category/:categoryId', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mockTutorials);
     expect(service.getTutorialsByCategory).toHaveBeenCalledWith('123');
+  });
+});
+
+describe('GET /api/users/tutorials/:id', () => {
+  it('returns tutorial details with assignment count and certificate info', async () => {
+    service.getPublicTutorialDetails.mockResolvedValue({ id: '1', title: 'T' });
+    service.getAssignmentCount.mockResolvedValue(3);
+    certificateService.findExisting.mockResolvedValue({ id: 'cert1' });
+
+    const appWithUser = express();
+    appWithUser.use(express.json());
+    appWithUser.use((req, _res, next) => {
+      req.user = { id: 'student1' };
+      next();
+    });
+    appWithUser.use('/api/users/tutorials', routes);
+
+    const res = await request(appWithUser).get('/api/users/tutorials/1');
+
+    expect(res.status).toBe(200);
+    expect(service.getPublicTutorialDetails).toHaveBeenCalledWith('1');
+    expect(service.getAssignmentCount).toHaveBeenCalledWith('1');
+    expect(certificateService.findExisting).toHaveBeenCalledWith('student1', '1');
+    expect(res.body.data.assignment_count).toBe(3);
+    expect(res.body.data.certificate_id).toBe('cert1');
   });
 });
 
