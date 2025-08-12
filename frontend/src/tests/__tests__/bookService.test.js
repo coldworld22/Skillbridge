@@ -187,7 +187,7 @@ describe("bookService", () => {
     });
   });
 
-  it("buildUrl strips versioned API base paths", () => {
+  it("buildUrl preserves API base paths", () => {
     const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     jest.isolateModules(() => {
       process.env.NEXT_PUBLIC_API_BASE_URL = "https://example.com/api/v1";
@@ -199,7 +199,7 @@ describe("bookService", () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
 
-  it("buildUrl keeps relative api prefixes by default", () => {
+  it("buildUrl returns a same-origin path when API base is relative", () => {
     const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;

@@ -1,14 +1,11 @@
 import api from "@/services/api/api";
 
-// Determine the base URL for media assets. If an absolute URL is provided
-// (e.g. "https://example.com/api"), strip any trailing API segment so media
-// files resolve correctly. For relative paths (like the default "/api" used
-// during development), keep the prefix so requests are routed through the same
-// proxy that handles API calls.
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-const API_BASE = rawApiBase.startsWith("http")
-  ? rawApiBase.replace(/\/api(?:\/.*)?$/, "")
-  : rawApiBase;
+// Base URL for media assets. We keep the configured API prefix intact so that
+// environments which proxy the backend under `/api` can still access uploads
+// through `/api/uploads/*`.
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+).replace(/\/$/, "");
 
 export const buildUrl = (path) => {
   if (!path) return null;
