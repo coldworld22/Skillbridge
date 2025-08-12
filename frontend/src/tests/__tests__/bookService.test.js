@@ -136,8 +136,8 @@ describe("bookService", () => {
       price: 19.99,
       cover_image_url: null,
       pdf_url: null,
-      preview_url: "/uploads/p.pdf",
-      preview_pages: ["/uploads/a.png"],
+      preview_url: "/media/p.pdf",
+      preview_pages: ["/media/a.png"],
     });
   });
 
@@ -214,7 +214,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/media/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });

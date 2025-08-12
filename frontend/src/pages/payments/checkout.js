@@ -56,12 +56,12 @@ export default function CheckoutPage() {
   const firstItemId = parsedItems[0]?.id || cartItems[0]?.id;
   const firstItemType = parsedItems[0]?.itemType || cartItems[0]?.item_type;
   useEffect(() => {
-    const id = queryItemId || firstItemId;
-    const type = queryItemType || firstItemType || 'class';
+    const id = queryItemId || cartItems[0]?.id;
+    const type = queryItemType || cartItems[0]?.item_type || 'class';
     if (!id) return;
-    if (id !== itemId) setItemId(id);
-    if (type !== itemType) setItemType(type);
-  }, [queryItemId, queryItemType, firstItemId, firstItemType, itemId, itemType]);
+    setItemId(id);
+    setItemType(type);
+  }, [queryItemId, queryItemType, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;

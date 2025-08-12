@@ -4,7 +4,6 @@ import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
 import { FaTag, FaGift } from "react-icons/fa";
-import Link from "next/link";
 import { toast } from "react-toastify";
 import CartItem from "@/components/books/CartItem";
 

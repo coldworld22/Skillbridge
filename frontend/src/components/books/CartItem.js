@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FaTrash, FaPlus, FaMinus, FaGift } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -8,6 +9,7 @@ export default function CartItem({
   onDecrease,
   onRemove,
 }) {
+  const itemType = item.item_type || item.type || "class";
   return (
     <motion.li
       initial={{ opacity: 0, y: -10 }}
@@ -45,15 +47,25 @@ export default function CartItem({
           <FaPlus />
         </motion.button>
       </div>
-
-      <motion.button
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={onRemove}
-        className="p-2 text-red-500 hover:text-red-600"
-      >
-        <FaTrash />
-      </motion.button>
+      <div className="flex items-center space-x-4">
+        <Link href={`/payments/checkout?itemType=${itemType}&itemId=${item.id}`}>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="px-3 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600"
+          >
+            Checkout
+          </motion.button>
+        </Link>
+        <motion.button
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onRemove}
+          className="p-2 text-red-500 hover:text-red-600"
+        >
+          <FaTrash />
+        </motion.button>
+      </div>
     </motion.li>
   );
 }
