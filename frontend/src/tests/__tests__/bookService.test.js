@@ -131,14 +131,14 @@ describe("bookService", () => {
     };
     api.get.mockResolvedValueOnce({ data: { data: apiData } });
     const book = await fetchBook(3);
-      expect(book).toEqual({
-        id: 3,
-        price: 19.99,
-        cover_image_url: null,
-        pdf_url: null,
-        preview_url: "/api/media/p.pdf",
-        preview_pages: ["/api/media/a.png"],
-      });
+    expect(book).toEqual({
+      id: 3,
+      price: 19.99,
+      cover_image_url: null,
+      pdf_url: null,
+      preview_url: "/uploads/p.pdf",
+      preview_pages: ["/uploads/a.png"],
+    });
   });
 
   it("returns null when book is not found", async () => {
@@ -199,12 +199,22 @@ describe("bookService", () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
 
-  it("buildUrl returns a same-origin path when API base is relative", () => {
+  it("buildUrl prefixes relative API base paths", () => {
+    const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.isolateModules(() => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = "/api";
+      const { buildUrl } = require("../../services/bookService");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/api/media/test.jpg");
+    });
+    process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
+  });
+
+  it("buildUrl returns a same-origin path when API base is empty", () => {
     const originalBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/api/media/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
