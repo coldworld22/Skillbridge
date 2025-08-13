@@ -61,9 +61,11 @@ function resolveCheckoutItem(query, cartItems) {
   const resolvedFromItems = parseItems(items);
   if (resolvedFromItems) return resolvedFromItems;
 
-  if (cartItems.length === 1) {
+  if (Array.isArray(cartItems) && cartItems.length === 1) {
     const c = cartItems[0];
-    return { id: c.id, type: c.item_type || 'class' };
+    if (c && c.id) {
+      return { id: c.id, type: c.item_type || 'class' };
+    }
   }
 
   return null;
