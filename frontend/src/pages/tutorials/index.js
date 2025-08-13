@@ -7,7 +7,12 @@ import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-import { fetchPublishedTutorials, fetchTutorialProgress } from "@/services/tutorialService";
+import {
+  fetchPublishedTutorials,
+  fetchTutorialProgress,
+  getMyTutorialWishlist,
+  getMyTutorialFavorites,
+} from "@/services/tutorialService";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 
