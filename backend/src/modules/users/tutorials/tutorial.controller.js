@@ -233,8 +233,15 @@ exports.createTutorial = catchAsync(async (req, res) => {
 
 
 exports.getAllTutorials = async (req, res) => {
-  const tutorials = await service.getAllTutorials(req.query);
-  sendSuccess(res, tutorials);
+  const { status, category, search, page = 1, limit = 10 } = req.query;
+  const result = await service.getAllTutorials({
+    status,
+    category,
+    search,
+    page,
+    limit,
+  });
+  sendSuccess(res, result.data, "Tutorials fetched", result.meta);
 };
 
 exports.getMyTutorials = catchAsync(async (req, res) => {
