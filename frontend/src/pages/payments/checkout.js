@@ -118,9 +118,13 @@ export default function CheckoutPage() {
       const data = await validateCode(promoCode);
       setDiscount(data.discount_percent);
       setError('');
-    } catch {
+    } catch (err) {
       setDiscount(0);
-      setError('Invalid promo code');
+      if (err?.response?.status === 400) {
+        setError('Invalid promo code');
+      } else {
+        setError('Failed to apply promo code. Please try again.');
+      }
     }
   };
 
@@ -137,7 +141,9 @@ export default function CheckoutPage() {
     };
     localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
-      await removeItem(itemInfo.id);
+      removeItem(itemInfo.id).catch((err) => {
+        console.error('Failed to remove from cart', err);
+      });
     } catch (err) {
       console.error('Failed to remove from cart', err);
     }
