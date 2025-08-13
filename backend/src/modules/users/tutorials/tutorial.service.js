@@ -1,5 +1,7 @@
 // 📁 src/modules/users/tutorials/tutorial.service.js
 const db = require("../../../config/database");
+const tagService = require("./tutorialTag.service");
+const slugify = require("slugify");
 
 exports.createTutorial = async (data, trx = db) => {
   const [tutorial] = await trx("tutorials").insert(data).returning("*");
@@ -309,6 +311,23 @@ exports.addTutorialTags = async (tutorialId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ tutorial_id: tutorialId, tag_id }));
   await trx("tutorial_tag_map").insert(rows);
+};
+
+exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
+  await trx("tutorial_tag_map").where({ tutorial_id: tutorialId }).del();
+  if (!tags || !tags.length) return;
+  const tagIds = [];
+  for (const name of tags) {
+    const existing = await tagService.findByName(name, trx);
+    const tag =
+      existing ||
+      (await tagService.createTag(
+        { name, slug: slugify(name, { lower: true, strict: true }) },
+        trx
+      ));
+    tagIds.push(tag.id);
+  }
+  await exports.addTutorialTags(tutorialId, tagIds, trx);
 };
 
 exports.getTutorialTags = async (tutorialId, trx = db) => {
