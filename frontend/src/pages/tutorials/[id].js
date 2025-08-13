@@ -81,7 +81,10 @@ export default function TutorialDetail() {
   const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
   const user = useAuthStore((state) => state.user);
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem, items: cartItems } = useCartStore((state) => ({
+    addItem: state.addItem,
+    items: state.items,
+  }));
   const isStudent = user?.role?.toLowerCase() === "student";
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -127,6 +130,12 @@ export default function TutorialDetail() {
     }
     if (user?.role?.toLowerCase() !== "student") {
       toast.error("Only students can purchase");
+      return;
+    }
+
+    const alreadyInCart = cartItems.some((item) => item.id === tutorial.id);
+    if (alreadyInCart) {
+      toast.error("Already in cart");
       return;
     }
 
@@ -389,6 +398,7 @@ export default function TutorialDetail() {
             isPaid={Number(tutorial.price) > 0}
             price={tutorial.price}
             onAddToCart={handleAddToCart}
+            currency={tutorial.currency}
           />
         )}
 

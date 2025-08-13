@@ -13,21 +13,26 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
       setTagSuggestions([]);
       return;
     }
-    let ignore = false;
-    fetchTutorialTags(tagInput)
-      .then((tags) => {
-        if (!ignore) {
+
+    const controller = new AbortController();
+    const handler = setTimeout(() => {
+      fetchTutorialTags(tagInput, controller.signal)
+        .then((tags) => {
           const filtered = tags.filter(
             (t) => !tutorialData.tags.includes(t.name)
           );
           setTagSuggestions(filtered);
-        }
-      })
-      .catch(() => {
-        if (!ignore) setTagSuggestions([]);
-      });
+        })
+        .catch((err) => {
+          if (err.code !== "ERR_CANCELED" && err.name !== "CanceledError") {
+            setTagSuggestions([]);
+          }
+        });
+    }, 300);
+
     return () => {
-      ignore = true;
+      clearTimeout(handler);
+      controller.abort();
     };
   }, [tagInput, tutorialData.tags]);
 
