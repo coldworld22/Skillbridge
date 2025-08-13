@@ -22,6 +22,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -136,45 +137,16 @@ function EditTutorialPage() {
           />
         )}
         {step === 4 && (
-          <ReviewStep
-            tutorialData={tutorialData}
-            onPrev={onPrev}
-            actionLabel="Save Changes"
-            onPublish={async () => {
-              const formData = new FormData();
-              formData.append("title", tutorialData.title);
-              formData.append("description", tutorialData.shortDescription);
-              formData.append("category_id", tutorialData.category);
-              formData.append("level", tutorialData.level);
-              formData.append("language", tutorialData.language);
-              formData.append("status", tutorialData.status);
-              formData.append("is_paid", (!tutorialData.isFree).toString());
-              if (!tutorialData.isFree) {
-                formData.append("price", tutorialData.price);
-              }
-              if (tutorialData.tags.length) {
-                formData.append("tags", JSON.stringify(tutorialData.tags));
-              }
-              if (tutorialData.chapters.length) {
-                const chapters = tutorialData.chapters.map((ch, idx) => ({
-                  title: ch.title,
-                  duration: ch.duration,
-                  video_url: ch.videoUrl,
-                  order: idx + 1,
-                  is_preview: ch.preview,
-                }));
-                formData.append("chapters", JSON.stringify(chapters));
-              }
-              if (tutorialData.thumbnail instanceof File) {
-                formData.append("thumbnail", tutorialData.thumbnail);
-              }
-              if (tutorialData.preview instanceof File) {
-                formData.append("preview", tutorialData.preview);
-              }
+            <ReviewStep
+              tutorialData={tutorialData}
+              onPrev={onPrev}
+              actionLabel="Save Changes"
+              onPublish={async () => {
+                const formData = buildTutorialFormData(tutorialData);
 
-              try {
-                await updateTutorial(id, formData);
-                toast.success(t('update_success'));
+                try {
+                  await updateTutorial(id, formData);
+                  toast.success(t('update_success'));
 
                 try {
                   await createNotification({
