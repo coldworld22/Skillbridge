@@ -6,9 +6,13 @@ const EnrollBanner = ({
   price,
   onAddToCart,
   checkoutUrl,
+  currency = "USD",
 }) => {
   const formattedPrice = isPaid
-    ? `$${Number(price).toFixed(2)}`
+    ? new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+      }).format(Number(price))
     : "Free";
 
   let actionButton;

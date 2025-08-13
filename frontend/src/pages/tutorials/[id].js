@@ -398,6 +398,7 @@ export default function TutorialDetail() {
             isPaid={Number(tutorial.price) > 0}
             price={tutorial.price}
             onAddToCart={handleAddToCart}
+            currency={tutorial.currency}
           />
         )}
 
