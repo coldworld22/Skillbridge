@@ -230,7 +230,8 @@ function MyApp({ Component, pageProps, router }) {
                 },
               }}
             />
-            <ToastContainer position="top-right" autoClose={3000} />
+            {/* Display React Toastify notifications centered at the top */}
+            <ToastContainer position="top-center" autoClose={3000} />
           </motion.div>
         </AnimatePresence>
       </>
