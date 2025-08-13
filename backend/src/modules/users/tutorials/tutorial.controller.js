@@ -81,7 +81,9 @@ exports.createTutorial = catchAsync(async (req, res) => {
     : [];
 
   // 🚫 Prevent duplicate titles
-  const existing = await db("tutorials").where({ title }).first();
+  const existing = await db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
   if (existing) {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }

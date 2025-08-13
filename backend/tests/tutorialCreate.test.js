@@ -1,6 +1,7 @@
 jest.mock('../src/config/database', () => {
   const mockDb = jest.fn(() => ({
     where: jest.fn().mockReturnThis(),
+    whereRaw: jest.fn().mockReturnThis(),
     first: jest.fn().mockResolvedValue(null),
   }));
   mockDb.transaction = jest.fn(async (cb) => {
@@ -49,6 +50,7 @@ jest.mock('../src/utils/email', () => ({
 const controller = require('../src/modules/users/tutorials/tutorial.controller');
 const service = require('../src/modules/users/tutorials/tutorial.service');
 const userModel = require('../src/modules/users/user.model');
+const db = require('../src/config/database');
 
 
 describe('createTutorial', () => {
@@ -146,6 +148,30 @@ describe('createTutorial', () => {
     await new Promise((resolve) => setImmediate(resolve));
     const data = service.createTutorial.mock.calls[0][0];
     expect(data.is_paid).toBe(true);
+  });
+
+  it('rejects duplicate titles regardless of case', async () => {
+    const whereRaw = jest.fn().mockReturnThis();
+    const first = jest.fn().mockResolvedValue({ id: 'existing' });
+    db.mockImplementationOnce(() => ({ whereRaw, first }));
+
+    const req = {
+      body: {
+        title: 'My Unique',
+        category_id: 'cat',
+        level: 'beginner',
+      },
+      user: { id: 'inst1', role: 'instructor' },
+      files: {},
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await controller.createTutorial(req, res, jest.fn());
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(whereRaw).toHaveBeenCalledWith('LOWER(title) = ?', 'my unique');
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(service.createTutorial).not.toHaveBeenCalled();
   });
 });
 
