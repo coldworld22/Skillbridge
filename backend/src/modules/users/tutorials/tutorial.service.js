@@ -6,18 +6,61 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
-exports.getAllTutorials = async () => {
-  return db("tutorials")
-    .leftJoin("categories", "tutorials.category_id", "categories.id")
-    .leftJoin("users", "tutorials.instructor_id", "users.id")
-    .whereNot("tutorials.status", "archived")
-    .orderBy("tutorials.created_at", "desc")
+exports.getAllTutorials = async (filters = {}) => {
+  const {
+    status,
+    category,
+    search,
+    page = 1,
+    limit = 10,
+  } = filters;
+
+  const offset = (page - 1) * limit;
+
+  const baseQuery = db("tutorials as t")
+    .leftJoin("categories as c", "t.category_id", "c.id")
+    .leftJoin("users as u", "t.instructor_id", "u.id")
+    .whereNot("t.status", "archived")
+    .modify((query) => {
+      if (status) query.andWhere("t.status", status);
+      if (category) query.andWhere("t.category_id", category);
+      if (search) {
+        query.andWhere(function () {
+          this.whereILike("t.title", `%${search}%`);
+        });
+      }
+    });
+
+  const countQuery = baseQuery
+    .clone()
+    .clearSelect()
+    .count("t.id as count")
+    .first();
+
+  const dataQuery = baseQuery
+    .clone()
+    .orderBy("t.created_at", "desc")
     .select(
-      "tutorials.*",
-      "categories.name as category_name",
-      "categories.image_url as category_image_url",
-      "users.full_name as instructor_name"
-    );
+      "t.*",
+      "c.name as category_name",
+      "c.image_url as category_image_url",
+      "u.full_name as instructor_name"
+    )
+    .limit(limit)
+    .offset(offset);
+
+  const [totalResult, tutorials] = await Promise.all([countQuery, dataQuery]);
+  const total = parseInt(totalResult.count, 10) || 0;
+
+  return {
+    data: tutorials,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 exports.getTutorialById = async (id, userId = null) => {
