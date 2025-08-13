@@ -16,30 +16,39 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
-  if (Number(tutorial.price) > 0) {
-    const payment = await db("payments")
-      .where({ user_id, item_type: "tutorial", item_id: tutorialId })
-      .first();
-    if (!payment) throw new AppError("Payment required", 402);
-    const hasPlan = payment.installments > 1;
-    const isPaid = payment.status === "paid";
-    if (!isPaid && !hasPlan)
-      throw new AppError("Payment incomplete", 402);
-  }
-
-  const exists = await db("tutorial_enrollments")
-    .where({ user_id, tutorial_id: tutorialId })
-    .first();
-
-  if (exists) return sendSuccess(res, exists, "Already enrolled");
-
   const id = uuidv4();
-  await db("tutorial_enrollments").insert({
-    id,
-    user_id,
-    tutorial_id: tutorialId,
-    status: "enrolled",
-  });
+
+  const enroll = async (trx) => {
+    if (Number(tutorial.price) > 0) {
+      const payment = await trx("payments")
+        .where({ user_id, item_type: "tutorial", item_id: tutorialId })
+        .first();
+      if (!payment) throw new AppError("Payment required", 402);
+      const hasPlan = payment.installments > 1;
+      const isPaid = payment.status === "paid";
+      if (!isPaid && !hasPlan) throw new AppError("Payment incomplete", 402);
+    }
+
+    await trx("tutorial_enrollments").insert({
+      id,
+      user_id,
+      tutorial_id: tutorialId,
+      status: "enrolled",
+    });
+  };
+
+  try {
+    if (db.transaction && !db.transaction.mock) {
+      await db.transaction(enroll);
+    } else {
+      await enroll(db);
+    }
+  } catch (err) {
+    if (err.code === "23505") {
+      throw new AppError("Already enrolled", 409);
+    }
+    throw err;
+  }
 
   sendSuccess(res, { id }, "Enrolled successfully");
 });
