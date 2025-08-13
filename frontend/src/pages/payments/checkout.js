@@ -67,16 +67,16 @@ export default function CheckoutPage() {
   // items before falling back to individual query params or the cart store.
   useEffect(() => {
     if (!router.isReady) return;
-    const id = queryItemId || parsedItems[0]?.id || cartItems[0]?.id;
+    const id = parsedItems[0]?.id || queryItemId || cartItems[0]?.id;
     const type =
-      queryItemType ||
       parsedItems[0]?.itemType ||
+      queryItemType ||
       cartItems[0]?.item_type ||
       'class';
     if (!id) return;
     setItemId(id);
     setItemType(type);
-  }, [router.isReady, queryItemId, queryItemType, parsedItems, cartItems]);
+  }, [router.isReady, parsedItems, queryItemId, queryItemType, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
