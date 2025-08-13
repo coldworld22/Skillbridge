@@ -23,6 +23,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");
+const { parseTags } = require("./tutorial.helpers");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -131,18 +132,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
   };
 
   // Parse tags safely
-  let tags = [];
-  if (rawTags) {
-    if (typeof rawTags === "string") {
-      try {
-        tags = JSON.parse(rawTags);
-      } catch (err) {
-        return res.status(400).json({ message: "Invalid tags JSON" });
-      }
-    } else if (Array.isArray(rawTags)) {
-      tags = rawTags;
-    }
-  }
+  const tags = parseTags(rawTags);
 
   let tutorial;
   await db.transaction(async (trx) => {
@@ -278,19 +268,11 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     throw new AppError("Tutorial not found", 404);
   }
 
-  let tags = null;
-  if (rawTags) {
-    if (typeof rawTags === 'string') {
-      try {
-        tags = JSON.parse(rawTags);
-      } catch (err) {
-        return res.status(400).json({ message: "Invalid tags JSON" });
-      }
-    } else if (Array.isArray(rawTags)) {
-      tags = rawTags;
-    }
+  let tags;
+  if (rawTags !== undefined) {
+    tags = parseTags(rawTags);
   }
-  if (tags) {
+  if (tags !== undefined) {
     await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
     const tagIds = [];
     for (const name of tags) {
