@@ -26,6 +26,14 @@ export default function MediaStep({ tutorialData, setTutorialData, onNext, onBac
     }
   }, [tutorialData.thumbnail, tutorialData.preview, thumbnailPreview, previewVideo]);
 
+  // Clean up generated object URLs when media changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+      if (previewVideo) URL.revokeObjectURL(previewVideo);
+    };
+  }, [thumbnailPreview, previewVideo]);
+
   const handleThumbnailUpload = (e) => {
     const file = e.target.files[0];
     if (
