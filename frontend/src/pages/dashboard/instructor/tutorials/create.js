@@ -3,11 +3,6 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/admin/categoryService";
 import { createTutorial } from "@/services/admin/tutorialService";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";
@@ -39,9 +34,6 @@ export default function CreateTutorialPage() {
   });
 
   const [categories, setCategories] = useState([]);
-  const user = useAuthStore((state) => state.user);
-  const refreshNotifications = useNotificationStore((state) => state.fetch);
-  const refreshMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
@@ -68,7 +60,7 @@ export default function CreateTutorialPage() {
     };
 
     loadCategories();
-  }, []);
+  }, [t]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
