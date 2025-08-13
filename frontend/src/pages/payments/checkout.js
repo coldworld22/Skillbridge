@@ -26,33 +26,46 @@ const iconMap = {
 
 function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
+
   if (itemId && itemType) {
     return { id: itemId, type: itemType };
   }
 
-  if (items) {
+  const parseItems = (value) => {
+    if (!value) return null;
+
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== 'string') return null;
+
+    let decoded = raw;
     try {
-      const raw = Array.isArray(items) ? items[0] : items;
-      let decoded = decodeURIComponent(raw);
-      try {
-        decoded = decodeURIComponent(decoded);
-      } catch {
-        // already decoded
-      }
+      decoded = decodeURIComponent(decoded);
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      // ignore decode errors; we'll attempt to parse whatever we have
+    }
+
+    try {
       const parsed = JSON.parse(decoded);
       if (Array.isArray(parsed) && parsed.length === 1) {
-        const p = parsed[0];
+        const p = parsed[0] || {};
+        if (!p.id) return null;
         return { id: p.id, type: p.itemType || p.item_type || 'class' };
       }
-      return null;
-    } catch {
-      return null;
+    } catch (err) {
+      console.error('Failed to parse checkout items', err);
     }
-  }
+    return null;
+  };
 
-  if (cartItems.length === 1) {
+  const resolvedFromItems = parseItems(items);
+  if (resolvedFromItems) return resolvedFromItems;
+
+  if (Array.isArray(cartItems) && cartItems.length === 1) {
     const c = cartItems[0];
-    return { id: c.id, type: c.item_type || 'class' };
+    if (c && c.id) {
+      return { id: c.id, type: c.item_type || 'class' };
+    }
   }
 
   return null;
