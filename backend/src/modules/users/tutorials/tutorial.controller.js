@@ -23,6 +23,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");
+const { parseTags } = require("./tutorial.helpers");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -133,18 +134,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
   };
 
   // Parse tags safely
-  let tags = [];
-  if (rawTags) {
-    if (typeof rawTags === "string") {
-      try {
-        tags = JSON.parse(rawTags);
-      } catch (err) {
-        return res.status(400).json({ message: "Invalid tags JSON" });
-      }
-    } else if (Array.isArray(rawTags)) {
-      tags = rawTags;
-    }
-  }
+  const tags = parseTags(rawTags);
 
   let tutorial;
   await db.transaction(async (trx) => {
@@ -280,41 +270,23 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     throw new AppError("Tutorial not found", 404);
   }
 
-  let tags = null;
-  if (rawTags) {
-    if (typeof rawTags === 'string') {
-      try {
-        tags = JSON.parse(rawTags);
-      } catch (err) {
-        return res.status(400).json({ message: "Invalid tags JSON" });
-      }
-    } else if (Array.isArray(rawTags)) {
-      tags = rawTags;
-    }
+  let tags;
+  if (rawTags !== undefined) {
+    tags = parseTags(rawTags);
   }
-  if (tags) {
-    const trx = await db.transaction();
-    try {
-      await trx('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
-      const tagIds = [];
-      for (const name of tags) {
-        const existing = await tagService.findByName(name, trx);
-        const tag =
-          existing ||
-          (await tagService.createTag(
-            {
-              name,
-              slug: slugify(name, { lower: true, strict: true }),
-            },
-            trx
-          ));
-        tagIds.push(tag.id);
-      }
-      await service.addTutorialTags(tutorial.id, tagIds, trx);
-      await trx.commit();
-    } catch (err) {
-      await trx.rollback();
-      throw err;
+
+  if (tags !== undefined) {
+    await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
+    const tagIds = [];
+    for (const name of tags) {
+      const existing = await tagService.findByName(name);
+      const tag =
+        existing ||
+        (await tagService.createTag({
+          name,
+          slug: slugify(name, { lower: true, strict: true }),
+        }));
+      tagIds.push(tag.id);
     }
     tutorial.tags = await service.getTutorialTags(tutorial.id);
   }
