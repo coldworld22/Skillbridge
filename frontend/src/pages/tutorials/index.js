@@ -162,7 +162,7 @@ const TutorialsSection = () => {
 
     const matchSearch =
       tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tut.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+      (tut.instructor || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchCategory && matchLevel && matchPrice && matchSearch;
   });
