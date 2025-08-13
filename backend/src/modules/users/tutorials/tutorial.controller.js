@@ -291,19 +291,29 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     }
   }
   if (tags) {
-    await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
+    const trx = await db.transaction();
+    try {
+      await trx('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
+      const tagIds = [];
+      for (const name of tags) {
+        const existing = await tagService.findByName(name, trx);
+        const tag =
+          existing ||
+          (await tagService.createTag(
+            {
+              name,
+              slug: slugify(name, { lower: true, strict: true }),
+            },
+            trx
+          ));
+        tagIds.push(tag.id);
+      }
+      await service.addTutorialTags(tutorial.id, tagIds, trx);
+      await trx.commit();
+    } catch (err) {
+      await trx.rollback();
+      throw err;
     }
-    await service.addTutorialTags(tutorial.id, tagIds);
     tutorial.tags = await service.getTutorialTags(tutorial.id);
   }
 
