@@ -1,5 +1,5 @@
 // 📁 src/modules/users/tutorials/tutorial.controller.js
-const db = require("../../../config/database"); // ✅ Required for slug check
+const db = require("../../../config/database");
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const tagService = require("./tutorialTag.service");
@@ -31,18 +31,9 @@ const getRoleDir = (req) => {
   return role;
 };
 
-// ✅ Helper: Generate a unique slug based on title
-const generateUniqueSlug = async (title) => {
-  const baseSlug = slugify(title, { lower: true, strict: true });
-  let slug = baseSlug;
-  let count = 1;
-
-  while (await db("tutorials").where({ slug }).first()) {
-    slug = `${baseSlug}-${count++}`;
-  }
-
-  return slug;
-};
+// ✅ Helper: Generate a slug based on title
+const generateUniqueSlug = (title) =>
+  slugify(title, { lower: true, strict: true });
 
 // Ensure the acting instructor owns the tutorial
 const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
@@ -101,7 +92,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id = req.user.id;
   }
 
-  const slug = await generateUniqueSlug(title);
+  let slug = generateUniqueSlug(title);
   const id = uuidv4();
 
   const roleDir = getRoleDir(req);
@@ -146,7 +137,18 @@ exports.createTutorial = catchAsync(async (req, res) => {
 
   let tutorial;
   await db.transaction(async (trx) => {
-    tutorial = await service.createTutorial(tutorialData, trx);
+    try {
+      tutorial = await service.createTutorial(tutorialData, trx);
+    } catch (err) {
+      if (err.code === "23505") {
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        slug = `${slug}-${randomSuffix}`;
+        tutorialData.slug = slug;
+        tutorial = await service.createTutorial(tutorialData, trx);
+      } else {
+        throw err;
+      }
+    }
 
     if (tags.length) {
       const tagIds = [];
