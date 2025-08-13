@@ -15,6 +15,7 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -105,32 +106,7 @@ function CreateTutorialPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", tutorialData.title);
-    formData.append("description", tutorialData.shortDescription);
-    formData.append("category_id", tutorialData.category);
-    formData.append("level", tutorialData.level);
-    formData.append("language", tutorialData.language);
-    formData.append("status", status);
-    formData.append("is_paid", (!tutorialData.isFree).toString());
-    if (!tutorialData.isFree) {
-      formData.append("price", tutorialData.price);
-    }
-    if (tutorialData.tags.length) {
-      formData.append("tags", JSON.stringify(tutorialData.tags));
-    }
-    if (tutorialData.chapters.length) {
-      const chapters = tutorialData.chapters.map((ch, idx) => ({
-        title: ch.title,
-        duration: ch.duration,
-        video_url: ch.videoUrl,
-        order: idx + 1,
-        is_preview: ch.preview,
-      }));
-      formData.append("chapters", JSON.stringify(chapters));
-    }
-    if (tutorialData.thumbnail) formData.append("thumbnail", tutorialData.thumbnail);
-    if (tutorialData.preview) formData.append("preview", tutorialData.preview);
+    const formData = buildTutorialFormData(tutorialData, status);
 
     try {
       await createTutorial(formData);
