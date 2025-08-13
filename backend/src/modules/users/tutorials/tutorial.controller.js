@@ -82,7 +82,9 @@ exports.createTutorial = catchAsync(async (req, res) => {
     : [];
 
   // 🚫 Prevent duplicate titles
-  const existing = await db("tutorials").where({ title }).first();
+  const existing = await db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
   if (existing) {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }
@@ -272,6 +274,7 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   if (rawTags !== undefined) {
     tags = parseTags(rawTags);
   }
+
   if (tags !== undefined) {
     await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
     const tagIds = [];
@@ -285,7 +288,6 @@ exports.updateTutorial = catchAsync(async (req, res) => {
         }));
       tagIds.push(tag.id);
     }
-    await service.addTutorialTags(tutorial.id, tagIds);
     tutorial.tags = await service.getTutorialTags(tutorial.id);
   }
 
