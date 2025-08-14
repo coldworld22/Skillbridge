@@ -162,6 +162,8 @@
   "pending": "Pending",
   "approved": "Approved",
   "rejected": "Rejected",
+  "active": "Aktiv",
+  "inactive": "Inaktiv",
   "by_author": "by {{author}}",
   "network_error": "Netzwerkfehler: Bitte API_BASE_URL und Backend-Server prüfen.",
   "tutorials_load_error": "Laden der Tutorials fehlgeschlagen.",
