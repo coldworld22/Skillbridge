@@ -6,7 +6,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import BookCard from "@/components/books/BookCard";
 import BookFilterSidebar from "@/components/books/FilterSidebar";
-import { fetchBooks, buildUrl } from "@/services/bookService";
+import { fetchBooks } from "@/services/bookService";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 import useCartStore from "@/store/cart/cartStore";
 // Use global react-hot-toast setup from _app.js
@@ -14,32 +14,14 @@ import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
+import { mapBookForCart, mapBookForWishlist } from "@/utils/bookMapping";
+import { BOOK_PRICE_RANGE_DEFAULT } from "@/utils/constants";
 
-const buildBookItem = (book) => ({
-  id: book.id,
-  name: book.title,
-  author: book.author,
-  category_name: book.category_name,
-  rating: book.rating,
-  price: book.price,
-  cover_url:
-    book.cover_image_url ||
-    buildUrl(book.cover_image) ||
-    "/images/default-book-cover.jpg",
-});
-
-const buildWishlistItem = (book) => ({
-  book_id: book.id,
-  title: book.title,
-  author: book.author,
-  category_name: book.category_name,
-  rating: book.rating,
-  price: book.price,
-  cover_url:
-    book.cover_image_url ||
-    buildUrl(book.cover_image) ||
-    "/images/default-book-cover.jpg",
-});
+// Fallback to a sane default if the constant is missing during build/runtime
+const DEFAULT_PRICE_RANGE =
+  typeof BOOK_PRICE_RANGE_DEFAULT !== "undefined"
+    ? BOOK_PRICE_RANGE_DEFAULT
+    : 100;
 
 export default function BooksPage() {
   const { t } = useTranslation(["website", "common"]);
@@ -55,7 +37,7 @@ export default function BooksPage() {
   // We keep the shape here aligned with what `book.service.js` expects.
   const [filters, setFilters] = useState({
     category: "",
-    priceRange: 100,
+    priceRange: DEFAULT_PRICE_RANGE,
     language: "",
     tags: [],
   });
@@ -98,7 +80,7 @@ export default function BooksPage() {
   const resetFilters = () => {
     setFilters({
       category: "",
-      priceRange: 100,
+      priceRange: DEFAULT_PRICE_RANGE,
       language: "",
       tags: [],
     });
@@ -108,12 +90,12 @@ export default function BooksPage() {
   };
 
   const handleAddToWishlist = (book) => {
-    addToWishlist(buildWishlistItem(book));
+    addToWishlist(mapBookForWishlist(book));
     toast.success("Added to wishlist");
   };
 
   const handleAddToCart = async (book) => {
-    await addItem(buildBookItem(book));
+    await addItem(mapBookForCart(book));
     toast.success("Added to cart");
   };
 

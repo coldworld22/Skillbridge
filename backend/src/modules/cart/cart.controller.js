@@ -2,7 +2,6 @@ const service = require("./cart.service");
 const { sendSuccess } = require("../../utils/response");
 const catchAsync = require("../../utils/catchAsync");
 const notificationService = require("../notifications/notifications.service");
-const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
 const { sendCartAddedEmail } = require("../../utils/email");
 
@@ -15,15 +14,6 @@ exports.addItem = catchAsync(async (req, res) => {
     type: "cart_added",
     message,
   });
-  const admins = await userModel.findAdmins();
-  const sender = admins[0];
-  if (sender) {
-    await messageService.createMessage({
-      sender_id: sender.id,
-      receiver_id: req.user.id,
-      message,
-    });
-  }
   try {
     const user = await userModel.findById(req.user.id);
     if (user?.email) await sendCartAddedEmail(user.email, item.name);

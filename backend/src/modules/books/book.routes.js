@@ -2,6 +2,8 @@ const router = require("express").Router();
 const controller = require("./book.controller");
 const tagController = require("./bookTag.controller");
 const upload = require("./bookUploadMiddleware");
+const validate = require("../../middleware/validate");
+const validation = require("./validation/bookValidation");
 const {
   verifyToken,
   isAdmin,
@@ -15,13 +17,45 @@ router.get("/", controller.listBooks);
 router.get("/admin", verifyToken, isAdmin, controller.listBooksAdmin);
 router.get("/admin/:id", verifyToken, isAdmin, controller.getBookAdmin);
 router.get("/:id", controller.getBook);
-router.post("/", verifyToken, isInstructorOrAdmin, upload, controller.createBook);
-router.put("/:id", verifyToken, isInstructorOrAdmin, upload, controller.updateBook);
+router.post(
+  "/",
+  verifyToken,
+  isInstructorOrAdmin,
+  upload,
+  validate({ body: validation.createBook }),
+  controller.createBook
+);
+router.put(
+  "/:id",
+  verifyToken,
+  isInstructorOrAdmin,
+  upload,
+  validate({ body: validation.updateBook }),
+  controller.updateBook
+);
 router.patch("/:id/status", verifyToken, isInstructorOrAdmin, controller.updateBookStatus);
-router.post("/cart", verifyToken, isStudent, controller.updateCart);
+router.post(
+  "/cart",
+  verifyToken,
+  isStudent,
+  validate({ body: validation.cartAction }),
+  controller.updateCart
+);
 router.post("/checkout", verifyToken, isStudent, controller.checkout);
-router.post("/wishlist", verifyToken, isStudent, controller.addWishlist);
-router.delete("/wishlist", verifyToken, isStudent, controller.removeWishlist);
+router.post(
+  "/wishlist",
+  verifyToken,
+  isStudent,
+  validate({ body: validation.wishlist }),
+  controller.addWishlist
+);
+router.delete(
+  "/wishlist",
+  verifyToken,
+  isStudent,
+  validate({ body: validation.wishlist }),
+  controller.removeWishlist
+);
 router.delete("/:id", verifyToken, isInstructorOrAdmin, controller.deleteBook);
 
 module.exports = router;

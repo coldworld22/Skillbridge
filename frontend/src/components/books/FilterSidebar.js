@@ -4,12 +4,24 @@ import { FaTimesCircle } from "react-icons/fa";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
+import {
+  BOOK_PRICE_RANGE_DEFAULT,
+  BOOK_PRICE_RANGE_MAX,
+} from "@/utils/constants";
+
+// Gracefully handle missing build-time constants
+const DEFAULT_PRICE_RANGE =
+  typeof BOOK_PRICE_RANGE_DEFAULT !== "undefined"
+    ? BOOK_PRICE_RANGE_DEFAULT
+    : 100;
+const PRICE_RANGE_MAX =
+  typeof BOOK_PRICE_RANGE_MAX !== "undefined" ? BOOK_PRICE_RANGE_MAX : 500;
 
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const { t } = useTranslation("website");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [priceRange, setPriceRange] = useState(100);
+  const [priceRange, setPriceRange] = useState(DEFAULT_PRICE_RANGE);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -33,7 +45,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   const resetFilters = () => {
     setSelectedCategory("");
-    setPriceRange(100);
+    setPriceRange(DEFAULT_PRICE_RANGE);
     onResetFilters();
   };
 
@@ -51,7 +63,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
         <input
           type="range"
           min="0"
-          max="500"
+          max={PRICE_RANGE_MAX}
           value={priceRange}
           onChange={(e) => {
             const value = Number(e.target.value);
