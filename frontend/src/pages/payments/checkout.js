@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
@@ -24,35 +24,48 @@ const iconMap = {
   coinbase: <FaEthereum />,
 };
 
-function resolveCheckoutItem(query, cartItems) {
+export function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
+
   if (itemId && itemType) {
     return { id: itemId, type: itemType };
   }
 
-  if (items) {
+  const parseItems = (value) => {
+    if (!value) return null;
+
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== 'string') return null;
+
+    let decoded = raw;
     try {
-      const raw = Array.isArray(items) ? items[0] : items;
-      let decoded = decodeURIComponent(raw);
-      try {
-        decoded = decodeURIComponent(decoded);
-      } catch {
-        // already decoded
-      }
+      decoded = decodeURIComponent(decoded);
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      // ignore decode errors; we'll attempt to parse whatever we have
+    }
+
+    try {
       const parsed = JSON.parse(decoded);
       if (Array.isArray(parsed) && parsed.length === 1) {
-        const p = parsed[0];
+        const p = parsed[0] || {};
+        if (!p.id) return null;
         return { id: p.id, type: p.itemType || p.item_type || 'class' };
       }
-      return null;
-    } catch {
-      return null;
+    } catch (err) {
+      console.error('Failed to parse checkout items', err);
     }
-  }
+    return null;
+  };
 
-  if (cartItems.length === 1) {
+  const resolvedFromItems = parseItems(items);
+  if (resolvedFromItems) return resolvedFromItems;
+
+  if (Array.isArray(cartItems) && cartItems.length === 1) {
     const c = cartItems[0];
-    return { id: c.id, type: c.item_type || 'class' };
+    if (c && c.id) {
+      return { id: c.id, type: c.item_type || 'class' };
+    }
   }
 
   return null;
@@ -64,8 +77,15 @@ export default function CheckoutPage() {
     items: state.items,
     removeItem: state.removeItem,
   }));
-  const [itemId, setItemId] = useState();
-  const [itemType, setItemType] = useState();
+  const resolvedItem = useMemo(() => {
+    if (!router.isReady) return null;
+    return resolveCheckoutItem(router.query, cartItems);
+  }, [router.isReady, router.asPath, cartItems]);
+  const itemId = resolvedItem?.id;
+  const itemType = resolvedItem?.type;
+  const checkoutError = router.isReady && !resolvedItem
+    ? 'Please select exactly one item to checkout'
+    : '';
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState('stripe');
@@ -74,23 +94,10 @@ export default function CheckoutPage() {
   const [invoicePreview, setInvoicePreview] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
-  const [checkoutError, setCheckoutError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [paypalClientId, setPaypalClientId] = useState('');
-  // Determine the item to checkout, prioritising explicit query params and
-  // falling back to the cart store only if necessary.
-  useEffect(() => {
-    if (!router.isReady) return;
-    const resolved = resolveCheckoutItem(router.query, cartItems);
-    if (!resolved) {
-      setCheckoutError('Please select exactly one item to checkout');
-      return;
-    }
-    setItemId(resolved.id);
-    setItemType(resolved.type);
-  }, [router.isReady, router.query, cartItems]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
@@ -106,8 +113,10 @@ export default function CheckoutPage() {
       }
       try {
         const data = await fetchPaymentMethods();
-        setMethods(data);
-        if (data.length > 0) setSelectedMethod(data[0].name);
+        setMethods(Array.isArray(data) ? data : []);
+        if (Array.isArray(data) && data.length > 0) {
+          setSelectedMethod(data[0].name);
+        }
       } catch (err) {
         console.error('Failed to load payment methods', err);
       }
@@ -155,9 +164,7 @@ export default function CheckoutPage() {
     };
     localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
-      removeItem(itemInfo.id).catch((err) => {
-        console.error('Failed to remove from cart', err);
-      });
+      await Promise.resolve(removeItem(itemInfo.id));
     } catch (err) {
       console.error('Failed to remove from cart', err);
     }
@@ -218,7 +225,7 @@ export default function CheckoutPage() {
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const finalPrice = Math.max(itemInfo.price - discount, 0);
+  const finalPrice = Math.max((itemInfo.price ?? 0) - discount, 0);
   const isFree = finalPrice === 0;
   const installments = 3;
   const perInstallment = finalPrice / installments;
@@ -227,7 +234,7 @@ export default function CheckoutPage() {
     d.setMonth(d.getMonth() + i);
     return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
   });
-  const availableMethods = methods.filter((m) => m.active);
+  const availableMethods = Array.isArray(methods) ? methods.filter((m) => m.active) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
