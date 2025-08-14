@@ -111,7 +111,13 @@ describe('GET /api/books/admin/:id', () => {
 
 describe('POST /api/books', () => {
   it('creates a book', async () => {
-    const payload = { title: 'New' };
+    const payload = {
+      title: 'New',
+      price: 10,
+      language: 'en',
+      license_type: 'standard',
+      category_id: 1,
+    };
     service.createBook.mockResolvedValue({ id: '1', ...payload });
     userModel.findAdmins.mockResolvedValue([]);
     const res = await request(app).post('/api/books').send(payload);
@@ -215,7 +221,7 @@ describe('POST /api/books/cart', () => {
       .post('/api/books/cart')
       .send({ bookId: '10' });
     expect(res.status).toBe(200);
-    expect(service.addToCart).toHaveBeenCalledWith('1', '10');
+    expect(service.addToCart).toHaveBeenCalledWith('1', 10);
   });
 
   it('removes from cart', async () => {
@@ -228,7 +234,7 @@ describe('POST /api/books/cart', () => {
       .post('/api/books/cart')
       .send({ bookId: '10', action: 'remove' });
     expect(res.status).toBe(200);
-    expect(service.removeFromCart).toHaveBeenCalledWith('1', '10');
+    expect(service.removeFromCart).toHaveBeenCalledWith('1', 10);
   });
 
   it('returns 404 when book not found', async () => {
@@ -284,7 +290,7 @@ describe('POST /api/books/wishlist', () => {
       .post('/api/books/wishlist')
       .send({ bookId: '10' });
     expect(res.status).toBe(200);
-    expect(service.addToWishlist).toHaveBeenCalledWith('1', '10');
+    expect(service.addToWishlist).toHaveBeenCalledWith('1', 10);
   });
 
   it('returns 404 when book not found', async () => {
@@ -325,7 +331,45 @@ describe('DELETE /api/books/wishlist', () => {
       .delete('/api/books/wishlist')
       .send({ bookId: '10' });
     expect(res.status).toBe(200);
-    expect(service.removeFromWishlist).toHaveBeenCalledWith('1', '10');
+    expect(service.removeFromWishlist).toHaveBeenCalledWith('1', 10);
+  });
+});
+
+describe('validation errors', () => {
+  it('returns 400 for invalid create payload', async () => {
+    const res = await request(app).post('/api/books').send({});
+    expect(res.status).toBe(400);
+    expect(service.createBook).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid update payload', async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '1' });
+    const res = await request(app).put('/api/books/1').send({ price: 'abc' });
+    expect(res.status).toBe(400);
+    expect(service.updateBook).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid cart action', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10', action: 'invalid' });
+    expect(res.status).toBe(400);
+    expect(service.addToCart).not.toHaveBeenCalled();
+    expect(service.removeFromCart).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for wishlist without bookId', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app).post('/api/books/wishlist').send({});
+    expect(res.status).toBe(400);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
   });
 
   it('returns 404 when book not found', async () => {
