@@ -28,19 +28,20 @@ const removeUploadedFiles = async (files = {}) => {
 };
 
 exports.createBook = catchAsync(async (req, res) => {
-  const { tags: rawTags, ...data } = req.body;
-  data.instructor_id = req.user.id;
-  data.status = "pending";
-  if (req.files?.cover_image?.[0])
-    data.cover_image_url =
-      "/uploads/books/" + req.files.cover_image[0].filename;
-  if (req.files?.book_file?.[0])
-    data.pdf_url = "/uploads/books/" + req.files.book_file[0].filename;
-  if (req.files?.preview_pages?.length) {
-    data.preview_pages = JSON.stringify(
-      req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
-    );
-  }
+  try {
+    const { tags: rawTags, ...data } = req.body;
+    data.instructor_id = req.user.id;
+    data.status = "pending";
+    if (req.files?.cover_image?.[0])
+      data.cover_image_url =
+        "/uploads/books/" + req.files.cover_image[0].filename;
+    if (req.files?.book_file?.[0])
+      data.pdf_url = "/uploads/books/" + req.files.book_file[0].filename;
+    if (req.files?.preview_pages?.length) {
+      data.preview_pages = JSON.stringify(
+        req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
+      );
+    }
 
     const book = await service.createBook(data);
 
