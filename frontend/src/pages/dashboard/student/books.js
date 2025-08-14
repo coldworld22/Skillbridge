@@ -107,10 +107,15 @@ function BookCard({ book }) {
 export default function BooksPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { books, fetchLibrary } = useLibraryStore();
+  const addToWishlist = useBookWishlistStore((s) => s.addToWishlist);
 
   useEffect(() => {
     fetchLibrary();
   }, [fetchLibrary]);
+
+  const handleAddToWishlist = (book) => {
+    addToWishlist(buildWishlistItem(book));
+  };
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -24,7 +24,7 @@ const iconMap = {
   coinbase: <FaEthereum />,
 };
 
-function resolveCheckoutItem(query, cartItems) {
+export function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
 
   if (itemId && itemType) {
@@ -119,8 +119,10 @@ export default function CheckoutPage() {
       }
       try {
         const data = await fetchPaymentMethods();
-        setMethods(data);
-        if (data.length > 0) setSelectedMethod(data[0].name);
+        setMethods(Array.isArray(data) ? data : []);
+        if (Array.isArray(data) && data.length > 0) {
+          setSelectedMethod(data[0].name);
+        }
       } catch (err) {
         console.error('Failed to load payment methods', err);
       }
@@ -168,9 +170,7 @@ export default function CheckoutPage() {
     };
     localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
-      removeItem(itemInfo.id).catch((err) => {
-        console.error('Failed to remove from cart', err);
-      });
+      await Promise.resolve(removeItem(itemInfo.id));
     } catch (err) {
       console.error('Failed to remove from cart', err);
     }
@@ -231,7 +231,7 @@ export default function CheckoutPage() {
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const finalPrice = Math.max(itemInfo.price - discount, 0);
+  const finalPrice = Math.max((itemInfo.price ?? 0) - discount, 0);
   const isFree = finalPrice === 0;
   const installments = 3;
   const perInstallment = finalPrice / installments;
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
     d.setMonth(d.getMonth() + i);
     return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
   });
-  const availableMethods = methods.filter((m) => m.active);
+  const availableMethods = Array.isArray(methods) ? methods.filter((m) => m.active) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
