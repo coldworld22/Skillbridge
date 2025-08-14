@@ -8,6 +8,7 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
+const fs = require("fs");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
 const isAdminRole = (roles = []) => {
@@ -15,6 +16,15 @@ const isAdminRole = (roles = []) => {
   return arr
     .map((r) => normalizeRole(r))
     .some((r) => ["admin", "superadmin"].includes(r));
+};
+
+const removeUploadedFiles = async (files = {}) => {
+  const allFiles = Object.values(files).flat();
+  await Promise.all(
+    allFiles.map((file) =>
+      file?.path ? fs.promises.unlink(file.path).catch(() => {}) : null
+    )
+  );
 };
 
 exports.createBook = catchAsync(async (req, res) => {
@@ -32,68 +42,72 @@ exports.createBook = catchAsync(async (req, res) => {
     );
   }
 
-  const book = await service.createBook(data);
+    const book = await service.createBook(data);
 
-  book.tags = await processTags(rawTags, book.id);
+    book.tags = await processTags(rawTags, book.id);
 
-  const userMessage =
-    "Your book was submitted successfully and is under review.";
-  const admins = await userModel.findAdmins();
-  const adminMessage =
-    `Instructor ${req.user.full_name || "Instructor"} submitted a new book "${
-      book.title
-    }" that is awaiting your review.`;
+    const userMessage =
+      "Your book was submitted successfully and is under review.";
+    const admins = await userModel.findAdmins();
+    const adminMessage =
+      `Instructor ${req.user.full_name || "Instructor"} submitted a new book "${
+        book.title
+      }" that is awaiting your review.`;
 
-  const senderAdmin = admins[0];
+    const senderAdmin = admins[0];
 
-  await Promise.all([
-    notificationService.createNotification({
-      user_id: req.user.id,
-      type: "book_submitted",
-      message: userMessage,
-    }),
-    messageService.createMessage({
-      sender_id: senderAdmin ? senderAdmin.id : req.user.id,
-      receiver_id: req.user.id,
-      message: userMessage,
-    }),
-    req.user.email
-      ? mailService.sendMail({
-          to: req.user.email,
-          subject: "Book submitted for review",
-          html: `<p>${userMessage} We will notify you when it is published.</p>`,
-        })
-      : Promise.resolve(),
-    req.user.phone
-      ? smsService.sendSMS({ to: req.user.phone, text: userMessage })
-      : Promise.resolve(),
-    ...admins.map((admin) =>
-      Promise.all([
-        notificationService.createNotification({
-          user_id: admin.id,
-          type: "new_book",
-          message: adminMessage,
-        }),
-        messageService.createMessage({
-          sender_id: req.user.id,
-          receiver_id: admin.id,
-          message: adminMessage,
-        }),
-        admin.email
-          ? mailService.sendMail({
-              to: admin.email,
-              subject: "New book submitted",
-              html: `<p>${adminMessage}</p>`,
-            })
-          : Promise.resolve(),
-        admin.phone
-          ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
-          : Promise.resolve(),
-      ])
-    ),
-  ]);
+    await Promise.all([
+      notificationService.createNotification({
+        user_id: req.user.id,
+        type: "book_submitted",
+        message: userMessage,
+      }),
+      messageService.createMessage({
+        sender_id: senderAdmin ? senderAdmin.id : req.user.id,
+        receiver_id: req.user.id,
+        message: userMessage,
+      }),
+      req.user.email
+        ? mailService.sendMail({
+            to: req.user.email,
+            subject: "Book submitted for review",
+            html: `<p>${userMessage} We will notify you when it is published.</p>`,
+          })
+        : Promise.resolve(),
+      req.user.phone
+        ? smsService.sendSMS({ to: req.user.phone, text: userMessage })
+        : Promise.resolve(),
+      ...admins.map((admin) =>
+        Promise.all([
+          notificationService.createNotification({
+            user_id: admin.id,
+            type: "new_book",
+            message: adminMessage,
+          }),
+          messageService.createMessage({
+            sender_id: req.user.id,
+            receiver_id: admin.id,
+            message: adminMessage,
+          }),
+          admin.email
+            ? mailService.sendMail({
+                to: admin.email,
+                subject: "New book submitted",
+                html: `<p>${adminMessage}</p>`,
+              })
+            : Promise.resolve(),
+          admin.phone
+            ? smsService.sendSMS({ to: admin.phone, text: adminMessage })
+            : Promise.resolve(),
+        ])
+      ),
+    ]);
 
-  sendSuccess(res, book, "Book submitted for review");
+    sendSuccess(res, book, "Book submitted for review");
+  } catch (error) {
+    await removeUploadedFiles(req.files);
+    throw error;
+  }
 });
 
 exports.listBooks = catchAsync(async (req, res) => {
@@ -140,14 +154,15 @@ exports.getBookAdmin = catchAsync(async (req, res) => {
 });
 
 exports.updateBook = catchAsync(async (req, res) => {
-  const existing = await service.getBookById(req.params.id);
-  if (!existing) throw new AppError("Book not found", 404);
-  if (
-    !isAdminRole(req.user.roles || req.user.role) &&
-    existing.instructor_id !== req.user.id
-  ) {
-    throw new AppError("Access denied", 403);
-  }
+  try {
+    const existing = await service.getBookById(req.params.id);
+    if (!existing) throw new AppError("Book not found", 404);
+    if (
+      !isAdminRole(req.user.roles || req.user.role) &&
+      existing.instructor_id !== req.user.id
+    ) {
+      throw new AppError("Access denied", 403);
+    }
 
   const { tags: rawTags, ...data } = req.body;
   if (req.files?.cover_image?.[0])
@@ -161,32 +176,36 @@ exports.updateBook = catchAsync(async (req, res) => {
     );
   }
 
-  const book = await service.updateBook(req.params.id, data);
+    const book = await service.updateBook(req.params.id, data);
 
-  await service.clearBookTags(book.id);
-  book.tags = await processTags(rawTags, book.id);
+    await service.clearBookTags(book.id);
+    book.tags = await processTags(rawTags, book.id);
 
-  if (
-    req.user.role !== "instructor" &&
-    existing.instructor_id &&
-    existing.instructor_id !== req.user.id
-  ) {
-    const message = `Your book "${book.title}" was updated by an admin.`;
-    await Promise.all([
-      notificationService.createNotification({
-        user_id: existing.instructor_id,
-        type: "book_updated",
-        message,
-      }),
-      messageService.createMessage({
-        sender_id: req.user.id,
-        receiver_id: existing.instructor_id,
-        message,
-      }),
-    ]);
+    if (
+      req.user.role !== "instructor" &&
+      existing.instructor_id &&
+      existing.instructor_id !== req.user.id
+    ) {
+      const message = `Your book "${book.title}" was updated by an admin.`;
+      await Promise.all([
+        notificationService.createNotification({
+          user_id: existing.instructor_id,
+          type: "book_updated",
+          message,
+        }),
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: existing.instructor_id,
+          message,
+        }),
+      ]);
+    }
+
+    sendSuccess(res, book, "Book updated");
+  } catch (error) {
+    await removeUploadedFiles(req.files);
+    throw error;
   }
-
-  sendSuccess(res, book, "Book updated");
 });
 
 exports.deleteBook = catchAsync(async (req, res) => {
@@ -286,6 +305,7 @@ sendSuccess(res, book, "Book status updated");
 exports.updateCart = catchAsync(async (req, res) => {
   const { bookId, action } = req.body;
   if (action === "remove") {
+
     await service.removeFromCart(req.user.id, bookId);
     return sendSuccess(res, null, "Removed from cart");
   }
@@ -299,11 +319,17 @@ exports.checkout = catchAsync(async (req, res) => {
 });
 
 exports.addWishlist = catchAsync(async (req, res) => {
+  const book = await service.getBookById(req.body.bookId);
+  if (!book) throw new AppError('Book not found', 404);
+  if (book.status !== 'active') throw new AppError('Book is not active', 400);
   await service.addToWishlist(req.user.id, req.body.bookId);
   sendSuccess(res, null, 'Added to wishlist');
 });
 
 exports.removeWishlist = catchAsync(async (req, res) => {
+  const book = await service.getBookById(req.body.bookId);
+  if (!book) throw new AppError('Book not found', 404);
+  if (book.status !== 'active') throw new AppError('Book is not active', 400);
   await service.removeFromWishlist(req.user.id, req.body.bookId);
   sendSuccess(res, null, 'Removed from wishlist');
 });
