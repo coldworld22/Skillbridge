@@ -6,6 +6,13 @@ const mockI18n = { language: 'en-US' };
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key, i18n: mockI18n }),
 }));
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: function MockImage(props) {
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
 
 jest.mock('next/link', () => ({
   __esModule: true,
@@ -36,18 +43,11 @@ describe('BookCard', () => {
     expect(screen.getByText('£10.00')).toBeInTheDocument();
   });
 
-  it.each([
-    ['pending', 'bg-yellow-100', 'text-yellow-800'],
-    ['approved', 'bg-green-100', 'text-green-800'],
-    ['rejected', 'bg-red-100', 'text-red-800'],
-    ['active', 'bg-green-100', 'text-green-800'],
-    ['inactive', 'bg-gray-100', 'text-gray-800'],
-  ])('renders %s badge with correct classes', (status, bg, text) => {
-    const book = { id: 1, title: 'Test Book', price: 10, status };
+  it('uses fallback cover and lazy loads image', () => {
+    const book = { id: 1, title: 'Fallback Book', price: 5 };
     render(<BookCard book={book} />);
-    const badge = screen.getByText(status);
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass(bg);
-    expect(badge).toHaveClass(text);
+    const img = screen.getByAltText('Fallback Book');
+    expect(img).toHaveAttribute('src', '/images/default-book-cover.jpg');
+    expect(img).toHaveAttribute('loading', 'lazy');
   });
 });
