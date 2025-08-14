@@ -101,9 +101,14 @@ export default function CheckoutPage() {
       setCheckoutError('Please select exactly one item to checkout');
       return;
     }
-    setItemId(resolved.id);
-    setItemType(resolved.type);
-  }, [router.isReady, router.query, cartItems]);
+    setCheckoutError('');
+    if (resolved.id !== itemId) {
+      setItemId(resolved.id);
+    }
+    if (resolved.type !== itemType) {
+      setItemType(resolved.type);
+    }
+  }, [router.isReady, router.asPath, cartItems, itemId, itemType]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
