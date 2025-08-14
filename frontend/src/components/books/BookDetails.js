@@ -1,21 +1,11 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
-import { buildUrl } from "@/services/bookService";
 import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
-
-const buildBookItem = (b) => ({
-  id: b.id,
-  name: b.title,
-  price: b.price,
-  cover_url:
-    b.cover_image_url ||
-    buildUrl(b.cover_image) ||
-    "/images/default-book-cover.jpg",
-});
+import { mapBookForCart } from "@/utils/bookMapping";
 
 export default function BookDetails({ book }) {
   const { t } = useTranslation(["website", "common"]);
@@ -36,7 +26,7 @@ export default function BookDetails({ book }) {
     }
     try {
       setIsAdding(true);
-      await addItem(buildBookItem(book));
+      await addItem(mapBookForCart(book));
       toast.success("Added to cart");
       router.push("/cart");
     } finally {

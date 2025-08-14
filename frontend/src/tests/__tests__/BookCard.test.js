@@ -6,6 +6,13 @@ const mockI18n = { language: 'en-US' };
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key, i18n: mockI18n }),
 }));
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: function MockImage(props) {
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
 
 jest.mock('next/link', () => ({
   __esModule: true,
@@ -34,5 +41,13 @@ describe('BookCard', () => {
     mockI18n.language = 'en-GB';
     render(<BookCard book={book} />);
     expect(screen.getByText('£10.00')).toBeInTheDocument();
+  });
+
+  it('uses fallback cover and lazy loads image', () => {
+    const book = { id: 1, title: 'Fallback Book', price: 5 };
+    render(<BookCard book={book} />);
+    const img = screen.getByAltText('Fallback Book');
+    expect(img).toHaveAttribute('src', '/images/default-book-cover.jpg');
+    expect(img).toHaveAttribute('loading', 'lazy');
   });
 });

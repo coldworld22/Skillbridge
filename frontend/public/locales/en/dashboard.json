@@ -994,6 +994,15 @@
     "tutorials": "Tutorials",
     "no_tutorials": "No tutorials in wishlist."
   },
+  "booksPage": {
+    "by_author": "By {{author}}",
+    "preview": "Preview",
+    "download": "Download",
+    "free": "Free",
+    "purchased_for": "Purchased for ${{price}}",
+    "purchased_on": "Purchased on {{date}}",
+    "no_books": "No books in your library."
+  },
   "adminOffersPage": {
     "title": "Admin: Manage All Offers",
     "all_roles": "All Roles",

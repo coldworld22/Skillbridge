@@ -1,10 +1,32 @@
 /**
  * @file validate.js
- * @desc Universal Zod validation middleware for Express.js
- *       Supports body, query, and params validation.
+ * @desc Universal validation middleware for Express.js
+ *       Supports Zod and Joi schemas for body, query, and params.
  */
 
 const { ZodError } = require("zod");
+
+// helper to run validation for either Zod or Joi schemas
+async function runSchema(schema, data) {
+  if (!schema) return data;
+
+  // Zod schema
+  if (typeof schema.parse === "function") {
+    return schema.parse(data);
+  }
+
+  // Joi schema
+  if (typeof schema.validate === "function" || typeof schema.validateAsync === "function") {
+    const validation = schema.validateAsync
+      ? await schema.validateAsync(data, { abortEarly: false })
+      : schema.validate(data, { abortEarly: false });
+    if (validation.error) throw validation.error;
+    return validation.value || validation;
+  }
+
+  // unknown schema type - return data as is
+  return data;
+}
 
 /**
  * @param {Object} schemas - Optional Zod schemas:
@@ -15,22 +37,25 @@ const { ZodError } = require("zod");
  *   }
  * @returns Express middleware function
  */
-module.exports = (schemas = {}) => {
-  return (req, res, next) => {
+module.exports = (schemaConfig = {}) => {
+  // Allow passing a single schema for body validation
+  const schemas =
+    typeof schemaConfig.parse === "function" ||
+    typeof schemaConfig.validate === "function" ||
+    typeof schemaConfig.validateAsync === "function"
+      ? { body: schemaConfig }
+      : schemaConfig;
+
+  return async (req, res, next) => {
     try {
-      // 🔹 Validate req.body
       if (schemas.body) {
-        req.body = schemas.body.parse(req.body);
+        req.body = await runSchema(schemas.body, req.body);
       }
-
-      // 🔹 Validate req.query
       if (schemas.query) {
-        req.query = schemas.query.parse(req.query);
+        req.query = await runSchema(schemas.query, req.query);
       }
-
-      // 🔹 Validate req.params
       if (schemas.params) {
-        req.params = schemas.params.parse(req.params);
+        req.params = await runSchema(schemas.params, req.params);
       }
 
       next();
@@ -42,7 +67,14 @@ module.exports = (schemas = {}) => {
         });
       }
 
-      next(err); // Let Express handle unexpected errors
+      if (err.isJoi || err.details) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: err.details,
+        });
+      }
+
+      next(err);
     }
   };
 };
