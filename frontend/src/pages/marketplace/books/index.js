@@ -15,6 +15,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import { mapBookForCart, mapBookForWishlist } from "@/utils/bookMapping";
+import { BOOK_PRICE_RANGE_DEFAULT } from "@/utils/constants";
 
 export default function BooksPage() {
   const { t } = useTranslation(["website", "common"]);
