@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { buildUrl } from "@/services/bookService";
@@ -36,9 +36,13 @@ export default function BookDetails({ book }) {
     }
     try {
       setIsAdding(true);
-      await addItem(buildBookItem(book));
-      toast.success("Added to cart");
-      router.push("/cart");
+      const added = await addItem(buildBookItem(book));
+      if (added) {
+        toast.success(t("added_to_cart"));
+        router.push("/cart");
+      } else {
+        toast.error(t("failed_to_add_to_cart"));
+      }
     } finally {
       setIsAdding(false);
     }
