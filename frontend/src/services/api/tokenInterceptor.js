@@ -86,10 +86,8 @@ api.interceptors.response.use(
 
       if (!refreshCookie && !hasAuthState) {
         console.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
-        authStore.setToken(null);
-        authStore.setUser(null);
+        authStore.logout(true);
         if (typeof window !== "undefined") {
-          localStorage.removeItem("auth");
           Router.push("/auth/login");
         }
         toast.error("Session expired. Please log in again.");
@@ -122,7 +120,7 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         console.error("\u274C Refresh token request failed:", refreshErr);
         processQueue(refreshErr, null);
-        authStore.logout();
+        authStore.logout(true);
         toast.info("You have been logged out.");
         toast.error("Session expired. Please log in again.");
         if (typeof window !== "undefined") {
@@ -133,7 +131,7 @@ api.interceptors.response.use(
         isRefreshing = false;
       }
     } else if (error.response?.status === 401 && originalRequest._retry && !isAuthRoute) {
-      authStore.logout();
+      authStore.logout(true);
       toast.info("You have been logged out.");
       toast.error("Session expired. Please log in again.");
       if (typeof window !== "undefined") {
