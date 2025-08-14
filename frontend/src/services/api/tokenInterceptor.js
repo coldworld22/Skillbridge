@@ -80,10 +80,12 @@ api.interceptors.response.use(
     ].some((route) => originalRequest?.url?.includes(route));
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+      console.warn("\u26A0\uFE0F Received 401 for", originalRequest?.url);
       const refreshCookie = getCookie("refreshToken");
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
 
       if (!refreshCookie && !hasAuthState) {
+        console.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
         authStore.setToken(null);
         authStore.setUser(null);
         if (typeof window !== "undefined") {
@@ -107,15 +109,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log("\uD83D\uDD04 Attempting token refresh...");
         const { data } = await api.post("/auth/refresh", null, {
           withCredentials: true,
         });
+        console.log("\u2705 Token refresh successful");
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
       } catch (refreshErr) {
+        console.error("\u274C Refresh token request failed:", refreshErr);
         processQueue(refreshErr, null);
         authStore.logout();
         toast.info("You have been logged out.");
