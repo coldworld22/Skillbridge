@@ -18,23 +18,9 @@ const isAdminRole = (roles = []) => {
 };
 
 exports.createBook = catchAsync(async (req, res) => {
-  const { tags: rawTags, ...body } = req.body || {};
-  const data = {
-    title: body.title,
-    short_description: body.short_description,
-    detailed_description: body.detailed_description,
-    price: body.price,
-    language: body.language,
-    license_type: body.license_type,
-    category_id: body.category_id,
-    instructor_id: req.user.id,
-    status: "pending",
-    allow_preview:
-      body.allow_preview === "1" ||
-      body.allow_preview === 1 ||
-      body.allow_preview === true ||
-      body.allow_preview === "true",
-  };
+  const { tags: rawTags, ...data } = req.body;
+  data.instructor_id = req.user.id;
+  data.status = "pending";
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
@@ -163,8 +149,7 @@ exports.updateBook = catchAsync(async (req, res) => {
     throw new AppError("Access denied", 403);
   }
 
-  const { tags: rawTags, ...body } = req.body || {};
-  const data = { ...body };
+  const { tags: rawTags, ...data } = req.body;
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
@@ -174,13 +159,6 @@ exports.updateBook = catchAsync(async (req, res) => {
     data.preview_pages = JSON.stringify(
       req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
     );
-  }
-  if (data.allow_preview !== undefined) {
-    data.allow_preview =
-      data.allow_preview === "1" ||
-      data.allow_preview === 1 ||
-      data.allow_preview === true ||
-      data.allow_preview === "true";
   }
 
   const book = await service.updateBook(req.params.id, data);
@@ -306,13 +284,13 @@ sendSuccess(res, book, "Book status updated");
 });
 
 exports.updateCart = catchAsync(async (req, res) => {
-  const { bookId, action } = req.body || {};
-  if (action === 'remove') {
+  const { bookId, action } = req.body;
+  if (action === "remove") {
     await service.removeFromCart(req.user.id, bookId);
-    return sendSuccess(res, null, 'Removed from cart');
+    return sendSuccess(res, null, "Removed from cart");
   }
   const item = await service.addToCart(req.user.id, bookId);
-  sendSuccess(res, item, 'Added to cart');
+  sendSuccess(res, item, "Added to cart");
 });
 
 exports.checkout = catchAsync(async (req, res) => {
