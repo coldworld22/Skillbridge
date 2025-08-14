@@ -7,6 +7,8 @@ import { fetchBooks } from "@/services/bookService";
 const BooksSection = () => {
   const { t } = useTranslation("website");
   const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -16,6 +18,9 @@ const BooksSection = () => {
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("Failed to load books", err);
+        setError(true);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -32,15 +37,25 @@ const BooksSection = () => {
       >
         📖 {t("explore_books")}
       </motion.h2>
-      <p className="text-gray-300 mb-8">
-        Discover our curated selection of books.
-      </p>
+      <p className="text-gray-300 mb-8">{t("discover_books")}</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
-        {books.map((book) => (
-          <BookCard key={book.id} book={book} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-40 bg-gray-800 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : error ? (
+        <p className="text-gray-400 mb-8">{t("failed_load_books")}</p>
+      ) : books.length === 0 ? (
+        <p className="text-gray-400 mb-8">{t("no_books")}</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
+          {books.map((book) => (
+            <BookCard key={book.id} book={book} />
+          ))}
+        </div>
+      )}
 
       <motion.a
         href="/marketplace/books"
