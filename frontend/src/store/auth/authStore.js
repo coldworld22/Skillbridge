@@ -74,10 +74,13 @@ const useAuthStore = create(
         await authService.registerUser(data);
       },
 
-      logout: async () => {
-        try {
-          await authService.logoutUser();
-        } catch (_) {}
+      logout: async (skipRequest = false) => {
+        if (!skipRequest) {
+          try {
+            await authService.logoutUser();
+          } catch (_) {}
+        }
+
         // Stop polling intervals when logging out
         const notifStop = useNotificationStore.getState().stopPolling;
         const msgStop = useMessageStore.getState().stopPolling;

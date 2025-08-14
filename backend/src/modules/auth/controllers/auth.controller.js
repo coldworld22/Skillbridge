@@ -78,7 +78,11 @@ exports.login = catchAsync(async (req, res) => {
  */
 exports.refreshToken = catchAsync(async (req, res) => {
   const token = req.cookies.refreshToken;
-  if (!token) return res.status(401).json({ message: "Missing refresh token" });
+  console.log("\uD83D\uDD04 Refresh token endpoint hit. Token present:", Boolean(token));
+  if (!token) {
+    console.warn("\u26A0\uFE0F Missing refresh token cookie");
+    return res.status(401).json({ message: "Missing refresh token" });
+  }
 
   try {
     const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
@@ -87,6 +91,7 @@ exports.refreshToken = catchAsync(async (req, res) => {
       role: decoded.role,
     });
     const csrfToken = authService.generateCsrfToken();
+    console.log("\u2705 Refresh token rotated for user", decoded.id);
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
       .cookie("csrfToken", csrfToken, csrfCookieOptions)
