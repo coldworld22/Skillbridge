@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
@@ -77,8 +77,15 @@ export default function CheckoutPage() {
     items: state.items,
     removeItem: state.removeItem,
   }));
-  const [itemId, setItemId] = useState();
-  const [itemType, setItemType] = useState();
+  const resolvedItem = useMemo(() => {
+    if (!router.isReady) return null;
+    return resolveCheckoutItem(router.query, cartItems);
+  }, [router.isReady, router.asPath, cartItems]);
+  const itemId = resolvedItem?.id;
+  const itemType = resolvedItem?.type;
+  const checkoutError = router.isReady && !resolvedItem
+    ? 'Please select exactly one item to checkout'
+    : '';
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState('stripe');
@@ -87,28 +94,10 @@ export default function CheckoutPage() {
   const [invoicePreview, setInvoicePreview] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
-  const [checkoutError, setCheckoutError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [paypalClientId, setPaypalClientId] = useState('');
-  // Determine the item to checkout, prioritising explicit query params and
-  // falling back to the cart store only if necessary.
-  useEffect(() => {
-    if (!router.isReady) return;
-    const resolved = resolveCheckoutItem(router.query, cartItems);
-    if (!resolved) {
-      setCheckoutError('Please select exactly one item to checkout');
-      return;
-    }
-    setCheckoutError('');
-    if (resolved.id !== itemId) {
-      setItemId(resolved.id);
-    }
-    if (resolved.type !== itemType) {
-      setItemType(resolved.type);
-    }
-  }, [router.isReady, router.asPath, cartItems, itemId, itemType]);
 
   useEffect(() => {
     if (!itemId || !itemType) return;
