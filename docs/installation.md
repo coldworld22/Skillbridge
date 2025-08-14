@@ -35,6 +35,22 @@ COOKIE_SECURE=false
 COOKIE_SAMESITE=None
 ```
 
+The book filter's price range uses configurable defaults:
+
+```
+BOOK_PRICE_RANGE_DEFAULT=100
+BOOK_PRICE_RANGE_MAX=500
+```
+
+These values are read in `backend/src/config/books.js` and mirrored on the
+frontend via `frontend/src/utils/constants.js`. When running the frontend
+outside Docker, add the `NEXT_PUBLIC_` variants to `frontend/.env.local`:
+
+```
+NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
+NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
+```
+
 ### Frontend (optional)
 
 When using Docker Compose the frontend automatically points to the API on port

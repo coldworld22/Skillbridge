@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { PRICE_RANGE_MAX } = require("../../config/books");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -28,7 +29,8 @@ exports.listBooks = async (params = {}) => {
   }
   if (category) query.where("b.category_id", category);
   if (status) query.where("b.status", status);
-  if (priceRange) query.where("b.price", "<=", priceRange);
+  if (priceRange)
+    query.where("b.price", "<=", Math.min(priceRange, PRICE_RANGE_MAX));
   if (language) query.where("b.language", language);
   if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];

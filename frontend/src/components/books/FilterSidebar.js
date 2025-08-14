@@ -4,12 +4,16 @@ import { FaTimesCircle } from "react-icons/fa";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
+import {
+  BOOK_PRICE_RANGE_DEFAULT,
+  BOOK_PRICE_RANGE_MAX,
+} from "@/utils/constants";
 
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const { t } = useTranslation("website");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [priceRange, setPriceRange] = useState(100);
+  const [priceRange, setPriceRange] = useState(BOOK_PRICE_RANGE_DEFAULT);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -33,7 +37,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   const resetFilters = () => {
     setSelectedCategory("");
-    setPriceRange(100);
+    setPriceRange(BOOK_PRICE_RANGE_DEFAULT);
     onResetFilters();
   };
 
@@ -51,7 +55,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
         <input
           type="range"
           min="0"
-          max="500"
+          max={BOOK_PRICE_RANGE_MAX}
           value={priceRange}
           onChange={(e) => {
             const value = Number(e.target.value);
