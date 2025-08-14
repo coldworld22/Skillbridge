@@ -7,24 +7,34 @@ import { fetchBooks } from "@/services/bookService";
 const BooksSection = () => {
   const { t } = useTranslation("website");
   const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadBooks = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const { books: list } = await fetchBooks({ perPage: 3 });
+        const { books: list } = await fetchBooks({
+          perPage: 3,
+          signal: controller.signal,
+        });
         setBooks(list);
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to load books", err);
-        setError(true);
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          console.error("Failed to load books", err);
+          setError("Failed to load books");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadBooks();
+
+    return () => controller.abort();
   }, []);
 
   return (
@@ -37,18 +47,14 @@ const BooksSection = () => {
       >
         📖 {t("explore_books")}
       </motion.h2>
-      <p className="text-gray-300 mb-8">{t("discover_books")}</p>
+      <p className="text-gray-300 mb-8">
+        Discover our curated selection of books.
+      </p>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-gray-800 rounded animate-pulse" />
-          ))}
-        </div>
+        <p className="text-gray-300 mb-8">Loading...</p>
       ) : error ? (
-        <p className="text-gray-400 mb-8">{t("failed_load_books")}</p>
-      ) : books.length === 0 ? (
-        <p className="text-gray-400 mb-8">{t("no_books")}</p>
+        <p className="text-red-500 mb-8">{error}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
           {books.map((book) => (
