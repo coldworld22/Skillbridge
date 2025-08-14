@@ -9,11 +9,19 @@ import {
   BOOK_PRICE_RANGE_MAX,
 } from "@/utils/constants";
 
+// Gracefully handle missing build-time constants
+const DEFAULT_PRICE_RANGE =
+  typeof BOOK_PRICE_RANGE_DEFAULT !== "undefined"
+    ? BOOK_PRICE_RANGE_DEFAULT
+    : 100;
+const PRICE_RANGE_MAX =
+  typeof BOOK_PRICE_RANGE_MAX !== "undefined" ? BOOK_PRICE_RANGE_MAX : 500;
+
 const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const { t } = useTranslation("website");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [priceRange, setPriceRange] = useState(BOOK_PRICE_RANGE_DEFAULT);
+  const [priceRange, setPriceRange] = useState(DEFAULT_PRICE_RANGE);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -37,7 +45,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   const resetFilters = () => {
     setSelectedCategory("");
-    setPriceRange(BOOK_PRICE_RANGE_DEFAULT);
+    setPriceRange(DEFAULT_PRICE_RANGE);
     onResetFilters();
   };
 
@@ -55,7 +63,7 @@ const BookFilterSidebar = ({ onFilterChange, onResetFilters }) => {
         <input
           type="range"
           min="0"
-          max={BOOK_PRICE_RANGE_MAX}
+          max={PRICE_RANGE_MAX}
           value={priceRange}
           onChange={(e) => {
             const value = Number(e.target.value);

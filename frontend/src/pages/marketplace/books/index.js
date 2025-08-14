@@ -17,6 +17,12 @@ import nextI18NextConfig from "../../../../next-i18next.config.js";
 import { mapBookForCart, mapBookForWishlist } from "@/utils/bookMapping";
 import { BOOK_PRICE_RANGE_DEFAULT } from "@/utils/constants";
 
+// Fallback to a sane default if the constant is missing during build/runtime
+const DEFAULT_PRICE_RANGE =
+  typeof BOOK_PRICE_RANGE_DEFAULT !== "undefined"
+    ? BOOK_PRICE_RANGE_DEFAULT
+    : 100;
+
 export default function BooksPage() {
   const { t } = useTranslation(["website", "common"]);
   const [books, setBooks] = useState([]);
@@ -31,7 +37,7 @@ export default function BooksPage() {
   // We keep the shape here aligned with what `book.service.js` expects.
   const [filters, setFilters] = useState({
     category: "",
-    priceRange: BOOK_PRICE_RANGE_DEFAULT,
+    priceRange: DEFAULT_PRICE_RANGE,
     language: "",
     tags: [],
   });
@@ -74,7 +80,7 @@ export default function BooksPage() {
   const resetFilters = () => {
     setFilters({
       category: "",
-      priceRange: BOOK_PRICE_RANGE_DEFAULT,
+      priceRange: DEFAULT_PRICE_RANGE,
       language: "",
       tags: [],
     });
