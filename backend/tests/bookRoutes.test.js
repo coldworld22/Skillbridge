@@ -210,6 +210,7 @@ describe('POST /api/books/cart', () => {
       req.user = { id: '1', role: 'student', roles: ['student'] };
       next();
     });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
     const res = await request(app)
       .post('/api/books/cart')
       .send({ bookId: '10' });
@@ -222,11 +223,38 @@ describe('POST /api/books/cart', () => {
       req.user = { id: '1', role: 'student', roles: ['student'] };
       next();
     });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
     const res = await request(app)
       .post('/api/books/cart')
       .send({ bookId: '10', action: 'remove' });
     expect(res.status).toBe(200);
     expect(service.removeFromCart).toHaveBeenCalledWith('1', '10');
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.addToCart).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when book is inactive', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'inactive' });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(400);
+    expect(service.addToCart).not.toHaveBeenCalled();
   });
 });
 
@@ -251,11 +279,38 @@ describe('POST /api/books/wishlist', () => {
       req.user = { id: '1', role: 'student', roles: ['student'] };
       next();
     });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
     const res = await request(app)
       .post('/api/books/wishlist')
       .send({ bookId: '10' });
     expect(res.status).toBe(200);
     expect(service.addToWishlist).toHaveBeenCalledWith('1', '10');
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when book is inactive', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'inactive' });
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(400);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
   });
 });
 
@@ -265,11 +320,25 @@ describe('DELETE /api/books/wishlist', () => {
       req.user = { id: '1', role: 'student', roles: ['student'] };
       next();
     });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
     const res = await request(app)
       .delete('/api/books/wishlist')
       .send({ bookId: '10' });
     expect(res.status).toBe(200);
     expect(service.removeFromWishlist).toHaveBeenCalledWith('1', '10');
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .delete('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.removeFromWishlist).not.toHaveBeenCalled();
   });
 });
 
