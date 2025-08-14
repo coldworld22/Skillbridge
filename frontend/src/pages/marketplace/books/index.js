@@ -30,7 +30,7 @@ export default function BooksPage() {
   // We keep the shape here aligned with what `book.service.js` expects.
   const [filters, setFilters] = useState({
     category: "",
-    priceRange: 100,
+    priceRange: BOOK_PRICE_RANGE_DEFAULT,
     language: "",
     tags: [],
   });
@@ -73,7 +73,7 @@ export default function BooksPage() {
   const resetFilters = () => {
     setFilters({
       category: "",
-      priceRange: 100,
+      priceRange: BOOK_PRICE_RANGE_DEFAULT,
       language: "",
       tags: [],
     });

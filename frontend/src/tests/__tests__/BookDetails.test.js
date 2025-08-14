@@ -12,7 +12,7 @@ jest.mock('next/router', () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-jest.mock('react-toastify', () => ({
+jest.mock('react-hot-toast', () => ({
   toast: { info: jest.fn(), error: jest.fn(), success: jest.fn() },
 }));
 

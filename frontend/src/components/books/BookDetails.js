@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
