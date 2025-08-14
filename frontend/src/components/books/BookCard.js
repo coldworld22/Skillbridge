@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "next-i18next";
 import {
   FiEye,
@@ -54,9 +55,11 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      <img
+      <Image
         src={coverUrl}
         alt={book.title}
+        width={400}
+        height={160}
         loading="lazy"
         className="w-full h-40 object-cover"
       />
