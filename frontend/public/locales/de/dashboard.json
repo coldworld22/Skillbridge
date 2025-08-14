@@ -1227,6 +1227,15 @@
     "completion_rate": "🎯 Completion Rate",
     "enrollment_trend": "📈 Enrollment Trend"
   },
+  "booksPage": {
+    "by_author": "By {{author}}",
+    "preview": "Preview",
+    "download": "Download",
+    "free": "Free",
+    "purchased_for": "Purchased for ${{price}}",
+    "purchased_on": "Purchased on {{date}}",
+    "no_books": "No books in your library."
+  },
   "progressChecklistModal": {
     "title": "🧩 Tutorial Progress Checklist",
     "title_description": "Title & Description",

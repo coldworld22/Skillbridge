@@ -14,6 +14,9 @@ import { toast } from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
+import {
+  BOOK_PRICE_RANGE_DEFAULT,
+} from "@/utils/constants";
 
 const buildBookItem = (book) => ({
   id: book.id,
@@ -55,7 +58,7 @@ export default function BooksPage() {
   // We keep the shape here aligned with what `book.service.js` expects.
   const [filters, setFilters] = useState({
     category: "",
-    priceRange: 100,
+    priceRange: BOOK_PRICE_RANGE_DEFAULT,
     language: "",
     tags: [],
   });
@@ -98,7 +101,7 @@ export default function BooksPage() {
   const resetFilters = () => {
     setFilters({
       category: "",
-      priceRange: 100,
+      priceRange: BOOK_PRICE_RANGE_DEFAULT,
       language: "",
       tags: [],
     });
