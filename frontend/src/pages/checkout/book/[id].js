@@ -4,7 +4,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { fetchBook } from "@/services/bookService";
 import { purchaseBook } from "@/services/checkoutService";
-import useLibraryStore from "@/store/library/libraryStore";
+import useLibraryStore from "@/store/libraryStore";
 
 export default function BookCheckoutPage() {
   const router = useRouter();
