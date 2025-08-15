@@ -31,11 +31,11 @@ describe('GET /api/library', () => {
         author: 'Author',
         tags: ['tag'],
         isFree: false,
-        price: 10,
+        price_paid: 10,
         purchasedAt: '2024-01-01T00:00:00Z',
-        coverUrl: '/cover',
-        pdfUrl: '/file.pdf',
-        previewUrl: '/preview',
+        cover_image_url: '/cover',
+        pdf_url: '/file.pdf',
+        preview_url: '/preview',
       },
     ];
     service.listForStudent.mockResolvedValue(items);
