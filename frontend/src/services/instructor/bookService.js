@@ -1,5 +1,5 @@
 import api from "@/services/api/api";
-import { buildUrl } from "@/services/bookService";
+import { buildUrl } from "@/utils/url";
 
 // Fetch books belonging to the current instructor with
 // optional pagination, filtering and status parameters

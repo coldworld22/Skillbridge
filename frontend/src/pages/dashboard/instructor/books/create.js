@@ -104,7 +104,7 @@ function CreateBookPage() {
         if (respErrors) {
           if (Array.isArray(respErrors)) {
             errorMessage = respErrors
-              .map((err) => err?.message || err)
+              .map((err) => err?.message || err?.msg || err)
               .join(", ");
           } else {
             errorMessage = Object.values(respErrors).join(", ");

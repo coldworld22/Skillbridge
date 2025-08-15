@@ -99,7 +99,7 @@ function AdminEditBookPage() {
         if (respErrors) {
           if (Array.isArray(respErrors)) {
             errorMessage = respErrors
-              .map((e) => e?.message || e)
+              .map((e) => e?.message || e?.msg || e)
               .join(", ");
           } else {
             errorMessage = Object.values(respErrors).join(", ");

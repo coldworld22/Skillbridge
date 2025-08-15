@@ -3,7 +3,7 @@ import { FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
 
-import { buildUrl } from "@/services/bookService";
+import { buildUrl } from "@/utils/url";
 import useLibraryStore from "@/store/library/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 

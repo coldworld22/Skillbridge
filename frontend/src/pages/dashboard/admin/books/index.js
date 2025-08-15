@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { fetchBooks, deleteBook, updateBookStatus, buildUrl } from "@/services/bookService";
+import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";

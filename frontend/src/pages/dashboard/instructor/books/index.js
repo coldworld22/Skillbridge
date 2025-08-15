@@ -16,7 +16,7 @@ import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
-import { buildUrl } from "@/services/bookService";
+import { buildUrl } from "@/utils/url";
 
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");

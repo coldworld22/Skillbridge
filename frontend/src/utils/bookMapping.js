@@ -1,4 +1,4 @@
-import { buildUrl } from "@/services/bookService";
+import { buildUrl } from "@/utils/url";
 
 export const mapBookForCart = (book) => ({
   id: book.id,
