@@ -125,6 +125,8 @@ describe('POST /api/books', () => {
     const res = await request(app).post('/api/books').send(payload);
     expect(res.status).toBe(200);
     expect(service.createBook).toHaveBeenCalled();
+    const [dataArg] = service.createBook.mock.calls[0];
+    expect(dataArg).not.toHaveProperty('is_free');
   });
 });
 
