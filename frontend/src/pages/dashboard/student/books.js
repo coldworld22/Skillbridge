@@ -3,7 +3,6 @@ import { FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
 
-import { buildUrl } from "@/utils/url";
 import useLibraryStore from "@/store/library/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 
@@ -11,10 +10,7 @@ function BookCard({ book }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { wishlist, addToWishlist, removeFromWishlist } = useBookWishlistStore();
 
-  const cover =
-    book.cover_image_url ||
-    buildUrl(book.cover_image) ||
-    "/images/default-book-cover.jpg";
+  const cover = book.coverUrl || "/images/default-book-cover.jpg";
 
   const isWishlisted = wishlist.some((item) => item.book_id === book.id);
 
@@ -107,15 +103,10 @@ function BookCard({ book }) {
 export default function BooksPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
   const { books, fetchLibrary } = useLibraryStore();
-  const addToWishlist = useBookWishlistStore((s) => s.addToWishlist);
 
   useEffect(() => {
     fetchLibrary();
   }, [fetchLibrary]);
-
-  const handleAddToWishlist = (book) => {
-    addToWishlist(buildWishlistItem(book));
-  };
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
