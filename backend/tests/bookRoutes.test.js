@@ -212,6 +212,20 @@ describe('PATCH /api/books/:id/status', () => {
     expect(res.status).toBe(403);
     expect(service.updateBookStatus).not.toHaveBeenCalled();
   });
+
+  it("returns 403 when instructor updates own book status", async () => {
+    const book = { id: '1', status: 'active', instructor_id: '1', title: 'Book' };
+    service.getBookById.mockResolvedValue(book);
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app)
+      .patch('/api/books/1/status')
+      .send({ status: 'active' });
+    expect(res.status).toBe(403);
+    expect(service.updateBookStatus).not.toHaveBeenCalled();
+  });
 });
 
 describe('POST /api/books/cart', () => {

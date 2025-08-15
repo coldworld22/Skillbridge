@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { deleteBook, updateBookStatus } from "@/services/bookService";
+import { deleteBook } from "@/services/bookService";
 import { fetchInstructorBooks } from "@/services/instructor/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
@@ -17,6 +17,8 @@ import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, Fi
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
+import useNotificationStore from "@/store/notifications/notificationStore";
+import useMessageStore from "@/store/messages/messageStore";
 
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");
@@ -44,8 +46,6 @@ function InstructorBooksPage() {
   const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const perPage = 12;
-
-  const [bulkStatus, setBulkStatus] = useState("");
 
   const [visibleCount, setVisibleCount] = useState(perPage);
   const loader = useRef(null);
@@ -80,6 +80,9 @@ function InstructorBooksPage() {
     message: "",
     onConfirm: null,
   });
+
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
   const openConfirmModal = ({ title, message, onConfirm }) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm });
@@ -213,54 +216,12 @@ function InstructorBooksPage() {
           setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
           setSelectedBooks([]);
           toast.success(t("Books deleted successfully"));
+          await Promise.all([fetchNotifications(), fetchMessages()]);
         } catch (err) {
           toast.error(t("Failed to delete some books"));
         }
       }
     });
-  };
-
-  const handleBulkStatusUpdate = async () => {
-    if (!bulkStatus) return;
-    openConfirmModal({
-      title: t("Confirm Status Change"),
-      message: t("Change status of selected books?"),
-      onConfirm: async () => {
-        try {
-          const updatePromises = selectedBooks.map(id => updateBookStatus(id, bulkStatus));
-          await Promise.all(updatePromises);
-          setBooks(prev =>
-            prev.map(b =>
-              selectedBooks.includes(b.id) ? { ...b, status: bulkStatus } : b
-            )
-          );
-          toast.success(t("Status updated"));
-          setSelectedBooks([]);
-          setBulkStatus("");
-        } catch (err) {
-          toast.error(t("Failed to update status"));
-        }
-      }
-    });
-  };
-
-  const handleStatusChange = async (bookId, newStatus, currentStatus) => {
-    setBooks(prev =>
-      prev.map(book =>
-        book.id === bookId ? { ...book, status: newStatus } : book
-      )
-    );
-    try {
-      await updateBookStatus(bookId, newStatus);
-      toast.success(t("Status updated"));
-    } catch (err) {
-      setBooks(prev =>
-        prev.map(book =>
-          book.id === bookId ? { ...book, status: currentStatus } : book
-        )
-      );
-      toast.error(t("Failed to update status"));
-    }
   };
 
   const resetFilters = () => {
@@ -668,22 +629,6 @@ function InstructorBooksPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <select
-                value={bulkStatus}
-                onChange={(e) => setBulkStatus(e.target.value)}
-                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg p-1.5 text-sm"
-              >
-                <option value="">{t("Change Status")}</option>
-                <option value="pending">{t("Pending")}</option>
-                <option value="approved">{t("Approved")}</option>
-                <option value="rejected">{t("Rejected")}</option>
-              </select>
-              <button
-                onClick={handleBulkStatusUpdate}
-                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-              >
-                {t("Apply")}
-              </button>
               <button
                 onClick={handleBulkDelete}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors shadow-sm"
@@ -752,19 +697,11 @@ function InstructorBooksPage() {
                         alt={book.title}
                         className="w-full h-48 object-cover"
                       />
-                      <div className="absolute top-3 right-3">
-                        <select
-                          value={book.status}
-                          onChange={(e) =>
-                            handleStatusChange(book.id, e.target.value, book.status)
-                          }
-                          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs rounded px-2 py-1"
-                        >
-                          <option value="pending">{t("Pending")}</option>
-                          <option value="approved">{t("Approved")}</option>
-                          <option value="rejected">{t("Rejected")}</option>
-                        </select>
-                      </div>
+                    <div className="absolute top-3 right-3">
+                      <span className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs rounded px-2 py-1">
+                        {t(book.status)}
+                      </span>
+                    </div>
                     </div>
 
                     <div className="p-4">
@@ -829,6 +766,7 @@ function InstructorBooksPage() {
                                     await deleteBook(book.id);
                                     setBooks((prev) => prev.filter((b) => b.id !== book.id));
                                     toast.success(t("Book deleted"));
+                                    await Promise.all([fetchNotifications(), fetchMessages()]);
                                   } catch {
                                     toast.error(t("Failed to delete"));
                                   }
