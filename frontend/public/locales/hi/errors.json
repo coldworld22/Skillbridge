@@ -1,4 +1,5 @@
 {
-  "categoryLoad": "Failed to load categories",
-  "bookLoad": "Failed to load book"
+  "categoryLoad": "श्रेणियों को लोड करने में विफल",
+  "bookLoad": "बुक लोड करने में विफल"
 }
+
