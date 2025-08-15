@@ -29,7 +29,8 @@ const removeUploadedFiles = async (files = {}) => {
 
 exports.createBook = catchAsync(async (req, res) => {
   try {
-    const { tags: rawTags, ...data } = req.body;
+    // exclude `is_free` since the database schema does not include this column
+    const { tags: rawTags, is_free: _is_free, ...data } = req.body;
     data.instructor_id = req.user.id;
     data.status = "pending";
     if (req.files?.cover_image?.[0])
@@ -165,7 +166,8 @@ exports.updateBook = catchAsync(async (req, res) => {
       throw new AppError("Access denied", 403);
     }
 
-  const { tags: rawTags, ...data } = req.body;
+  // exclude `is_free` field to align with existing database schema
+  const { tags: rawTags, is_free: _is_free, ...data } = req.body;
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
@@ -305,8 +307,10 @@ sendSuccess(res, book, "Book status updated");
 
 exports.updateCart = catchAsync(async (req, res) => {
   const { bookId, action } = req.body;
+  const book = await service.getBookById(bookId);
+  if (!book) throw new AppError("Book not found", 404);
+  if (book.status !== "active") throw new AppError("Book is not active", 400);
   if (action === "remove") {
-
     await service.removeFromCart(req.user.id, bookId);
     return sendSuccess(res, null, "Removed from cart");
   }

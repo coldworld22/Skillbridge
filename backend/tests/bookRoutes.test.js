@@ -116,7 +116,7 @@ describe('POST /api/books', () => {
       price: 10,
       language: 'en',
       license_type: 'standard',
-      category_id: 1,
+      category_id: '123e4567-e89b-12d3-a456-426614174000',
       is_free: false,
       status: 'pending',
     };
@@ -125,6 +125,8 @@ describe('POST /api/books', () => {
     const res = await request(app).post('/api/books').send(payload);
     expect(res.status).toBe(200);
     expect(service.createBook).toHaveBeenCalled();
+    const [dataArg] = service.createBook.mock.calls[0];
+    expect(dataArg).not.toHaveProperty('is_free');
   });
 });
 
