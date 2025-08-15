@@ -1,6 +1,7 @@
 const Joi = require('joi');
 
 const id = Joi.number().integer().positive();
+const uuid = Joi.string().uuid();
 
 exports.createBook = Joi.object({
   title: Joi.string().min(1).required(),
@@ -9,7 +10,7 @@ exports.createBook = Joi.object({
   price: Joi.number().min(0).required(),
   language: Joi.string().required(),
   license_type: Joi.string().required(),
-  category_id: id.required(),
+  category_id: uuid.required(),
   allow_preview: Joi.boolean()
     .truthy('1')
     .truthy(1)
@@ -37,7 +38,7 @@ exports.updateBook = Joi.object({
   price: Joi.number().min(0),
   language: Joi.string(),
   license_type: Joi.string(),
-  category_id: id,
+  category_id: uuid,
   allow_preview: Joi.boolean()
     .truthy('1')
     .truthy(1)
