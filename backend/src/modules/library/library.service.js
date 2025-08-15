@@ -53,11 +53,11 @@ exports.listForStudent = async (studentId) => {
       author: row.author,
       tags: tagMap[row.id] || [],
       isFree: Number(row.price_paid) === 0,
-      price: Number(row.price_paid),
+      price_paid: Number(row.price_paid),
       purchasedAt: row.purchased_at,
-      coverUrl: row.cover_image_url,
-      pdfUrl: row.pdf_url,
-      previewUrl:
+      cover_image_url: row.cover_image_url,
+      pdf_url: row.pdf_url,
+      preview_url:
         row.allow_preview && previewPages.length ? previewPages[0] : null,
     };
   });
