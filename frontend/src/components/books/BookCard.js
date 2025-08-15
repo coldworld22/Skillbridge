@@ -1,8 +1,15 @@
 import Link from "next/link";
-import Image from "next/image";
 import { useTranslation } from "next-i18next";
-import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
+import {
+  FiEye,
+  FiBookOpen,
+  FiEdit,
+  FiTrash2,
+  FiHeart,
+  FiShoppingCart,
+} from "react-icons/fi";
 import { buildUrl } from "@/utils/url";
+import { formatCurrency } from "@/utils/currency";
 
 export default function BookCard({
   book,
@@ -49,7 +56,7 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      <Image
+      <img
         src={coverUrl}
         alt={book.title}
         width={400}
@@ -59,9 +66,9 @@ export default function BookCard({
       />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
-        {book.author && (
+        {(book.uploaded_by?.name || book.author) && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-            {t("by_author", { author: book.author })}
+            {t("by_author", { author: book.uploaded_by?.name || book.author })}
           </p>
         )}
         {book.category_name && (
