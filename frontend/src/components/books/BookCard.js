@@ -1,16 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "next-i18next";
-import {
-  FiEye,
-  FiBookOpen,
-  FiEdit,
-  FiTrash2,
-  FiHeart,
-  FiShoppingCart,
-} from "react-icons/fi";
-import { buildUrl } from "@/services/bookService";
-import { formatCurrency } from "@/utils/currency";
+import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
+import { buildUrl } from "@/utils/url";
 
 export default function BookCard({
   book,

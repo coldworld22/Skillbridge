@@ -1,34 +1,5 @@
 import api from "@/services/api/api";
-
-// Determine the base URL for media assets. When an absolute API URL is
-// provided (e.g. "https://example.com/api"), strip the trailing `/api` so that
-// uploaded files resolve correctly. If a relative path like "/api" is used
-// (common in local development where Next.js proxies API requests), we prefix
-// media requests with that base so the proxy forwards them to the backend.
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-const API_BASE = rawApiBase.startsWith("http")
-  ? rawApiBase.replace(/\/api(?:\/.*)?$/, "")
-  : "";
-const RELATIVE_API_BASE = !API_BASE && rawApiBase
-  ? rawApiBase.replace(/\/$/, "")
-  : "";
-
-export const buildUrl = (path) => {
-  if (!path) return null;
-  if (/^https?:/i.test(path)) return path;
-  const base = API_BASE || RELATIVE_API_BASE;
-  let normalized = path.startsWith("/") ? path : `/${path}`;
-  if (normalized.startsWith("/uploads")) {
-    // Always convert legacy `/uploads` paths to the backend's `/media` endpoint
-    // so that assets are consistently served via the media route regardless of
-    // whether a base URL is configured. When a relative API base (e.g. `/api`)
-    // is used, this path will be prefixed below so that the proxy forwards the
-    // request correctly. Without a base, the application should still request
-    // assets from `/media` rather than the deprecated `/uploads` path.
-    normalized = normalized.replace("/uploads", "/media");
-  }
-  return base ? `${base}${normalized}` : normalized;
-};
+import { buildUrl } from "@/utils/url";
 
 const formatBook = (book) => {
   let previewPages = [];
