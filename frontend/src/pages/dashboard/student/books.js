@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
-
 import useLibraryStore from "@/store/library/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 
@@ -22,7 +21,7 @@ function BookCard({ book }) {
       addToWishlist({
         book_id: book.id,
         title: book.title,
-        price: book.price,
+        price: book.price_paid,
         cover_url: cover,
       });
       toast.success(t("added_to_wishlist", { ns: "website" }));
@@ -54,7 +53,7 @@ function BookCard({ book }) {
             <span className="text-green-600 font-medium">{t("free")}</span>
           ) : (
             <span className="text-blue-600 font-medium">
-              {t("purchased_for", { price: book.price })}
+              {t("purchased_for", { price: book.price_paid })}
             </span>
           )}
         </div>
@@ -67,18 +66,18 @@ function BookCard({ book }) {
         )}
       </div>
       <div className="mt-4 flex gap-3 flex-wrap">
-        {book.previewUrl && (
+        {book.preview_url && (
           <a
-            href={book.previewUrl}
+            href={book.preview_url}
             target="_blank"
             className="flex items-center gap-1 text-indigo-600 hover:underline"
           >
             <FiEye className="text-lg" /> {t("preview")}
           </a>
         )}
-        {book.pdfUrl && (
+        {book.pdf_url && (
           <a
-            href={book.pdfUrl}
+            href={book.pdf_url}
             target="_blank"
             download
             className="flex items-center gap-1 text-green-600 hover:underline"

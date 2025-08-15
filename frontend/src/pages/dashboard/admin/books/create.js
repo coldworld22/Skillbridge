@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { createBook } from "@/services/bookService";
 import BookForm from "@/components/books/BookForm";
@@ -218,8 +218,6 @@ function AdminCreateBookPage() {
                 submitText={t("booksCreate.save")}
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
-                maxFileSize={10 * 1024 * 1024}
-                allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
               />
             </div>
           )}

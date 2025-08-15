@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
@@ -13,7 +13,8 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
-import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
+import useCoverImageUpload from "@/hooks/useCoverImageUpload";
+import { MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 function CreateBookPage() {
   const router = useRouter();
@@ -21,10 +22,14 @@ function CreateBookPage() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [fileError, setFileError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
-  const fileInputRef = useRef(null);
+  const {
+    coverPreview,
+    fileError,
+    fileInputRef,
+    handleFileChange,
+    handleRemoveImage,
+  } = useCoverImageUpload(t);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
 
@@ -46,41 +51,6 @@ function CreateBookPage() {
     loadCategories();
   }, [t]);
 
-  const handleFileChange = useCallback(
-    (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowedTypes.includes(file.type)) {
-        setFileError(t("validation.invalidFileType"));
-        return;
-      }
-
-      if (file.size > MAX_IMAGE_SIZE) {
-        setFileError(
-          t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` })
-        );
-        return;
-      }
-
-      setFileError(null);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCoverPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    },
-    [t]
-  );
-
-  const handleRemoveImage = useCallback(() => {
-    setCoverPreview(null);
-    setFileError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
-
   const handleSubmit = async (formData, setProgress) => {
     if (fileInputRef.current?.files?.[0]) {
       formData.append("cover_image", fileInputRef.current.files[0]);
@@ -94,7 +64,13 @@ function CreateBookPage() {
           setUploadProgress(progress);
         }
       });
-      await Promise.all([fetchNotifications(), fetchMessages()]);
+      toast.success(t("booksCreate.success"));
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (err) {
+        console.error("Failed to fetch notifications or messages", err);
+      }
+      handleRemoveImage();
       router.push("/dashboard/instructor/books?created=1");
     } catch (e) {
       console.error("Failed to create book", e);
