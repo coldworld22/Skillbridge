@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
-import useLibraryStore from "@/store/library/libraryStore";
+import useLibraryStore from "@/store/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 
 function BookCard({ book }) {
