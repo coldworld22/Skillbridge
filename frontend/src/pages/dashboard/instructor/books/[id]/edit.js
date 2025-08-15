@@ -117,8 +117,15 @@ function EditBookPage() {
       console.error("Failed to update book", e);
       let errorMessage = t("booksEdit.error");
       if (e.response) {
-        if (e.response.data?.errors) {
-          errorMessage = Object.values(e.response.data.errors).join(", ");
+        const respErrors = e.response.data?.errors;
+        if (respErrors) {
+          if (Array.isArray(respErrors)) {
+            errorMessage = respErrors
+              .map((err) => err?.message || err?.msg || err)
+              .join(", ");
+          } else {
+            errorMessage = Object.values(respErrors).join(", ");
+          }
         } else if (e.response.data?.message) {
           errorMessage = e.response.data.message;
         }
