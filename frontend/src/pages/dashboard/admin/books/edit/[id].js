@@ -95,8 +95,15 @@ function AdminEditBookPage() {
         defaultValue: "Failed to update book",
       });
       if (err.response) {
-        if (err.response.data?.errors) {
-          errorMessage = Object.values(err.response.data.errors).join(", ");
+        const respErrors = err.response.data?.errors;
+        if (respErrors) {
+          if (Array.isArray(respErrors)) {
+            errorMessage = respErrors
+              .map((e) => e?.message || e)
+              .join(", ");
+          } else {
+            errorMessage = Object.values(respErrors).join(", ");
+          }
         } else if (err.response.data?.message) {
           errorMessage = err.response.data.message;
         }
