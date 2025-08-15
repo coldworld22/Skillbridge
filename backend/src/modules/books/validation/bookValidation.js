@@ -49,6 +49,12 @@ exports.updateBook = Joi.object({
   tags: Joi.alternatives(Joi.array().items(Joi.string()), Joi.string()),
 });
 
+exports.updateBookStatus = Joi.object({
+  status: Joi.string()
+    .valid('pending', 'approved', 'rejected', 'active', 'inactive')
+    .required(),
+});
+
 exports.cartAction = Joi.object({
   bookId: id.required(),
   action: Joi.string().valid('add', 'remove').default('add'),

@@ -33,7 +33,13 @@ router.put(
   validate({ body: validation.updateBook }),
   controller.updateBook
 );
-router.patch("/:id/status", verifyToken, isInstructorOrAdmin, controller.updateBookStatus);
+router.patch(
+  "/:id/status",
+  verifyToken,
+  isInstructorOrAdmin,
+  validate({ body: validation.updateBookStatus }),
+  controller.updateBookStatus
+);
 router.post(
   "/cart",
   verifyToken,
