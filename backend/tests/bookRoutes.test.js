@@ -117,6 +117,8 @@ describe('POST /api/books', () => {
       language: 'en',
       license_type: 'standard',
       category_id: 1,
+      is_free: false,
+      status: 'pending',
     };
     service.createBook.mockResolvedValue({ id: '1', ...payload });
     userModel.findAdmins.mockResolvedValue([]);
