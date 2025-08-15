@@ -94,7 +94,13 @@ function CreateBookPage() {
           setUploadProgress(progress);
         }
       });
-      await Promise.all([fetchNotifications(), fetchMessages()]);
+      toast.success(t("booksCreate.success"));
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (err) {
+        console.error("Failed to fetch notifications or messages", err);
+      }
+      handleRemoveImage();
       router.push("/dashboard/instructor/books?created=1");
     } catch (e) {
       console.error("Failed to create book", e);
