@@ -1,7 +1,12 @@
 // ParticipantList.js
 import { useState, useEffect } from "react";
 import { FaMicrophoneSlash, FaUserShield, FaTimes } from "react-icons/fa";
-import { fetchParticipants } from "@/services/videoCallService";
+import {
+  fetchParticipants,
+  muteParticipant,
+  removeParticipant,
+  makeCoHost,
+} from "@/services/videoCallService";
 
 export default function ParticipantList({ chatId, userRole = "participant" }) {
   const [participants, setParticipants] = useState([]);
@@ -11,27 +16,35 @@ export default function ParticipantList({ chatId, userRole = "participant" }) {
     fetchParticipants(chatId).then((data) => setParticipants(data));
   }, [chatId]);
 
-  const handleMute = (id) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, isMuted: !p.isMuted } : p
-      )
-    );
-    // TODO: Emit socket event or API call
+  const handleMute = async (id, isMuted) => {
+    try {
+      const updated = await muteParticipant(chatId, id, !isMuted);
+      setParticipants((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
+      );
+    } catch (err) {
+      console.error("Failed to mute participant", err);
+    }
   };
 
-  const handleRemove = (id) => {
-    setParticipants((prev) => prev.filter((p) => p.id !== id));
-    // TODO: Emit socket event or API call
+  const handleRemove = async (id) => {
+    try {
+      await removeParticipant(chatId, id);
+      setParticipants((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Failed to remove participant", err);
+    }
   };
 
-  const handleMakeCoHost = (id) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, role: "co-host" } : p
-      )
-    );
-    // TODO: Emit socket event or API call
+  const handleMakeCoHost = async (id) => {
+    try {
+      const updated = await makeCoHost(chatId, id);
+      setParticipants((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
+      );
+    } catch (err) {
+      console.error("Failed to update participant role", err);
+    }
   };
 
   return (
@@ -55,7 +68,7 @@ export default function ParticipantList({ chatId, userRole = "participant" }) {
             <div className="flex gap-2">
               <button
                 className="p-2 bg-yellow-500 rounded hover:bg-yellow-600"
-                onClick={() => handleMute(user.id)}
+                onClick={() => handleMute(user.id, user.isMuted)}
               >
                 <FaMicrophoneSlash />
               </button>

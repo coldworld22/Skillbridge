@@ -160,6 +160,12 @@ exports.getPublicClassDetails = async (id) => {
   return cls;
 };
 
+exports.getClassesStartingBetween = async (startTime, endTime) => {
+  return db("online_classes")
+    .select("id", "title", "start_date")
+    .whereBetween("start_date", [startTime, endTime]);
+};
+
 exports.getClassAnalytics = async (classId) => {
   const [totalRow] = await db("class_enrollments")
     .where({ class_id: classId })
@@ -184,7 +190,7 @@ exports.getClassAnalytics = async (classId) => {
     .countDistinct({ count: "user_id" });
 
   const [attendanceRow] = await db("class_attendance")
-    .where({ lesson_id: classId, attended: true })
+    .where({ class_id: classId, attended: true })
     .countDistinct({ count: "user_id" });
 
   const viewAgents = await db("class_views")

@@ -1,11 +1,70 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { FaStar, FaClock, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter } from "react-icons/fa";
+import Image from "next/image";
+import { FaStar, FaFire, FaEye, FaArrowUp, FaSearch, FaFilter, FaBookmark, FaHeart } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FilterSidebar from "@/components/tutorials/FilterSidebar";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import {
+  fetchPublishedTutorials,
+  fetchTutorialProgress,
+  getMyTutorialWishlist,
+  getMyTutorialFavorites,
+} from "@/services/tutorialService";
+import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
+
+/**
+ * Retrieves enrollment status and progress percentage for a tutorial.
+ * Prefers backend API data and falls back to `localStorage` if unavailable.
+ * @param {Object} tut - Tutorial information containing an `id` and optional
+ * chapter metadata.
+ * @returns {Promise<{enrolled: boolean, status: string | null, progress: number}>}
+ */
+export const loadTutorialStatus = async (tut) => {
+  const userId = useAuthStore.getState().user?.id;
+  let enrolled = false;
+  let progressPercent = 0;
+  let status = null;
+
+  try {
+    const apiData = await fetchTutorialProgress(tut.id);
+    if (apiData) {
+      enrolled = !!apiData.enrolled;
+      status = apiData.status ?? null;
+      if (apiData.progress != null) {
+        progressPercent = Number(apiData.progress);
+      }
+      return { enrolled, status, progress: progressPercent };
+    }
+  } catch (err) {
+    // Ignore API errors and fall back to localStorage
+  }
+
+  if (typeof window !== "undefined") {
+    const prefix = userId ? `${userId}-` : "";
+    enrolled = !!localStorage.getItem(`enrolled-${prefix}${tut.id}`);
+    const saved = localStorage.getItem(
+      `progress-tutorial-${prefix}${tut.id}`
+    );
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        const total = Array.isArray(tut.chapters)
+          ? tut.chapters.length
+          : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
+        if (total) {
+          progressPercent =
+            ((data.completedChapters?.length || 0) / total) * 100;
+        }
+      } catch {}
+    }
+  }
+
+  return { enrolled, status, progress: progressPercent };
+};
 
 const TutorialsSection = () => {
   const [tutorials, setTutorials] = useState([]);
@@ -18,10 +77,18 @@ const TutorialsSection = () => {
   const [filters, setFilters] = useState({
     categories: [],
     levels: [],
-    price: 100,
+    price: null,
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [statusMap, setStatusMap] = useState({});
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const isStudent = user?.role?.toLowerCase() === "student";
   const router = useRouter();
   const loader = useRef(null);
+  const { t } = useTranslation("tutorials", { keyPrefix: "list" });
+  const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,12 +99,12 @@ const TutorialsSection = () => {
   }, []);
 
   const handleFilterChange = (f) => {
-    setFilters(f);
+    setFilters((prev) => ({ ...prev, ...f }));
     setVisibleCount(6);
   };
 
   const resetFilters = () => {
-    setFilters({ categories: [], levels: [], price: 100 });
+    setFilters((prev) => ({ ...prev, categories: [], levels: [], price: null }));
   };
 
   useEffect(() => {
@@ -47,13 +114,41 @@ const TutorialsSection = () => {
         setTutorials(data?.data || data || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorials");
+        setError(t("load_error"));
       } finally {
         setLoading(false);
       }
     };
     loadTutorials();
   }, []);
+
+  useEffect(() => {
+    if (!tutorials.length) return;
+    const loadStatuses = async () => {
+      const entries = await Promise.all(
+        tutorials.map(async (t) => [t.id, await loadTutorialStatus(t)])
+      );
+      setStatusMap(Object.fromEntries(entries));
+    };
+    loadStatuses();
+  }, [tutorials]);
+
+  useEffect(() => {
+    if (!user || !isStudent) return;
+    const loadLists = async () => {
+      try {
+        const [w, f] = await Promise.all([
+          getMyTutorialWishlist(),
+          getMyTutorialFavorites(),
+        ]);
+        setWishlistIds(w.map((t) => t.id));
+        setFavoriteIds(f.map((t) => t.id));
+      } catch (err) {
+        console.error("Failed to load user lists", err);
+      }
+    };
+    loadLists();
+  }, [user, isStudent]);
 
   const filteredTutorials = tutorials.filter((tut) => {
     const matchCategory =
@@ -65,13 +160,14 @@ const TutorialsSection = () => {
       !filters.levels.length || filters.levels.includes(tut.level);
 
     const matchPrice =
-      !filters.price ||
-      !tut.is_paid ||
-      (tut.price != null && Number(tut.price) <= Number(filters.price));
+      filters.price == null ||
+      filters.price === Infinity ||
+      tut.price == null ||
+      Number(tut.price) <= Number(filters.price);
 
     const matchSearch =
       tut.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tut.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+      (tut.instructor || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchCategory && matchLevel && matchPrice && matchSearch;
   });
@@ -105,7 +201,7 @@ const TutorialsSection = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-yellow-400">
-        ⏳ Loading tutorials...
+        ⏳ {t("loading")}
       </div>
     );
   }
@@ -133,28 +229,32 @@ const TutorialsSection = () => {
             className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500"
             whileHover={{ scale: 1.02 }}
           >
-            📺 Premium Tutorials
+            {t("heading")}
           </motion.h2>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Master new skills with our curated collection of expert-led tutorials
+            {t("subheading")}
           </p>
         </motion.div>
 
         {/* Mobile Filters Button */}
         <div className="lg:hidden mb-6 flex justify-between items-center">
           <div className="relative w-full max-w-md">
+            <label htmlFor="tutorial-search-mobile" className="sr-only">
+              Search tutorials
+            </label>
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
+              id="tutorial-search-mobile"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tutorials..."
+              placeholder={t("search_placeholder")}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
-          <button 
+          <button
             className="ml-3 p-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 hover:bg-gray-700 transition-all"
-            onClick={() => document.getElementById('filter-sidebar').classList.toggle('translate-x-full')}
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
           >
             <FaFilter className="text-yellow-400" />
           </button>
@@ -162,15 +262,14 @@ const TutorialsSection = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filter Sidebar - Enhanced with glass effect */}
-          <div 
-            id="filter-sidebar"
-            className="fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/80 backdrop-blur-lg lg:backdrop-blur-none lg:bg-transparent p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 translate-x-full lg:translate-x-0"
+          <div
+            className={`fixed lg:sticky top-0 left-0 lg:left-auto h-screen lg:h-auto w-full lg:w-1/4 bg-gray-900/80 backdrop-blur-lg lg:backdrop-blur-none lg:bg-transparent p-6 lg:p-0 z-30 transform lg:transform-none transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
           >
             <div className="flex justify-between items-center mb-6 lg:hidden">
-              <h3 className="text-xl font-bold text-yellow-400">Filters</h3>
-              <button 
+              <h3 className="text-xl font-bold text-yellow-400">{t("mobile_filters")}</h3>
+              <button
                 className="text-gray-400 hover:text-white"
-                onClick={() => document.getElementById('filter-sidebar').classList.add('translate-x-full')}
+                onClick={() => setIsSidebarOpen(false)}
               >
                 ✕
               </button>
@@ -185,25 +284,30 @@ const TutorialsSection = () => {
             {/* Desktop Search & Sort */}
             <div className="hidden lg:flex items-center justify-between gap-4 mb-8">
               <div className="relative w-full max-w-md">
+                <label htmlFor="tutorial-search-desktop" className="sr-only">
+                  Search tutorials
+                </label>
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
+                  id="tutorial-search-desktop"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tutorials, instructors..."
+                  placeholder={t("desktop_search_placeholder")}
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-gray-400">Sort by:</span>
+                <span className="text-gray-400">{t("sort_by")}</span>
                 <select
+                  id="tutorial-sort"
                   onChange={(e) => setSortBy(e.target.value)}
                   className="py-2.5 px-4 rounded-lg bg-gray-800/60 backdrop-blur-sm border border-gray-700 text-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 >
-                  <option value="default">Featured</option>
-                  <option value="views">Most Viewed</option>
-                  <option value="rating">Top Rated</option>
+                  <option value="default">{t("featured")}</option>
+                  <option value="views">{t("most_viewed")}</option>
+                  <option value="rating">{t("top_rated")}</option>
                 </select>
               </div>
             </div>
@@ -211,15 +315,14 @@ const TutorialsSection = () => {
             {/* Results Info */}
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-400">
-                Showing <span className="text-yellow-400 font-medium">{visibleTutorials.length}</span> of{" "}
-                <span className="text-yellow-400 font-medium">{sortedTutorials.length}</span> tutorials
+                {t("showing")} <span className="text-yellow-400 font-medium">{visibleTutorials.length}</span> {t("of")} <span className="text-yellow-400 font-medium">{sortedTutorials.length}</span> {t("tutorials")}
               </p>
               {filters.categories.length > 0 || filters.levels.length > 0 ? (
-                <button 
+                <button
                   onClick={resetFilters}
                   className="text-sm text-yellow-400 hover:text-yellow-300 flex items-center"
                 >
-                  Clear all filters
+                  {t("clear_filters")}
                 </button>
               ) : null}
             </div>
@@ -227,32 +330,11 @@ const TutorialsSection = () => {
             {/* Tutorial Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleTutorials.map((tut) => {
-                const enrolled =
-                  typeof window !== "undefined" &&
-                  localStorage.getItem(`enrolled-${tut.id}`);
-
-                let progressPercent = 0;
-                if (typeof window !== "undefined") {
-                  const saved = localStorage.getItem(
-                    `progress-tutorial-${tut.id}`
-                  );
-                  if (saved) {
-                    try {
-                      const data = JSON.parse(saved);
-                      const total = Array.isArray(tut.chapters)
-                        ? tut.chapters.length
-                        :
-                          tut.totalLessons ||
-                          tut.total_chapters ||
-                          tut.chapter_count ||
-                          0;
-                      if (total) {
-                        progressPercent =
-                          ((data.completedChapters?.length || 0) / total) * 100;
-                      }
-                    } catch {}
-                  }
-                }
+                const {
+                  enrolled,
+                  status: enrollStatus,
+                  progress: progressPercent = 0,
+                } = statusMap[tut.id] || {};
 
                 return (
                   <motion.div
@@ -264,15 +346,37 @@ const TutorialsSection = () => {
                     onClick={() => router.push(`/tutorials/${tut.id}`)}
                   >
                     {/* Premium Badge */}
-                    {tut.is_paid && (
+                    {Number(tut.price) > 0 && (
                       <div className="absolute top-3 right-3 z-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full">
-                        PREMIUM
+                        {t("premium_badge")}
                       </div>
                     )}
                     
                     {/* Thumbnail */}
                     <div className="relative h-44 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
+                      <div className="absolute top-2 right-2 z-20 flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(tut.id);
+                          }}
+                          aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+                        >
+                          <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(tut.id);
+                          }}
+                          aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          className="bg-gray-700 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                        >
+                          <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                        </button>
+                      </div>
                       {tut.preview ? (
                         <video
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -282,21 +386,94 @@ const TutorialsSection = () => {
                           loop
                         />
                       ) : (
-                        <img
+                        <Image
                           src={tut.thumbnail}
                           alt={tut.title}
+                          width={640}
+                          height={256}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       )}
-                      
+
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!user) return router.push('/auth/login');
+                          if (!isStudent) {
+                            toast.error('Only students can save tutorials.');
+                            return;
+                          }
+                          try {
+                            if (favoriteIds.includes(tut.id)) {
+                              await removeTutorialFromFavorites(tut.id);
+                              setFavoriteIds(favoriteIds.filter((i) => i !== tut.id));
+                            } else {
+                              await addTutorialToFavorites(tut.id);
+                              setFavoriteIds([...favoriteIds, tut.id]);
+                              toast.success('Added to favorites');
+                            }
+                          } catch (err) {
+                            toast.error('Failed to update favorites');
+                          }
+                        }}
+                        aria-label={favoriteIds.includes(tut.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        className="absolute top-2 right-10 bg-gray-800/80 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-red-400"
+                      >
+                        <FaHeart className={favoriteIds.includes(tut.id) ? 'text-red-500' : 'text-white'} />
+                      </button>
+
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!user) return router.push('/auth/login');
+                          if (!isStudent) {
+                            toast.error('Only students can save tutorials.');
+                            return;
+                          }
+                          try {
+                            if (wishlistIds.includes(tut.id)) {
+                              await removeTutorialFromWishlist(tut.id);
+                              setWishlistIds(wishlistIds.filter((i) => i !== tut.id));
+                            } else {
+                              await addTutorialToWishlist(tut.id);
+                              setWishlistIds([...wishlistIds, tut.id]);
+                              toast.success(t('added_to_wishlist'));
+                            }
+                          } catch (err) {
+                            toast.error('Failed to update wishlist');
+                          }
+                        }}
+                        aria-label={wishlistIds.includes(tut.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        className="absolute top-2 right-2 bg-gray-800/80 rounded-full p-1 w-6 h-6 flex items-center justify-center hover:text-yellow-400"
+                      >
+                        <FaBookmark className={wishlistIds.includes(tut.id) ? 'text-yellow-400' : 'text-white'} />
+                      </button>
+
                       {/* Progress bar */}
-                      {enrolled && (
+                      {enrolled ? (
                         <div className="absolute bottom-0 left-0 right-0 z-20 h-1.5 bg-gray-700">
                           <div
                             className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
                             style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
+                      ) : (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!user) return router.push('/auth/login');
+                            if (!isStudent) {
+                              return;
+                            }
+                            try {
+                              await enrollInTutorial(tut.id);
+                              await fetchStatus(tut.id);
+                            } catch {}
+                          }}
+                          className="absolute bottom-3 left-3 z-20 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded"
+                        >
+                          Enroll
+                        </button>
                       )}
                     </div>
 
@@ -307,7 +484,7 @@ const TutorialsSection = () => {
                         </h3>
                         {tut.trending && (
                           <span className="flex-shrink-0 bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-1 text-xs rounded-full ml-2">
-                            <FaFire className="inline mr-1" /> Trending
+                            <FaFire className="inline mr-1" /> {t("trending")}
                           </span>
                         )}
                       </div>
@@ -322,6 +499,7 @@ const TutorialsSection = () => {
                                 src={avatar}
                                 alt={tut.instructor}
                                 className="w-8 h-8 rounded-full border-2 border-yellow-500"
+                                loading="lazy"
                               />
                             );
                           })()}
@@ -351,14 +529,38 @@ const TutorialsSection = () => {
                             <FaEye className="text-gray-400 mr-1" /> {tut.views}
                           </span>
                         </div>
-                        <div className="text-sm font-medium">
-                          {tut.is_paid && tut.price ? (
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          {Number(tut.price) > 0 ? (
                             <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-transparent bg-clip-text">
-                              ${tut.price}
+                              {formatCurrency(tut.price, { currency: tut.currencyCode })}
                             </span>
                           ) : (
-                            <span className="text-green-400">Free</span>
+                            <span className="text-green-400">{t("free")}</span>
                           )}
+                          <button
+                            className="px-2 py-1 text-xs rounded bg-yellow-500 text-black hover:bg-yellow-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const price = tut.discountPrice ?? tut.price;
+                              if (price == null) {
+                                console.error(
+                                  `Cannot add tutorial ${tut.id} to cart: missing price`,
+                                );
+                                return;
+                              }
+                              addItem({
+                                id: tut.id,
+                                name: tut.title,
+                                item_type: "tutorial",
+                                price,
+                                ...(tut.currency || tut.currencyCode
+                                  ? { currency: tut.currency || tut.currencyCode }
+                                  : {}),
+                              });
+                            }}
+                          >
+                            Add to Cart
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -366,7 +568,7 @@ const TutorialsSection = () => {
                     {/* Enrolled Badge */}
                     {enrolled && (
                       <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                        ENROLLED
+                        {t("enrolled")}
                       </div>
                     )}
                   </motion.div>
@@ -378,15 +580,15 @@ const TutorialsSection = () => {
                 <div className="col-span-full py-16 text-center">
                   <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 max-w-md mx-auto border border-gray-700">
                     <div className="text-5xl mb-4">🔍</div>
-                    <h3 className="text-xl font-bold text-white mb-2">No tutorials found</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">{t("empty_title")}</h3>
                     <p className="text-gray-400 mb-4">
-                      Try adjusting your filters or search terms
+                      {t("empty_description")}
                     </p>
                     <button
                       onClick={resetFilters}
                       className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-lg text-black font-medium hover:opacity-90 transition-opacity"
                     >
-                      Reset Filters
+                      {t("reset_filters")}
                     </button>
                   </div>
                 </div>
@@ -432,7 +634,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'tutorials'], nextI18NextConfig)),
     },
   };
 }

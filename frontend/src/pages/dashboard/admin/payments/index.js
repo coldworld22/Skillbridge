@@ -31,24 +31,7 @@ import { sendChatMessage } from '@/services/messageService';
 import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
-
-const useAdminNotice = () => {
-  const user = useAuthStore((s) => s.user);
-  const refreshNotifications = useNotificationStore((s) => s.fetch);
-  const refreshMessages = useMessageStore((s) => s.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || 'Failed to send notification';
-      toast.error(msg);
-    }
-  };
-};
+import useAdminNotice from '@/hooks/useAdminNotice';
 
 
 const defaultConfig = {
@@ -119,6 +102,8 @@ export default function AdminPaymentsPage() {
             role: t.user_role,
             method: t.method_name,
             type: t.item_type,
+            platformFee: parseFloat(t.platform_fee ?? 0),
+            instructorAmount: parseFloat(t.instructor_amount ?? t.amount),
           }))
         );
         setMethods(
@@ -165,7 +150,8 @@ export default function AdminPaymentsPage() {
       setMethods((prev) =>
         prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m))
       );
-      toast.success(t('paymentsPage.status_updated'));
+      const action = method.active ? 'deactivated' : 'activated';
+      toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" status changed`;
       notify('payment_method_status_changed', msg);
     } catch (err) {
@@ -189,7 +175,8 @@ export default function AdminPaymentsPage() {
             : m
         )
       );
-      toast.success(t('paymentsPage.default_updated'));
+      const action = newState ? 'set as default' : 'removed from default';
+      toast.success(`Payment method "${method.name}" ${action}`);
       const msg = `Payment method "${method.name}" set as default`;
       notify('payment_method_default_changed', msg);
     } catch (err) {
@@ -200,10 +187,11 @@ export default function AdminPaymentsPage() {
 
   const handleDelete = async (id) => {
     try {
+      const methodName = methods.find(m=>m.id===id)?.name;
       await deleteMethod(id);
       setMethods((prev) => prev.filter((m) => m.id !== id));
-      toast.success(t('paymentsPage.method_deleted'));
-      const msg = `Payment method "${methods.find(m=>m.id===id)?.name}" deleted.`;
+      toast.success(`Payment method "${methodName}" deleted`);
+      const msg = `Payment method "${methodName}" deleted.`;
       notify('payment_method_deleted', msg);
     } catch (err) {
       console.error('Failed to delete method', err);
@@ -212,6 +200,26 @@ export default function AdminPaymentsPage() {
   };
 
   const [form, setForm] = useState(defaultConfig);
+  const [errors, setErrors] = useState({});
+
+  const validate = (data) => {
+    const errs = {};
+    if (!data.currency) errs.currency = "Currency is required";
+    Object.entries(data.platformCut).forEach(([key, val]) => {
+      if (val === "" || isNaN(val)) {
+        errs[`platformCut.${key}`] = "Required";
+      } else if (val < 0 || val > 100) {
+        errs[`platformCut.${key}`] = "Must be between 0 and 100";
+      }
+    });
+    if (!data.refundPolicy) errs.refundPolicy = "Refund policy is required";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  useEffect(() => {
+    validate(form);
+  }, [form]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -219,7 +227,10 @@ export default function AdminPaymentsPage() {
       const key = name.split(".")[1];
       setForm((prev) => ({
         ...prev,
-        platformCut: { ...prev.platformCut, [key]: parseFloat(value) },
+        platformCut: {
+          ...prev.platformCut,
+          [key]: value === "" ? "" : parseFloat(value),
+        },
       }));
     } else if (name.includes("invoice")) {
       const key = name.split(".")[1];
@@ -228,19 +239,24 @@ export default function AdminPaymentsPage() {
         invoice: { ...prev.invoice, [key]: type === "checkbox" ? checked : value },
       }));
     } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+      setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
     }
   };
 
   const handleSave = async () => {
+    if (!validate(form)) {
+      toast.error("Please correct the errors before saving");
+      return;
+    }
     try {
       await updatePaymentConfig(form);
       toast.success(t('paymentsPage.config_saved'));
-      notify("payment_config_updated", "Payment configuration updated");
     } catch (err) {
       toast.error(err?.response?.data?.message || t('paymentsPage.config_save_failed'));
     }
   };
+
+  const isFormValid = Object.keys(errors).length === 0;
 
   const [payouts, setPayouts] = useState([]);
 
@@ -320,6 +336,8 @@ export default function AdminPaymentsPage() {
                     <th className="px-4 py-2">{t('paymentsPage.type')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.method')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                    <th className="px-4 py-2">Platform Fee</th>
+                    <th className="px-4 py-2">Net Amount</th>
                     <th className="px-4 py-2">{t('paymentsPage.status')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
                   </tr>
@@ -338,6 +356,8 @@ export default function AdminPaymentsPage() {
                       <td className="px-4 py-2">{txn.type}</td>
                       <td className="px-4 py-2">{txn.method}</td>
                       <td className="px-4 py-2 font-semibold text-green-600">${txn.amount.toFixed(2)}</td>
+                      <td className="px-4 py-2">${txn.platformFee.toFixed(2)}</td>
+                      <td className="px-4 py-2">${txn.instructorAmount.toFixed(2)}</td>
                       <td className="px-4 py-2">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${txn.status === "Success"
@@ -459,6 +479,9 @@ export default function AdminPaymentsPage() {
                 <option value="SAR">SAR - Saudi Riyal</option>
                 <option value="EUR">EUR - Euro</option>
               </select>
+              {errors.currency && (
+                <p className="text-red-500 text-sm mt-1">{errors.currency}</p>
+              )}
             </div>
 
             <div>
@@ -476,6 +499,9 @@ export default function AdminPaymentsPage() {
                       onChange={handleChange}
                       className="border px-3 py-2 rounded w-full"
                     />
+                    {errors[`platformCut.${key}`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`platformCut.${key}`]}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -519,9 +545,18 @@ export default function AdminPaymentsPage() {
                 className="border px-3 py-2 rounded w-full"
                 rows={4}
               />
+              {errors.refundPolicy && (
+                <p className="text-red-500 text-sm mt-1">{errors.refundPolicy}</p>
+              )}
             </div>
 
-            <button onClick={handleSave} className="bg-indigo-600 text-white px-6 py-2 rounded shadow">{t('paymentsPage.save_configuration')}</button>
+            <button
+              onClick={handleSave}
+              disabled={!isFormValid}
+              className={`bg-indigo-600 text-white px-6 py-2 rounded shadow ${!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {t('paymentsPage.save_configuration')}
+            </button>
           </div>
         );
 

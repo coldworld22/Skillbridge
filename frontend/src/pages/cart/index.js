@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import useCartStore from "@/store/cart/cartStore";
+import useAuthStore from "@/store/auth/authStore";
 import { motion, AnimatePresence } from "framer-motion"; // ✅ Import animations
-import { FaTrash, FaPlus, FaMinus, FaTag, FaGift } from "react-icons/fa";
-import Link from "next/link";
+import { FaTag, FaGift } from "react-icons/fa";
 import { toast } from "react-toastify";
+import CartItem from "@/components/books/CartItem";
+import Link from "next/link";
 
 const CartPage = () => {
   const {
@@ -14,6 +16,7 @@ const CartPage = () => {
     updateItem: updateCartItemAction,
     removeItem: removeCartItemAction,
   } = useCartStore();
+  const user = useAuthStore((state) => state.user);
   const loading = isLoading;
   const [discountCode, setDiscountCode] = useState(""); // ✅ State for Discount Code
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -21,8 +24,8 @@ const CartPage = () => {
   const validDiscounts = { SAVE10: 10, "قسيمة10": 10, "DISCOUNT20": 20 }; // ✅ Support Arabic Discount Code
 
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    if (user) fetchCart();
+  }, [user, fetchCart]);
 
   // Update quantity
   const updateQuantity = (id, type) => {
@@ -55,6 +58,11 @@ const CartPage = () => {
   // Calculate total price
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const totalPrice = Math.max(0, subtotal - discountAmount);
+  const checkoutQuery = encodeURIComponent(
+    JSON.stringify(
+      cartItems.map(({ id, item_type }) => ({ id, itemType: item_type }))
+    )
+  );
 
   return (
     <div className="bg-black min-h-screen text-white">
@@ -70,7 +78,7 @@ const CartPage = () => {
           <div className="text-center py-10">
             <FaGift className="mx-auto text-6xl mb-4 text-yellow-500" />
             <p className="text-lg">Your cart is empty.</p>
-            <Link href="/marketplace">
+            <Link href="/website">
               <button className="mt-4 px-6 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition">
                 Browse Courses
               </button>
@@ -87,55 +95,14 @@ const CartPage = () => {
             <ul className="space-y-6">
               <AnimatePresence>
                 {cartItems.map((item, index) => (
-                  <motion.li
+                  <CartItem
                     key={item.id}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex justify-between items-center border-b border-gray-700 pb-4"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <FaGift className="text-yellow-500 text-4xl" />
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {index + 1}. {item.name}
-                        </h3>
-                        <p className="text-gray-400">${item.price} per item</p>
-                      </div>
-                    </div>
-
-                    {/* Quantity Controls */}
-                    <div className="flex items-center space-x-4">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item.id, "decrease")}
-                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full"
-                      >
-                        <FaMinus />
-                      </motion.button>
-                      <span className="text-lg font-bold">{item.quantity}</span>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQuantity(item.id, "increase")}
-                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full"
-                      >
-                        <FaPlus />
-                      </motion.button>
-                    </div>
-
-                    {/* Remove Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-red-500 hover:text-red-600"
-                    >
-                      <FaTrash />
-                    </motion.button>
-                  </motion.li>
+                    item={item}
+                    index={index}
+                    onIncrease={() => updateQuantity(item.id, "increase")}
+                    onDecrease={() => updateQuantity(item.id, "decrease")}
+                    onRemove={() => removeItem(item.id)}
+                  />
                 ))}
               </AnimatePresence>
             </ul>
@@ -182,15 +149,17 @@ const CartPage = () => {
 
             {/* Checkout Button */}
             <div className="mt-6 flex justify-end">
-              <Link href="/payments/checkout">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
-                >
-                  Proceed to Checkout
-                </motion.button>
-              </Link>
+              {cartItems.length > 0 && (
+                <Link href={`/payments/checkout?items=${checkoutQuery}`}>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-bold"
+                  >
+                    Proceed to Checkout
+                  </motion.button>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

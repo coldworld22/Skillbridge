@@ -10,12 +10,25 @@ const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const { verifyToken } = require("./middleware/auth/authMiddleware");
+const verifyEnrollment = require("./middleware/auth/verifyEnrollment");
 const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
+const { startLessonLiveJob } = require("./jobs/lessonLiveJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
+const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
+const { createLessonRoomLink } = require("./utils/roomLink");
 require("dotenv").config();
+
+// Ensure required environment secrets are present
+const requiredSecrets = ["JWT_SECRET", "REFRESH_TOKEN_SECRET"];
+const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
+if (missingSecrets.length) {
+  throw new Error(
+    `Missing required environment variables: ${missingSecrets.join(", ")}`
+  );
+}
 
 
 // ─── Express and HTTP Setup ───
@@ -135,8 +148,36 @@ app.use("/api/tickets", require("./modules/tickets/tickets.routes"));
 app.use("/api/media", require("./modules/media/media.routes"));
 app.use("/api/book-categories", require("./modules/bookCategories/bookCategories.routes"));
 app.use("/api/books", require("./modules/books/book.routes"));
+app.use("/api/instructor/books", require("./modules/books/instructorBook.routes"));
 app.use("/api/library", require("./modules/library/library.routes"));
 app.use("/api/search", require("./modules/search/search.routes"));
+
+// Generate secure video room link for a lesson
+app.post("/api/users/classes/lessons/:lessonId/room", verifyToken, async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const lesson = await db("class_lessons as l")
+      .join("online_classes as c", "l.class_id", "c.id")
+      .select("l.class_id", "c.instructor_id")
+      .where("l.id", lessonId)
+      .first();
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    const isInstructor = lesson.instructor_id === req.user.id;
+    let isStudent = false;
+    if (!isInstructor) {
+      const enrollment = await db("class_enrollments")
+        .where({ class_id: lesson.class_id, user_id: req.user.id })
+        .first();
+      if (enrollment) isStudent = true;
+    }
+    if (!isInstructor && !isStudent)
+      return res.status(403).json({ message: "Not allowed" });
+    const link = createLessonRoomLink(lessonId);
+    res.json(link);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to generate room link" });
+  }
+});
 
 app.get("/", (req, res) => res.send("🚀 SkillBridge API is live."));
 
@@ -251,7 +292,13 @@ io.on("connection", (socket) => {
 app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) => {
   try {
     const rows = await db("video_call_participants")
-      .select("name", "role", "is_muted", "joined_at")
+      .select(
+        "socket_id as id",
+        "name",
+        "role",
+        "is_muted as isMuted",
+        "joined_at"
+      )
       .where({ room_id: req.params.roomId })
       .andWhere("left_at", null);
     res.json(rows);
@@ -259,6 +306,67 @@ app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) =
     res.status(500).json({ message: "Failed to fetch participants" });
   }
 });
+
+app.patch(
+  "/api/video-calls/:roomId/participants/:id",
+  verifyToken,
+  async (req, res) => {
+    const { roomId, id } = req.params;
+    const { isMuted, role } = req.body || {};
+    const updateData = {};
+    if (typeof isMuted === "boolean") updateData.is_muted = isMuted;
+    if (role) updateData.role = role;
+    if (Object.keys(updateData).length === 0)
+      return res.status(400).json({ message: "No fields to update" });
+    try {
+      await db("video_call_participants")
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null)
+        .update(updateData);
+      if (participants[roomId]) {
+        const p = participants[roomId].find((p) => p.id === id);
+        if (p) {
+          if (typeof isMuted === "boolean") p.isMuted = isMuted;
+          if (role) p.role = role;
+        }
+      }
+      const [participant] = await db("video_call_participants")
+        .select(
+          "socket_id as id",
+          "name",
+          "role",
+          "is_muted as isMuted"
+        )
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null);
+      io.to(roomId).emit("participant-updated", participant);
+      res.json(participant);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to update participant" });
+    }
+  }
+);
+
+app.delete(
+  "/api/video-calls/:roomId/participants/:id",
+  verifyToken,
+  async (req, res) => {
+    const { roomId, id } = req.params;
+    try {
+      await db("video_call_participants")
+        .where({ room_id: roomId, socket_id: id })
+        .andWhere("left_at", null)
+        .update({ left_at: new Date() });
+      if (participants[roomId]) {
+        participants[roomId] = participants[roomId].filter((p) => p.id !== id);
+      }
+      io.to(roomId).emit("participant-removed", { id });
+      res.status(204).end();
+    } catch (err) {
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  }
+);
 
 app.get("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
   try {
@@ -271,25 +379,31 @@ app.get("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
   }
 });
 
-app.post("/api/video-calls/:roomId/messages", verifyToken, async (req, res) => {
-  const { text } = req.body || {};
-  const roomId = req.params.roomId;
-  if (!text?.trim()) return res.status(400).json({ message: "Message text required" });
-  try {
-    const [message] = await db("video_call_messages")
-      .insert({
-        room_id: roomId,
-        sender_id: req.user.id,
-        sender: req.user.full_name,
-        text: text.trim(),
-      })
-      .returning("*");
-    io.to(roomId).emit("call-message", message);
-    res.status(201).json(message);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to store message" });
-  }
-});
+app.post(
+  "/api/video-calls/:roomId/messages",
+  verifyToken,
+  verifyEnrollment,
+  async (req, res) => {
+    const { text } = req.body || {};
+    const roomId = req.params.roomId;
+    if (!text?.trim())
+      return res.status(400).json({ message: "Message text required" });
+    try {
+      const [message] = await db("video_call_messages")
+        .insert({
+          room_id: roomId,
+          sender_id: req.user.id,
+          sender: req.user.full_name,
+          text: text.trim(),
+        })
+        .returning("*");
+      io.to(roomId).emit("call-message", message);
+      res.status(201).json(message);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to store message" });
+    }
+  },
+);
 
 app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
@@ -303,6 +417,8 @@ async function startServer() {
       console.log(`✅ Server running on port ${PORT}`);
     });
     startLessonReminderJob();
+    startLessonLiveJob();
+    startClassReminderJob();
     startCartReminderJob();
     startCleanupJob();
   } catch (err) {

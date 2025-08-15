@@ -139,22 +139,22 @@ export default function WishlistPage() {
         </ul>}
       <h2 className="text-xl font-semibold mt-6 mb-2">{t('tutorials')}</h2>
       {filteredTutorials.length===0? <p className="text-gray-500">{t('no_tutorials')}</p>:
-        <ul className="space-y-2">{filteredTutorials.map(t=>(
-          <li key={t.id} className="bg-white p-3 rounded-md shadow">
+        <ul className="space-y-2">{filteredTutorials.map(tutorial=>(
+          <li key={tutorial.id} className="bg-white p-3 rounded-md shadow">
             <div className="flex justify-between items-center">
-              <span className="font-medium">{t.title}</span>
+              <span className="font-medium">{tutorial.title}</span>
               <div className="flex gap-2">
-                <button onClick={()=>handleAddToCart(t)} className="text-blue-600 text-sm">{t('add_to_cart')}</button>
-                <button onClick={()=>setReminder(t)} className="text-yellow-600 text-sm" title={t('set_reminder')}><FaBell/></button>
-                <button onClick={()=>removeTutorial(t.id)} className="text-red-500 text-sm">{t('remove')}</button>
+                <button onClick={()=>handleAddToCart(tutorial)} className="text-blue-600 text-sm">{t('add_to_cart')}</button>
+                <button onClick={()=>setReminder(tutorial)} className="text-yellow-600 text-sm" title={t('set_reminder')}><FaBell/></button>
+                <button onClick={()=>removeTutorial(tutorial.id)} className="text-red-500 text-sm">{t('remove')}</button>
               </div>
             </div>
-            <p className="text-xs text-gray-600 mt-1">{t.status && t.status}</p>
+            <p className="text-xs text-gray-600 mt-1">{tutorial.status && tutorial.status}</p>
             <input
               type="text"
               placeholder={t('add_tag')}
-              value={tags[t.id] || ''}
-              onChange={(e)=>updateTag(t.id, e.target.value)}
+              value={tags[tutorial.id] || ''}
+              onChange={(e)=>updateTag(tutorial.id, e.target.value)}
               className="mt-2 w-full border rounded p-1 text-sm"
             />
           </li>))}

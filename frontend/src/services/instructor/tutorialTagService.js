@@ -1,8 +1,9 @@
 import api from "@/services/api/api";
 
-export const fetchTutorialTags = async (search) => {
+export const fetchTutorialTags = async (search, signal) => {
   const { data } = await api.get("/users/tutorials/tags", {
     params: search ? { search } : {},
+    signal,
   });
   return data?.data ?? [];
 };

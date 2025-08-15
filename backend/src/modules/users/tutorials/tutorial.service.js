@@ -1,27 +1,72 @@
 // 📁 src/modules/users/tutorials/tutorial.service.js
 const db = require("../../../config/database");
+const tagService = require("./tutorialTag.service");
+const slugify = require("slugify");
 
-exports.createTutorial = async (data) => {
-  const [tutorial] = await db("tutorials").insert(data).returning("*");
+exports.createTutorial = async (data, trx = db) => {
+  const [tutorial] = await trx("tutorials").insert(data).returning("*");
   return tutorial;
 };
 
-exports.getAllTutorials = async () => {
-  return db("tutorials")
-    .leftJoin("categories", "tutorials.category_id", "categories.id")
-    .leftJoin("users", "tutorials.instructor_id", "users.id")
-    .whereNot("tutorials.status", "archived")
-    .orderBy("tutorials.created_at", "desc")
+exports.getAllTutorials = async (filters = {}) => {
+  const {
+    status,
+    category,
+    search,
+    page = 1,
+    limit = 10,
+  } = filters;
+
+  const offset = (page - 1) * limit;
+
+  const baseQuery = db("tutorials as t")
+    .leftJoin("categories as c", "t.category_id", "c.id")
+    .leftJoin("users as u", "t.instructor_id", "u.id")
+    .whereNot("t.status", "archived")
+    .modify((query) => {
+      if (status) query.andWhere("t.status", status);
+      if (category) query.andWhere("t.category_id", category);
+      if (search) {
+        query.andWhere(function () {
+          this.whereILike("t.title", `%${search}%`);
+        });
+      }
+    });
+
+  const countQuery = baseQuery
+    .clone()
+    .clearSelect()
+    .count("t.id as count")
+    .first();
+
+  const dataQuery = baseQuery
+    .clone()
+    .orderBy("t.created_at", "desc")
     .select(
-      "tutorials.*",
-      "categories.name as category_name",
-      "categories.image_url as category_image_url",
-      "users.full_name as instructor_name"
-    );
+      "t.*",
+      "c.name as category_name",
+      "c.image_url as category_image_url",
+      "u.full_name as instructor_name"
+    )
+    .limit(limit)
+    .offset(offset);
+
+  const [totalResult, tutorials] = await Promise.all([countQuery, dataQuery]);
+  const total = parseInt(totalResult.count, 10) || 0;
+
+  return {
+    data: tutorials,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
-exports.getTutorialById = async (id) => {
-  return db({ t: 'tutorials' })
+exports.getTutorialById = async (id, userId = null) => {
+  const query = db({ t: 'tutorials' })
     .leftJoin('categories as c', 't.category_id', 'c.id')
     .leftJoin('users as u', 't.instructor_id', 'u.id')
     .leftJoin(
@@ -59,18 +104,38 @@ exports.getTutorialById = async (id) => {
         .as('v'),
       'v.tutorial_id',
       't.id'
-    )
-    .where('t.id', id)
-    .first(
-      't.*',
-      'c.name as category_name',
-      'c.image_url as category_image_url',
-      'u.full_name as instructor_name',
-      db.raw('COALESCE(r.avg_rating,0) as rating'),
-      db.raw('COALESCE(com.comment_count,0) as comment_count'),
-      db.raw('COALESCE(en.enrollments,0) as enrollments'),
-      db.raw('COALESCE(v.views,0) as views')
     );
+
+  if (userId) {
+    query.leftJoin('tutorial_enrollments as te', function () {
+      this.on('te.tutorial_id', 't.id').andOn('te.user_id', '=', userId);
+    });
+  }
+
+  query.where('t.id', id);
+
+  const columns = [
+    't.*',
+    'c.name as category_name',
+    'c.image_url as category_image_url',
+    'u.full_name as instructor_name',
+    db.raw('COALESCE(r.avg_rating,0) as rating'),
+    db.raw('COALESCE(com.comment_count,0) as comment_count'),
+    db.raw('COALESCE(en.enrollments,0) as enrollments'),
+    db.raw('COALESCE(v.views,0) as views'),
+  ];
+
+  if (userId) {
+    columns.push(
+      db.raw(
+        'CASE WHEN te.user_id IS NULL THEN false ELSE true END as is_enrolled'
+      )
+    );
+  } else {
+    columns.push(db.raw('false as is_enrolled'));
+  }
+
+  return query.select(columns).first();
 };
 
 exports.getTutorialsByInstructor = async (instructorId) => {
@@ -149,8 +214,24 @@ exports.permanentlyDeleteTutorial = async (id) => {
 
 exports.togglePublishStatus = async (id) => {
   const tutorial = await db("tutorials").where({ id }).first();
+  if (!tutorial) {
+    return null;
+  }
+
   const newStatus = tutorial.status === "published" ? "draft" : "published";
-  return db("tutorials").where({ id }).update({ status: newStatus });
+  const updateData = { status: newStatus };
+
+  if (newStatus === "published") {
+    updateData.moderation_status = "Pending";
+    updateData.rejection_reason = null;
+  }
+
+  const [updated] = await db("tutorials")
+    .where({ id })
+    .update(updateData)
+    .returning(["status", "moderation_status"]);
+
+  return updated;
 };
 
 exports.updateModeration = async (id, status, reason = null) => {
@@ -211,15 +292,22 @@ exports.getPublishedTutorials = async () => {
     .avg({ avg_rating: "rating" })
     .groupBy("tutorial_id");
 
+  const chapterCountSubquery = db("tutorial_chapters")
+    .select("tutorial_id")
+    .count({ chapter_count: "id" })
+    .groupBy("tutorial_id");
+
   return db({ t: "tutorials" })
     .leftJoin("users as u", "t.instructor_id", "u.id")
     .leftJoin(ratingSubquery.as("r"), "r.tutorial_id", "t.id")
+    .leftJoin(chapterCountSubquery.as("c"), "c.tutorial_id", "t.id")
     .where({ "t.status": "published", "t.moderation_status": "Approved" })
     .select(
       "t.*",
       "u.full_name as instructor_name",
       "u.avatar_url as instructor_avatar",
-      db.raw("COALESCE(r.avg_rating, 0) as rating")
+      db.raw("COALESCE(r.avg_rating, 0) as rating"),
+      db.raw("COALESCE(c.chapter_count, 0) as chapter_count")
     )
     .orderBy("t.created_at", "desc");
 };
@@ -262,14 +350,31 @@ exports.getPublicTutorialDetails = async (id) => {
   return { ...tutorial, chapters, views };
 };
 
-exports.addTutorialTags = async (tutorialId, tagIds) => {
+exports.addTutorialTags = async (tutorialId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ tutorial_id: tutorialId, tag_id }));
-  await db("tutorial_tag_map").insert(rows);
+  await trx("tutorial_tag_map").insert(rows);
 };
 
-exports.getTutorialTags = async (tutorialId) => {
-  return db("tutorial_tag_map as m")
+exports.updateTutorialTags = async (tutorialId, tags, trx = db) => {
+  await trx("tutorial_tag_map").where({ tutorial_id: tutorialId }).del();
+  if (!tags || !tags.length) return;
+  const tagIds = [];
+  for (const name of tags) {
+    const existing = await tagService.findByName(name, trx);
+    const tag =
+      existing ||
+      (await tagService.createTag(
+        { name, slug: slugify(name, { lower: true, strict: true }) },
+        trx
+      ));
+    tagIds.push(tag.id);
+  }
+  await exports.addTutorialTags(tutorialId, tagIds, trx);
+};
+
+exports.getTutorialTags = async (tutorialId, trx = db) => {
+  return trx("tutorial_tag_map as m")
     .join("tags as t", "m.tag_id", "t.id")
     .where("m.tutorial_id", tutorialId)
     .select("t.id", "t.name", "t.slug");
@@ -293,7 +398,8 @@ exports.getTutorialAnalytics = async (tutorialId) => {
     .where({ tutorial_id: tutorialId })
     .count();
   const [completedRow] = await db('tutorial_enrollments')
-    .where({ tutorial_id: tutorialId, status: 'completed' })
+    .where({ tutorial_id: tutorialId })
+    .where('progress', 100)
     .count();
   const [commentRow] = await db('tutorial_comments')
     .where({ tutorial_id: tutorialId })
@@ -327,4 +433,11 @@ exports.getTutorialAnalytics = async (tutorialId) => {
       students: parseInt(r.students, 10),
     })),
   };
+};
+
+exports.getAssignmentCount = async (tutorialId) => {
+  const [row] = await db('tutorial_assignments')
+    .where({ tutorial_id: tutorialId })
+    .count();
+  return parseInt(row.count, 10) || 0;
 };

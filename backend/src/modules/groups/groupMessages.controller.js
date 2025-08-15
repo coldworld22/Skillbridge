@@ -29,8 +29,13 @@ exports.sendMessage = catchAsync(async (req, res) => {
     throw new AppError("Message or attachment required", 400);
   }
 
-  const isMember = await groupService.isMember(id, req.user.id);
-  if (!isMember) throw new AppError("Not authorized", 403);
+  const role = await groupService.getMemberRole(id, req.user.id);
+  if (!role) throw new AppError("Not authorized", 403);
+
+  const perms = await groupService.getGroupPermissions(id);
+  const rolePerms = perms[role] || {};
+  if (!rolePerms.message) throw new AppError("Not authorized", 403);
+  if ((file || audio) && !rolePerms.upload) throw new AppError("Not authorized", 403);
 
   const created = await msgService.createMessage({
     group_id: id,
@@ -48,7 +53,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
     .map((m) => m.user_id)
     .filter((uid) => uid !== req.user.id);
   const note = `New message in group "${group.name}" from ${req.user.full_name}`;
-  await Promise.all(
+  const notifResults = await Promise.allSettled(
     recipients.map((uid) =>
       notificationService.createNotification({
         user_id: uid,
@@ -57,7 +62,16 @@ exports.sendMessage = catchAsync(async (req, res) => {
       })
     )
   );
-  await Promise.all(
+  notifResults.forEach((res, idx) => {
+    if (res.status === "rejected") {
+      console.error(
+        `Failed to create notification for user ${recipients[idx]}:`,
+        res.reason,
+      );
+    }
+  });
+
+  const msgResults = await Promise.allSettled(
     recipients.map((uid) =>
       messageService.createMessage({
         sender_id: req.user.id,
@@ -66,6 +80,14 @@ exports.sendMessage = catchAsync(async (req, res) => {
       })
     )
   );
+  msgResults.forEach((res, idx) => {
+    if (res.status === "rejected") {
+      console.error(
+        `Failed to create private message for user ${recipients[idx]}:`,
+        res.reason,
+      );
+    }
+  });
 
   sendSuccess(res, full, "Message sent");
 });

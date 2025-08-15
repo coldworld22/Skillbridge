@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
@@ -9,11 +10,19 @@ import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
 import { fetchAdminDashboardStats } from "@/services/admin/adminService";
-import { FaUsers, FaChalkboardTeacher, FaBook, FaVideo } from "react-icons/fa";
+import {
+  FaUsers,
+  FaChalkboardTeacher,
+  FaBook,
+  FaVideo,
+} from "react-icons/fa";
 import RevenueChart from "@/components/admin/charts/RevenueChart";
 import SignupsChart from "@/components/admin/charts/SignupsChart";
 import CategoryPieChart from "@/components/admin/charts/CategoryPieChart";
 import InstructorActivityChart from "@/components/admin/charts/InstructorActivityChart";
+import { fetchRecentAlerts } from "@/services/admin/alertService";
+import { fetchFlaggedMessages } from "@/services/admin/moderationService";
+import { fetchLicenseStatus } from "@/services/admin/licenseService";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
@@ -21,8 +30,14 @@ function AdminDashboardHome() {
   const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [flaggedMessages, setFlaggedMessages] = useState([]);
+  const [flagsLoading, setFlagsLoading] = useState(false);
+  const [licenseStatus, setLicenseStatus] = useState(null);
+  const [licenseLoading, setLicenseLoading] = useState(false);
+  const { t } = useTranslation("dashboard");
 
-  // Wait for hydration to access Zustand state safely
   useEffect(() => {
     setHydrated(true);
   }, []);
@@ -35,22 +50,36 @@ function AdminDashboardHome() {
         router.replace("/error/403");
       }
     }
-  }, [user, hydrated]);
+  }, [user, hydrated, router]);
 
   useEffect(() => {
-    const loadStats = async () => {
+    const loadData = async () => {
       setStatsLoading(true);
+      setAlertsLoading(true);
+      setFlagsLoading(true);
+      setLicenseLoading(true);
       try {
-        const data = await fetchAdminDashboardStats();
-        setStats(data);
+        const [statsData, alertsData, flagsData, licenseData] = await Promise.all([
+          fetchAdminDashboardStats(),
+          fetchRecentAlerts(),
+          fetchFlaggedMessages(),
+          fetchLicenseStatus(),
+        ]);
+        setStats(statsData);
+        setAlerts(alertsData);
+        setFlaggedMessages(flagsData);
+        setLicenseStatus(licenseData);
       } catch (err) {
-        console.error("Failed to load dashboard stats", err);
+        console.error("Failed to load dashboard data", err);
       } finally {
         setStatsLoading(false);
+        setAlertsLoading(false);
+        setFlagsLoading(false);
+        setLicenseLoading(false);
       }
     };
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
-      loadStats();
+      loadData();
     }
   }, [hydrated, user]);
 
@@ -60,11 +89,11 @@ function AdminDashboardHome() {
 
   const statsArray = stats
     ? [
-        { icon: <FaUsers />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
-        { icon: <FaChalkboardTeacher />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
-        { icon: <FaUsers />, label: "Students", value: stats.students, color: "text-green-500" },
-        { icon: <FaBook />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
-        { icon: <FaVideo />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: "Total Users", value: stats.totalUsers, color: "text-blue-500" },
+        { icon: <FaChalkboardTeacher aria-hidden="true" />, label: "Instructors", value: stats.instructors, color: "text-purple-500" },
+        { icon: <FaUsers aria-hidden="true" />, label: "Students", value: stats.students, color: "text-green-500" },
+        { icon: <FaBook aria-hidden="true" />, label: "Tutorials", value: stats.tutorials, color: "text-indigo-500" },
+        { icon: <FaVideo aria-hidden="true" />, label: "Classes", value: stats.classes, color: "text-yellow-500" },
       ]
     : [];
 
@@ -75,29 +104,85 @@ function AdminDashboardHome() {
       {/* Alerts Summary */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🚨 Recent Alerts</h3>
-          <ul className="text-sm text-red-600 space-y-1">
-            <li>Unauthorized usage detected</li>
-            <li>Flagged chat in Python class</li>
-            <li>API key expiring soon</li>
-          </ul>
-          <Link href="/admin/alerts" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">View all alerts</Link>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🚨</span> {t("recentAlerts")}
+          </h3>
+          {alertsLoading ? (
+            <p className="text-sm">Loading alerts...</p>
+          ) : alerts.length === 0 ? (
+            <p className="text-sm text-gray-600">No alerts</p>
+          ) : (
+            <ul className="text-sm text-red-600 space-y-1">
+              {alerts.slice(0, 3).map((alert, idx) => (
+                <li key={idx}>{alert.message || alert}</li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href="/admin/alerts"
+            className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
+          >
+            View all alerts
+          </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🛡️ Flagged Messages</h3>
-          <ul className="text-sm text-red-500 space-y-1">
-            <li>@ayman: “This is stupid”</li>
-            <li>@maria: “Dumb answer...”</li>
-          </ul>
-          <Link href="/admin/moderation" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">Review messages</Link>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🛡️</span> {t("flaggedMessages")}
+          </h3>
+          {flagsLoading ? (
+            <p className="text-sm">Loading messages...</p>
+          ) : flaggedMessages.length === 0 ? (
+            <p className="text-sm text-gray-600">No flagged messages</p>
+          ) : (
+            <ul className="text-sm text-red-500 space-y-1">
+              {flaggedMessages.slice(0, 2).map((msg) => (
+                <li key={msg.id || msg}>
+                  @{msg.user || msg.username}: “{msg.content || msg.message}”
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href="/admin/moderation"
+            className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
+          >
+            Review messages
+          </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">🔒 License Check</h3>
-          <p className="text-sm text-gray-800">Last check: 1 hour ago</p>
-          <p className="text-sm text-red-600 mt-1">❌ 1 unauthorized instance detected</p>
-          <Link href="/admin/license-logs" className="text-yellow-500 text-sm mt-2 inline-block hover:underline">See details</Link>
+          <h3 className="font-semibold mb-2">
+            <span aria-hidden="true">🔒</span> {t("licenseCheck")}
+          </h3>
+          {licenseLoading ? (
+            <p className="text-sm">Checking license...</p>
+          ) : licenseStatus ? (
+            <>
+              <p className="text-sm text-gray-800">
+                Last check: {licenseStatus.last_check || "N/A"}
+              </p>
+              <p
+                className={`text-sm mt-1 ${
+                  licenseStatus.unauthorized_count ? "text-red-600" : "text-green-600"
+                }`}
+              >
+                  {licenseStatus.unauthorized_count
+                    ? `❌ ${licenseStatus.unauthorized_count} unauthorized instance${
+                        licenseStatus.unauthorized_count > 1 ? "s" : ""
+                      } detected`
+                    : "✅ No unauthorized instances"}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-600">No license data</p>
+          )}
+          <Link
+            href="/admin/license-logs"
+            className="text-yellow-500 text-sm mt-2 inline-block hover:underline"
+          >
+            See details
+          </Link>
         </div>
       </section>
 
@@ -121,14 +206,15 @@ function AdminDashboardHome() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">📊 Platform Insights</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">
+          <span aria-hidden="true">📊</span> {t("platformInsights")}
+        </h2>
         {statsLoading ? (
-          <p>Loading stats...</p>
+          <p>{t("loadingStats")}</p>
         ) : (
           <StatsGrid stats={statsArray} />
         )}
       </section>
-
     </div>
   );
 }
@@ -144,7 +230,7 @@ export default ProtectedAdminDashboard;
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common', 'dashboard'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ["common", "dashboard"], nextI18NextConfig)),
     },
   };
 }

@@ -33,6 +33,7 @@
     "passport-github2": "^0.1.12",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3",
+    "knex": "^3.1.0",
     "sharp": "^0.34.2",
     "slugify": "^1.6.6",
     "socket.io": "^4.7.2",
@@ -40,12 +41,14 @@
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "yamljs": "^0.3.0",
-    "zod": "^3.25.20"
+    "zod": "^3.25.20",
+    "joi": "^17.13.0",
+    "@paypal/checkout-server-sdk": "^1.0.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "knex": "^3.1.0",
     "nodemon": "^3.1.10",
-    "supertest": "^6.3.4"
+    "supertest": "^6.3.4",
+    "sqlite3": "^5.1.6"
   }
 }

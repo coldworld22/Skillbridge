@@ -31,8 +31,18 @@ describe('POST /api/auth/forgot-password', () => {
       .post('/api/auth/forgot-password')
       .send({ email: 'test@example.com' });
     expect(res.status).toBe(200);
-    expect(service.generateOtp).toHaveBeenCalledWith('test@example.com');
+    expect(service.generateOtp).toHaveBeenCalledWith('test@example.com', undefined);
     expect(res.body.message).toBeDefined();
+  });
+
+  it('passes via sms when requested', async () => {
+    service.generateOtp.mockResolvedValue();
+    userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com', phone: '+11234567890', is_phone_verified: true });
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'test@example.com', via: 'sms' });
+    expect(res.status).toBe(200);
+    expect(service.generateOtp).toHaveBeenCalledWith('test@example.com', 'sms');
   });
 
   it('returns generic message for unknown email', async () => {

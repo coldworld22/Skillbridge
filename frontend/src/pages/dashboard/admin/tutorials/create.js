@@ -15,6 +15,7 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -25,6 +26,11 @@ function CreateTutorialPage() {
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
   const notify = async (type, message) => {
+    if (!user?.id) {
+      toast.warn('Notification skipped: missing user data.');
+      return;
+    }
+
     try {
       await createNotification({ user_id: user.id, type, message });
       await sendChatMessage(user.id, { text: message });
@@ -59,21 +65,26 @@ function CreateTutorialPage() {
   useEffect(() => {
     const savedDraft = localStorage.getItem("tutorialDraft");
     if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      setTutorialData({
-        ...draft,
-        thumbnail: null,
-        preview: null,
-        language: draft.language || "",
-        lessonCount: draft.lessonCount || draft.chapters?.length || 1,
-      });
+      try {
+        const draft = JSON.parse(savedDraft);
+        setTutorialData({
+          ...draft,
+          thumbnail: null,
+          preview: null,
+          language: draft.language || "",
+          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
+        });
+      } catch (err) {
+        console.error("Failed to parse tutorialDraft", err);
+        localStorage.removeItem("tutorialDraft");
+      }
     }
 
     const loadCategories = async () => {
       try {
         const result = await fetchAllCategories();
 
-        setCategories(result?.data || []);
+        setCategories(result || []);
 
       
       } catch (err) {
@@ -95,32 +106,7 @@ function CreateTutorialPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", tutorialData.title);
-    formData.append("description", tutorialData.shortDescription);
-    formData.append("category_id", tutorialData.category);
-    formData.append("level", tutorialData.level);
-    formData.append("language", tutorialData.language);
-    formData.append("status", status);
-    formData.append("is_paid", (!tutorialData.isFree).toString());
-    if (!tutorialData.isFree) {
-      formData.append("price", tutorialData.price);
-    }
-    if (tutorialData.tags.length) {
-      formData.append("tags", JSON.stringify(tutorialData.tags));
-    }
-    if (tutorialData.chapters.length) {
-      const chapters = tutorialData.chapters.map((ch, idx) => ({
-        title: ch.title,
-        duration: ch.duration,
-        video_url: ch.videoUrl,
-        order: idx + 1,
-        is_preview: ch.preview,
-      }));
-      formData.append("chapters", JSON.stringify(chapters));
-    }
-    if (tutorialData.thumbnail) formData.append("thumbnail", tutorialData.thumbnail);
-    if (tutorialData.preview) formData.append("preview", tutorialData.preview);
+    const formData = buildTutorialFormData(tutorialData, status);
 
     try {
       await createTutorial(formData);

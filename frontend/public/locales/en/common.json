@@ -40,6 +40,9 @@
   "users": "Users",
   "groups": "Groups",
   "no_new_notifications": "No new notifications right now.",
+  "you_have_new_notifications": "You have {{count}} new notification",
+  "you_have_new_notifications_plural": "You have {{count}} new notifications",
+  "failed_to_mark_notification_as_read": "Failed to mark notification as read",
   "show": "Show",
   "hide": "Hide",
   "welcome_user": "Welcome, {{name}}",
@@ -65,6 +68,7 @@
   "student_dashboard": "Student Dashboard"
   ,"start_chat": "Start Chat"
   ,"start_new_message": "Start New Message"
-  ,"type_message_placeholder": "Type a message..."
+  ,"type_message_placeholder": "Type a message...",
+  "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
 }
   

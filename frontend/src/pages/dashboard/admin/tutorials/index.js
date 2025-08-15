@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheck, FaTimes, FaSpinner } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
+import Filters from "@/components/dashboard/admin/tutorials/Filters";
+import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTable";
+import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
+import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -27,7 +31,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 
 function AdminTutorialsPage() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialsPage' });
+  const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
   const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,26 +54,40 @@ function AdminTutorialsPage() {
   const [tutorialToReject, setTutorialToReject] = useState(null);
   const [selectedTutorials, setSelectedTutorials] = useState([]);
 
+  useEffect(() => {
+    setSelectedTutorials([]);
+  }, [searchQuery, filterCategory, filterStatus, filterApproval]);
+
   // Load tutorials and categories from backend on mount
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+
     const loadData = async () => {
       try {
         setLoading(true);
         const [tuts, cats] = await Promise.all([
-          fetchAllTutorials(),
-          fetchAllCategories(),
+          fetchAllTutorials({ signal: controller.signal }),
+          fetchAllCategories({}, { signal: controller.signal }),
         ]);
+        if (!isMounted) return;
         setTutorials(tuts);
         setCategories(cats?.data || cats || []);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
-        toast.error(t('load_error'));
+        if (isMounted) toast.error(t('load_error'));
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   // Pagination
@@ -77,19 +95,25 @@ function AdminTutorialsPage() {
   const tutorialsPerPage = 10;
 
   // Filtering
-  const filteredTutorials = tutorials
-    .filter((tut) => {
-      const matchesSearch =
-        tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        filterCategory === "All" || tut.category === filterCategory;
-      const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
-      const matchesApproval = filterApproval === "All" || tut.approvalStatus === filterApproval;
-      return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
-    });
+  const filteredTutorials = tutorials.filter((tut) => {
+    const matchesSearch =
+      tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      filterCategory === "All" || tut.category === filterCategory;
+    const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
+    const matchesApproval =
+      filterApproval === "All" || tut.approvalStatus === filterApproval;
+    return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
+  });
 
   const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(Math.min(currentPage, totalPages) || 1);
+    }
+  }, [currentPage, totalPages]);
   const startIndex = (currentPage - 1) * tutorialsPerPage;
   const endIndex = startIndex + tutorialsPerPage;
   const paginatedTutorials = filteredTutorials.slice(startIndex, endIndex);
@@ -97,7 +121,7 @@ function AdminTutorialsPage() {
   // Functions
   const toggleSelectOne = (id) => {
     setSelectedTutorials((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -109,8 +133,8 @@ function AdminTutorialsPage() {
       ]);
     } else {
       const pageIds = paginatedTutorials.map((tut) => tut.id);
-      setSelectedTutorials((prevSelected) =>
-        prevSelected.filter((id) => !pageIds.includes(id)) // Remove only current page IDs
+      setSelectedTutorials(
+        (prevSelected) => prevSelected.filter((id) => !pageIds.includes(id)), // Remove only current page IDs
       );
     }
   };
@@ -119,41 +143,56 @@ function AdminTutorialsPage() {
 
   const togglePublishStatus = async (id) => {
     try {
+      const existing = tutorials.find((tut) => tut.id === id);
+      if (!existing) {
+        toast.error("Tutorial not found");
+        return;
+      }
       await toggleTutorialStatus(id);
-      let target;
+      const newStatus = existing.status === "Published" ? "Draft" : "Published";
+      const target = { ...existing, status: newStatus };
       setTutorials((prev) =>
-        prev.map((tut) => {
-          if (tut.id === id) {
-            const newStatus = tut.status === "Published" ? "Draft" : "Published";
-            target = { ...tut, status: newStatus };
-            return { ...target, updatedAt: new Date().toISOString() };
-          }
-          return tut;
-        })
+        prev.map((tut) =>
+          tut.id === id
+            ? { ...target, updatedAt: new Date().toISOString() }
+            : tut,
+        ),
       );
       const message = `Tutorial "${target.title}" status changed to ${target.status}.`;
-      toast.success(t('status_updated'));
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_status_changed",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      toast.success(t("status_updated"));
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_status_changed",
-          message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_status_changed",
+            message: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" status was changed to ${target.status}.`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Status updated but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('update_failed'));
+      toast.error(t("update_failed"));
     }
   };
 
@@ -172,12 +211,14 @@ function AdminTutorialsPage() {
     try {
       await permanentlyDeleteTutorial(tutorialToDelete);
       setTutorials((prev) => prev.filter((tut) => tut.id !== tutorialToDelete));
-      toast.success(t('deleted'));
+      toast.success(t("deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('delete_failed'));
+      toast.error(t("delete_failed"));
     } finally {
-      setSelectedTutorials((prev) => prev.filter((id) => id !== tutorialToDelete));
+      setSelectedTutorials((prev) =>
+        prev.filter((id) => id !== tutorialToDelete),
+      );
       setTutorialToDelete(null);
       setIsModalOpen(false);
     }
@@ -185,40 +226,61 @@ function AdminTutorialsPage() {
 
   const handleConfirmReject = async (reason) => {
     try {
+      const existing = tutorials.find((tut) => tut.id === tutorialToReject);
+      if (!existing) {
+        toast.error("Tutorial not found");
+        return;
+      }
       await rejectTutorial(tutorialToReject, reason);
-      let target;
+      const target = {
+        ...existing,
+        approvalStatus: "Rejected",
+        rejectionReason: reason,
+      };
       setTutorials((prev) =>
-        prev.map((tut) => {
-          if (tut.id === tutorialToReject) {
-            target = { ...tut, approvalStatus: "Rejected", rejectionReason: reason };
-            return { ...target, updatedAt: new Date().toISOString() };
-          }
-          return tut;
-        })
+        prev.map((tut) =>
+          tut.id === tutorialToReject
+            ? { ...target, updatedAt: new Date().toISOString() }
+            : tut,
+        ),
       );
-      toast.success(t('rejected'));
+      toast.success(t("rejected"));
       const message = `Tutorial "${target.title}" was rejected.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_rejected",
-        message,
-      });
-      await sendChatMessage(user.id, { text: `${message} Reason: ${reason}` });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_rejected",
-          message: `Your tutorial "${target.title}" was rejected.`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: `${message} Reason: ${reason}` }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_rejected",
+            message: `Your tutorial "${target.title}" was rejected.`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was rejected. Reason: ${reason}`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn(
+          "Rejection processed but failed to send some notifications.",
+        );
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('reject_failed'));
+      toast.error(t("reject_failed"));
     } finally {
       setIsRejectionModalOpen(false);
       setTutorialToReject(null);
@@ -236,31 +298,43 @@ function AdminTutorialsPage() {
             return { ...target, updatedAt: new Date().toISOString() };
           }
           return tut;
-        })
+        }),
       );
-      toast.success(t('approved'));
+      toast.success(t("approved"));
       const message = `Tutorial "${target.title}" approved.`;
-      await createNotification({
-        user_id: user.id,
-        type: "tutorial_approved",
-        message,
-      });
-      await sendChatMessage(user.id, { text: message });
-      if (target.instructorId && target.instructorId !== user.id) {
-        await createNotification({
-          user_id: target.instructorId,
+      const notificationPromises = [
+        createNotification({
+          user_id: user.id,
           type: "tutorial_approved",
-          message: `Your tutorial "${target.title}" was approved!`,
-        });
-        await sendChatMessage(target.instructorId, {
-          text: `Your tutorial "${target.title}" was approved!`,
-        });
+          message,
+        }),
+        sendChatMessage(user.id, { text: message }),
+      ];
+      if (target.instructorId && target.instructorId !== user.id) {
+        notificationPromises.push(
+          createNotification({
+            user_id: target.instructorId,
+            type: "tutorial_approved",
+            message: `Your tutorial "${target.title}" was approved!`,
+          }),
+          sendChatMessage(target.instructorId, {
+            text: `Your tutorial "${target.title}" was approved!`,
+          }),
+        );
+      }
+      const notificationResults =
+        await Promise.allSettled(notificationPromises);
+      if (notificationResults.some((res) => res.status === "rejected")) {
+        notificationResults
+          .filter((res) => res.status === "rejected")
+          .forEach((res) => console.error(res.reason));
+        toast.warn("Tutorial approved but failed to send some notifications.");
       }
       refreshNotifications?.();
       refreshMessages?.();
     } catch (err) {
       console.error(err);
-      toast.error(t('approval_failed'));
+      toast.error(t("approval_failed"));
     }
   };
 
@@ -268,11 +342,13 @@ function AdminTutorialsPage() {
     if (selectedTutorials.length === 0) return;
     try {
       await bulkDeleteTutorials(selectedTutorials);
-      setTutorials((prev) => prev.filter((tut) => !selectedTutorials.includes(tut.id)));
-      toast.success(t('bulk_deleted'));
+      setTutorials((prev) =>
+        prev.filter((tut) => !selectedTutorials.includes(tut.id)),
+      );
+      toast.success(t("bulk_deleted"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_delete_failed'));
+      toast.error(t("bulk_delete_failed"));
     } finally {
       setSelectedTutorials([]);
     }
@@ -285,14 +361,18 @@ function AdminTutorialsPage() {
       setTutorials((prev) =>
         prev.map((tut) =>
           selectedTutorials.includes(tut.id)
-            ? { ...tut, approvalStatus: "Approved", updatedAt: new Date().toISOString() }
-            : tut
-        )
+            ? {
+                ...tut,
+                approvalStatus: "Approved",
+                updatedAt: new Date().toISOString(),
+              }
+            : tut,
+        ),
       );
-      toast.success(t('bulk_approved'));
+      toast.success(t("bulk_approved"));
     } catch (err) {
       console.error(err);
-      toast.error(t('bulk_approve_failed'));
+      toast.error(t("bulk_approve_failed"));
     }
     setSelectedTutorials([]);
   };
@@ -304,175 +384,46 @@ function AdminTutorialsPage() {
     }
   };
 
-  // Render page numbers
-  const renderPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-    let startPage, endPage;
-
-    if (totalPages <= maxPagesToShow) {
-      startPage = 1;
-      endPage = totalPages;
-    } else {
-      const maxPagesBeforeCurrent = Math.floor(maxPagesToShow / 2);
-      const maxPagesAfterCurrent = Math.ceil(maxPagesToShow / 2) - 1;
-      
-      if (currentPage <= maxPagesBeforeCurrent) {
-        startPage = 1;
-        endPage = maxPagesToShow;
-      } else if (currentPage + maxPagesAfterCurrent >= totalPages) {
-        startPage = totalPages - maxPagesToShow + 1;
-        endPage = totalPages;
-      } else {
-        startPage = currentPage - maxPagesBeforeCurrent;
-        endPage = currentPage + maxPagesAfterCurrent;
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => goToPage(i)}
-          className={`px-3 py-1 rounded-md ${
-            currentPage === i
-              ? "bg-yellow-500 text-white"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return pages;
-  };
-
   return (
     <AdminLayout>
       <div className="p-6 bg-gray-50 min-h-screen space-y-6">
-
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">📚 {t('title')}</h1>
-            <p className="text-gray-600 mt-1">{t('description')}</p>
+            <h1 className="text-3xl font-bold text-gray-800">
+              📚 {t("title")}
+            </h1>
+            <p className="text-gray-600 mt-1">{t("description")}</p>
           </div>
           <Button
             onClick={() => router.push("/dashboard/admin/tutorials/create")}
             className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold py-2.5 px-6 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
           >
-            <FaPlus className="mr-2" /> {t('create_tutorial')}
+            <FaPlus className="mr-2" /> {t("create_tutorial")}
           </Button>
         </div>
 
         {/* Bulk Actions */}
-        {selectedTutorials.length > 0 && (
-          <div className="flex flex-wrap gap-3 items-center p-4 bg-white rounded-xl shadow-md border border-yellow-100 transition-all animate-fade-in">
-            <span className="font-semibold text-gray-700">
-              {selectedTutorials.length} {selectedTutorials.length === 1 ? "tutorial" : "tutorials"} selected
-            </span>
-
-            <Button
-              onClick={handleBulkApprove}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow"
-            >
-              <FaCheck className="mr-2" /> Approve Selected
-            </Button>
-
-            <Button
-              onClick={handleBulkDelete}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg flex items-center shadow"
-            >
-              <FaTrash className="mr-2" /> Delete Selected
-            </Button>
-
-            <Button
-              onClick={clearSelected}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg flex items-center border border-gray-300"
-            >
-              <FaTimes className="mr-2" /> Clear Selection
-            </Button>
-          </div>
-        )}
+        <BulkActions
+          count={selectedTutorials.length}
+          onBulkApprove={handleBulkApprove}
+          onBulkDelete={handleBulkDelete}
+          onClearSelected={clearSelected}
+        />
 
         {/* Filters Card */}
-        <div className="bg-white p-5 rounded-xl shadow-md border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                <FaSearch />
-              </div>
-              <input
-                type="text"
-                placeholder="Search by title or instructor..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="pl-10 p-2.5 w-full border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
-              />
-            </div>
-            
-            <select
-              value={filterCategory}
-              onChange={(e) => {
-                setFilterCategory(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
-            >
-              <option value="All">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            
-            <select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
-            >
-              <option value="All">All Status</option>
-              <option value="Published">Published</option>
-              <option value="Draft">Draft</option>
-            </select>
-            
-            <select
-              value={filterApproval}
-              onChange={(e) => {
-                setFilterApproval(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
-            >
-              <option value="All">All Approval</option>
-              <option value="Approved">Approved</option>
-              <option value="Pending">Pending</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-            
-            <Button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterCategory("All");
-                setFilterStatus("All");
-                setFilterApproval("All");
-                setCurrentPage(1);
-              }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg border border-gray-300"
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
+        <Filters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterCategory={filterCategory}
+          setFilterCategory={setFilterCategory}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          filterApproval={filterApproval}
+          setFilterApproval={setFilterApproval}
+          categories={categories}
+          setCurrentPage={setCurrentPage}
+        />
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -482,221 +433,54 @@ function AdminTutorialsPage() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.approvalStatus === "Pending").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
             <p className="text-gray-600">Published</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Published").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Published").length}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
             <p className="text-gray-600">Drafts</p>
-            <p className="text-2xl font-bold">{tutorials.filter(t => t.status === "Draft").length}</p>
+            <p className="text-2xl font-bold">
+              {tutorials.filter((t) => t.status === "Draft").length}
+            </p>
           </div>
         </div>
 
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="py-4 px-4 text-left w-12">
-                    <input
-                      type="checkbox"
-                      checked={paginatedTutorials.length > 0 && paginatedTutorials.every((tut) => selectedTutorials.includes(tut.id))}
-                      onChange={(e) => toggleSelectAll(e.target.checked)}
-                      className="h-4 w-4 rounded text-yellow-500 focus:ring-yellow-400"
-                    />
-                  </th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Thumbnail</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Title</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Instructor</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Category</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Approval</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
+          <TutorialsTable
+            paginatedTutorials={paginatedTutorials}
+            loading={loading}
+            selectedTutorials={selectedTutorials}
+            toggleSelectAll={toggleSelectAll}
+            toggleSelectOne={toggleSelectOne}
+            togglePublishStatus={togglePublishStatus}
+            handleApproval={handleApproval}
+            openRejectModal={openRejectModal}
+            openDeleteModal={openDeleteModal}
+            setSearchQuery={setSearchQuery}
+            setFilterCategory={setFilterCategory}
+            setFilterStatus={setFilterStatus}
+            setFilterApproval={setFilterApproval}
+            setCurrentPage={setCurrentPage}
+            onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
+          />
 
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan="8" className="py-12 text-center">
-                      <div className="flex justify-center">
-                        <FaSpinner className="animate-spin text-yellow-500 text-3xl" />
-                      </div>
-                      <p className="mt-2 text-gray-600">Loading tutorials...</p>
-                    </td>
-                  </tr>
-                ) : paginatedTutorials.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-400 mb-4">
-                          <FaSearch className="text-2xl" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900">No tutorials found</h3>
-                        <p className="mt-1 text-gray-500 max-w-md">
-                          Try adjusting your search or filter to find what you're looking for.
-                        </p>
-                        <Button
-                          onClick={() => {
-                            setSearchQuery("");
-                            setFilterCategory("All");
-                            setFilterStatus("All");
-                            setFilterApproval("All");
-                            setCurrentPage(1);
-                          }}
-                          className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800"
-                        >
-                          Reset Filters
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedTutorials.map((tutorial) => (
-                    <tr 
-                      key={tutorial.id} 
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedTutorials.includes(tutorial.id)}
-                          onChange={() => toggleSelectOne(tutorial.id)}
-                          className="h-4 w-4 rounded text-yellow-500 focus:ring-yellow-400"
-                        />
-                      </td>
-                      <td className="py-3 px-4">
-                        <img
-                          src={tutorial.thumbnail || "/default-thumbnail.jpg"}
-                          alt={tutorial.title}
-                          className="h-14 w-24 object-cover rounded-lg border"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "/default-thumbnail.jpg";
-                          }}
-                        />
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-gray-900">{tutorial.title}</div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(tutorial.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-gray-900">{tutorial.instructor}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {tutorial.category}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Button
-                          onClick={() => togglePublishStatus(tutorial.id)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                            tutorial.status === "Published"
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
-                              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                          }`}
-                        >
-                          {tutorial.status}
-                        </Button>
-                      </td>
-                      <td className="py-3 px-4">
-                        {tutorial.approvalStatus === "Pending" ? (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleApproval(tutorial.id)}
-                              className="bg-green-100 hover:bg-green-200 text-green-700 text-xs px-3 py-1 rounded-full"
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              onClick={() => openRejectModal(tutorial.id)}
-                              className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1 rounded-full"
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            disabled
-                            className={`px-3 py-1 rounded-full text-xs font-bold cursor-default ${
-                              tutorial.approvalStatus === "Approved"
-                                ? "bg-green-100 text-green-800"
-                                : tutorial.approvalStatus === "Rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {tutorial.approvalStatus}
-                          </Button>
-                        )}
-                        {tutorial.approvalStatus === "Rejected" && tutorial.rejectionReason && (
-                          <div className="text-xs text-red-600 mt-1 max-w-xs truncate" title={tutorial.rejectionReason}>
-                            {tutorial.rejectionReason}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => router.push(`/dashboard/admin/tutorials/${tutorial.id}/edit`)}
-                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg"
-                            title="Edit"
-                          >
-                            <FaEdit className="text-sm" />
-                          </Button>
-                          <Button
-                            onClick={() => openDeleteModal(tutorial.id)}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg"
-                            title="Delete"
-                          >
-                            <FaTrash className="text-sm" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
 
-          {/* Pagination */}
           {filteredTutorials.length > 0 && !loading && (
-            <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between">
-              <div className="text-sm text-gray-700 mb-4 sm:mb-0">
-                Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
-                <span className="font-medium">{Math.min(endIndex, filteredTutorials.length)}</span> of{" "}
-                <span className="font-medium">{filteredTutorials.length}</span> results
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex space-x-1">
-                  {renderPageNumbers()}
-                </div>
-                
-                <Button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              goToPage={goToPage}
+              startIndex={startIndex}
+              endIndex={Math.min(endIndex, filteredTutorials.length)}
+              totalResults={filteredTutorials.length}
+            />
           )}
         </div>
 
@@ -705,15 +489,15 @@ function AdminTutorialsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          title={t('confirm_title')}
-          message={t('confirm_delete')}
+          title={t("confirm_title")}
+          message={t("confirm_delete")}
         />
-        
+
         <RejectionReasonModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
-          title={t('reject_title')}
+          title={t("reject_title")}
         />
       </div>
     </AdminLayout>
@@ -725,7 +509,11 @@ export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+      ...(await serverSideTranslations(
+        locale,
+        ["dashboard"],
+        nextI18NextConfig,
+      )),
     },
   };
 }

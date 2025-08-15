@@ -1,7 +1,5 @@
 // 📁 src/modules/users/tutorials/tutorial.controller.js
-const path = require("path");
-const fs = require("fs");
-const db = require("../../../config/database"); // ✅ Required for slug check
+const db = require("../../../config/database");
 const service = require("./tutorial.service");
 const chapterService = require("./chapters/tutorialChapter.service");
 const tagService = require("./tutorialTag.service");
@@ -9,6 +7,9 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
 const analyticsService = require("../../../services/analyticsService");
+const certificateService = require("./certificate/certificate.service");
+const enrollmentService = require("./enrollments/tutorialEnrollment.service");
+const AppError = require("../../../utils/AppError");
 const {
   sendTutorialCreatedAdminEmail,
   sendTutorialCreatedInstructorEmail,
@@ -22,6 +23,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const { sendSuccess } = require("../../../utils/response");
 const slugify = require("slugify");
+const { parseTags } = require("./tutorial.helpers");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -30,17 +32,15 @@ const getRoleDir = (req) => {
   return role;
 };
 
-// ✅ Helper: Generate a unique slug based on title
-const generateUniqueSlug = async (title) => {
-  const baseSlug = slugify(title, { lower: true, strict: true });
-  let slug = baseSlug;
-  let count = 1;
+// ✅ Helper: Generate a slug based on title
+const generateUniqueSlug = (title) =>
+  slugify(title, { lower: true, strict: true });
 
-  while (await db("tutorials").where({ slug }).first()) {
-    slug = `${baseSlug}-${count++}`;
-  }
-
-  return slug;
+// Ensure the acting instructor owns the tutorial
+const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
+  const tut = await service.getTutorialById(tutorialId);
+  if (!tut) throw new AppError("Tutorial not found", 404);
+  if (tut.instructor_id !== userId) throw new AppError("Access denied", 403);
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
@@ -54,6 +54,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     status = "draft",
     tags: rawTags,
     chapters = [],
+    instructor_id: bodyInstructorId,
   } = req.body;
 
   // In case chapters came as a serialized JSON string, parse it
@@ -72,21 +73,37 @@ exports.createTutorial = catchAsync(async (req, res) => {
     : [];
 
   // 🚫 Prevent duplicate titles
-  const existing = await db("tutorials").where({ title }).first();
+  const existing = await db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
   if (existing) {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }
 
-  const instructor_id = req.user.id;
-  const slug = await generateUniqueSlug(title);
+  let instructor = null;
+  let instructor_id;
+  if (
+    ["admin", "superadmin"].includes(req.user.role) &&
+    bodyInstructorId
+  ) {
+    instructor = await userModel.findById(bodyInstructorId);
+    if (!instructor) {
+      return res.status(404).json({ message: "Instructor not found" });
+    }
+    instructor_id = bodyInstructorId;
+  } else {
+    instructor_id = req.user.id;
+  }
+
+  let slug = generateUniqueSlug(title);
   const id = uuidv4();
 
   const roleDir = getRoleDir(req);
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
-  // Save tutorial
-  const tutorial = {
+  // Prepare tutorial data
+  const tutorialData = {
     id,
     title,
     slug,
@@ -95,6 +112,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     level,
     duration: duration ?? null,
     price,
+    is_paid: Number(price) > 0,
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
@@ -105,42 +123,58 @@ exports.createTutorial = catchAsync(async (req, res) => {
       ? `/uploads/tutorials/${roleDir}/${previewFile.filename}`
       : null,
   };
-  await service.createTutorial(tutorial);
 
-  const tags = rawTags
-    ? typeof rawTags === "string"
-      ? JSON.parse(rawTags)
-      : rawTags
-    : [];
-  if (tags.length) {
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
+  // Parse tags safely
+  const tags = parseTags(rawTags);
+
+  let tutorial;
+  await db.transaction(async (trx) => {
+    try {
+      tutorial = await service.createTutorial(tutorialData, trx);
+    } catch (err) {
+      if (err.code === "23505") {
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        slug = `${slug}-${randomSuffix}`;
+        tutorialData.slug = slug;
+        tutorial = await service.createTutorial(tutorialData, trx);
+      } else {
+        throw err;
+      }
     }
-    await service.addTutorialTags(id, tagIds);
-    tutorial.tags = await service.getTutorialTags(id);
-  }
 
-  // Save chapters (if any)
-  for (let i = 0; i < parsedChapters.length; i++) {
-    const ch = parsedChapters[i];
-    await chapterService.create({
-      id: uuidv4(),
-      tutorial_id: id,
-      title: ch.title,
-      video_url: ch.video_url,
-      duration: ch.duration,
-      order: ch.order ?? i + 1,
-      is_preview: ch.is_preview ?? false,
-    });
-  }
+    if (tags.length) {
+      const tagIds = [];
+      for (const name of tags) {
+        const existing = await tagService.findByName(name, trx);
+        const tag =
+          existing ||
+          (await tagService.createTag(
+            { name, slug: slugify(name, { lower: true, strict: true }) },
+            trx
+          ));
+        tagIds.push(tag.id);
+      }
+      await service.addTutorialTags(id, tagIds, trx);
+      tutorial.tags = await service.getTutorialTags(id, trx);
+    }
+
+    // Save chapters (if any)
+    for (let i = 0; i < parsedChapters.length; i++) {
+      const ch = parsedChapters[i];
+      await chapterService.create(
+        {
+          id: uuidv4(),
+          tutorial_id: id,
+          title: ch.title,
+          video_url: ch.video_url,
+          duration: ch.duration,
+          order: ch.order ?? i + 1,
+          is_preview: ch.is_preview ?? false,
+        },
+        trx
+      );
+    }
+  });
 
   await notificationService.createNotification({
     user_id: instructor_id,
@@ -149,7 +183,9 @@ exports.createTutorial = catchAsync(async (req, res) => {
       "New tutorial added successfully. It's under review and will be available after we approve it",
   });
 
-  const instructor = await userModel.findById(instructor_id);
+  if (!instructor) {
+    instructor = await userModel.findById(instructor_id);
+  }
   const admins = await userModel.findAdmins();
   await Promise.all(
     admins.map((admin) =>
@@ -197,8 +233,15 @@ exports.createTutorial = catchAsync(async (req, res) => {
 
 
 exports.getAllTutorials = async (req, res) => {
-  const tutorials = await service.getAllTutorials(req.query);
-  sendSuccess(res, tutorials);
+  const { status, category, search, page = 1, limit = 10 } = req.query;
+  const result = await service.getAllTutorials({
+    status,
+    category,
+    search,
+    page,
+    limit,
+  });
+  sendSuccess(res, result.data, "Tutorials fetched", result.meta);
 };
 
 exports.getMyTutorials = catchAsync(async (req, res) => {
@@ -208,13 +251,21 @@ exports.getMyTutorials = catchAsync(async (req, res) => {
 
 
 exports.getTutorialById = catchAsync(async (req, res) => {
-  const tutorial = await service.getTutorialById(req.params.id);
+  const userId = req.user?.id || null;
+  const tutorial = await service.getTutorialById(req.params.id, userId);
+
+  if (!tutorial) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
   sendSuccess(res, tutorial);
 });
 
 
 exports.updateTutorial = catchAsync(async (req, res) => {
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, req.params.id);
+  }
   const { tags: rawTags, ...data } = req.body;
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
@@ -224,23 +275,24 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     data.preview_video = `/uploads/tutorials/${roleDir}/${req.files.preview[0].filename}`;
   }
   const tutorial = await service.updateTutorial(req.params.id, data);
+  if (!tutorial) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
-  const tags = rawTags ? (typeof rawTags === 'string' ? JSON.parse(rawTags) : rawTags) : null;
+  let tags;
+  if (rawTags !== undefined) {
+    tags = parseTags(rawTags);
+  }
   if (tags) {
-    await db('tutorial_tag_map').where({ tutorial_id: tutorial.id }).del();
-    const tagIds = [];
-    for (const name of tags) {
-      const existing = await tagService.findByName(name);
-      const tag =
-        existing ||
-        (await tagService.createTag({
-          name,
-          slug: slugify(name, { lower: true, strict: true }),
-        }));
-      tagIds.push(tag.id);
+    const trx = await db.transaction();
+    try {
+      await service.updateTutorialTags(tutorial.id, tags, trx);
+      await trx.commit();
+      tutorial.tags = await service.getTutorialTags(tutorial.id);
+    } catch (err) {
+      await trx.rollback();
+      throw err;
     }
-    await service.addTutorialTags(tutorial.id, tagIds);
-    tutorial.tags = await service.getTutorialTags(tutorial.id);
   }
 
   sendSuccess(res, tutorial);
@@ -262,6 +314,9 @@ exports.restoreTutorial = catchAsync(async (req, res) => {
 
 
 exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, req.params.id);
+  }
   await service.permanentlyDeleteTutorial(req.params.id);
 
   sendSuccess(res, { message: "Permanently deleted" });
@@ -270,7 +325,14 @@ exports.permanentlyDeleteTutorial = catchAsync(async (req, res) => {
 
 exports.togglePublishStatus = catchAsync(async (req, res) => {
   const tutorialId = req.params.id;
-  await service.togglePublishStatus(tutorialId);
+
+  if (req.user.role === "instructor") {
+    await assertInstructorOwnsTutorial(req.user.id, tutorialId);
+  }
+  const updated = await service.togglePublishStatus(tutorialId);
+  if (!updated) {
+    throw new AppError("Tutorial not found", 404);
+  }
 
   const tut = await service.getTutorialById(tutorialId);
   if (
@@ -293,7 +355,11 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
     ]);
   }
 
-  sendSuccess(res, { message: "Status toggled" });
+  sendSuccess(res, {
+    message: "Status toggled",
+    status: updated.status,
+    moderation_status: updated.moderation_status,
+  });
 });
 
 
@@ -446,6 +512,33 @@ exports.getPublicTutorialDetails = catchAsync(async (req, res) => {
       req.headers["user-agent"]
     );
     tutorial.views = await service.getTutorialViewCount(req.params.id);
+
+    if (req.user?.id) {
+      const enrollment = await enrollmentService.findEnrollment(
+        req.user.id,
+        req.params.id
+      );
+      tutorial.is_enrolled = !!enrollment;
+      tutorial.progress = enrollment?.progress || 0;
+
+      tutorial.assignment_count = await service.getAssignmentCount(
+        req.params.id
+      );
+      tutorial.assignments_locked = !enrollment;
+
+      const cert = await certificateService.findExisting(
+        req.user.id,
+        req.params.id
+      );
+      if (cert) {
+        tutorial.certificate_id = cert.id;
+      }
+      const completed = await certificateService.isUserCompletedTutorial(
+        req.user.id,
+        req.params.id
+      );
+      tutorial.certificate_locked = !completed;
+    }
   }
 
   analyticsService.logEvent(req.user?.id || null, 'view_tutorial', {

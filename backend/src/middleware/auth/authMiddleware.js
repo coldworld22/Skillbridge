@@ -7,7 +7,9 @@ const tokenBlacklist = new Set();
  * ✅ Helper: Determines if a role has admin-level access
  */
 // Normalize role string for consistent comparisons
-const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
+// Guard against null/undefined or non-string values to avoid runtime errors
+const normalizeRole = (role) =>
+  typeof role === "string" ? role.toLowerCase().replace(/\s+/g, "") : "";
 
 const isAdminRole = (roles = []) => {
   const arr = Array.isArray(roles) ? roles : [roles];
@@ -51,9 +53,10 @@ const verifyToken = async (req, res, next) => {
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
+    const { password_hash, ...safeUser } = user;
     req.user = {
       ...decoded,
-      ...user,
+      ...safeUser,
       roles: userRoles,
       role: userRoles[0],
     };

@@ -58,10 +58,15 @@ exports.toggleStatus = async (req, res) => {
     if (typeof is_online !== "boolean") {
         return res.status(400).json({ message: "is_online must be true or false." });
     }
+    const [updated] = await db("users")
+        .where({ id: userId })
+        .update({ is_online })
+        .returning(["id", "is_online"]);
 
-    await db("users").where({ id: userId }).update({ is_online });
-
-    res.json({ message: `Status set to ${is_online ? "online" : "offline"}` });
+    res.json({
+        message: `Status set to ${updated.is_online ? "online" : "offline"}`,
+        is_online: updated.is_online,
+    });
 };
 
 /**
@@ -185,6 +190,34 @@ exports.getProfileStatus = async (req, res) => {
     res.json({ profile_complete: user.profile_complete });
 };
 
+
+/**
+ * @desc Update instructor avatar
+ * @route PATCH /api/users/instructor/:id/avatar
+ * @access Instructor
+ */
+exports.updateAvatar = async (req, res) => {
+    console.log("📥 Incoming avatar upload");
+
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        if (req.params.id !== req.user.id) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
+
+        await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
+
+        res.json({ avatar_url: avatarUrl });
+    } catch (err) {
+        console.error("❌ Avatar upload error:", err.message);
+        res.status(500).json({ error: "Failed to upload avatar" });
+    }
+};
 
 /**
  * @desc Delete instructor avatar

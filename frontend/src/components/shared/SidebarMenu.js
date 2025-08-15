@@ -17,7 +17,9 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const { t } = useTranslation("common");
   const userRole = user?.role?.toLowerCase();
 
-  console.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user)
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user);
+  }
 
   const [hydrated, setHydrated] = useState(false);
 

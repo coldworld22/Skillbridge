@@ -17,11 +17,18 @@ export default function StudentTutorialsPage() {
         const data = await fetchPublishedTutorials();
         const enriched = data.map((tut) => {
           const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-          const progress = saved ? JSON.parse(saved) : { completedChapters: [], completedQuiz: false };
+          let progress = { completedChapters: [], completedQuiz: false };
+          if (saved) {
+            try {
+              progress = JSON.parse(saved);
+            } catch {
+              progress = { completedChapters: [], completedQuiz: false };
+            }
+          }
           return {
             ...tut,
             completedLessons: progress.completedChapters.length,
-            totalLessons: tut.chapters?.length || 0,
+            totalLessons: tut.chapter_count || 0,
             isCompleted: progress.completedQuiz,
           };
         });
@@ -79,7 +86,13 @@ export default function StudentTutorialsPage() {
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">{error}</div>;
+    return (
+      <StudentLayout>
+        <div className="p-6 text-red-500" role="alert">
+          {error}
+        </div>
+      </StudentLayout>
+    );
   }
 
   return (
@@ -91,14 +104,22 @@ export default function StudentTutorialsPage() {
             <span className="text-sm text-gray-500">({sorted.length} found)</span>
           </div>
           <div className="flex gap-2 items-center">
+            <label htmlFor="student-tutorial-search" className="sr-only">
+              Search tutorials
+            </label>
             <input
+              id="student-tutorial-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tutorials..."
               className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full md:w-64"
             />
+            <label htmlFor="student-tutorial-filter" className="sr-only">
+              Filter tutorials
+            </label>
             <select
+              id="student-tutorial-filter"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="border border-gray-300 px-2 py-2 rounded-md text-sm"
@@ -107,7 +128,11 @@ export default function StudentTutorialsPage() {
               <option value="completed">Completed</option>
               <option value="in-progress">In Progress</option>
             </select>
+            <label htmlFor="student-tutorial-sort" className="sr-only">
+              Sort tutorials
+            </label>
             <select
+              id="student-tutorial-sort"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="border border-gray-300 px-2 py-2 rounded-md text-sm"

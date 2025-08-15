@@ -2,12 +2,22 @@ const db = require("../../../../config/database");
 const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
+const AppError = require("../../../../utils/AppError");
 
 // Post a comment
 exports.createComment = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
   const { message, parent_id } = req.body;
   const user_id = req.user.id;
+
+  const enrolled = await db("tutorial_enrollments")
+    .where({ tutorial_id: tutorialId, user_id })
+    .first();
+  if (!enrolled)
+    throw new AppError(
+      "You must enroll in the tutorial before commenting.",
+      403
+    );
 
   const id = uuidv4();
   await db("tutorial_comments").insert({

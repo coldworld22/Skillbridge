@@ -26,6 +26,7 @@ function InstructorClassRoom() {
   const [classData, setClassData] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [currentLessonId, setCurrentLessonId] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -36,6 +37,19 @@ function InstructorClassRoom() {
           setClassData(data.class);
           setLessons(data.lessons);
           setAssignments(data.assignments);
+
+          // Set the current lesson to the next upcoming lesson by default
+          if (data.lessons && data.lessons.length > 0) {
+            const now = new Date();
+            const upcoming = data.lessons
+              .filter((l) => l.start_time && new Date(l.start_time) >= now)
+              .sort(
+                (a, b) => new Date(a.start_time) - new Date(b.start_time)
+              )[0];
+            setCurrentLessonId(
+              upcoming ? upcoming.id : data.lessons[0]?.id || null
+            );
+          }
         }
       } catch (err) {
         console.error("Failed to load class data", err);
@@ -105,7 +119,20 @@ function InstructorClassRoom() {
         {/* Attendance Panel */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-yellow-300 mb-2">🧑‍🎓 Attendance</h2>
-          <StudentAttendancePanel classId={id} />
+          {lessons.length > 0 && (
+            <select
+              className="mb-3 w-full bg-gray-700 text-white p-2 rounded"
+              value={currentLessonId || ""}
+              onChange={(e) => setCurrentLessonId(Number(e.target.value))}
+            >
+              {lessons.map((lesson) => (
+                <option key={lesson.id} value={lesson.id}>
+                  {lesson.title}
+                </option>
+              ))}
+            </select>
+          )}
+          <StudentAttendancePanel lessonId={currentLessonId} />
         </div>
 
         {/* Certificate Issuance */}

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -35,19 +35,20 @@ services:
       - PORT=5002
       - DATABASE_URL=postgres://postgres:postgres@db:5432/eduSkillbridge
       - JWT_SECRET=SkillBr1dge-!Secure.JWT-Key!
+      - REFRESH_TOKEN_SECRET=SkillBr1dge-!Refresh.JWT-Key!
       - FRONTEND_URL=https://eduskillbridge.net
     depends_on:
       - db
     volumes:
-      - ./backend/src:/app/src  # ✅ This makes migrations show up locally
-      - ./backend/uploads:/app/uploads  # persist uploaded logos and media
+      - ./backend/uploads:/app/uploads
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
+      # IMPORTANT: browsers can't call localhost on your server
+      - NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
     depends_on:
       - backend
 

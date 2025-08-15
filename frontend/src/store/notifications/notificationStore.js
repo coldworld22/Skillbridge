@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { toast } from "react-toastify";
 import React from "react";
 import LinkText from "@/components/shared/LinkText";
-import { getNotifications, markNotificationAsRead, deleteNotification } from "@/services/notificationService";
+import i18next from "i18next";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+} from "@/services/notificationService";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -26,7 +31,7 @@ const useNotificationStore = create((set, get) => ({
           const note = filtered.find((n) => !n.read);
           toast.info(<LinkText text={note.message} />);
         } else {
-          toast.info(`You have ${diff} new notifications`);
+          toast.info(i18next.t("you_have_new_notifications", { count: diff }));
         }
       }
       set({ items: filtered, loading: false });
@@ -74,7 +79,7 @@ const useNotificationStore = create((set, get) => ({
     } catch (err) {
       // Revert on failure
       set({ items: prevItems });
-      toast.error("Failed to mark notification as read");
+      toast.error(i18next.t("failed_to_mark_notification_as_read"));
       return false;
     }
   },

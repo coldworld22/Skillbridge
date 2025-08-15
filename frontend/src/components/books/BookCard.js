@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslation } from "next-i18next";
 import { FiEye, FiBookOpen, FiEdit, FiTrash2 } from "react-icons/fi";
 import { buildUrl } from "@/utils/url";
@@ -11,19 +12,26 @@ export default function BookCard({
   onEditLink,
   showReadLink = false,
   viewLink,
+  onAddToWishlist,
+  onAddToCart,
 }) {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation("website");
 
-  const coverUrl = buildUrl(book.cover_image_url || book.cover_image);
+  const coverUrl =
+    book.cover_image_url ||
+    buildUrl(book.cover_image) ||
+    "/images/default-book-cover.jpg";
 
   const statusClasses = {
     pending: "bg-yellow-100 text-yellow-800",
     approved: "bg-green-100 text-green-800",
     rejected: "bg-red-100 text-red-800",
+    active: "bg-green-100 text-green-800",
+    inactive: "bg-gray-100 text-gray-800",
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow relative">
       {onSelect && (
         <input
           type="checkbox"
@@ -41,17 +49,32 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      {coverUrl && (
-        <img
-          src={coverUrl}
-          alt={book.title}
-          loading="lazy"
-          className="w-full h-40 object-cover"
-        />
-      )}
+      <Image
+        src={coverUrl}
+        alt={book.title}
+        width={400}
+        height={160}
+        loading="lazy"
+        className="w-full h-40 object-cover"
+      />
       <div className="p-4">
         <h3 className="font-semibold mb-1 line-clamp-1">{book.title}</h3>
-        <p className="text-sm mb-3">{`$${book.price}`}</p>
+        {book.author && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            {t("by_author", { author: book.author })}
+          </p>
+        )}
+        {book.category_name && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            {book.category_name}
+          </p>
+        )}
+        {book.rating != null && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            ⭐ {Number(book.rating).toFixed(1)} / 5
+          </p>
+        )}
+        <p className="text-sm mb-3">{formatCurrency(book.price)}</p>
         <div className="flex gap-2">
           <Link
             href={viewLink || `/marketplace/books/${book.id}`}
@@ -72,6 +95,28 @@ export default function BookCard({
               <FiBookOpen />
               <span className="sr-only">{t("read")}</span>
             </a>
+          )}
+          {onAddToWishlist && (
+            <button
+              type="button"
+              onClick={onAddToWishlist}
+              className="p-2 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors"
+              aria-label={t("wishlist")}
+            >
+              <FiHeart />
+              <span className="sr-only">{t("wishlist")}</span>
+            </button>
+          )}
+          {onAddToCart && (
+            <button
+              type="button"
+              onClick={onAddToCart}
+              className="p-2 rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors"
+              aria-label={t("add_to_cart")}
+            >
+              <FiShoppingCart />
+              <span className="sr-only">{t("add_to_cart")}</span>
+            </button>
           )}
           {onEditLink && (
             <Link

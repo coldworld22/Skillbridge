@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useAuthStore from '@/store/auth/authStore';
-import { X, Mail, Bell, MessageSquare, Smartphone, Send, Image as ImageIcon, Tag, Users } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
+import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
 import { fetchAllCategories } from '@/services/admin/categoryService';
 import userService from '@/services/profile/userService';
 import { sendChatMessage } from '@/services/messageService';
 import { createNotification } from '@/services/notificationService';
+import useNotificationStore from '@/store/notifications/notificationStore';
+import useMessageStore from '@/store/messages/messageStore';
 import { API_BASE_URL } from '@/config/config';
 
 export default function GroupForm() {
@@ -30,6 +32,9 @@ export default function GroupForm() {
   const [users, setUsers] = useState([]);
   const [maxSize, setMaxSize] = useState('');
   const [timezone, setTimezone] = useState('');
+
+  const fetchNotifications = useNotificationStore((s) => s.fetch);
+  const fetchMessages = useMessageStore((s) => s.fetch);
 
   const getAvatarUrl = (user) => {
     const url =
@@ -149,6 +154,53 @@ export default function GroupForm() {
       const group = await groupService.createGroup(payload);
       toast.success('Group created successfully!');
 
+      if (invitedUsers.length) {
+        const invitePromises = invitedUsers.map((member) => {
+          const msg = sendChatMessage(member.id, {
+            text: `You are invited to join the group ${groupName}`,
+          });
+          const notif = createNotification({
+            user_id: member.id,
+            type: 'group_invite',
+            message: `You are invited to join the group ${groupName}`,
+          });
+          return Promise.allSettled([msg, notif]).then((results) => ({
+            member,
+            results,
+          }));
+        });
+
+        const outcomes = await Promise.all(invitePromises);
+
+        let successCount = 0;
+        const failedMembers = [];
+        outcomes.forEach(({ member, results }) => {
+          const hasFailure = results.some((r) => r.status !== 'fulfilled');
+          if (hasFailure) {
+            const name =
+              member.name || member.email || member.username || `ID ${member.id}`;
+            failedMembers.push(name);
+          } else {
+            successCount += 1;
+          }
+        });
+
+        if (inviteMethods.includes('email') || inviteMethods.includes('whatsapp')) {
+          toast(`Additional invite methods: ${inviteMethods.join(', ')}`);
+        }
+
+        const summary = `Invites: ${successCount} succeeded${
+          failedMembers.length ? `, failed for ${failedMembers.join(', ')}` : ''
+        }`;
+        toast[failedMembers.length ? 'warn' : 'success'](summary);
+        if (failedMembers.length) {
+          console.error('Failed invites:', failedMembers);
+        }
+
+        fetchNotifications?.();
+        fetchMessages?.();
+      }
+
       const normalizedRole = user?.role?.toLowerCase();
       const path =
         normalizedRole === 'instructor'
@@ -163,33 +215,6 @@ export default function GroupForm() {
       toast.error(err.response?.data?.message || 'Failed to create group');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSendInvites = async () => {
-    try {
-      for (const user of invitedUsers) {
-        // always send message and notification
-        await sendChatMessage(user.id, {
-          text: `You are invited to join the group ${groupName}`,
-        });
-        await createNotification({
-          user_id: user.id,
-          type: 'group_invite',
-          message: `You are invited to join the group ${groupName}`,
-        });
-      }
-
-      if (inviteMethods.includes('email') || inviteMethods.includes('whatsapp')) {
-        toast.info(`Additional invite methods: ${inviteMethods.join(', ')}`);
-      }
-
-      toast.success(
-        `Invites sent to ${invitedUsers.length} member${invitedUsers.length !== 1 ? 's' : ''}.`
-      );
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to send invitations');
     }
   };
 
@@ -504,14 +529,6 @@ export default function GroupForm() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleSendInvites}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  <Send size={16} />
-                  Send Invitations to {invitedUsers.length} Member{invitedUsers.length !== 1 ? 's' : ''}
-                </button>
               </div>
             </>
           )}

@@ -19,7 +19,9 @@ const useAuthStore = create(
       isAuthenticated: () => !!get().accessToken && !!get().user,
 
       login: async (credentials) => {
-        console.log("🔑 authStore.login", credentials.email);
+        if (process.env.NODE_ENV !== "production") {
+          console.log("🔑 authStore.login invoked");
+        }
         const { accessToken, user } = await authService.loginUser(credentials);
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;
@@ -45,7 +47,9 @@ const useAuthStore = create(
           fetchNotifications?.();
           return user;
         } catch (err) {
-          console.error("❌ loginWithToken error", err);
+          if (process.env.NODE_ENV !== "production") {
+            console.error("❌ loginWithToken error", { message: err?.message });
+          }
           set({ accessToken: null, user: null });
         }
       },
@@ -60,7 +64,9 @@ const useAuthStore = create(
           set({ user: fresh });
           return fresh;
         } catch (err) {
-          console.error("❌ refreshUser error", err);
+          if (process.env.NODE_ENV !== "production") {
+            console.error("❌ refreshUser error", { message: err?.message });
+          }
         }
       },
 
@@ -68,10 +74,13 @@ const useAuthStore = create(
         await authService.registerUser(data);
       },
 
-      logout: async () => {
-        try {
-          await authService.logoutUser();
-        } catch (_) {}
+      logout: async (skipRequest = false) => {
+        if (!skipRequest) {
+          try {
+            await authService.logoutUser();
+          } catch (_) {}
+        }
+
         // Stop polling intervals when logging out
         const notifStop = useNotificationStore.getState().stopPolling;
         const msgStop = useMessageStore.getState().stopPolling;
@@ -85,7 +94,9 @@ const useAuthStore = create(
       name: "auth",
       onRehydrateStorage: () => {
         return (state) => {
-          console.log("🔥 Zustand hydrated");
+          if (process.env.NODE_ENV !== "production") {
+            console.log("🔥 Zustand hydrated");
+          }
           set({ hasHydrated: true });
         };
       },

@@ -79,6 +79,30 @@ router.post(
   authController.resetPassword
 );
 
+/**
+ * @route   POST /auth/send-verification
+ * @desc    Send OTP for email or phone verification
+ * @access  Public
+ */
+router.post(
+  "/send-verification",
+  limitAuthRequests,
+  validate(authValidation.verificationSendSchema),
+  authController.sendVerification
+);
+
+/**
+ * @route   POST /auth/confirm-verification
+ * @desc    Confirm verification OTP and update user status
+ * @access  Public
+ */
+router.post(
+  "/confirm-verification",
+  limitAuthRequests,
+  validate(authValidation.verificationConfirmSchema),
+  authController.confirmVerification
+);
+
 // ─────────────────────────────────────────────────────────────
 // Social login routes
 // ─────────────────────────────────────────────────────────────

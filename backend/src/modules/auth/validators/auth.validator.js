@@ -33,6 +33,7 @@ exports.loginSchema = z.object({
  */
 exports.otpRequestSchema = z.object({
   email: z.string().email("Invalid email"),
+  via: z.enum(["email", "sms"]).optional(),
 });
 
 /**
@@ -59,4 +60,23 @@ exports.resetPasswordSchema = z.object({
       PASSWORD_REGEX,
       "Password must be at least 8 characters, include an uppercase letter and a special character"
     ),
+});
+
+/**
+ * @desc Validation for sending verification OTP
+ */
+exports.verificationSendSchema = z.object({
+  user_id: z.number().int().positive(),
+  type: z.enum(["email", "phone"]),
+});
+
+/**
+ * @desc Validation for confirming verification OTP
+ */
+exports.verificationConfirmSchema = z.object({
+  user_id: z.number().int().positive(),
+  type: z.enum(["email", "phone"]),
+  code: z
+    .string()
+    .length(OTP_LENGTH, `OTP code must be ${OTP_LENGTH} digits`),
 });

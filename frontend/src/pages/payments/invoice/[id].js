@@ -5,6 +5,7 @@ import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaDownload } from 'react-icons/fa';
 import QRCode from 'react-qr-code';
+import { uploadReceipt } from '@/services/student/paymentService';
 
 export default function InvoicePage() {
   const router = useRouter();
@@ -38,6 +39,17 @@ export default function InvoicePage() {
 
   const total = invoiceData.price - invoiceData.discount;
   const isBank = invoiceData.paymentMethod === 'bank';
+
+  const handleReceiptUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadReceipt(file);
+      alert('Receipt uploaded');
+    } catch (err) {
+      console.error('Upload failed', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
@@ -86,7 +98,7 @@ export default function InvoicePage() {
 
               <div className="mt-6">
                 <label className="block mb-2 text-sm font-medium text-white">Upload Transfer Proof</label>
-                <input type="file" accept="image/*,application/pdf" className="w-full text-sm bg-gray-700 p-2 rounded border border-gray-600" />
+                <input type="file" accept="image/*,application/pdf" onChange={handleReceiptUpload} className="w-full text-sm bg-gray-700 p-2 rounded border border-gray-600" />
               </div>
             </div>
           )}

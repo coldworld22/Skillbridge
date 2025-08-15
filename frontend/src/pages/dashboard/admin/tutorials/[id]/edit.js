@@ -22,6 +22,7 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { buildTutorialFormData } from "@/utils/tutorialForm";
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -31,6 +32,7 @@ function EditTutorialPage() {
   const [step, setStep] = useState(1);
   const [tutorialData, setTutorialData] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [error, setError] = useState(null);
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
@@ -50,6 +52,7 @@ function EditTutorialPage() {
 
     const load = async () => {
       try {
+        setError(null);
         const [tutorial, chapters, cats] = await Promise.all([
           fetchTutorialById(id),
           fetchChaptersByTutorial(id),
@@ -70,6 +73,7 @@ function EditTutorialPage() {
           level: tutorial.level,
           language: tutorial.language || "",
           instructorId: tutorial.instructorId,
+          status: tutorial.status,
           lessonCount: mappedChapters.length,
           tags: tutorial.tags || [],
           chapters: mappedChapters,
@@ -81,6 +85,7 @@ function EditTutorialPage() {
         setCategories(cats?.data || cats);
       } catch (err) {
         console.error(err);
+        setError("Failed to load tutorial.");
       }
     };
 
@@ -95,6 +100,11 @@ function EditTutorialPage() {
 
   const onNext = () => setStep((prev) => prev + 1);
   const onPrev = () => setStep((prev) => prev - 1);
+
+  if (error)
+    return (
+      <div className="p-6 max-w-4xl mx-auto text-red-600">{error}</div>
+    );
 
   if (!tutorialData)
     return <div className="p-6 max-w-4xl mx-auto">Loading...</div>;
@@ -127,61 +137,40 @@ function EditTutorialPage() {
           />
         )}
         {step === 4 && (
-          <ReviewStep
-            tutorialData={tutorialData}
-            onPrev={onPrev}
-            actionLabel="Save Changes"
-            onPublish={async () => {
-              const formData = new FormData();
-              formData.append("title", tutorialData.title);
-              formData.append("description", tutorialData.shortDescription);
-              formData.append("category_id", tutorialData.category);
-              formData.append("level", tutorialData.level);
-              formData.append("is_paid", (!tutorialData.isFree).toString());
-              if (!tutorialData.isFree) {
-                formData.append("price", tutorialData.price);
-              }
-              if (tutorialData.tags.length) {
-                formData.append("tags", JSON.stringify(tutorialData.tags));
-              }
-              if (tutorialData.chapters.length) {
-                const chapters = tutorialData.chapters.map((ch, idx) => ({
-                  title: ch.title,
-                  duration: ch.duration,
-                  video_url: ch.videoUrl,
-                  order: idx + 1,
-                  is_preview: ch.preview,
-                }));
-                formData.append("chapters", JSON.stringify(chapters));
-              }
-              if (tutorialData.thumbnail instanceof File) {
-                formData.append("thumbnail", tutorialData.thumbnail);
-              }
-              if (tutorialData.preview instanceof File) {
-                formData.append("preview", tutorialData.preview);
-              }
+            <ReviewStep
+              tutorialData={tutorialData}
+              onPrev={onPrev}
+              actionLabel="Save Changes"
+              onPublish={async () => {
+                const formData = buildTutorialFormData(tutorialData);
 
-              try {
-                await updateTutorial(id, formData);
-                toast.success(t('update_success'));
-                await createNotification({
-                  user_id: user.id,
-                  type: "tutorial_updated",
-                  message: `Tutorial "${tutorialData.title}" was updated.`,
-                });
-                if (tutorialData.instructorId) {
+                try {
+                  await updateTutorial(id, formData);
+                  toast.success(t('update_success'));
+
+                try {
                   await createNotification({
-                    user_id: tutorialData.instructorId,
+                    user_id: user.id,
                     type: "tutorial_updated",
-                    message: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    message: `Tutorial "${tutorialData.title}" was updated.`,
                   });
-                  await sendChatMessage(tutorialData.instructorId, {
-                    text: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                  if (tutorialData.instructorId) {
+                    await createNotification({
+                      user_id: tutorialData.instructorId,
+                      type: "tutorial_updated",
+                      message: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    });
+                    await sendChatMessage(tutorialData.instructorId, {
+                      text: `Your tutorial "${tutorialData.title}" was updated by admin.`,
+                    });
+                  }
+                  await sendChatMessage(user.id, {
+                    text: `Tutorial "${tutorialData.title}" was updated.`,
                   });
+                } catch (err) {
+                  console.error(err);
+                  toast.error('Failed to send notification or message');
                 }
-                await sendChatMessage(user.id, {
-                  text: `Tutorial "${tutorialData.title}" was updated.`,
-                });
                 refreshNotifications?.();
                 refreshMessages?.();
                 localStorage.removeItem(`editTutorialDraft-${id}`);

@@ -7,11 +7,34 @@ const generateCode = () => {
 };
 
 // Check if user completed the tutorial
+// Now also verifies that all assignments have been submitted and passed
 const isUserCompletedTutorial = async (userId, tutorialId) => {
+  // Ensure tutorial progress is 100%
   const enrollment = await db("tutorial_enrollments")
-    .where({ user_id: userId, tutorial_id: tutorialId, status: "completed" })
+    .where({ user_id: userId, tutorial_id: tutorialId })
+    .where("progress", 100)
     .first();
-  return !!enrollment;
+  if (!enrollment) return false;
+
+  // Get total assignments for the tutorial
+  const [assignmentRow] = await db("tutorial_assignments")
+    .where({ tutorial_id: tutorialId })
+    .count("id as count");
+  const totalAssignments = parseInt(assignmentRow?.count, 10) || 0;
+
+  if (totalAssignments === 0) return true;
+
+  // Count assignments submitted/passed by the user
+  const [submittedRow] = await db("assignment_submissions as s")
+    .join("tutorial_assignments as a", "s.assignment_id", "a.id")
+    .where("a.tutorial_id", tutorialId)
+    .where("s.user_id", userId)
+    .where("s.grade", ">=", 60)
+    .count("s.id as count");
+
+  const passedAssignments = parseInt(submittedRow?.count, 10) || 0;
+
+  return passedAssignments >= totalAssignments;
 };
 
 // Check if certificate already exists

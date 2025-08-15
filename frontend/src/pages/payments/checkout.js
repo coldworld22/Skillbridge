@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { fetchPaymentMethods } from '@/services/paymentMethodService';
+import { useEffect, useState, useMemo } from 'react';
+import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
+import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
@@ -23,10 +24,69 @@ const iconMap = {
   coinbase: <FaEthereum />,
 };
 
+export function resolveCheckoutItem(query, cartItems) {
+  const { itemId, itemType, items } = query;
+
+  if (itemId && itemType) {
+    return { id: itemId, type: itemType };
+  }
+
+  const parseItems = (value) => {
+    if (!value) return null;
+
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== 'string') return null;
+
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(decoded);
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      // ignore decode errors; we'll attempt to parse whatever we have
+    }
+
+    try {
+      const parsed = JSON.parse(decoded);
+      if (Array.isArray(parsed) && parsed.length === 1) {
+        const p = parsed[0] || {};
+        if (!p.id) return null;
+        return { id: p.id, type: p.itemType || p.item_type || 'class' };
+      }
+    } catch (err) {
+      console.error('Failed to parse checkout items', err);
+    }
+    return null;
+  };
+
+  const resolvedFromItems = parseItems(items);
+  if (resolvedFromItems) return resolvedFromItems;
+
+  if (Array.isArray(cartItems) && cartItems.length === 1) {
+    const c = cartItems[0];
+    if (c && c.id) {
+      return { id: c.id, type: c.item_type || 'class' };
+    }
+  }
+
+  return null;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
-  const { classId } = router.query;
-  const [classInfo, setClassInfo] = useState(null);
+  const { items: cartItems, removeItem } = useCartStore((state) => ({
+    items: state.items,
+    removeItem: state.removeItem,
+  }));
+  const resolvedItem = useMemo(() => {
+    if (!router.isReady) return null;
+    return resolveCheckoutItem(router.query, cartItems);
+  }, [router.isReady, router.asPath, cartItems]);
+  const itemId = resolvedItem?.id;
+  const itemType = resolvedItem?.type;
+  const checkoutError = router.isReady && !resolvedItem
+    ? 'Please select exactly one item to checkout'
+    : '';
+  const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState('stripe');
   const [promoCode, setPromoCode] = useState('');
@@ -35,69 +95,146 @@ export default function CheckoutPage() {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
-  const removeItem = useCartStore((state) => state.removeItem);
-
+  const [allowInstallments, setAllowInstallments] = useState(false);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [paypalClientId, setPaypalClientId] = useState('');
 
   useEffect(() => {
-    if (!classId) return;
+    if (!itemId || !itemType) return;
     const load = async () => {
       try {
-        const details = await fetchClassDetails(classId);
-        setClassInfo(details?.data ?? details);
+        const details =
+          itemType === 'tutorial'
+            ? await fetchTutorialDetails(itemId)
+            : await fetchClassDetails(itemId);
+        setItemInfo(details?.data ?? details);
       } catch (err) {
-        console.error('Failed to load class', err);
+        console.error('Failed to load item', err);
       }
       try {
         const data = await fetchPaymentMethods();
-        setMethods(data);
-        if (data.length > 0) setSelectedMethod(data[0].name);
+        setMethods(Array.isArray(data) ? data : []);
+        if (Array.isArray(data) && data.length > 0) {
+          setSelectedMethod(data[0].name);
+        }
       } catch (err) {
         console.error('Failed to load payment methods', err);
       }
     };
     load();
-  }, [classId]);
+  }, [itemId, itemType]);
+
+  useEffect(() => {
+    const loadId = async () => {
+      try {
+        const id = await fetchPayPalClientId();
+        setPaypalClientId(id || '');
+      } catch (err) {
+        console.error('Failed to load PayPal client ID', err);
+      }
+    };
+    loadId();
+  }, []);
 
   const handleApplyPromo = async () => {
     try {
       const data = await validateCode(promoCode);
       setDiscount(data.discount_percent);
       setError('');
-    } catch {
+    } catch (err) {
       setDiscount(0);
-      setError('Invalid promo code');
+      if (err?.response?.status === 400) {
+        setError('Invalid promo code');
+      } else {
+        setError('Failed to apply promo code. Please try again.');
+      }
     }
+  };
+
+  const completePayment = async () => {
+    const storageKey = itemType === 'tutorial' ? 'enrolledTutorials' : 'enrolledClasses';
+    const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const newItem = {
+      id: itemInfo.id,
+      title: itemInfo.title,
+      instructor: itemInfo.instructor,
+      startDate: new Date().toISOString(),
+      status: 'Live',
+      joined: true,
+    };
+    localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
+    try {
+      await Promise.resolve(removeItem(itemInfo.id));
+    } catch (err) {
+      console.error('Failed to remove from cart', err);
+    }
+    setPaymentStatus('success');
+    setTimeout(
+      () => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`),
+      1500
+    );
   };
 
   const handlePayment = () => {
     setPaymentStatus('processing');
-    setTimeout(async () => {
-      const enrolled = JSON.parse(localStorage.getItem("enrolledClasses") || "[]");
-      const newClass = {
-        id: classInfo.id,
-        title: classInfo.title,
-        instructor: classInfo.instructor,
-        startDate: new Date().toISOString(),
-        status: "Live",
-        joined: true,
-      };
-      localStorage.setItem("enrolledClasses", JSON.stringify([...enrolled, newClass]));
-      try {
-        await removeItem(classInfo.id);
-      } catch (err) {
-        console.error('Failed to remove from cart', err);
-      }
-      setPaymentStatus('success');
-      setTimeout(() => router.push(`/payments/success?classId=${classInfo.id}`), 1500);
-    }, 1500);
+    setTimeout(completePayment, 1500);
   };
+
+  const renderPayPalButton = (amount) => {
+    if (!window.paypal) return;
+    const container = document.getElementById('paypal-button-container');
+    if (container) container.innerHTML = '';
+    window.paypal.Buttons({
+      createOrder: (_, actions) =>
+        actions.order.create({
+          purchase_units: [{ amount: { value: amount } }],
+        }),
+      onApprove: async (_, actions) => {
+        setPaymentStatus('processing');
+        await actions.order.capture();
+        completePayment();
+      },
+      onError: (err) => {
+        console.error('PayPal error', err);
+        setPaymentStatus('idle');
+      },
+    }).render('#paypal-button-container');
+  };
+
+  useEffect(() => {
+    if (selectedMethod !== 'paypal' || !itemInfo) return;
+    const amountValue = itemInfo.price - discount;
+    if (amountValue <= 0) return;
+    const amount = amountValue.toString();
+    if (!paypalLoaded) {
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
+      script.addEventListener('load', () => {
+        setPaypalLoaded(true);
+        renderPayPalButton(amount);
+      });
+      document.body.appendChild(script);
+    } else {
+      renderPayPalButton(amount);
+    }
+
+  }, [selectedMethod, itemInfo, discount, paypalLoaded]);
 
   const handleFileChange = (e) => setReceipt(e.target.files[0]);
   const generatePDF = () => alert('Invoice PDF downloaded (mocked)');
 
-  if (!classInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const finalPrice = classInfo.price - discount;
-  const availableMethods = methods.filter((m) => m.active);
+  if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
+  if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
+  const finalPrice = Math.max((itemInfo.price ?? 0) - discount, 0);
+  const isFree = finalPrice === 0;
+  const installments = 3;
+  const perInstallment = finalPrice / installments;
+  const schedule = Array.from({ length: installments }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + i);
+    return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
+  });
+  const availableMethods = Array.isArray(methods) ? methods.filter((m) => m.active) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
@@ -106,33 +243,39 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-bold mb-6 text-yellow-400">Checkout</h1>
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
-          <img src={classInfo.cover_image} alt={classInfo.title} className="w-32 h-32 object-cover rounded-lg" />
+          <img
+            src={itemType === 'tutorial' ? itemInfo.thumbnail : itemInfo.cover_image}
+            alt={itemInfo.title}
+            className="w-32 h-32 object-cover rounded-lg"
+          />
           <div>
-            <h2 className="text-xl font-semibold">{classInfo.title}</h2>
-            <p className="text-sm text-gray-400">Instructor: {classInfo.instructor}</p>
-            <p className="mt-2 font-bold text-lg">Price: ${classInfo.price}</p>
+            <h2 className="text-xl font-semibold">{itemInfo.title}</h2>
+            <p className="text-sm text-gray-400">Instructor: {itemInfo.instructor}</p>
+            <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
             {discount > 0 && <p className="text-green-400">Discount Applied: -${discount}</p>}
           </div>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Select Payment Method</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-            {availableMethods.map((method) => (
-              <button
-                key={method.name}
-                onClick={() => setSelectedMethod(method.name)}
-                className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
+        {!isFree && (
+          <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Select Payment Method</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              {availableMethods.map((method) => (
+                <button
+                  key={method.name}
+                  onClick={() => setSelectedMethod(method.name)}
+                  className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
                   ${selectedMethod === method.name ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
-              >
-                <div className="text-2xl">
-                  {iconMap[method.icon.toLowerCase()] || <FaMoneyCheckAlt />}
-                </div>
-                <div>{method.label}</div>
-              </button>
-            ))}
+                >
+                  <div className="text-2xl">
+                    {iconMap[method.icon?.toLowerCase()] || <FaMoneyCheckAlt />}
+                  </div>
+                  <div>{method.label}</div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Promo Code</h2>
@@ -152,10 +295,34 @@ export default function CheckoutPage() {
           {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
         </div>
 
+        {!isFree && (
+          <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Installments</h2>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={allowInstallments} onChange={(e) => setAllowInstallments(e.target.checked)} />
+              Pay in {installments} monthly installments
+            </label>
+            {allowInstallments && (
+              <ul className="mt-4 text-sm text-gray-300">
+                {schedule.map((s) => (
+                  <li key={s.number}>Installment {s.number}: ${s.amount} due {s.date}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         <div className="bg-gray-800 p-6 rounded-xl shadow-md">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Payment Details</h2>
 
-          {paymentStatus === 'success' ? (
+          {isFree ? (
+            <div className="text-center">
+              <p className="mb-4">This item is free. Click below to complete your enrollment.</p>
+              <button onClick={completePayment} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
+                Enroll for Free
+              </button>
+            </div>
+          ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> Payment Successful! Redirecting...
             </div>
@@ -171,7 +338,7 @@ export default function CheckoutPage() {
           ) : invoicePreview && selectedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Invoice</strong></p>
-              <p className="mt-2">Class: {classInfo.title}</p>
+              <p className="mt-2">{itemType === 'tutorial' ? 'Tutorial' : 'Class'}: {itemInfo.title}</p>
               <p>Price: ${finalPrice}</p>
               <p>Bank: Al Rajhi</p>
               <p>IBAN: SA442000000123456789</p>
@@ -182,23 +349,30 @@ export default function CheckoutPage() {
               </button>
               <button
                 className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-                onClick={() => router.push(`/payments/success?classId=${classInfo.id}`)}
+                onClick={() => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`)}
               >Done</button>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
               <input type="text" placeholder="Full Name" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
               <input type="email" placeholder="Email Address" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-              {selectedMethod !== 'bank' && (
+              {selectedMethod !== 'bank' && selectedMethod !== 'paypal' && (
                 <>
                   <input type="tel" placeholder="Card Number" required inputMode="numeric" className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
                   <input type="text" placeholder="Expiration Date (MM/YY)" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
                   <input type="text" placeholder="CVC" required className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white" />
                 </>
               )}
-              <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
-                {paymentStatus === 'processing' ? 'Processing...' : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
-              </button>
+              {selectedMethod === 'paypal' && <div id="paypal-button-container" className="mb-4"></div>}
+              {selectedMethod !== 'paypal' && (
+                <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
+                  {paymentStatus === 'processing'
+                    ? 'Processing...'
+                    : allowInstallments
+                    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`
+                    : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
+                </button>
+              )}
               <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
             </form>
           )}

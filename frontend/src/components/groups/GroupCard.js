@@ -5,8 +5,12 @@ export default function GroupCard({ group }) {
   const [requested, setRequested] = useState(false);
 
   const handleJoin = async () => {
-    await groupService.sendJoinRequest(group.id);
-    setRequested(true);
+    try {
+      await groupService.joinGroup(group.id);
+      setRequested(true);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

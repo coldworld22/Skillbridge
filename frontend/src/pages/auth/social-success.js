@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import useAuthStore from '@/store/auth/authStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { getFullProfile } from '@/services/profile/profileService';
+import { refreshAccessToken } from '@/services/auth/authService';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
@@ -16,11 +17,10 @@ export default function SocialSuccess() {
   const { t } = useTranslation('auth');
 
   useEffect(() => {
-    const { token } = router.query;
-    if (!token) return;
     async function finalize() {
-      setToken(token);
       try {
+        const { accessToken } = await refreshAccessToken();
+        setToken(accessToken);
         const res = await getFullProfile();
         setUser(res.data);
         fetchNotifications();

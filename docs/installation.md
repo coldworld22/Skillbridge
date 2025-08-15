@@ -1,6 +1,6 @@
 # Installation Guide
 
-This document explains how to set up SkillBridge for local development.
+This document explains how to set up SkillBridge for local development and for hosting the platform on a production server.
 
 ## Prerequisites
 
@@ -33,6 +33,22 @@ without HTTPS, also set:
 ```bash
 COOKIE_SECURE=false
 COOKIE_SAMESITE=None
+```
+
+The book filter's price range uses configurable defaults:
+
+```
+BOOK_PRICE_RANGE_DEFAULT=100
+BOOK_PRICE_RANGE_MAX=500
+```
+
+These values are read in `backend/src/config/books.js` and mirrored on the
+frontend via `frontend/src/utils/constants.js`. When running the frontend
+outside Docker, add the `NEXT_PUBLIC_` variants to `frontend/.env.local`:
+
+```
+NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
+NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 ```
 
 ### Frontend (optional)
@@ -98,4 +114,37 @@ npm test
 ```bash
 cd frontend
 npm test
+```
+
+## 7. Hosting on a server
+
+To deploy SkillBridge for real users on a remote host:
+
+1. **Provision a server** running Linux and install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/).
+2. **Clone the repository** on the server and configure environment variables as described above.
+   - In `backend/.env`, set production values such as `NODE_ENV=production`, `FRONTEND_URL=https://<your-domain>`, `COOKIE_SECURE=true`, and `COOKIE_SAMESITE=None`.
+   - Create `frontend/.env.local` with `NEXT_PUBLIC_API_BASE_URL=https://<your-domain>/api`.
+3. **Adjust Nginx for your domain.**
+   - Replace `eduskillbridge.net` in `nginx/conf.d/default.conf` and `nginx/conf.d/ssl.conf` with your domain name.
+   - Obtain TLS certificates (e.g. via Let's Encrypt's certbot) and ensure the paths in `ssl.conf` match the certificate locations.
+4. **Build and start the containers** in detached mode:
+
+   ```bash
+   docker-compose up -d --build
+   ```
+
+5. **Run database migrations and seeds** inside the running backend container:
+
+   ```bash
+   docker-compose exec backend npx knex migrate:latest
+   docker-compose exec backend npx knex seed:run
+   ```
+
+6. **Verify the deployment** by visiting `https://<your-domain>` in a browser. The API will be available at `https://<your-domain>/api`.
+
+For updates, pull the latest changes and rebuild:
+
+```bash
+git pull
+docker-compose up -d --build
 ```

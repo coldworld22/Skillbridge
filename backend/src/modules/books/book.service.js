@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { PRICE_RANGE_MAX } = require("../../config/books");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -16,22 +17,22 @@ exports.listBooks = async (params = {}) => {
     language,
     tags = [],
     sortBy = "newest",
+    instructorId,
   } = params;
 
   const query = db("books as b");
 
   if (search) {
     query.where(function () {
-      this.whereILike("b.title", `%${search}%`).orWhereILike(
-        "b.author",
-        `%${search}%`
-      );
+      this.whereILike("b.title", `%${search}%`);
     });
   }
   if (category) query.where("b.category_id", category);
   if (status) query.where("b.status", status);
-  if (priceRange) query.where("b.price", "<=", priceRange);
+  if (priceRange)
+    query.where("b.price", "<=", Math.min(priceRange, PRICE_RANGE_MAX));
   if (language) query.where("b.language", language);
+  if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
   if (tagArr.length) {
     query.whereIn("b.id", function () {
@@ -106,4 +107,89 @@ exports.updateBook = async (id, data) => {
   return row;
 };
 
+exports.updateBookStatus = async (id, status) => {
+  const [row] = await db("books").where({ id }).update({ status }).returning("*");
+  return row;
+};
+
 exports.deleteBook = (id) => db("books").where({ id }).del();
+
+exports.getInstructorBookAnalytics = async (instructorId) => {
+  const totalSalesRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .count("* as totalSales")
+    .first();
+
+  const totalRevenueRow = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .sum("p.price_paid as totalRevenue")
+    .first();
+
+  const topBooks = await db("book_purchases as p")
+    .join("books as b", "p.book_id", "b.id")
+    .where("b.instructor_id", instructorId)
+    .select("b.id", "b.title")
+    .count("* as sales")
+    .groupBy("b.id", "b.title")
+    .orderBy("sales", "desc")
+    .limit(5);
+
+  return {
+    totalSales: Number(totalSalesRow?.totalSales || 0),
+    totalRevenue: Number(totalRevenueRow?.totalRevenue || 0),
+    topBooks: topBooks.map((b) => ({
+      id: b.id,
+      title: b.title,
+      sales: Number(b.sales),
+    })),
+  };
+};
+
+exports.addToCart = async (studentId, bookId) => {
+  const [row] = await db('book_cart')
+    .insert({ student_id: studentId, book_id: bookId })
+    .onConflict(['student_id', 'book_id'])
+    .merge({ quantity: db.raw('book_cart.quantity + 1') })
+    .returning('*');
+  return row;
+};
+
+exports.removeFromCart = (studentId, bookId) =>
+  db('book_cart').where({ student_id: studentId, book_id: bookId }).del();
+
+exports.checkout = async (studentId) => {
+  return db.transaction(async (trx) => {
+    const items = await trx('book_cart')
+      .where({ student_id: studentId })
+      .select('book_id');
+    if (!items.length) return [];
+    const books = await trx('books')
+      .whereIn('id', items.map((i) => i.book_id))
+      .select('id', 'price');
+    const rows = books.map((b) => ({
+      student_id: studentId,
+      book_id: b.id,
+      price_paid: b.price,
+    }));
+    const purchases = await trx('book_purchases')
+      .insert(rows)
+      .returning('*');
+    await trx('book_cart').where({ student_id: studentId }).del();
+    return purchases;
+  });
+};
+
+exports.addToWishlist = async (studentId, bookId) => {
+  const [row] = await db('book_wishlist')
+    .insert({ student_id: studentId, book_id: bookId })
+    .onConflict(['student_id', 'book_id'])
+    .ignore()
+    .returning('*');
+  return row;
+};
+
+exports.removeFromWishlist = (studentId, bookId) =>
+  db('book_wishlist').where({ student_id: studentId, book_id: bookId }).del();
+

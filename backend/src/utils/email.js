@@ -12,6 +12,9 @@ const EMAIL_FOOTER =
 const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
 
 async function createTransporter() {
+  if (EMAILS_DISABLED) {
+    throw new Error("Email service is disabled");
+  }
   const cfg = (await emailConfigService.getSettings()) || {};
 
   const host = (cfg.smtpHost || process.env.SMTP_HOST || "").trim();
@@ -40,11 +43,6 @@ exports.sendOtpEmail = async (to, otp) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] OTP for ${to}: ${otp}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -97,11 +95,6 @@ exports.sendPasswordChangeEmail = async (to) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Password change notice for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -152,11 +145,6 @@ exports.sendWelcomeEmail = async (to, name) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Welcome email for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -205,11 +193,6 @@ exports.sendNewUserAdminEmail = async (to, user) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] New user notice to ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -265,11 +248,6 @@ exports.sendLessonScheduledEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Lesson scheduled notice for ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -330,11 +308,6 @@ exports.sendLessonReminderEmail = async (
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Lesson reminder for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -384,6 +357,64 @@ exports.sendLessonReminderEmail = async (
   }
 };
 
+// Notify students of a new class assignment
+exports.sendAssignmentEmail = async (
+  to,
+  assignmentTitle,
+  classTitle,
+  dueDate
+) => {
+  const cfg = (await emailConfigService.getSettings()) || {};
+  const app = (await appConfigService.getSettings()) || {};
+  const transporter = await createTransporter();
+
+  const fromEmail = (
+    cfg.fromEmail ||
+    process.env.SMTP_USER ||
+    "support@eduskillbridge.net"
+  ).trim();
+
+  const fromName = (
+    cfg.fromName ||
+    process.env.SMTP_NAME ||
+    app.appName ||
+    "SkillBridge"
+  ).trim();
+
+  const logo = app.logo_url
+    ? `${frontendBase}${app.logo_url}`
+    : "https://eduskillbridge.net/logo.png";
+  const support = app.contactEmail || "support@eduskillbridge.net";
+
+  const due = dueDate
+    ? new Date(dueDate).toLocaleDateString("en-US", { dateStyle: "long" })
+    : null;
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    replyTo: cfg.replyTo || fromEmail,
+    to,
+    subject: `New assignment for ${classTitle}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto">
+        <img src="${logo}" alt="${fromName}" style="max-width:150px;margin-bottom:20px"/>
+        <p>Hello,</p>
+        <p>A new assignment <strong>${assignmentTitle}</strong> has been posted for your class <strong>${classTitle}</strong>.</p>
+        ${due ? `<p><strong>Due Date:</strong> ${due}</p>` : ""}
+        <p>Please log in to view the details and submit your work.</p>
+        <p>Thank you,<br/>The ${fromName} Team</p>
+        ${EMAIL_FOOTER}
+      </div>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Assignment notice sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending assignment email: ", error);
+  }
+};
+
 /**
  * Notify admins when a user submits a support ticket
  * @param {string} to - Admin email address
@@ -400,11 +431,6 @@ exports.sendSupportTicketAdminEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Support ticket notice to ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -466,11 +492,6 @@ exports.sendSupportTicketUserEmail = async (
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Support ticket receipt for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -524,11 +545,6 @@ exports.sendSupportTicketUpdateEmail = async (
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Support ticket update for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -580,11 +596,6 @@ exports.sendTutorialCreatedAdminEmail = async (
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Tutorial created notice to ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -633,11 +644,6 @@ exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Tutorial creation notice for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -685,11 +691,6 @@ exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Tutorial approved notice for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -736,11 +737,6 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Tutorial rejection notice for ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -792,11 +788,6 @@ exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] New discussion notice for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -845,11 +836,6 @@ exports.sendCartReminderEmail = async (to, itemName) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Cart reminder for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -896,11 +882,6 @@ exports.sendCartAddedEmail = async (to, itemName) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Cart added notice for ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -949,11 +930,6 @@ exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Ad submission notice for ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -1001,11 +977,6 @@ exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
 
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] New ad notice to ${to}`);
-    return;
-  }
-
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
@@ -1052,11 +1023,6 @@ exports.sendAdApprovalEmail = async (to, adTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
-
-  if (EMAILS_DISABLED) {
-    console.log(`[EMAIL DISABLED] Ad approval notice for ${to}`);
-    return;
-  }
 
   const fromEmail = (
     cfg.fromEmail ||

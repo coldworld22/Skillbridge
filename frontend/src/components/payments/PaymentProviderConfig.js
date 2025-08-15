@@ -5,29 +5,7 @@ import {
   updateMethod,
 } from "@/services/admin/paymentMethodService";
 import { toast } from "react-toastify";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
-
-const useAdminNotice = () => {
-  const user = useAuthStore((s) => s.user);
-  const refreshNotifications = useNotificationStore((s) => s.fetch);
-  const refreshMessages = useMessageStore((s) => s.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to send notification";
-      toast.error(msg);
-    }
-  };
-};
+import useAdminNotice from "@/hooks/useAdminNotice";
 
 export default function PaymentProviderConfig({ providerId }) {
   const [settings, setSettings] = useState("{}");
@@ -52,11 +30,25 @@ export default function PaymentProviderConfig({ providerId }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    let parsed;
     try {
-      const parsed = settings ? JSON.parse(settings) : {};
+      parsed = settings ? JSON.parse(settings) : {};
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        toast.error("Invalid JSON format");
+        return;
+      }
+      throw err;
+    }
+
+    try {
       await updateMethod(providerId, { settings: parsed });
       toast.success(t('paymentsPage.config_saved'));
-      notify("payment_method_updated", `Payment method \"${providerId}\" configuration updated`);
+      notify(
+        "payment_method_updated",
+        `Payment method \"${providerId}\" configuration updated`
+      );
     } catch (err) {
       console.error("Failed to save settings", err);
       toast.error(t('paymentsPage.config_save_failed'));

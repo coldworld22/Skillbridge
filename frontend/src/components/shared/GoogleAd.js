@@ -5,9 +5,20 @@ const GoogleAd = ({ slot }) => {
 
   useEffect(() => {
     fetch("/api/adsense")
-      .then((res) => res.json())
-      .then((data) => setAdConfig(data))
-      .catch((err) => console.error("Failed to load AdSense settings:", err));
+      .then((res) => {
+        const contentType = res.headers.get("content-type");
+        if (!res.ok || !contentType || !contentType.includes("application/json")) {
+          setAdConfig(null);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data) setAdConfig(data);
+      })
+      .catch(() => {
+        setAdConfig(null);
+      });
   }, []);
 
   useEffect(() => {

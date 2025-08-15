@@ -62,34 +62,104 @@ exports.updateProfile = async (req, res) => {
     social_links,
   } = req.body;
 
-  await db("users")
-    .where({ id: userId })
-    .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
+  // Sanitize social links before database operations
+  const sanitizedLinks = Array.isArray(social_links)
+    ? social_links
+        .filter(
+          (link) =>
+            link &&
+            typeof link.url === "string" &&
+            typeof link.platform === "string" &&
+            link.url.trim()
+        )
+        .map((link) => ({
+          platform: link.platform.trim(),
+          url: link.url.trim(),
+        }))
+    : [];
 
-  const exists = await db("student_profiles").where({ user_id: userId }).first();
-  const studentData = { education_level, topics, learning_goals };
-  if (exists) {
-    await db("student_profiles")
-      .where({ user_id: userId })
-      .update(studentData);
-  } else {
-    await db("student_profiles").insert({ user_id: userId, ...studentData });
-  }
+  const trx = await db.transaction();
+  try {
+    await trx("users")
+      .where({ id: userId })
+      .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
 
-  await db("user_social_links").where({ user_id: userId }).del();
-  if (Array.isArray(social_links)) {
-    for (const link of social_links) {
-      if (link.url) {
-        await db("user_social_links").insert({
-          user_id: userId,
-          platform: link.platform,
-          url: link.url,
-        });
-      }
+    const exists = await trx("student_profiles").where({ user_id: userId }).first();
+    const studentData = { education_level, topics, learning_goals };
+    if (exists) {
+      await trx("student_profiles").where({ user_id: userId }).update(studentData);
+    } else {
+      await trx("student_profiles").insert({ user_id: userId, ...studentData });
     }
-  }
 
-  res.json({ message: "Profile updated successfully" });
+    await trx("user_social_links").where({ user_id: userId }).del();
+    for (const link of sanitizedLinks) {
+      await trx("user_social_links").insert({
+        user_id: userId,
+        platform: link.platform,
+        url: link.url,
+      });
+    }
+
+    await trx.commit();
+    res.json({ message: "Profile updated successfully" });
+  } catch (err) {
+    await trx.rollback();
+    console.error("Failed to update student profile", err.message);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+};
+
+/**
+ * @desc Update student avatar
+ * @route PATCH /api/users/student/:id/avatar
+ * @access Student
+ */
+exports.updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No avatar uploaded" });
+    }
+    const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
+    await db("users")
+      .where({ id: req.user.id })
+      .update({ avatar_url: avatarUrl });
+    res.json({ avatar_url: avatarUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update avatar" });
+  }
+};
+
+/**
+ * @desc Update student identity document
+ * @route PATCH /api/users/student/:id/identity
+ * @access Student
+ */
+exports.updateIdentity = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No identity document uploaded" });
+    }
+    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+    const exists = await db("student_profiles")
+      .where({ user_id: req.user.id })
+      .first();
+    if (exists) {
+      await db("student_profiles")
+        .where({ user_id: req.user.id })
+        .update({ identity_doc_url: identityUrl });
+    } else {
+      await db("student_profiles").insert({
+        user_id: req.user.id,
+        identity_doc_url: identityUrl,
+      });
+    }
+    res.json({ identity_doc_url: identityUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update identity document" });
+  }
 };
 
 /**

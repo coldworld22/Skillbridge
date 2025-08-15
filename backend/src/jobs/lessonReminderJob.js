@@ -2,6 +2,8 @@ const db = require("../config/database");
 const notificationService = require("../modules/notifications/notifications.service");
 const messageService = require("../modules/messages/messages.service");
 const userModel = require("../modules/users/user.model");
+const enrollmentService = require("../modules/classes/enrollments/classEnrollment.service");
+const smsService = require("../services/smsService");
 const { sendLessonReminderEmail } = require("../utils/email");
 
 function startLessonReminderJob() {
@@ -14,6 +16,7 @@ function startLessonReminderJob() {
         .join("online_classes as c", "l.class_id", "c.id")
         .select(
           "l.id",
+          "l.class_id",
           "l.title",
           "l.start_time",
           "c.title as class_title",
@@ -51,6 +54,31 @@ function startLessonReminderJob() {
           );
         } catch (err) {
           console.error("Error sending reminder email:", err.message);
+        }
+
+        const startTime = new Date(lesson.start_time).toLocaleString();
+        const text = `Reminder: Lesson "${lesson.title}" starts at ${startTime}`;
+
+        if (instructor.phone) {
+          try {
+            await smsService.sendSMS({ to: instructor.phone, text });
+          } catch (err) {
+            console.error("Error sending instructor reminder SMS:", err.message);
+          }
+        }
+
+        let students = [];
+        try {
+          students = await enrollmentService.getPhonesByClass(lesson.class_id);
+        } catch (err) {
+          console.error("Error fetching enrolled students for lesson:", err.message);
+        }
+        for (const student of students) {
+          try {
+            await smsService.sendSMS({ to: student.phone, text });
+          } catch (err) {
+            console.error("Error sending lesson reminder SMS:", err.message);
+          }
         }
       }
     } catch (err) {

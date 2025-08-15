@@ -2,12 +2,36 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Star, Eye, PlayCircle } from "lucide-react";
 import Link from "next/link";
+import { formatCurrency } from "@/utils/currency";
+import useCartStore from "@/store/cart/cartStore";
+import { toast } from "react-toastify";
 
 const DEFAULT_IMAGE =
   "https://www.classcentral.com/report/wp-content/uploads/2022/06/C-Programming-BCG-Banner.png";
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 
 const TutorialCard = ({ tutorial = {} }) => {
+  const addItem = useCartStore((state) => state.addItem);
+
+  const formattedPrice =
+    Number(tutorial.price) > 0 ? formatCurrency(tutorial.price) : "Free";
+
+  const handleAddToCart = async () => {
+    const success = await addItem({
+      id: tutorial.id,
+      name: tutorial.title,
+      price: tutorial.price || 0,
+      item_type: "tutorial",
+      quantity: 1,
+      ...(tutorial.currency ? { currency: tutorial.currency } : {}),
+    });
+    if (success) {
+      toast.success("Added to cart");
+    } else {
+      toast.error("Failed to add to cart");
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
@@ -69,19 +93,52 @@ const TutorialCard = ({ tutorial = {} }) => {
           {tutorial.category || "General"} &middot; {tutorial.level || "N/A"}
         </div>
         <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          {tutorial.price ? `$${tutorial.price}` : "Free"} &middot;{" "}
-          {tutorial.duration || "Unknown Duration"}
+          {(() => {
+            const currency = tutorial.currency;
+            const originalPrice =
+              tutorial.originalPrice ?? tutorial.original_price ?? tutorial.price;
+            const discountPrice =
+              tutorial.discountPrice ?? tutorial.discount_price;
+
+            if (Number(originalPrice) <= 0) {
+              return "Free";
+            }
+
+            if (discountPrice && Number(discountPrice) < Number(originalPrice)) {
+              return (
+                <>
+                  <span className="line-through mr-2 text-gray-400">
+                    {formatCurrency(originalPrice, { currency })}
+                  </span>
+                  <span>{formatCurrency(discountPrice, { currency })}</span>
+                </>
+              );
+            }
+
+            return formatCurrency(originalPrice, { currency });
+          })()} &middot; {tutorial.duration || "Unknown Duration"}
         </div>
 
-        {/* Explore Button */}
-        <Link href={`/tutorials/${tutorial.id || 0}`} passHref>
-          <motion.button
-            className="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-full transition"
-            whileHover={{ scale: 1.03 }}
-          >
-            Explore Tutorial
-          </motion.button>
-        </Link>
+        {/* Actions */}
+        <div className="mt-4 flex gap-2">
+          <Link href={`/tutorials/${tutorial.id || 0}`} passHref>
+            <motion.button
+              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-full transition"
+              whileHover={{ scale: 1.03 }}
+            >
+              Explore Tutorial
+            </motion.button>
+          </Link>
+          {Number(tutorial.price) > 0 && (
+            <motion.button
+              onClick={handleAddToCart}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition"
+              whileHover={{ scale: 1.03 }}
+            >
+              Add to Cart
+            </motion.button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

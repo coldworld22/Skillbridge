@@ -33,56 +33,92 @@ exports.createTicket = catchAsync(async (req, res) => {
   // ─────────────────────
   // 📣 Notify admins and user
   // ─────────────────────
-  try {
-    const admins = await userModel.findAdmins();
-    await Promise.all(
-      admins.map((a) =>
-        sendSupportTicketAdminEmail(
-          a.email,
-          req.user.full_name,
-          ticket.subject,
-          ticket.ticket_number
-        )
+  const admins = await userModel.findAdmins();
+  const adminEmailResults = await Promise.allSettled(
+    admins.map((a) =>
+      sendSupportTicketAdminEmail(
+        a.email,
+        req.user.full_name,
+        ticket.subject,
+        ticket.ticket_number
       )
-    );
+    )
+  );
+  adminEmailResults.forEach((r) => {
+    if (r.status === "rejected") {
+      console.error(
+        "Failed to send admin support email:",
+        r.reason?.message || r.reason
+      );
+    }
+  });
+
+  try {
     await sendSupportTicketUserEmail(
       req.user.email,
       req.user.full_name,
       ticket.subject,
       ticket.ticket_number
     );
-    // Create notifications/messages for admins
-    await Promise.all(
-      admins.map((admin) =>
-        notificationService.createNotification({
-          user_id: admin.id,
-          type: "new_support_ticket",
-          message: `New support ticket from ${req.user.full_name}: '${ticket.subject}'`,
-        })
-      )
-    );
-    await Promise.all(
-      admins.map((admin) =>
-        messageService.createMessage({
-          sender_id: req.user.id,
-          receiver_id: admin.id,
-          message: `New support ticket '${ticket.subject}' submitted`,
-        })
-      )
-    );
   } catch (err) {
-    console.error("Error sending support ticket emails:", err.message);
+    console.error("Failed to send user support email:", err.message);
   }
 
-  await notificationService.createNotification({
-    user_id: req.user.id,
-    type: "ticket_submitted",
-    message: `Ticket #${ticket.ticket_number} created`,
+  const adminNotifyResults = await Promise.allSettled(
+    admins.map((admin) =>
+      notificationService.createNotification({
+        user_id: admin.id,
+        type: "new_support_ticket",
+        message: `New support ticket from ${req.user.full_name}: '${ticket.subject}'`,
+      })
+    )
+  );
+  adminNotifyResults.forEach((r, idx) => {
+    if (r.status === "rejected") {
+      console.error(
+        `Failed to notify admin ${admins[idx].id} of support ticket:`,
+        r.reason?.message || r.reason
+      );
+    }
   });
-  await messageService.createMessage({
-    sender_id: req.user.id,
-    receiver_id: req.user.id,
-    message: `We received your support ticket #${ticket.ticket_number}`,
+
+  const adminMessageResults = await Promise.allSettled(
+    admins.map((admin) =>
+      messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: admin.id,
+        message: `New support ticket '${ticket.subject}' submitted`,
+      })
+    )
+  );
+  adminMessageResults.forEach((r, idx) => {
+    if (r.status === "rejected") {
+      console.error(
+        `Failed to message admin ${admins[idx].id} about support ticket:`,
+        r.reason?.message || r.reason
+      );
+    }
+  });
+
+  const userDispatch = await Promise.allSettled([
+    notificationService.createNotification({
+      user_id: req.user.id,
+      type: "ticket_submitted",
+      message: `Ticket #${ticket.ticket_number} created`,
+    }),
+    messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: req.user.id,
+      message: `We received your support ticket #${ticket.ticket_number}`,
+    }),
+  ]);
+  userDispatch.forEach((r) => {
+    if (r.status === "rejected") {
+      console.error(
+        "Failed to dispatch user notification/message for ticket creation:",
+        r.reason?.message || r.reason
+      );
+    }
   });
 
   sendSuccess(res, ticket, "Ticket created");

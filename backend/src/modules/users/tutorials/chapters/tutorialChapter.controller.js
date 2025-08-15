@@ -4,6 +4,23 @@ const service = require("./tutorialChapter.service");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const uploadChapterVideo = require("./uploadChapterVideo");
+const db = require("../../../../config/database");
+
+// Ensure the requesting user is the tutorial's instructor or an admin
+const assertTutorialAccess = async (req, tutorialId) => {
+  const tutorial = await db("tutorials")
+    .select("instructor_id")
+    .where({ id: tutorialId })
+    .first();
+
+  if (!tutorial) throw new AppError("Tutorial not found", 404);
+
+  const role = req.user?.role?.toLowerCase();
+  const isAdmin = ["admin", "superadmin"].includes(role);
+  if (tutorial.instructor_id !== req.user.id && !isAdmin) {
+    throw new AppError("Access denied", 403);
+  }
+};
 
 // Handle chapter video uploads
 exports.uploadVideo = (req, res) => {
@@ -21,6 +38,8 @@ exports.uploadVideo = (req, res) => {
 exports.createChapter = catchAsync(async (req, res) => {
   const { tutorial_id, title, order, video_url, duration, is_preview = false } = req.body;
   if (!title || !tutorial_id) throw new AppError("Tutorial ID and title are required", 400);
+
+  await assertTutorialAccess(req, tutorial_id);
 
   const chapter = await service.create({
     id: uuidv4(),
@@ -41,6 +60,8 @@ exports.updateChapter = catchAsync(async (req, res) => {
   const chapter = await service.findById(id);
   if (!chapter) throw new AppError("Chapter not found", 404);
 
+  await assertTutorialAccess(req, chapter.tutorial_id);
+
   const data = { ...req.body };
   if (data.duration) {
     data.duration = parseInt(data.duration);
@@ -55,6 +76,8 @@ exports.deleteChapter = catchAsync(async (req, res) => {
   const chapter = await service.findById(id);
   if (!chapter) throw new AppError("Chapter not found", 404);
 
+  await assertTutorialAccess(req, chapter.tutorial_id);
+
   await service.delete(id);
   sendSuccess(res, null, "Chapter deleted");
 });
@@ -62,12 +85,22 @@ exports.deleteChapter = catchAsync(async (req, res) => {
 // List chapters by tutorial
 exports.getChaptersByTutorial = catchAsync(async (req, res) => {
   const { tutorialId } = req.params;
-  const isGuest = !req.user;
+  const tutorial = await db("tutorials")
+    .where({ id: tutorialId, status: "published" })
+    .first();
+
+  if (!tutorial) throw new AppError("Tutorial not found or not published", 404);
 
   let chapters = await service.getByTutorial(tutorialId);
 
-  // Filter only previews if guest
-  if (isGuest) {
+  if (req.user) {
+    const enrollment = await db("tutorial_enrollments")
+      .where({ tutorial_id: tutorialId, user_id: req.user.id })
+      .first();
+    if (!enrollment) {
+      chapters = chapters.filter((ch) => ch.is_preview);
+    }
+  } else {
     chapters = chapters.filter((ch) => ch.is_preview);
   }
 
@@ -82,6 +115,8 @@ exports.reorderChapters = catchAsync(async (req, res) => {
   if (!Array.isArray(orderedIds)) {
     throw new AppError("orderedIds must be an array", 400);
   }
+
+  await assertTutorialAccess(req, tutorialId);
 
   const updates = orderedIds.map((id, index) => ({ id, order: index + 1 }));
   await service.reorderChapters(tutorialId, updates);

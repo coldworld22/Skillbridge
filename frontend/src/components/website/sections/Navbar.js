@@ -66,7 +66,7 @@ const Navbar = () => {
   const router = useRouter();
   const userRole = user?.role?.toLowerCase();
 
-  const { items: cartItems, fetchCart } = useCartStore();
+  const { items: cartItems, fetchCart, clearCart } = useCartStore();
 
   const notifications = useNotificationStore((state) => state.items);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
@@ -147,8 +147,12 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    fetchCart();
-  }, [user, fetchCart]);
+    if (user) {
+      fetchCart();
+    } else {
+      clearCart();
+    }
+  }, [user, fetchCart, clearCart]);
 
   useEffect(() => {
     if (user) {

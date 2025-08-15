@@ -37,10 +37,20 @@ exports.getByClass = async (class_id) => {
       "u.id",
       "u.full_name",
       "u.email",
+      "u.phone",
       "ce.status",
       "ce.enrolled_at"
     )
     .orderBy("ce.enrolled_at");
+};
+
+// Get phone numbers of students enrolled in a class
+exports.getPhonesByClass = async (class_id) => {
+  return db("class_enrollments as ce")
+    .join("users as u", "ce.user_id", "u.id")
+    .where("ce.class_id", class_id)
+    .whereNotNull("u.phone")
+    .select("u.id", "u.phone");
 };
 
 // Get a single student's enrollment details in a class

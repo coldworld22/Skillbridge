@@ -19,12 +19,12 @@ jest.mock('../class.service', () => ({
 }));
 const service = require('../class.service');
 jest.mock('../../notifications/notifications.service', () => ({
-  createNotification: jest.fn(),
+  createNotification: jest.fn(() => Promise.resolve()),
 }));
 
 const notifications = require('../../notifications/notifications.service');
 jest.mock('../../messages/messages.service', () => ({
-  createMessage: jest.fn(),
+  createMessage: jest.fn(() => Promise.resolve()),
 }));
 const messages = require('../../messages/messages.service');
 jest.mock('../../users/user.model', () => ({
@@ -48,6 +48,7 @@ jest.mock('../../../middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
   isInstructorOrAdmin: (_req, _res, next) => next(),
   isAdmin: (_req, _res, next) => next(),
+  isInstructor: (_req, _res, next) => next(),
 }));
 
 const routes = require('../class.routes');
@@ -72,6 +73,18 @@ describe('Class routes', () => {
     );
     expect(notifications.createNotification).toHaveBeenCalledTimes(2);
     expect(messages.createMessage).toHaveBeenCalledTimes(2);
+  });
+
+  test('create class responds even if notifications fail', async () => {
+    const data = { id: '3', instructor_id: '2', title: 'Fail Class', status: 'published' };
+    service.createClass.mockResolvedValue(data);
+    notifications.createNotification
+      .mockResolvedValueOnce() // instructor notification
+      .mockRejectedValueOnce(new Error('notify error')); // admin notification
+
+    const res = await request(app).post('/classes/admin').send(data);
+    expect(res.statusCode).toBe(200);
+    expect(notifications.createNotification).toHaveBeenCalledTimes(2);
   });
 
   test('create class with options', async () => {

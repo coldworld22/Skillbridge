@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useTranslation } from "next-i18next";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
@@ -13,9 +14,11 @@ import TutorialSkeleton from "@/components/tutorials/detail/TutorialSkeleton";
 import CourseProgress from "@/components/classes/CourseProgress";
 import toast from "react-hot-toast";
 import useAuthStore from "@/store/auth/authStore";
+import useCartStore from "@/store/cart/cartStore";
 import useTutorialProgress from "@/hooks/useTutorialProgress";
 import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
 import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
+import { FaBookmark, FaHeart } from "react-icons/fa";
 
 const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
 const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
@@ -27,10 +30,45 @@ import {
   fetchTutorialDetails,
   fetchPublishedTutorials,
   fetchTutorialAssignments,
+  fetchTutorialProgress,
+  enrollInTutorial,
+  addTutorialToWishlist,
+  removeTutorialFromWishlist,
+  getMyTutorialWishlist,
+  addTutorialToFavorites,
+  removeTutorialFromFavorites,
+  getMyTutorialFavorites,
 } from "@/services/tutorialService";
+import {
+  getNotifications,
+  markNotificationAsRead,
+} from "@/services/notificationService";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 import Link from "next/link";
+
+export async function handleShare(tutorial) {
+  const shareData = {
+    title: tutorial.title,
+    text: "Check out this tutorial on SkillBridge!",
+    url: typeof window !== "undefined" ? window.location.href : "",
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      toast.success("Shared successfully!");
+    } catch {
+      // ignore errors
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  }
+}
 
 export default function TutorialDetail() {
   const router = useRouter();
@@ -42,23 +80,77 @@ export default function TutorialDetail() {
   const [testPassed, setTestPassed] = useState(false);
   const [assignments, setAssignments] = useState([]);
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated());
+  const user = useAuthStore((state) => state.user);
+  const { addItem, items: cartItems } = useCartStore((state) => ({
+    addItem: state.addItem,
+    items: state.items,
+  }));
+  const isStudent = user?.role?.toLowerCase() === "student";
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [inFavorites, setInFavorites] = useState(false);
 
   const { progress, saveTime, completeChapter, setIndex, startTimeFor } =
     useTutorialProgress(id);
+  const { t } = useTranslation("tutorials", { keyPrefix: "detail" });
 
-  const enroll = () => {
+  const enroll = async () => {
     if (!tutorial) return;
     if (!isLoggedIn) {
-      toast.error("Please login first");
+      toast.error(t("login_first"));
       router.push("/auth/login");
       return;
     }
-    localStorage.setItem(`enrolled-${tutorial.id}`, true);
-    setIsEnrolled(true);
-    toast.success("Enrolled successfully!");
+
+    try {
+      const res = await enrollInTutorial(tutorial.id);
+      const enrolledFlag =
+        res?.is_enrolled === true ||
+        res?.enrolled === true ||
+        res?.data?.is_enrolled === true ||
+        res?.data?.enrolled === true ||
+        res?.success === true;
+      setIsEnrolled(enrolledFlag);
+      if (enrolledFlag) toast.success(t("enroll_success"));
+      else toast.error(t("enroll_fail"));
+    } catch (err) {
+      console.error("Enrollment failed", err);
+      toast.error(t("enroll_fail"));
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!tutorial) return;
+    if (!isLoggedIn) {
+      toast.error(t("login_first"));
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role?.toLowerCase() !== "student") {
+      toast.error("Only students can purchase");
+      return;
+    }
+
+    const alreadyInCart = cartItems.some((item) => item.id === tutorial.id);
+    if (alreadyInCart) {
+      toast.error("Already in cart");
+      return;
+    }
+
+    try {
+      await addItem({
+        id: tutorial.id,
+        name: tutorial.title,
+        price: tutorial.price,
+      });
+      toast.success("Added to cart");
+      router.push("/cart");
+    } catch (err) {
+      console.error("Failed to add to cart", err);
+      toast.error("Failed to add to cart");
+    }
   };
 
 
@@ -70,7 +162,7 @@ export default function TutorialDetail() {
       try {
         const data = await fetchTutorialDetails(id);
         if (!data) {
-          setError("Tutorial not found");
+          setError(t("not_found"));
           setLoading(false);
           return;
         }
@@ -85,9 +177,23 @@ export default function TutorialDetail() {
           };
         });
         setTutorial({ ...data, chapters });
+        let enrolled = Boolean(
+          data?.is_enrolled || data?.enrolled || data?.isEnrolled,
+        );
+        if (!enrolled && isLoggedIn) {
+          try {
+            const status = await fetchTutorialProgress(id);
+            enrolled = Boolean(
+              status?.is_enrolled || status?.enrolled || status?.success,
+            );
+          } catch (err) {
+            console.error('Failed to fetch enrollment status', err);
+          }
+        }
+        setIsEnrolled(enrolled);
         try {
-          const assignList = await fetchTutorialAssignments(id);
-          setAssignments(assignList);
+          const assignmentList = await fetchTutorialAssignments(id);
+          setAssignments(assignmentList);
         } catch (err) {
           console.error('Failed to load assignments', err);
         }
@@ -97,21 +203,66 @@ export default function TutorialDetail() {
           (t) => String(t.id) !== String(data.id),
         );
         setRelated(others.slice(0, 3));
+        if (isLoggedIn && isStudent) {
+          try {
+            const [w, f] = await Promise.all([
+              getMyTutorialWishlist(),
+              getMyTutorialFavorites(),
+            ]);
+            setInWishlist(w.some((t) => String(t.id) === String(data.id)));
+            setInFavorites(f.some((t) => String(t.id) === String(data.id)));
+          } catch (err) {
+            console.error('Failed to load user lists', err);
+          }
+        }
       } catch (err) {
         console.error(err);
-        setError("Failed to load tutorial");
+        setError(t("load_error"));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [id]);
-
+  }, [id, isLoggedIn, isStudent]);
   useEffect(() => {
-    if (!tutorial) return;
-    const enrolled = localStorage.getItem(`enrolled-${tutorial.id}`);
-    if (enrolled) setIsEnrolled(true);
-  }, [tutorial]);
+    if (!isEnrolled || !tutorial?.title) return;
+    const fetchNotifications = async () => {
+      try {
+        const notes = await getNotifications();
+        const note = notes.find(
+          (n) =>
+            n.type === "new_assignment" &&
+            n.message?.toLowerCase().includes(tutorial.title.toLowerCase()),
+        );
+        if (note) {
+          toast((t) => (
+            <span>
+              {note.message}{" "}
+              <Link
+                href="/dashboard/student/assignments"
+                className="underline text-blue-400"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                View
+              </Link>
+            </span>
+          ));
+          try {
+            await markNotificationAsRead(note.id);
+          } catch (err) {
+            // ignore mark read errors
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [isEnrolled, tutorial]);
+
+
+
 
   // Load saved progress when chapter changes
   useEffect(() => {
@@ -123,7 +274,7 @@ export default function TutorialDetail() {
 
   // Resume last position
   useEffect(() => {
-    if (progress.lastIndex && tutorial) {
+    if (progress.lastIndex !== undefined && tutorial) {
       setCurrentIndex(progress.lastIndex);
     }
   }, [progress.lastIndex, tutorial]);
@@ -150,7 +301,7 @@ export default function TutorialDetail() {
   if (!tutorial) {
     return (
       <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-300">Tutorial not found</p>
+        <p className="text-lg text-gray-300">{t("not_found")}</p>
       </div>
     );
   }
@@ -164,10 +315,13 @@ export default function TutorialDetail() {
     : tutorial.chapters.slice(0, 1);
 
   const videoList = accessibleChapters.map((ch) => ({
+    id: ch.id,
     src: ch.videoUrl,
     title: ch.title,
   }));
-  const currentVideo = videoList[currentIndex]?.src;
+  const currentVideoObj = videoList[currentIndex];
+  const currentVideo = currentVideoObj?.src || null;
+  const playerVideos = currentVideo ? [{ src: currentVideo }] : [];
 
   const progressPercentage = tutorial.chapters.length
     ? (progress.completedChapters.length / tutorial.chapters.length) * 100
@@ -180,6 +334,54 @@ export default function TutorialDetail() {
     setIndex(currentIndex);
   };
 
+  const handleToggleWishlist = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inWishlist) {
+        await removeTutorialFromWishlist(tutorial.id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addTutorialToWishlist(tutorial.id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (err) {
+      toast.error('Failed to update wishlist');
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!isStudent) {
+      toast.error('Only students can save tutorials.');
+      return;
+    }
+    try {
+      if (inFavorites) {
+        await removeTutorialFromFavorites(tutorial.id);
+        setInFavorites(false);
+        toast.success('Removed from favorites');
+      } else {
+        await addTutorialToFavorites(tutorial.id);
+        setInFavorites(true);
+        toast.success('Added to favorites');
+      }
+    } catch (err) {
+      toast.error('Failed to update favorites');
+    }
+  };
+
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <Head>
@@ -190,18 +392,36 @@ export default function TutorialDetail() {
       <div className="container mx-auto px-6 py-12 mt-16 space-y-10">
         <BackButton />
 
-        {!isEnrolled && <EnrollBanner onEnroll={enroll} />}
+        {!isEnrolled && (
+          <EnrollBanner
+            onEnroll={enroll}
+            isPaid={Number(tutorial.price) > 0}
+            price={tutorial.price}
+            onAddToCart={handleAddToCart}
+            currency={tutorial.currency}
+          />
+        )}
 
-        <CustomVideoPlayer
-          key={currentIndex}
-          videos={[{ src: currentVideo }]}
-          startTime={startTime}
-          onTimeUpdate={handleVideoTimeUpdate}
-          locked={!isEnrolled}
-          onEnded={(idx) => {
-            completeChapter(idx);
-          }}
-        />
+
+        {playerVideos.length > 0 ? (
+          <CustomVideoPlayer
+            key={currentIndex}
+            videos={playerVideos}
+            startTime={startTime}
+            onTimeUpdate={handleVideoTimeUpdate}
+            locked={!isEnrolled}
+            onEnded={(idx) => {
+              completeChapter(idx);
+            }}
+          />
+        ) : (
+          <div
+            className="bg-gray-800 text-gray-400 p-4 rounded"
+            data-testid="no-video"
+          >
+            No video available
+          </div>
+        )}
 
         <VideoPreviewList
           videos={videoList}
@@ -211,27 +431,42 @@ export default function TutorialDetail() {
         />
 
         <div className="flex justify-end mb-4 gap-3">
+          <button
+            onClick={handleToggleFavorite}
+            aria-label={inFavorites ? "Remove from favorites" : "Add to favorites"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaHeart className={inFavorites ? "text-red-500" : "text-white"} />
+          </button>
+
+          <button
+            onClick={handleToggleWishlist}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600"
+          >
+            <FaBookmark className={inWishlist ? "text-yellow-400" : "text-white"} />
+          </button>
 
           <button
             onClick={() =>
               navigator
                 .share({
                   title: tutorial.title,
-                  text: "Check out this tutorial on SkillBridge!",
+                  text: t("share_message"),
                   url: typeof window !== "undefined" ? window.location.href : "",
                 })
-                .then(() => toast.success("Shared successfully!"))
+                .then(() => toast.success(t("share_success")))
                 .catch(() => {})
             }
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
-            🔗 Share
+            🔗 {t("share")}
           </button>
         </div>
 
         <TutorialHeader
           {...tutorial}
-          price={tutorial.is_paid && tutorial.price ? `$${tutorial.price}` : "Free"}
+          price={Number(tutorial.price) > 0 ? `$${tutorial.price}` : t("free")}
         />
         <InstructorBio
           name={tutorial.instructor}
@@ -251,27 +486,39 @@ export default function TutorialDetail() {
 
         {isEnrolled ? (
           <TestQuiz
+            tutorialId={tutorial.id}
             onComplete={(finalScore) => {
               if (finalScore >= 2) setTestPassed(true);
             }}
           />
         ) : (
-          <div className="text-center text-gray-400" title="Enroll to access quiz">
-            Quiz locked
+          <div className="text-center text-gray-400" title={t("enroll_to_access_quiz")}> 
+            {t("quiz_locked")}
           </div>
         )}
 
         {assignments.length > 0 && (
           <div className="mt-6 text-center">
             {testPassed && isEnrolled ? (
-              <Link
-                href={`/dashboard/student/assignments/${assignments[0].id}`}
-                className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition"
-              >
-                📚 Start Assignment
-              </Link>
+              <div className="space-y-4">
+                {assignments.map((assignment) => (
+                  <div key={assignment.id}>
+                    <Link
+                      href={`/dashboard/student/assignments/${assignment.id}`}
+                      className="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition inline-block"
+                    >
+                      📚 {assignment.title || t("start_assignment")}
+                    </Link>
+                    {(assignment.due_date || assignment.dueDate) && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        Due: {new Date(assignment.due_date || assignment.dueDate).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="text-gray-400">Complete the quiz to unlock assignments</div>
+              <div className="text-gray-400">{t("complete_quiz_unlock_assignments")}</div>
             )}
           </div>
         )}
@@ -282,15 +529,15 @@ export default function TutorialDetail() {
               onClick={() => router.push(`/certificate/${tutorial.id}`)}
               className="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition"
             >
-              🎉 Claim Your Certificate
+              🎉 {t("claim_certificate")}
             </button>
           </div>
         ) : (
           <div
             className="mt-6 text-center text-gray-400"
-            title="Pass quiz to unlock certificate"
+            title={t("pass_quiz_to_unlock_certificate")}
           >
-            Certificate locked
+            {t("certificate_locked")}
           </div>
         )}
 
@@ -309,7 +556,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'tutorials'], nextI18NextConfig)),
     },
   };
 }

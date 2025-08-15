@@ -3,8 +3,13 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { fetchBook } from "@/services/bookService";
+import BookDetails from "@/components/books/BookDetails";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 export default function BookDetailPage() {
+  const { t } = useTranslation(["website", "common"]);
   const router = useRouter();
   const { id } = router.query;
   const [book, setBook] = useState(null);
@@ -13,26 +18,37 @@ export default function BookDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+
+    const controller = new AbortController();
+    let isMounted = true;
+
     const load = async () => {
       setLoading(true);
       try {
-        const data = await fetchBook(id);
+        const data = await fetchBook(id, { signal: controller.signal });
+        if (!isMounted) return;
         if (data) {
           setBook(data);
           setError(null);
         } else {
-          setError("Book not found");
+          setError(t("book_not_found"));
         }
       } catch (e) {
+        if (e.name === "AbortError" || e.name === "CanceledError") return;
         console.error("Failed to load book", e);
-        setError("Failed to load book");
+        if (isMounted) setError(t("failed_load_book"));
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-    load();
-  }, [id]);
 
+    load();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [id, t]);
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100">
@@ -43,11 +59,12 @@ export default function BookDetailPage() {
           onClick={() => router.back()}
           className="mb-6 text-sm text-yellow-400 hover:underline"
         >
-          ← Back to books
+          {t("back_to_books")}
         </button>
+
         {loading && !error && (
           <div className="min-h-[50vh] flex items-center justify-center text-yellow-400">
-            Loading...
+            {t("loading")}
           </div>
         )}
 
@@ -57,50 +74,24 @@ export default function BookDetailPage() {
           </div>
         )}
 
-        {!loading && !error && book && (
-          <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
-            {book.cover_image_url && (
-              <img
-                src={book.cover_image_url}
-                alt={book.title}
-                className="w-full md:w-1/3 rounded-lg object-cover"
-              />
-            )}
-
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{book.title}</h1>
-              {book.author && (
-                <p className="text-yellow-400 mb-4">by {book.author}</p>
-              )}
-              {book.category_name && (
-                <p className="text-sm uppercase tracking-wide text-gray-400 mb-4">
-                  {book.category_name}
-                </p>
-              )}
-              {book.rating && (
-                <p className="mb-4 text-yellow-400">
-                  ⭐ {Number(book.rating).toFixed(1)} / 5
-                </p>
-              )}
-              <p className="mb-6">{book.description}</p>
-              <p className="text-xl font-semibold mb-6">
-                {book.is_paid ? `$${book.price}` : "Free"}
-              </p>
-              {book.pdf_url && (
-                <a
-                  href={book.pdf_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"
-                >
-                  {book.is_paid ? "Preview" : "Read Now"}
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+        {!loading && !error && book && <BookDetails book={book} />}
       </div>
       <Footer />
     </section>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["common", "website"], nextI18NextConfig)),
+    },
+  };
+}
+
+export async function getStaticPaths() {
+  return {
+    paths: [],
+    fallback: "blocking",
+  };
 }

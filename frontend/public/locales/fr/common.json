@@ -39,6 +39,9 @@
   "users": "Utilisateurs",
   "groups": "Groupes",
   "no_new_notifications": "Pas de nouvelles notifications pour le moment.",
+  "you_have_new_notifications": "Vous avez {{count}} nouvelle notification",
+  "you_have_new_notifications_plural": "Vous avez {{count}} nouvelles notifications",
+  "failed_to_mark_notification_as_read": "Échec du marquage de la notification comme lue",
   "show": "Afficher",
   "hide": "Masquer",
   "welcome_user": "Bienvenue, {{name}}",
@@ -65,5 +68,6 @@
   ,"system_messages": "Messages syst\u00e8me"
   ,"start_chat": "D\u00e9marrer le chat"
   ,"start_new_message": "Commencer un nouveau message"
-  ,"type_message_placeholder": "Tapez un message..."
+  ,"type_message_placeholder": "Tapez un message...",
+  "new_assignment": "Nouveau devoir \"{{title}}\" publi\u00e9 pour le cours \"{{classTitle}}\"."
 }

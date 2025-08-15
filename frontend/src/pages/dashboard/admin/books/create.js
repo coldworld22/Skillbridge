@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
-import api from "@/services/api/api";
+import { createBook } from "@/services/bookService";
 import BookForm from "@/components/books/BookForm";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
@@ -13,6 +13,8 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
+import useCoverImageUpload from "@/hooks/useCoverImageUpload";
+import { MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 function AdminCreateBookPage() {
   const router = useRouter();
@@ -20,9 +22,14 @@ function AdminCreateBookPage() {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [fileError, setFileError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const {
+    coverPreview,
+    fileError,
+    fileInputRef,
+    handleFileChange,
+    handleRemoveImage,
+  } = useCoverImageUpload(t);
 
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
@@ -45,58 +52,28 @@ function AdminCreateBookPage() {
     loadCategories();
   }, [t]);
 
-  const handleFileChange = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      setFileError(t("validation.invalidFileType"));
-      return;
-    }
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setFileError(t("validation.fileTooLarge", { size: "10MB" }));
-      return;
-    }
-
-    setFileError(null);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setCoverPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }, [t]);
-
-  const handleRemoveImage = useCallback(() => {
-    setCoverPreview(null);
-    setFileError(null);
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput) fileInput.value = "";
-  }, []);
-
   const handleSubmit = async (formData, setProgress) => {
-    const fileInput = document.getElementById("cover_image");
-    if (fileInput?.files?.[0]) {
-      formData.append("cover_image", fileInput.files[0]);
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {
       setProgress(0);
-      await api.post("/books", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (event.total) {
-            const progress = Math.round((event.loaded * 100) / event.total);
-            setProgress(progress);
-            setUploadProgress(progress);
-          }
-        },
+      await createBook(formData, (event) => {
+        if (event.total) {
+          const progress = Math.round((event.loaded * 100) / event.total);
+          setProgress(progress);
+          setUploadProgress(progress);
+        }
       });
 
       toast.success(t("booksCreate.success"));
-      await Promise.all([fetchNotifications(), fetchMessages()]);
+
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (notifyErr) {
+        console.error("Failed to refresh notifications or messages", notifyErr);
+      }
+      handleRemoveImage();
       router.push("/dashboard/admin/books");
     } catch (err) {
       console.error("Failed to create book", err);
@@ -198,13 +175,16 @@ function AdminCreateBookPage() {
                             name="cover_image"
                             type="file"
                             className="sr-only"
+                            ref={fileInputRef}
                             onChange={handleFileChange}
                             accept="image/jpeg, image/png, image/webp"
                           />
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("booksCreate.imageRequirements", { size: "10MB" })}
+                        {t("booksCreate.imageRequirements", {
+                          size: `${MAX_IMAGE_SIZE_MB}MB`,
+                        })}
                       </p>
                     </div>
                   </div>

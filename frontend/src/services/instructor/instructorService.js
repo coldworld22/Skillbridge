@@ -68,7 +68,7 @@ export const changeInstructorPassword = async (payload) => {
 // 🔹 Toggle online/offline status
 export const toggleInstructorStatus = async (is_online) => {
   const res = await api.patch("/users/instructor/status", { is_online });
-  return res.data;
+  return res.data; // { message, is_online }
 };
 
 // 🔹 Get profile completion status

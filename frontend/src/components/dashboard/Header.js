@@ -170,12 +170,13 @@ export default function Header() {
             onClick={async () => {
               const newStatus = !available;
               try {
-                await toggleInstructorStatus(newStatus);
-                setAvailable(newStatus);
+                const res = await toggleInstructorStatus(newStatus);
+                const updated = res?.is_online ?? newStatus;
+                setAvailable(updated);
                 const setUser = useAuthStore.getState().setUser;
-                setUser({ ...user, is_online: newStatus });
+                setUser({ ...user, is_online: updated });
                 toast.success(
-                  newStatus
+                  updated
                     ? t('available_now')
                     : t('unavailable_now')
                 );

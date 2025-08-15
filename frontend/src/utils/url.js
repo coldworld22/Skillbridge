@@ -12,3 +12,7 @@ export function buildUrl(path) {
   const normalized = relative.startsWith("/") ? relative : `/${relative}`;
   return `${API_BASE}${normalized}`;
 }
+
+export function joinUrl(base, path) {
+  return new URL(path, base).href;
+}

@@ -9,6 +9,13 @@ jest.mock('../src/modules/books/book.service', () => ({
   deleteBook: jest.fn(),
   clearBookTags: jest.fn(),
   getBookTags: jest.fn(),
+  updateBookStatus: jest.fn(),
+  getInstructorBookAnalytics: jest.fn(),
+  addToCart: jest.fn(),
+  removeFromCart: jest.fn(),
+  checkout: jest.fn(),
+  addToWishlist: jest.fn(),
+  removeFromWishlist: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -17,6 +24,10 @@ jest.mock('../src/modules/messages/messages.service', () => ({
 
 jest.mock('../src/services/mailService', () => ({
   sendMail: jest.fn(),
+}));
+
+jest.mock('../src/services/smsService', () => ({
+  sendSMS: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({
@@ -30,18 +41,27 @@ jest.mock('../src/modules/books/bookTag.service', () => ({
   searchTags: jest.fn(),
 }));
 
+jest.mock('../src/modules/users/user.model', () => ({
+  findAdmins: jest.fn(() => []),
+  findById: jest.fn(),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
-    req.user = { id: '1' };
+  verifyToken: jest.fn((req, _res, next) => {
+    req.user = { id: '1', role: 'admin', roles: ['admin'] };
     next();
-  },
-  isInstructorOrAdmin: (_req, _res, next) => next(),
+  }),
+  isAdmin: jest.fn((_req, _res, next) => next()),
+  isStudent: jest.fn((_req, _res, next) => next()),
+  isInstructorOrAdmin: jest.fn((_req, _res, next) => next()),
 }));
 
 const service = require('../src/modules/books/book.service');
 const routes = require('../src/modules/books/book.routes');
 const messageService = require('../src/modules/messages/messages.service');
 const notificationService = require('../src/modules/notifications/notifications.service');
+const userModel = require('../src/modules/users/user.model');
+const auth = require('../src/middleware/auth/authMiddleware');
 
 const app = express();
 app.use(express.json());
@@ -91,8 +111,17 @@ describe('GET /api/books/admin/:id', () => {
 
 describe('POST /api/books', () => {
   it('creates a book', async () => {
-    const payload = { title: 'New' };
+    const payload = {
+      title: 'New',
+      price: 10,
+      language: 'en',
+      license_type: 'standard',
+      category_id: 1,
+      is_free: false,
+      status: 'pending',
+    };
     service.createBook.mockResolvedValue({ id: '1', ...payload });
+    userModel.findAdmins.mockResolvedValue([]);
     const res = await request(app).post('/api/books').send(payload);
     expect(res.status).toBe(200);
     expect(service.createBook).toHaveBeenCalled();
@@ -118,13 +147,244 @@ describe('PUT /api/books/:id', () => {
       message: expect.stringContaining('Updated'),
     });
   });
+
+  it("returns 403 when instructor updates another instructor's book", async () => {
+    const payload = { title: 'Updated' };
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2', title: 'Old' });
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app).put('/api/books/1').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.updateBook).not.toHaveBeenCalled();
+  });
 });
 
 describe('DELETE /api/books/:id', () => {
   it('deletes a book', async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2' });
     const res = await request(app).delete('/api/books/1');
     expect(res.status).toBe(200);
     expect(service.clearBookTags).toHaveBeenCalledWith('1');
     expect(service.deleteBook).toHaveBeenCalledWith('1');
   });
+
+  it("returns 403 when instructor deletes another instructor's book", async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '2' });
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app).delete('/api/books/1');
+    expect(res.status).toBe(403);
+    expect(service.deleteBook).not.toHaveBeenCalled();
+  });
 });
+
+describe('PATCH /api/books/:id/status', () => {
+  it('updates book status', async () => {
+    const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
+    service.getBookById.mockResolvedValue(book);
+    service.updateBookStatus.mockResolvedValue(book);
+    userModel.findAdmins.mockResolvedValue([]);
+    userModel.findById.mockResolvedValue({ id: '2', email: 'user@example.com' });
+    const res = await request(app)
+      .patch('/api/books/1/status')
+      .send({ status: 'active' });
+    expect(res.status).toBe(200);
+    expect(service.updateBookStatus).toHaveBeenCalledWith('1', 'active');
+    expect(res.body.data).toEqual(book);
+  });
+
+  it("returns 403 when instructor updates another instructor's book status", async () => {
+    const book = { id: '1', status: 'active', instructor_id: '2', title: 'Book' };
+    service.getBookById.mockResolvedValue(book);
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor', roles: ['instructor'] };
+      next();
+    });
+    const res = await request(app)
+      .patch('/api/books/1/status')
+      .send({ status: 'active' });
+    expect(res.status).toBe(403);
+    expect(service.updateBookStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/books/cart', () => {
+  it('adds to cart', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.addToCart).toHaveBeenCalledWith('1', 10);
+  });
+
+  it('removes from cart', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10', action: 'remove' });
+    expect(res.status).toBe(200);
+    expect(service.removeFromCart).toHaveBeenCalledWith('1', 10);
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.addToCart).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when book is inactive', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'inactive' });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(400);
+    expect(service.addToCart).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/books/checkout', () => {
+  it('processes checkout', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const purchases = [{ id: 1 }];
+    service.checkout.mockResolvedValue(purchases);
+    const res = await request(app).post('/api/books/checkout');
+    expect(res.status).toBe(200);
+    expect(service.checkout).toHaveBeenCalledWith('1');
+    expect(res.body.data).toEqual(purchases);
+  });
+});
+
+describe('POST /api/books/wishlist', () => {
+  it('adds to wishlist', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.addToWishlist).toHaveBeenCalledWith('1', 10);
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when book is inactive', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'inactive' });
+    const res = await request(app)
+      .post('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(400);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
+  });
+});
+
+describe('DELETE /api/books/wishlist', () => {
+  it('removes from wishlist', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue({ id: '10', status: 'active' });
+    const res = await request(app)
+      .delete('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(200);
+    expect(service.removeFromWishlist).toHaveBeenCalledWith('1', 10);
+  });
+});
+
+describe('validation errors', () => {
+  it('returns 400 for invalid create payload', async () => {
+    const res = await request(app).post('/api/books').send({});
+    expect(res.status).toBe(400);
+    expect(service.createBook).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid update payload', async () => {
+    service.getBookById.mockResolvedValue({ id: '1', instructor_id: '1' });
+    const res = await request(app).put('/api/books/1').send({ price: 'abc' });
+    expect(res.status).toBe(400);
+    expect(service.updateBook).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid cart action', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app)
+      .post('/api/books/cart')
+      .send({ bookId: '10', action: 'invalid' });
+    expect(res.status).toBe(400);
+    expect(service.addToCart).not.toHaveBeenCalled();
+    expect(service.removeFromCart).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for wishlist without bookId', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    const res = await request(app).post('/api/books/wishlist').send({});
+    expect(res.status).toBe(400);
+    expect(service.addToWishlist).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when book not found', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = { id: '1', role: 'student', roles: ['student'] };
+      next();
+    });
+    service.getBookById.mockResolvedValue(null);
+    const res = await request(app)
+      .delete('/api/books/wishlist')
+      .send({ bookId: '10' });
+    expect(res.status).toBe(404);
+    expect(service.removeFromWishlist).not.toHaveBeenCalled();
+  });
+});
+

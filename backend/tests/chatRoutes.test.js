@@ -1,5 +1,6 @@
 const request = require('supertest');
 const express = require('express');
+const errorHandler = require('../src/middleware/errorHandler');
 
 jest.mock('../src/modules/chat/chat.service', () => ({
   searchUsers: jest.fn(),
@@ -7,6 +8,7 @@ jest.mock('../src/modules/chat/chat.service', () => ({
   sendMessage: jest.fn(),
   deleteMessage: jest.fn(),
   togglePin: jest.fn(),
+  logModerationEvent: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -19,6 +21,11 @@ const routes = require('../src/modules/chat/chat.routes');
 const app = express();
 app.use(express.json());
 app.use('/api/chat', routes);
+app.use(errorHandler);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('GET /api/chat/users', () => {
   it('searches users', async () => {
@@ -59,6 +66,31 @@ describe('POST /api/chat/:userId', () => {
       reply_to_id: null,
     });
   });
+
+  it('rejects empty message without attachments', async () => {
+    const res = await request(app).post('/api/chat/2').send({ message: '' });
+    expect(res.status).toBe(400);
+    expect(service.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized file uploads', async () => {
+    const bigBuffer = Buffer.alloc(10 * 1024 * 1024 + 1);
+    const res = await request(app)
+      .post('/api/chat/2')
+      .attach('file', bigBuffer, { filename: 'big.png', contentType: 'image/png' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('File too large');
+    expect(service.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects disallowed mime types', async () => {
+    const res = await request(app)
+      .post('/api/chat/2')
+      .attach('file', Buffer.from('test'), { filename: 'bad.txt', contentType: 'text/plain' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Invalid file type');
+    expect(service.sendMessage).not.toHaveBeenCalled();
+  });
 });
 
 describe('DELETE /api/chat/messages/:id', () => {
@@ -78,5 +110,19 @@ describe('PATCH /api/chat/messages/:id/pin', () => {
     const res = await request(app).patch('/api/chat/messages/1/pin');
     expect(res.status).toBe(200);
     expect(service.togglePin).toHaveBeenCalledWith('user1', '1');
+  });
+});
+
+describe('POST /api/chat/moderation', () => {
+  it('logs moderation event', async () => {
+    service.logModerationEvent.mockResolvedValue({});
+    const payload = { message: 'bad word here', matchedWords: ['bad'] };
+    const res = await request(app).post('/api/chat/moderation').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.logModerationEvent).toHaveBeenCalledWith({
+      userId: 'user1',
+      message: 'bad word here',
+      matchedWords: ['bad'],
+    });
   });
 });

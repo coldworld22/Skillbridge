@@ -21,3 +21,18 @@ exports.updateLesson = async (id, data) => {
 exports.deleteLesson = async (id) => {
   return db("class_lessons").where({ id }).del();
 };
+
+// Find lessons starting between a time window, including class and instructor details
+exports.getLessonsStartingBetween = async (start, end) => {
+  return db("class_lessons as l")
+    .join("online_classes as c", "l.class_id", "c.id")
+    .select(
+      "l.id",
+      "l.class_id",
+      "l.title",
+      "l.start_time",
+      "c.title as class_title",
+      "c.instructor_id"
+    )
+    .whereBetween("l.start_time", [start, end]);
+};

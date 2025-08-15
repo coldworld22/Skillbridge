@@ -36,24 +36,10 @@ router.put(
  */
 router.patch(
   "/:id/avatar",
-  (req, res, next) => {
-    console.log("📥 Incoming avatar upload");
-    next();
-  },
+  verifyToken,
+  isInstructor,
   avatarUpload.single("avatar"),
-  async (req, res) => {
-    try {
-      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-      const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
-      await db("users").where({ id: req.params.id }).update({ avatar_url: avatarUrl });
-
-      res.json({ avatar_url: avatarUrl });
-    } catch (err) {
-      console.error("❌ Avatar upload error:", err.message);
-      res.status(500).json({ error: err.message });
-    }
-  }
+  controller.updateAvatar
 );
 
 // Upload certificate

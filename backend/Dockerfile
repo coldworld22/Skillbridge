@@ -1,20 +1,19 @@
-# Use official Node.js image
 FROM node:18-alpine
 
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json ./
+# Copy package.json and package-lock.json first (better build caching)
+COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (use ci for clean install)
+RUN npm ci --only=production
 
 # Copy the rest of the application files
 COPY . .
 
-# Expose port (Ensure it matches the one in .env)
-EXPOSE 5000
+# Expose port - match docker-compose.yml (5002)
+EXPOSE 5002
 
 # Start the backend server
 CMD ["node", "src/server.js"]

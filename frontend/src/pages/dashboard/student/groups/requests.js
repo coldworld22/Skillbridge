@@ -2,6 +2,7 @@ import StudentLayout from '@/components/layouts/StudentLayout';
 import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
+import { toast } from 'react-hot-toast';
 
 export default function JoinRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -14,6 +15,16 @@ export default function JoinRequestsPage() {
       })
       .catch(() => setRequests([]));
   }, []);
+
+  const handleCancel = async (id) => {
+    try {
+      await groupService.cancelJoinRequest(id);
+      setRequests((prev) => prev.filter((g) => g.id !== id));
+      toast.success('Join request cancelled');
+    } catch (e) {
+      toast.error('Failed to cancel join request');
+    }
+  };
   return (
     <StudentLayout>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
@@ -33,10 +44,10 @@ export default function JoinRequestsPage() {
                 </div>
                 <p className="text-sm text-gray-600">{group.description}</p>
                 <button
-                  disabled
-                  className="mt-2 w-full px-4 py-2 rounded bg-gray-300 cursor-not-allowed"
+                  onClick={() => handleCancel(group.id)}
+                  className="mt-2 w-full px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
                 >
-                  Awaiting Approval
+                  Cancel Request
                 </button>
               </div>
             ))}

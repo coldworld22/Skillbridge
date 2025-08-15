@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
 import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
 
 export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
+  const { t } = useTranslation("tutorials");
   const [errors, setErrors] = useState({});
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [tagInput, setTagInput] = useState("");
@@ -11,21 +13,26 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
       setTagSuggestions([]);
       return;
     }
-    let ignore = false;
-    fetchTutorialTags(tagInput)
-      .then((tags) => {
-        if (!ignore) {
+
+    const controller = new AbortController();
+    const handler = setTimeout(() => {
+      fetchTutorialTags(tagInput, controller.signal)
+        .then((tags) => {
           const filtered = tags.filter(
             (t) => !tutorialData.tags.includes(t.name)
           );
           setTagSuggestions(filtered);
-        }
-      })
-      .catch(() => {
-        if (!ignore) setTagSuggestions([]);
-      });
+        })
+        .catch((err) => {
+          if (err.code !== "ERR_CANCELED" && err.name !== "CanceledError") {
+            setTagSuggestions([]);
+          }
+        });
+    }, 300);
+
     return () => {
-      ignore = true;
+      clearTimeout(handler);
+      controller.abort();
     };
   }, [tagInput, tutorialData.tags]);
 
@@ -85,15 +92,32 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
   const validateAndContinue = () => {
     const newErrors = {};
 
-    if (!tutorialData.title) newErrors.title = "Title is required.";
-    if (!tutorialData.shortDescription) newErrors.shortDescription = "Short description is required.";
-    if (!tutorialData.category) newErrors.category = "Category is required.";
-    if (!tutorialData.level) newErrors.level = "Level is required.";
-    if (!tutorialData.language) newErrors.language = "Tutorial language is required.";
-    if (!tutorialData.lessonCount || isNaN(tutorialData.lessonCount) || tutorialData.lessonCount <= 0) {
-      newErrors.lessonCount = "Number of lessons is required.";
+    if (!tutorialData.title)
+      newErrors.title = t("create.basic.validation.title_required");
+    if (!tutorialData.shortDescription)
+      newErrors.shortDescription = t(
+        "create.basic.validation.short_desc_required"
+      );
+    if (!tutorialData.category)
+      newErrors.category = t("create.basic.validation.category_required");
+    if (!tutorialData.level)
+      newErrors.level = t("create.basic.validation.level_required");
+    if (!tutorialData.language)
+      newErrors.language = t("create.basic.validation.language_required");
+    if (
+      !tutorialData.lessonCount ||
+      isNaN(tutorialData.lessonCount) ||
+      tutorialData.lessonCount <= 0
+    ) {
+      newErrors.lessonCount = t(
+        "create.basic.validation.lessons_required"
+      );
     }
-    if (!tutorialData.isFree && (!tutorialData.price || isNaN(tutorialData.price))) newErrors.price = "Valid price is required.";
+    if (
+      !tutorialData.isFree &&
+      (!tutorialData.price || isNaN(tutorialData.price))
+    )
+      newErrors.price = t("create.basic.validation.price_required");
 
     setErrors(newErrors);
 
@@ -121,46 +145,60 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <label className="font-semibold">Tutorial Title *</label>
+        <label className="font-semibold">
+          {t("create.basic.title_label")}
+        </label>
         <input
           type="text"
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.title}
           onChange={(e) => handleChange("title", e.target.value)}
-          placeholder="Write tutorial title in any language..."
+          placeholder={t("create.basic.title_placeholder")}
         />
-        {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+        {errors.title && (
+          <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+        )}
       </div>
 
       {/* Short Description */}
       <div>
-        <label className="font-semibold">Short Description *</label>
+        <label className="font-semibold">
+          {t("create.basic.short_desc_label")}
+        </label>
         <textarea
           rows={4}
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.shortDescription}
           onChange={(e) => handleChange("shortDescription", e.target.value)}
-          placeholder="Briefly describe the tutorial content..."
+          placeholder={t("create.basic.short_desc_placeholder")}
         />
-        {errors.shortDescription && <p className="text-red-500 text-sm mt-1">{errors.shortDescription}</p>}
+        {errors.shortDescription && (
+          <p className="text-red-500 text-sm mt-1">{errors.shortDescription}</p>
+        )}
       </div>
 
       {/* Language */}
       <div>
-        <label className="font-semibold">Tutorial Language *</label>
+        <label className="font-semibold">
+          {t("create.basic.language_label")}
+        </label>
         <input
           type="text"
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.language || ""}
           onChange={(e) => handleChange("language", e.target.value)}
-          placeholder="e.g., English, Arabic, French..."
+          placeholder={t("create.basic.language_placeholder")}
         />
-        {errors.language && <p className="text-red-500 text-sm mt-1">{errors.language}</p>}
+        {errors.language && (
+          <p className="text-red-500 text-sm mt-1">{errors.language}</p>
+        )}
       </div>
 
       {/* Category */}
       <div>
-        <label className="font-semibold">Category *</label>
+        <label className="font-semibold">
+          {t("create.basic.category_label")}
+        </label>
         <select
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.category}
@@ -170,7 +208,9 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
             handleChange("categoryName", selected ? selected.name : "");
           }}
         >
-          <option value="">Select a Category</option>
+          <option value="">
+            {t("create.basic.select_category")}
+          </option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -184,29 +224,37 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
 
       {/* Level */}
       <div>
-        <label className="font-semibold">Level *</label>
+        <label className="font-semibold">
+          {t("create.basic.level_label")}
+        </label>
         <select
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.level}
           onChange={(e) => handleChange("level", e.target.value)}
         >
-          <option value="">Select Level</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option>
+          <option value="">{t("create.basic.select_level")}</option>
+          <option value="Beginner">{t("create.basic.level_beginner")}</option>
+          <option value="Intermediate">
+            {t("create.basic.level_intermediate")}
+          </option>
+          <option value="Advanced">{t("create.basic.level_advanced")}</option>
         </select>
-        {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
+        {errors.level && (
+          <p className="text-red-500 text-sm mt-1">{errors.level}</p>
+        )}
       </div>
 
       {/* Number of Lessons */}
       <div>
-        <label className="font-semibold">Number of Lessons *</label>
+        <label className="font-semibold">
+          {t("create.basic.lessons_label")}
+        </label>
         <input
           type="number"
           className="w-full p-2 border rounded mt-1"
           value={tutorialData.lessonCount || ""}
           onChange={(e) => handleChange("lessonCount", e.target.value)}
-          placeholder="e.g., 5"
+          placeholder={t("create.basic.lessons_placeholder")}
         />
         {errors.lessonCount && (
           <p className="text-red-500 text-sm mt-1">{errors.lessonCount}</p>
@@ -215,7 +263,7 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
 
       {/* Tags */}
       <div>
-        <label className="font-semibold">Tags</label>
+        <label className="font-semibold">{t("create.basic.tags_label")}</label>
         <div className="relative">
           <div className="flex flex-wrap gap-2 mb-2">
             {tutorialData.tags.map((tag) => (
@@ -240,12 +288,12 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   addTag(tagInput);
                 }
               }}
-              placeholder="Add tags..."
+              placeholder={t("create.basic.add_tags_placeholder")}
               className="flex-1 p-2 border rounded"
             />
             <button
@@ -253,7 +301,7 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
               onClick={() => addTag(tagInput)}
               className="px-3 py-2 bg-yellow-500 text-white rounded"
             >
-              Add
+              {t("create.basic.add_tag")}
             </button>
           </div>
           {tagSuggestions.length > 0 && tagInput && (
@@ -274,7 +322,7 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
 
       {/* Is Free + Price */}
       <div className="flex items-center gap-4">
-        <label className="font-semibold">Is it Free?</label>
+        <label className="font-semibold">{t("create.basic.is_free")}</label>
         <input
           type="checkbox"
           checked={tutorialData.isFree}
@@ -285,15 +333,17 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
 
       {!tutorialData.isFree && (
         <div>
-          <label className="font-semibold">Price (USD) *</label>
+          <label className="font-semibold">{t("create.basic.price_label")}</label>
           <input
             type="number"
             className="w-full p-2 border rounded mt-1"
             value={tutorialData.price}
             onChange={(e) => handleChange("price", e.target.value)}
-            placeholder="Enter price, e.g., 19.99"
+            placeholder={t("create.basic.price_placeholder")}
           />
-          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+          {errors.price && (
+            <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+          )}
         </div>
       )}
 
@@ -303,7 +353,7 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
           onClick={validateAndContinue}
           className="bg-yellow-500 hover:bg-yellow-600 text-white px-8 py-3 rounded-full font-bold"
         >
-          Next ➡️
+          {t("create.basic.next")}
         </button>
       </div>
     </div>

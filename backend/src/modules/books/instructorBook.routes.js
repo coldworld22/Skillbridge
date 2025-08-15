@@ -1,0 +1,15 @@
+const router = require("express").Router();
+const controller = require("./book.controller");
+const upload = require("./bookUploadMiddleware");
+const {
+  verifyToken,
+  isInstructorOrAdmin,
+} = require("../../middleware/auth/authMiddleware");
+
+router.use(verifyToken, isInstructorOrAdmin);
+
+router.get("/analytics", controller.getInstructorBookAnalytics);
+router.get("/", controller.listInstructorBooks);
+router.post("/", upload, controller.createBook);
+
+module.exports = router;

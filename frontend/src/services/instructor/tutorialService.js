@@ -22,7 +22,7 @@ const mapStatus = (tut) =>
     ? "Approved"
     : tut.moderation_status === "Rejected"
     ? "Rejected"
-    : "Submitted";
+    : "Pending";
 
 export const fetchInstructorTutorials = async () => {
   const { data } = await api.get("/users/tutorials/admin/my");
@@ -38,6 +38,13 @@ export const fetchInstructorTutorials = async () => {
     comments: t.comment_count || 0,
     watchTime: t.watch_time || 0,
   }));
+};
+
+export const createTutorial = async (formData) => {
+  const { data } = await api.post("/users/tutorials/admin", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
 };
 
 export const fetchInstructorTutorialById = async (id) => {
@@ -62,6 +69,13 @@ export const fetchInstructorTutorialById = async (id) => {
     progress: tut.progress,
     chapters,
   };
+};
+
+export const updateTutorial = async (id, formData) => {
+  const { data } = await api.put(`/users/tutorials/admin/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data;
 };
 
 export const submitTutorialForReview = async (id) => {

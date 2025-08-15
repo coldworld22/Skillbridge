@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookCardSkeleton from "@/components/books/BookCardSkeleton";
-import { fetchBooks, deleteBook, updateBookStatus } from "@/services/bookService";
+import { fetchBooks, deleteBook, updateBookStatus, buildUrl } from "@/services/bookService";
 import { fetchBookCategories } from "@/services/bookCategoryService";
 import { getLanguages } from "@/services/languageService";
 import { fetchBookTags } from "@/services/bookTagService";
@@ -15,7 +15,6 @@ import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, Fi
 import { Switch } from '@headlessui/react';
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
-
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 
@@ -23,12 +22,12 @@ function AdminBooksPage() {
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [filters, setFilters] = useState({
-    search: "", 
-    category: "", 
-    status: "", 
-    priceRange: 0, 
-    language: "", 
-    tags: [] 
+    search: "",
+    category: "",
+    status: "",
+    priceRange: null,
+    language: "",
+    tags: []
   });
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -49,6 +48,9 @@ function AdminBooksPage() {
     message: "",
     onConfirm: null,
   });
+
+  const fetchNotifications = useNotificationStore((state) => state.fetch);
+  const fetchMessages = useMessageStore((state) => state.fetch);
 
   const openConfirmModal = ({ title, message, onConfirm }) => {
     setConfirmModal({ isOpen: true, title, message, onConfirm });
@@ -71,8 +73,10 @@ function AdminBooksPage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const cats = await fetchBookCategories();
-        const langs = await getLanguages();
+        const [cats, langs] = await Promise.all([
+          fetchBookCategories(),
+          getLanguages(),
+        ]);
         setCategories(cats);
         setLanguages(langs);
       } catch (err) {
@@ -82,26 +86,66 @@ function AdminBooksPage() {
     loadCategories();
   }, [t]);
 
+  const tagAbortRef = useRef(null);
+
+  const debouncedFetchTags = useMemo(
+    () =>
+      debounce(async (input, signal) => {
+        try {
+          const data = await fetchBookTags(input, { signal });
+          setTagSuggestions(data);
+        } catch (err) {
+          if (err.name !== "CanceledError" && err.name !== "AbortError") {
+            console.error("Failed to fetch tags", err);
+          }
+        }
+      }, 300),
+    []
+  );
+
   useEffect(() => {
     if (!tagInput) {
       setTagSuggestions([]);
+      tagAbortRef.current?.abort();
+      debouncedFetchTags.cancel();
       return;
     }
 
-    fetchBookTags(tagInput)
-      .then(setTagSuggestions)
-      .catch(() => {});
-  }, [tagInput]);
+    tagAbortRef.current?.abort();
+    debouncedFetchTags.cancel();
+    const controller = new AbortController();
+    tagAbortRef.current = controller;
+    debouncedFetchTags(tagInput, controller.signal);
 
-  useEffect(() => {
-    const loadBooks = async () => {
+    return () => {
+      controller.abort();
+      debouncedFetchTags.cancel();
+    };
+  }, [tagInput, debouncedFetchTags]);
+
+  const loadBooks = useCallback(
+    async (currentPage = page) => {
       try {
         setLoading(true);
+        const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+          if (
+            value === "" ||
+            value === null ||
+            value === undefined ||
+            (Array.isArray(value) && value.length === 0) ||
+            (key === "priceRange" && (value === null || value <= 0))
+          ) {
+            return acc;
+          }
+          acc[key] = value;
+          return acc;
+        }, {});
         const { books: list, meta } = await fetchBooks({
-          page,
+          page: currentPage,
           perPage,
-          filters,
+          filters: activeFilters,
           sort: { sortBy },
+          admin: true,
         });
         setBooks(list);
         setMeta(meta);
@@ -111,9 +155,13 @@ function AdminBooksPage() {
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [page, perPage, filters, sortBy, t]
+  );
+
+  useEffect(() => {
     loadBooks();
-  }, [page, filters, sortBy, perPage, t]);
+  }, [loadBooks]);
 
   // Remember filters in localStorage
   useEffect(() => {
@@ -122,7 +170,6 @@ function AdminBooksPage() {
     }
   }, [filters]);
 
-  const filteredBooks = books;
   const totalPages = meta?.totalPages ?? 1;
   const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
   const endIndex = books.length ? startIndex + books.length - 1 : 0;
@@ -132,7 +179,7 @@ function AdminBooksPage() {
       const updated = prev.includes(id)
         ? prev.filter((x) => x !== id)
         : [...prev, id];
-      setAllSelected(updated.length === filteredBooks.length);
+      setAllSelected(updated.length === books.length);
       return updated;
     });
   };
@@ -142,17 +189,16 @@ function AdminBooksPage() {
       setSelectedBooks([]);
       setAllSelected(false);
     } else {
-      setSelectedBooks(filteredBooks.map((b) => b.id));
+      setSelectedBooks(books.map((b) => b.id));
       setAllSelected(true);
     }
   };
 
   useEffect(() => {
     setAllSelected(
-      filteredBooks.length > 0 &&
-        selectedBooks.length === filteredBooks.length
+      books.length > 0 && selectedBooks.length === books.length
     );
-  }, [filteredBooks, selectedBooks]);
+  }, [books, selectedBooks]);
 
   const handleBulkDelete = async () => {
     openConfirmModal({
@@ -162,10 +208,22 @@ function AdminBooksPage() {
         try {
           const deletePromises = selectedBooks.map(id => deleteBook(id));
           await Promise.all(deletePromises);
-          setBooks((prev) => prev.filter((b) => !selectedBooks.includes(b.id)));
-          setMeta((m) => ({ ...m, total: (m.total ?? 0) - selectedBooks.length }));
+
+          const remaining = books.filter((b) => !selectedBooks.includes(b.id));
+          const newTotal = (meta.total ?? 0) - selectedBooks.length;
+          const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
+
+          setBooks(remaining);
+          setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
           setSelectedBooks([]);
           toast.success(t("Books deleted successfully"));
+          await Promise.all([fetchNotifications(), fetchMessages()]);
+
+          if (remaining.length === 0 && page > 1) {
+            setPage((p) => p - 1);
+          } else {
+            await loadBooks();
+          }
         } catch (err) {
           toast.error(t("Failed to delete some books"));
         }
@@ -190,6 +248,7 @@ function AdminBooksPage() {
           toast.success(t("Status updated"));
           setSelectedBooks([]);
           setBulkStatus("");
+          await Promise.all([fetchNotifications(), fetchMessages()]);
         } catch (err) {
           toast.error(t("Failed to update status"));
         }
@@ -198,34 +257,30 @@ function AdminBooksPage() {
   };
 
   const toggleBookStatus = async (bookId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
-    setBooks(prev =>
-      prev.map(book =>
-        book.id === bookId ? { ...book, status: newStatus } : book
-      )
-    );
+    const isActive = ["active", "approved"].includes(currentStatus);
+    const newStatus = isActive ? "inactive" : "active";
     try {
-      await updateBookStatus(bookId, newStatus);
-      toast.success(t("Status updated"));
-    } catch (err) {
+      const updated = await updateBookStatus(bookId, newStatus);
       setBooks(prev =>
-        prev.map(book =>
-          book.id === bookId ? { ...book, status: currentStatus } : book
-        )
+        prev.map(book => (book.id === bookId ? updated : book))
       );
+      toast.success(t("Status updated"));
+      await Promise.all([fetchNotifications(), fetchMessages()]);
+    } catch (err) {
       toast.error(t("Failed to update status"));
     }
   };
 
   const resetFilters = () => {
-    setFilters({ 
-      search: "", 
-      category: "", 
-      status: "", 
-      priceRange: 0, 
-      language: "", 
-      tags: [] 
-    });
+    setFilters((prev) => ({
+      ...prev,
+      search: "",
+      category: "",
+      status: "",
+      priceRange: null,
+      language: "",
+      tags: []
+    }));
     setPage(1);
   };
 
@@ -338,14 +393,14 @@ function AdminBooksPage() {
 
             <div className="min-w-[180px]">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t("Max Price")}: ${filters.priceRange}
+                {t("Max Price")}: ${filters.priceRange ?? 0}
               </label>
               <input
                 type="range"
                 min="0"
                 max="500"
                 step="10"
-                value={filters.priceRange}
+                value={filters.priceRange ?? 0}
                 onChange={(e) => {
                   setFilters({ ...filters, priceRange: Number(e.target.value) });
                   setPage(1);
@@ -529,14 +584,14 @@ function AdminBooksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t("Max Price")}: ${filters.priceRange}
+                  {t("Max Price")}: ${filters.priceRange ?? 0}
                 </label>
                 <input
                   type="range"
                   min="0"
                   max="500"
                   step="10"
-                  value={filters.priceRange}
+                  value={filters.priceRange ?? 0}
                   onChange={(e) => {
                     setFilters({ ...filters, priceRange: Number(e.target.value) });
                     setPage(1);
@@ -671,8 +726,7 @@ function AdminBooksPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {books.map((book) => {
                 const coverUrl =
-                  book.cover_image_url ||
-                  buildUrl(book.cover_image) ||
+                  buildUrl(book.cover_image_url || book.cover_image) ||
                   "/images/default-book-cover.jpg";
                 return (
                   <div
@@ -698,15 +752,19 @@ function AdminBooksPage() {
                       />
                       <div className="absolute top-3 right-3">
                         <Switch
-                          checked={book.status === "active"}
+                          checked={["active", "approved"].includes(book.status)}
                           onChange={() => toggleBookStatus(book.id, book.status)}
                           className={`${
-                            book.status === "active" ? 'bg-yellow-500' : 'bg-gray-200'
+                            ["active", "approved"].includes(book.status)
+                              ? 'bg-yellow-500'
+                              : 'bg-gray-200'
                           } relative inline-flex h-6 w-11 items-center rounded-full`}
                         >
                           <span
                             className={`${
-                              book.status === "active" ? 'translate-x-6' : 'translate-x-1'
+                              ["active", "approved"].includes(book.status)
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
                             } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                           />
                         </Switch>
@@ -758,8 +816,7 @@ function AdminBooksPage() {
                             <FiEdit className="text-lg" />
                           </Link>
                           <Link
-                            href={`/books/${book.slug}`}
-                            target="_blank"
+                            href={`/dashboard/admin/books/view/${book.id}`}
                             className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
                             title={t("View")}
                           >
@@ -767,14 +824,26 @@ function AdminBooksPage() {
                           </Link>
                           <button
                             onClick={() =>
-                              openConfirmModal({
+                            openConfirmModal({
                                 title: t("Confirm Deletion"),
                                 message: t("Are you sure you want to delete this book?"),
                                 onConfirm: async () => {
                                   try {
                                     await deleteBook(book.id);
-                                    setBooks((prev) => prev.filter((b) => b.id !== book.id));
+
+                                    const remaining = books.filter((b) => b.id !== book.id);
+                                    const newTotal = (meta.total ?? 0) - 1;
+                                    const newTotalPages = Math.max(1, Math.ceil(newTotal / perPage));
+
+                                    setBooks(remaining);
+                                    setMeta((m) => ({ ...m, total: newTotal, totalPages: newTotalPages }));
                                     toast.success(t("Book deleted"));
+
+                                    if (remaining.length === 0 && page > 1) {
+                                      setPage((p) => p - 1);
+                                    } else {
+                                      await loadBooks();
+                                    }
                                   } catch {
                                     toast.error(t("Failed to delete"));
                                   }

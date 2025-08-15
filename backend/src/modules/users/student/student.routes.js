@@ -7,7 +7,6 @@ const router = express.Router();
 const controller = require("./student.controller");
 const { verifyToken, isStudent } = require("../../../middleware/auth/authMiddleware");
 const { avatarUpload, identityUpload } = require("./studentUploadMiddleware");
-const db = require("../../../config/database");
 const { updateStudentProfileSchema } = require("./student.validator");
 const validate = require("../../../middleware/validate");
 
@@ -28,19 +27,24 @@ router.put(
   controller.updateProfile
 );
 
+const ensureSelf = (req, res, next) => {
+  if (req.params.id !== String(req.user.id)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+  next();
+};
+
 /**
  * @desc Upload avatar
  * @route PATCH /api/users/student/:id/avatar
  */
 router.patch(
   "/:id/avatar",
-  verifyToken,isStudent,
+  verifyToken,
+  isStudent,
+  ensureSelf,
   avatarUpload.single("avatar"),
-  async (req, res) => {
-    const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
-    await db("users").where({ id: req.params.id }).update({ avatar_url: avatarUrl });
-    res.json({ avatar_url: avatarUrl });
-  }
+  controller.updateAvatar
 );
 
 /**
@@ -49,15 +53,11 @@ router.patch(
  */
 router.patch(
   "/:id/identity",
-  verifyToken,isStudent,
+  verifyToken,
+  isStudent,
+  ensureSelf,
   identityUpload.single("identity"),
-  async (req, res) => {
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-    await db("student_profiles")
-      .where({ user_id: req.params.id })
-      .update({ identity_doc_url: identityUrl });
-    res.json({ identity_doc_url: identityUrl });
-  }
+  controller.updateIdentity
 );
 
 /**

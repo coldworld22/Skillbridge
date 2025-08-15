@@ -56,12 +56,16 @@ exports.createClass = catchAsync(async (req, res) => {
     await service.addClassTags(cls.id, tagIds);
     cls.tags = await service.getClassTags(cls.id);
   }
-  await notificationService.createNotification({
-    user_id: cls.instructor_id,
-    type: "class_created",
-    message:
-      "Your class was created successfully and is now pending review. We'll notify you once it's published.",
-  });
+  notificationService
+    .createNotification({
+      user_id: cls.instructor_id,
+      type: "class_created",
+      message:
+        "Your class was created successfully and is now pending review. We'll notify you once it's published.",
+    })
+    .catch((err) =>
+      console.error("Failed to notify instructor of new class:", err.message)
+    );
 
   const admins = await userModel.findAdmins();
   const instructor = await userModel.findById(cls.instructor_id);
@@ -69,14 +73,12 @@ exports.createClass = catchAsync(async (req, res) => {
   const adminMessage = `Instructor ${instructor.full_name} submitted a new class "${cls.title}"${
     cls.start_date ? ` starting ${new Date(cls.start_date).toLocaleDateString("en-US", { dateStyle: "long" })}` : ""
   } that is awaiting your review.`;
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "new_class",
-        message: adminMessage,
-      })
-    )
+  const adminNotificationPromises = admins.map((admin) =>
+    notificationService.createNotification({
+      user_id: admin.id,
+      type: "new_class",
+      message: adminMessage,
+    })
   );
 
   const instructorMessage =
@@ -84,23 +86,54 @@ exports.createClass = catchAsync(async (req, res) => {
 
   const sender = admins[0];
   if (sender) {
-    await messageService.createMessage({
-      sender_id: sender.id,
-      receiver_id: cls.instructor_id,
-      message: instructorMessage,
-    });
-  }
-  await Promise.all(
-    admins.map((admin) =>
-      messageService.createMessage({
-        sender_id: instructor.id,
-        receiver_id: admin.id,
-        message: adminMessage,
+    messageService
+      .createMessage({
+        sender_id: sender.id,
+        receiver_id: cls.instructor_id,
+        message: instructorMessage,
       })
-    )
+      .catch((err) =>
+        console.error(
+          "Failed to send instructor class message:",
+          err.message
+        )
+      );
+  }
+
+  const adminMessagePromises = admins.map((admin) =>
+    messageService.createMessage({
+      sender_id: instructor.id,
+      receiver_id: admin.id,
+      message: adminMessage,
+    })
   );
 
   sendSuccess(res, cls, "Class created");
+
+  Promise.allSettled(adminNotificationPromises).then((results) => {
+    results.forEach((result, idx) => {
+      if (result.status === "rejected") {
+        console.error(
+          "Failed to notify admin",
+          admins[idx].id,
+          result.reason?.message || result.reason
+        );
+      }
+    });
+  });
+
+  Promise.allSettled(adminMessagePromises).then((results) => {
+    results.forEach((result, idx) => {
+      if (result.status === "rejected") {
+        console.error(
+          "Failed to send admin message",
+          admins[idx].id,
+          result.reason?.message || result.reason
+        );
+      }
+    });
+  });
+
 });
 
 exports.getAllClasses = catchAsync(async (_req, res) => {

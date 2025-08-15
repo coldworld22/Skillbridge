@@ -1,8 +1,42 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "next-i18next";
 import { motion } from "framer-motion";
+import BookCard from "@/components/books/BookCard";
+import { fetchBooks } from "@/services/bookService";
 
 const BooksSection = () => {
-  const { t } = useTranslation('website');
+  const { t } = useTranslation("website");
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadBooks = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { books: list } = await fetchBooks({
+          perPage: 3,
+          signal: controller.signal,
+        });
+        setBooks(list);
+      } catch (err) {
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          console.error("Failed to load books", err);
+          setError("Failed to load books");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBooks();
+
+    return () => controller.abort();
+  }, []);
+
   return (
     <section className="bg-gray-950 py-16 text-white text-center">
       <motion.h2
@@ -11,16 +45,31 @@ const BooksSection = () => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        📖 {t('explore_books')}
+        📖 {t("explore_books")}
       </motion.h2>
-      <p className="text-gray-300 mb-8">Discover our curated selection of books.</p>
+      <p className="text-gray-300 mb-8">
+        Discover our curated selection of books.
+      </p>
+
+      {loading ? (
+        <p className="text-gray-300 mb-8">Loading...</p>
+      ) : error ? (
+        <p className="text-red-500 mb-8">{error}</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
+          {books.map((book) => (
+            <BookCard key={book.id} book={book} />
+          ))}
+        </div>
+      )}
+
       <motion.a
         href="/marketplace/books"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="inline-block bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-full font-semibold transition"
       >
-        {t('explore_books')}
+        {t("explore_books")}
       </motion.a>
     </section>
   );

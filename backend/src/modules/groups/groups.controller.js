@@ -217,33 +217,46 @@ exports.getMyGroups = catchAsync(async (req, res) => {
 
 exports.joinGroup = catchAsync(async (req, res) => {
   const groupId = req.params.id;
-  const reqRow = await service.requestJoin(groupId, req.user.id);
-
   const group = await service.getGroupById(groupId);
-  const adminIds = await service.listAdminIds(groupId);
-  const note = `${req.user.full_name} requested to join the group "${group.name}"`;
+  if (!group) throw new AppError("Group not found", 404);
 
-  const recipients = adminIds.filter((uid) => uid !== req.user.id);
-  await Promise.all(
-    recipients.map((uid) =>
-      notificationService.createNotification({
-        user_id: uid,
-        type: "join_request",
-        message: note,
-      })
-    )
-  );
-  await Promise.all(
-    recipients.map((uid) =>
-      messageService.createMessage({
-        sender_id: req.user.id,
-        receiver_id: uid,
-        message: note,
-      })
-    )
-  );
+  if (group.requires_approval) {
+    const reqRow = await service.requestJoin(groupId, req.user.id);
 
-  sendSuccess(res, reqRow, "Request sent");
+    const adminIds = await service.listAdminIds(groupId);
+    const note = `${req.user.full_name} requested to join the group "${group.name}"`;
+
+    const recipients = adminIds.filter((uid) => uid !== req.user.id);
+    await Promise.all(
+      recipients.map((uid) =>
+        notificationService.createNotification({
+          user_id: uid,
+          type: "join_request",
+          message: note,
+        })
+      )
+    );
+    await Promise.all(
+      recipients.map((uid) =>
+        messageService.createMessage({
+          sender_id: req.user.id,
+          receiver_id: uid,
+          message: note,
+        })
+      )
+    );
+
+    sendSuccess(res, reqRow, "Request sent");
+  } else {
+    const member = await service.addMember(groupId, req.user.id, "member");
+    sendSuccess(res, member, "Joined group");
+  }
+});
+
+exports.cancelJoin = catchAsync(async (req, res) => {
+  const groupId = req.params.id;
+  await service.cancelJoinRequest(groupId, req.user.id);
+  sendSuccess(res, null, "Request cancelled");
 });
 
 exports.listTags = catchAsync(async (_req, res) => {

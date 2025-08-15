@@ -1,0 +1,79 @@
+{
+  "adminDashboardHome": {
+    "recentAlerts": "Recent Alerts",
+    "unauthorizedUsageDetected": "Unauthorized usage detected",
+    "flaggedChatInPythonClass": "Flagged chat in Python class",
+    "apiKeyExpiringSoon": "API key expiring soon",
+    "viewAllAlerts": "View all alerts",
+    "flaggedMessages": "Flagged Messages",
+    "reviewMessages": "Review messages",
+    "licenseCheck": "License Check",
+    "lastCheck": "Last check: 1 hour ago",
+    "unauthorizedInstanceDetected": "1 unauthorized instance detected",
+    "seeDetails": "See details",
+    "platformInsights": "Platform Insights",
+    "loadingStats": "Loading stats...",
+    "totalUsers": "Total Users",
+    "instructors": "Instructors",
+    "students": "Students",
+    "tutorials": "Tutorials",
+    "classes": "Classes"
+  },
+  "notifications": {
+    "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
+  },
+  "tutorials": {
+    "list": {
+      "loading": "Loading tutorials...",
+      "load_error": "Failed to load tutorials",
+      "heading": "📺 Premium Tutorials",
+      "subheading": "Master new skills with our curated collection of expert-led tutorials",
+      "search_placeholder": "Search tutorials...",
+      "mobile_filters": "Filters",
+      "desktop_search_placeholder": "Search tutorials, instructors...",
+      "sort_by": "Sort by:",
+      "featured": "Featured",
+      "most_viewed": "Most Viewed",
+      "top_rated": "Top Rated",
+      "showing": "Showing",
+      "of": "of",
+      "tutorials": "tutorials",
+      "clear_filters": "Clear all filters",
+      "premium_badge": "PREMIUM",
+      "trending": "Trending",
+      "free": "Free",
+      "enrolled": "ENROLLED",
+      "empty_title": "No tutorials found",
+      "empty_description": "Try adjusting your filters or search terms",
+      "reset_filters": "Reset Filters"
+    },
+    "detail": {
+      "login_first": "Please login first",
+      "enroll_success": "Enrolled successfully!",
+      "enroll_fail": "Enrollment failed",
+      "load_error": "Failed to load tutorial",
+      "not_found": "Tutorial not found",
+      "share": "Share",
+      "share_message": "Check out this tutorial on SkillBridge!",
+      "share_success": "Shared successfully!",
+      "quiz_locked": "Quiz locked",
+      "enroll_to_access_quiz": "Enroll to access quiz",
+      "start_assignment": "Start Assignment",
+      "complete_quiz_unlock_assignments": "Complete the quiz to unlock assignments",
+      "claim_certificate": "Claim Your Certificate",
+      "pass_quiz_to_unlock_certificate": "Pass quiz to unlock certificate",
+      "certificate_locked": "Certificate locked",
+      "free": "Free"
+    }
+  },
+  "dashboard": {
+    "tutorialEditPage": {
+      "loading": "Loading tutorial...",
+      "not_found": "Tutorial not found",
+      "save_changes": "Save Changes",
+      "update_success": "Tutorial updated successfully",
+      "notification_updated": "Notification updated",
+      "update_failed": "Failed to update tutorial"
+    }
+  }
+}

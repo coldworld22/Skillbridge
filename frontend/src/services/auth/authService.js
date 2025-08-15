@@ -12,11 +12,21 @@ import api from "@/services/api/api";
  */
 export const loginUser = async ({ email, password, recaptchaToken }) => {
   try {
-    console.log("🔐 loginUser requesting", api.defaults.baseURL + "/auth/login");
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "🔐 loginUser requesting",
+        `${api.defaults.baseURL}/auth/login`
+      );
+    }
     const res = await api.post("/auth/login", { email, password, recaptchaToken });
     return res.data;
   } catch (err) {
-    console.error("❌ loginUser error", err?.response || err);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("❌ loginUser error", {
+        message: err?.message,
+        status: err?.response?.status,
+      });
+    }
     throw err;
   }
 };
@@ -35,11 +45,11 @@ export const registerUser = async (payload) => {
 /**
  * 📧 Request OTP to reset password (step 1).
  * 
- * @param {string} email - Email to send OTP to
+ * @param {{email: string, via?: string}} payload
  * @returns {Promise<{ message: string }>}
  */
-export const requestPasswordReset = async (email) => {
-  const res = await api.post("/auth/forgot-password", { email });
+export const requestPasswordReset = async ({ email, via = "email" }) => {
+  const res = await api.post("/auth/forgot-password", { email, via });
   return res.data;
 };
 

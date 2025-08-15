@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import BookForm from "@/components/books/BookForm";
@@ -13,6 +13,8 @@ import { FiArrowLeft, FiX } from "react-icons/fi";
 import Head from "next/head";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import useCoverImageUpload from "@/hooks/useCoverImageUpload";
+import { MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 function AdminEditBookPage() {
   const router = useRouter();
@@ -23,9 +25,15 @@ function AdminEditBookPage() {
   const [book, setBook] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const [fileError, setFileError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const {
+    coverPreview,
+    fileError,
+    fileInputRef,
+    handleFileChange,
+    handleRemoveImage,
+    setCoverPreview,
+  } = useCoverImageUpload(t);
 
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
@@ -63,45 +71,9 @@ function AdminEditBookPage() {
     load();
   }, [id, t]);
 
-  const handleFileChange = useCallback(
-    (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowedTypes.includes(file.type)) {
-        setFileError(t("validation.invalidFileType"));
-        return;
-      }
-
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setFileError(t("validation.fileTooLarge", { size: "10MB" }));
-        return;
-      }
-
-      setFileError(null);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCoverPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    },
-    [t]
-  );
-
-  const handleRemoveImage = useCallback(() => {
-    setCoverPreview(null);
-    setFileError(null);
-    const fileInput = document.getElementById("coverImage");
-    if (fileInput) fileInput.value = "";
-  }, []);
-
   const handleSubmit = async (formData, setProgress) => {
-    const fileInput = document.getElementById("coverImage");
-    if (fileInput?.files?.[0]) {
-      formData.append("cover_image", fileInput.files[0]);
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("cover_image", fileInputRef.current.files[0]);
     }
     try {
       setProgress(0);
@@ -193,7 +165,7 @@ function AdminEditBookPage() {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700">
                   {t("booksCreate.coverImage")}
                 </label>
 
@@ -220,22 +192,25 @@ function AdminEditBookPage() {
                     <div className="space-y-1 text-center">
                       <div className="flex text-sm text-gray-600 justify-center">
                         <label
-                          htmlFor="coverImage"
+                          htmlFor="cover_image"
                           className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
                         >
                           <span>{t("booksCreate.uploadImage")}</span>
                           <input
-                            id="coverImage"
-                            name="coverImage"
+                            id="cover_image"
+                            name="cover_image"
                             type="file"
                             className="sr-only"
+                            ref={fileInputRef}
                             onChange={handleFileChange}
                             accept="image/jpeg, image/png, image/webp"
                           />
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("booksCreate.imageRequirements", { size: "10MB" })}
+                        {t("booksCreate.imageRequirements", {
+                          size: `${MAX_IMAGE_SIZE_MB}MB`,
+                        })}
                       </p>
                     </div>
                   </div>

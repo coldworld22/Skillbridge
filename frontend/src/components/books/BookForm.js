@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "next-i18next";
 import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
+import debounce from "lodash/debounce";
+import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
 
 export default function BookForm({
   onSubmit,
@@ -13,8 +15,9 @@ export default function BookForm({
   submitText,
   cancelText,
   onCancel,
+  showStatusSelector = false,
 }) {
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t } = useTranslation(["dashboard", "common", "validation"]);
   const {
     register,
     handleSubmit,
@@ -25,10 +28,10 @@ export default function BookForm({
   } = useForm({
     defaultValues: {
       tags: [],
-      status: "pending",
       is_free: false,
       allow_preview: false,
       ...(defaultValues || {}),
+      status: defaultValues?.status ?? "pending",
     },
   });
   const [languages, setLanguages] = useState([]);
@@ -45,10 +48,10 @@ export default function BookForm({
     if (defaultValues) {
       reset({
         tags: defaultValues.tags || [],
-        status: "pending",
         is_free: defaultValues.is_free ?? false,
         allow_preview: defaultValues.allow_preview ?? false,
         ...defaultValues,
+        status: defaultValues.status ?? "pending",
       });
       setTags(defaultValues.tags || []);
     }
@@ -77,19 +80,42 @@ export default function BookForm({
     setValue("tags", tags);
   }, [tags, setValue]);
 
+  const tagAbortRef = useRef(null);
+
+  const debouncedFetchTags = useMemo(
+    () =>
+      debounce(async (input, signal) => {
+        try {
+          const data = await fetchBookTags(input, { signal });
+          setTagSuggestions(data);
+        } catch (err) {
+          if (err.name !== "CanceledError" && err.name !== "AbortError") {
+            console.error("Failed to fetch tags", err);
+          }
+        }
+      }, 300),
+    []
+  );
+
   useEffect(() => {
-    let ignore = false;
-    if (tagInput) {
-      fetchBookTags(tagInput).then((data) => {
-        if (!ignore) setTagSuggestions(data);
-      });
-    } else {
+    if (!tagInput) {
       setTagSuggestions([]);
+      tagAbortRef.current?.abort();
+      debouncedFetchTags.cancel();
+      return;
     }
+
+    tagAbortRef.current?.abort();
+    debouncedFetchTags.cancel();
+    const controller = new AbortController();
+    tagAbortRef.current = controller;
+    debouncedFetchTags(tagInput, controller.signal);
+
     return () => {
-      ignore = true;
+      controller.abort();
+      debouncedFetchTags.cancel();
     };
-  }, [tagInput]);
+  }, [tagInput, debouncedFetchTags]);
 
   const addTag = (name) => {
     const value = name.trim();
@@ -97,9 +123,13 @@ export default function BookForm({
     if (!tags.includes(value)) {
       setTags([...tags, value]);
       if (!tagSuggestions.find((t) => t.name === value)) {
-        createBookTag({ name: value }).then((newTag) =>
-          setTagSuggestions((prev) => [...prev, newTag])
-        );
+        createBookTag({ name: value })
+          .then((newTag) =>
+            setTagSuggestions((prev) => [...prev, newTag])
+          )
+          .catch((err) =>
+            console.error("Failed to create tag", err)
+          );
       }
     }
     setTagInput("");
@@ -128,7 +158,7 @@ export default function BookForm({
     formData.append("license_type", data.license_type);
     formData.append("is_free", isFree ? 1 : 0);
     formData.append("allow_preview", data.allow_preview ? 1 : 0);
-    formData.append("status", "pending");
+    formData.append("status", data.status);
     setUploadProgress(0);
     onSubmit(formData, setUploadProgress);
   };
@@ -286,16 +316,22 @@ export default function BookForm({
             validate: {
               fileType: (files) =>
                 !files[0] ||
-                ["image/png", "image/jpeg"].includes(files[0].type) ||
-                "Only PNG or JPG",
+                [
+                  "image/png",
+                  "image/jpeg",
+                  "image/webp",
+                ].includes(files[0].type) ||
+                t("validation.pngJpgWebpOnly"),
               fileSize: (files) =>
-                !files[0] || files[0].size <= 2 * 1024 * 1024 || "Max 2MB",
+                !files[0] ||
+                files[0].size <= MAX_IMAGE_SIZE ||
+                t("validation.fileTooLarge", { size: `${MAX_IMAGE_SIZE_MB}MB` }),
             },
           });
           return (
             <input
               type="file"
-              accept=".png,.jpg,.jpeg"
+              accept=".png,.jpg,.jpeg,.webp"
               {...reg}
               onChange={(e) => {
                 reg.onChange(e);
@@ -330,9 +366,11 @@ export default function BookForm({
             required: !isEdit && t("booksCreate.bookFileRequired"),
             validate: {
               fileType: (files) =>
-                !files[0] || files[0].type === "application/pdf" || "PDF only",
+                !files[0] || files[0].type === "application/pdf" || t("validation.pdfOnly"),
               fileSize: (files) =>
-                !files[0] || files[0].size <= 50 * 1024 * 1024 || "Max 50MB",
+                !files[0] ||
+                files[0].size <= 50 * 1024 * 1024 ||
+                t("validation.fileTooLarge", { size: "50MB" }),
             },
           });
           return (
@@ -364,7 +402,35 @@ export default function BookForm({
           {t("booksCreate.previewPagesLabel")}
         </label>
         {(() => {
-          const reg = register("preview_pages");
+          const reg = register("preview_pages", {
+            validate: {
+              fileType: (files) => {
+                if (!files || files.length === 0) return true;
+                return (
+                  Array.from(files).every(
+                    (file) =>
+                      file.type === "application/pdf" ||
+                      file.type.startsWith("image/")
+                  ) || t("validation.pdfOrImageOnly")
+                );
+              },
+              fileSize: (files) => {
+                if (!files || files.length === 0) return true;
+                return (
+                  Array.from(files).every(
+                    (file) => file.size <= 50 * 1024 * 1024
+                  ) || t("validation.eachFileLessThan", { size: "50MB" })
+                );
+              },
+              fileCount: (files) => {
+                if (!files || files.length === 0) return true;
+                return (
+                  files.length <= 10 ||
+                  t("validation.maxFiles", { count: 10 })
+                );
+              },
+            },
+          });
           return (
             <input
               type="file"
@@ -386,6 +452,11 @@ export default function BookForm({
               <li key={idx}>{file.name}</li>
             ))}
           </ul>
+        )}
+        {errors.preview_pages && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors.preview_pages.message}
+          </p>
         )}
       </div>
         <div className="flex items-center gap-2">
@@ -478,9 +549,9 @@ export default function BookForm({
           className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
           <option value="">{t("booksCreate.selectLicenseType")}</option>
-          <option value="personal">Personal use</option>
-          <option value="educational">Educational use</option>
-          <option value="commercial">Commercial resale not allowed</option>
+          <option value="personal">{t("booksCreate.licensePersonal")}</option>
+          <option value="educational">{t("booksCreate.licenseEducational")}</option>
+          <option value="commercial">{t("booksCreate.licenseCommercial")}</option>
         </select>
         {errors.license_type && (
           <p className="text-red-500 text-sm mt-1">
@@ -488,6 +559,30 @@ export default function BookForm({
           </p>
         )}
       </div>
+
+      {showStatusSelector ? (
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t("booksCreate.statusLabel", "Status")}
+          </label>
+          <select
+            {...register("status")}
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option value="pending">
+              {t("booksCreate.statusPending", "Pending")}
+            </option>
+            <option value="approved">
+              {t("booksCreate.statusApproved", "Approved")}
+            </option>
+            <option value="rejected">
+              {t("booksCreate.statusRejected", "Rejected")}
+            </option>
+          </select>
+        </div>
+      ) : (
+        <input type="hidden" {...register("status")} />
+      )}
 
       {uploadProgress !== null && (
         <div className="w-full bg-gray-200 rounded h-2 mb-4">
