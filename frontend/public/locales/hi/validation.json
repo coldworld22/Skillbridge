@@ -1,0 +1,9 @@
+{
+  "fileTooLarge": "फ़ाइल का आकार {{size}} से कम होना चाहिए",
+  "pngJpgWebpOnly": "केवल PNG, JPG या WEBP फ़ाइलों की अनुमति है",
+  "pdfOnly": "केवल पीडीएफ",
+  "pdfOrImageOnly": "केवल पीडीएफ या छवि फ़ाइलों की अनुमति है",
+  "eachFileLessThan": "प्रत्येक फ़ाइल {{size}} से कम होनी चाहिए",
+  "maxFiles": "आप {{count}} फ़ाइलों तक अपलोड कर सकते हैं",
+  "invalidFileType": "अमान्य फ़ाइल प्रकार"
+}
