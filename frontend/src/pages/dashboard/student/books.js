@@ -4,7 +4,7 @@ import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
 
 import { buildUrl } from "@/utils/url";
-import useLibraryStore from "@/store/library/libraryStore";
+import useLibraryStore from "@/store/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
 
 function BookCard({ book }) {

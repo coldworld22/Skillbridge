@@ -3,7 +3,7 @@ import LibraryItem from "@/components/books/LibraryItem";
 import useLibraryStore from "@/store/libraryStore";
 
 export default function LibraryPage() {
-  const { items, fetchLibrary } = useLibraryStore();
+  const { books, fetchLibrary } = useLibraryStore();
 
   useEffect(() => {
     fetchLibrary();
@@ -11,7 +11,7 @@ export default function LibraryPage() {
 
   return (
     <div>
-      {items.map((item) => (
+      {books.map((item) => (
         <LibraryItem key={item.id} item={item} />
       ))}
     </div>
