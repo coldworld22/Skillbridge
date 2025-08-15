@@ -305,8 +305,10 @@ sendSuccess(res, book, "Book status updated");
 
 exports.updateCart = catchAsync(async (req, res) => {
   const { bookId, action } = req.body;
+  const book = await service.getBookById(bookId);
+  if (!book) throw new AppError("Book not found", 404);
+  if (book.status !== "active") throw new AppError("Book is not active", 400);
   if (action === "remove") {
-
     await service.removeFromCart(req.user.id, bookId);
     return sendSuccess(res, null, "Removed from cart");
   }
