@@ -125,6 +125,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'books_purchase_limit',
+      value: '5',
+      description: 'Students can purchase up to 5 books per month'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'books_publish_limit',
+      value: '0',
+      description: 'Instructors cannot publish books'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
       feature_key: 'ads_max_ads',
       value: '3',
@@ -174,6 +188,20 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'books_purchase_limit',
+      value: '20',
+      description: 'Students can purchase up to 20 books per month'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'books_publish_limit',
+      value: '10',
+      description: 'Instructors can publish up to 10 books'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.prime,
       feature_key: 'ads_max_ads',
       value: '10',
@@ -220,6 +248,20 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: 'unlimited',
       description: 'Join unlimited groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'books_purchase_limit',
+      value: 'unlimited',
+      description: 'Students can purchase unlimited books'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'books_publish_limit',
+      value: 'unlimited',
+      description: 'Instructors can publish unlimited books'
     }
   ]);
 };
