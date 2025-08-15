@@ -218,8 +218,6 @@ function AdminCreateBookPage() {
                 submitText={t("booksCreate.save")}
                 cancelText={t("common.cancel")}
                 onCancel={handleCancel}
-                maxFileSize={10 * 1024 * 1024}
-                allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
               />
             </div>
           )}
