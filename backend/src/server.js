@@ -109,10 +109,18 @@ app.use("/api/community/admin", require("./modules/community/admin/admin.routes"
 app.use("/api/community", require("./modules/community/public/public.routes"));
 app.use("/api/roles", require("./modules/roles/roles.routes"));
 app.use("/api/plans", require("./modules/plans/plans.routes"));
-app.use("/api/payment-methods", require("./modules/paymentMethods/paymentMethods.public.routes"));
+// Register admin routes before public routes to prevent public routes from catching
+// requests intended for admin endpoints such as "/api/payment-methods/admin".
+app.use(
+  "/api/payment-methods/admin",
+  require("./modules/paymentMethods/paymentMethods.routes")
+);
+app.use(
+  "/api/payment-methods",
+  require("./modules/paymentMethods/paymentMethods.public.routes")
+);
 app.use("/api/payments/student", require("./modules/payments/student.routes"));
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
-app.use("/api/payment-methods/admin", require("./modules/paymentMethods/paymentMethods.routes"));
 app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.routes"));
 app.use("/api/messages/config", require("./modules/messagesConfig/messagesConfig.routes"));
 app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
