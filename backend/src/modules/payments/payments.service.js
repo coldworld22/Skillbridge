@@ -105,3 +105,36 @@ exports.approveBankPayment = async (
     return row;
   });
 };
+
+exports.rejectBankPayment = async (
+  id,
+  { amount, item_id, item_type } = {}
+) => {
+  return db.transaction(async (trx) => {
+    const payment = await trx("payments").where({ id }).first();
+    if (!payment) throw new Error("Payment not found");
+
+    if (payment.status !== STATUS.AWAITING_APPROVAL) {
+      throw new Error("Payment is not awaiting approval");
+    }
+
+    if (amount !== undefined && Number(payment.amount) !== Number(amount)) {
+      throw new Error("Payment amount does not match");
+    }
+
+    if (item_id !== undefined && payment.item_id !== item_id) {
+      throw new Error("Payment item does not match order");
+    }
+
+    if (item_type !== undefined && payment.item_type !== item_type) {
+      throw new Error("Payment item type does not match order");
+    }
+
+    const [row] = await trx("payments")
+      .where({ id })
+      .update({ status: STATUS.REJECTED })
+      .returning("*");
+
+    return row;
+  });
+};

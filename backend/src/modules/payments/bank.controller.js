@@ -48,3 +48,19 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   sendSuccess(res, { settings: bankMethod.settings, invoice }, "Bank payment initiated");
 });
 
+exports.approveBankPayment = catchAsync(async (req, res) => {
+  const payment = await paymentsService.approveBankPayment(
+    req.params.id,
+    req.body
+  );
+  sendSuccess(res, payment, "Bank payment approved");
+});
+
+exports.rejectBankPayment = catchAsync(async (req, res) => {
+  const payment = await paymentsService.rejectBankPayment(
+    req.params.id,
+    req.body
+  );
+  sendSuccess(res, payment, "Bank payment rejected");
+});
+
