@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.2",
+    "multer-s3": "^3.0.1",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-apple": "^2.0.2",
@@ -43,6 +44,7 @@
     "yamljs": "^0.3.0",
     "zod": "^3.25.20",
     "joi": "^17.13.0",
+    "@aws-sdk/client-s3": "^3.614.0",
     "@paypal/checkout-server-sdk": "^1.0.3"
   },
   "devDependencies": {

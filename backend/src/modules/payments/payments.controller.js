@@ -11,6 +11,7 @@ const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutori
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const paypalService = require("../../services/paypalService");
+const path = require("path");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -150,8 +151,17 @@ exports.createPayment = catchAsync(async (req, res) => {
 
 exports.uploadReceipt = catchAsync(async (req, res) => {
   if (!req.file) throw new AppError("No file uploaded", 400);
-  const url = `/uploads/payment-receipts/${req.file.filename}`;
-  sendSuccess(res, { url }, "Receipt uploaded");
+
+  let receiptUrl;
+  if (process.env.RECEIPT_STORAGE === 's3') {
+    // `multer-s3` exposes the uploaded file's location
+    receiptUrl = req.file.location;
+  } else {
+    // Store a path relative to the secure receipt directory
+    receiptUrl = path.posix.join('payment-receipts', req.file.filename);
+  }
+
+  sendSuccess(res, { receipt_url: receiptUrl }, "Receipt uploaded");
 });
 
 exports.getPayments = catchAsync(async (_req, res) => {
