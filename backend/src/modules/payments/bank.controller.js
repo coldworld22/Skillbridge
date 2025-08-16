@@ -1,70 +1,50 @@
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
-const service = require("./payments.service");
-const libraryService = require("../library/library.service");
-const enrollmentService = require("../classes/enrollments/classEnrollment.service");
-const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutorialEnrollment.service");
+const paymentsService = require("./payments.service");
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
+const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const { v4: uuidv4 } = require("uuid");
 
-exports.approveBankPayment = catchAsync(async (req, res) => {
-  const payment = await service.getById(req.params.id);
-  if (!payment) throw new AppError("Payment not found", 404);
+exports.initiateBankPayment = catchAsync(async (req, res) => {
+  const { item_type, item_id, amount, currency } = req.body;
+  const user_id = req.user?.id;
 
-  const updated = await service.update(req.params.id, {
-    status: "completed",
-    paid_at: new Date(),
-  });
-
-  if (payment.item_type === "book") {
-    try {
-      await libraryService.recordPurchase(
-        payment.user_id,
-        payment.item_id,
-        payment.amount
-      );
-    } catch (err) {
-      console.error("Failed to record book purchase:", err);
-    }
+  if (!user_id || !item_type || !item_id || !amount) {
+    throw new AppError("Missing required fields", 400);
   }
 
-  if (payment.item_type === "class") {
-    try {
-      await enrollmentService.createEnrollment({
-        id: uuidv4(),
-        user_id: payment.user_id,
-        class_id: payment.item_id,
-        status: "enrolled",
-      });
-    } catch (err) {
-      console.error("Failed to enroll after payment:", err);
-    }
+  const bankMethod = await paymentMethodsService.getByType("bank");
+  if (!bankMethod) {
+    throw new AppError("Bank payment method not configured", 400);
   }
 
-  if (payment.item_type === "tutorial") {
-    try {
-      await tutorialEnrollmentService.createEnrollment({
-        id: uuidv4(),
-        user_id: payment.user_id,
-        tutorial_id: payment.item_id,
-        status: "enrolled",
-      });
-    } catch (err) {
-      console.error("Failed to enroll in tutorial after payment:", err);
-    }
+  let platform_fee = 0;
+  let instructor_amount = amount;
+  try {
+    const settings = await paymentConfigService.getSettings();
+    const cut = settings?.platformCut?.[item_type] || 0;
+    platform_fee = (amount * cut) / 100;
+    instructor_amount = amount - platform_fee;
+  } catch (err) {
+    console.error("Failed to load payment settings:", err);
   }
 
-  sendSuccess(res, updated, "Bank payment approved");
-});
+  const paymentData = {
+    id: uuidv4(),
+    user_id,
+    method_id: bankMethod.id,
+    item_type,
+    item_id,
+    amount,
+    currency: currency || "USD",
+    status: "pending_payment",
+    platform_fee,
+    instructor_amount,
+  };
 
-exports.rejectBankPayment = catchAsync(async (req, res) => {
-  const payment = await service.getById(req.params.id);
-  if (!payment) throw new AppError("Payment not found", 404);
+  const invoice = await paymentsService.create(paymentData);
 
-  const updated = await service.update(req.params.id, {
-    status: "rejected",
-  });
-
-  sendSuccess(res, updated, "Bank payment rejected");
+  sendSuccess(res, { settings: bankMethod.settings, invoice }, "Bank payment initiated");
 });
 
