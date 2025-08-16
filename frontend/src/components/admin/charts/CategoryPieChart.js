@@ -1,18 +1,11 @@
 // components/admin/charts/CategoryPieChart.js
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'Development', value: 500 },
-  { name: 'Design', value: 200 },
-  { name: 'Marketing', value: 150 },
-  { name: 'Business', value: 100 },
-];
-
 const COLORS = ['#facc15', '#60a5fa', '#f87171', '#34d399'];
 
-export default function CategoryPieChart() {
+export default function CategoryPieChart({ data = [] }) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow mt-8">
+    <div className="bg-white p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-4">📚 Tutorials by Category</h2>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>

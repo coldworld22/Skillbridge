@@ -39,15 +39,53 @@ exports.updateAdminProfile = async (userId, data) => {
 // ---------------------------------------------------------------------------
 
 exports.getDashboardStats = async () => {
-  const [userRow] = await db("users").count();
-  const [instructorRow] = await db("users")
-    .where({ role: "Instructor" })
-    .count();
-  const [studentRow] = await db("users")
-    .where({ role: "Student" })
-    .count();
-  const [tutorialRow] = await db("tutorials").count();
-  const [classRow] = await db("online_classes").count();
+  const [
+    userRow,
+    instructorRow,
+    studentRow,
+    tutorialRow,
+    classRow,
+    revenueRows,
+    signupRows,
+    categoryRows,
+    instructorRows,
+  ] = await Promise.all([
+    db("users").count().first(),
+    db("users").where({ role: "Instructor" }).count().first(),
+    db("users").where({ role: "Student" }).count().first(),
+    db("tutorials").count().first(),
+    db("online_classes").count().first(),
+    db("payments")
+      .where({ status: "paid" })
+      .where("created_at", ">=", db.raw("date_trunc('month', now()) - interval '5 months'"))
+      .select(
+        db.raw("TO_CHAR(date_trunc('month', created_at), 'Mon') as month")
+      )
+      .sum({ revenue: "amount" })
+      .groupByRaw("date_trunc('month', created_at)")
+      .orderByRaw("date_trunc('month', created_at)"),
+    db("users")
+      .where("created_at", ">=", db.raw("date_trunc('month', now()) - interval '5 months'"))
+      .select(
+        db.raw("TO_CHAR(date_trunc('month', created_at), 'Mon') as month")
+      )
+      .count("* as users")
+      .groupByRaw("date_trunc('month', created_at)")
+      .orderByRaw("date_trunc('month', created_at)"),
+    db("tutorials as t")
+      .leftJoin("categories as c", "t.category_id", "c.id")
+      .select(db.raw("COALESCE(c.name, 'Uncategorized') as name"))
+      .count("t.id as value")
+      .groupBy("name")
+      .orderBy("value", "desc"),
+    db("tutorials as t")
+      .leftJoin("users as u", "t.instructor_id", "u.id")
+      .select("u.full_name as instructor")
+      .count("t.id as tutorials")
+      .groupBy("u.full_name")
+      .orderBy("tutorials", "desc")
+      .limit(10),
+  ]);
 
   return {
     totalUsers: parseInt(userRow.count, 10) || 0,
@@ -55,5 +93,21 @@ exports.getDashboardStats = async () => {
     students: parseInt(studentRow.count, 10) || 0,
     tutorials: parseInt(tutorialRow.count, 10) || 0,
     classes: parseInt(classRow.count, 10) || 0,
+    monthlyRevenue: revenueRows.map((r) => ({
+      month: r.month,
+      revenue: parseFloat(r.revenue) || 0,
+    })),
+    monthlySignups: signupRows.map((r) => ({
+      month: r.month,
+      users: parseInt(r.users, 10) || 0,
+    })),
+    tutorialsByCategory: categoryRows.map((r) => ({
+      name: r.name,
+      value: parseInt(r.value, 10) || 0,
+    })),
+    instructorTutorialCount: instructorRows.map((r) => ({
+      instructor: r.instructor,
+      tutorials: parseInt(r.tutorials, 10) || 0,
+    })),
   };
 };
