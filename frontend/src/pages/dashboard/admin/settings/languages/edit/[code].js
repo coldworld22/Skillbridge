@@ -169,59 +169,62 @@ const handleIconChange = (file) => {
             }}
             className="space-y-8 md:space-y-0 md:grid md:grid-cols-2 md:gap-6"
           >
-            {language && (
-              <>
-                <div className="bg-white shadow rounded p-4 flex flex-col gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1">Language Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={langForm.name}
-                      onChange={handleLangFormChange}
-                      className="border p-2 rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Language Code</label>
-                    <input
-                      type="text"
-                      name="code"
-                      value={langForm.code}
-                      onChange={handleLangFormChange}
-                      className="border p-2 rounded w-full"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="is_default"
-                      checked={langForm.is_default}
-                      onChange={handleLangFormChange}
-                    />
-                    <span className="text-sm">Set as Default</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      checked={langForm.is_active}
-                      onChange={handleLangFormChange}
-                    />
-                    <span className="text-sm">Active</span>
-                  </label>
-                </div>
-                <div className="bg-white shadow rounded p-4">
-                  <label className="block font-semibold mb-1">Language Icon</label>
+            <>
+              <div className="bg-white shadow rounded p-4 flex flex-col gap-4">
+                <div>
+                  <label className="block font-semibold mb-1">Language Name</label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleIconChange(e.target.files[0])}
+                    type="text"
+                    name="name"
+                    value={langForm.name}
+                    onChange={handleLangFormChange}
                     className="border p-2 rounded w-full"
                   />
-                {(iconFile || language.icon_url) && (
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Language Code</label>
+                  <input
+                    type="text"
+                    name="code"
+                    value={langForm.code}
+                    onChange={handleLangFormChange}
+                    className="border p-2 rounded w-full"
+                  />
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="is_default"
+                    checked={langForm.is_default}
+                    onChange={handleLangFormChange}
+                  />
+                  <span className="text-sm">Set as Default</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    checked={langForm.is_active}
+                    onChange={handleLangFormChange}
+                  />
+                  <span className="text-sm">Active</span>
+                </label>
+              </div>
+              <div className="bg-white shadow rounded p-4">
+                <label className="block font-semibold mb-1">Language Icon</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleIconChange(e.target.files[0])}
+                  className="border p-2 rounded w-full"
+                />
+                {(iconFile || language?.icon_url) && (
                   <img
-                    src={iconFile ? URL.createObjectURL(iconFile) : `${process.env.NEXT_PUBLIC_API_BASE_URL}${language.icon_url}`}
+                    src={
+                      iconFile
+                        ? URL.createObjectURL(iconFile)
+                        : `${process.env.NEXT_PUBLIC_API_BASE_URL}${language?.icon_url}`
+                    }
                     alt="icon preview"
                     className="mt-2 w-6 h-6 rounded"
                   />
@@ -229,14 +232,13 @@ const handleIconChange = (file) => {
                 <button
                   type="button"
                   onClick={handleIconUpload}
-                  disabled={iconUploading || !iconFile}
+                  disabled={iconUploading || !iconFile || !language?.id}
                   className="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1 disabled:opacity-50"
                 >
                   <FaUpload /> {iconUploading ? "Uploading..." : "Upload"}
                 </button>
-                </div>
-              </>
-            )}
+              </div>
+            </>
             {namespaces.map((ns) => (
               <div key={ns} className="bg-white shadow rounded p-4">
                 <h2 className="text-lg font-semibold mb-4">🗂️ {ns}.json</h2>
