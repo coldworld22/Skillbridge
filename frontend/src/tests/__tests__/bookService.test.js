@@ -136,8 +136,8 @@ describe("bookService", () => {
       price: 19.99,
       cover_image_url: null,
       pdf_url: null,
-      preview_url: "/media/p.pdf",
-      preview_pages: ["/media/a.png"],
+      preview_url: "/uploads/p.pdf",
+      preview_pages: ["/uploads/a.png"],
     });
   });
 
@@ -193,7 +193,7 @@ describe("bookService", () => {
       process.env.NEXT_PUBLIC_API_BASE_URL = "https://example.com/api/v1";
       const { buildUrl } = require("../../services/bookService");
       expect(buildUrl("/uploads/test.jpg")).toBe(
-        "https://example.com/media/test.jpg"
+        "https://example.com/uploads/test.jpg"
       );
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
@@ -204,7 +204,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       process.env.NEXT_PUBLIC_API_BASE_URL = "/api";
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/api/media/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
@@ -214,7 +214,7 @@ describe("bookService", () => {
     jest.isolateModules(() => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
       const { buildUrl } = require("../../services/bookService");
-      expect(buildUrl("/uploads/test.jpg")).toBe("/media/test.jpg");
+      expect(buildUrl("/uploads/test.jpg")).toBe("/uploads/test.jpg");
     });
     process.env.NEXT_PUBLIC_API_BASE_URL = originalBase;
   });
