@@ -11,6 +11,8 @@ const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutori
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const paypalService = require("../../services/paypalService");
+const notificationService = require("../notifications/notifications.service");
+const mailService = require("../../services/mailService");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -101,14 +103,38 @@ exports.createPayment = catchAsync(async (req, res) => {
   if (schedules.length) createArgs.push(schedules);
   const payment = await service.create(...createArgs);
 
+  let user;
   try {
-    const user = await userModel.findById(user_id);
+    user = await userModel.findById(user_id);
     if (user?.phone) {
       const text = `Payment of ${verifiedAmount} received. Ref: ${payment.reference_id}`;
       await smsService.sendSMS({ to: user.phone, text });
     }
   } catch (err) {
     console.error("Failed to send payment SMS:", err);
+  }
+
+  if (method.type === "bank" && user?.email) {
+    try {
+      const bank = method.settings || {};
+      const html = `
+        <p>Dear ${user.full_name || ""},</p>
+        <p>Please complete your payment via bank transfer using the details below:</p>
+        <ul>
+          <li><strong>Bank:</strong> ${bank.bank_name || ""}</li>
+          <li><strong>Account Number:</strong> ${bank.account_number || ""}</li>
+          <li><strong>IBAN:</strong> ${bank.iban || ""}</li>
+        </ul>
+        <p>${bank.instructions || ""}</p>
+      `;
+      await mailService.sendMail({
+        to: user.email,
+        subject: "Payment Invoice",
+        html,
+      });
+    } catch (err) {
+      console.error("Failed to send invoice email:", err);
+    }
   }
 
   if (item_type === "book" && payment.status === "paid") {
@@ -154,6 +180,34 @@ exports.uploadReceipt = catchAsync(async (req, res) => {
   sendSuccess(res, { url }, "Receipt uploaded");
 });
 
+exports.confirmPayment = catchAsync(async (req, res) => {
+  const payment = await service.getById(req.params.id);
+  if (!payment || payment.user_id !== req.user.id) {
+    throw new AppError("Payment not found", 404);
+  }
+  const { receipt_url } = req.body;
+  const updated = await service.update(req.params.id, {
+    status: "pending_review",
+    receipt_url,
+  });
+  sendSuccess(res, updated, "Payment confirmation submitted");
+
+  try {
+    const admins = await userModel.findAdmins();
+    await Promise.all(
+      admins.map((admin) =>
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "payment_confirmation",
+          message: `Payment ${payment.id} pending review`,
+        })
+      )
+    );
+  } catch (err) {
+    console.error("Failed to notify admins of payment confirmation:", err);
+  }
+});
+
 exports.getPayments = catchAsync(async (_req, res) => {
   const data = await service.getAll();
   sendSuccess(res, data);
@@ -171,9 +225,41 @@ exports.getPayment = catchAsync(async (req, res) => {
 });
 
 exports.updatePayment = catchAsync(async (req, res) => {
+  const existing = await service.getById(req.params.id);
   const payment = await service.update(req.params.id, req.body);
   if (!payment) throw new AppError("Payment not found", 404);
   sendSuccess(res, payment, "Payment updated");
+
+  if (existing && req.body.status && req.body.status !== existing.status) {
+    try {
+      const user = await userModel.findById(payment.user_id);
+      let message = "";
+      let subject = "";
+      if (req.body.status === "paid") {
+        message = `Your payment ${payment.id} has been approved.`;
+        subject = "Payment Approved";
+      } else if (req.body.status === "rejected") {
+        message = `Your payment ${payment.id} has been rejected.`;
+        subject = "Payment Rejected";
+      }
+      if (message) {
+        await notificationService.createNotification({
+          user_id: payment.user_id,
+          type: "payment_status",
+          message,
+        });
+        if (user?.email) {
+          await mailService.sendMail({
+            to: user.email,
+            subject,
+            html: `<p>${message}</p>`,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to notify student of payment status:", err);
+    }
+  }
 });
 
 exports.deletePayment = catchAsync(async (req, res) => {

@@ -653,7 +653,8 @@
       "transactions": "Transactions",
       "methods": "Payment Methods",
       "configuration": "Configuration",
-      "payouts": "Payouts"
+      "payouts": "Payouts",
+      "bankTransfers": "Bank Transfers"
     },
     "total_revenue": "Total Revenue",
     "total_transactions": "Total Transactions",
@@ -672,6 +673,7 @@
     "refunded": "Refunded",
     "export_csv": "Export CSV",
     "transaction_id": "Transaction ID",
+    "order_id": "Order ID",
     "date": "Date",
     "user": "User",
     "type": "Type",
@@ -696,6 +698,7 @@
     "instructor_payouts": "Instructor Payouts",
     "mark_paid": "Mark as Paid",
     "reject": "Reject",
+    "approve": "Approve",
     "reopen": "Reopen",
     "payout_status_updated": "Payout status updated",
     "payout_status_failed": "Failed to update payout status",

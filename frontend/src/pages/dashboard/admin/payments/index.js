@@ -14,10 +14,16 @@ import {
   FaToggleOff,
   FaPlus,
   FaStar,
+  FaUniversity,
 } from "react-icons/fa";
 import OverviewTab from './OverviewTab';
 
 import { fetchPayments } from '@/services/admin/paymentService';
+import {
+  fetchBankTransfers,
+  approveBankTransfer,
+  rejectBankTransfer,
+} from '@/services/admin/bankTransferService';
 import {
   fetchMethods,
   updateMethod,
@@ -65,6 +71,7 @@ export default function AdminPaymentsPage() {
     { key: 'methods', label: t('paymentsPage.tabs.methods'), icon: <FaMoneyCheckAlt /> },
     { key: 'configuration', label: t('paymentsPage.tabs.configuration'), icon: <FaCog /> },
     { key: 'payouts', label: t('paymentsPage.tabs.payouts'), icon: <FaWallet /> },
+    { key: 'bankTransfers', label: t('paymentsPage.tabs.bankTransfers'), icon: <FaUniversity /> },
   ];
 
   const notifyUser = async (userId, type, message) => {
@@ -84,6 +91,17 @@ export default function AdminPaymentsPage() {
   const [transactions, setTransactions] = useState([]);
   const [methods, setMethods] = useState([]);
   const notify = useAdminNotice();
+
+  const [bankTransfers, setBankTransfers] = useState([]);
+
+  const loadBankTransfers = async () => {
+    try {
+      const data = await fetchBankTransfers();
+      setBankTransfers(data);
+    } catch (err) {
+      console.error('Failed to load bank transfers', err);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -140,6 +158,7 @@ export default function AdminPaymentsPage() {
       }
     };
     loadData();
+    loadBankTransfers();
   }, []);
 
 
@@ -286,6 +305,28 @@ export default function AdminPaymentsPage() {
     } catch (err) {
       console.error(err);
       toast.error(t('paymentsPage.payout_status_failed'));
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await approveBankTransfer(id);
+      toast.success(t('paymentsPage.status_updated'));
+      loadBankTransfers();
+    } catch (err) {
+      console.error(err);
+      toast.error(t('update_failed'));
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await rejectBankTransfer(id);
+      toast.success(t('paymentsPage.status_updated'));
+      loadBankTransfers();
+    } catch (err) {
+      console.error(err);
+      toast.error(t('update_failed'));
     }
   };
 
@@ -639,6 +680,45 @@ export default function AdminPaymentsPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        );
+
+      case "bankTransfers":
+        return (
+          <div className="overflow-x-auto bg-white shadow rounded">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100 text-left">
+                <tr>
+                  <th className="px-4 py-2">{t('paymentsPage.user')}</th>
+                  <th className="px-4 py-2">{t('paymentsPage.order_id')}</th>
+                  <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                  <th className="px-4 py-2">Receipt</th>
+                  <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankTransfers.map((bt) => (
+                  <tr key={bt.id} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{bt.student_name || bt.student?.name || bt.user_name}</td>
+                    <td className="px-4 py-2">{bt.order_id}</td>
+                    <td className="px-4 py-2 font-semibold text-green-600">${parseFloat(bt.amount ?? 0).toFixed(2)}</td>
+                    <td className="px-4 py-2">
+                      {bt.receipt_url && (
+                        <img src={bt.receipt_url} alt="receipt" className="w-24 h-24 object-cover" />
+                      )}
+                    </td>
+                    <td className="px-4 py-2 space-x-2">
+                      <button onClick={() => handleApprove(bt.id)} className="text-green-600 hover:underline text-xs">
+                        {t('paymentsPage.approve')}
+                      </button>
+                      <button onClick={() => handleReject(bt.id)} className="text-red-600 hover:underline text-xs">
+                        {t('paymentsPage.reject')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
 
