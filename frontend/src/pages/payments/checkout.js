@@ -146,7 +146,7 @@ export default function CheckoutPage() {
       setError('');
     } catch (err) {
       setDiscount(0);
-      if (err?.response?.status === 400) {
+      if (err?.response?.status === 404) {
         setError('Invalid promo code');
       } else {
         setError('Failed to apply promo code. Please try again.');

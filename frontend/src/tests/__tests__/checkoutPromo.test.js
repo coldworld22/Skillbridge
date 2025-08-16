@@ -68,7 +68,7 @@ test('applies promo code successfully', async () => {
 });
 
 test('shows error for invalid promo code', async () => {
-  validateCode.mockRejectedValue({ response: { status: 400 } });
+  validateCode.mockRejectedValue({ response: { status: 404 } });
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   fireEvent.change(screen.getByPlaceholderText('Enter promo code'), {
