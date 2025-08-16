@@ -10,6 +10,8 @@ const messageService = require("../messages/messages.service");
 
 exports.createLanguage = catchAsync(async (req, res) => {
   const data = { ...req.body };
+  if (data.name) data.name = data.name.trim();
+  if (data.code) data.code = data.code.trim();
   if (req.file) {
     data.icon_url = `/uploads/languages/${req.file.filename}`;
   }
@@ -28,6 +30,8 @@ exports.updateLanguage = catchAsync(async (req, res) => {
   if (!existing) throw new AppError("Language not found", 404);
 
   const data = { ...req.body };
+  if (data.name) data.name = data.name.trim();
+  if (data.code) data.code = data.code.trim();
   if (req.file) {
     if (existing.icon_url) {
       const oldPath = path.join(__dirname, "../../../", existing.icon_url);
