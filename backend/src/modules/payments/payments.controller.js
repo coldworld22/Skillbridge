@@ -13,6 +13,7 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paypalService = require("../../services/paypalService");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
+const couponService = require("../coupons/coupons.service");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -27,6 +28,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     allow_installments,
     installments,
     receipt_url,
+    coupon_id,
   } = req.body;
   if (!user_id || !method_id || !item_type || !item_id || !amount) {
     throw new AppError("Missing required fields", 400);
@@ -102,6 +104,14 @@ exports.createPayment = catchAsync(async (req, res) => {
   const createArgs = [createData];
   if (schedules.length) createArgs.push(schedules);
   const payment = await service.create(...createArgs);
+
+  if (coupon_id && payment.status === "paid") {
+    try {
+      await couponService.incrementUsage(coupon_id);
+    } catch (err) {
+      console.error("Failed to increment coupon usage:", err);
+    }
+  }
 
   let user;
   try {
