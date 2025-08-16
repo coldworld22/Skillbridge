@@ -1,5 +1,5 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { FaSave, FaEye } from "react-icons/fa";
 import { useRouter } from "next/router";
@@ -13,6 +13,7 @@ import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { createPopupAnnouncement } from "@/services/admin/popupAnnouncementService";
+import { fetchPageList } from "@/services/admin/seoConfigService";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -49,7 +50,20 @@ export default function CreateAnnouncementForm() {
     active: true,
   });
 
-  const allPages = ["/", "/courses", "/about", "/dashboard/student", "/contact"];
+  const [allPages, setAllPages] = useState([]);
+
+  useEffect(() => {
+    const loadPages = async () => {
+      try {
+        const pages = await fetchPageList();
+        setAllPages(Array.isArray(pages) ? pages : []);
+      } catch (err) {
+        console.error('Failed to load pages', err);
+        toast.error(t('loading_failed'));
+      }
+    };
+    loadPages();
+  }, [t]);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
