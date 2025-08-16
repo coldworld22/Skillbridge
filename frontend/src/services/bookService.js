@@ -110,3 +110,6 @@ export default {
   updateBook,
   updateBookStatus,
 };
+
+// Re-export for testing and external usage
+export { buildUrl };
