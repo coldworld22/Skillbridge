@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchCouponById, updateCoupon } from "@/services/instructor/couponService";
 
@@ -22,8 +23,13 @@ export default function InstructorCouponEdit() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateCoupon(id, { code, discount_percent: parseInt(discount, 10) }).catch(() => {});
-    router.push("/dashboard/instructor/coupons");
+    try {
+      await updateCoupon(id, { code, discount_percent: parseInt(discount, 10) });
+      toast.success("Coupon updated successfully");
+      router.push("/dashboard/instructor/coupons");
+    } catch (err) {
+      toast.error("Failed to update coupon");
+    }
   };
 
   return (

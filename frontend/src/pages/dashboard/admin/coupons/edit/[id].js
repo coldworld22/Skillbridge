@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchCouponById, updateCoupon } from "@/services/admin/couponService";
 
@@ -32,16 +33,21 @@ export default function EditCouponPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await updateCoupon(id, {
-      code,
-      discount_percent: parseInt(discount, 10),
-      starts_at: startsAt || undefined,
-      expires_at: expiresAt || undefined,
-      usage_limit: usageLimit ? parseInt(usageLimit, 10) : undefined,
-      applies_to: appliesTo,
-      applies_to_id: appliesToId || undefined,
-    }).catch(() => {});
-    router.push("/dashboard/admin/coupons");
+    try {
+      await updateCoupon(id, {
+        code,
+        discount_percent: parseInt(discount, 10),
+        starts_at: startsAt || undefined,
+        expires_at: expiresAt || undefined,
+        usage_limit: usageLimit ? parseInt(usageLimit, 10) : undefined,
+        applies_to: appliesTo,
+        applies_to_id: appliesToId || undefined,
+      });
+      toast.success("Coupon updated successfully");
+      router.push("/dashboard/admin/coupons");
+    } catch (err) {
+      toast.error("Failed to update coupon");
+    }
   };
 
   return (
