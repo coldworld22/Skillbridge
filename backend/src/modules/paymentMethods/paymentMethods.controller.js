@@ -70,6 +70,20 @@ exports.updateMethod = catchAsync(async (req, res) => {
   if (!existing) throw new AppError("Payment method not found", 404);
 
   const data = { ...req.body };
+  // Merge existing settings with incoming settings to avoid dropping
+  // secrets (e.g. client_secret) that are not returned to the client.
+  if (data.settings) {
+    let incoming = data.settings;
+    // If settings came in as a JSON string (e.g. multipart requests), parse it
+    if (typeof incoming === "string") {
+      try {
+        incoming = JSON.parse(incoming);
+      } catch (_err) {
+        incoming = {};
+      }
+    }
+    data.settings = { ...(existing.settings || {}), ...(incoming || {}) };
+  }
   if (req.file) {
     if (existing.icon) {
       const old = path.join(__dirname, '../../../', existing.icon);
