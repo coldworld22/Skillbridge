@@ -3,10 +3,13 @@ import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { FaCreditCard, FaClock, FaCheckCircle, FaFileInvoice } from "react-icons/fa";
-import { fetchMyPayments } from "@/services/student/paymentService";
+import { fetchMyPayments, confirmBankPayment } from "@/services/student/paymentService";
 
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState([]);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [reference, setReference] = useState("");
+  const [receipt, setReceipt] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -24,6 +27,33 @@ export default function StudentPaymentsPage() {
     .filter(p => p.status === "paid")
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const pending = payments.filter(p => p.status === "pending").length;
+
+  const bankPayments = payments.filter(
+    (p) =>
+      (p.method === "bank" || p.method_name?.toLowerCase().includes("bank")) &&
+      ["pending_payment", "awaiting_approval"].includes(p.status)
+  );
+
+  const handleConfirm = async (e) => {
+    e.preventDefault();
+    if (!selectedPayment) return;
+    try {
+      await confirmBankPayment(selectedPayment.id, reference, receipt);
+      setPayments((prev) =>
+        prev.map((p) =>
+          p.id === selectedPayment.id
+            ? { ...p, status: "awaiting_approval" }
+            : p
+        )
+      );
+      setSelectedPayment(null);
+      setReference("");
+      setReceipt(null);
+    } catch (err) {
+      console.error("Failed to confirm payment", err);
+      alert("Failed to confirm payment");
+    }
+  };
 
   const downloadInvoicePDF = async (id) => {
     const element = document.getElementById(`invoice-${id}`);
@@ -89,18 +119,44 @@ export default function StudentPaymentsPage() {
                 <th className="p-3">Method</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Status</th>
+                <th className="p-3">Action</th>
                 <th className="p-3">Invoice</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
+              {bankPayments.map((p) => (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
                   <td className="p-3 font-medium">{p.class_title || p.item_id}</td>
                   <td className="p-3">${p.amount}</td>
                   <td className="p-3">{p.method_name || "-"}</td>
                   <td className="p-3">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</td>
-                  <td className={`p-3 font-medium ${p.status === "paid" ? "text-green-600" : "text-yellow-600"}`}>
-                    {p.status ? p.status.charAt(0).toUpperCase() + p.status.slice(1) : ""}
+                  <td
+                    className={`p-3 font-medium ${
+                      p.status === "awaiting_approval"
+                        ? "text-blue-600"
+                        : p.status === "paid"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {p.status
+                      ? p.status
+                          .split("_")
+                          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                          .join(" ")
+                      : ""}
+                  </td>
+                  <td className="p-3">
+                    {p.status === "pending_payment" ? (
+                      <button
+                        onClick={() => setSelectedPayment(p)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        I Paid
+                      </button>
+                    ) : (
+                      <span className="text-gray-500">Awaiting Approval</span>
+                    )}
                   </td>
                   <td className="p-3">
                     <button
@@ -130,6 +186,44 @@ export default function StudentPaymentsPage() {
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md text-sm text-yellow-800">
           For any payment issues, contact <a href="mailto:support@skillbridge.com" className="underline font-medium">support@skillbridge.com</a>
         </div>
+
+        {selectedPayment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+              <h2 className="text-lg font-semibold mb-4">Confirm Bank Payment</h2>
+              <form onSubmit={handleConfirm} className="space-y-3">
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Transaction reference"
+                  className="w-full border rounded p-2"
+                  required
+                />
+                <input
+                  type="file"
+                  onChange={(e) => setReceipt(e.target.files[0])}
+                  className="w-full"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPayment(null)}
+                    className="px-3 py-1 rounded bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1 rounded bg-yellow-500 text-white"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </StudentLayout>
   );
