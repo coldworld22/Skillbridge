@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchCoupons, deleteCoupon } from "@/services/instructor/couponService";
 import Link from "next/link";
@@ -7,13 +8,23 @@ export default function InstructorCouponsPage() {
   const [coupons, setCoupons] = useState([]);
 
   useEffect(() => {
-    fetchCoupons().then(setCoupons).catch(() => setCoupons([]));
+    fetchCoupons()
+      .then(setCoupons)
+      .catch(() => {
+        setCoupons([]);
+        toast.error("Failed to load coupons");
+      });
   }, []);
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this coupon?")) return;
-    await deleteCoupon(id).catch(() => {});
-    setCoupons((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await deleteCoupon(id);
+      setCoupons((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Coupon deleted successfully");
+    } catch (err) {
+      toast.error("Failed to delete coupon");
+    }
   };
 
   return (
