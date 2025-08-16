@@ -89,7 +89,8 @@ export default function CheckoutPage() {
     : '';
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
-  const [selectedMethod, setSelectedMethod] = useState('stripe');
+  // Use the payment method "type" as identifier. Default to first active method once loaded.
+  const [selectedMethod, setSelectedMethod] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [invoicePreview, setInvoicePreview] = useState(false);
@@ -116,7 +117,8 @@ export default function CheckoutPage() {
         const data = await fetchPaymentMethods();
         setMethods(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
-          setSelectedMethod(data[0].name);
+          // Select the first available method's type by default
+          setSelectedMethod(data[0].type);
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
@@ -273,7 +275,12 @@ export default function CheckoutPage() {
     d.setMonth(d.getMonth() + i);
     return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
   });
-  const availableMethods = Array.isArray(methods) ? methods.filter((m) => m.active) : [];
+  // Filter out inactive methods if any; the API already returns active ones
+  const availableMethods = Array.isArray(methods)
+    ? methods.filter((m) => m.active !== false)
+    : [];
+  const selectedMethodLabel =
+    availableMethods.find((m) => m.type === selectedMethod)?.name || selectedMethod;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
@@ -301,15 +308,15 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
               {availableMethods.map((method) => (
                 <button
-                  key={method.name}
-                  onClick={() => setSelectedMethod(method.name)}
+                  key={method.id || method.type}
+                  onClick={() => setSelectedMethod(method.type)}
                   className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
-                  ${selectedMethod === method.name ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
+                  ${selectedMethod === method.type ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
                 >
                   <div className="text-2xl">
-                    {iconMap[method.icon?.toLowerCase()] || <FaMoneyCheckAlt />}
+                    {iconMap[(method.icon || method.type)?.toLowerCase()] || <FaMoneyCheckAlt />}
                   </div>
-                  <div>{method.label}</div>
+                  <div>{method.name}</div>
                 </button>
               ))}
             </div>
@@ -408,8 +415,8 @@ export default function CheckoutPage() {
                   {paymentStatus === 'processing'
                     ? 'Processing...'
                     : allowInstallments
-                    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`
-                    : `Pay $${finalPrice} with ${selectedMethod.charAt(0).toUpperCase() + selectedMethod.slice(1)}`}
+                    ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
+                    : `Pay $${finalPrice} with ${selectedMethodLabel}`}
                 </button>
               )}
               <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
