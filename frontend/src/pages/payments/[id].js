@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { BrowserProvider, parseEther } from "ethers";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
+import { validateCode } from "@/services/couponService";
+import { toast } from "react-toastify";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -24,7 +26,6 @@ export default function CheckoutPage() {
   const [account, setAccount] = useState(null);
 
   const coursePrice = 49;
-  const discountCode = "SKILL10";
   const finalTotal = coursePrice - appliedDiscount;
   const ethPrice = 0.01; // mock ETH equivalent
 
@@ -32,25 +33,33 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const applyCoupon = () => {
-    if (formData.coupon.trim().toUpperCase() === discountCode) {
-      setAppliedDiscount(10);
-    } else {
-      alert("Invalid coupon code");
+  const applyCoupon = async () => {
+    try {
+      const coupon = await validateCode(formData.coupon.trim());
+      if (coupon) {
+        const discountAmount = (coursePrice * coupon.discount_percent) / 100;
+        setAppliedDiscount(discountAmount);
+        toast.success("Coupon applied!");
+      } else {
+        setAppliedDiscount(0);
+        toast.error("Invalid coupon code");
+      }
+    } catch (err) {
       setAppliedDiscount(0);
+      toast.error("Invalid coupon code");
     }
   };
 
   const handleSubmit = () => {
     if (!formData.fullName || !formData.email) {
-      alert("Please fill out all required fields.");
+      toast.error("Please fill out all required fields.");
       return;
     }
-  
+
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      alert("✅ Payment successful! Redirecting...");
+      toast.success("Payment successful! Redirecting...");
       router.push("/payments/success");
     }, 1500);
   };
@@ -60,7 +69,7 @@ export default function CheckoutPage() {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       setAccount(accounts[0]);
     } else {
-      alert("Please install MetaMask.");
+      toast.error("Please install MetaMask.");
     }
   };
 
