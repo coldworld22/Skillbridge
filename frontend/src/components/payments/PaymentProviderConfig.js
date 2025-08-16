@@ -36,7 +36,7 @@ export default function PaymentProviderConfig({ providerId }) {
       parsed = settings ? JSON.parse(settings) : {};
     } catch (err) {
       if (err instanceof SyntaxError) {
-        toast.error("Invalid JSON format");
+        toast.error(t('paymentsPage.invalid_json'));
         return;
       }
       throw err;
