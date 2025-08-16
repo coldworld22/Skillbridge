@@ -1,4 +1,5 @@
 import axios from "axios";
+import api from "@/services/api/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -12,6 +13,12 @@ export const processPayment = async (paymentData) => {
 export const getPaymentStatus = async (transactionId) => {
   const response = await axios.get(`${API_URL}/payment/status/${transactionId}`);
   return response.data;
+};
+
+// Initiate Bank Transfer
+export const initiateBankPayment = async (payload) => {
+  const { data } = await api.post("/payments/bank/initiate", payload);
+  return data?.data ?? data;
 };
 
 

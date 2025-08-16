@@ -4,6 +4,7 @@ import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMeth
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
+import { initiateBankPayment } from '@/services/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
@@ -92,7 +93,7 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [invoicePreview, setInvoicePreview] = useState(false);
-  const [receipt, setReceipt] = useState(null);
+  const [bankInfo, setBankInfo] = useState(null);
   const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
@@ -175,7 +176,20 @@ export default function CheckoutPage() {
     );
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (selectedMethod === 'bank') {
+      try {
+        setPaymentStatus('processing');
+        const data = await initiateBankPayment({ itemId: itemInfo.id, itemType });
+        setBankInfo(data);
+        setInvoicePreview(true);
+      } catch (err) {
+        console.error('Failed to initiate bank transfer', err);
+      } finally {
+        setPaymentStatus('idle');
+      }
+      return;
+    }
     setPaymentStatus('processing');
     setTimeout(completePayment, 1500);
   };
@@ -220,8 +234,33 @@ export default function CheckoutPage() {
 
   }, [selectedMethod, itemInfo, discount, paypalLoaded]);
 
-  const handleFileChange = (e) => setReceipt(e.target.files[0]);
-  const generatePDF = () => alert('Invoice PDF downloaded (mocked)');
+  useEffect(() => {
+    if (selectedMethod !== 'bank') {
+      setInvoicePreview(false);
+      setBankInfo(null);
+    }
+  }, [selectedMethod]);
+
+  const downloadInvoice = () => {
+    if (!bankInfo) return;
+    const invoiceNumber =
+      bankInfo.invoiceNumber || bankInfo.invoice_number || bankInfo.reference || Date.now();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Invoice ${invoiceNumber}</title></head><body>` +
+      `<h1>Invoice #${invoiceNumber}</h1>` +
+      `<p>Item: ${itemInfo.title}</p>` +
+      `<p>Amount: $${finalPrice}</p>` +
+      `<p>Bank: ${bankInfo.bankName || bankInfo.bank_name}</p>` +
+      `<p>Account Number: ${bankInfo.accountNumber || bankInfo.account_number}</p>` +
+      `<p>IBAN: ${bankInfo.iban}</p>` +
+      `</body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `invoice-${invoiceNumber}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
@@ -337,20 +376,20 @@ export default function CheckoutPage() {
             </div>
           ) : invoicePreview && selectedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
-              <p><strong>Invoice</strong></p>
+              <p><strong>Invoice #{bankInfo?.invoiceNumber || bankInfo?.invoice_number || bankInfo?.reference}</strong></p>
               <p className="mt-2">{itemType === 'tutorial' ? 'Tutorial' : 'Class'}: {itemInfo.title}</p>
               <p>Price: ${finalPrice}</p>
-              <p>Bank: Al Rajhi</p>
-              <p>IBAN: SA442000000123456789</p>
-              <label className="block mt-4">Upload Transfer Receipt:</label>
-              <input type="file" accept="image/*,.pdf" onChange={handleFileChange} className="mb-4 p-2 w-full rounded bg-gray-700 text-white" />
-              <button onClick={generatePDF} className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded mb-4">
-                <FaDownload /> Download Invoice (PDF)
+              <p>Bank: {bankInfo?.bankName || bankInfo?.bank_name}</p>
+              <p>Account Number: {bankInfo?.accountNumber || bankInfo?.account_number}</p>
+              <p>IBAN: {bankInfo?.iban}</p>
+              <button onClick={downloadInvoice} className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded mb-4">
+                <FaDownload /> Download Invoice
               </button>
+              <p className="text-yellow-400">After completing the transfer, upload your receipt via "My Payments".</p>
               <button
                 className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-                onClick={() => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`)}
-              >Done</button>
+                onClick={() => router.push('/payments')}
+              >Go to My Payments</button>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
