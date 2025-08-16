@@ -25,8 +25,12 @@ ChartJS.register(
 
 export default function OverviewTab({ transactions = [], methods = [], payouts = [], onViewAll }) {
   const { t } = useTranslation('dashboard');
+  // Treat "success" as equivalent to "paid" for older records
   const totalRevenue = transactions
-    .filter((t) => t.status === "paid")
+    .filter((t) => {
+      const status = (t.status || "").toLowerCase();
+      return status === "paid" || status === "success";
+    })
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
   const summaryCards = [
@@ -84,7 +88,8 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
   const statusCounts = transactions.reduce(
     (acc, t) => {
       const key = (t.status || "").toLowerCase();
-      if (acc[key] !== undefined) acc[key] += 1;
+      const normalized = key === "success" ? "paid" : key;
+      if (acc[normalized] !== undefined) acc[normalized] += 1;
       return acc;
     },
     { paid: 0, pending: 0, failed: 0, refunded: 0 },
@@ -172,28 +177,29 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
             </tr>
           </thead>
           <tbody>
-            {recentTransactions.map((txn, idx) => (
-              <tr key={idx} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-2">{txn.user}</td>
-                <td className="px-4 py-2">{txn.method}</td>
-                <td className="px-4 py-2 text-green-600 font-medium">{txn.amount}</td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      txn.status === "paid"
-                        ? "bg-green-100 text-green-800"
-                        : txn.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : txn.status === "failed"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {txn.status?.charAt(0).toUpperCase() + txn.status?.slice(1)}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {recentTransactions.map((txn, idx) => {
+              const status = (txn.status || "").toLowerCase();
+              const colorClass =
+                status === "paid"
+                  ? "bg-green-100 text-green-800"
+                  : status === "pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : status === "failed"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-gray-100 text-gray-800";
+              return (
+                <tr key={idx} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-2">{txn.user}</td>
+                  <td className="px-4 py-2">{txn.method}</td>
+                  <td className="px-4 py-2 text-green-600 font-medium">{txn.amount}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
