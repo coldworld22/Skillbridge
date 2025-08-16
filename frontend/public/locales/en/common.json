@@ -65,10 +65,10 @@
   "sponsored_ads": "Sponsored Ads",
   "admin_dashboard": "Admin Dashboard",
   "instructor_dashboard": "Instructor Dashboard",
-  "student_dashboard": "Student Dashboard"
-  ,"start_chat": "Start Chat"
-  ,"start_new_message": "Start New Message"
-  ,"type_message_placeholder": "Type a message...",
+  "student_dashboard": "Student Dashboard",
+  "start_chat": "Start Chat",
+  "start_new_message": "Start New Message",
+  "type_message_placeholder": "Type a message...",
   "new_assignment": "New assignment \"{{title}}\" posted for class \"{{classTitle}}\"."
 }
   

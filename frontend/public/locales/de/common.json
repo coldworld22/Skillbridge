@@ -56,9 +56,10 @@
   "sponsored_ads": "Gesponserte Anzeigen",
   "admin_dashboard": "Admin-Dashboard",
   "instructor_dashboard": "Dozenten-Dashboard",
-  "student_dashboard": "Studenten-Dashboard"
-  ,"system_messages": "Systemnachrichten"
-  ,"start_chat": "Chat starten"
-  ,"start_new_message": "Neue Nachricht beginnen"
-  ,"type_message_placeholder": "Nachricht eingeben..."
+  "student_dashboard": "Studenten-Dashboard",
+  "system_messages": "Systemnachrichten",
+  "start_chat": "Chat starten",
+  "start_new_message": "Neue Nachricht beginnen",
+  "type_message_placeholder": "Nachricht eingeben...",
+  "new_assignment": "Neue Aufgabe \"{{title}}\" f\u00fcr Kurs \"{{classTitle}}\" ver\u00f6ffentlicht."
 }
