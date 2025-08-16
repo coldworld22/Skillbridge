@@ -121,6 +121,10 @@ app.use(
 );
 app.use("/api/payments/student", require("./modules/payments/student.routes"));
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
+app.use(
+  "/api/admin/payments/bank",
+  require("./modules/payments/bank.admin.routes")
+);
 app.use("/api/payments/config", require("./modules/paymentConfig/paymentConfig.routes"));
 app.use("/api/messages/config", require("./modules/messagesConfig/messagesConfig.routes"));
 app.use("/api/social-login/config", require("./modules/socialLoginConfig/socialLoginConfig.routes"));
