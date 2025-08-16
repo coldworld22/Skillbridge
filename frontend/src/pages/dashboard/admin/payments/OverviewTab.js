@@ -67,7 +67,7 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
     labels: last7Days.map((d) => d.format("MMM D")),
     datasets: [
       {
-        label: "Revenue ($)",
+        label: t('paymentsPage.revenue_label'),
         data: revenueByDay,
         borderColor: "rgba(99, 102, 241, 1)",
         backgroundColor: "rgba(99, 102, 241, 0.2)",
@@ -96,7 +96,12 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
   );
 
   const transactionStatusData = {
-    labels: ["Paid", "Pending", "Failed", "Refunded"],
+    labels: [
+      t('paymentsPage.paid'),
+      t('paymentsPage.pending'),
+      t('paymentsPage.failed'),
+      t('paymentsPage.refunded'),
+    ],
     datasets: [
       {
         data: [
@@ -178,27 +183,27 @@ export default function OverviewTab({ transactions = [], methods = [], payouts =
           </thead>
           <tbody>
             {recentTransactions.map((txn, idx) => {
-              const status = (txn.status || "").toLowerCase();
-              const colorClass =
-                status === "paid"
-                  ? "bg-green-100 text-green-800"
-                  : status === "pending"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : status === "failed"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-gray-100 text-gray-800";
-              return (
-                <tr key={idx} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{txn.user}</td>
-                  <td className="px-4 py-2">{txn.method}</td>
-                  <td className="px-4 py-2 text-green-600 font-medium">{txn.amount}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </span>
-                  </td>
-                </tr>
-              );
+                const status = (txn.status || "").toLowerCase();
+                const colorClass =
+                  status === "paid"
+                    ? "bg-green-100 text-green-800"
+                    : status === "pending"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : status === "failed"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-gray-100 text-gray-800";
+                return (
+                  <tr key={idx} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{txn.user}</td>
+                    <td className="px-4 py-2">{txn.method}</td>
+                    <td className="px-4 py-2 text-green-600 font-medium">{txn.amount}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>
+                        {t(`paymentsPage.${status}`)}
+                      </span>
+                    </td>
+                  </tr>
+                );
             })}
           </tbody>
         </table>

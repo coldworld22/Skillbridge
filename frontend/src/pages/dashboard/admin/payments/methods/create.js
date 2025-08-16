@@ -62,10 +62,10 @@ export default function CreatePaymentMethodPage() {
       let settings = {};
       try {
         settings = form.settingsText ? JSON.parse(form.settingsText) : {};
-      } catch (err) {
-        toast.error("Invalid JSON in settings");
-        return;
-      }
+        } catch (err) {
+          toast.error(t('paymentsPage.invalid_json'));
+          return;
+        }
       let payload;
       if (iconFile) {
         payload = new FormData();
@@ -111,15 +111,15 @@ export default function CreatePaymentMethodPage() {
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded shadow">
           <div>
             <label className="block font-semibold mb-1">{t('name')}</label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              className="w-full border p-2 rounded"
-              placeholder="e.g. Stripe"
-            />
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className="w-full border p-2 rounded"
+                placeholder={t('paymentsPage.method_name_placeholder')}
+              />
           </div>
           <div>
             <label className="block font-semibold mb-1">{t('type')}</label>

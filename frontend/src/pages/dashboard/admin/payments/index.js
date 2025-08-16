@@ -206,15 +206,15 @@ export default function AdminPaymentsPage() {
 
   const validate = (data) => {
     const errs = {};
-    if (!data.currency) errs.currency = "Currency is required";
+    if (!data.currency) errs.currency = t('paymentsPage.currency_required');
     Object.entries(data.platformCut).forEach(([key, val]) => {
       if (val === "" || isNaN(val)) {
-        errs[`platformCut.${key}`] = "Required";
+        errs[`platformCut.${key}`] = t('paymentsPage.required');
       } else if (val < 0 || val > 100) {
-        errs[`platformCut.${key}`] = "Must be between 0 and 100";
+        errs[`platformCut.${key}`] = t('paymentsPage.between_0_100');
       }
     });
-    if (!data.refundPolicy) errs.refundPolicy = "Refund policy is required";
+    if (!data.refundPolicy) errs.refundPolicy = t('paymentsPage.refund_policy_required');
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -247,7 +247,7 @@ export default function AdminPaymentsPage() {
 
   const handleSave = async () => {
     if (!validate(form)) {
-      toast.error("Please correct the errors before saving");
+      toast.error(t('paymentsPage.correct_errors'));
       return;
     }
     try {
@@ -313,10 +313,9 @@ export default function AdminPaymentsPage() {
               />
               <select className="border px-3 py-2 rounded">
                 <option>{t('paymentsPage.all_methods')}</option>
-                <option>PayPal</option>
-                <option>Stripe</option>
-                <option>Bank Transfer</option>
-                <option>Crypto Wallet</option>
+                {methods.map((m) => (
+                  <option key={m.id}>{m.name}</option>
+                ))}
               </select>
               <select className="border px-3 py-2 rounded">
                 <option>{t('paymentsPage.all_status')}</option>
@@ -337,9 +336,9 @@ export default function AdminPaymentsPage() {
                     <th className="px-4 py-2">{t('paymentsPage.user')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.type')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.method')}</th>
-                    <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
-                    <th className="px-4 py-2">Platform Fee</th>
-                    <th className="px-4 py-2">Net Amount</th>
+                      <th className="px-4 py-2">{t('paymentsPage.amount')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.platform_fee')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.net_amount')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.status')}</th>
                     <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
                   </tr>
@@ -371,7 +370,7 @@ export default function AdminPaymentsPage() {
                                 : "bg-gray-100 text-gray-800"
                             }`}
                         >
-                          {txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}
+                          {t(`paymentsPage.${txn.status}`)}
                         </span>
                       </td>
                       <td className="px-4 py-2 space-x-2">
@@ -402,13 +401,13 @@ export default function AdminPaymentsPage() {
             <div className="overflow-x-auto bg-white shadow rounded">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-100 text-left">
-                  <tr>
-                    <th className="px-4 py-2">Name</th>
-                    <th className="px-4 py-2">Type</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Default</th>
-                    <th className="px-4 py-2">Actions</th>
-                  </tr>
+                    <tr>
+                      <th className="px-4 py-2">{t('paymentsPage.name')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.type')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.status')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.default')}</th>
+                      <th className="px-4 py-2">{t('paymentsPage.actions')}</th>
+                    </tr>
                 </thead>
                 <tbody>
                   {methods.map((method) => (
@@ -594,19 +593,23 @@ export default function AdminPaymentsPage() {
                       <td className="px-4 py-2 text-green-600 font-semibold">${p.amount.toFixed(2)}</td>
                       <td className="px-4 py-2">{p.method}</td>
                       <td className="px-4 py-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${p.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : p.status === "Paid"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {p.status}
-                        </span>
+                        {(() => {
+                          const status = (p.status || '').toLowerCase();
+                          const color =
+                            status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : status === 'paid'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800';
+                          return (
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}>
+                              {t(`paymentsPage.${status}`)}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-2 space-x-2">
-                        {p.status === "Pending" && (
+                        {p.status?.toLowerCase() === "pending" && (
                           <>
                             <button
                               onClick={() => updateStatus(p.id, "Paid")}
@@ -622,7 +625,7 @@ export default function AdminPaymentsPage() {
                             </button>
                           </>
                         )}
-                        {p.status === "Rejected" && (
+                        {p.status?.toLowerCase() === "rejected" && (
                           <button
                             onClick={() => updateStatus(p.id, "Pending")}
                             className="text-gray-500 hover:underline text-xs"
