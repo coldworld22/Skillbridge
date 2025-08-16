@@ -4,6 +4,8 @@ import { validateCode } from '../../services/couponService';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods, fetchPayPalClientId } from '../../services/paymentMethodService';
 
+jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
+
 const mockRemoveItem = jest.fn();
 jest.mock('../../store/cart/cartStore', () => ({
   __esModule: true,
@@ -64,7 +66,8 @@ test('applies promo code successfully', async () => {
   fireEvent.click(screen.getByText('Apply'));
   await waitFor(() => expect(validateCode).toHaveBeenCalledWith('SAVE10'));
   expect(await screen.findByText('Discount Applied: -$10')).toBeInTheDocument();
-  expect(screen.queryByText('Invalid promo code')).toBeNull();
+  const { toast } = require('react-toastify');
+  expect(toast.success).toHaveBeenCalledWith('Promo code applied');
 });
 
 test('shows error for invalid promo code', async () => {
@@ -75,7 +78,10 @@ test('shows error for invalid promo code', async () => {
     target: { value: 'BADCODE' },
   });
   fireEvent.click(screen.getByText('Apply'));
-  expect(await screen.findByText('Invalid promo code')).toBeInTheDocument();
+  const { toast } = require('react-toastify');
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith('Invalid promo code');
+  });
 });
 
 test('handles network failure when applying promo code', async () => {
@@ -86,7 +92,8 @@ test('handles network failure when applying promo code', async () => {
     target: { value: 'SAVE10' },
   });
   fireEvent.click(screen.getByText('Apply'));
-  expect(
-    await screen.findByText('Failed to apply promo code. Please try again.')
-  ).toBeInTheDocument();
+  const { toast } = require('react-toastify');
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith('Failed to apply promo code. Please try again.');
+  });
 });
