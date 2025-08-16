@@ -7,7 +7,7 @@ exports.seed = async function(knex) {
       code: 'DISCOUNT10',
       discount_percent: 10,
       starts_at: knex.fn.now(),
-      expires_at: knex.fn.now(),
+      expires_at: knex.raw("NOW() + INTERVAL '7 months'"),
       usage_limit: 100,
       applies_to: 'plan',
       applies_to_id: null,
