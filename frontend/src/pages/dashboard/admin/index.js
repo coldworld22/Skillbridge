@@ -189,21 +189,13 @@ function AdminDashboardHome() {
       {/* Charts & Stats */}
       <section>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-6">
-            <RevenueChart />
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <SignupsChart />
-          </div>
+          <RevenueChart data={stats?.monthlyRevenue} />
+          <SignupsChart data={stats?.monthlySignups} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-          <div className="bg-white rounded-xl shadow p-6">
-            <CategoryPieChart />
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <InstructorActivityChart />
-          </div>
+          <CategoryPieChart data={stats?.tutorialsByCategory} />
+          <InstructorActivityChart data={stats?.instructorTutorialCount} />
         </div>
 
         <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-8">
