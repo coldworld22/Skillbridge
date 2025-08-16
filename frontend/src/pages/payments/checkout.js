@@ -8,6 +8,7 @@ import { initiateBankPayment } from '@/services/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
+import { toast } from 'react-toastify';
 import {
   FaCcStripe, FaPaypal, FaMoneyCheckAlt, FaUniversity,
   FaEthereum, FaFileInvoice, FaDownload, FaCheckCircle
@@ -95,7 +96,6 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(0);
   const [invoicePreview, setInvoicePreview] = useState(false);
   const [bankInfo, setBankInfo] = useState(null);
-  const [error, setError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
@@ -143,13 +143,13 @@ export default function CheckoutPage() {
     try {
       const data = await validateCode(promoCode);
       setDiscount(data.discount_percent);
-      setError('');
+      toast.success('Promo code applied');
     } catch (err) {
       setDiscount(0);
-      if (err?.response?.status === 400) {
-        setError('Invalid promo code');
+      if (err?.response?.status === 404) {
+        toast.error('Invalid promo code');
       } else {
-        setError('Failed to apply promo code. Please try again.');
+        toast.error('Failed to apply promo code. Please try again.');
       }
     }
   };
@@ -338,7 +338,6 @@ export default function CheckoutPage() {
               className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
             >Apply</button>
           </div>
-          {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
         </div>
 
         {!isFree && (
