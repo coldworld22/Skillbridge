@@ -1,5 +1,14 @@
 const db = require("../../config/database");
 
+const STATUS = {
+  PENDING_PAYMENT: "pending_payment",
+  AWAITING_APPROVAL: "awaiting_approval",
+  COMPLETED: "completed",
+  REJECTED: "rejected",
+};
+
+exports.STATUS = STATUS;
+
 exports.create = async (data, schedules = []) => {
   return db.transaction(async (trx) => {
     const [row] = await trx("payments").insert(data).returning("*");
@@ -11,32 +20,44 @@ exports.create = async (data, schedules = []) => {
   });
 };
 
-exports.getAll = async () => {
-  return db({ p: 'payments' })
-    .leftJoin('users as u', 'p.user_id', 'u.id')
-    .leftJoin('payment_methods_config as m', 'p.method_id', 'm.id')
+exports.getAll = async (status) => {
+  const query = db({ p: "payments" })
+    .leftJoin("users as u", "p.user_id", "u.id")
+    .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
     .select(
-      'p.*',
-      'u.full_name as user_name',
-      'u.role as user_role',
-      'm.name as method_name'
+      "p.*",
+      "u.full_name as user_name",
+      "u.role as user_role",
+      "m.name as method_name"
     )
-    .orderBy('p.created_at', 'desc');
+    .orderBy("p.created_at", "desc");
+
+  if (status) {
+    query.where("p.status", status);
+  }
+
+  return query;
 };
 
-exports.getByUser = async (userId) => {
-  return db({ p: 'payments' })
-    .leftJoin('payment_methods_config as m', 'p.method_id', 'm.id')
-    .leftJoin('online_classes as c', function () {
-      this.on('p.item_id', '=', 'c.id').andOn('p.item_type', '=', db.raw('?', ['class']));
+exports.getByUser = async (userId, status) => {
+  const query = db({ p: "payments" })
+    .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
+    .leftJoin("online_classes as c", function () {
+      this.on("p.item_id", "=", "c.id").andOn(
+        "p.item_type",
+        "=",
+        db.raw("?", ["class"])
+      );
     })
-    .select(
-      'p.*',
-      'm.name as method_name',
-      'c.title as class_title'
-    )
-    .where('p.user_id', userId)
-    .orderBy('p.created_at', 'desc');
+    .select("p.*", "m.name as method_name", "c.title as class_title")
+    .where("p.user_id", userId)
+    .orderBy("p.created_at", "desc");
+
+  if (status) {
+    query.andWhere("p.status", status);
+  }
+
+  return query;
 };
 
 exports.getById = async (id) => {
@@ -50,4 +71,37 @@ exports.update = async (id, data) => {
 
 exports.delete = async (id) => {
   return db("payments").where({ id }).del();
+};
+
+exports.approveBankPayment = async (
+  id,
+  { amount, item_id, item_type } = {}
+) => {
+  return db.transaction(async (trx) => {
+    const payment = await trx("payments").where({ id }).first();
+    if (!payment) throw new Error("Payment not found");
+
+    if (payment.status !== STATUS.AWAITING_APPROVAL) {
+      throw new Error("Payment is not awaiting approval");
+    }
+
+    if (amount !== undefined && Number(payment.amount) !== Number(amount)) {
+      throw new Error("Payment amount does not match");
+    }
+
+    if (item_id !== undefined && payment.item_id !== item_id) {
+      throw new Error("Payment item does not match order");
+    }
+
+    if (item_type !== undefined && payment.item_type !== item_type) {
+      throw new Error("Payment item type does not match order");
+    }
+
+    const [row] = await trx("payments")
+      .where({ id })
+      .update({ status: STATUS.COMPLETED, paid_at: new Date() })
+      .returning("*");
+
+    return row;
+  });
 };
