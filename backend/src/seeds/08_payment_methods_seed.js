@@ -5,14 +5,18 @@ exports.seed = async function(knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       name: 'Bank Transfer',
-      type: 'bank',
+      type: 'manual',
       icon: null,
       active: true,
       settings: {
-        bank_name: 'Sample Bank',
-        account_number: '123456789',
+        bankName: 'Sample Bank',
+        accountHolderName: 'John Doe',
+        accountNumber: '123456789',
         iban: 'DE89370400440532013000',
-        instructions: 'Transfer to the above account and upload your receipt for verification.'
+        swiftCode: 'COBADEFFXXX',
+        branchAddress: '1234 Elm Street, City, Country',
+        extraInstructions:
+          'Transfer to the above account and upload your receipt for verification.'
       },
       is_default: true,
       created_at: now,
