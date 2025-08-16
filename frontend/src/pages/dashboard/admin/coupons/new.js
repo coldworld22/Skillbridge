@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { createCoupon } from "@/services/admin/couponService";
 import { useRouter } from "next/router";
@@ -15,16 +16,21 @@ export default function NewCouponPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createCoupon({
-      code,
-      discount_percent: parseInt(discount, 10),
-      starts_at: startsAt || undefined,
-      expires_at: expiresAt || undefined,
-      usage_limit: usageLimit ? parseInt(usageLimit, 10) : undefined,
-      applies_to: appliesTo,
-      applies_to_id: appliesToId || undefined,
-    }).catch(() => {});
-    router.push("/dashboard/admin/coupons");
+    try {
+      await createCoupon({
+        code,
+        discount_percent: parseInt(discount, 10),
+        starts_at: startsAt || undefined,
+        expires_at: expiresAt || undefined,
+        usage_limit: usageLimit ? parseInt(usageLimit, 10) : undefined,
+        applies_to: appliesTo,
+        applies_to_id: appliesToId || undefined,
+      });
+      toast.success("Coupon created successfully");
+      router.push("/dashboard/admin/coupons");
+    } catch (err) {
+      toast.error("Failed to create coupon");
+    }
   };
 
   return (

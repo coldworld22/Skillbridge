@@ -17,6 +17,14 @@ exports.findByCode = (code) => {
   return db("coupons").whereRaw("LOWER(code) = LOWER(?)", [code]).first();
 };
 
+exports.incrementUsage = async (id) => {
+  const [row] = await db("coupons")
+    .where({ id })
+    .increment("times_used", 1)
+    .returning("*");
+  return row;
+};
+
 exports.updateCoupon = async (id, data) => {
   const [row] = await db("coupons").where({ id }).update(data).returning("*");
   return row;

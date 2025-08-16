@@ -52,5 +52,11 @@ exports.validateCode = catchAsync(async (req, res) => {
   if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
     throw new AppError("Coupon expired", 400);
   }
+  if (
+    coupon.usage_limit !== null &&
+    coupon.times_used >= coupon.usage_limit
+  ) {
+    throw new AppError("Coupon usage limit reached", 400);
+  }
   sendSuccess(res, coupon, "Coupon valid");
 });

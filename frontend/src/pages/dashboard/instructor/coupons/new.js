@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { createCoupon } from "@/services/instructor/couponService";
 import { useRouter } from "next/router";
@@ -10,8 +11,13 @@ export default function InstructorCouponNew() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createCoupon({ code, discount_percent: parseInt(discount, 10) }).catch(() => {});
-    router.push("/dashboard/instructor/coupons");
+    try {
+      await createCoupon({ code, discount_percent: parseInt(discount, 10) });
+      toast.success("Coupon created successfully");
+      router.push("/dashboard/instructor/coupons");
+    } catch (err) {
+      toast.error("Failed to create coupon");
+    }
   };
 
   return (
