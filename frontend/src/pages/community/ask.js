@@ -195,18 +195,12 @@ const handleAcceptAIResponse = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      let payload;
-      if (uploadedFiles.length) {
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('content', description);
-        formData.append('tags', JSON.stringify(tags));
-        uploadedFiles.forEach((file) => formData.append('files', file));
-        payload = formData;
-      } else {
-        payload = { title, content: description, tags };
-      }
-      const discussion = await createDiscussion(payload);
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', description);
+      formData.append('tags', JSON.stringify(tags));
+      uploadedFiles.forEach((file) => formData.append('files', file));
+      const discussion = await createDiscussion(formData);
       if (editableResponse.trim()) {
         await createReply(discussion.id, { content: editableResponse });
       }
