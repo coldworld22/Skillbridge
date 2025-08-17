@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaTrash } from "react-icons/fa";
+import { formatDateTime } from "@/utils/date";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -18,7 +19,7 @@ export default function AdminAnnouncementsPage() {
         const formatted = (data || []).map((a) => ({
           id: a.id,
           message: a.message,
-          timestamp: new Date(a.created_at).toLocaleString(),
+          timestamp: formatDateTime(a.created_at),
         }));
         setAnnouncements(formatted);
       } catch (err) {
@@ -36,7 +37,7 @@ export default function AdminAnnouncementsPage() {
       const newEntry = {
         id: created.id,
         message: created.message,
-        timestamp: new Date(created.created_at).toLocaleString(),
+        timestamp: formatDateTime(created.created_at),
       };
       setAnnouncements((prev) => [newEntry, ...prev]);
       setNewMessage("");
