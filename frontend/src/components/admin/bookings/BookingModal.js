@@ -77,7 +77,7 @@ export default function BookingModal({ booking, onClose, onCancel, onDelete }) {
           </div>
         )}
 
-        {booking.status?.toLowerCase() === 'cancelled' && (
+        {booking.status === 'cancelled' && onDelete && (
           <div className="mt-6">
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -114,7 +114,7 @@ export default function BookingModal({ booking, onClose, onCancel, onDelete }) {
           </div>
         )}
 
-        {showDeleteConfirm && (
+        {showDeleteConfirm && onDelete && (
           <div className="mt-4 border-t pt-4">
             <p className="mb-2 text-sm">Are you sure you want to delete this booking?</p>
             <div className="flex justify-end gap-2">
