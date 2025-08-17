@@ -24,6 +24,7 @@ const QuestionDetails = () => {
   const [replyText, setReplyText] = useState("");
   const [replies, setReplies] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
+  const [audioPreview, setAudioPreview] = useState(null);
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
 
@@ -80,7 +81,15 @@ const QuestionDetails = () => {
   };
 
   // ✅ Handle Audio Upload
-  const handleAudioUpload = (e) => setAudioFile(e.target.files[0]);
+  const handleAudioUpload = (e) => {
+    const f = e.target.files[0];
+    setAudioFile(f);
+    if (f) {
+      setAudioPreview(URL.createObjectURL(f));
+    } else {
+      setAudioPreview(null);
+    }
+  };
 
   // ✅ Handle File Upload
   const handleFileUpload = (e) => {
@@ -105,6 +114,7 @@ const QuestionDetails = () => {
     const fd = new FormData();
     fd.append('content', replyText);
     if (file) fd.append('file', file);
+    if (audioFile) fd.append('audio', audioFile);
     try {
       const newReply = await createReply(router.query.id, fd);
       setReplies([...replies, newReply]);
@@ -112,6 +122,9 @@ const QuestionDetails = () => {
       setFile(null);
       if (filePreview) URL.revokeObjectURL(filePreview);
       setFilePreview(null);
+      setAudioFile(null);
+      if (audioPreview) URL.revokeObjectURL(audioPreview);
+      setAudioPreview(null);
       toast.success('Reply posted');
     } catch (err) {
       console.error(err);
@@ -122,8 +135,9 @@ const QuestionDetails = () => {
   useEffect(() => {
     return () => {
       if (filePreview) URL.revokeObjectURL(filePreview);
+      if (audioPreview) URL.revokeObjectURL(audioPreview);
     };
-  }, [filePreview]);
+  }, [filePreview, audioPreview]);
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
@@ -187,7 +201,20 @@ const QuestionDetails = () => {
               </div>
               <p className="text-gray-300 mt-2"><ReactMarkdown>{reply.content}</ReactMarkdown></p>
               {reply.file_url && (
-                <img src={reply.file_url} alt="attachment" className="mt-2 max-w-full rounded" />
+                /(mp3|wav|ogg|m4a)$/i.test(reply.file_url)
+                  ? (
+                      <audio controls className="mt-2 w-full">
+                        <source src={reply.file_url} />
+                        Your browser does not support the audio element.
+                      </audio>
+                    )
+                  : (
+                      <img
+                        src={reply.file_url}
+                        alt="attachment"
+                        className="mt-2 max-w-full rounded"
+                      />
+                    )
               )}
             </div>
           ))}
@@ -204,6 +231,14 @@ const QuestionDetails = () => {
         {/* ✅ File & Video Call */}
         <input type="file" accept="audio/*" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleAudioUpload} />
         <input type="file" accept=".pdf,.jpg,.png" className="mt-3 bg-gray-800 p-2 rounded-lg text-white" onChange={handleFileUpload} />
+        {audioFile && audioPreview && (
+          <div className="mt-2">
+            <audio controls className="w-full">
+              <source src={audioPreview} />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        )}
         {file && (
           <div className="mt-2">
             {file.type.startsWith('image/') ? (
