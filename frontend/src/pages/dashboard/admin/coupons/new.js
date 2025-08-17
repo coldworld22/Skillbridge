@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { createCoupon } from "@/services/admin/couponService";
 import { useRouter } from "next/router";
+import { fetchPlans } from "@/services/admin/planService";
+import { fetchAdminClasses } from "@/services/admin/classService";
+import { fetchAllTutorials } from "@/services/admin/tutorialService";
 
 export default function NewCouponPage() {
   const [code, setCode] = useState("");
@@ -12,7 +15,36 @@ export default function NewCouponPage() {
   const [usageLimit, setUsageLimit] = useState("");
   const [appliesTo, setAppliesTo] = useState("plan");
   const [appliesToId, setAppliesToId] = useState("");
+  const [options, setOptions] = useState([]);
   const router = useRouter();
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        let items = [];
+        if (appliesTo === "plan") {
+          items = (await fetchPlans()).map((p) => ({ id: p.id, label: p.name }));
+        } else if (appliesTo === "class") {
+          items = (await fetchAdminClasses()).map((c) => ({
+            id: c.id,
+            label: c.title,
+          }));
+        } else if (appliesTo === "tutorial") {
+          items = (await fetchAllTutorials()).map((t) => ({
+            id: t.id,
+            label: t.title,
+          }));
+        }
+        setOptions(items);
+        setAppliesToId(items[0]?.id || "");
+      } catch (err) {
+        console.error("Failed to load targets", err);
+        setOptions([]);
+        setAppliesToId("");
+      }
+    };
+    loadOptions();
+  }, [appliesTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +80,18 @@ export default function NewCouponPage() {
             <option value="class">Class</option>
             <option value="tutorial">Tutorial</option>
           </select>
-          <input value={appliesToId} onChange={(e) => setAppliesToId(e.target.value)} placeholder="Target ID" className="border p-2 w-full" />
+          <select
+            value={appliesToId}
+            onChange={(e) => setAppliesToId(e.target.value)}
+            className="border p-2 w-full"
+          >
+            <option value="">Select {appliesTo}</option>
+            {options.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Save</button>
         </form>
       </div>
