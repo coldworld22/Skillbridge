@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { id } = router.query;
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -36,7 +37,7 @@ export default function CheckoutPage() {
 
   const applyCoupon = async () => {
     try {
-      const coupon = await validateCode(formData.coupon.trim());
+      const coupon = await validateCode(formData.coupon.trim(), "class", id);
       if (coupon) {
         const discountAmount = (coursePrice * coupon.discount_percent) / 100;
         setAppliedDiscount(discountAmount);

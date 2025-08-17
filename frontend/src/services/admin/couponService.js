@@ -24,7 +24,12 @@ export const deleteCoupon = async (id) => {
   await api.delete(`/coupons/admin/${id}`);
 };
 
-export const validateCode = async (code) => {
-  const { data } = await api.get(`/coupons/code/${code}`);
+export const validateCode = async (code, itemType, itemId) => {
+  let url = `/coupons/code/${encodeURIComponent(code)}`;
+  if (itemType) {
+    url += `/${itemType}`;
+    if (itemId) url += `/${itemId}`;
+  }
+  const { data } = await api.get(url);
   return data?.data;
 };

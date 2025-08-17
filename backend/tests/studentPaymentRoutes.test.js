@@ -14,6 +14,11 @@ jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
   getSettings: jest.fn(),
 }));
 
+jest.mock('../src/modules/coupons/coupons.service', () => ({
+  getCouponById: jest.fn(),
+  incrementUsage: jest.fn(),
+}));
+
 jest.mock('../src/services/smsService', () => ({
   sendSMS: jest.fn(),
 }));
@@ -30,6 +35,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 const service = require('../src/modules/payments/payments.service');
 const methodService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
+const couponService = require('../src/modules/coupons/coupons.service');
 const routes = require('../src/modules/payments/student.routes');
 
 const app = express();
@@ -80,6 +86,23 @@ describe('POST /api/payments/student', () => {
       item_type: 'class',
       item_id: 'i1',
       amount: 100,
+    });
+
+    expect(res.status).toBe(400);
+    expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid coupon', async () => {
+    methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
+    configService.getSettings.mockResolvedValue({ platformCut: {} });
+    couponService.getCouponById.mockResolvedValue(null);
+
+    const res = await request(app).post('/api/payments/student').send({
+      method_id: 'm1',
+      item_type: 'class',
+      item_id: 'i1',
+      amount: 100,
+      coupon_id: 'bad',
     });
 
     expect(res.status).toBe(400);

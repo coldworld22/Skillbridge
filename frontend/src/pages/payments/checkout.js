@@ -143,7 +143,7 @@ export default function CheckoutPage() {
 
   const handleApplyPromo = async () => {
     try {
-      const data = await validateCode(promoCode);
+      const data = await validateCode(promoCode, itemType, itemId);
       setDiscount(data.discount_percent);
       setCouponId(data.id);
       toast.success('Promo code applied');
