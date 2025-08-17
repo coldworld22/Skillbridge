@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaTrash } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -10,6 +12,7 @@ import {
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const { t } = useTranslation("dashboard");
 
   useEffect(() => {
     const load = async () => {
@@ -21,12 +24,14 @@ export default function AdminAnnouncementsPage() {
           timestamp: new Date(a.created_at).toLocaleString(),
         }));
         setAnnouncements(formatted);
+        toast.success(t("communityAnnouncementsPage.announcements_loaded"));
       } catch (err) {
         console.error("Failed to load announcements", err);
+        toast.error(t("communityAnnouncementsPage.loading_failed"));
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const handlePost = async () => {
     if (!newMessage.trim()) return;
@@ -40,19 +45,25 @@ export default function AdminAnnouncementsPage() {
       };
       setAnnouncements((prev) => [newEntry, ...prev]);
       setNewMessage("");
+      toast.success(t("communityAnnouncementsPage.announcement_saved"));
     } catch (err) {
       console.error("Failed to post announcement", err);
+      toast.error(t("communityAnnouncementsPage.save_failed"));
     }
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = confirm("Delete this announcement?");
+    const confirmDelete = confirm(
+      t("communityAnnouncementsPage.confirm_delete")
+    );
     if (!confirmDelete) return;
     try {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+      toast.success(t("communityAnnouncementsPage.announcement_deleted"));
     } catch (err) {
       console.error("Failed to delete announcement", err);
+      toast.error(t("communityAnnouncementsPage.delete_failed"));
     }
   };
 
