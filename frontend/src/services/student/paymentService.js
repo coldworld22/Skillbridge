@@ -5,6 +5,11 @@ export const fetchMyPayments = async () => {
   return data?.data ?? [];
 };
 
+export const createPayment = async (payload) => {
+  const { data } = await api.post("/payments/student", payload);
+  return data?.data ?? data;
+};
+
 export const uploadReceipt = async (file) => {
   const formData = new FormData();
   formData.append("receipt", file);
