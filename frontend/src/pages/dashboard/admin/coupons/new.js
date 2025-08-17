@@ -4,63 +4,68 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import {
   createCoupon,
   validateCode,
 } from "@/services/admin/couponService";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
-const couponSchema = z
-  .object({
-    code: z
-      .string()
-      .trim()
-      .min(1, "Code is required")
-      .transform((val) => val.toUpperCase())
-      .superRefine(async (val, ctx) => {
-        try {
-          await validateCode(val);
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Code already exists",
-          });
-        } catch (err) {
-          if (err?.response?.status !== 404) {
+const createCouponSchema = (t) =>
+  z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .min(1, t("code_required"))
+        .transform((val) => val.toUpperCase())
+        .superRefine(async (val, ctx) => {
+          try {
+            await validateCode(val);
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: "Failed to validate code",
+              message: t("code_exists"),
             });
+          } catch (err) {
+            if (err?.response?.status !== 404) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: t("code_validate_failed"),
+              });
+            }
           }
+        }),
+      discount_percent: z.coerce.number().int().min(1).max(100),
+      starts_at: z.string().optional(),
+      expires_at: z.string().optional(),
+      usage_limit: z.preprocess(
+        (val) =>
+          val === "" || val === null || typeof val === "undefined"
+            ? undefined
+            : Number(val),
+        z.number().int().positive().optional()
+      ),
+      applies_to: z.enum(["plan", "class", "tutorial"]),
+      applies_to_id: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.starts_at && data.expires_at) {
+          return new Date(data.starts_at) < new Date(data.expires_at);
         }
-      }),
-    discount_percent: z.coerce.number().int().min(1).max(100),
-    starts_at: z.string().optional(),
-    expires_at: z.string().optional(),
-    usage_limit: z.preprocess(
-      (val) =>
-        val === "" || val === null || typeof val === "undefined"
-          ? undefined
-          : Number(val),
-      z.number().int().positive().optional()
-    ),
-    applies_to: z.enum(["plan", "class", "tutorial"]),
-    applies_to_id: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.starts_at && data.expires_at) {
-        return new Date(data.starts_at) < new Date(data.expires_at);
+        return true;
+      },
+      {
+        message: t("start_before_end"),
+        path: ["expires_at"],
       }
-      return true;
-    },
-    {
-      message: "Start date must be before expiration",
-      path: ["expires_at"],
-    }
-  );
+    );
 
 export default function NewCouponPage() {
+  const { t, i18n } = useTranslation("dashboard", { keyPrefix: "couponsPage" });
   const router = useRouter();
   const [serverError, setServerError] = useState(null);
 
@@ -69,7 +74,7 @@ export default function NewCouponPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(couponSchema),
+    resolver: zodResolver(createCouponSchema(t)),
     defaultValues: {
       code: "",
       discount_percent: 10,
@@ -91,19 +96,19 @@ export default function NewCouponPage() {
         usage_limit: data.usage_limit ?? undefined,
         applies_to_id: data.applies_to_id || undefined,
       });
-      toast.success("Coupon created successfully");
+      toast.success(t("create_success"));
       router.push("/dashboard/admin/coupons");
     } catch (err) {
       const message =
-        err?.response?.data?.message || err?.message || "Failed to create coupon";
+        err?.response?.data?.message || err?.message || t("create_failed");
       setServerError(message);
     }
   };
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-lg">
-        <h1 className="text-2xl font-bold mb-4">New Coupon</h1>
+      <div className="p-6 max-w-lg" dir={i18n.dir()}>
+        <h1 className="text-2xl font-bold mb-4">{t("new_coupon")}</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {serverError && (
             <p className="text-red-600 text-sm">{serverError}</p>
@@ -111,7 +116,7 @@ export default function NewCouponPage() {
           <div>
             <input
               {...register("code")}
-              placeholder="CODE"
+              placeholder={t("code_placeholder")}
               className="border p-2 w-full"
             />
             {errors.code && (
@@ -158,7 +163,7 @@ export default function NewCouponPage() {
             <input
               type="number"
               {...register("usage_limit")}
-              placeholder="Usage Limit"
+              placeholder={t("usage_limit_placeholder")}
               className="border p-2 w-full"
             />
             {errors.usage_limit && (
@@ -172,15 +177,15 @@ export default function NewCouponPage() {
               {...register("applies_to")}
               className="border p-2 w-full"
             >
-              <option value="plan">Plan</option>
-              <option value="class">Class</option>
-              <option value="tutorial">Tutorial</option>
+              <option value="plan">{t("plan")}</option>
+              <option value="class">{t("class")}</option>
+              <option value="tutorial">{t("tutorial")}</option>
             </select>
           </div>
           <div>
             <input
               {...register("applies_to_id")}
-              placeholder="Target ID"
+              placeholder={t("target_id_placeholder")}
               className="border p-2 w-full"
             />
             {errors.applies_to_id && (
@@ -194,11 +199,19 @@ export default function NewCouponPage() {
             type="submit"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : "Save"}
+            {isSubmitting ? t("saving") : t("save")}
           </button>
         </form>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
 
