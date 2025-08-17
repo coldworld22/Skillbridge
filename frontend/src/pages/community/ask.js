@@ -359,6 +359,9 @@ const handleAcceptAIResponse = () => {
                 <div className="prose prose-invert">
                   <ReactMarkdown>{aiResponse}</ReactMarkdown>
                 </div>
+                {confidenceScore !== null && (
+                  <p className="mt-2 text-sm text-gray-400">Confidence: {confidenceScore}</p>
+                )}
               </div>
             )}
 
