@@ -35,6 +35,7 @@ const QuestionDetails = () => {
         setQuestion(data);
         setLikes(data.likes || 0);
         setVotes(data.votes || 0);
+        setLiked(Boolean(data.liked));
         try {
           const r = await fetchReplies(router.query.id);
           setReplies(r);
