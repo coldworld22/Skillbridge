@@ -98,7 +98,7 @@ describe('GET /api/community/admin/stats', () => {
 
 describe('GET /api/community/admin/contributors', () => {
   it('returns contributors', async () => {
-    const mock = [{ name: 'Jane' }];
+    const mock = [{ id: '1', name: 'Jane' }];
     contributorsService.getTopContributors.mockResolvedValue(mock);
 
     const res = await request(app).get('/api/community/admin/contributors');
