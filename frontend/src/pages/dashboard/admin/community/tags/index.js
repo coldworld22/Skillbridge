@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import {
   fetchTags,
   createTag,
@@ -19,6 +19,7 @@ export default function AdminTagsPage() {
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -55,6 +56,13 @@ export default function AdminTagsPage() {
   const handleEdit = (tag) => {
     setEditing(tag);
     setNewTag(tag.name);
+    inputRef.current?.focus();
+  };
+
+  const handleCancel = () => {
+    setEditing(null);
+    setNewTag("");
+    inputRef.current?.focus();
   };
 
   const handleDelete = async (id) => {
@@ -76,6 +84,7 @@ export default function AdminTagsPage() {
         {/* Create/Edit */}
         <div className="flex items-center gap-3 mb-8">
           <input
+            ref={inputRef}
             type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
@@ -89,6 +98,14 @@ export default function AdminTagsPage() {
             <FaPlus />
             {editing ? "Update" : "Add"}
           </button>
+          {editing && (
+            <button
+              onClick={handleCancel}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded flex items-center gap-2"
+            >
+              <FaTimes /> Cancel
+            </button>
+          )}
         </div>
 
         {/* Tag List */}
