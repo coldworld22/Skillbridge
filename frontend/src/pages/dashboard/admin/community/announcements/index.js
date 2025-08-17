@@ -9,6 +9,7 @@ import {
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
+  const [newTitle, setNewTitle] = useState("");
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function AdminAnnouncementsPage() {
         const data = await fetchAnnouncements();
         const formatted = (data || []).map((a) => ({
           id: a.id,
+          title: a.title,
           message: a.message,
           timestamp: new Date(a.created_at).toLocaleString(),
         }));
@@ -29,16 +31,18 @@ export default function AdminAnnouncementsPage() {
   }, []);
 
   const handlePost = async () => {
-    if (!newMessage.trim()) return;
+    if (!newTitle.trim() || !newMessage.trim()) return;
     try {
-      const payload = { title: newMessage.trim(), message: newMessage.trim() };
+      const payload = { title: newTitle.trim(), message: newMessage.trim() };
       const created = await createAnnouncement(payload);
       const newEntry = {
         id: created.id,
+        title: created.title,
         message: created.message,
         timestamp: new Date(created.created_at).toLocaleString(),
       };
       setAnnouncements((prev) => [newEntry, ...prev]);
+      setNewTitle("");
       setNewMessage("");
     } catch (err) {
       console.error("Failed to post announcement", err);
@@ -63,6 +67,13 @@ export default function AdminAnnouncementsPage() {
 
         {/* New Announcement Form */}
         <div className="mb-8">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Announcement title"
+            className="w-full border border-gray-300 rounded px-4 py-2 mb-2"
+          />
           <textarea
             rows={3}
             value={newMessage}
@@ -86,6 +97,7 @@ export default function AdminAnnouncementsPage() {
                 key={a.id}
                 className="bg-white border-l-4 border-yellow-500 p-4 rounded shadow-sm relative"
               >
+                <h3 className="text-lg font-semibold text-gray-900">{a.title}</h3>
                 <p className="text-gray-800">{a.message}</p>
                 <p className="text-sm text-gray-400 mt-1">{a.timestamp}</p>
                 <button
