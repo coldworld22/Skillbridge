@@ -238,7 +238,10 @@ export default function GroupDetailsPage() {
         {activeTab === 'overview' && (
           <div className="space-y-4">
             <img
-              src={group.cover_image || group.image}
+              src={group.cover_image || group.image || '/images/group-placeholder.jpg'}
+              onError={(e) => {
+                e.target.src = '/images/group-placeholder.jpg';
+              }}
               alt={group.name}
               className="w-full h-48 object-cover rounded-xl"
             />
