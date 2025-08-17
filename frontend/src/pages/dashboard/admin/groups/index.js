@@ -106,7 +106,7 @@ export default function AdminGroupsIndex() {
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkStatusChange = async (status) => {
     if (selectedGroups.length === 0) return;
     const confirmChange = confirm(`Change status of selected groups to ${status}?`);
     if (confirmChange) {
