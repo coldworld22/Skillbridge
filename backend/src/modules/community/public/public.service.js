@@ -43,6 +43,15 @@ exports.listDiscussions = async () => {
       "t.discussion_id",
       "d.id"
     )
+    .leftJoin(
+      db("community_replies")
+        .select("discussion_id")
+        .count({ replies: "id" })
+        .groupBy("discussion_id")
+        .as("r"),
+      "r.discussion_id",
+      "d.id"
+    )
     .select(
       "d.id",
       "d.title",
@@ -55,7 +64,8 @@ exports.listDiscussions = async () => {
       "u.avatar_url as user_avatar",
       db.raw("COALESCE(v.views,0) as views"),
       db.raw("COALESCE(l.likes,0) as likes"),
-      db.raw("COALESCE(t.votes,0) as votes")
+      db.raw("COALESCE(t.votes,0) as votes"),
+      db.raw("COALESCE(r.replies,0) as replies")
     )
     .orderBy("d.created_at", "desc");
   const tagsMap = await exports.getDiscussionTags(rows.map((r) => r.id));
