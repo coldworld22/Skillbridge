@@ -267,8 +267,8 @@
 - **Primary Key**: `id`
 - **Foreign Keys**: `user_id, discussion_id?, reply_id?`
 
-### `community_announcements`
-- **Purpose**: Admin posts shown to the community
+### `popup_announcements`
+- **Purpose**: Admin posts shown to the community in popup form
 - **Primary Key**: `id`
 - **Foreign Keys**: `author_id`
 
