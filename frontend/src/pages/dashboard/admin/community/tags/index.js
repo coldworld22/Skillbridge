@@ -19,14 +19,21 @@ export default function AdminTagsPage() {
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const data = await fetchTags();
         setTags(data || []);
       } catch (err) {
         console.error("Failed to load tags", err);
+        setError("Failed to load tags");
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -92,23 +99,34 @@ export default function AdminTagsPage() {
         </div>
 
         {/* Tag List */}
+        {error && (
+          <div className="text-red-500 mb-4 text-sm">{error}</div>
+        )}
         <div className="space-y-3">
-          {tags.map((tag) => (
-            <div
-              key={tag.id}
-              className="flex justify-between items-center bg-white px-4 py-2 rounded border border-gray-200 shadow-sm hover:shadow-md"
-            >
-              <span className="text-sm font-medium text-gray-700">#{tag.name}</span>
-              <div className="flex gap-3 text-gray-600">
-                <button onClick={() => handleEdit(tag)} title="Edit">
-                  <FaEdit />
-                </button>
-                <button onClick={() => handleDelete(tag.id)} title="Delete">
-                  <FaTrash />
-                </button>
-              </div>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-500 border-t-transparent"></div>
             </div>
-          ))}
+          ) : tags.length === 0 ? (
+            <div className="text-gray-500 text-center">No tags found</div>
+          ) : (
+            tags.map((tag) => (
+              <div
+                key={tag.id}
+                className="flex justify-between items-center bg-white px-4 py-2 rounded border border-gray-200 shadow-sm hover:shadow-md"
+              >
+                <span className="text-sm font-medium text-gray-700">#{tag.name}</span>
+                <div className="flex gap-3 text-gray-600">
+                  <button onClick={() => handleEdit(tag)} title="Edit">
+                    <FaEdit />
+                  </button>
+                  <button onClick={() => handleDelete(tag.id)} title="Delete">
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </AdminLayout>
