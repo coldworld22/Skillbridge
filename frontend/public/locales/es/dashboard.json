@@ -1264,5 +1264,22 @@
     "price_or_free": "Price or Free",
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
+  },
+  "couponsPage": {
+    "new_coupon": "Nuevo cupón",
+    "code_placeholder": "CÓDIGO",
+    "usage_limit_placeholder": "Límite de uso",
+    "target_id_placeholder": "ID de destino",
+    "plan": "Plan",
+    "class": "Clase",
+    "tutorial": "Tutorial",
+    "saving": "Guardando...",
+    "save": "Guardar",
+    "code_required": "El código es obligatorio",
+    "code_exists": "El código ya existe",
+    "code_validate_failed": "No se pudo validar el código",
+    "start_before_end": "La fecha de inicio debe ser anterior a la expiración",
+    "create_success": "Cupón creado con éxito",
+    "create_failed": "Error al crear el cupón"
   }
 }

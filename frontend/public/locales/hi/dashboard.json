@@ -1467,5 +1467,22 @@
     "price_or_free": "Price or Free",
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
+  },
+  "couponsPage": {
+    "new_coupon": "नया कूपन",
+    "code_placeholder": "कोड",
+    "usage_limit_placeholder": "उपयोग सीमा",
+    "target_id_placeholder": "लक्ष्य आईडी",
+    "plan": "योजना",
+    "class": "कक्षा",
+    "tutorial": "ट्यूटोरियल",
+    "saving": "सहेजा जा रहा है...",
+    "save": "सहेजें",
+    "code_required": "कोड आवश्यक है",
+    "code_exists": "कोड पहले से मौजूद है",
+    "code_validate_failed": "कोड सत्यापित करने में विफल",
+    "start_before_end": "प्रारंभ तिथि समाप्ति से पहले होनी चाहिए",
+    "create_success": "कूपन सफलतापूर्वक बनाया गया",
+    "create_failed": "कूपन बनाने में विफल"
   }
 }

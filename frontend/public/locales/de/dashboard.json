@@ -1264,5 +1264,22 @@
     "price_or_free": "Price or Free",
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
+  },
+  "couponsPage": {
+    "new_coupon": "Neuer Gutschein",
+    "code_placeholder": "CODE",
+    "usage_limit_placeholder": "Nutzungsbeschränkung",
+    "target_id_placeholder": "Ziel-ID",
+    "plan": "Plan",
+    "class": "Klasse",
+    "tutorial": "Tutorial",
+    "saving": "Speichern...",
+    "save": "Speichern",
+    "code_required": "Code ist erforderlich",
+    "code_exists": "Code existiert bereits",
+    "code_validate_failed": "Codevalidierung fehlgeschlagen",
+    "start_before_end": "Startdatum muss vor Ablaufdatum liegen",
+    "create_success": "Gutschein erfolgreich erstellt",
+    "create_failed": "Gutschein konnte nicht erstellt werden"
   }
 }

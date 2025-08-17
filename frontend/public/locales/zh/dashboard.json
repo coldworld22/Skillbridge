@@ -1467,5 +1467,22 @@
     "price_or_free": "Price or Free",
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
+  },
+  "couponsPage": {
+    "new_coupon": "新优惠券",
+    "code_placeholder": "代码",
+    "usage_limit_placeholder": "使用限制",
+    "target_id_placeholder": "目标ID",
+    "plan": "计划",
+    "class": "课程",
+    "tutorial": "教程",
+    "saving": "保存中...",
+    "save": "保存",
+    "code_required": "代码为必填项",
+    "code_exists": "代码已存在",
+    "code_validate_failed": "验证代码失败",
+    "start_before_end": "开始日期必须早于结束日期",
+    "create_success": "优惠券创建成功",
+    "create_failed": "创建优惠券失败"
   }
 }

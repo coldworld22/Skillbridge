@@ -1454,5 +1454,22 @@
     "price_or_free": "Price or Free",
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
+  },
+  "couponsPage": {
+    "new_coupon": "قسيمة جديدة",
+    "code_placeholder": "الكود",
+    "usage_limit_placeholder": "حد الاستخدام",
+    "target_id_placeholder": "معرّف الهدف",
+    "plan": "خطة",
+    "class": "صف",
+    "tutorial": "درس",
+    "saving": "جاري الحفظ...",
+    "save": "حفظ",
+    "code_required": "الكود مطلوب",
+    "code_exists": "الكود موجود بالفعل",
+    "code_validate_failed": "فشل التحقق من الكود",
+    "start_before_end": "يجب أن يكون تاريخ البداية قبل تاريخ الانتهاء",
+    "create_success": "تم إنشاء القسيمة بنجاح",
+    "create_failed": "فشل إنشاء القسيمة"
   }
 }
