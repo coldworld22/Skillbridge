@@ -195,6 +195,20 @@
     "details_update_failed": "Failed to update instructor",
     "processing": "Saving..."
   },
+  "tagsPage": {
+    "title": "Tags",
+    "manage": "Manage Tags",
+    "placeholder": "Tag name",
+    "add": "Add",
+    "update": "Update",
+    "delete_confirm": "Delete this tag?",
+    "tag_created": "Tag created",
+    "tag_updated": "Tag updated",
+    "tag_deleted": "Tag deleted",
+    "load_failed": "Failed to load tags",
+    "save_failed": "Failed to save tag",
+    "delete_failed": "Failed to delete tag"
+  },
   "currenciesPage": {
     "title": "Currency Manager",
     "add_currency": "Add Currency",
