@@ -133,27 +133,33 @@ async function notifyAllUsers(discussion) {
 
   const message = `New question posted: ${discussion.title}`;
 
-  for (const id of ids) {
-    await notificationService.createNotification({
-      user_id: id,
-      type: 'community',
-      message,
-    });
-    if (sender) {
-      await messageService.createMessage({
-        sender_id: sender.id,
-        receiver_id: id,
-        message,
-      });
-    }
-    const info = await userModel.findContactInfo(id);
-    if (info?.email) {
-      await emailUtil.sendNewDiscussionEmail(
-        info.email,
-        discussion.user_name,
-        discussion.title
-      );
-    }
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    const batch = ids.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (id) => {
+        await notificationService.createNotification({
+          user_id: id,
+          type: 'community',
+          message,
+        });
+        if (sender) {
+          await messageService.createMessage({
+            sender_id: sender.id,
+            receiver_id: id,
+            message,
+          });
+        }
+        const info = await userModel.findContactInfo(id);
+        if (info?.email) {
+          await emailUtil.sendNewDiscussionEmail(
+            info.email,
+            discussion.user_name,
+            discussion.title
+          );
+        }
+      })
+    );
   }
 }
 
