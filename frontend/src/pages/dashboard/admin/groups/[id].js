@@ -2,6 +2,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import {
   FaUsers,
   FaCalendarAlt,
@@ -26,7 +27,8 @@ import toast from 'react-hot-toast';
 export default function AdminGroupDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [group, setGroup] = useState(null);
+  const [group, setGroup] = useState();
+  const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [members, setMembers] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -57,9 +59,18 @@ export default function AdminGroupDetailsPage() {
     const load = async () => {
       try {
         const data = await groupService.getGroupById(id);
+        if (!data) {
+          setNotFound(true);
+          return;
+        }
         setGroup(data);
-      } catch {
-        setGroup(null);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          setNotFound(true);
+          return;
+        }
+        setNotFound(true);
+        return;
       }
       try {
         const list = await groupService.getGroupMembers(id);
@@ -217,6 +228,10 @@ export default function AdminGroupDetailsPage() {
     link.download = 'members.csv';
     link.click();
   };
+
+  if (notFound) {
+    return <AdminLayout><div className="p-6">Group not found</div></AdminLayout>;
+  }
 
   if (!group) {
     return <AdminLayout><div className="p-6">Loading group...</div></AdminLayout>;
