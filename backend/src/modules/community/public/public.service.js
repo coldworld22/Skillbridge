@@ -254,6 +254,34 @@ exports.createReply = async (data) => {
     .where({ id: data.user_id })
     .first('full_name', 'avatar_url');
 
+  const discussion = await db('community_discussions')
+    .where({ id: data.discussion_id })
+    .first('user_id', 'title');
+
+  if (discussion) {
+    const participants = await db('community_replies')
+      .where({ discussion_id: data.discussion_id })
+      .whereNot('user_id', data.user_id)
+      .distinct('user_id');
+
+    const recipientIds = new Set([
+      discussion.user_id,
+      ...participants.map((p) => p.user_id),
+    ]);
+
+    recipientIds.delete(data.user_id);
+
+    const message = `New reply in discussion: ${discussion.title}`;
+
+    for (const id of recipientIds) {
+      await notificationService.createNotification({
+        user_id: id,
+        type: 'community',
+        message,
+      });
+    }
+  }
+
   return {
     ...row,
     user_name: user?.full_name,
