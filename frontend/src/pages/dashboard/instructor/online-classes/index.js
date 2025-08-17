@@ -129,12 +129,12 @@ export default function MyClasses() {
               <div className="flex gap-2 mb-4 mt-2">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    cls.status === "published"
+                    cls.publishStatus === "published"
                       ? "bg-green-100 text-green-800"
                       : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {cls.status === "published" ? "Published" : "Draft"}
+                  {cls.publishStatus === "published" ? "Published" : "Draft"}
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${

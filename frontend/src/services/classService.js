@@ -3,7 +3,7 @@ import { extractData } from "@/services/api/helpers";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
 
-const formatClass = (cls) => ({
+const formatBaseClass = (cls) => ({
   ...cls,
   cover_image: cls.cover_image
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL}${cls.cover_image}`
@@ -19,6 +19,14 @@ const formatClass = (cls) => ({
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
 
+const formatClass = (cls) => {
+  const { status, ...rest } = formatBaseClass(cls);
+  return {
+    ...rest,
+    publishStatus: status,
+  };
+};
+
 const computeScheduleStatus = (start, end) => {
   const now = new Date();
   const s = start ? new Date(start) : null;
@@ -30,7 +38,7 @@ const computeScheduleStatus = (start, end) => {
 };
 
 const formatEnrolledClass = (cls) => {
-  const base = formatClass(cls);
+  const base = formatBaseClass(cls);
   const { start_date, end_date, status, ...rest } = base;
   return {
     ...rest,
