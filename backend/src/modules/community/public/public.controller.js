@@ -37,7 +37,9 @@ exports.createDiscussion = catchAsync(async (req, res) => {
     title,
     content,
     tags,
-    image_url: req.file ? `/uploads/community/${req.file.filename}` : null,
+    image_url: Array.isArray(req.files) && req.files.length
+      ? `/uploads/community/${req.files[0].filename}`
+      : null,
   });
   sendSuccess(res, disc, "Discussion created");
 });

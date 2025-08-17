@@ -36,7 +36,10 @@ export const fetchDiscussionById = async (id) => {
 };
 
 export const createDiscussion = async (payload) => {
-  const { data } = await api.post('/community/discussions', payload);
+  const config = payload instanceof FormData
+    ? { headers: { "Content-Type": "multipart/form-data" } }
+    : {};
+  const { data } = await api.post('/community/discussions', payload, config);
   return data?.data;
 };
 
