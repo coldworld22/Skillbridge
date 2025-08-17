@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaTrash } from "react-icons/fa";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -10,6 +11,8 @@ import {
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -45,9 +48,14 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm("Delete this announcement?");
-    if (!confirmDelete) return;
+  const handleDeleteClick = (id) => {
+    setSelectedId(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    const id = selectedId;
+    if (!id) return;
     try {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
@@ -89,7 +97,7 @@ export default function AdminAnnouncementsPage() {
                 <p className="text-gray-800">{a.message}</p>
                 <p className="text-sm text-gray-400 mt-1">{a.timestamp}</p>
                 <button
-                  onClick={() => handleDelete(a.id)}
+                  onClick={() => handleDeleteClick(a.id)}
                   className="absolute top-3 right-3 text-red-500 hover:text-red-700"
                 >
                   <FaTrash />
@@ -100,6 +108,15 @@ export default function AdminAnnouncementsPage() {
             <p className="text-gray-500">No announcements posted yet.</p>
           )}
         </div>
+        <ConfirmModal
+          isOpen={isConfirmOpen}
+          message="Delete this announcement?"
+          onClose={() => {
+            setIsConfirmOpen(false);
+            setSelectedId(null);
+          }}
+          onConfirm={confirmDelete}
+        />
       </div>
     </AdminLayout>
   );
