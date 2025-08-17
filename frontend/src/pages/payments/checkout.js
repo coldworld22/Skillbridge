@@ -284,7 +284,9 @@ export default function CheckoutPage() {
     const link = document.createElement('a');
     link.href = url;
     link.download = `invoice-${invoiceNumber}.html`;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
     URL.revokeObjectURL(url);
   };
 

@@ -149,9 +149,12 @@ export default function AdminGroupsIndex() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'groups.csv');
+    link.href = url;
+    link.download = 'groups.csv';
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const toggleSelect = (id) => {
