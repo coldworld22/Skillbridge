@@ -58,7 +58,7 @@ exports.listGroups = async ({ search, status }) => {
       if (search) qb.whereILike("g.name", `%${search}%`);
       if (status && status !== "all") qb.andWhere("g.status", status);
     })
-    .groupBy("g.id", "u.full_name", "u.role", "c.name")
+    .groupBy("g.id", "u.full_name", "u.role", "u.email", "c.name")
     .select(
       "g.*",
       db.raw("COALESCE(u.full_name, '') as creator_name"),
@@ -78,11 +78,12 @@ exports.getGroupById = async (id) => {
     .leftJoin("categories as c", "g.category_id", "c.id")
     .leftJoin("group_members as gm", "g.id", "gm.group_id")
     .where("g.id", id)
-    .groupBy("g.id", "u.full_name", "u.role", "c.name")
+    .groupBy("g.id", "u.full_name", "u.role", "u.email", "c.name")
     .select(
       "g.*",
       db.raw("COALESCE(u.full_name, '') as creator_name"),
       db.raw("COALESCE(u.role, '') as creator_role"),
+      db.raw("COALESCE(u.email, '') as contact_email"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw("COUNT(DISTINCT gm.id) as members_count"),
     )

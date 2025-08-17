@@ -27,6 +27,7 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const isOnline =
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
+  const email = selectedChat.contact_email || selectedChat.email;
 
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
@@ -52,8 +53,8 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   };
 
   const handleSendEmail = () => {
-    if (selectedChat.email) {
-      window.location.href = `mailto:${selectedChat.email}?subject=Let's Chat&body=Hello!`;
+    if (email) {
+      window.location.href = `mailto:${email}?subject=Let's Chat&body=Hello!`;
     } else {
       alert("Email is missing!");
     }
@@ -113,12 +114,14 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
         </button>
 
         {/* ✅ Email Button */}
-        <button
-          className="px-3 py-2 bg-gray-600 text-white rounded flex items-center gap-2 hover:bg-gray-700 transition"
-          onClick={handleSendEmail}
-        >
-          <FaEnvelope /> Email
-        </button>
+        {email && (
+          <button
+            className="px-3 py-2 bg-gray-600 text-white rounded flex items-center gap-2 hover:bg-gray-700 transition"
+            onClick={handleSendEmail}
+          >
+            <FaEnvelope /> Email
+          </button>
+        )}
       </div>
     </div>
   );
