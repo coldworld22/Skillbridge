@@ -31,7 +31,10 @@ export default function AdminContributorsPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "contributors.csv";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
