@@ -319,7 +319,15 @@ export default function CheckoutPage() {
                   ${selectedMethod === method.type ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
                 >
                   <div className="text-2xl">
-                    {iconMap[(method.icon || method.type)?.toLowerCase()] || <FaMoneyCheckAlt />}
+                    {method.icon ? (
+                      <img
+                        src={method.icon}
+                        alt={method.name}
+                        className="w-8 h-8 object-contain"
+                      />
+                    ) : (
+                      iconMap[method.type?.toLowerCase()] || <FaMoneyCheckAlt />
+                    )}
                   </div>
                   <div>{method.name}</div>
                 </button>
