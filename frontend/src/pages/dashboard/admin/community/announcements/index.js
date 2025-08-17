@@ -8,8 +8,14 @@ import {
   deleteAnnouncement,
 } from "@/services/admin/communityService";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminAnnouncementsPage() {
+  const { t } = useTranslation("dashboard", {
+    keyPrefix: "communityAnnouncementsPage",
+  });
   const [announcements, setAnnouncements] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newMessage, setNewMessage] = useState("");
@@ -35,14 +41,14 @@ export default function AdminAnnouncementsPage() {
           pinned: a.pinned,
         }));
         setAnnouncements(formatted);
-        toast.success("Announcements loaded");
+        toast.success(t("announcements_loaded"));
       } catch (err) {
         console.error("Failed to load announcements", err);
-        toast.error("Failed to load announcements");
+        toast.error(t("loading_failed"));
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const handlePost = async () => {
     if (!newTitle.trim() || !newMessage.trim()) return;
@@ -73,10 +79,10 @@ export default function AdminAnnouncementsPage() {
       setEndDate("");
       setAudience("all");
       setPinned(false);
-      toast.success("Announcement posted");
+      toast.success(t("announcement_saved"));
     } catch (err) {
       console.error("Failed to post announcement", err);
-      toast.error("Failed to post announcement");
+      toast.error(t("save_failed"));
     }
   };
 
@@ -91,17 +97,17 @@ export default function AdminAnnouncementsPage() {
     try {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast.success("Announcement deleted");
+      toast.success(t("announcement_deleted"));
     } catch (err) {
       console.error("Failed to delete announcement", err);
-      toast.error("Failed to delete announcement");
+      toast.error(t("delete_failed"));
     }
   };
 
   return (
-    <AdminLayout title="Community Announcements">
+    <AdminLayout title={t("title")}>
       <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Post Announcement</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("heading")}</h1>
 
         {/* New Announcement Form */}
         <div className="mb-8">
@@ -109,14 +115,14 @@ export default function AdminAnnouncementsPage() {
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Announcement title"
+            placeholder={t("announcement_title")}
             className="w-full border border-gray-300 rounded px-4 py-2 mb-2"
           />
           <textarea
             rows={3}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Write something important to broadcast to all users..."
+            placeholder={t("announcement_message")}
             className="w-full border border-gray-300 rounded px-4 py-2 resize-none"
           />
           <div className="flex flex-wrap gap-4">
@@ -125,23 +131,23 @@ export default function AdminAnnouncementsPage() {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2"
-              placeholder="Start date"
+              placeholder={t("start_date")}
             />
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2"
-              placeholder="End date"
+              placeholder={t("end_date")}
             />
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2"
             >
-              <option value="all">All Users</option>
-              <option value="student">Students</option>
-              <option value="instructor">Instructors</option>
+              <option value="all">{t("audience_all")}</option>
+              <option value="student">{t("audience_student")}</option>
+              <option value="instructor">{t("audience_instructor")}</option>
             </select>
             <label className="flex items-center gap-2">
               <input
@@ -149,14 +155,14 @@ export default function AdminAnnouncementsPage() {
                 checked={pinned}
                 onChange={(e) => setPinned(e.target.checked)}
               />
-              <span>Pinned</span>
+              <span>{t("pinned")}</span>
             </label>
           </div>
           <button
             onClick={handlePost}
             className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded font-semibold"
           >
-            Post
+            {t("post")}
           </button>
         </div>
 
@@ -174,12 +180,12 @@ export default function AdminAnnouncementsPage() {
                   <p>{a.timestamp}</p>
                   {(a.startDate || a.endDate) && (
                     <p>
-                      Schedule: {a.startDate || "—"} - {a.endDate || "—"}
+                      {t("schedule", { start: a.startDate || "—", end: a.endDate || "—" })}
                     </p>
                   )}
-                  {a.audience && <p>Audience: {a.audience}</p>}
+                  {a.audience && <p>{t("audience", { audience: a.audience })}</p>}
                   {a.pinned && (
-                    <p className="text-yellow-600 font-semibold">Pinned</p>
+                    <p className="text-yellow-600 font-semibold">{t("pinned")}</p>
                   )}
                 </div>
                 <button
@@ -191,12 +197,12 @@ export default function AdminAnnouncementsPage() {
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No announcements posted yet.</p>
+            <p className="text-gray-500">{t("no_announcements")}</p>
           )}
         </div>
         <ConfirmModal
           isOpen={isConfirmOpen}
-          message="Delete this announcement?"
+          message={t("confirm_delete")}
           onClose={() => {
             setIsConfirmOpen(false);
             setSelectedId(null);
@@ -206,4 +212,12 @@ export default function AdminAnnouncementsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
