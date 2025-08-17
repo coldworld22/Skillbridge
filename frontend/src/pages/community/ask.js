@@ -88,7 +88,7 @@ const AskQuestionPage = () => {
         if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false) opts.push('deepseek');
         if (cfg.claude?.apiKey && cfg.claude?.active !== false) opts.push('claude');
         if (cfg.gemini?.apiKey && cfg.gemini?.active !== false) opts.push('gemini');
-        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false) opts.push('huggingface');
+        if ((cfg.huggingface?.apiKey || cfg.huggingface?.token) && cfg.huggingface?.active !== false) opts.push('huggingface');
         setAiOptions(opts);
         if (opts.length === 0) toast.info('No AI integrations available');
       } catch (err) {
