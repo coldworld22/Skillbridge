@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaTimes, FaPlus, FaRobot } from "react-icons/fa";
+import { toast } from "react-toastify";
 import UserFilter from "./UserFilter";
 
 const AskQuestionModal = ({ onClose, onSubmit }) => {
@@ -11,7 +12,7 @@ const AskQuestionModal = ({ onClose, onSubmit }) => {
 
   // Handle Question Submission
   const handleSubmit = () => {
-    if (!title || !description) return alert("Please enter question details!");
+    if (!title || !description) return toast.error("Please enter question details!");
 
     onSubmit({
       title,
