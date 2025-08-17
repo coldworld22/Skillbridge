@@ -271,6 +271,26 @@ exports.listMembers = catchAsync(async (req, res) => {
   sendSuccess(res, members);
 });
 
+exports.sendEmail = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const group = await service.getGroupById(id);
+  if (!group) throw new AppError("Group not found", 404);
+  const members = await service.listMembers(id);
+  await Promise.all(
+    members
+      .filter((m) => m.user_id !== req.user.id)
+      .map((m) =>
+        messageService.sendEmail({
+          sender_id: req.user.id,
+          receiver_id: m.user_id,
+          subject: req.body.subject,
+          message: req.body.message,
+        })
+      )
+  );
+  sendSuccess(res, null, "Email sent");
+});
+
 exports.manageMember = catchAsync(async (req, res) => {
   const { memberId } = req.params;
   const { action } = req.body;

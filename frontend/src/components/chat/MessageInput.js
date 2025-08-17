@@ -16,6 +16,8 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [recording, setRecording] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [sendWhatsapp, setSendWhatsapp] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -30,12 +32,16 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
       text: message.trim(),
       file,
       audio: audioBlob,
+      sendEmail,
+      sendWhatsapp,
     };
 
     sendMessage(newMessage);
     setMessage("");
     setFile(null);
     setAudioBlob(null);
+    setSendEmail(false);
+    setSendWhatsapp(false);
     setShowEmojiPicker(false);
     onCancelReply?.();
     onTyping?.(false);
@@ -162,6 +168,25 @@ const MessageInput = ({ sendMessage, replyTo, onCancelReply, onTyping }) => {
         >
           <FaPaperPlane />
         </button>
+      </div>
+
+      <div className="flex items-center gap-3 mt-2 text-xs text-gray-300">
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={sendEmail}
+            onChange={(e) => setSendEmail(e.target.checked)}
+          />
+          Email
+        </label>
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={sendWhatsapp}
+            onChange={(e) => setSendWhatsapp(e.target.checked)}
+          />
+          WhatsApp
+        </label>
       </div>
 
       {/* File name preview */}

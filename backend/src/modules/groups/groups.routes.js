@@ -22,6 +22,8 @@ router.delete("/messages/:id", verifyToken, msgCtrl.deleteMessage);
 router.post("/:id/typing", verifyToken, msgCtrl.updateTyping);
 router.get("/:id/typing", verifyToken, msgCtrl.getTyping);
 
+router.post("/:id/email", verifyToken, ctrl.sendEmail);
+
 
 router.post("/", verifyToken, upload, ctrl.createGroup);
 router.get("/", ctrl.listGroups);

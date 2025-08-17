@@ -20,7 +20,7 @@ exports.getMessages = catchAsync(async (req, res) => {
 
 exports.sendMessage = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const { message } = req.body || {};
+  const { message, sendEmail, sendWhatsapp } = req.body || {};
 
   const file = req.files?.file?.[0];
   const audio = req.files?.audio?.[0];
@@ -88,6 +88,52 @@ exports.sendMessage = catchAsync(async (req, res) => {
       );
     }
   });
+
+  const msgText = message
+    ? `${req.user.full_name}: ${message}`
+    : note;
+
+  if (sendEmail === "true" || sendEmail === true) {
+    const emailSubject = `New message in group "${group.name}"`;
+    const emailResults = await Promise.allSettled(
+      recipients.map((uid) =>
+        messageService.sendEmail({
+          sender_id: req.user.id,
+          receiver_id: uid,
+          subject: emailSubject,
+          message: msgText,
+        })
+      )
+    );
+    emailResults.forEach((res, idx) => {
+      if (res.status === "rejected") {
+        console.error(
+          `Failed to send email to user ${recipients[idx]}:`,
+          res.reason,
+        );
+      }
+    });
+  }
+
+  if (sendWhatsapp === "true" || sendWhatsapp === true) {
+    const waResults = await Promise.allSettled(
+      recipients.map((uid) =>
+        messageService.sendWhatsApp({
+          sender_id: req.user.id,
+          receiver_id: uid,
+          message: msgText,
+        })
+      )
+    );
+    waResults.forEach((res, idx) => {
+      if (res.status === "rejected") {
+        console.error(
+          `Failed to send WhatsApp message to user ${recipients[idx]}:`,
+          res.reason,
+        );
+      }
+    });
+  }
 
   sendSuccess(res, full, "Message sent");
 });

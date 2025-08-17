@@ -159,11 +159,16 @@ const groupService = {
     }));
   },
 
-  sendGroupMessage: async (groupId, { text, file, audio }) => {
+  sendGroupMessage: async (
+    groupId,
+    { text, file, audio, sendEmail, sendWhatsapp },
+  ) => {
     const form = new FormData();
     if (text) form.append("message", text);
     if (file) form.append("file", file);
     if (audio) form.append("audio", audio);
+    if (sendEmail) form.append("sendEmail", "true");
+    if (sendWhatsapp) form.append("sendWhatsapp", "true");
     const { data } = await api.post(`/groups/${groupId}/messages`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
