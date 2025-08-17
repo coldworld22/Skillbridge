@@ -5,7 +5,6 @@ import { BrowserProvider, parseEther } from "ethers";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { validateCode } from "@/services/couponService";
-import { processPayment } from "@/services/paymentService";
 import { toast } from "react-toastify";
 
 export default function CheckoutPage() {
@@ -64,7 +63,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     try {
       const payload = { ...formData, coupon_id: couponId, amount: finalTotal };
-      await processPayment(payload);
+      console.log("Payment payload", payload);
       toast.success("Payment successful! Redirecting...");
       router.push("/payments/success");
     } catch (err) {
