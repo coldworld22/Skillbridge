@@ -1,67 +1,102 @@
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import AdminLayout from "@/components/layouts/AdminLayout";
-import { createCoupon } from "@/services/admin/couponService";
+import { useState } from "react";
 import { useRouter } from "next/router";
-import { fetchPlans } from "@/services/admin/planService";
-import { fetchAdminClasses } from "@/services/admin/classService";
-import { fetchAllTutorials } from "@/services/admin/tutorialService";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "react-toastify";
+
+import AdminLayout from "@/components/layouts/AdminLayout";
+import {
+  createCoupon,
+  validateCode,
+} from "@/services/admin/couponService";
+
+const couponSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .min(1, "Code is required")
+      .transform((val) => val.toUpperCase())
+      .superRefine(async (val, ctx) => {
+        try {
+          await validateCode(val);
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Code already exists",
+          });
+        } catch (err) {
+          if (err?.response?.status !== 404) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Failed to validate code",
+            });
+          }
+        }
+      }),
+    discount_percent: z.coerce.number().int().min(1).max(100),
+    starts_at: z.string().optional(),
+    expires_at: z.string().optional(),
+    usage_limit: z.preprocess(
+      (val) =>
+        val === "" || val === null || typeof val === "undefined"
+          ? undefined
+          : Number(val),
+      z.number().int().positive().optional()
+    ),
+    applies_to: z.enum(["plan", "class", "tutorial"]),
+    applies_to_id: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.starts_at && data.expires_at) {
+        return new Date(data.starts_at) < new Date(data.expires_at);
+      }
+      return true;
+    },
+    {
+      message: "Start date must be before expiration",
+      path: ["expires_at"],
+    }
+  );
 
 export default function NewCouponPage() {
-  const [code, setCode] = useState("");
-  const [discount, setDiscount] = useState(10);
-  const [startsAt, setStartsAt] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [usageLimit, setUsageLimit] = useState("");
-  const [appliesTo, setAppliesTo] = useState("plan");
-  const [appliesToId, setAppliesToId] = useState("");
-  const [options, setOptions] = useState([]);
   const router = useRouter();
+  const [serverError, setServerError] = useState(null);
 
-  useEffect(() => {
-    const loadOptions = async () => {
-      try {
-        let items = [];
-        if (appliesTo === "plan") {
-          items = (await fetchPlans()).map((p) => ({ id: p.id, label: p.name }));
-        } else if (appliesTo === "class") {
-          items = (await fetchAdminClasses()).map((c) => ({
-            id: c.id,
-            label: c.title,
-          }));
-        } else if (appliesTo === "tutorial") {
-          items = (await fetchAllTutorials()).map((t) => ({
-            id: t.id,
-            label: t.title,
-          }));
-        }
-        setOptions(items);
-        setAppliesToId(items[0]?.id || "");
-      } catch (err) {
-        console.error("Failed to load targets", err);
-        setOptions([]);
-        setAppliesToId("");
-      }
-    };
-    loadOptions();
-  }, [appliesTo]);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(couponSchema),
+    defaultValues: {
+      code: "",
+      discount_percent: 10,
+      starts_at: "",
+      expires_at: "",
+      usage_limit: "",
+      applies_to: "plan",
+      applies_to_id: "",
+    },
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
+    setServerError(null);
     try {
       await createCoupon({
-        code,
-        discount_percent: parseInt(discount, 10),
-        starts_at: startsAt || undefined,
-        expires_at: expiresAt || undefined,
-        usage_limit: usageLimit ? parseInt(usageLimit, 10) : undefined,
-        applies_to: appliesTo,
-        applies_to_id: appliesToId || undefined,
+        ...data,
+        starts_at: data.starts_at || undefined,
+        expires_at: data.expires_at || undefined,
+        usage_limit: data.usage_limit ?? undefined,
+        applies_to_id: data.applies_to_id || undefined,
       });
       toast.success("Coupon created successfully");
       router.push("/dashboard/admin/coupons");
     } catch (err) {
-      toast.error("Failed to create coupon");
+      const message =
+        err?.response?.data?.message || err?.message || "Failed to create coupon";
+      setServerError(message);
     }
   };
 
@@ -69,32 +104,101 @@ export default function NewCouponPage() {
     <AdminLayout>
       <div className="p-6 max-w-lg">
         <h1 className="text-2xl font-bold mb-4">New Coupon</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="CODE" className="border p-2 w-full" required />
-          <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className="border p-2 w-full" min="1" max="100" />
-          <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className="border p-2 w-full" />
-          <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="border p-2 w-full" />
-          <input type="number" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="Usage Limit" className="border p-2 w-full" />
-          <select value={appliesTo} onChange={(e) => setAppliesTo(e.target.value)} className="border p-2 w-full">
-            <option value="plan">Plan</option>
-            <option value="class">Class</option>
-            <option value="tutorial">Tutorial</option>
-          </select>
-          <select
-            value={appliesToId}
-            onChange={(e) => setAppliesToId(e.target.value)}
-            className="border p-2 w-full"
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {serverError && (
+            <p className="text-red-600 text-sm">{serverError}</p>
+          )}
+          <div>
+            <input
+              {...register("code")}
+              placeholder="CODE"
+              className="border p-2 w-full"
+            />
+            {errors.code && (
+              <p className="text-red-600 text-sm">{errors.code.message}</p>
+            )}
+          </div>
+          <div>
+            <input
+              type="number"
+              {...register("discount_percent")}
+              className="border p-2 w-full"
+              min="1"
+              max="100"
+            />
+            {errors.discount_percent && (
+              <p className="text-red-600 text-sm">
+                {errors.discount_percent.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <input
+              type="datetime-local"
+              {...register("starts_at")}
+              className="border p-2 w-full"
+            />
+            {errors.starts_at && (
+              <p className="text-red-600 text-sm">{errors.starts_at.message}</p>
+            )}
+          </div>
+          <div>
+            <input
+              type="datetime-local"
+              {...register("expires_at")}
+              className="border p-2 w-full"
+            />
+            {errors.expires_at && (
+              <p className="text-red-600 text-sm">
+                {errors.expires_at.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <input
+              type="number"
+              {...register("usage_limit")}
+              placeholder="Usage Limit"
+              className="border p-2 w-full"
+            />
+            {errors.usage_limit && (
+              <p className="text-red-600 text-sm">
+                {errors.usage_limit.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <select
+              {...register("applies_to")}
+              className="border p-2 w-full"
+            >
+              <option value="plan">Plan</option>
+              <option value="class">Class</option>
+              <option value="tutorial">Tutorial</option>
+            </select>
+          </div>
+          <div>
+            <input
+              {...register("applies_to_id")}
+              placeholder="Target ID"
+              className="border p-2 w-full"
+            />
+            {errors.applies_to_id && (
+              <p className="text-red-600 text-sm">
+                {errors.applies_to_id.message}
+              </p>
+            )}
+          </div>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            type="submit"
+            disabled={isSubmitting}
           >
-            <option value="">Select {appliesTo}</option>
-            {options.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">Save</button>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
         </form>
       </div>
     </AdminLayout>
   );
 }
+
