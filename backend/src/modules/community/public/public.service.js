@@ -218,6 +218,16 @@ exports.searchTags = async (q) => {
     .limit(10);
 };
 
+// Search discussion titles matching a query for related questions
+exports.searchRelatedQuestions = async (q) => {
+  if (!q) return [];
+  const rows = await db('community_discussions')
+    .whereILike('title', `%${q}%`)
+    .limit(5)
+    .pluck('title');
+  return rows;
+};
+
 exports.listReplies = async (discussionId) => {
   return db('community_replies as r')
     .leftJoin('users as u', 'r.user_id', 'u.id')
