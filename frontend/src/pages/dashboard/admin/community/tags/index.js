@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import {
   fetchTags,
   createTag,
@@ -16,6 +20,7 @@ const slugify = (text) =>
     .replace(/ +/g, "-");
 
 export default function AdminTagsPage() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'tagsPage' });
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
@@ -30,10 +35,8 @@ export default function AdminTagsPage() {
         const data = await fetchTags();
         setTags(data || []);
       } catch (err) {
-        console.error("Failed to load tags", err);
-        setError("Failed to load tags");
-      } finally {
-        setLoading(false);
+        const msg = err?.response?.data?.message || t('load_failed');
+        toast.error(msg);
       }
     };
     load();
@@ -48,14 +51,17 @@ export default function AdminTagsPage() {
         setTags((prev) =>
           prev.map((tag) => (tag.id === editing.id ? updated : tag))
         );
+        toast.success(t('tag_updated'));
         setEditing(null);
       } else {
         const created = await createTag(payload);
         setTags((prev) => [...prev, created]);
+        toast.success(t('tag_created'));
       }
       setNewTag("");
     } catch (err) {
-      console.error("Failed to save tag", err);
+      const msg = err?.response?.data?.message || t('save_failed');
+      toast.error(msg);
     }
   };
 
@@ -65,20 +71,22 @@ export default function AdminTagsPage() {
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = confirm("Delete this tag?");
+    const confirmDelete = confirm(t('delete_confirm'));
     if (!confirmDelete) return;
     try {
       await deleteTag(id);
       setTags((prev) => prev.filter((t) => t.id !== id));
+      toast.success(t('tag_deleted'));
     } catch (err) {
-      console.error("Failed to delete tag", err);
+      const msg = err?.response?.data?.message || t('delete_failed');
+      toast.error(msg);
     }
   };
 
   return (
-    <AdminLayout title="Manage Tags">
+    <AdminLayout title={t('manage')}>
       <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Tags</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
 
         {/* Create/Edit */}
         <div className="flex items-center gap-3 mb-8">
@@ -86,7 +94,7 @@ export default function AdminTagsPage() {
             type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Tag name"
+            placeholder={t('placeholder')}
             className="border border-gray-300 px-4 py-2 rounded w-full"
           />
           <button
@@ -94,7 +102,7 @@ export default function AdminTagsPage() {
             className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded flex items-center gap-2"
           >
             <FaPlus />
-            {editing ? "Update" : "Add"}
+            {editing ? t('update') : t('add')}
           </button>
         </div>
 
@@ -131,4 +139,12 @@ export default function AdminTagsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
