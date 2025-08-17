@@ -62,11 +62,19 @@ exports.listReplies = catchAsync(async (req, res) => {
 exports.createReply = catchAsync(async (req, res) => {
   const { content } = req.body || {};
   if (!content) throw new AppError('Missing fields', 400);
+
+  const file = req.files?.file?.[0];
+  const audio = req.files?.audio?.[0];
+
   const reply = await service.createReply({
     discussion_id: req.params.id,
     user_id: req.user.id,
     content,
-    file_url: req.file ? `/uploads/community/${req.file.filename}` : null,
+    file_url: file
+      ? `/uploads/community/${file.filename}`
+      : audio
+      ? `/uploads/community/${audio.filename}`
+      : null,
   });
   sendSuccess(res, reply, 'Reply posted');
 });
