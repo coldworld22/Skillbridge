@@ -17,7 +17,16 @@ const formatGroup = (g) => {
   }
   return {
     ...g,
-    cover_image: g.cover_image ? `${base}${g.cover_image}` : g.cover_image,
+    cover_image: g.cover_image
+      ? g.cover_image.startsWith('http') || g.cover_image.startsWith('blob:')
+        ? g.cover_image
+        : `${base}${g.cover_image}`
+      : g.cover_image,
+    image: g.image
+      ? g.image.startsWith('http') || g.image.startsWith('blob:')
+        ? g.image
+        : `${base}${g.image}`
+      : g.image,
     membersCount: g.members_count ?? g.membersCount ?? 0,
     isPublic: g.visibility ? g.visibility === "public" : (g.isPublic ?? true),
     createdAt: g.created_at ?? g.createdAt,
