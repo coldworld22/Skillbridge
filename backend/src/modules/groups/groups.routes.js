@@ -21,6 +21,7 @@ router.delete("/messages/:id", verifyToken, msgCtrl.deleteMessage);
 
 router.post("/:id/typing", verifyToken, msgCtrl.updateTyping);
 router.get("/:id/typing", verifyToken, msgCtrl.getTyping);
+router.post("/:id/video-call", verifyToken, ctrl.startVideoCall);
 
 
 router.post("/", verifyToken, upload, ctrl.createGroup);

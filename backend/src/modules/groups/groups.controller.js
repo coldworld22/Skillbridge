@@ -9,6 +9,7 @@ const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
+const db = require("../../config/database");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const {
@@ -332,4 +333,65 @@ exports.getGroupPermissions = catchAsync(async (req, res) => {
 exports.updateGroupPermissions = catchAsync(async (req, res) => {
   const perms = await service.updateGroupPermissions(req.params.id, req.body);
   sendSuccess(res, perms);
+});
+
+exports.startVideoCall = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const group = await service.getGroupById(id);
+  if (!group) throw new AppError("Group not found", 404);
+
+  const role = await service.getMemberRole(id, req.user.id);
+  if (!role) throw new AppError("Not authorized", 403);
+
+  const perms = await service.getGroupPermissions(id);
+  const rolePerms = perms[role] || {};
+  if (!rolePerms.video) throw new AppError("Not authorized", 403);
+
+  const members = await service.listMembers(id);
+  const recipients = members
+    .map((m) => m.user_id)
+    .filter((uid) => uid !== req.user.id);
+
+  const roomId = uuidv4();
+
+  const note = `${req.user.full_name} started a video call in group "${group.name}"`;
+
+  await Promise.all(
+    recipients.map(async (uid) => {
+      await db("video_calls").insert({
+        caller_id: req.user.id,
+        receiver_id: uid,
+        room_id: roomId,
+      });
+
+      await messageService.createMessage({
+        sender_id: req.user.id,
+        receiver_id: uid,
+        message: roomId,
+        type: "video-call",
+      });
+
+      await notificationService.createNotification({
+        user_id: uid,
+        type: "group_video_call",
+        message: note,
+      });
+
+      try {
+        if (global.io && global.userSockets?.[uid]) {
+          global.io
+            .to(global.userSockets[uid])
+            .emit("incoming-call", {
+              chatId: id,
+              roomId,
+              name: req.user.full_name,
+            });
+        }
+      } catch (err) {
+        console.error("Failed to emit video call event", err.message);
+      }
+    })
+  );
+
+  sendSuccess(res, { roomId }, "Video call started");
 });
