@@ -47,6 +47,31 @@ const CommunityPage = () => {
       );
     }
 
+    if (filter.noAcceptedAnswer) {
+      updatedQuestions = updatedQuestions.filter((q) => !q.resolved);
+    }
+
+    if (filter.hasBounty) {
+      updatedQuestions = updatedQuestions.filter(
+        (q) => Number(q.bounty || q.bounty_amount || 0) > 0
+      );
+    }
+
+    if (filter.tags && filter.tags.length) {
+      const tagsArray = Array.isArray(filter.tags)
+        ? filter.tags
+        : filter.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+      if (tagsArray.length) {
+        updatedQuestions = updatedQuestions.filter((q) => {
+          const qTags = Array.isArray(q.tags) ? q.tags.map((t) => t.toLowerCase()) : [];
+          return tagsArray.every((tag) => qTags.includes(tag.toLowerCase()));
+        });
+      }
+    }
+
     if (filter.sortBy === "Newest") {
       updatedQuestions.sort(
         (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
