@@ -18,6 +18,7 @@ const { startLessonLiveJob } = require("./jobs/lessonLiveJob");
 const startCartReminderJob = require("./jobs/cartReminderJob");
 const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
+const startContributorStatsJob = require("./jobs/contributorStatsJob");
 const { createLessonRoomLink } = require("./utils/roomLink");
 require("dotenv").config();
 
@@ -435,6 +436,7 @@ async function startServer() {
     startClassReminderJob();
     startCartReminderJob();
     startCleanupJob();
+    startContributorStatsJob();
   } catch (err) {
     console.error("❌ Failed to start server:", err.message);
     process.exit(1);

@@ -1,4 +1,5 @@
 const db = require("../../../config/database");
+const { updateContributorStats } = require("../contributorStats.util");
 
 exports.getDiscussionTags = async (ids) => {
   const rows = await db("community_discussion_tags as m")
@@ -224,6 +225,7 @@ exports.createDiscussion = async (data) => {
   await exports.syncDiscussionTags(row.id, data.tags);
   const disc = { ...row, user_name: data.user_name, tags: data.tags };
   await notifyAllUsers(disc);
+  await updateContributorStats(data.user_id, 0, 1);
   return disc;
 };
 
@@ -315,6 +317,8 @@ exports.createReply = async (data) => {
     }
   }
 
+  await updateContributorStats(data.user_id, 0, 1);
+
   return {
     ...row,
     user_name: user?.full_name,
@@ -358,11 +362,20 @@ exports.getLikeCount = async (discussionId) => {
 
 // Votes
 exports.voteDiscussion = async (userId, discussionId, vote) => {
+  const existing = await db('community_votes')
+    .where({ user_id: userId, discussion_id: discussionId })
+    .first('vote');
   await db('community_votes')
     .insert({ id: uuidv4(), user_id: userId, discussion_id: discussionId, vote })
     .onConflict(['user_id', 'discussion_id']).merge({ vote });
   const [row] = await db('community_votes').where({ discussion_id: discussionId }).sum({ score: 'vote' });
-  return parseInt(row.score, 10) || 0;
+  const total = parseInt(row.score, 10) || 0;
+  const delta = vote - (existing ? existing.vote : 0);
+  if (delta !== 0) {
+    const disc = await db('community_discussions').where({ id: discussionId }).first('user_id');
+    if (disc) await updateContributorStats(disc.user_id, delta, 0);
+  }
+  return total;
 };
 
 exports.getVoteScore = async (discussionId) => {
