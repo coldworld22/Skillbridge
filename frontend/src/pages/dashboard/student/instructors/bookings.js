@@ -1,49 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import BookingCard from "@/components/student/instructors/BookingCard";
-
-const mockBookings = [
-  {
-    id: 101,
-    instructor: {
-      id: 1,
-      name: "Dr. John Doe",
-      avatar: "https://www.iwcf.org/wp-content/uploads/2018/12/Instructor-top-of-page-image-new.jpg",
-    },
-    subject: "Intro to Python",
-    date: "2025-05-15",
-    status: "pending",
-  },
-  {
-    id: 102,
-    instructor: {
-      id: 2,
-      name: "Jane Smith",
-      avatar: "https://media.istockphoto.com/id/1468138682/photo/happy-elementary-teacher-in-front-of-his-students-in-the-classroom.jpg",
-    },
-    subject: "React Components",
-    date: "2025-05-10",
-    status: "approved",
-  },
-  {
-    id: 103,
-    instructor: {
-      id: 1,
-      name: "Dr. John Doe",
-      avatar: "https://www.iwcf.org/wp-content/uploads/2018/12/Instructor-top-of-page-image-new.jpg",
-    },
-    subject: "Data Visualization",
-    date: "2025-04-25",
-    status: "completed",
-  },
-];
+import {
+  fetchStudentBookings,
+  deleteStudentBooking,
+} from "@/services/student/bookingService";
 
 export default function StudentBookings() {
-  const [bookings, setBookings] = useState(mockBookings);
+  const [bookings, setBookings] = useState([]);
 
-  const handleCancel = (id) => {
+  useEffect(() => {
+    const loadBookings = async () => {
+      const data = await fetchStudentBookings();
+      setBookings(data);
+    };
+    loadBookings();
+  }, []);
+
+  const handleCancel = async (id) => {
     const confirm = window.confirm("Are you sure you want to cancel this request?");
     if (confirm) {
+      await deleteStudentBooking(id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
     }
   };
