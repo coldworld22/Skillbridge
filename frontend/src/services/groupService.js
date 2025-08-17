@@ -37,6 +37,8 @@ const formatGroup = (g) => {
     creator: g.creator_name ?? g.creator ?? null,
     creatorRole: g.creator_role ?? g.creatorRole ?? null,
     status: g.status ?? "active",
+    contactPhone: g.contact_phone ?? g.contactPhone ?? null,
+    phone: g.phone ?? g.contact_phone ?? g.contactPhone ?? null,
     tags,
   };
 };

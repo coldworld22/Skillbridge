@@ -27,6 +27,7 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const isOnline =
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
+  const hasPhone = !!selectedChat.phone;
 
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
@@ -106,8 +107,11 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
 
         {/* ✅ WhatsApp Button */}
         <button
-          className="px-3 py-2 bg-green-500 text-white rounded flex items-center gap-2 hover:bg-green-600 transition"
-          onClick={handleWhatsAppChat}
+          className={`px-3 py-2 text-white rounded flex items-center gap-2 transition ${
+            hasPhone ? "bg-green-500 hover:bg-green-600" : "bg-gray-600 cursor-not-allowed opacity-50"
+          }`}
+          onClick={hasPhone ? handleWhatsAppChat : undefined}
+          disabled={!hasPhone}
         >
           <FaWhatsapp /> WhatsApp
         </button>
