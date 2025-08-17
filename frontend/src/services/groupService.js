@@ -190,6 +190,11 @@ const groupService = {
     return data?.data ?? [];
   },
 
+  startGroupVideoCall: async (groupId) => {
+    const { data } = await api.post(`/groups/${groupId}/video-call`);
+    return data?.data;
+  },
+
   deleteGroup: async (id) => {
     await api.delete(`/groups/${id}`);
     return true;

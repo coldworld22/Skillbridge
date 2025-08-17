@@ -100,6 +100,7 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
           selectedChat={
             group ? { ...group, isGroup: true } : { id: groupId, groupName, isGroup: true }
           }
+          onStartVideoCall={groupService.startGroupVideoCall}
         />
       </div>
 
