@@ -568,6 +568,15 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "communityAnnouncementsPage": {
+    "announcements_loaded": "Announcements loaded",
+    "loading_failed": "Failed to load announcements",
+    "announcement_saved": "Announcement posted",
+    "save_failed": "Failed to post announcement",
+    "announcement_deleted": "Announcement deleted",
+    "delete_failed": "Failed to delete announcement",
+    "confirm_delete": "Delete this announcement?"
+  },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",
     "total_tutorials": "Total Tutorials",
