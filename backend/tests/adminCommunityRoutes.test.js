@@ -106,6 +106,24 @@ describe('GET /api/community/admin/contributors', () => {
     expect(res.body.data).toEqual(mock);
     expect(contributorsService.getTopContributors).toHaveBeenCalled();
   });
+
+  it('caps limit to 100', async () => {
+    contributorsService.getTopContributors.mockClear();
+    const mock = [{ name: 'Jane' }];
+    contributorsService.getTopContributors.mockResolvedValue(mock);
+
+    const res = await request(app).get('/api/community/admin/contributors?limit=500');
+    expect(res.status).toBe(200);
+    expect(contributorsService.getTopContributors).toHaveBeenCalledWith(100);
+  });
+
+  it('returns 400 for invalid limit', async () => {
+    contributorsService.getTopContributors.mockClear();
+
+    const res = await request(app).get('/api/community/admin/contributors?limit=-5');
+    expect(res.status).toBe(400);
+    expect(contributorsService.getTopContributors).not.toHaveBeenCalled();
+  });
 });
 
 describe('GET /api/community/admin/settings', () => {
