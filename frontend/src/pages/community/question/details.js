@@ -223,7 +223,7 @@ const QuestionDetails = () => {
 
         {/* ✅ User Reply Section */}
         <h2 className="text-2xl font-bold text-yellow-500 mt-8">Your Reply</h2>
-        <RichTextEditor onChange={setReplyText} />
+        <RichTextEditor value={replyText} onChange={setReplyText} />
         <button onClick={handleReply} className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600">
           Post Reply
         </button>
