@@ -76,6 +76,29 @@ exports.createPayment = catchAsync(async (req, res) => {
     finalStatus = "paid";
   }
 
+  if (coupon_id) {
+    const coupon = await couponService.getCouponById(coupon_id);
+    if (!coupon) throw new AppError("Invalid coupon", 400);
+    if (coupon.applies_to && coupon.applies_to !== item_type) {
+      throw new AppError("Coupon not valid for this item type", 400);
+    }
+    if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
+      throw new AppError("Coupon not valid for this item", 400);
+    }
+    if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
+      throw new AppError("Coupon not active", 400);
+    }
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      throw new AppError("Coupon expired", 400);
+    }
+    if (
+      coupon.usage_limit !== null &&
+      coupon.times_used >= coupon.usage_limit
+    ) {
+      throw new AppError("Coupon usage limit reached", 400);
+    }
+  }
+
   let platform_fee = 0;
   let instructor_amount = verifiedAmount;
   try {
