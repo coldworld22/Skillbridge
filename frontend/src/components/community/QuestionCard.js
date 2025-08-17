@@ -7,8 +7,8 @@ const QuestionCard = ({ question }) => {
   const tags = Array.isArray(question.tags)
     ? question.tags
     : [];
-  const answersCount = Array.isArray(question.answers)
-    ? question.answers.length
+  const answersCount = typeof question.replies === "number"
+    ? question.replies
     : 0;
 
   const description = question.description || question.content || "";
