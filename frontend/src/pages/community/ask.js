@@ -184,11 +184,17 @@ const handleAcceptAIResponse = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createDiscussion({ title, content: description, tags });
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', description);
+      formData.append('tags', JSON.stringify(tags));
+      uploadedFiles.forEach((file) => formData.append('files', file));
+      await createDiscussion(formData);
       toast.success("Question posted");
       setTitle("");
       setDescription("");
       setTags([]);
+      setUploadedFiles([]);
     } catch (err) {
       console.error(err);
       toast.error("Failed to post question");

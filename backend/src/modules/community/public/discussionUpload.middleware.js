@@ -19,4 +19,10 @@ const fileFilter = (_req, file, cb) => {
   cb(null, allowed.includes(file.mimetype));
 };
 
-module.exports = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }).single('image');
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+module.exports = upload;
