@@ -1,6 +1,7 @@
 // Enhanced Admin Group Details Page (Final Polished UI with All Tabs and Overview Enhancements)
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import AbortController from 'abort-controller';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import {
@@ -56,38 +57,47 @@ export default function AdminGroupDetailsPage() {
 
   useEffect(() => {
     if (!router.isReady || !id) return;
+    const controller = new AbortController();
+    let isMounted = true;
+
     const load = async () => {
       try {
-        const data = await groupService.getGroupById(id);
+        const [data, list, reqs] = await Promise.all([
+          groupService.getGroupById(id, { signal: controller.signal }),
+          groupService.getGroupMembers(id, { signal: controller.signal }).catch(() => []),
+          groupService
+            .getJoinRequestsForGroup(id, { signal: controller.signal })
+            .catch(() => []),
+        ]);
+        if (!isMounted) return;
         if (!data) {
           setNotFound(true);
           return;
         }
         setGroup(data);
-      } catch (err) {
-        if (err?.response?.status === 404) {
-          setNotFound(true);
-          return;
-        }
-        setNotFound(true);
-        return;
-      }
-      try {
-        const list = await groupService.getGroupMembers(id);
         setMembers(list);
-      } catch {
-        setMembers([]);
-      }
-      try {
-        const reqs = await groupService.getJoinRequestsForGroup(id);
         setRequests(reqs);
         setPendingCount(Array.isArray(reqs) ? reqs.length : 0);
-      } catch {
-        setRequests([]);
-        setPendingCount(0);
+      } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
+        if (err?.response?.status === 404) {
+          if (isMounted) setNotFound(true);
+        } else {
+          if (isMounted) {
+            setNotFound(true);
+            setMembers([]);
+            setRequests([]);
+            setPendingCount(0);
+          }
+        }
       }
     };
     load();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [router.isReady, id]);
 
   const filteredMembers = members.filter((m) =>

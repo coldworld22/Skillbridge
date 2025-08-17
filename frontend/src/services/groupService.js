@@ -54,8 +54,8 @@ const groupService = {
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
-  getGroupById: async (id) => {
-    const { data } = await api.get(`/groups/${id}`);
+  getGroupById: async (id, opts = {}) => {
+    const { data } = await api.get(`/groups/${id}`, opts);
     return data?.data ? formatGroup(data.data) : null;
   },
 
@@ -79,8 +79,8 @@ const groupService = {
     return data?.data ? formatGroup(data.data) : null;
   },
 
-  getGroupMembers: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/members`);
+  getGroupMembers: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/members`, opts);
     const list = data?.data ?? [];
 
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -179,8 +179,8 @@ const groupService = {
     return data?.data ? formatGroup(data.data) : null;
   },
 
-  getJoinRequestsForGroup: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/requests`);
+  getJoinRequestsForGroup: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/requests`, opts);
     const list = data?.data ?? [];
     return Array.isArray(list)
       ? list.map((r) => ({
