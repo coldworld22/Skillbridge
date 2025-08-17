@@ -33,9 +33,19 @@ exports.getBooking = catchAsync(async (req, res) => {
 });
 
 exports.updateBooking = catchAsync(async (req, res) => {
-  const booking = await service.update(req.params.id, req.body);
+  const booking = await service.getById(req.params.id);
   if (!booking) throw new AppError("Booking not found", 404);
-  sendSuccess(res, booking, "Booking updated");
+
+  const role = req.user.role && req.user.role.toLowerCase();
+  if (
+    (role === "student" && booking.student_id !== req.user.id) ||
+    (role === "instructor" && booking.instructor_id !== req.user.id)
+  ) {
+    throw new AppError("Access denied", 403);
+  }
+
+  const updatedBooking = await service.update(req.params.id, req.body);
+  sendSuccess(res, updatedBooking, "Booking updated");
 });
 
 // Student: create a booking for themselves
