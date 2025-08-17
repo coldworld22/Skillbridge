@@ -172,6 +172,20 @@
     "details_update_failed": "Failed to update instructor",
     "processing": "Saving..."
   },
+  "tagsPage": {
+    "title": "Etiquetas",
+    "manage": "Administrar etiquetas",
+    "placeholder": "Nombre de la etiqueta",
+    "add": "Agregar",
+    "update": "Actualizar",
+    "delete_confirm": "¿Eliminar esta etiqueta?",
+    "tag_created": "Etiqueta creada",
+    "tag_updated": "Etiqueta actualizada",
+    "tag_deleted": "Etiqueta eliminada",
+    "load_failed": "Error al cargar etiquetas",
+    "save_failed": "Error al guardar la etiqueta",
+    "delete_failed": "Error al eliminar la etiqueta"
+  },
   "currenciesPage": {
     "title": "Gestor de divisas",
     "add_currency": "Agregar divisa",
@@ -541,6 +555,15 @@
     "save_failed": "Failed to save announcement",
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
+  },
+  "communityAnnouncementsPage": {
+    "announcements_loaded": "Announcements loaded",
+    "loading_failed": "Failed to load announcements",
+    "announcement_saved": "Announcement posted",
+    "save_failed": "Failed to post announcement",
+    "announcement_deleted": "Announcement deleted",
+    "delete_failed": "Failed to delete announcement",
+    "confirm_delete": "Delete this announcement?"
   },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",

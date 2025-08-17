@@ -21,15 +21,17 @@ export default function ConfirmModal({
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">
-          {title || t("Confirm Deletion")}
+          {t(title || "Confirm Deletion")}
         </h2>
-        <p className="text-gray-600 mb-6">{message}</p>
+        {message && (
+          <p className="text-gray-600 mb-6">{t(message)}</p>
+        )}
         <div className="flex justify-end gap-4">
           <Button
             onClick={onClose}
             className="bg-gray-300 text-black hover:bg-gray-400"
           >
-            {cancelText || t("Cancel")}
+            {t(cancelText || "Cancel")}
           </Button>
           <Button
             onClick={() => {
@@ -38,7 +40,7 @@ export default function ConfirmModal({
             }}
             className="bg-red-500 text-white hover:bg-red-600"
           >
-            {confirmText || t("Confirm")}
+            {t(confirmText || "Confirm")}
           </Button>
         </div>
       </div>

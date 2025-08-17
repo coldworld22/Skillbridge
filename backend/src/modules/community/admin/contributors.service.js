@@ -4,6 +4,7 @@ exports.getTopContributors = async (limit = 20) => {
   return db("community_contributors")
     .join("users", "community_contributors.user_id", "users.id")
     .select(
+      "community_contributors.user_id as id",
       "users.full_name as name",
       "users.avatar_url as avatar",
       "community_contributors.discussions_count as contributions",
