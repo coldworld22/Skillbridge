@@ -40,6 +40,27 @@ export default function AdminGroupsIndex() {
   });
   const itemsPerPage = 6;
 
+  const openConfirmModal = ({
+    title,
+    message,
+    confirmText,
+    cancelText,
+    onConfirm,
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      onConfirm,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const sortGroups = (list) => {
     const sorted = [...list];
     switch (sortOption) {
@@ -78,51 +99,64 @@ export default function AdminGroupsIndex() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm('Are you sure you want to delete this group?');
-    if (confirmDelete) {
-      try {
-        await groupService.deleteGroup(id);
-        toast.success('Group deleted');
-      } catch {
-        toast.error('Failed to delete group');
-      }
-      setGroups((prev) => prev.filter((g) => g.id !== id));
-      setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
-    }
+  const handleDelete = (id) => {
+    openConfirmModal({
+      title: 'Delete Group',
+      message: 'Are you sure you want to delete this group?',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await groupService.deleteGroup(id);
+          toast.success('Group deleted');
+        } catch {
+          toast.error('Failed to delete group');
+        }
+        setGroups((prev) => prev.filter((g) => g.id !== id));
+        setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
+      },
+    });
   };
 
-  const handleBulkDelete = async () => {
-    const confirmDelete = confirm('Delete selected groups?');
-    if (confirmDelete) {
-      const results = await Promise.allSettled(
-        selectedGroups.map((gid) => groupService.deleteGroup(gid))
-      );
-      const failed = results.filter((r) => r.status === 'rejected').length;
-      if (failed) toast.error(`Failed to delete ${failed} groups`);
-      setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
-      setSelectedGroups([]);
-      toast.success('Selected groups deleted');
-    }
-  };
-
-  const handleBulkStatusChange = async (status) => {
+  const handleBulkDelete = () => {
     if (selectedGroups.length === 0) return;
-    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
-    if (confirmChange) {
-      const results = await Promise.allSettled(
-        selectedGroups.map((gid) => groupService.updateGroup(gid, { status }))
-      );
-      const failed = results.filter((r) => r.status === 'rejected').length;
-      if (failed) toast.error(`Failed to update ${failed} groups`);
-      setGroups((prev) =>
-        prev.map((g) =>
-          selectedGroups.includes(g.id) ? { ...g, status } : g
-        )
-      );
-      setSelectedGroups([]);
-      toast.success(`Status updated to ${status} for selected groups`);
-    }
+    openConfirmModal({
+      title: 'Delete Selected Groups',
+      message: 'Delete selected groups?',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        const results = await Promise.allSettled(
+          selectedGroups.map((gid) => groupService.deleteGroup(gid))
+        );
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed) toast.error(`Failed to delete ${failed} groups`);
+        setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
+        setSelectedGroups([]);
+        toast.success('Selected groups deleted');
+      },
+    });
+  };
+
+  const handleBulkStatusChange = (status) => {
+    if (selectedGroups.length === 0) return;
+    openConfirmModal({
+      title: 'Change Status',
+      message: `Change status of selected groups to ${status}?`,
+      confirmText: 'Confirm',
+      onConfirm: async () => {
+        const results = await Promise.allSettled(
+          selectedGroups.map((gid) => groupService.updateGroup(gid, { status }))
+        );
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed) toast.error(`Failed to update ${failed} groups`);
+        setGroups((prev) =>
+          prev.map((g) =>
+            selectedGroups.includes(g.id) ? { ...g, status } : g
+          )
+        );
+        setSelectedGroups([]);
+        toast.success(`Status updated to ${status} for selected groups`);
+      },
+    });
   };
 
   const exportToCSV = () => {
