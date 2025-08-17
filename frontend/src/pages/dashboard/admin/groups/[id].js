@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import AbortController from 'abort-controller';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import GroupChat from '@/components/chat/GroupChat';
 import {
   FaUsers,
   FaCalendarAlt,
@@ -264,7 +265,7 @@ export default function AdminGroupDetailsPage() {
         )}
 
         <div className="flex gap-2 border-b pb-3">
-          {['overview', 'members', 'requests'].map((tab) => (
+          {['overview', 'chat', 'members', 'requests'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -356,6 +357,11 @@ export default function AdminGroupDetailsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* === Chat Tab === */}
+        {activeTab === 'chat' && group && (
+          <GroupChat groupId={group.id} groupName={group.name} />
         )}
 
         {/* === Members Tab === */}
