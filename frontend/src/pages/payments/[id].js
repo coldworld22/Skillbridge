@@ -5,6 +5,7 @@ import { BrowserProvider, parseEther } from "ethers";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { validateCode } from "@/services/couponService";
+import { processPayment } from "@/services/paymentService";
 import { toast } from "react-toastify";
 
 export default function CheckoutPage() {
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [couponId, setCouponId] = useState(null);
   const [ethStatus, setEthStatus] = useState("");
   const [account, setAccount] = useState(null);
 
@@ -39,29 +41,38 @@ export default function CheckoutPage() {
       if (coupon) {
         const discountAmount = (coursePrice * coupon.discount_percent) / 100;
         setAppliedDiscount(discountAmount);
+        setCouponId(coupon.id);
         toast.success("Coupon applied!");
       } else {
         setAppliedDiscount(0);
+        setCouponId(null);
         toast.error("Invalid coupon code");
       }
     } catch (err) {
       setAppliedDiscount(0);
+      setCouponId(null);
       toast.error("Invalid coupon code");
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.fullName || !formData.email) {
       toast.error("Please fill out all required fields.");
       return;
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
+    try {
+      const payload = { ...formData, coupon_id: couponId, amount: finalTotal };
+      await processPayment(payload);
       toast.success("Payment successful! Redirecting...");
       router.push("/payments/success");
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment failed.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const connectWallet = async () => {

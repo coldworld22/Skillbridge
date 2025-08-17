@@ -94,6 +94,7 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [couponId, setCouponId] = useState(null);
   const [invoicePreview, setInvoicePreview] = useState(false);
   const [bankInfo, setBankInfo] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
@@ -143,9 +144,11 @@ export default function CheckoutPage() {
     try {
       const data = await validateCode(promoCode);
       setDiscount(data.discount_percent);
+      setCouponId(data.id);
       toast.success('Promo code applied');
     } catch (err) {
       setDiscount(0);
+      setCouponId(null);
       if (err?.response?.status === 404) {
         toast.error('Invalid promo code');
       } else {
@@ -182,7 +185,9 @@ export default function CheckoutPage() {
     if (selectedMethod === 'bank') {
       try {
         setPaymentStatus('processing');
-        const data = await initiateBankPayment({ itemId: itemInfo.id, itemType });
+        const payload = { itemId: itemInfo.id, itemType };
+        if (couponId) payload.coupon_id = couponId;
+        const data = await initiateBankPayment(payload);
         setBankInfo(data);
         setInvoicePreview(true);
       } catch (err) {
