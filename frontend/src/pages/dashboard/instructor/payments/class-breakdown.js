@@ -2,9 +2,33 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useState } from "react";
 
 const mockClassEarnings = [
-  { id: 1, title: "React Basics", status: "Live", students: 20, price: 25, total: 500 },
-  { id: 2, title: "Next.js Bootcamp", status: "Completed", students: 30, price: 30, total: 900 },
-  { id: 3, title: "Node.js Fundamentals", status: "Draft", students: 0, price: 40, total: 0 },
+  {
+    id: 1,
+    title: "React Basics",
+    publishStatus: "published",
+    scheduleStatus: "Live",
+    students: 20,
+    price: 25,
+    total: 500,
+  },
+  {
+    id: 2,
+    title: "Next.js Bootcamp",
+    publishStatus: "published",
+    scheduleStatus: "Completed",
+    students: 30,
+    price: 30,
+    total: 900,
+  },
+  {
+    id: 3,
+    title: "Node.js Fundamentals",
+    publishStatus: "draft",
+    scheduleStatus: "Upcoming",
+    students: 0,
+    price: 40,
+    total: 0,
+  },
 ];
 
 export default function InstructorClassEarningsPage() {
@@ -13,7 +37,11 @@ export default function InstructorClassEarningsPage() {
   const filtered =
     filter === "all"
       ? mockClassEarnings
-      : mockClassEarnings.filter((cls) => cls.status.toLowerCase() === filter);
+      : mockClassEarnings.filter(
+          (cls) =>
+            cls.scheduleStatus.toLowerCase() === filter ||
+            cls.publishStatus.toLowerCase() === filter
+        );
 
   return (
     <InstructorLayout>
@@ -39,7 +67,8 @@ export default function InstructorClassEarningsPage() {
             <thead>
               <tr className="bg-gray-100 text-left">
                 <th className="p-3">Class</th>
-                <th className="p-3">Status</th>
+                <th className="p-3">Schedule</th>
+                <th className="p-3">Publish</th>
                 <th className="p-3">Students</th>
                 <th className="p-3">Price</th>
                 <th className="p-3">Total</th>
@@ -49,7 +78,8 @@ export default function InstructorClassEarningsPage() {
               {filtered.map((cls) => (
                 <tr key={cls.id} className="border-b hover:bg-gray-50">
                   <td className="p-3 font-medium">{cls.title}</td>
-                  <td className="p-3">{cls.status}</td>
+                  <td className="p-3">{cls.scheduleStatus}</td>
+                  <td className="p-3">{cls.publishStatus}</td>
                   <td className="p-3">{cls.students}</td>
                   <td className="p-3">${cls.price}</td>
                   <td className="p-3 font-semibold text-green-700">${cls.total}</td>

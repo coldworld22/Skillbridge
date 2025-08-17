@@ -3,28 +3,32 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
-const formatClass = (cls) => ({
-  ...cls,
-  cover_image: cls.cover_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
-    : null,
-  demo_video_url: cls.demo_video_url
-    ? safeEncodeURI(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
-      )
-    : null,
-  instructor_image: cls.instructor_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
-    : null,
-  trending: Boolean(cls.trending),
+const formatClass = (cls) => {
+  const { status, ...rest } = cls;
+  return {
+    ...rest,
+    publishStatus: status,
+    cover_image: cls.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
+      : null,
+    demo_video_url: cls.demo_video_url
+      ? safeEncodeURI(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
+        )
+      : null,
+    instructor_image: cls.instructor_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
+      : null,
+    trending: Boolean(cls.trending),
 
-  start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-  end_date: cls.end_date ? toDateInput(cls.end_date) : "",
+    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
+    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
 
-  approvalStatus: cls.moderation_status || "Pending",
-  scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
-  views: cls.views || 0,
-});
+    approvalStatus: cls.moderation_status || "Pending",
+    scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+    views: cls.views || 0,
+  };
+};
 
 export const fetchAdminClasses = async () => {
   const { data } = await api.get("/users/classes/admin");
@@ -74,7 +78,7 @@ export const fetchAdminClassAnalytics = async (id) => {
 
 export const toggleClassStatus = async (id) => {
   const { data } = await api.patch(`/users/classes/admin/${id}/status`);
-  return data?.data;
+  return data?.data ? formatClass(data.data) : null;
 };
 
 export const approveAdminClass = async (id) => {

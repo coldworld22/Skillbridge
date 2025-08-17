@@ -3,28 +3,32 @@ import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
 import { computeScheduleStatus } from "@/utils/classSchedule";
 
-const formatClass = (cls) => ({
-  ...cls,
-  cover_image: cls.cover_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
-    : null,
-  demo_video_url: cls.demo_video_url
-    ? safeEncodeURI(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
-      )
-    : null,
-  instructor_image: cls.instructor_image
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
-    : null,
-  trending: Boolean(cls.trending),
+const formatClass = (cls) => {
+  const { status, ...rest } = cls;
+  return {
+    ...rest,
+    publishStatus: status,
+    cover_image: cls.cover_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.cover_image}`
+      : null,
+    demo_video_url: cls.demo_video_url
+      ? safeEncodeURI(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.demo_video_url}`,
+        )
+      : null,
+    instructor_image: cls.instructor_image
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${cls.instructor_image}`
+      : null,
+    trending: Boolean(cls.trending),
 
-  start_date: cls.start_date ? toDateInput(cls.start_date) : "",
-  end_date: cls.end_date ? toDateInput(cls.end_date) : "",
+    start_date: cls.start_date ? toDateInput(cls.start_date) : "",
+    end_date: cls.end_date ? toDateInput(cls.end_date) : "",
 
-  approvalStatus: cls.moderation_status || "Pending",
-  scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
-  views: cls.views || 0,
-});
+    approvalStatus: cls.moderation_status || "Pending",
+    scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
+    views: cls.views || 0,
+  };
+};
 
 export const fetchInstructorClasses = async () => {
   // Fetch only classes belonging to the current instructor
@@ -35,12 +39,12 @@ export const fetchInstructorClasses = async () => {
 };
 
 export const fetchInstructorClassById = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}`);
+  const { data } = await api.get(`/users/classes/instructor/${id}`);
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
-  const { data } = await api.post("/users/classes/admin", payload, {
+  const { data } = await api.post("/users/classes/instructor", payload, {
     headers: { "Content-Type": "multipart/form-data" },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
@@ -48,39 +52,29 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
 };
 
 export const updateInstructorClass = async (id, payload) => {
-  const { data } = await api.put(`/users/classes/admin/${id}`, payload, {
+  const { data } = await api.put(`/users/classes/instructor/${id}`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const deleteInstructorClass = async (id) => {
-  await api.delete(`/users/classes/admin/${id}`);
+  await api.delete(`/users/classes/instructor/${id}`);
   return true;
 };
 
 export const fetchInstructorClassAnalytics = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/analytics`);
+  const { data } = await api.get(`/users/classes/instructor/${id}/analytics`);
   return data?.data ?? {};
 };
 
 export const toggleClassStatus = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/status`);
-  return data?.data;
-};
-
-export const approveInstructorClass = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/approve`);
-  return data?.data;
-};
-
-export const rejectInstructorClass = async (id, reason) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/reject`, { reason });
+  const { data } = await api.patch(`/users/classes/instructor/${id}/status`);
   return data?.data;
 };
 
 export const fetchClassManagementData = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/manage`);
+  const { data } = await api.get(`/users/classes/instructor/${id}/manage`);
   if (!data?.data) return null;
   return {
     class: data.data.class ? formatClass(data.data.class) : null,

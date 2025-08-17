@@ -6,6 +6,7 @@ const enrollmentCtrl = require("./enrollments/classEnrollment.controller");
 const validate = require("../../middleware/validate");
 const validator = require("./class.validator");
 const upload = require("./classUploadMiddleware");
+const verifyClassOwnership = require("../../middleware/auth/verifyClassOwnership");
 const {
   verifyToken,
   isInstructorOrAdmin,
@@ -33,60 +34,54 @@ router.use("/scores", require("./scores/classScore.routes"));
 router.post(
   "/admin",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   upload,
   validate(validator.create),
   controller.createClass
 );
-router.get("/admin", verifyToken, isInstructorOrAdmin, controller.getAllClasses);
+router.get("/admin", verifyToken, isAdmin, controller.getAllClasses);
 router.get(
   "/admin/my",
   verifyToken,
-  isInstructorOrAdmin,
-  controller.getMyClasses
-);
-router.get(
-  "/instructor/my",
-  verifyToken,
-  isInstructor,
+  isAdmin,
   controller.getMyClasses
 );
 router.get(
   "/admin/:id",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   controller.getClassById
 );
 router.get(
   "/admin/:id/manage",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   controller.getManagementData
 );
 router.get(
   "/admin/:id/analytics",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   controller.getClassAnalytics
 );
 // List students enrolled in a specific class
 router.get(
   "/admin/:id/students",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   enrollmentCtrl.getStudentsByClass
 );
 // Fetch details for a single student's enrollment
 router.get(
   "/admin/:classId/students/:studentId",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   enrollmentCtrl.getStudent
 );
 router.put(
   "/admin/:id",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   upload,
   validate(validator.update),
   controller.updateClass
@@ -94,13 +89,13 @@ router.put(
 router.delete(
   "/admin/:id",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   controller.deleteClass
 );
 router.patch(
   "/admin/:id/status",
   verifyToken,
-  isInstructorOrAdmin,
+  isAdmin,
   controller.toggleClassStatus
 );
 router.patch(
@@ -115,6 +110,80 @@ router.patch(
   isAdmin,
   validate(validator.reject),
   controller.rejectClass
+);
+
+// Instructor routes
+router.post(
+  "/instructor",
+  verifyToken,
+  isInstructor,
+  upload,
+  validate(validator.create),
+  controller.createClass
+);
+router.get(
+  "/instructor/my",
+  verifyToken,
+  isInstructor,
+  controller.getMyClasses
+);
+router.get(
+  "/instructor/:id",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  controller.getClassById
+);
+router.get(
+  "/instructor/:id/manage",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  controller.getManagementData
+);
+router.get(
+  "/instructor/:id/analytics",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  controller.getClassAnalytics
+);
+router.get(
+  "/instructor/:id/students",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  enrollmentCtrl.getStudentsByClass
+);
+router.get(
+  "/instructor/:classId/students/:studentId",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  enrollmentCtrl.getStudent
+);
+router.put(
+  "/instructor/:id",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  upload,
+  validate(validator.update),
+  controller.updateClass
+);
+router.delete(
+  "/instructor/:id",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  controller.deleteClass
+);
+router.patch(
+  "/instructor/:id/status",
+  verifyToken,
+  isInstructor,
+  verifyClassOwnership,
+  controller.toggleClassStatus
 );
 
 // Tags
