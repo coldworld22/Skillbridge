@@ -185,7 +185,11 @@ export default function CheckoutPage() {
     if (selectedMethod === 'bank') {
       try {
         setPaymentStatus('processing');
-        const payload = { itemId: itemInfo.id, itemType };
+        const payload = {
+          item_id: itemInfo.id,
+          item_type: itemType,
+          amount: Math.max((itemInfo.price ?? 0) - discount, 0),
+        };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiateBankPayment(payload);
         setBankInfo(data);
