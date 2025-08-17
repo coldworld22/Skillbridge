@@ -2,8 +2,14 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSearch, FaDownload } from "react-icons/fa";
 import { fetchContributors } from "@/services/admin/communityService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminContributorsPage() {
+  const { t } = useTranslation("dashboard", {
+    keyPrefix: "communityContributorsPage",
+  });
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -24,9 +30,11 @@ export default function AdminContributorsPage() {
   );
 
   const exportCSV = () => {
-    const header = "Name,Contributions,Reputation\n";
-    const rows = contributors.map((c) => `${c.name},${c.contributions},${c.reputation}`).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
+    const header = t("csv_header");
+    const rows = contributors
+      .map((c) => `${c.name},${c.contributions},${c.reputation}`)
+      .join("\n");
+    const blob = new Blob([header + "\n" + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -38,18 +46,18 @@ export default function AdminContributorsPage() {
   };
 
   return (
-    <AdminLayout title="Top Contributors">
+    <AdminLayout title={t("title")}>
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Top Contributors</h1>
-            <p className="text-sm text-gray-500">Track engagement, reputation, and activity.</p>
+            <h1 className="text-3xl font-bold mb-1">{t("heading")}</h1>
+            <p className="text-sm text-gray-500">{t("description")}</p>
           </div>
           <button
             onClick={exportCSV}
             className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded flex items-center gap-2"
           >
-            <FaDownload /> Export CSV
+            <FaDownload /> {t("export")}
           </button>
         </div>
 
@@ -57,7 +65,7 @@ export default function AdminContributorsPage() {
         <div className="relative max-w-md mb-6">
           <input
             type="text"
-            placeholder="Search contributors..."
+            placeholder={t("search_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg pr-10"
@@ -78,16 +86,27 @@ export default function AdminContributorsPage() {
                 <div>
                   <p className="font-semibold text-gray-800">{user.name}</p>
                   <p className="text-sm text-gray-500">
-                    {user.contributions} contributions • {user.reputation} reputation
+                    {t("meta", {
+                      contributions: user.contributions,
+                      reputation: user.reputation,
+                    })}
                   </p>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No contributors found.</p>
+            <p className="text-gray-500">{t("no_contributors")}</p>
           )}
         </div>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
