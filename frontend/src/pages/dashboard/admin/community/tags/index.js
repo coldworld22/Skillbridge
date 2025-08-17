@@ -21,7 +21,7 @@ const slugify = (text) =>
     .replace(/ +/g, "-");
 
 export default function AdminTagsPage() {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation("dashboard", { keyPrefix: "communityTagsPage" });
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
@@ -58,7 +58,7 @@ export default function AdminTagsPage() {
   const handleSave = async () => {
     const trimmed = newTag.trim();
     if (!trimmed) {
-      alert("Tag name is required");
+      alert(t("tag_required"));
       return;
     }
 
@@ -69,7 +69,7 @@ export default function AdminTagsPage() {
         (t.name.toLowerCase() === trimmed.toLowerCase() || t.slug === slug)
     );
     if (exists) {
-      alert("Tag already exists");
+      alert(t("tag_exists"));
       return;
     }
 
@@ -90,7 +90,7 @@ export default function AdminTagsPage() {
       setNewTag("");
     } catch (err) {
       console.error("Failed to save tag", err);
-      alert("Failed to save tag");
+      alert(t("save_failed"));
     }
   };
 
@@ -116,10 +116,10 @@ export default function AdminTagsPage() {
 
   const handleDelete = (tag) => {
     openConfirmModal({
-      title: t("confirm_delete_title", { defaultValue: "Confirm Deletion" }),
-      message: t("Delete tag {{name}}?", { name: tag.name }),
-      confirmText: t("delete", { defaultValue: "Delete" }),
-      cancelText: t("cancel", { defaultValue: "Cancel" }),
+      title: t("confirm_delete_title"),
+      message: t("confirm_delete", { name: tag.name }),
+      confirmText: t("delete"),
+      cancelText: t("cancel"),
       onConfirm: async () => {
         try {
           await deleteTag(tag.id);
@@ -159,7 +159,7 @@ export default function AdminTagsPage() {
               onClick={handleCancel}
               className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded flex items-center gap-2"
             >
-              <FaTimes /> Cancel
+              <FaTimes /> {t("cancel")}
             </button>
           )}
         </div>
@@ -170,9 +170,9 @@ export default function AdminTagsPage() {
         )}
         <div className="space-y-3">
           {loading ? (
-            <div className="text-gray-500 text-center">Loading...</div>
+            <div className="text-gray-500 text-center">{t("loading")}</div>
           ) : tags.length === 0 ? (
-            <div className="text-gray-500 text-center">No tags found</div>
+            <div className="text-gray-500 text-center">{t("no_tags")}</div>
           ) : (
             tags.map((tag) => (
               <div
@@ -181,10 +181,10 @@ export default function AdminTagsPage() {
               >
                 <span className="text-sm font-medium text-gray-700">#{tag.name}</span>
                 <div className="flex gap-3 text-gray-600">
-                  <button onClick={() => handleEdit(tag)} title="Edit">
+                  <button onClick={() => handleEdit(tag)} title={t("edit")}>
                     <FaEdit />
                   </button>
-                  <button onClick={() => handleDelete(tag)} title="Delete">
+                  <button onClick={() => handleDelete(tag)} title={t("delete")}>
                     <FaTrash />
                   </button>
                 </div>
