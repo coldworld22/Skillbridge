@@ -7,11 +7,16 @@ import {
   createAnnouncement,
   deleteAnnouncement,
 } from "@/services/admin/communityService";
+import { toast } from "react-toastify";
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newMessage, setNewMessage] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [audience, setAudience] = useState("all");
+  const [pinned, setPinned] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -30,19 +35,26 @@ export default function AdminAnnouncementsPage() {
           pinned: a.pinned,
         }));
         setAnnouncements(formatted);
-        toast.success(t("communityAnnouncementsPage.announcements_loaded"));
+        toast.success("Announcements loaded");
       } catch (err) {
         console.error("Failed to load announcements", err);
-        toast.error(t("communityAnnouncementsPage.loading_failed"));
+        toast.error("Failed to load announcements");
       }
     };
     load();
-  }, [t]);
+  }, []);
 
   const handlePost = async () => {
     if (!newTitle.trim() || !newMessage.trim()) return;
     try {
-      const payload = { title: newTitle.trim(), message: newMessage.trim() };
+      const payload = {
+        title: newTitle.trim(),
+        message: newMessage.trim(),
+        start_date: startDate || null,
+        end_date: endDate || null,
+        audience,
+        pinned,
+      };
       const created = await createAnnouncement(payload);
       const newEntry = {
         id: created.id,
@@ -61,9 +73,10 @@ export default function AdminAnnouncementsPage() {
       setEndDate("");
       setAudience("all");
       setPinned(false);
+      toast.success("Announcement posted");
     } catch (err) {
       console.error("Failed to post announcement", err);
-      toast.error(t("communityAnnouncementsPage.save_failed"));
+      toast.error("Failed to post announcement");
     }
   };
 
@@ -78,10 +91,10 @@ export default function AdminAnnouncementsPage() {
     try {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast.success(t("communityAnnouncementsPage.announcement_deleted"));
+      toast.success("Announcement deleted");
     } catch (err) {
       console.error("Failed to delete announcement", err);
-      toast.error(t("communityAnnouncementsPage.delete_failed"));
+      toast.error("Failed to delete announcement");
     }
   };
 
