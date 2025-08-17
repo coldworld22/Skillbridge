@@ -111,7 +111,14 @@ exports.getDiscussion = async (id, viewerId, ip, userAgent) => {
     .first();
   if (!row) return null;
   const tagsMap = await exports.getDiscussionTags(id);
-  return { ...row, tags: tagsMap[id] || [] };
+  let liked = false;
+  if (viewerId) {
+    const likeRow = await db('community_likes')
+      .where({ discussion_id: id, user_id: viewerId })
+      .first();
+    liked = !!likeRow;
+  }
+  return { ...row, tags: tagsMap[id] || [], liked };
 };
 
 const { v4: uuidv4 } = require('uuid');
