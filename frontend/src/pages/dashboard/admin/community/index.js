@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import {
@@ -65,28 +65,48 @@ export default function AdminCommunityDashboard({ initialStats }) {
     topContributor: initialStats.topContributor || {},
   } : null);
   const [activityData, setActivityData] = useState(initialStats?.activityData || []);
+  const [error, setError] = useState(null);
+  const load = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await fetchDashboardStats();
+      if (data) {
+        setStats({
+          totalDiscussions: data.totalDiscussions,
+          pendingReports: data.pendingReports,
+          contributors: data.contributors,
+          repliesThisWeek: data.repliesThisWeek,
+          topContributor: data.topContributor || {},
+        });
+        setActivityData(data.activityData || []);
+      }
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      setError("Failed to load dashboard stats.");
+    }
+  }, []);
 
   useEffect(() => {
-    if (stats) return;
-    const load = async () => {
-      try {
-        const data = await fetchDashboardStats();
-        if (data) {
-          setStats({
-            totalDiscussions: data.totalDiscussions,
-            pendingReports: data.pendingReports,
-            contributors: data.contributors,
-            repliesThisWeek: data.repliesThisWeek,
-            topContributor: data.topContributor || {},
-          });
-          setActivityData(data.activityData || []);
-        }
-      } catch (err) {
-        console.error("Dashboard fetch error:", err);
-      }
-    };
-    load();
-  }, [stats]);
+    if (!stats) {
+      load();
+    }
+  }, [stats, load]);
+
+  if (error) {
+    return (
+      <AdminLayout title="Community Dashboard">
+        <div className="p-6">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={load}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Retry
+          </button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!stats) {
     return (
