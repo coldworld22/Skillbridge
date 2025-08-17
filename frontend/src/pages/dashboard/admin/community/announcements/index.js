@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaTrash } from "react-icons/fa";
-import { toast } from "react-toastify";
-import { useTranslation } from "next-i18next";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -12,10 +11,8 @@ import {
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [audience, setAudience] = useState("all");
-  const [pinned, setPinned] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -79,11 +76,14 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm(
-      t("communityAnnouncementsPage.confirm_delete")
-    );
-    if (!confirmDelete) return;
+  const handleDeleteClick = (id) => {
+    setSelectedId(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    const id = selectedId;
+    if (!id) return;
     try {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
@@ -171,7 +171,7 @@ export default function AdminAnnouncementsPage() {
                   )}
                 </div>
                 <button
-                  onClick={() => handleDelete(a.id)}
+                  onClick={() => handleDeleteClick(a.id)}
                   className="absolute top-3 right-3 text-red-500 hover:text-red-700"
                 >
                   <FaTrash />
@@ -182,6 +182,15 @@ export default function AdminAnnouncementsPage() {
             <p className="text-gray-500">No announcements posted yet.</p>
           )}
         </div>
+        <ConfirmModal
+          isOpen={isConfirmOpen}
+          message="Delete this announcement?"
+          onClose={() => {
+            setIsConfirmOpen(false);
+            setSelectedId(null);
+          }}
+          onConfirm={confirmDelete}
+        />
       </div>
     </AdminLayout>
   );
