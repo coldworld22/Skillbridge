@@ -2,6 +2,7 @@ import api from "@/services/api/api";
 import { extractData } from "@/services/api/helpers";
 import { API_BASE_URL } from "@/config/config";
 import { safeEncodeURI } from "@/utils/url";
+import { computeScheduleStatus } from "@/utils/classSchedule";
 
 const formatClass = (cls) => ({
   ...cls,
@@ -18,16 +19,6 @@ const formatClass = (cls) => ({
     : null,
   instructorBio: cls.instructor_bio || cls.instructorBio,
 });
-
-const computeScheduleStatus = (start, end) => {
-  const now = new Date();
-  const s = start ? new Date(start) : null;
-  const e = end ? new Date(end) : null;
-  if (s && now < s) return "Upcoming";
-  if (s && e && now >= s && now <= e) return "Live";
-  if (e && now > e) return "Completed";
-  return "Upcoming";
-};
 
 const formatEnrolledClass = (cls) => {
   const base = formatClass(cls);

@@ -1,6 +1,7 @@
 import api from "@/services/api/api";
 import { toDateInput } from "@/utils/date";
 import { safeEncodeURI } from "@/utils/url";
+import { computeScheduleStatus } from "@/utils/classSchedule";
 
 const formatClass = (cls) => ({
   ...cls,
@@ -24,16 +25,6 @@ const formatClass = (cls) => ({
   scheduleStatus: computeScheduleStatus(cls.start_date, cls.end_date),
   views: cls.views || 0,
 });
-
-const computeScheduleStatus = (start, end) => {
-  const now = new Date();
-  const s = start ? new Date(start) : null;
-  const e = end ? new Date(end) : null;
-  if (s && now < s) return "Upcoming";
-  if (s && e && now >= s && now <= e) return "Ongoing";
-  if (e && now > e) return "Completed";
-  return "Upcoming";
-};
 
 export const fetchInstructorClasses = async () => {
   // Fetch only classes belonging to the current instructor
