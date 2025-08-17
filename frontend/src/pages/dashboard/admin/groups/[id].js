@@ -250,6 +250,9 @@ export default function AdminGroupDetailsPage() {
     return <AdminLayout><div className="p-6">Loading group...</div></AdminLayout>;
   }
 
+  const tabs = ['overview', 'members', 'requests'];
+  tabs.splice(1, 0, 'chat');
+
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
@@ -265,7 +268,7 @@ export default function AdminGroupDetailsPage() {
         )}
 
         <div className="flex gap-2 border-b pb-3">
-          {['overview', 'chat', 'members', 'requests'].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
