@@ -64,7 +64,9 @@ export default function AdminGroupDetailsPage() {
       try {
         const [data, list, reqs] = await Promise.all([
           groupService.getGroupById(id, { signal: controller.signal }),
-          groupService.getGroupMembers(id, { signal: controller.signal }).catch(() => []),
+          groupService
+            .getGroupMembers(id, { signal: controller.signal })
+            .catch(() => []),
           groupService
             .getJoinRequestsForGroup(id, { signal: controller.signal })
             .catch(() => []),
@@ -75,30 +77,15 @@ export default function AdminGroupDetailsPage() {
           return;
         }
         setGroup(data);
-      } catch (err) {
-        if (err?.response?.status === 404) {
-          setNotFound(true);
-        } else {
-          toast.error('Failed to load group');
-        }
-        return;
-      }
-      try {
-        const list = await groupService.getGroupMembers(id);
         setMembers(list);
         setRequests(reqs);
         setPendingCount(Array.isArray(reqs) ? reqs.length : 0);
       } catch (err) {
         if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         if (err?.response?.status === 404) {
-          if (isMounted) setNotFound(true);
+          setNotFound(true);
         } else {
-          if (isMounted) {
-            setNotFound(true);
-            setMembers([]);
-            setRequests([]);
-            setPendingCount(0);
-          }
+          toast.error('Failed to load group');
         }
       }
     };
