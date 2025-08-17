@@ -4,12 +4,14 @@ import { motion } from "framer-motion";
 import { FaFilter, FaPlus, FaSearch, FaUsers } from "react-icons/fa";
 import groupService from "@/services/groupService";
 import useAuthStore from "@/store/auth/authStore";
+import { useTranslation } from "next-i18next";
 
 const StudyGroups = () => {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState("");
   const { user } = useAuthStore();
   const router = useRouter();
+  const { t } = useTranslation("website");
 
   useEffect(() => {
     const load = async () => {
@@ -43,10 +45,10 @@ const StudyGroups = () => {
             transition={{ delay: 0.2 }}
             className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 mb-4"
           >
-            📚 Collaborative Study Groups
+            📚 {t("groups_heading")}
           </motion.h1>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Join communities of learners, share knowledge, and accelerate your learning journey.
+            {t("groups_text")}
           </p>
         </div>
 
@@ -58,7 +60,7 @@ const StudyGroups = () => {
             </div>
             <input
               type="text"
-              placeholder="Search groups by name, tags, or category..."
+              placeholder={t("search_groups_placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full py-4 pl-10 pr-4 rounded-xl border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-gray-800 text-white placeholder-gray-500 shadow-lg transition"
@@ -76,7 +78,7 @@ const StudyGroups = () => {
               className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-gray-900 font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-300"
             >
               <FaPlus className="text-lg" />
-              <span>Create New Group</span>
+              <span>{t("create_group")}</span>
             </motion.button>
             
             <motion.button
@@ -92,7 +94,7 @@ const StudyGroups = () => {
               className="flex items-center gap-2 text-amber-400 hover:text-amber-300 font-medium py-3 px-6 rounded-xl border border-amber-500 hover:border-amber-400 transition-colors"
             >
               <FaUsers />
-              <span>Explore All Groups</span>
+              <span>{t("explore_groups")}</span>
             </motion.button>
           </div>
         </div>
@@ -101,13 +103,13 @@ const StudyGroups = () => {
         {filtered.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-gray-800/50 rounded-2xl p-8 max-w-md mx-auto border border-dashed border-amber-500/30">
-              <h3 className="text-xl font-bold text-gray-300 mb-2">No groups found</h3>
-              <p className="text-gray-400 mb-4">Try adjusting your search or create a new group</p>
+              <h3 className="text-xl font-bold text-gray-300 mb-2">{t("no_groups")}</h3>
+              <p className="text-gray-400 mb-4">{t("no_groups_hint")}</p>
               <button
                 onClick={() => router.push("/groups/create")}
                 className="text-amber-400 hover:text-amber-300 font-medium underline"
               >
-                Create your first group
+                {t("create_first_group")}
               </button>
             </div>
           </div>
@@ -139,7 +141,7 @@ const StudyGroups = () => {
                   />
                   <div className="absolute top-3 right-3 z-20">
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${group.isPublic ? 'bg-green-900/70 text-green-300' : 'bg-purple-900/70 text-purple-300'}`}>
-                      {group.isPublic ? 'PUBLIC' : 'PRIVATE'}
+                      {group.isPublic ? t("group_public") : t("group_private")}
                     </span>
                   </div>
                 </div>
@@ -153,7 +155,7 @@ const StudyGroups = () => {
                   </div>
                   
                   <p className="text-gray-400 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-                    {group.description || "A collaborative learning community"}
+                    {group.description || t("group_default_description")}
                   </p>
                   
                   <div className="flex flex-wrap gap-2 mb-5">
@@ -182,7 +184,7 @@ const StudyGroups = () => {
                     }}
                     className="w-full py-2.5 text-center bg-gray-700 hover:bg-gray-600 text-amber-400 rounded-lg font-medium transition-colors"
                   >
-                    View Group Details
+                    {t("view_group_details")}
                   </button>
                 </div>
               </motion.div>
@@ -193,5 +195,6 @@ const StudyGroups = () => {
     </motion.section>
   );
 };
+
 
 export default StudyGroups;

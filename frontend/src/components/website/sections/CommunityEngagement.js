@@ -10,12 +10,14 @@ import {
 import Link from "next/link";
 import { fetchDiscussions, fetchTopContributors } from "@/services/communityService";
 import { getBadge } from "@/utils/community/reputation";
+import { useTranslation, Trans } from "next-i18next";
 
 const CommunityLandingPage = () => {
   const [discussions, setDiscussions] = useState([]);
   const [contributors, setContributors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState([]);
+  const { t } = useTranslation("website");
 
   useEffect(() => {
     const load = async () => {
@@ -25,7 +27,7 @@ const CommunityLandingPage = () => {
           list.slice(0, 5).map((d) => ({
             id: d.id,
             title: d.title,
-            user: d.user_name || "Anonymous",
+            user: d.user_name || t("anonymous"),
             replies: d.replies || 0,
           }))
         );
@@ -51,7 +53,7 @@ const CommunityLandingPage = () => {
 
     };
     load();
-  }, []);
+  }, [t]);
 
 
   return (
@@ -63,13 +65,13 @@ const CommunityLandingPage = () => {
         viewport={{ once: true }}
         className="py-16 text-center px-4"
       >
-        <h1 className="text-4xl font-bold text-yellow-500 mb-4">Welcome to the Community</h1>
-        <p className="text-lg text-gray-400 mb-6">Ask questions, get answers, and connect with top contributors!</p>
+        <h1 className="text-4xl font-bold text-yellow-500 mb-4">{t("community_heading")}</h1>
+        <p className="text-lg text-gray-400 mb-6">{t("community_text")}</p>
 
         {/* Ask Question CTA */}
         <Link href="/community/ask">
           <button className="mb-10 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600 flex items-center gap-2 mx-auto">
-            <FaPlus /> Ask a Question
+            <FaPlus /> {t("ask_question")}
           </button>
         </Link>
 
@@ -77,7 +79,7 @@ const CommunityLandingPage = () => {
         <div className="max-w-lg mx-auto mb-10 relative">
           <input
             type="text"
-            placeholder="Search discussions..."
+            placeholder={t("search_discussions_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-600 focus:outline-none text-white"
@@ -87,7 +89,7 @@ const CommunityLandingPage = () => {
 
         {/* Popular Tags */}
         <div className="mb-10">
-          <h4 className="text-xl font-semibold mb-2">Popular Tags</h4>
+          <h4 className="text-xl font-semibold mb-2">{t("popular_tags")}</h4>
           <div className="flex flex-wrap justify-center gap-2">
             {tags.map((tag) => (
               <span key={tag} className="bg-yellow-600 px-3 py-1 rounded-full text-sm text-white cursor-pointer hover:bg-yellow-500 transition">
@@ -101,7 +103,7 @@ const CommunityLandingPage = () => {
           {/* Trending Discussions */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h3 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <FaCommentDots className="text-yellow-500" /> Trending Discussions
+              <FaCommentDots className="text-yellow-500" /> {t("trending_discussions")}
             </h3>
             <ul className="space-y-4">
               {discussions.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase())).map((discussion) => (
@@ -115,10 +117,10 @@ const CommunityLandingPage = () => {
                 >
                   <div>
                     <h4 className="text-lg font-semibold">{discussion.title}</h4>
-                    <p className="text-gray-400">By {discussion.user}</p>
+                    <p className="text-gray-400">{t("by_author", { author: discussion.user })}</p>
                   </div>
                   <span className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
-                    {discussion.replies} Replies
+                    {t("replies_count", { count: discussion.replies })}
                   </span>
                 </motion.li>
               ))}
@@ -128,7 +130,7 @@ const CommunityLandingPage = () => {
           {/* Top Contributors */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h3 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <FaUsers className="text-yellow-500" /> Top Contributors
+              <FaUsers className="text-yellow-500" /> {t("top_contributors")}
             </h3>
             <ul className="space-y-4">
               {contributors.map((contributor, index) => (
@@ -141,7 +143,7 @@ const CommunityLandingPage = () => {
                     <img src={contributor.avatar || "/images/default-avatar.png"} className="w-10 h-10 rounded-full border border-gray-500" />
                     <div>
                       <h4 className="text-lg font-semibold">{contributor.name} {getBadge(contributor.contributions)}</h4>
-                      <p className="text-gray-400 text-sm">{contributor.contributions} Contributions • {contributor.reputation} Reputation</p>
+                      <p className="text-gray-400 text-sm">{contributor.contributions} {t("contributions")} • {contributor.reputation} {t("reputation")}</p>
                     </div>
                   </div>
                 </motion.li>
@@ -154,14 +156,17 @@ const CommunityLandingPage = () => {
         <motion.div className="mt-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Link href="/community">
             <button className="px-6 py-3 bg-yellow-500 text-gray-900 rounded-lg font-semibold hover:bg-yellow-600 transition shadow-lg">
-              Explore the Community
+              {t("community_explore")}
             </button>
           </Link>
         </motion.div>
 
         {/* Join Prompt */}
         <motion.div className="mt-6 text-sm text-gray-400">
-          Not a member yet? <Link href="/auth/register" className="text-yellow-400 hover:underline">Join now</Link> and start contributing!
+          <Trans
+            i18nKey="community_join_prompt"
+            components={{ link: <Link href="/auth/register" className="text-yellow-400 hover:underline" /> }}
+          />
         </motion.div>
       </motion.section>
     </div>
@@ -169,3 +174,5 @@ const CommunityLandingPage = () => {
 };
 
 export default CommunityLandingPage;
+
+
