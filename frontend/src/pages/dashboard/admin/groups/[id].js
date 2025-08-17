@@ -75,6 +75,16 @@ export default function AdminGroupDetailsPage() {
           return;
         }
         setGroup(data);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          toast.error('Failed to load group');
+        }
+        return;
+      }
+      try {
+        const list = await groupService.getGroupMembers(id);
         setMembers(list);
         setRequests(reqs);
         setPendingCount(Array.isArray(reqs) ? reqs.length : 0);
@@ -153,6 +163,7 @@ export default function AdminGroupDetailsPage() {
         try {
           await groupService.manageMember(group.id, mid, 'kick');
           setMembers((prev) => prev.filter((m) => m.id !== mid));
+          setSelectedMembers((prev) => prev.filter((id) => id !== mid));
           toast.success('Member removed');
         } catch (err) {
           toast.error('Failed to remove member');
@@ -165,7 +176,7 @@ export default function AdminGroupDetailsPage() {
     if (!group) return;
     openConfirmModal({
       title: 'Confirm Promotion',
-      message: 'Promote this member to Moderator?',
+      message: 'Promote this member to Admin?',
       onConfirm: async () => {
         try {
           await groupService.manageMember(group.id, mid, 'promote');
@@ -174,7 +185,7 @@ export default function AdminGroupDetailsPage() {
               m.id === mid && m.role === 'member' ? { ...m, role: 'admin' } : m
             )
           );
-          toast.success('Member promoted');
+          toast.success('Member promoted to admin');
         } catch (err) {
           toast.error('Failed to promote member');
         }

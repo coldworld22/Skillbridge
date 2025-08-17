@@ -3,15 +3,13 @@ import useDebounce from '@/hooks/useDebounce';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Link from 'next/link';
 import {
-  FaSearch,
-  FaUsers,
   FaTrashAlt,
   FaEye,
   FaToggleOn,
   FaToggleOff,
   FaDownload,
   FaCheckSquare,
-  FaRegSquare
+  FaRegSquare,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
 import toast from 'react-hot-toast';
@@ -25,7 +23,6 @@ const imagePool = [
 
 
 export default function AdminGroupsIndex() {
-  const [allGroups, setAllGroups] = useState([]);
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
@@ -43,57 +40,36 @@ export default function AdminGroupsIndex() {
   });
   const itemsPerPage = 6;
 
-  useEffect(() => {
-    groupService
-      .getAllGroups(debouncedSearch, statusFilter)
-      .then(setAllGroups)
-      .catch(() => setAllGroups([]));
-  }, [debouncedSearch, statusFilter]);
-
-  useEffect(() => {
-    let filtered = [...allGroups];
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((g) => g.status === statusFilter);
-    }
-
-    if (debouncedSearch.trim()) {
-      filtered = filtered.filter(
-        (g) =>
-          g.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-          g.creator.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
-    }
-
+  const sortGroups = (list) => {
+    const sorted = [...list];
     switch (sortOption) {
       case 'oldest':
-        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         break;
       case 'members':
-        filtered.sort((a, b) => b.membersCount - a.membersCount);
+        sorted.sort((a, b) => b.membersCount - a.membersCount);
         break;
       default:
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
-
-    setGroups(filtered);
-  }, [debouncedSearch, statusFilter, sortOption, allGroups]);
-
-  const openConfirmModal = ({ title, message, confirmText, cancelText, onConfirm }) => {
-    setConfirmModal({ isOpen: true, title, message, confirmText, cancelText, onConfirm });
+    return sorted;
   };
 
-  const closeConfirmModal = () => {
-    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-  };
+  useEffect(() => {
+    groupService
+      .getAllGroups(search, statusFilter)
+      .then((data) => setGroups(sortGroups(data)))
+      .catch(() => setGroups([]));
+  }, [search, statusFilter]);
+
+  useEffect(() => {
+    setGroups((prev) => sortGroups(prev));
+  }, [sortOption]);
 
   const toggleStatus = async (id, newStatus) => {
     try {
       await groupService.updateGroup(id, { status: newStatus });
       setGroups((prev) =>
-        prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
-      );
-      setAllGroups((prev) =>
         prev.map((g) => (g.id === id ? { ...g, status: newStatus } : g))
       );
       toast.success(`Group status set to ${newStatus}`);
@@ -102,73 +78,51 @@ export default function AdminGroupsIndex() {
     }
   };
 
-  const handleDelete = (id) => {
-    openConfirmModal({
-      title: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this group?',
-      confirmText: 'Delete',
-      onConfirm: async () => {
-        try {
-          await groupService.deleteGroup(id);
-          toast.success('Group deleted');
-        } catch {
-          toast.error('Failed to delete group');
-        }
-        setGroups((prev) => prev.filter((g) => g.id !== id));
-        setAllGroups((prev) => prev.filter((g) => g.id !== id));
-        setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
-      },
-    });
+  const handleDelete = async (id) => {
+    const confirmDelete = confirm('Are you sure you want to delete this group?');
+    if (confirmDelete) {
+      try {
+        await groupService.deleteGroup(id);
+        toast.success('Group deleted');
+      } catch {
+        toast.error('Failed to delete group');
+      }
+      setGroups((prev) => prev.filter((g) => g.id !== id));
+      setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const confirmDelete = confirm('Delete selected groups?');
+    if (confirmDelete) {
+      const results = await Promise.allSettled(
+        selectedGroups.map((gid) => groupService.deleteGroup(gid))
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed) toast.error(`Failed to delete ${failed} groups`);
+      setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
+      setSelectedGroups([]);
+      toast.success('Selected groups deleted');
+    }
   };
 
   const handleBulkDelete = () => {
     if (selectedGroups.length === 0) return;
-    openConfirmModal({
-      title: 'Confirm Deletion',
-      message: 'Delete selected groups?',
-      confirmText: 'Delete',
-      onConfirm: async () => {
-        const results = await Promise.allSettled(
-          selectedGroups.map((gid) => groupService.deleteGroup(gid))
-        );
-        const succeededIds = selectedGroups.filter((_, idx) => results[idx].status === 'fulfilled');
-        const failedCount = results.filter((r) => r.status === 'rejected').length;
-        setGroups((prev) => prev.filter((g) => !succeededIds.includes(g.id)));
-        setAllGroups((prev) => prev.filter((g) => !succeededIds.includes(g.id)));
-        setSelectedGroups((prev) => prev.filter((id) => !succeededIds.includes(id)));
-        if (failedCount) toast.error(`Failed to delete ${failedCount} groups`);
-        if (succeededIds.length) toast.success('Selected groups deleted');
-      },
-    });
-  };
-
-  const handleBulkStatusChange = (status) => {
-    if (selectedGroups.length === 0) return;
-    openConfirmModal({
-      title: 'Confirm Status Change',
-      message: `Change status of selected groups to ${status}?`,
-      confirmText: 'Confirm',
-      onConfirm: async () => {
-        const results = await Promise.allSettled(
-          selectedGroups.map((gid) => groupService.updateGroup(gid, { status }))
-        );
-        const succeededIds = selectedGroups.filter((_, idx) => results[idx].status === 'fulfilled');
-        const failedCount = results.filter((r) => r.status === 'rejected').length;
-        setGroups((prev) =>
-          prev.map((g) =>
-            succeededIds.includes(g.id) ? { ...g, status } : g
-          )
-        );
-        setAllGroups((prev) =>
-          prev.map((g) =>
-            succeededIds.includes(g.id) ? { ...g, status } : g
-          )
-        );
-        if (failedCount) toast.error(`Failed to update ${failedCount} groups`);
-        if (succeededIds.length)
-          toast.success(`Status updated to ${status} for selected groups`);
-      },
-    });
+    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
+    if (confirmChange) {
+      const results = await Promise.allSettled(
+        selectedGroups.map((gid) => groupService.updateGroup(gid, { status }))
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed) toast.error(`Failed to update ${failed} groups`);
+      setGroups((prev) =>
+        prev.map((g) =>
+          selectedGroups.includes(g.id) ? { ...g, status } : g
+        )
+      );
+      setSelectedGroups([]);
+      toast.success(`Status updated to ${status} for selected groups`);
+    }
   };
 
   const exportToCSV = () => {
@@ -294,7 +248,9 @@ export default function AdminGroupsIndex() {
                 {pageGroupIds.every((id) => selectedGroups.includes(id)) ? <FaCheckSquare /> : <FaRegSquare />} Select All on Page
               </button>
             </div>
-            {paginatedGroups.map((group) => (
+            {paginatedGroups.map((group, idx) => {
+              const placeholder = imagePool[(idx + (currentPage - 1) * itemsPerPage) % imagePool.length];
+              return (
               <div
                 key={group.id}
                 className={`p-4 bg-white rounded-lg shadow hover:shadow-lg border space-y-2 relative ${selectedGroups.includes(group.id) ? 'ring-2 ring-yellow-400' : ''}`}
@@ -308,7 +264,7 @@ export default function AdminGroupsIndex() {
                 </button>
 
                 <img
-                  src={group.cover_image || imagePool[0]}
+                  src={group.cover_image || placeholder}
                   alt={group.name}
                   className="w-full h-32 object-cover rounded-md mb-2"
                 />
@@ -329,7 +285,6 @@ export default function AdminGroupsIndex() {
                     {group.status}
                   </span>
                 </div>
-
                 <p className="text-xs bg-gray-800 text-white inline-block px-2 py-0.5 rounded">
                   📁 {group.category || 'N/A'}
                 </p>
@@ -402,7 +357,8 @@ export default function AdminGroupsIndex() {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
