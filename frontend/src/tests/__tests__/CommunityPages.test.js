@@ -60,12 +60,12 @@ describe('Community pages', () => {
     });
     fireEvent.click(screen.getByText(/Submit Question/i));
     await waitFor(() => {
-      expect(createDiscussion).toHaveBeenCalledWith({
-        title: 'My Question',
-        content: '',
-        tags: [],
-      });
+      expect(createDiscussion).toHaveBeenCalled();
     });
+    const formData = createDiscussion.mock.calls[0][0];
+    expect(formData.get('title')).toBe('My Question');
+    expect(formData.get('content')).toBe('');
+    expect(formData.get('tags')).toBe(JSON.stringify([]));
   });
 
   test('posting a reply displays it', async () => {
