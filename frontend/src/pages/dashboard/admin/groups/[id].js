@@ -91,7 +91,7 @@ export default function AdminGroupDetailsPage() {
   }, [router.isReady, id]);
 
   const filteredMembers = members.filter((m) =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase())
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const sortedMembers = [...filteredMembers].sort((a, b) => {
     if (sortKey === 'name') return a.name.localeCompare(b.name);
