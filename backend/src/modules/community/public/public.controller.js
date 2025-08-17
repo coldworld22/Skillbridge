@@ -62,6 +62,11 @@ exports.listReplies = catchAsync(async (req, res) => {
 exports.createReply = catchAsync(async (req, res) => {
   const { content } = req.body || {};
   if (!content) throw new AppError('Missing fields', 400);
+  const status = await service.getDiscussionStatus(req.params.id);
+  if (!status) throw new AppError('Discussion not found', 404);
+  if (status.locked || status.resolved) {
+    throw new AppError('Posting is not allowed', 403);
+  }
   const reply = await service.createReply({
     discussion_id: req.params.id,
     user_id: req.user.id,

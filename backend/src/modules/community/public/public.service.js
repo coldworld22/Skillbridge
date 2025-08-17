@@ -114,6 +114,12 @@ exports.getDiscussion = async (id, viewerId, ip, userAgent) => {
   return { ...row, tags: tagsMap[id] || [] };
 };
 
+exports.getDiscussionStatus = async (id) => {
+  return db("community_discussions")
+    .where({ id })
+    .first("locked", "resolved");
+};
+
 const { v4: uuidv4 } = require('uuid');
 const notificationService = require('../../notifications/notifications.service');
 const messageService = require('../../messages/messages.service');
