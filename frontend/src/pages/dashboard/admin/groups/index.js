@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
 import toast from 'react-hot-toast';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 const imagePool = [
   'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
@@ -30,6 +31,14 @@ export default function AdminGroupsIndex() {
   const [sortOption, setSortOption] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedGroups, setSelectedGroups] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    cancelText: '',
+    onConfirm: () => {},
+  });
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -68,6 +77,14 @@ export default function AdminGroupsIndex() {
     setGroups(filtered);
   }, [search, statusFilter, sortOption, allGroups]);
 
+  const openConfirmModal = ({ title, message, confirmText, cancelText, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, confirmText, cancelText, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const toggleStatus = async (id, newStatus) => {
     try {
       await groupService.updateGroup(id, { status: newStatus });
@@ -83,62 +100,73 @@ export default function AdminGroupsIndex() {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm('Are you sure you want to delete this group?');
-    if (confirmDelete) {
-      try {
-        await groupService.deleteGroup(id);
-        toast.success('Group deleted');
-      } catch {
-        toast.error('Failed to delete group');
-      }
-      setGroups((prev) => prev.filter((g) => g.id !== id));
-      setAllGroups((prev) => prev.filter((g) => g.id !== id));
-      setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    const confirmDelete = confirm('Delete selected groups?');
-    if (confirmDelete) {
-      for (const gid of selectedGroups) {
+  const handleDelete = (id) => {
+    openConfirmModal({
+      title: 'Confirm Deletion',
+      message: 'Are you sure you want to delete this group?',
+      confirmText: 'Delete',
+      onConfirm: async () => {
         try {
-          await groupService.deleteGroup(gid);
+          await groupService.deleteGroup(id);
+          toast.success('Group deleted');
         } catch {
-          toast.error('Failed to delete some groups');
+          toast.error('Failed to delete group');
         }
-      }
-      setGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
-      setAllGroups((prev) => prev.filter((g) => !selectedGroups.includes(g.id)));
-      setSelectedGroups([]);
-      toast.success('Selected groups deleted');
-    }
+        setGroups((prev) => prev.filter((g) => g.id !== id));
+        setAllGroups((prev) => prev.filter((g) => g.id !== id));
+        setSelectedGroups((prev) => prev.filter((gid) => gid !== id));
+      },
+    });
   };
 
-  const handleBulkStatusChange = async (status) => {
+  const handleBulkDelete = () => {
     if (selectedGroups.length === 0) return;
-    const confirmChange = confirm(`Change status of selected groups to ${status}?`);
-    if (confirmChange) {
-      for (const gid of selectedGroups) {
-        try {
-          await groupService.updateGroup(gid, { status });
-        } catch {
-          toast.error('Failed to update some groups');
-        }
-      }
-      setGroups((prev) =>
-        prev.map((g) =>
-          selectedGroups.includes(g.id) ? { ...g, status } : g
-        )
-      );
-      setAllGroups((prev) =>
-        prev.map((g) =>
-          selectedGroups.includes(g.id) ? { ...g, status } : g
-        )
-      );
-      toast.success(`Status updated to ${status} for selected groups`);
+    openConfirmModal({
+      title: 'Confirm Deletion',
+      message: 'Delete selected groups?',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        const results = await Promise.allSettled(
+          selectedGroups.map((gid) => groupService.deleteGroup(gid))
+        );
+        const succeededIds = selectedGroups.filter((_, idx) => results[idx].status === 'fulfilled');
+        const failedCount = results.filter((r) => r.status === 'rejected').length;
+        setGroups((prev) => prev.filter((g) => !succeededIds.includes(g.id)));
+        setAllGroups((prev) => prev.filter((g) => !succeededIds.includes(g.id)));
+        setSelectedGroups((prev) => prev.filter((id) => !succeededIds.includes(id)));
+        if (failedCount) toast.error(`Failed to delete ${failedCount} groups`);
+        if (succeededIds.length) toast.success('Selected groups deleted');
+      },
+    });
+  };
 
-    }
+  const handleBulkStatusChange = (status) => {
+    if (selectedGroups.length === 0) return;
+    openConfirmModal({
+      title: 'Confirm Status Change',
+      message: `Change status of selected groups to ${status}?`,
+      confirmText: 'Confirm',
+      onConfirm: async () => {
+        const results = await Promise.allSettled(
+          selectedGroups.map((gid) => groupService.updateGroup(gid, { status }))
+        );
+        const succeededIds = selectedGroups.filter((_, idx) => results[idx].status === 'fulfilled');
+        const failedCount = results.filter((r) => r.status === 'rejected').length;
+        setGroups((prev) =>
+          prev.map((g) =>
+            succeededIds.includes(g.id) ? { ...g, status } : g
+          )
+        );
+        setAllGroups((prev) =>
+          prev.map((g) =>
+            succeededIds.includes(g.id) ? { ...g, status } : g
+          )
+        );
+        if (failedCount) toast.error(`Failed to update ${failedCount} groups`);
+        if (succeededIds.length)
+          toast.success(`Status updated to ${status} for selected groups`);
+      },
+    });
   };
 
   const exportToCSV = () => {
@@ -394,6 +422,15 @@ export default function AdminGroupsIndex() {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
 }
