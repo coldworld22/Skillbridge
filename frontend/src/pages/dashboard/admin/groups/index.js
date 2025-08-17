@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Link from 'next/link';
 import {
@@ -26,6 +27,7 @@ export default function AdminGroupsIndex() {
   const [allGroups, setAllGroups] = useState([]);
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,10 +36,10 @@ export default function AdminGroupsIndex() {
 
   useEffect(() => {
     groupService
-      .getAllGroups(search, statusFilter)
+      .getAllGroups(debouncedSearch, statusFilter)
       .then(setAllGroups)
       .catch(() => setAllGroups([]));
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter]);
 
   useEffect(() => {
     let filtered = [...allGroups];
@@ -46,11 +48,11 @@ export default function AdminGroupsIndex() {
       filtered = filtered.filter((g) => g.status === statusFilter);
     }
 
-    if (search.trim()) {
+    if (debouncedSearch.trim()) {
       filtered = filtered.filter(
         (g) =>
-          g.name.toLowerCase().includes(search.toLowerCase()) ||
-          g.creator.toLowerCase().includes(search.toLowerCase())
+          g.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          g.creator.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
 
@@ -66,7 +68,7 @@ export default function AdminGroupsIndex() {
     }
 
     setGroups(filtered);
-  }, [search, statusFilter, sortOption, allGroups]);
+  }, [debouncedSearch, statusFilter, sortOption, allGroups]);
 
   const toggleStatus = async (id, newStatus) => {
     try {
