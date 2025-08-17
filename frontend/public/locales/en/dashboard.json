@@ -593,6 +593,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "Community Dashboard",
+    "description": "Moderate discussions, manage contributors, and configure community-wide features.",
+    "error": "Failed to load dashboard stats.",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "stats": {
+      "discussions": "Discussions",
+      "pendingReports": "Pending Reports",
+      "contributors": "Contributors",
+      "repliesThisWeek": "Replies This Week"
+    },
+    "manageSections": "Manage Community Sections",
+    "nav": {
+      "manageDiscussions": "Manage Discussions",
+      "reportedPosts": "Reported Posts",
+      "manageTags": "Manage Tags",
+      "topContributors": "Top Contributors",
+      "postAnnouncement": "Post Announcement",
+      "settings": "Community Settings"
+    },
+    "topContributor": {
+      "title": "🏆 Top Contributor",
+      "meta": "{{contributions}} contributions • {{reputation}} reputation"
+    },
+    "activity": {
+      "title": "📈 Community Activity (Last 5 Days)",
+      "discussions": "Discussions",
+      "reports": "Reports",
+      "replies": "Replies"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",

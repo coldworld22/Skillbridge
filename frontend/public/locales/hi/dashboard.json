@@ -593,6 +593,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "समुदाय डैशबोर्ड",
+    "description": "चर्चाओं का संयम करें, योगदानकर्ताओं को प्रबंधित करें और समुदाय-व्यापी सुविधाएँ कॉन्फ़िगर करें।",
+    "error": "डैशबोर्ड आँकड़े लोड करने में विफल।",
+    "retry": "पुनः प्रयास करें",
+    "loading": "लोड हो रहा है...",
+    "stats": {
+      "discussions": "चर्चाएँ",
+      "pendingReports": "लंबित रिपोर्टें",
+      "contributors": "योगदानकर्ता",
+      "repliesThisWeek": "इस सप्ताह की प्रतिक्रियाएँ"
+    },
+    "manageSections": "समुदाय सेक्शन प्रबंधित करें",
+    "nav": {
+      "manageDiscussions": "चर्चाएँ प्रबंधित करें",
+      "reportedPosts": "रिपोर्ट की गई पोस्ट",
+      "manageTags": "टैग प्रबंधित करें",
+      "topContributors": "शीर्ष योगदानकर्ता",
+      "postAnnouncement": "घोषणा पोस्ट करें",
+      "settings": "समुदाय सेटिंग्स"
+    },
+    "topContributor": {
+      "title": "🏆 शीर्ष योगदानकर्ता",
+      "meta": "{{contributions}} योगदान • {{reputation}} प्रतिष्ठा"
+    },
+    "activity": {
+      "title": "📈 समुदाय गतिविधि (पिछले 5 दिन)",
+      "discussions": "चर्चाएँ",
+      "reports": "रिपोर्टें",
+      "replies": "प्रतिक्रियाएँ"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",

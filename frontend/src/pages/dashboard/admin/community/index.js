@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 import {
   FaCommentDots,
   FaExclamationTriangle,
@@ -57,6 +58,7 @@ const StatCard = ({ label, value, color }) => (
 );
 
 export default function AdminCommunityDashboard({ initialStats }) {
+  const { t } = useTranslation("dashboard");
   const [stats, setStats] = useState(initialStats ? {
     totalDiscussions: initialStats.totalDiscussions,
     pendingReports: initialStats.pendingReports,
@@ -82,9 +84,9 @@ export default function AdminCommunityDashboard({ initialStats }) {
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
-      setError("Failed to load dashboard stats.");
+      setError(t("adminCommunityDashboardPage.error"));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!stats) {
@@ -94,14 +96,14 @@ export default function AdminCommunityDashboard({ initialStats }) {
 
   if (error) {
     return (
-      <AdminLayout title="Community Dashboard">
+      <AdminLayout title={t("adminCommunityDashboardPage.title")}>
         <div className="p-6">
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={load}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Retry
+            {t("adminCommunityDashboardPage.retry")}
           </button>
         </div>
       </AdminLayout>
@@ -110,45 +112,45 @@ export default function AdminCommunityDashboard({ initialStats }) {
 
   if (!stats) {
     return (
-      <AdminLayout title="Community Dashboard">
-        <div className="p-6">Loading...</div>
+      <AdminLayout title={t("adminCommunityDashboardPage.title")}>
+        <div className="p-6">{t("adminCommunityDashboardPage.loading")}</div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Community Dashboard">
+    <AdminLayout title={t("adminCommunityDashboardPage.title")}>
       <div className="p-6 max-w-7xl mx-auto">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Community Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{t("adminCommunityDashboardPage.title")}</h1>
           <p className="text-gray-500 text-sm">
-            Moderate discussions, manage contributors, and configure community-wide features.
+            {t("adminCommunityDashboardPage.description")}
           </p>
         </div>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-          <StatCard label="Discussions" value={stats.totalDiscussions} color="bg-yellow-500" />
-          <StatCard label="Pending Reports" value={stats.pendingReports} color="bg-red-500" />
-          <StatCard label="Contributors" value={stats.contributors} color="bg-blue-500" />
-          <StatCard label="Replies This Week" value={stats.repliesThisWeek} color="bg-green-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.discussions")} value={stats.totalDiscussions} color="bg-yellow-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.pendingReports")} value={stats.pendingReports} color="bg-red-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.contributors")} value={stats.contributors} color="bg-blue-500" />
+          <StatCard label={t("adminCommunityDashboardPage.stats.repliesThisWeek")} value={stats.repliesThisWeek} color="bg-green-500" />
         </div>
 
         {/* Navigation Cards */}
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Manage Community Sections</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">{t("adminCommunityDashboardPage.manageSections")}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          <NavCard href="/dashboard/admin/community/discussions" label="Manage Discussions" icon={<FaCommentDots />} />
-          <NavCard href="/dashboard/admin/community/reports" label="Reported Posts" icon={<FaExclamationTriangle />} />
-          <NavCard href="/dashboard/admin/community/tags" label="Manage Tags" icon={<FaCogs />} />
-          <NavCard href="/dashboard/admin/community/contributors" label="Top Contributors" icon={<FaUsers />} />
-          <NavCard href="/dashboard/admin/community/announcements" label="Post Announcement" icon={<FaBullhorn />} />
-          <NavCard href="/dashboard/admin/community/settings" label="Community Settings" icon={<FaCogs />} />
+          <NavCard href="/dashboard/admin/community/discussions" label={t("adminCommunityDashboardPage.nav.manageDiscussions")} icon={<FaCommentDots />} />
+          <NavCard href="/dashboard/admin/community/reports" label={t("adminCommunityDashboardPage.nav.reportedPosts")} icon={<FaExclamationTriangle />} />
+          <NavCard href="/dashboard/admin/community/tags" label={t("adminCommunityDashboardPage.nav.manageTags")} icon={<FaCogs />} />
+          <NavCard href="/dashboard/admin/community/contributors" label={t("adminCommunityDashboardPage.nav.topContributors")} icon={<FaUsers />} />
+          <NavCard href="/dashboard/admin/community/announcements" label={t("adminCommunityDashboardPage.nav.postAnnouncement")} icon={<FaBullhorn />} />
+          <NavCard href="/dashboard/admin/community/settings" label={t("adminCommunityDashboardPage.nav.settings")} icon={<FaCogs />} />
         </div>
 
         {/* Top Contributor */}
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mb-10">
-          <h3 className="text-lg font-semibold mb-3">🏆 Top Contributor</h3>
+          <h3 className="text-lg font-semibold mb-3">{t("adminCommunityDashboardPage.topContributor.title")}</h3>
           <div className="flex items-center gap-4">
             <img
               src={stats.topContributor.avatar || "/images/default-avatar.png"}
@@ -158,7 +160,10 @@ export default function AdminCommunityDashboard({ initialStats }) {
             <div>
               <p className="font-bold text-gray-800">{stats.topContributor.name}</p>
               <p className="text-sm text-gray-500">
-                {stats.topContributor.contributions} contributions • {stats.topContributor.reputation} reputation
+                {t("adminCommunityDashboardPage.topContributor.meta", {
+                  contributions: stats.topContributor.contributions,
+                  reputation: stats.topContributor.reputation,
+                })}
               </p>
             </div>
           </div>
@@ -166,7 +171,7 @@ export default function AdminCommunityDashboard({ initialStats }) {
 
         {/* Activity Chart */}
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">📈 Community Activity (Last 5 Days)</h3>
+          <h3 className="text-lg font-semibold mb-4">{t("adminCommunityDashboardPage.activity.title")}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={activityData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -174,9 +179,9 @@ export default function AdminCommunityDashboard({ initialStats }) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="discussions" stroke="#F59E0B" name="Discussions" />
-              <Line type="monotone" dataKey="reports" stroke="#EF4444" name="Reports" />
-              <Line type="monotone" dataKey="replies" stroke="#10B981" name="Replies" />
+              <Line type="monotone" dataKey="discussions" stroke="#F59E0B" name={t("adminCommunityDashboardPage.activity.discussions")} />
+              <Line type="monotone" dataKey="reports" stroke="#EF4444" name={t("adminCommunityDashboardPage.activity.reports")} />
+              <Line type="monotone" dataKey="replies" stroke="#10B981" name={t("adminCommunityDashboardPage.activity.replies")} />
             </LineChart>
           </ResponsiveContainer>
         </div>
