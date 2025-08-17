@@ -31,7 +31,10 @@ export default function AdminContributorsPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "contributors.csv";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -65,8 +68,8 @@ export default function AdminContributorsPage() {
         {/* Contributor List */}
         <div className="space-y-4">
           {filtered.length > 0 ? (
-            filtered.map((user, index) => (
-              <div key={index} className="bg-white p-4 rounded shadow-sm flex items-center gap-4">
+            filtered.map((user) => (
+              <div key={user.id} className="bg-white p-4 rounded shadow-sm flex items-center gap-4">
                 <img
                   src={user.avatar || "/images/default-avatar.png"}
                   className="w-12 h-12 rounded-full border"

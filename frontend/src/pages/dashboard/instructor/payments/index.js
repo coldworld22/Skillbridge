@@ -38,10 +38,14 @@ export default function InstructorPaymentsPage() {
     const rows = filteredPayments.map(({ title, amount, date, status, method }) => [title, amount, date, status, method]);
     const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = "payments.csv";
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
