@@ -3,13 +3,18 @@ import { API_BASE_URL } from "@/config/config";
 
 const formatGroup = (g) => {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-  const tags = g.tags
-    ? Array.isArray(g.tags)
-      ? g.tags
-      : typeof g.tags === "string"
-        ? JSON.parse(g.tags)
-        : []
-    : [];
+  let tags = [];
+  if (g.tags) {
+    if (Array.isArray(g.tags)) {
+      tags = g.tags;
+    } else if (typeof g.tags === "string") {
+      try {
+        tags = JSON.parse(g.tags);
+      } catch {
+        tags = [];
+      }
+    }
+  }
   return {
     ...g,
     cover_image: g.cover_image ? `${base}${g.cover_image}` : g.cover_image,
@@ -54,8 +59,8 @@ const groupService = {
     return Array.isArray(list) ? list.map(formatGroup) : list;
   },
 
-  getGroupById: async (id) => {
-    const { data } = await api.get(`/groups/${id}`);
+  getGroupById: async (id, opts = {}) => {
+    const { data } = await api.get(`/groups/${id}`, opts);
     return data?.data ? formatGroup(data.data) : null;
   },
 
@@ -79,8 +84,8 @@ const groupService = {
     return data?.data ? formatGroup(data.data) : null;
   },
 
-  getGroupMembers: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/members`);
+  getGroupMembers: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/members`, opts);
     const list = data?.data ?? [];
 
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -179,8 +184,8 @@ const groupService = {
     return data?.data ? formatGroup(data.data) : null;
   },
 
-  getJoinRequestsForGroup: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/requests`);
+  getJoinRequestsForGroup: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/requests`, opts);
     const list = data?.data ?? [];
     return Array.isArray(list)
       ? list.map((r) => ({
