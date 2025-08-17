@@ -10,6 +10,7 @@ import {
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
+  const [newTitle, setNewTitle] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -20,6 +21,7 @@ export default function AdminAnnouncementsPage() {
         const data = await fetchAnnouncements();
         const formatted = (data || []).map((a) => ({
           id: a.id,
+          title: a.title,
           message: a.message,
           timestamp: new Date(a.created_at).toLocaleString(),
           startDate: a.start_date ? new Date(a.start_date).toLocaleString() : null,
@@ -38,25 +40,13 @@ export default function AdminAnnouncementsPage() {
   }, [t]);
 
   const handlePost = async () => {
-    if (!newMessage.trim()) return;
-
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      alert("Start date must be before end date");
-      return;
-    }
-
+    if (!newTitle.trim() || !newMessage.trim()) return;
     try {
-      const payload = {
-        title: newMessage.trim(),
-        message: newMessage.trim(),
-        start_date: startDate || null,
-        end_date: endDate || null,
-        audience,
-        pinned,
-      };
+      const payload = { title: newTitle.trim(), message: newMessage.trim() };
       const created = await createAnnouncement(payload);
       const newEntry = {
         id: created.id,
+        title: created.title,
         message: created.message,
         timestamp: new Date(created.created_at).toLocaleString(),
         startDate: created.start_date ? new Date(created.start_date).toLocaleString() : null,
@@ -65,6 +55,7 @@ export default function AdminAnnouncementsPage() {
         pinned: created.pinned,
       };
       setAnnouncements((prev) => [newEntry, ...prev]);
+      setNewTitle("");
       setNewMessage("");
       setStartDate("");
       setEndDate("");
@@ -100,7 +91,14 @@ export default function AdminAnnouncementsPage() {
         <h1 className="text-3xl font-bold mb-6">Post Announcement</h1>
 
         {/* New Announcement Form */}
-        <div className="mb-8 space-y-4">
+        <div className="mb-8">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Announcement title"
+            className="w-full border border-gray-300 rounded px-4 py-2 mb-2"
+          />
           <textarea
             rows={3}
             value={newMessage}
@@ -157,6 +155,7 @@ export default function AdminAnnouncementsPage() {
                 key={a.id}
                 className="bg-white border-l-4 border-yellow-500 p-4 rounded shadow-sm relative"
               >
+                <h3 className="text-lg font-semibold text-gray-900">{a.title}</h3>
                 <p className="text-gray-800">{a.message}</p>
                 <div className="text-sm text-gray-400 mt-1 space-y-1">
                   <p>{a.timestamp}</p>
