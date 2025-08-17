@@ -6,7 +6,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { FaPaperPlane, FaEdit, FaCheckCircle } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-toastify";
-import { createDiscussion, searchTags } from "@/services/communityService";
+import { createDiscussion, searchTags, createReply } from "@/services/communityService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 // ✅ AI API URL - Update with your actual backend API endpoint
@@ -191,24 +191,34 @@ const AskQuestionPage = () => {
 
   // ✅ Accept AI Answer & Convert to Community Question
 const handleAcceptAIResponse = () => {
-  setDescription(editableResponse);
+  setDescription(title);
   setActiveTab("community");
 };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('content', description);
-      formData.append('tags', JSON.stringify(tags));
-      uploadedFiles.forEach((file) => formData.append('files', file));
-      await createDiscussion(formData);
+      let payload;
+      if (uploadedFiles.length) {
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', description);
+        formData.append('tags', JSON.stringify(tags));
+        uploadedFiles.forEach((file) => formData.append('files', file));
+        payload = formData;
+      } else {
+        payload = { title, content: description, tags };
+      }
+      const discussion = await createDiscussion(payload);
+      if (editableResponse.trim()) {
+        await createReply(discussion.id, { content: editableResponse });
+      }
       toast.success("Question posted");
       setTitle("");
       setDescription("");
       setTags([]);
       setUploadedFiles([]);
+      setEditableResponse("");
     } catch (err) {
       console.error(err);
       toast.error("Failed to post question");
