@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { FaVideo, FaWhatsapp, FaEnvelope, FaCircle } from "react-icons/fa";
+import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
 import ChatImage from "../shared/ChatImage";
@@ -28,6 +28,7 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
   const hasPhone = !!selectedChat.phone;
+  const email = selectedChat.email;
 
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
