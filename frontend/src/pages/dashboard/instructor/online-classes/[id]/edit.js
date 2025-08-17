@@ -42,7 +42,7 @@ function EditInstructorClass() {
     maxStudents: '',
     isFree: false,
     allowInstallments: false,
-    isApproved: false,
+    isPublished: false,
     image: '',
     imagePreview: '',
     demoVideo: null,
@@ -102,7 +102,7 @@ function EditInstructorClass() {
             maxStudents: data.max_students ?? '',
             isFree: data.price === 0,
             allowInstallments: Boolean(data.allow_installments),
-            isApproved: data.status === 'published',
+            isPublished: data.publishStatus === 'published',
             imagePreview: data.cover_image || '',
             demoPreview: data.demo_video_url || '',
           }));
@@ -181,7 +181,7 @@ function EditInstructorClass() {
       }
       if (formData.maxStudents) payload.append('max_students', formData.maxStudents);
       payload.append('allow_installments', formData.allowInstallments ? 'true' : 'false');
-      payload.append('status', formData.isApproved ? 'published' : 'draft');
+      payload.append('status', formData.isPublished ? 'published' : 'draft');
       if (formData.category) payload.append('category_id', formData.category);
       if (formData.image) payload.append('cover_image', formData.image);
       if (formData.demoVideo) payload.append('demo_video', formData.demoVideo);
@@ -338,8 +338,8 @@ function EditInstructorClass() {
                 <label className="inline-flex items-center">
                   <input
                     type="checkbox"
-                    name="isApproved"
-                    checked={formData.isApproved}
+                    name="isPublished"
+                    checked={formData.isPublished}
                     onChange={handleChange}
                     className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                   />
