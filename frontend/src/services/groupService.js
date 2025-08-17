@@ -3,13 +3,18 @@ import { API_BASE_URL } from "@/config/config";
 
 const formatGroup = (g) => {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-  const tags = g.tags
-    ? Array.isArray(g.tags)
-      ? g.tags
-      : typeof g.tags === "string"
-        ? JSON.parse(g.tags)
-        : []
-    : [];
+  let tags = [];
+  if (g.tags) {
+    if (Array.isArray(g.tags)) {
+      tags = g.tags;
+    } else if (typeof g.tags === "string") {
+      try {
+        tags = JSON.parse(g.tags);
+      } catch {
+        tags = [];
+      }
+    }
+  }
   return {
     ...g,
     cover_image: g.cover_image ? `${base}${g.cover_image}` : g.cover_image,
