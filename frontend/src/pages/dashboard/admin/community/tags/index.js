@@ -6,11 +6,12 @@ import {
   createTag,
   updateTag,
   deleteTag,
-} from "@/services/admin/communityService
+} from "@/services/admin/communityService";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { toast } from "react-toastify";
 
 const slugify = (text) =>
   text
@@ -25,6 +26,16 @@ export default function AdminTagsPage() {
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
   const inputRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    cancelText: "",
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -34,12 +45,15 @@ export default function AdminTagsPage() {
         const data = await fetchTags();
         setTags(data || []);
       } catch (err) {
-        const msg = err?.response?.data?.message || t('load_failed');
+        const msg = err?.response?.data?.message || t("load_failed");
         toast.error(msg);
+        setError(msg);
+      } finally {
+        setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     const trimmed = newTag.trim();
@@ -155,21 +169,8 @@ export default function AdminTagsPage() {
           <div className="text-red-500 mb-4 text-sm">{error}</div>
         )}
         <div className="space-y-3">
-          {tags.map((tag) => (
-            <div
-              key={tag.id}
-              className="flex justify-between items-center bg-white px-4 py-2 rounded border border-gray-200 shadow-sm hover:shadow-md"
-            >
-              <span className="text-sm font-medium text-gray-700">#{tag.name}</span>
-              <div className="flex gap-3 text-gray-600">
-                <button onClick={() => handleEdit(tag)} title="Edit">
-                  <FaEdit />
-                </button>
-                <button onClick={() => handleDelete(tag)} title="Delete">
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
+          {loading ? (
+            <div className="text-gray-500 text-center">Loading...</div>
           ) : tags.length === 0 ? (
             <div className="text-gray-500 text-center">No tags found</div>
           ) : (
@@ -183,7 +184,7 @@ export default function AdminTagsPage() {
                   <button onClick={() => handleEdit(tag)} title="Edit">
                     <FaEdit />
                   </button>
-                  <button onClick={() => handleDelete(tag.id)} title="Delete">
+                  <button onClick={() => handleDelete(tag)} title="Delete">
                     <FaTrash />
                   </button>
                 </div>
