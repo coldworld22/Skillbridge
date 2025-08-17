@@ -17,7 +17,6 @@ const couponService = require("../coupons/coupons.service");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
-    user_id,
     method_id,
     item_type,
     item_id,
@@ -30,7 +29,10 @@ exports.createPayment = catchAsync(async (req, res) => {
     receipt_url,
     coupon_id,
   } = req.body;
-  if (!user_id || !method_id || !item_type || !item_id || !amount) {
+
+  const user_id = req.user.id;
+
+  if (!method_id || !item_type || !item_id || !amount) {
     throw new AppError("Missing required fields", 400);
   }
 
@@ -51,7 +53,9 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   const method = await paymentMethodsService.getById(method_id);
-  if (!method) throw new AppError("Invalid payment method", 400);
+  if (!method || !method.active) {
+    throw new AppError("Invalid payment method", 400);
+  }
 
   let verifiedAmount = amount;
   let verifiedCurrency = currency || "USD";

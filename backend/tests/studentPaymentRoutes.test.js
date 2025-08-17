@@ -3,6 +3,23 @@ const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   getByUser: jest.fn(),
+  create: jest.fn(),
+}));
+
+jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
+  getById: jest.fn(),
+}));
+
+jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
+  getSettings: jest.fn(),
+}));
+
+jest.mock('../src/services/smsService', () => ({
+  sendSMS: jest.fn(),
+}));
+
+jest.mock('../src/modules/users/user.model', () => ({
+  findById: jest.fn().mockResolvedValue({}),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -11,6 +28,8 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 }));
 
 const service = require('../src/modules/payments/payments.service');
+const methodService = require('../src/modules/paymentMethods/paymentMethods.service');
+const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const routes = require('../src/modules/payments/student.routes');
 
 const app = express();
@@ -26,5 +45,44 @@ describe('GET /api/payments/student', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(service.getByUser).toHaveBeenCalledWith('user1');
+  });
+});
+
+describe('POST /api/payments/student', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('creates a payment using authenticated user id', async () => {
+    methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
+    configService.getSettings.mockResolvedValue({ platformCut: {} });
+    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending' });
+
+    const res = await request(app).post('/api/payments/student').send({
+      user_id: 'other',
+      method_id: 'm1',
+      item_type: 'class',
+      item_id: 'i1',
+      amount: 100,
+    });
+
+    expect(res.status).toBe(200);
+    const call = service.create.mock.calls[0][0];
+    expect(call.user_id).toBe('user1');
+  });
+
+  it('rejects inactive payment methods', async () => {
+    methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: false });
+    configService.getSettings.mockResolvedValue({ platformCut: {} });
+
+    const res = await request(app).post('/api/payments/student').send({
+      method_id: 'm1',
+      item_type: 'class',
+      item_id: 'i1',
+      amount: 100,
+    });
+
+    expect(res.status).toBe(400);
+    expect(service.create).not.toHaveBeenCalled();
   });
 });
