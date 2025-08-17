@@ -195,6 +195,20 @@
     "details_update_failed": "Failed to update instructor",
     "processing": "Saving..."
   },
+  "tagsPage": {
+    "title": "Tags",
+    "manage": "Manage Tags",
+    "placeholder": "Tag name",
+    "add": "Add",
+    "update": "Update",
+    "delete_confirm": "Delete this tag?",
+    "tag_created": "Tag created",
+    "tag_updated": "Tag updated",
+    "tag_deleted": "Tag deleted",
+    "load_failed": "Failed to load tags",
+    "save_failed": "Failed to save tag",
+    "delete_failed": "Failed to delete tag"
+  },
   "currenciesPage": {
     "title": "Currency Manager",
     "add_currency": "Add Currency",
@@ -578,6 +592,15 @@
     "save_failed": "Failed to save announcement",
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
+  },
+  "communityAnnouncementsPage": {
+    "announcements_loaded": "Announcements loaded",
+    "loading_failed": "Failed to load announcements",
+    "announcement_saved": "Announcement posted",
+    "save_failed": "Failed to post announcement",
+    "announcement_deleted": "Announcement deleted",
+    "delete_failed": "Failed to delete announcement",
+    "confirm_delete": "Delete this announcement?"
   },
   "instructorDashboardPage": {
     "title": "Instructor Dashboard",

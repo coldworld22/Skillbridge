@@ -125,7 +125,9 @@ export default function ViewTutorialPage() {
               const a = document.createElement("a");
               a.href = dataStr;
               a.download = `${tutorial.slug || tutorial.id}.json`;
+              document.body.appendChild(a);
               a.click();
+              a.remove();
             }}
             className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold flex items-center gap-2"
           >

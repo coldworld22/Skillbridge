@@ -29,10 +29,14 @@ export default function InstructorCommissionPage() {
     const rows = mockSummary.breakdown.map((item) => [item.title, item.amount, item.commission]);
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = "class_commission_breakdown.csv";
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (

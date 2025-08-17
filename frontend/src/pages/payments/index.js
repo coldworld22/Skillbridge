@@ -63,10 +63,14 @@ export default function PaymentsPage() {
       .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = "payments.csv";
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
