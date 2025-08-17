@@ -1,9 +1,21 @@
-import React, { useState } from "react";
-import { Editor, EditorState, RichUtils, convertToRaw } from "draft-js";
+import React, { useState, useEffect } from "react";
+import { Editor, EditorState, RichUtils, convertToRaw, ContentState } from "draft-js";
 import "draft-js/dist/Draft.css"; // Import Draft.js styles
 
-const RichTextEditor = ({ onChange }) => {
-  const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
+const RichTextEditor = ({ onChange, value }) => {
+  const [editorState, setEditorState] = useState(() =>
+    value ? EditorState.createWithContent(ContentState.createFromText(value)) : EditorState.createEmpty()
+  );
+
+  useEffect(() => {
+    if (value === undefined) return;
+    const currentText = editorState.getCurrentContent().getPlainText();
+    if (value === "" && currentText !== "") {
+      setEditorState(EditorState.createEmpty());
+    } else if (value !== "" && value !== currentText) {
+      setEditorState(EditorState.createWithContent(ContentState.createFromText(value)));
+    }
+  }, [value]);
 
   // Handle changes in the editor
   const handleEditorChange = (newState) => {
