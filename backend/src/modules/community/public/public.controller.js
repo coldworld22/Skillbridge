@@ -37,7 +37,9 @@ exports.createDiscussion = catchAsync(async (req, res) => {
     title,
     content,
     tags,
-    image_url: req.file ? `/uploads/community/${req.file.filename}` : null,
+    image_url: Array.isArray(req.files) && req.files.length
+      ? `/uploads/community/${req.files[0].filename}`
+      : null,
   });
   sendSuccess(res, disc, "Discussion created");
 });
@@ -54,6 +56,12 @@ exports.listTags = catchAsync(async (req, res) => {
   sendSuccess(res, tags);
 });
 
+exports.relatedQuestions = catchAsync(async (req, res) => {
+  const q = req.query.query || req.query.q || '';
+  const questions = await service.searchRelatedQuestions(q);
+  sendSuccess(res, { questions });
+});
+
 exports.listReplies = catchAsync(async (req, res) => {
   const replies = await service.listReplies(req.params.id);
   sendSuccess(res, replies);
@@ -62,11 +70,19 @@ exports.listReplies = catchAsync(async (req, res) => {
 exports.createReply = catchAsync(async (req, res) => {
   const { content } = req.body || {};
   if (!content) throw new AppError('Missing fields', 400);
+
+  const file = req.files?.file?.[0];
+  const audio = req.files?.audio?.[0];
+
   const reply = await service.createReply({
     discussion_id: req.params.id,
     user_id: req.user.id,
     content,
-    file_url: req.file ? `/uploads/community/${req.file.filename}` : null,
+    file_url: file
+      ? `/uploads/community/${file.filename}`
+      : audio
+      ? `/uploads/community/${audio.filename}`
+      : null,
   });
   sendSuccess(res, reply, 'Reply posted');
 });

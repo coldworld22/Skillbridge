@@ -12,8 +12,8 @@ jest.mock('../../components/community/Filters', () => () => <div />);
 jest.mock('../../components/community/Pagination', () => () => <div />);
 jest.mock('../../components/FileUploader', () => () => <div />);
 // simple textarea mock for rich text editor
-jest.mock('../../components/RichTextEditor', () => ({ onChange }) => (
-  <textarea data-testid="editor" onChange={(e) => onChange && onChange(e.target.value)} />
+jest.mock('../../components/RichTextEditor', () => ({ onChange, value }) => (
+  <textarea data-testid="editor" value={value} onChange={(e) => onChange && onChange(e.target.value)} />
 ));
 jest.mock('react-markdown', () => (props) => <div>{props.children}</div>);
 

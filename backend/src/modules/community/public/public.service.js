@@ -121,7 +121,20 @@ exports.getDiscussion = async (id, viewerId, ip, userAgent) => {
     .first();
   if (!row) return null;
   const tagsMap = await exports.getDiscussionTags(id);
-  return { ...row, tags: tagsMap[id] || [] };
+  let liked = false;
+  if (viewerId) {
+    const likeRow = await db('community_likes')
+      .where({ discussion_id: id, user_id: viewerId })
+      .first();
+    liked = !!likeRow;
+  }
+  return { ...row, tags: tagsMap[id] || [], liked };
+};
+
+exports.getDiscussionStatus = async (id) => {
+  return db("community_discussions")
+    .where({ id })
+    .first("locked", "resolved");
 };
 
 const { v4: uuidv4 } = require('uuid');
@@ -143,27 +156,33 @@ async function notifyAllUsers(discussion) {
 
   const message = `New question posted: ${discussion.title}`;
 
-  for (const id of ids) {
-    await notificationService.createNotification({
-      user_id: id,
-      type: 'community',
-      message,
-    });
-    if (sender) {
-      await messageService.createMessage({
-        sender_id: sender.id,
-        receiver_id: id,
-        message,
-      });
-    }
-    const info = await userModel.findContactInfo(id);
-    if (info?.email) {
-      await emailUtil.sendNewDiscussionEmail(
-        info.email,
-        discussion.user_name,
-        discussion.title
-      );
-    }
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    const batch = ids.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (id) => {
+        await notificationService.createNotification({
+          user_id: id,
+          type: 'community',
+          message,
+        });
+        if (sender) {
+          await messageService.createMessage({
+            sender_id: sender.id,
+            receiver_id: id,
+            message,
+          });
+        }
+        const info = await userModel.findContactInfo(id);
+        if (info?.email) {
+          await emailUtil.sendNewDiscussionEmail(
+            info.email,
+            discussion.user_name,
+            discussion.title
+          );
+        }
+      })
+    );
   }
 }
 
@@ -228,6 +247,16 @@ exports.searchTags = async (q) => {
     .limit(10);
 };
 
+// Search discussion titles matching a query for related questions
+exports.searchRelatedQuestions = async (q) => {
+  if (!q) return [];
+  const rows = await db('community_discussions')
+    .whereILike('title', `%${q}%`)
+    .limit(5)
+    .pluck('title');
+  return rows;
+};
+
 exports.listReplies = async (discussionId) => {
   return db('community_replies as r')
     .leftJoin('users as u', 'r.user_id', 'u.id')
@@ -257,6 +286,34 @@ exports.createReply = async (data) => {
   const user = await db('users')
     .where({ id: data.user_id })
     .first('full_name', 'avatar_url');
+
+  const discussion = await db('community_discussions')
+    .where({ id: data.discussion_id })
+    .first('user_id', 'title');
+
+  if (discussion) {
+    const participants = await db('community_replies')
+      .where({ discussion_id: data.discussion_id })
+      .whereNot('user_id', data.user_id)
+      .distinct('user_id');
+
+    const recipientIds = new Set([
+      discussion.user_id,
+      ...participants.map((p) => p.user_id),
+    ]);
+
+    recipientIds.delete(data.user_id);
+
+    const message = `New reply in discussion: ${discussion.title}`;
+
+    for (const id of recipientIds) {
+      await notificationService.createNotification({
+        user_id: id,
+        type: 'community',
+        message,
+      });
+    }
+  }
 
   return {
     ...row,
