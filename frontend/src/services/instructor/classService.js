@@ -44,12 +44,12 @@ export const fetchInstructorClasses = async () => {
 };
 
 export const fetchInstructorClassById = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}`);
+  const { data } = await api.get(`/users/classes/instructor/${id}`);
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const createInstructorClass = async (payload, onUploadProgress) => {
-  const { data } = await api.post("/users/classes/admin", payload, {
+  const { data } = await api.post("/users/classes/instructor", payload, {
     headers: { "Content-Type": "multipart/form-data" },
     ...(onUploadProgress ? { onUploadProgress } : {}),
   });
@@ -57,39 +57,29 @@ export const createInstructorClass = async (payload, onUploadProgress) => {
 };
 
 export const updateInstructorClass = async (id, payload) => {
-  const { data } = await api.put(`/users/classes/admin/${id}`, payload, {
+  const { data } = await api.put(`/users/classes/instructor/${id}`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data?.data ? formatClass(data.data) : null;
 };
 
 export const deleteInstructorClass = async (id) => {
-  await api.delete(`/users/classes/admin/${id}`);
+  await api.delete(`/users/classes/instructor/${id}`);
   return true;
 };
 
 export const fetchInstructorClassAnalytics = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/analytics`);
+  const { data } = await api.get(`/users/classes/instructor/${id}/analytics`);
   return data?.data ?? {};
 };
 
 export const toggleClassStatus = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/status`);
-  return data?.data;
-};
-
-export const approveInstructorClass = async (id) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/approve`);
-  return data?.data;
-};
-
-export const rejectInstructorClass = async (id, reason) => {
-  const { data } = await api.patch(`/users/classes/admin/${id}/reject`, { reason });
+  const { data } = await api.patch(`/users/classes/instructor/${id}/status`);
   return data?.data;
 };
 
 export const fetchClassManagementData = async (id) => {
-  const { data } = await api.get(`/users/classes/admin/${id}/manage`);
+  const { data } = await api.get(`/users/classes/instructor/${id}/manage`);
   if (!data?.data) return null;
   return {
     class: data.data.class ? formatClass(data.data.class) : null,
