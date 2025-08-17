@@ -11,6 +11,7 @@ router.get("/admin/:id", verifyToken, isInstructorOrAdmin, controller.getCoupon)
 router.put("/admin/:id", verifyToken, isInstructorOrAdmin, validate(validator.update), controller.updateCoupon);
 router.delete("/admin/:id", verifyToken, isInstructorOrAdmin, controller.deleteCoupon);
 
-router.get("/code/:code", controller.validateCode);
+// Accept optional item type and id parameters for validation
+router.get("/code/:code/:item_type?/:item_id?", controller.validateCode);
 
 module.exports = router;
