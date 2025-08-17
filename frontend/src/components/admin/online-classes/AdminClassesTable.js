@@ -70,14 +70,14 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   );
 
   const exportCSV = () => {
-    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Status"];
+    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
     const rows = classList.map(cls => [
       cls.title,
       cls.instructor,
       cls.start_date,
       cls.end_date,
       cls.category,
-      cls.status
+      cls.publishStatus
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -100,7 +100,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
         setClassList((prev) =>
           prev.map((c) =>
             c.id === id
-              ? { ...c, approvalStatus: "Approved", status: updated?.status }
+              ? { ...c, approvalStatus: "Approved", publishStatus: updated?.publishStatus }
               : c
           )
         );
@@ -147,21 +147,21 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
         const updated = await toggleClassStatus(id);
         setClassList((prev) =>
           prev.map((c) =>
-            c.id === id ? { ...c, status: updated.status } : c
+            c.id === id ? { ...c, publishStatus: updated.publishStatus } : c
           )
         );
         toast.success("Status updated");
-        const message = `Class "${target.title}" status changed to ${updated.status}.`;
+        const message = `Class "${target.title}" publish status changed to ${updated.publishStatus}.`;
         await createNotification({ user_id: user.id, type: "class_status_changed", message });
         await sendChatMessage(user.id, { text: message });
         if (target.instructor_id && target.instructor_id !== user.id) {
           await createNotification({
             user_id: target.instructor_id,
             type: "class_status_changed",
-            message: `Your class "${target.title}" status was changed to ${updated.status}.`,
+            message: `Your class "${target.title}" publish status was changed to ${updated.publishStatus}.`,
           });
           await sendChatMessage(target.instructor_id, {
-            text: `Your class "${target.title}" status was changed to ${updated.status}.`,
+            text: `Your class "${target.title}" publish status was changed to ${updated.publishStatus}.`,
           });
         }
         refreshNotifications?.();
@@ -322,12 +322,12 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                   <button
                     onClick={() => handleStatusChange(cls.id, 'toggle')}
                     className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                        cls.status === 'published'
+                        cls.publishStatus === 'published'
                           ? 'bg-green-100 text-green-800 hover:bg-green-200'
                           : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                       }`}
                   >
-                    {cls.status === 'published' ? 'Published' : 'Draft'}
+                    {cls.publishStatus === 'published' ? 'Published' : 'Draft'}
                   </button>
                 </td>
                 <td className="px-6 py-4">
