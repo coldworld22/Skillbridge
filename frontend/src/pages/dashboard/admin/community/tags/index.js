@@ -7,6 +7,10 @@ import {
   updateTag,
   deleteTag,
 } from "@/services/admin/communityService";
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const slugify = (text) =>
   text
@@ -16,9 +20,18 @@ const slugify = (text) =>
     .replace(/ +/g, "-");
 
 export default function AdminTagsPage() {
+  const { t } = useTranslation("dashboard");
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    cancelText: "",
+    onConfirm: null,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -57,15 +70,29 @@ export default function AdminTagsPage() {
     setNewTag(tag.name);
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm("Delete this tag?");
-    if (!confirmDelete) return;
-    try {
-      await deleteTag(id);
-      setTags((prev) => prev.filter((t) => t.id !== id));
-    } catch (err) {
-      console.error("Failed to delete tag", err);
-    }
+  const openConfirmModal = ({ title, message, confirmText, cancelText, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, confirmText, cancelText, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleDelete = (tag) => {
+    openConfirmModal({
+      title: t("confirm_delete_title", { defaultValue: "Confirm Deletion" }),
+      message: t("Delete tag {{name}}?", { name: tag.name }),
+      confirmText: t("delete", { defaultValue: "Delete" }),
+      cancelText: t("cancel", { defaultValue: "Cancel" }),
+      onConfirm: async () => {
+        try {
+          await deleteTag(tag.id);
+          setTags((prev) => prev.filter((t) => t.id !== tag.id));
+        } catch (err) {
+          console.error("Failed to delete tag", err);
+        }
+      },
+    });
   };
 
   return (
@@ -103,14 +130,31 @@ export default function AdminTagsPage() {
                 <button onClick={() => handleEdit(tag)} title="Edit">
                   <FaEdit />
                 </button>
-                <button onClick={() => handleDelete(tag.id)} title="Delete">
+                <button onClick={() => handleDelete(tag)} title="Delete">
                   <FaTrash />
                 </button>
               </div>
             </div>
           ))}
         </div>
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModal.onConfirm}
+        />
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
