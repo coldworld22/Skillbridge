@@ -11,13 +11,7 @@ import {
   updateTag,
   deleteTag,
 } from "@/services/admin/communityService";
-
-const slugify = (text) =>
-  text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w ]+/g, "")
-    .replace(/ +/g, "-");
+import slugify from "@/utils/slugify";
 
 export default function AdminTagsPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tagsPage' });
@@ -43,9 +37,25 @@ export default function AdminTagsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!newTag.trim()) return;
+    const trimmed = newTag.trim();
+    if (!trimmed) {
+      alert("Tag name is required");
+      return;
+    }
+
+    const slug = slugify(trimmed);
+    const exists = tags.some(
+      (t) =>
+        t.id !== editing?.id &&
+        (t.name.toLowerCase() === trimmed.toLowerCase() || t.slug === slug)
+    );
+    if (exists) {
+      alert("Tag already exists");
+      return;
+    }
+
     try {
-      const payload = { name: newTag, slug: slugify(newTag) };
+      const payload = { name: trimmed, slug };
       if (editing) {
         const updated = await updateTag(editing.id, payload);
         setTags((prev) =>
@@ -60,8 +70,8 @@ export default function AdminTagsPage() {
       }
       setNewTag("");
     } catch (err) {
-      const msg = err?.response?.data?.message || t('save_failed');
-      toast.error(msg);
+      console.error("Failed to save tag", err);
+      alert("Failed to save tag");
     }
   };
 
