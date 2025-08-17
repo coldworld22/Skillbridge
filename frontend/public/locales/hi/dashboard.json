@@ -195,6 +195,20 @@
     "details_update_failed": "Failed to update instructor",
     "processing": "Saving..."
   },
+  "tagsPage": {
+    "title": "टैग",
+    "manage": "टैग प्रबंधित करें",
+    "placeholder": "टैग नाम",
+    "add": "जोड़ें",
+    "update": "अपडेट करें",
+    "delete_confirm": "क्या आप इस टैग को हटाना चाहते हैं?",
+    "tag_created": "टैग बनाया गया",
+    "tag_updated": "टैग अपडेट किया गया",
+    "tag_deleted": "टैग हटाया गया",
+    "load_failed": "टैग लोड करने में विफल",
+    "save_failed": "टैग सहेजने में विफल",
+    "delete_failed": "टैग हटाने में विफल"
+  },
   "currenciesPage": {
     "title": "Currency Manager",
     "add_currency": "Add Currency",
