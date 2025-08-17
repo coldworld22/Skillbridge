@@ -143,6 +143,9 @@ exports.listGroups = catchAsync(async (req, res) => {
 
 exports.getGroup = catchAsync(async (req, res) => {
   const group = await service.getGroupById(req.params.id);
+  if (!group) {
+    throw new AppError("Group not found", 404);
+  }
   sendSuccess(res, group);
 });
 
