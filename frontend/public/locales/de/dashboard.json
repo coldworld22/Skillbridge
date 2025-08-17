@@ -556,6 +556,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "Community-Dashboard",
+    "description": "Moderieren Sie Diskussionen, verwalten Sie Mitwirkende und konfigurieren Sie communityweite Funktionen.",
+    "error": "Dashboard-Statistiken konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "loading": "Lädt...",
+    "stats": {
+      "discussions": "Diskussionen",
+      "pendingReports": "Ausstehende Meldungen",
+      "contributors": "Mitwirkende",
+      "repliesThisWeek": "Antworten dieser Woche"
+    },
+    "manageSections": "Community-Bereiche verwalten",
+    "nav": {
+      "manageDiscussions": "Diskussionen verwalten",
+      "reportedPosts": "Gemeldete Beiträge",
+      "manageTags": "Tags verwalten",
+      "topContributors": "Top-Mitwirkende",
+      "postAnnouncement": "Ankündigung posten",
+      "settings": "Community-Einstellungen"
+    },
+    "topContributor": {
+      "title": "🏆 Top-Mitwirkender",
+      "meta": "{{contributions}} Beiträge • {{reputation}} Reputation"
+    },
+    "activity": {
+      "title": "📈 Community-Aktivität (letzte 5 Tage)",
+      "discussions": "Diskussionen",
+      "reports": "Meldungen",
+      "replies": "Antworten"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",

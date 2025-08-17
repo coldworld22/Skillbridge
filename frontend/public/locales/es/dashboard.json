@@ -556,6 +556,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "Panel de la comunidad",
+    "description": "Modera debates, gestiona colaboradores y configura funciones para toda la comunidad.",
+    "error": "No se pudieron cargar las estadísticas del panel.",
+    "retry": "Reintentar",
+    "loading": "Cargando...",
+    "stats": {
+      "discussions": "Debates",
+      "pendingReports": "Reportes pendientes",
+      "contributors": "Colaboradores",
+      "repliesThisWeek": "Respuestas esta semana"
+    },
+    "manageSections": "Gestionar secciones de la comunidad",
+    "nav": {
+      "manageDiscussions": "Gestionar debates",
+      "reportedPosts": "Publicaciones reportadas",
+      "manageTags": "Gestionar etiquetas",
+      "topContributors": "Principales colaboradores",
+      "postAnnouncement": "Publicar anuncio",
+      "settings": "Configuración de la comunidad"
+    },
+    "topContributor": {
+      "title": "🏆 Principal colaborador",
+      "meta": "{{contributions}} contribuciones • {{reputation}} reputación"
+    },
+    "activity": {
+      "title": "📈 Actividad de la comunidad (últimos 5 días)",
+      "discussions": "Debates",
+      "reports": "Reportes",
+      "replies": "Respuestas"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",

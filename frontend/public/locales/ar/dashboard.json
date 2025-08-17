@@ -580,6 +580,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "لوحة تحكم المجتمع",
+    "description": "قم بإدارة النقاشات، إدارة المساهمين، وتكوين ميزات على مستوى المجتمع.",
+    "error": "فشل تحميل إحصائيات لوحة التحكم.",
+    "retry": "إعادة المحاولة",
+    "loading": "جارٍ التحميل...",
+    "stats": {
+      "discussions": "المناقشات",
+      "pendingReports": "التقارير المعلقة",
+      "contributors": "المساهمون",
+      "repliesThisWeek": "الردود هذا الأسبوع"
+    },
+    "manageSections": "إدارة أقسام المجتمع",
+    "nav": {
+      "manageDiscussions": "إدارة المناقشات",
+      "reportedPosts": "المنشورات المبلغ عنها",
+      "manageTags": "إدارة الوسوم",
+      "topContributors": "أفضل المساهمين",
+      "postAnnouncement": "نشر إعلان",
+      "settings": "إعدادات المجتمع"
+    },
+    "topContributor": {
+      "title": "🏆 أفضل مساهم",
+      "meta": "{{contributions}} مساهمة • {{reputation}} سمعة"
+    },
+    "activity": {
+      "title": "📈 نشاط المجتمع (آخر 5 أيام)",
+      "discussions": "المناقشات",
+      "reports": "التقارير",
+      "replies": "الردود"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",

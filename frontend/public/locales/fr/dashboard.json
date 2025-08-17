@@ -568,6 +568,38 @@
     "loading_failed": "Failed to load announcements",
     "delete": "Delete"
   },
+  "adminCommunityDashboardPage": {
+    "title": "Tableau de bord de la communauté",
+    "description": "Modérez les discussions, gérez les contributeurs et configurez les fonctionnalités à l'échelle de la communauté.",
+    "error": "Échec du chargement des statistiques du tableau de bord.",
+    "retry": "Réessayer",
+    "loading": "Chargement...",
+    "stats": {
+      "discussions": "Discussions",
+      "pendingReports": "Signalements en attente",
+      "contributors": "Contributeurs",
+      "repliesThisWeek": "Réponses cette semaine"
+    },
+    "manageSections": "Gérer les sections de la communauté",
+    "nav": {
+      "manageDiscussions": "Gérer les discussions",
+      "reportedPosts": "Publications signalées",
+      "manageTags": "Gérer les étiquettes",
+      "topContributors": "Meilleurs contributeurs",
+      "postAnnouncement": "Publier une annonce",
+      "settings": "Paramètres de la communauté"
+    },
+    "topContributor": {
+      "title": "🏆 Meilleur contributeur",
+      "meta": "{{contributions}} contributions • {{reputation}} réputation"
+    },
+    "activity": {
+      "title": "📈 Activité de la communauté (5 derniers jours)",
+      "discussions": "Discussions",
+      "reports": "Signalements",
+      "replies": "Réponses"
+    }
+  },
   "communityAnnouncementsPage": {
     "announcements_loaded": "Announcements loaded",
     "loading_failed": "Failed to load announcements",
