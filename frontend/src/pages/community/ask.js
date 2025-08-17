@@ -3,7 +3,7 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import FileUploader from "@/components/FileUploader";
 import RichTextEditor from "@/components/RichTextEditor";
-import { FaPaperPlane, FaEdit, FaCheckCircle } from "react-icons/fa";
+import { FaPaperPlane, FaEdit, FaCheckCircle, FaSpinner } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-toastify";
 import { createDiscussion, searchTags } from "@/services/communityService";
@@ -345,8 +345,20 @@ const handleAcceptAIResponse = () => {
             <input className="w-full p-3 mt-3 bg-gray-700 rounded-md text-white" placeholder="Ask AI a question..." value={title} onChange={(e) => setTitle(e.target.value)} />
 
             {/* ✅ Get AI Answer Button */}
-            <button onClick={fetchAIResponse} className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg flex items-center gap-2">
-              <FaPaperPlane /> Get AI Answer
+            <button
+              onClick={fetchAIResponse}
+              disabled={isProcessingAI}
+              className="mt-4 px-6 py-3 bg-yellow-500 text-gray-900 font-bold rounded-lg flex items-center gap-2 disabled:opacity-50"
+            >
+              {isProcessingAI ? (
+                <>
+                  <FaSpinner className="animate-spin" /> Generating…
+                </>
+              ) : (
+                <>
+                  <FaPaperPlane /> Get AI Answer
+                </>
+              )}
             </button>
 
             {/* ✅ AI Answer Display */}
@@ -356,6 +368,9 @@ const handleAcceptAIResponse = () => {
                 <div className="prose prose-invert">
                   <ReactMarkdown>{aiResponse}</ReactMarkdown>
                 </div>
+                {confidenceScore !== null && (
+                  <p className="mt-2 text-sm text-gray-400">Confidence: {confidenceScore}</p>
+                )}
               </div>
             )}
 
