@@ -20,6 +20,7 @@ export default function AdminCommunityDiscussionsPage() {
   const [discussions, setDiscussions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -35,6 +36,8 @@ export default function AdminCommunityDiscussionsPage() {
         setDiscussions(formatted);
       } catch (err) {
         console.error("Failed to load discussions", err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -106,7 +109,9 @@ export default function AdminCommunityDiscussionsPage() {
 
         {/* List */}
         <div className="space-y-4">
-          {filtered.length > 0 ? (
+          {loading ? (
+            <p className="text-gray-500">Loading...</p>
+          ) : filtered.length > 0 ? (
             filtered.map((discussion) => (
               <div
                 key={discussion.id}
