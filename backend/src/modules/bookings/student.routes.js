@@ -18,6 +18,4 @@ router.patch(
 );
 router.delete("/:id", controller.deleteStudentBooking);
 
-router.delete("/:id", controller.deleteStudentBooking);
-
 module.exports = router;
