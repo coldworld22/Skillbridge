@@ -4,7 +4,7 @@ exports.up = function(knex) {
     table.string('title').notNullable();
     table.text('message').notNullable();
     table.string('audience').notNullable().defaultTo('all');
-    table.jsonb('pages');
+    table.jsonb('pages').notNullable().defaultTo('[]');
     table.timestamp('start_date');
     table.timestamp('end_date');
     table.string('position').defaultTo('center');
