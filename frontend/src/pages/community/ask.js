@@ -32,6 +32,7 @@ const AskQuestionPage = () => {
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [confidenceScore, setConfidenceScore] = useState(null);
   const [relatedQuestions, setRelatedQuestions] = useState([]);
+  const [relatedQuestionsError, setRelatedQuestionsError] = useState(false);
   const [editableResponse, setEditableResponse] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [aiOptions, setAiOptions] = useState([]);
@@ -42,10 +43,23 @@ const AskQuestionPage = () => {
   // ✅ Fetch Related Questions Based on Title Input
   useEffect(() => {
     if (title.trim().length > 3) {
-      fetch(`/api/related-questions?query=${title}`)
-        .then(res => res.json())
-        .then(data => setRelatedQuestions(data.questions))
-        .catch(error => console.error("Error fetching related questions:", error));
+      fetch(`/api/related-questions?query=${encodeURIComponent(title)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch');
+          return res.json();
+        })
+        .then(data => {
+          setRelatedQuestions(data.questions || []);
+          setRelatedQuestionsError(false);
+        })
+        .catch(error => {
+          console.error("Error fetching related questions:", error);
+          setRelatedQuestions([]);
+          setRelatedQuestionsError(true);
+        });
+    } else {
+      setRelatedQuestions([]);
+      setRelatedQuestionsError(false);
     }
   }, [title]);
 
@@ -254,7 +268,12 @@ const handleAcceptAIResponse = () => {
             </div>
 
             {/* ✅ Show Related Questions */}
-            {relatedQuestions.length > 0 && (
+            {relatedQuestionsError && (
+              <div className="bg-gray-700 p-4 rounded-md mt-4">
+                <p className="text-red-400">Related questions are currently unavailable.</p>
+              </div>
+            )}
+            {!relatedQuestionsError && relatedQuestions.length > 0 && (
               <div className="bg-gray-700 p-4 rounded-md mt-4">
                 <h3 className="text-yellow-500 font-bold">🔗 Related Questions:</h3>
                 {relatedQuestions.map((q, index) => (

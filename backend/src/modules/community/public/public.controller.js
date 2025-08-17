@@ -56,6 +56,12 @@ exports.listTags = catchAsync(async (req, res) => {
   sendSuccess(res, tags);
 });
 
+exports.relatedQuestions = catchAsync(async (req, res) => {
+  const q = req.query.query || req.query.q || '';
+  const questions = await service.searchRelatedQuestions(q);
+  sendSuccess(res, { questions });
+});
+
 exports.listReplies = catchAsync(async (req, res) => {
   const replies = await service.listReplies(req.params.id);
   sendSuccess(res, replies);

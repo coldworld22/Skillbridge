@@ -107,6 +107,7 @@ app.use("/api/bookings/student", require("./modules/bookings/student.routes"));
 app.use("/api/bookings/instructor", require("./modules/bookings/instructor.routes"));
 app.use("/api/community/admin", require("./modules/community/admin/admin.routes"));
 app.use("/api/community", require("./modules/community/public/public.routes"));
+app.use("/api/related-questions", require("./modules/community/public/relatedQuestions.routes"));
 app.use("/api/roles", require("./modules/roles/roles.routes"));
 app.use("/api/plans", require("./modules/plans/plans.routes"));
 // Register admin routes before public routes to prevent public routes from catching
