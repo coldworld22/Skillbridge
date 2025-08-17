@@ -51,6 +51,8 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
         text: newMessage.text,
         file: newMessage.file,
         audio: newMessage.audio,
+        sendEmail: newMessage.sendEmail,
+        sendWhatsapp: newMessage.sendWhatsapp,
       });
 
       if (created) {
