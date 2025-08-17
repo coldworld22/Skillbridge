@@ -53,6 +53,7 @@ jest.mock('../../../../config/database', () => {
   return mockDb;
 });
 
+jest.mock('../../contributorStats.util', () => ({ updateContributorStats: jest.fn(), }));
 jest.mock('../../../notifications/notifications.service', () => ({
   createNotification: jest.fn(),
 }));

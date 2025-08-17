@@ -419,7 +419,9 @@ export default function InstructorTutorialsPage() {
                       const a = document.createElement("a");
                       a.href = dataStr;
                       a.download = `${tutorial.slug || tutorial.id}.json`;
+                      document.body.appendChild(a);
                       a.click();
+                      a.remove();
                     }}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm flex items-center justify-center transition-colors"
                   >

@@ -38,10 +38,14 @@ export default function AITranscriptPage() {
       data.history.map(item => `- [${item.date}] ${item.type}: ${item.detail}`).join("\n");
 
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = "AI_Transcript.txt";
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (

@@ -172,6 +172,20 @@
     "details_update_failed": "Failed to update instructor",
     "processing": "Saving..."
   },
+  "tagsPage": {
+    "title": "Tags",
+    "manage": "Tags verwalten",
+    "placeholder": "Tag-Name",
+    "add": "Hinzufügen",
+    "update": "Aktualisieren",
+    "delete_confirm": "Diesen Tag löschen?",
+    "tag_created": "Tag erstellt",
+    "tag_updated": "Tag aktualisiert",
+    "tag_deleted": "Tag gelöscht",
+    "load_failed": "Tags konnten nicht geladen werden",
+    "save_failed": "Tag konnte nicht gespeichert werden",
+    "delete_failed": "Tag konnte nicht gelöscht werden"
+  },
   "currenciesPage": {
     "title": "Währungsverwaltung",
     "add_currency": "Währung hinzufügen",

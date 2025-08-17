@@ -96,7 +96,9 @@ export default function InstructorStudentsPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `${student.name.replace(/\s+/g, '_')}_report.txt`;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
   };
 
