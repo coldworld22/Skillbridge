@@ -195,6 +195,20 @@
     "details_update_failed": "فشل تحديث المدرب",
     "processing": "جارٍ الحفظ..."
   },
+  "tagsPage": {
+    "title": "الوسوم",
+    "manage": "إدارة الوسوم",
+    "placeholder": "اسم الوسم",
+    "add": "إضافة",
+    "update": "تحديث",
+    "delete_confirm": "حذف هذا الوسم؟",
+    "tag_created": "تم إنشاء الوسم",
+    "tag_updated": "تم تحديث الوسم",
+    "tag_deleted": "تم حذف الوسم",
+    "load_failed": "فشل تحميل الوسوم",
+    "save_failed": "فشل حفظ الوسم",
+    "delete_failed": "فشل حذف الوسم"
+  },
   "currenciesPage": {
     "title": "إدارة العملات",
     "add_currency": "إضافة عملة",
