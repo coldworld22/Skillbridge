@@ -77,16 +77,15 @@ exports.getGroupById = async (id) => {
     .leftJoin("users as u", "g.creator_id", "u.id")
     .leftJoin("categories as c", "g.category_id", "c.id")
     .leftJoin("group_members as gm", "g.id", "gm.group_id")
-    .leftJoin("users as contact", "g.contact_id", "contact.id")
     .where("g.id", id)
-    .groupBy("g.id", "u.full_name", "u.role", "c.name", "contact.phone")
+    .groupBy("g.id", "u.full_name", "u.role", "u.email", "u.phone", "c.name")
     .select(
       "g.*",
       db.raw("COALESCE(u.full_name, '') as creator_name"),
       db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(u.email, '') as contact_email"),
       db.raw("COALESCE(c.name, '') as category"),
-      db.raw("COALESCE(contact.phone, '') as contact_phone"),
+      db.raw("COALESCE(u.phone, '') as contact_phone"),
       db.raw("COUNT(DISTINCT gm.id) as members_count"),
     )
     .first();
