@@ -14,6 +14,7 @@ const formatDiscussion = (d) => ({
   ...d,
   user_avatar: formatUrl(d.user_avatar),
   image_url: formatUrl(d.image_url),
+  liked: Boolean(d.liked),
 });
 
 const formatReply = (r) => ({
