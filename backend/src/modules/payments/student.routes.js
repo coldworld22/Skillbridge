@@ -6,6 +6,7 @@ const { verifyToken, isStudent } = require("../../middleware/auth/authMiddleware
 router.use(verifyToken, isStudent);
 
 router.get("/", controller.getMyPayments);
+router.post("/", controller.createPayment);
 router.post("/receipts", upload.single("receipt"), controller.uploadReceipt);
 router.post("/:id/confirm", controller.confirmPayment);
 
