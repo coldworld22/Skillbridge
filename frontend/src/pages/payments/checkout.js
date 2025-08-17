@@ -5,6 +5,7 @@ import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment } from '@/services/paymentService';
+import { createPayment as createStudentPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
@@ -212,8 +213,22 @@ export default function CheckoutPage() {
         }),
       onApprove: async (_, actions) => {
         setPaymentStatus('processing');
-        await actions.order.capture();
-        completePayment();
+        try {
+          const order = await actions.order.capture();
+          const method = methods.find((m) => m.type === 'paypal');
+          await createStudentPayment({
+            method_id: method?.id,
+            method_type: method?.type || 'paypal',
+            item_id: itemInfo.id,
+            item_type: itemType,
+            amount: parseFloat(amount),
+            reference_id: order?.id,
+          });
+          completePayment();
+        } catch (err) {
+          console.error('Failed to record payment', err);
+          setPaymentStatus('idle');
+        }
       },
       onError: (err) => {
         console.error('PayPal error', err);
