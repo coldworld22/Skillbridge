@@ -10,16 +10,32 @@ import {
   createTag,
   updateTag,
   deleteTag,
-} from "@/services/admin/communityService";
-import slugify from "@/utils/slugify";
+} from "@/services/admin/communityService
+import ConfirmModal from "@/components/common/ConfirmModal";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w ]+/g, "")
+    .replace(/ +/g, "-");
 
 export default function AdminTagsPage() {
-  const { t } = useTranslation('dashboard', { keyPrefix: 'tagsPage' });
+  const { t } = useTranslation("dashboard");
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [editing, setEditing] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    cancelText: "",
+    onConfirm: null,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -80,17 +96,30 @@ export default function AdminTagsPage() {
     setNewTag(tag.name);
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = confirm(t('delete_confirm'));
-    if (!confirmDelete) return;
-    try {
-      await deleteTag(id);
-      setTags((prev) => prev.filter((t) => t.id !== id));
-      toast.success(t('tag_deleted'));
-    } catch (err) {
-      const msg = err?.response?.data?.message || t('delete_failed');
-      toast.error(msg);
-    }
+  const openConfirmModal = ({ title, message, confirmText, cancelText, onConfirm }) => {
+    setConfirmModal({ isOpen: true, title, message, confirmText, cancelText, onConfirm });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleDelete = (tag) => {
+    openConfirmModal({
+      title: t("confirm_delete_title", { defaultValue: "Confirm Deletion" }),
+      message: t("Delete tag {{name}}?", { name: tag.name }),
+      confirmText: t("delete", { defaultValue: "Delete" }),
+      cancelText: t("cancel", { defaultValue: "Cancel" }),
+      onConfirm: async () => {
+        try {
+          await deleteTag(tag.id);
+          setTags((prev) => prev.filter((t) => t.id !== tag.id));
+        } catch (err) {
+          console.error("Failed to delete tag", err);
+        }
+      },
+    });
+
   };
 
   return (
@@ -121,9 +150,20 @@ export default function AdminTagsPage() {
           <div className="text-red-500 mb-4 text-sm">{error}</div>
         )}
         <div className="space-y-3">
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-500 border-t-transparent"></div>
+          {tags.map((tag) => (
+            <div
+              key={tag.id}
+              className="flex justify-between items-center bg-white px-4 py-2 rounded border border-gray-200 shadow-sm hover:shadow-md"
+            >
+              <span className="text-sm font-medium text-gray-700">#{tag.name}</span>
+              <div className="flex gap-3 text-gray-600">
+                <button onClick={() => handleEdit(tag)} title="Edit">
+                  <FaEdit />
+                </button>
+                <button onClick={() => handleDelete(tag)} title="Delete">
+                  <FaTrash />
+                </button>
+              </div>
             </div>
           ) : tags.length === 0 ? (
             <div className="text-gray-500 text-center">No tags found</div>
@@ -146,6 +186,15 @@ export default function AdminTagsPage() {
             ))
           )}
         </div>
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModal.onConfirm}
+        />
       </div>
     </AdminLayout>
   );
