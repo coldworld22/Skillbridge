@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Link from 'next/link';
 import {
@@ -12,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
 import toast from 'react-hot-toast';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 const imagePool = [
   'https://media.npr.org/assets/img/2012/01/25/newnewearth_wide-e15c88c202099fecf4a9d6f6f0e2a19826d9a26f.jpg?s=1400&c=100&f=jpeg',
@@ -23,10 +25,19 @@ const imagePool = [
 export default function AdminGroupsIndex() {
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedGroups, setSelectedGroups] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    cancelText: '',
+    onConfirm: () => {},
+  });
   const itemsPerPage = 6;
 
   const sortGroups = (list) => {
@@ -95,7 +106,7 @@ export default function AdminGroupsIndex() {
     }
   };
 
-  const handleBulkStatusChange = async (status) => {
+  const handleBulkDelete = () => {
     if (selectedGroups.length === 0) return;
     const confirmChange = confirm(`Change status of selected groups to ${status}?`);
     if (confirmChange) {
@@ -369,6 +380,15 @@ export default function AdminGroupsIndex() {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+      />
     </AdminLayout>
   );
 }
