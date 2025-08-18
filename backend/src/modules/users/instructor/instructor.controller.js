@@ -8,6 +8,7 @@ const path = require("path");
 const instructorService = require("./instructor.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const { availabilitySlotSchema } = require("./instructor.validator");
 
 
 /**
@@ -350,13 +351,49 @@ exports.updateAvailability = async (req, res) => {
     const userId = req.user.id;
     const { availability } = req.body;
 
-    if (!Array.isArray(availability)) {
-        return res.status(400).json({ message: 'Availability must be an array' });
+    const parsed = availabilitySlotSchema.array().safeParse(availability);
+    if (!parsed.success) {
+        return res.status(400).json({ message: 'Invalid availability slots', errors: parsed.error.errors });
+    }
+
+    const slots = parsed.data;
+
+    if (slots.length > 50) {
+        return res.status(400).json({ message: 'Too many availability slots' });
+    }
+
+    const toMinutes = (t) => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const seenIds = new Set();
+    const byDay = {};
+
+    for (const slot of slots) {
+        if (seenIds.has(slot.id)) {
+            return res.status(400).json({ message: 'Duplicate slot id detected' });
+        }
+        seenIds.add(slot.id);
+
+        for (const day of slot.daysOfWeek) {
+            if (!byDay[day]) byDay[day] = [];
+            byDay[day].push(slot);
+        }
+    }
+
+    for (const day in byDay) {
+        const daySlots = byDay[day].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
+        for (let i = 1; i < daySlots.length; i++) {
+            if (toMinutes(daySlots[i].startTime) < toMinutes(daySlots[i - 1].endTime)) {
+                return res.status(400).json({ message: 'Overlapping availability slots detected' });
+            }
+        }
     }
 
     await db('instructor_profiles')
         .where({ user_id: userId })
-        .update({ availability: JSON.stringify(availability) });
+        .update({ availability: JSON.stringify(slots) });
 
     res.json({ message: 'Availability updated successfully' });
 };
