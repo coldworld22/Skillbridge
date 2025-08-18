@@ -8,6 +8,7 @@ export default function AdvancedSEOSettings({ config, update }) {
   const defaultGlobal = {
     forceCanonical: true,
     noindexSitewide: false,
+    nofollowSitewide: false,
     autoPingSitemap: true,
   };
   const [globalSEO, setGlobalSEO] = useState(defaultGlobal);
@@ -66,7 +67,7 @@ export default function AdvancedSEOSettings({ config, update }) {
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-800">{t("heading")}</h2>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-4 gap-6">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -82,6 +83,14 @@ export default function AdvancedSEOSettings({ config, update }) {
             onChange={(e) => handleGlobalChange("noindexSitewide", e.target.checked)}
           />
           {t("noindexSitewide")}
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={globalSEO.nofollowSitewide}
+            onChange={(e) => handleGlobalChange("nofollowSitewide", e.target.checked)}
+          />
+          {t("nofollowSitewide")}
         </label>
         <label className="flex items-center gap-2">
           <input
