@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { toast } from "react-hot-toast";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
@@ -86,9 +87,11 @@ export default function BookDetails({ book }) {
   return (
     <div className="flex flex-col md:flex-row gap-8 bg-gray-800/60 p-6 rounded-xl shadow-lg">
       {book.cover_image_url && (
-        <img
+        <Image
           src={book.cover_image_url}
           alt={book.title}
+          width={400}
+          height={600}
           className="w-full md:w-1/3 rounded-lg object-cover"
         />
       )}
