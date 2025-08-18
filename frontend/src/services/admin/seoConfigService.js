@@ -24,3 +24,12 @@ export const fetchPageList = async () => {
   const { data } = await api.get("/seo-config/pages");
   return data?.data ?? [];
 };
+
+export const uploadImage = async (file) => {
+  const form = new FormData();
+  form.append("image", file);
+  const { data } = await api.post("/seo-config/upload-image", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data?.data?.url;
+};

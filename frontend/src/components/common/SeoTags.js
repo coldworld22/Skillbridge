@@ -22,21 +22,18 @@ export default function SeoTags() {
   const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
 
-  const robots =
-    settings.globalSEO?.noindexSitewide ||
-    settings.globalSEO?.nofollowSitewide ||
-    meta.noindex ||
-    meta.nofollow
-      ? `${
-          settings.globalSEO?.noindexSitewide || meta.noindex
-            ? 'noindex'
-            : 'index'
-        },${
-          settings.globalSEO?.nofollowSitewide || meta.nofollow
-            ? 'nofollow'
-            : 'follow'
-        }`
-      : null;
+  const absoluteUrl = (url) => {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${baseUrl.replace(/\/$/, '')}${url}`;
+  };
+
+  const ogMeta = { ...og, image: absoluteUrl(og.image) };
+  const twitterImage = absoluteUrl(twitter.image);
+
+  const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
+    ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
+    : null;
 
   return (
     <Head>
@@ -45,11 +42,13 @@ export default function SeoTags() {
       {meta.keywords && <meta name="keywords" content={meta.keywords} />}
       {canonical && <link rel="canonical" href={canonical} />}
       {robots && <meta name="robots" content={robots} />}
-      {Object.entries(og).map(([k, v]) => v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null)}
+      {Object.entries(ogMeta).map(([k, v]) =>
+        v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null
+      )}
       {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
       {twitter.title && <meta name="twitter:title" content={twitter.title} />}
       {twitter.description && <meta name="twitter:description" content={twitter.description} />}
-      {twitter.image && <meta name="twitter:image" content={twitter.image} />}
+      {twitterImage && <meta name="twitter:image" content={twitterImage} />}
       {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
       {settings.jsonSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: settings.jsonSchema }} />
