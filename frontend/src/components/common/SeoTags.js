@@ -21,6 +21,8 @@ export default function SeoTags() {
   const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
+  const ogUrl = og.url || `${baseUrl}${path}`;
+  const ogSiteName = og.site_name || settings.siteName;
 
   const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
     ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
@@ -33,12 +35,17 @@ export default function SeoTags() {
       {meta.keywords && <meta name="keywords" content={meta.keywords} />}
       {canonical && <link rel="canonical" href={canonical} />}
       {robots && <meta name="robots" content={robots} />}
-      {Object.entries(og).map(([k, v]) => v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null)}
+      {ogUrl && <meta property="og:url" content={ogUrl} />}
+      {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
+      {Object.entries(og)
+        .filter(([k]) => !["url", "site_name"].includes(k))
+        .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
       {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
       {twitter.title && <meta name="twitter:title" content={twitter.title} />}
       {twitter.description && <meta name="twitter:description" content={twitter.description} />}
       {twitter.image && <meta name="twitter:image" content={twitter.image} />}
       {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
+      {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
       {settings.jsonSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: settings.jsonSchema }} />
       )}
