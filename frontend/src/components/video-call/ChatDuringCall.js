@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaPaperPlane } from "react-icons/fa";
 import { fetchCallMessages, sendCallMessage } from "@/services/videoCallService";
+import socket from "@/services/socketService";
 
 const ChatDuringCall = ({ chatId }) => {
   const [messages, setMessages] = useState([]);
@@ -8,17 +9,29 @@ const ChatDuringCall = ({ chatId }) => {
 
   useEffect(() => {
     if (!chatId) return;
+
     fetchCallMessages(chatId)
       .then(setMessages)
       .catch(() => setMessages([]));
+
+    if (!socket.connected) socket.connect();
+
+    const handleMessage = (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    };
+
+    socket.on("call-message", handleMessage);
+
+    return () => {
+      socket.off("call-message", handleMessage);
+    };
   }, [chatId]);
 
   const sendMessage = async () => {
     const text = newMessage.trim();
     if (!text) return;
     try {
-      const saved = await sendCallMessage(chatId, { sender: "You", text });
-      setMessages((prev) => [...prev, saved]);
+      await sendCallMessage(chatId, { text });
     } catch {
       // fail silently for this demo
     }
