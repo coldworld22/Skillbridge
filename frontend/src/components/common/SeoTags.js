@@ -19,6 +19,7 @@ export default function SeoTags() {
   const meta = settings.metaTags?.[path] || {};
   const og = settings.openGraph?.[path] || {};
   const twitter = settings.twitter?.[path] || {};
+  const twitterImage = twitter.image || og.image;
 
   const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const baseUrl = settings.baseUrl || fallbackUrl;
