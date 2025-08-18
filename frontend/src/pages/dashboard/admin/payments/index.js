@@ -43,10 +43,9 @@ import useAdminNotice from '@/hooks/useAdminNotice';
 const defaultConfig = {
   currency: "USD",
   platformCut: {
-    subscriptions: 10,
-    classSales: 15,
-    adPayments: 20,
-    bookings: 5,
+    class: 15,
+    book: 10,
+    tutorial: 20,
   },
   invoice: {
     logoUrl: "",
@@ -533,7 +532,9 @@ export default function AdminPaymentsPage() {
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(form.platformCut).map(([key, val]) => (
                   <div key={key}>
-                    <label className="block text-sm capitalize mb-1">{key}</label>
+                    <label className="block text-sm capitalize mb-1">
+                      {t(`paymentsPage.item_types.${key}`, key)}
+                    </label>
                     <input
                       type="number"
                       name={`platformCut.${key}`}
