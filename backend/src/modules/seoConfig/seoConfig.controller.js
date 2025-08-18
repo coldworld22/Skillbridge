@@ -4,6 +4,7 @@ const service = require("./seoConfig.service");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const AppError = require("../../utils/AppError");
 
 exports.getSettings = catchAsync(async (_req, res) => {
   const settings = await service.getSettings();
@@ -47,4 +48,10 @@ exports.scanMetaIssues = catchAsync(async (_req, res) => {
 exports.listPages = catchAsync(async (_req, res) => {
   const pages = await service.listPages();
   sendSuccess(res, pages);
+});
+
+exports.uploadImage = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError("No file uploaded", 400);
+  const url = `/uploads/seo/${req.file.filename}`;
+  sendSuccess(res, { url }, "Image uploaded");
 });
