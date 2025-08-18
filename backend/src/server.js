@@ -295,6 +295,10 @@ io.on("connection", (socket) => {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
       participants[roomId] = participants[roomId].filter((p) => p.id !== socket.id);
       socket.to(roomId).emit("user-disconnected", socket.id);
+      if (!rooms[roomId].length) {
+        delete rooms[roomId];
+        delete participants[roomId];
+      }
       if (socket.participantDbId) {
         db("video_call_participants")
           .where({ id: socket.participantDbId })
@@ -444,4 +448,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== "test") {
+  startServer();
+}
+
+module.exports = { app, server, io, rooms, participants, startServer };
