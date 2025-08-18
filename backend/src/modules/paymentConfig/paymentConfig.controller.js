@@ -11,6 +11,17 @@ exports.getSettings = catchAsync(async (_req, res) => {
 });
 
 exports.updateSettings = catchAsync(async (req, res) => {
+  const { platformCut } = req.body;
+  if (platformCut) {
+    for (const val of Object.values(platformCut)) {
+      if (typeof val !== "number" || isNaN(val) || val < 0 || val > 100) {
+        return res
+          .status(400)
+          .json({ error: "Platform cut values must be numbers between 0 and 100" });
+      }
+    }
+  }
+
   const settings = await service.updateSettings(req.body);
   sendSuccess(res, settings, "Settings updated");
 
