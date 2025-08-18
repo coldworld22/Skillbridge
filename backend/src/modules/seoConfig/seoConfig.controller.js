@@ -12,7 +12,11 @@ exports.getSettings = catchAsync(async (_req, res) => {
 });
 
 exports.updateSettings = catchAsync(async (req, res) => {
-  const settings = await service.updateSettings(req.body);
+  const payload = { ...req.body };
+  if (payload.globalSEO) {
+    payload.globalSEO.nofollowSitewide = !!payload.globalSEO.nofollowSitewide;
+  }
+  const settings = await service.updateSettings(payload);
   sendSuccess(res, settings, "Settings updated");
 
   const admins = await userModel.findAdmins();
