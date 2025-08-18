@@ -42,14 +42,23 @@ function saveToEnv(settings) {
     env = '';
   }
 
+  const remove = (key) => {
+    const regex = new RegExp(`^${key}=.*\n?`, 'gm');
+    env = env.replace(regex, '');
+    env = env.replace(/\n{2,}/g, '\n').replace(/^\n|\n$/g, '');
+  };
+
   const upsert = (key, val) => {
-    if (!val) return;
-    const line = `${key}=${val.toString().replace(/\n/g, '\\n')}`;
     const regex = new RegExp(`^${key}=.*$`, 'm');
-    if (regex.test(env)) {
-      env = env.replace(regex, line);
+    if (val) {
+      const line = `${key}=${val.toString().replace(/\n/g, '\\n')}`;
+      if (regex.test(env)) {
+        env = env.replace(regex, line);
+      } else {
+        env = env ? `${env}\n${line}` : line;
+      }
     } else {
-      env = env ? `${env}\n${line}` : line;
+      remove(key);
     }
   };
 
@@ -61,10 +70,18 @@ function saveToEnv(settings) {
   upsert('FACEBOOK_CLIENT_SECRET', p.facebook?.clientSecret);
   upsert('GITHUB_CLIENT_ID', p.github?.clientId);
   upsert('GITHUB_CLIENT_SECRET', p.github?.clientSecret);
-  upsert('APPLE_CLIENT_ID', p.apple?.clientId);
-  upsert('APPLE_TEAM_ID', p.apple?.teamId);
-  upsert('APPLE_KEY_ID', p.apple?.keyId);
-  upsert('APPLE_PRIVATE_KEY', p.apple?.privateKey);
+
+  if (p.apple?.active) {
+    upsert('APPLE_CLIENT_ID', p.apple?.clientId);
+    upsert('APPLE_TEAM_ID', p.apple?.teamId);
+    upsert('APPLE_KEY_ID', p.apple?.keyId);
+    upsert('APPLE_PRIVATE_KEY', p.apple?.privateKey);
+  } else {
+    remove('APPLE_CLIENT_ID');
+    remove('APPLE_TEAM_ID');
+    remove('APPLE_KEY_ID');
+    remove('APPLE_PRIVATE_KEY');
+  }
 
   fs.writeFileSync(envPath, env);
 }
