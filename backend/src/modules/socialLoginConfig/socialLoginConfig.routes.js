@@ -8,7 +8,9 @@ const logger = require("../../utils/logger");
 const maybeAuth = (req, res, next) => {
   if (req.query.includeSecrets) {
     return verifyToken(req, res, (err) => {
-      if (err) return;
+      if (err) {
+        return next(err);
+      }
       return isAdmin(req, res, next);
     });
   }
