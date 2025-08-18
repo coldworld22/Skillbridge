@@ -23,10 +23,15 @@ const verifyEnrollment = require('../../src/middleware/auth/verifyEnrollment');
 
 const app = express();
 app.use(express.json());
-const attachUser = (req, _res, next) => { req.user = { id: 'user1' }; next(); };
-app.get('/api/video-calls/:roomId/participants', attachUser, verifyEnrollment, (_req, res) => res.json([]));
-app.get('/api/video-calls/:roomId/messages', attachUser, verifyEnrollment, (_req, res) => res.json([]));
-app.post('/api/video-calls/:roomId/messages', attachUser, verifyEnrollment, (_req, res) => res.status(201).json({}));
+// Mock verifyToken to attach a user to the request
+const verifyToken = (req, _res, next) => {
+  req.user = { id: 'user1' };
+  next();
+};
+
+app.get('/api/video-calls/:roomId/participants', verifyToken, verifyEnrollment, (_req, res) => res.json([]));
+app.get('/api/video-calls/:roomId/messages', verifyToken, verifyEnrollment, (_req, res) => res.json([]));
+app.post('/api/video-calls/:roomId/messages', verifyToken, verifyEnrollment, (_req, res) => res.status(201).json({}));
 
 describe('video call authorization', () => {
   it('rejects unauthorized participants fetch', async () => {
