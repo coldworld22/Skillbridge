@@ -6,6 +6,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { Dialog } from '@headlessui/react';
+import ConfirmModal from '@/components/common/ConfirmModal';
+import WarningModal from '@/components/common/WarningModal';
 import useAuthStore from '@/store/auth/authStore';
 import {
   toggleInstructorStatus,
@@ -23,6 +25,8 @@ export default function InstructorAvailabilityPage() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [warningModal, setWarningModal] = useState({ open: false, message: '' });
+  const [confirmModal, setConfirmModal] = useState({ open: false, message: '', onConfirm: null });
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -86,7 +90,7 @@ export default function InstructorAvailabilityPage() {
     };
 
     if (isOverlapping(newSlot)) {
-      alert('This time slot overlaps with an existing one.');
+      setWarningModal({ open: true, message: 'This time slot overlaps with an existing one.' });
       return;
     }
 
@@ -96,11 +100,14 @@ export default function InstructorAvailabilityPage() {
   };
 
   const handleSlotRemove = (clickInfo) => {
-    if (confirm('Remove this availability slot?')) {
-      setAvailability((prev) =>
-        prev.filter((slot) => String(slot.id) !== String(clickInfo.event.id))
-      );
-    }
+    setConfirmModal({
+      open: true,
+      message: 'Remove this availability slot?',
+      onConfirm: () =>
+        setAvailability((prev) =>
+          prev.filter((slot) => String(slot.id) !== String(clickInfo.event.id))
+        ),
+    });
   };
 
   return (
@@ -204,6 +211,18 @@ export default function InstructorAvailabilityPage() {
             </Dialog.Panel>
           </div>
         </Dialog>
+
+        <ConfirmModal
+          isOpen={confirmModal.open}
+          message={confirmModal.message}
+          onClose={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+          onConfirm={confirmModal.onConfirm}
+        />
+        <WarningModal
+          isOpen={warningModal.open}
+          message={warningModal.message}
+          onClose={() => setWarningModal({ open: false, message: '' })}
+        />
       </section>
     </InstructorLayout>
   );
