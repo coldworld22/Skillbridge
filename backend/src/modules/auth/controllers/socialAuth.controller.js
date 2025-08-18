@@ -26,25 +26,25 @@ exports.googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-// Facebook OAuth is disabled until the project is hosted
-// exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] });
+// Facebook OAuth
+exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] });
 
-// exports.facebookCallback = (req, res, next) => {
-//   passport.authenticate('facebook', { session: false }, (err, result) => {
-//     if (err || !result) {
-//       return res.redirect(`${process.env.FRONTEND_URL || ''}/auth/login?error=social`);
-//     }
-//     const { accessToken, refreshToken } = result;
-//     res.cookie('refreshToken', refreshToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       sameSite: 'strict',
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
-//     });
-//     const redirectUrl = `${process.env.FRONTEND_URL || ''}/auth/social-success?token=${accessToken}`;
-//     res.redirect(redirectUrl);
-//   })(req, res, next);
-// };
+exports.facebookCallback = (req, res, next) => {
+  passport.authenticate('facebook', { session: false }, (err, result) => {
+    if (err || !result) {
+      return res.redirect(`${frontendBase}/auth/login?error=social`);
+    }
+    const { refreshToken } = result;
+    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
+    let origin = req.query.origin;
+    if (!allowedOrigins.includes(origin)) {
+      const headerOrigin = req.get('origin');
+      origin = allowedOrigins.includes(headerOrigin) ? headerOrigin : frontendBase;
+    }
+    const redirectUrl = `${origin}/auth/social-success`;
+    res.redirect(redirectUrl);
+  })(req, res, next);
+};
 
 // Apple OAuth is disabled until the project is hosted
 // exports.appleAuth = passport.authenticate('apple');
