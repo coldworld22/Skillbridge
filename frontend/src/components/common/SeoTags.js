@@ -23,6 +23,8 @@ export default function SeoTags() {
   const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
+  const ogUrl = og.url || `${baseUrl}${path}`;
+  const ogSiteName = og.site_name || settings.siteName;
 
   // Compute alternate language URLs using next-i18next and current path
   const pathWithoutLocale = path.replace(new RegExp(`^/${router.locale}`), '') || '/';
@@ -50,14 +52,17 @@ export default function SeoTags() {
         <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
       )}
       {robots && <meta name="robots" content={robots} />}
-      {Object.entries(ogMeta).map(([k, v]) =>
-        v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null
-      )}
+      {ogUrl && <meta property="og:url" content={ogUrl} />}
+      {ogSiteName && <meta property="og:site_name" content={ogSiteName} />}
+      {Object.entries(og)
+        .filter(([k]) => !["url", "site_name"].includes(k))
+        .map(([k, v]) => (v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null))}
       {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
       {twitter.title && <meta name="twitter:title" content={twitter.title} />}
       {twitter.description && <meta name="twitter:description" content={twitter.description} />}
       {twitterImage && <meta name="twitter:image" content={twitterImage} />}
       {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
+      {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
       {settings.jsonSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: settings.jsonSchema }} />
       )}

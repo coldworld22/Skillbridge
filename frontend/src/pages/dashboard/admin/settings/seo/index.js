@@ -27,6 +27,7 @@ const defaultConfig = {
   robots: "",
   openGraph: {},
   twitter: {},
+  siteName: "",
   globalSEO: {
     forceCanonical: true,
     noindexSitewide: false,

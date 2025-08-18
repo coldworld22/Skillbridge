@@ -9,6 +9,7 @@ exports.seed = async function (knex) {
     robots: '',
     openGraph: {},
     twitter: {},
+    siteName: '',
     globalSEO: {
       forceCanonical: true,
       noindexSitewide: false,
