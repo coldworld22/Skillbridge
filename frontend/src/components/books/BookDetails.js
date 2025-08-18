@@ -27,7 +27,7 @@ export default function BookDetails({ book }) {
     try {
       setIsAdding(true);
       await addItem(mapBookForCart(book));
-      toast.success("Added to cart");
+      toast.success(t("added_to_cart"));
       router.push("/cart");
     } finally {
       setIsAdding(false);
