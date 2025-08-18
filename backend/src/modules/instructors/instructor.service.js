@@ -110,12 +110,12 @@ exports.getPublicInstructor = async (id) => {
 exports.getInstructorAvailability = async (id) => {
   const [profile] = await db("instructor_profiles")
     .where({ user_id: id })
-    .select("availability");
+    .select("availability_slots");
 
   let availability = [];
-  if (profile && profile.availability) {
+  if (profile && profile.availability_slots) {
     try {
-      availability = JSON.parse(profile.availability);
+      availability = JSON.parse(profile.availability_slots);
     } catch (_) {
       availability = [];
     }

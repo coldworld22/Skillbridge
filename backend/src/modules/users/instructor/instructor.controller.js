@@ -31,7 +31,7 @@ exports.getProfile = async (req, res) => {
     .where({ user_id: userId })
     .select(
       "expertise", "experience", "certifications",
-      "availability", "pricing", "demo_video_url", "bio"
+      "pricing", "demo_video_url", "bio"
     );
 
   const socialLinks = await db("user_social_links")
@@ -136,7 +136,6 @@ exports.updateProfile = async (req, res) => {
     experience,
     bio,
     certifications,
-    availability,
     pricing,
     demo_video_url,
     social_links,
@@ -151,7 +150,6 @@ exports.updateProfile = async (req, res) => {
         experience,
         bio,
         certifications,
-        availability,
         pricing,
         demo_video_url,
       },
@@ -327,18 +325,18 @@ exports.getAvailability = async (req, res) => {
     const userId = req.user.id;
     const [profile] = await db('instructor_profiles')
         .where({ user_id: userId })
-        .select('availability');
+        .select('availability_slots');
 
     let availability = [];
-    if (profile && profile.availability) {
+    if (profile && profile.availability_slots) {
         try {
-            availability = JSON.parse(profile.availability);
+            availability = JSON.parse(profile.availability_slots);
         } catch (_) {
             availability = [];
         }
     }
 
-    res.json({ availability });
+    res.json({ availability_slots: availability });
 };
 
 /**
@@ -348,15 +346,15 @@ exports.getAvailability = async (req, res) => {
  */
 exports.updateAvailability = async (req, res) => {
     const userId = req.user.id;
-    const { availability } = req.body;
+    const { availability_slots } = req.body;
 
-    if (!Array.isArray(availability)) {
+    if (!Array.isArray(availability_slots)) {
         return res.status(400).json({ message: 'Availability must be an array' });
     }
 
     await db('instructor_profiles')
         .where({ user_id: userId })
-        .update({ availability: JSON.stringify(availability) });
+        .update({ availability_slots: JSON.stringify(availability_slots) });
 
     res.json({ message: 'Availability updated successfully' });
 };

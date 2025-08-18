@@ -84,7 +84,7 @@ export const getInstructorAvailability = async () => {
 };
 
 export const updateInstructorAvailability = async (availability) => {
-  const res = await api.patch("/users/instructor/availability", { availability });
+  const res = await api.patch("/users/instructor/availability", { availability_slots: availability });
   return res.data;
 };
 

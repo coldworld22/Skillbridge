@@ -44,7 +44,6 @@ const getInstructorProfile = async (userId) => {
       "experience",
       "bio",
       "certifications",
-      "availability",
       "pricing",
       "demo_video_url"
     );
@@ -59,7 +58,6 @@ const getInstructorProfile = async (userId) => {
 
   if (instructor) {
     instructor.expertise = parseArrayField(instructor.expertise);
-    instructor.availability = parseArrayField(instructor.availability);
   }
 
   return {

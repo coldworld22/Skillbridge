@@ -20,6 +20,7 @@ import {
   uploadInstructorDemo,
   uploadCertificateFile,
   deleteCertificateFile,
+  toggleInstructorStatus,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -60,7 +61,6 @@ const instructorProfileSchema = z.object({
     message: "invalid_date",
   }),
   experience: z.number().min(0, "experience_positive"),
-  availability: z.boolean().optional(),
   pricing_amount: z.number().min(0, "amount_positive").optional(),
   pricing_currency: z.string().optional(),
   expertise: z.array(z.string()).optional(),
@@ -99,7 +99,6 @@ export default function InstructorProfileEdit() {
     gender: "male",
     date_of_birth: "",
     experience: 0,
-    availability: false,
     pricing_amount: undefined,
     pricing_currency: "",
     expertise: [],
@@ -127,6 +126,11 @@ export default function InstructorProfileEdit() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
   const [currencyOptions, setCurrencyOptions] = useState([]);
+  const [available, setAvailable] = useState(user?.is_online ?? false);
+
+  useEffect(() => {
+    setAvailable(user?.is_online ?? false);
+  }, [user]);
 
   useEffect(() => {
     const loadCurrencies = async () => {
@@ -172,8 +176,6 @@ export default function InstructorProfileEdit() {
           }
         }
 
-        const availability = instructor?.availability === "available";
-
         let expertiseList = [];
         if (Array.isArray(instructor?.expertise)) {
           expertiseList = instructor.expertise;
@@ -195,7 +197,6 @@ export default function InstructorProfileEdit() {
           gender: gender || "male",
           date_of_birth: date_of_birth?.split("T")[0] || "",
           experience: instructor?.experience ? parseInt(instructor.experience) : 0,
-          availability,
           pricing_amount,
           pricing_currency,
           expertise: expertiseList,
@@ -348,7 +349,6 @@ export default function InstructorProfileEdit() {
         date_of_birth: formData.date_of_birth,
         experience: formData.experience,
         bio: formData.bio,
-        availability: formData.availability ? "available" : "unavailable",
         pricing,
         expertise: formData.expertise,
         social_links,
@@ -390,7 +390,6 @@ export default function InstructorProfileEdit() {
         expertise: freshExpertise,
         experience: fresh.instructor?.experience || 0,
         bio: fresh.instructor?.bio || "",
-        availability: fresh.instructor?.availability === "available",
         pricing_amount: fresh.instructor?.pricing
           ? (() => {
               const amt = parseFloat(fresh.instructor.pricing.split(" ")[0]);
@@ -643,10 +642,21 @@ export default function InstructorProfileEdit() {
               </label>
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, availability: !prev.availability }))}
-                className={`px-4 py-2 rounded-md ${formData.availability ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                onClick={async () => {
+                  const newStatus = !available;
+                  try {
+                    const res = await toggleInstructorStatus(newStatus);
+                    const updated = res?.is_online ?? newStatus;
+                    setAvailable(updated);
+                    const setUser = useAuthStore.getState().setUser;
+                    setUser({ ...user, is_online: updated });
+                  } catch (err) {
+                    toast.error(t('availability_update_failed'));
+                  }
+                }}
+                className={`px-4 py-2 rounded-md ${available ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                {formData.availability ? t('available') : t('unavailable')}
+                {available ? t('available') : t('unavailable')}
               </button>
             </div>
           </div>

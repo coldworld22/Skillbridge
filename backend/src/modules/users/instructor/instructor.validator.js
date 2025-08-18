@@ -26,7 +26,6 @@ const updateInstructorProfileSchema = z.object({
     }),
 
   certifications: z.string().trim().optional().nullable(),
-  availability: z.string().trim().optional().nullable(),
   pricing: z.string().trim().optional().nullable(),
 
   demo_video_url: z
