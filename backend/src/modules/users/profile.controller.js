@@ -165,7 +165,7 @@ exports.getFullProfile = async (req, res) => {
           'expertise',
           'experience',
           'certifications',
-          'availability',
+          'availability_slots',
           'pricing',
           'demo_video_url',
           'bio'

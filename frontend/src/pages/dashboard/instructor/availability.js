@@ -36,8 +36,8 @@ export default function InstructorAvailabilityPage() {
     async function fetchAvailability() {
       try {
         const res = await getInstructorAvailability();
-        if (Array.isArray(res.availability)) {
-          setAvailability(res.availability);
+        if (Array.isArray(res.availability_slots)) {
+          setAvailability(res.availability_slots);
         }
       } catch (err) {
         console.error('Failed to load availability', err);

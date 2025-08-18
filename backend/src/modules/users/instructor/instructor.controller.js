@@ -32,7 +32,7 @@ exports.getProfile = async (req, res) => {
     .where({ user_id: userId })
     .select(
       "expertise", "experience", "certifications",
-      "availability", "pricing", "demo_video_url", "bio"
+      "pricing", "demo_video_url", "bio"
     );
 
   const socialLinks = await db("user_social_links")
@@ -137,7 +137,6 @@ exports.updateProfile = async (req, res) => {
     experience,
     bio,
     certifications,
-    availability,
     pricing,
     demo_video_url,
     social_links,
@@ -152,7 +151,6 @@ exports.updateProfile = async (req, res) => {
         experience,
         bio,
         certifications,
-        availability,
         pricing,
         demo_video_url,
       },
@@ -328,18 +326,18 @@ exports.getAvailability = async (req, res) => {
     const userId = req.user.id;
     const [profile] = await db('instructor_profiles')
         .where({ user_id: userId })
-        .select('availability');
+        .select('availability_slots');
 
     let availability = [];
-    if (profile && profile.availability) {
+    if (profile && profile.availability_slots) {
         try {
-            availability = JSON.parse(profile.availability);
+            availability = JSON.parse(profile.availability_slots);
         } catch (_) {
             availability = [];
         }
     }
 
-    res.json({ availability });
+    res.json({ availability_slots: availability });
 };
 
 /**
@@ -349,51 +347,15 @@ exports.getAvailability = async (req, res) => {
  */
 exports.updateAvailability = async (req, res) => {
     const userId = req.user.id;
-    const { availability } = req.body;
+    const { availability_slots } = req.body;
 
-    const parsed = availabilitySlotSchema.array().safeParse(availability);
-    if (!parsed.success) {
-        return res.status(400).json({ message: 'Invalid availability slots', errors: parsed.error.errors });
-    }
-
-    const slots = parsed.data;
-
-    if (slots.length > 50) {
-        return res.status(400).json({ message: 'Too many availability slots' });
-    }
-
-    const toMinutes = (t) => {
-        const [h, m] = t.split(':').map(Number);
-        return h * 60 + m;
-    };
-
-    const seenIds = new Set();
-    const byDay = {};
-
-    for (const slot of slots) {
-        if (seenIds.has(slot.id)) {
-            return res.status(400).json({ message: 'Duplicate slot id detected' });
-        }
-        seenIds.add(slot.id);
-
-        for (const day of slot.daysOfWeek) {
-            if (!byDay[day]) byDay[day] = [];
-            byDay[day].push(slot);
-        }
-    }
-
-    for (const day in byDay) {
-        const daySlots = byDay[day].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
-        for (let i = 1; i < daySlots.length; i++) {
-            if (toMinutes(daySlots[i].startTime) < toMinutes(daySlots[i - 1].endTime)) {
-                return res.status(400).json({ message: 'Overlapping availability slots detected' });
-            }
-        }
+    if (!Array.isArray(availability_slots)) {
+        return res.status(400).json({ message: 'Availability must be an array' });
     }
 
     await db('instructor_profiles')
         .where({ user_id: userId })
-        .update({ availability: JSON.stringify(slots) });
+        .update({ availability_slots: JSON.stringify(availability_slots) });
 
     res.json({ message: 'Availability updated successfully' });
 };
