@@ -2,6 +2,14 @@
 
 This guide explains how to configure OAuth providers like Google so users can sign in to SkillBridge using their existing accounts.
 
+## Seed default settings
+
+Run this seed from the `backend` directory to create a default `social_login_settings` row with all providers disabled:
+
+```bash
+knex seed:run --specific=08_social_login_settings_seed.js
+```
+
 ## Google
 
 1. Open the **Google Cloud Console** and create OAuth 2.0 credentials.
