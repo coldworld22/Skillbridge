@@ -12,6 +12,7 @@ exports.seed = async function (knex) {
     globalSEO: {
       forceCanonical: true,
       noindexSitewide: false,
+      nofollowSitewide: false,
       autoPingSitemap: true,
     },
     redirects: [],

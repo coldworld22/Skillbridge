@@ -50,11 +50,13 @@ export default function SeoTags() {
         <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
       )}
       {robots && <meta name="robots" content={robots} />}
-      {Object.entries(og).map(([k, v]) => v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null)}
+      {Object.entries(ogMeta).map(([k, v]) =>
+        v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null
+      )}
       {twitter.cardType && <meta name="twitter:card" content={twitter.cardType} />}
       {twitter.title && <meta name="twitter:title" content={twitter.title} />}
       {twitter.description && <meta name="twitter:description" content={twitter.description} />}
-      {twitter.image && <meta name="twitter:image" content={twitter.image} />}
+      {twitterImage && <meta name="twitter:image" content={twitterImage} />}
       {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
       {settings.jsonSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: settings.jsonSchema }} />

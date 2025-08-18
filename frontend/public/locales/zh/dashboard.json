@@ -1362,6 +1362,8 @@
     },
     "sitemap": {
       "invalidPriority": "Priority must be between 0 and 1",
+      "invalidPath": "Paths must start with / and contain no spaces",
+      "duplicatePath": "Duplicate paths detected",
       "saved": "Sitemap saved",
       "saveFailed": "Failed to save",
       "heading": "Sitemap Manager",
@@ -1413,11 +1415,13 @@
     },
     "advanced": {
       "invalidRedirect": "Redirect paths must start with /",
+      "invalidJson": "Invalid JSON format",
       "saved": "SEO settings saved!",
       "saveFailed": "Failed to save settings",
       "heading": "Advanced SEO Settings",
       "forceCanonical": "Force canonical URLs",
       "noindexSitewide": "Noindex sitewide",
+      "nofollowSitewide": "Nofollow sitewide",
       "autoPingSitemap": "Auto ping sitemap",
       "redirects": "Redirect Rules",
       "from": "From",
