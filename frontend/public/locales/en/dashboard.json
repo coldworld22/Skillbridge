@@ -1419,6 +1419,7 @@
       "heading": "Advanced SEO Settings",
       "forceCanonical": "Force canonical URLs",
       "noindexSitewide": "Noindex sitewide",
+      "nofollowSitewide": "Nofollow sitewide",
       "autoPingSitemap": "Auto ping sitemap",
       "redirects": "Redirect Rules",
       "from": "From",

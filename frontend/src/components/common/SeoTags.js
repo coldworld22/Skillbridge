@@ -22,9 +22,21 @@ export default function SeoTags() {
   const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
 
-  const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
-    ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
-    : null;
+  const robots =
+    settings.globalSEO?.noindexSitewide ||
+    settings.globalSEO?.nofollowSitewide ||
+    meta.noindex ||
+    meta.nofollow
+      ? `${
+          settings.globalSEO?.noindexSitewide || meta.noindex
+            ? 'noindex'
+            : 'index'
+        },${
+          settings.globalSEO?.nofollowSitewide || meta.nofollow
+            ? 'nofollow'
+            : 'follow'
+        }`
+      : null;
 
   return (
     <Head>
