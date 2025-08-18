@@ -1414,6 +1414,7 @@
     },
     "advanced": {
       "invalidRedirect": "Redirect paths must start with /",
+      "invalidJson": "Invalid JSON format",
       "saved": "SEO settings saved!",
       "saveFailed": "Failed to save settings",
       "heading": "Advanced SEO Settings",

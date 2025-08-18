@@ -52,6 +52,13 @@ export default function AdvancedSEOSettings({ config, update }) {
       toast.error(t("invalidRedirect"));
       return;
     }
+    try {
+      JSON.parse(jsonSchema);
+    } catch {
+      toast.error(t("invalidJson"));
+      return;
+    }
+
     const updated = { ...config, globalSEO, redirects, jsonSchema };
     update(updated);
     try {
