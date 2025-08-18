@@ -7,13 +7,41 @@ import {
   removeParticipant,
   makeCoHost,
 } from "@/services/videoCallService";
+import socket from "@/services/socketService";
 
 export default function ParticipantList({ chatId, userRole = "participant" }) {
   const [participants, setParticipants] = useState([]);
 
   useEffect(() => {
     if (!chatId) return;
+
     fetchParticipants(chatId).then((data) => setParticipants(data));
+
+    const handleParticipantUpdated = (participant) => {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === participant.id ? { ...p, ...participant } : p
+        )
+      );
+    };
+
+    const handleParticipantRemoved = ({ id }) => {
+      setParticipants((prev) => prev.filter((p) => p.id !== id));
+    };
+
+    const handleUserJoined = (participant) => {
+      setParticipants((prev) => [...prev, participant]);
+    };
+
+    socket.on("participant-updated", handleParticipantUpdated);
+    socket.on("participant-removed", handleParticipantRemoved);
+    socket.on("user-joined", handleUserJoined);
+
+    return () => {
+      socket.off("participant-updated", handleParticipantUpdated);
+      socket.off("participant-removed", handleParticipantRemoved);
+      socket.off("user-joined", handleUserJoined);
+    };
   }, [chatId]);
 
   const handleMute = async (id, isMuted) => {
