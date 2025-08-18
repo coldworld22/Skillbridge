@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
-import { updateSEOConfig } from "@/services/admin/seoConfigService";
+import { updateSEOConfig, uploadImage } from "@/services/admin/seoConfigService";
 
 export default function OpenGraphSettings({ config, update, availablePages }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "seoPage.og" });
@@ -17,14 +17,15 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (form.image && form.image.startsWith('blob:')) {
-      URL.revokeObjectURL(form.image);
+    try {
+      const url = await uploadImage(file);
+      handleChange("image", url);
+    } catch {
+      toast.error("Upload failed");
     }
-    const url = URL.createObjectURL(file);
-    handleChange("image", url);
   };
 
   useEffect(() => {
@@ -37,13 +38,6 @@ export default function OpenGraphSettings({ config, update, availablePages }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPage, config.openGraph]);
 
-  useEffect(() => {
-    return () => {
-      if (form.image && form.image.startsWith('blob:')) {
-        URL.revokeObjectURL(form.image);
-      }
-    };
-  }, [form.image]);
 
   const handleSave = async () => {
     const updated = {

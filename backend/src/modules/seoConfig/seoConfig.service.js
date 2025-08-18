@@ -2,22 +2,33 @@ const db = require("../../config/database");
 
 const SETTINGS_KEY = "seo_settings";
 
+const DEFAULT_GLOBAL_SEO = {
+  forceCanonical: true,
+  noindexSitewide: false,
+  nofollowSitewide: false,
+  autoPingSitemap: true,
+};
+
 exports.getSettings = async () => {
   const row = await db("settings").where({ key: SETTINGS_KEY }).first();
   const base = process.env.FRONTEND_URL || "http://localhost:3000";
-  if (!row) return { baseUrl: base };
+  if (!row) return { baseUrl: base, siteName: "" };
   try {
     const data = JSON.parse(row.value);
     if (!data.baseUrl) data.baseUrl = base;
+    if (!data.siteName) data.siteName = "";
     return data;
   } catch (_err) {
-    return { baseUrl: base };
+    return { baseUrl: base, siteName: "" };
   }
 };
 
 exports.updateSettings = async (settings) => {
   if (!settings.baseUrl) {
     settings.baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  }
+  if (settings.siteName === undefined) {
+    settings.siteName = "";
   }
   const value = JSON.stringify(settings);
   const existing = await db("settings").where({ key: SETTINGS_KEY }).first();
