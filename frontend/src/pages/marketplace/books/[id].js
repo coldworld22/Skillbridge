@@ -4,6 +4,8 @@ import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
 import { fetchBook } from "@/services/bookService";
 import BookDetails from "@/components/books/BookDetails";
+import BookReviewList from "@/components/books/BookReviewList";
+import BookReviewForm from "@/components/books/BookReviewForm";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
@@ -15,6 +17,7 @@ export default function BookDetailPage() {
   const [book, setBook] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviewVersion, setReviewVersion] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -74,7 +77,16 @@ export default function BookDetailPage() {
           </div>
         )}
 
-        {!loading && !error && book && <BookDetails book={book} />}
+        {!loading && !error && book && (
+          <>
+            <BookDetails book={book} />
+            <BookReviewList bookId={id} version={reviewVersion} />
+            <BookReviewForm
+              bookId={id}
+              onSubmitted={() => setReviewVersion((v) => v + 1)}
+            />
+          </>
+        )}
       </div>
       <Footer />
     </section>

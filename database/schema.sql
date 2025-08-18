@@ -18,3 +18,14 @@ CREATE TABLE IF NOT EXISTS cart_items (
   UNIQUE (user_id, item_id)
 );
 
+-- book_reviews table
+CREATE TABLE IF NOT EXISTS book_reviews (
+  id SERIAL PRIMARY KEY,
+  book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
