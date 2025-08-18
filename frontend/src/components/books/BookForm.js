@@ -5,6 +5,7 @@ import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
+import { toast } from "react-hot-toast";
 
 export default function BookForm({
   onSubmit,
@@ -63,7 +64,7 @@ export default function BookForm({
         const langs = await getLanguages();
         setLanguages(langs);
       } catch (e) {
-        console.error("Failed to load languages", e);
+        toast.error("Failed to load languages");
       }
     };
     load();
@@ -90,7 +91,7 @@ export default function BookForm({
           setTagSuggestions(data);
         } catch (err) {
           if (err.name !== "CanceledError" && err.name !== "AbortError") {
-            console.error("Failed to fetch tags", err);
+            toast.error("Failed to fetch tags");
           }
         }
       }, 300),
@@ -127,9 +128,7 @@ export default function BookForm({
           .then((newTag) =>
             setTagSuggestions((prev) => [...prev, newTag])
           )
-          .catch((err) =>
-            console.error("Failed to create tag", err)
-          );
+          .catch(() => toast.error("Failed to create tag"));
       }
     }
     setTagInput("");
