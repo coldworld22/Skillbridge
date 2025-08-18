@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 import useSEOConfigStore from '@/store/seoConfigStore';
 
 export default function SeoTags() {
   const router = useRouter();
+  const { i18n } = useTranslation();
   const path = router.asPath.split('?')[0] || '/';
   const fetchConfig = useSEOConfigStore((s) => s.fetch);
   const loaded = useSEOConfigStore((s) => s.loaded);
@@ -22,14 +24,14 @@ export default function SeoTags() {
   const baseUrl = settings.baseUrl || fallbackUrl;
   const canonical = meta.canonical || (settings.globalSEO?.forceCanonical ? `${baseUrl}${path}` : '');
 
-  const absoluteUrl = (url) => {
-    if (!url) return url;
-    if (/^https?:\/\//i.test(url)) return url;
-    return `${baseUrl.replace(/\/$/, '')}${url}`;
-  };
-
-  const ogMeta = { ...og, image: absoluteUrl(og.image) };
-  const twitterImage = absoluteUrl(twitter.image);
+  // Compute alternate language URLs using next-i18next and current path
+  const pathWithoutLocale = path.replace(new RegExp(`^/${router.locale}`), '') || '/';
+  const stripPath = pathWithoutLocale === '/' ? '' : pathWithoutLocale;
+  const alternates = (router.locales || i18n?.options?.locales || []).map((lng) => {
+    const localePath = lng === router.defaultLocale ? stripPath : `/${lng}${stripPath}`;
+    return { hrefLang: lng, href: `${baseUrl}${localePath || '/'}` };
+  });
+  const defaultAlternate = alternates.find((a) => a.hrefLang === router.defaultLocale);
 
   const robots = settings.globalSEO?.noindexSitewide || meta.noindex || meta.nofollow
     ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
@@ -41,6 +43,12 @@ export default function SeoTags() {
       {meta.description && <meta name="description" content={meta.description} />}
       {meta.keywords && <meta name="keywords" content={meta.keywords} />}
       {canonical && <link rel="canonical" href={canonical} />}
+      {alternates.map(({ hrefLang, href }) => (
+        <link key={`alt-${hrefLang}`} rel="alternate" hrefLang={hrefLang} href={href} />
+      ))}
+      {defaultAlternate && (
+        <link rel="alternate" hrefLang="x-default" href={defaultAlternate.href} />
+      )}
       {robots && <meta name="robots" content={robots} />}
       {Object.entries(ogMeta).map(([k, v]) =>
         v ? <meta key={`og-${k}`} property={`og:${k}`} content={v} /> : null
