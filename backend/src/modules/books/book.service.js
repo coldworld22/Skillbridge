@@ -1,5 +1,7 @@
 const db = require("../../config/database");
 const { PRICE_RANGE_MAX } = require("../../config/books");
+const fs = require("fs");
+const path = require("path");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -24,7 +26,10 @@ exports.listBooks = async (params = {}) => {
 
   if (search) {
     query.where(function () {
-      this.whereILike("b.title", `%${search}%`);
+      this.whereILike("b.title", `%${search}%`)
+        .orWhereILike("b.author", `%${search}%`)
+        .orWhereILike("b.short_description", `%${search}%`)
+        .orWhereILike("b.detailed_description", `%${search}%`);
     });
   }
   if (category) query.where("b.category_id", category);
@@ -102,7 +107,44 @@ exports.getBookTags = (bookId) =>
 exports.clearBookTags = (bookId) =>
   db("book_tag_map").where({ book_id: bookId }).del();
 
-exports.updateBook = async (id, data) => {
+const removeFiles = async (files = []) => {
+  await Promise.all(
+    files.map((f) =>
+      fs.promises
+        .unlink(
+          path.join(
+            __dirname,
+            "../../../",
+            f.startsWith("/") ? f.slice(1) : f
+          )
+        )
+        .catch(() => {})
+    )
+  );
+};
+
+exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
+  if (removePreviewPages || data.preview_pages) {
+    const existing = await db("books")
+      .where({ id })
+      .select("preview_pages")
+      .first();
+    let prev = [];
+    if (existing?.preview_pages) {
+      if (Array.isArray(existing.preview_pages)) prev = existing.preview_pages;
+      else {
+        try {
+          prev = JSON.parse(existing.preview_pages) || [];
+        } catch {
+          prev = [];
+        }
+      }
+    }
+    await removeFiles(prev);
+    if (removePreviewPages && !data.preview_pages) {
+      data.preview_pages = null;
+    }
+  }
   const [row] = await db("books").where({ id }).update(data).returning("*");
   return row;
 };

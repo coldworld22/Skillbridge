@@ -50,7 +50,32 @@ const uploadCertificateSchema = z.object({
   // The actual file is handled via multer, but this can validate accompanying fields
 });
 
+// 🔹 Availability Slot Schema
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+const availabilitySlotSchema = z
+  .object({
+    id: z.string().uuid(),
+    title: z.string().trim().min(1),
+    startTime: z.string().regex(timeRegex, "Invalid time format"),
+    endTime: z.string().regex(timeRegex, "Invalid time format"),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).nonempty(),
+    startRecur: z.string().optional(),
+    endRecur: z.string().optional(),
+    backgroundColor: z.string().optional(),
+    borderColor: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const [sh, sm] = data.startTime.split(":").map(Number);
+      const [eh, em] = data.endTime.split(":").map(Number);
+      return eh * 60 + em > sh * 60 + sm;
+    },
+    { message: "endTime must be after startTime", path: ["endTime"] }
+  );
+
 module.exports = {
   updateInstructorProfileSchema,
   uploadCertificateSchema,
+  availabilitySlotSchema,
 };

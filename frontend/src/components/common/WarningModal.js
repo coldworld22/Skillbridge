@@ -1,19 +1,9 @@
-// src/components/common/ConfirmModal.js
-
 import React, { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "next-i18next";
 import { Button } from "@/components/ui/button";
 
-export default function ConfirmModal({
-  isOpen,
-  title,
-  message,
-  onClose,
-  onConfirm,
-  confirmText,
-  cancelText,
-}) {
+export default function WarningModal({ isOpen, title, message, onClose, confirmText }) {
   const { t } = useTranslation();
 
   return (
@@ -43,27 +33,18 @@ export default function ConfirmModal({
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl">
-                <Dialog.Title className="text-xl font-semibold mb-4 text-gray-800">
-                  {t(title || "Confirm")}
+                <Dialog.Title className="text-lg font-semibold text-yellow-600">
+                  {t(title || "Warning")}
                 </Dialog.Title>
                 {message && (
-                  <p className="text-gray-600 mb-6">{t(message)}</p>
+                  <p className="mt-2 text-sm text-gray-600">{t(message)}</p>
                 )}
-                <div className="flex justify-end gap-4">
+                <div className="mt-4 flex justify-end">
                   <Button
                     onClick={onClose}
-                    className="bg-gray-300 text-black hover:bg-gray-400"
+                    className="bg-yellow-500 text-white hover:bg-yellow-600"
                   >
-                    {t(cancelText || "Cancel")}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      onConfirm?.();
-                      onClose();
-                    }}
-                    className="bg-red-500 text-white hover:bg-red-600"
-                  >
-                    {t(confirmText || "Confirm")}
+                    {t(confirmText || "OK")}
                   </Button>
                 </div>
               </Dialog.Panel>

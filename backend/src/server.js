@@ -164,6 +164,7 @@ app.use("/api/media", require("./modules/media/media.routes"));
 app.use("/api/book-categories", require("./modules/bookCategories/bookCategories.routes"));
 app.use("/api/books", require("./modules/books/book.routes"));
 app.use("/api/instructor/books", require("./modules/books/instructorBook.routes"));
+app.use("/api/book-reviews", require("./modules/bookReviews/bookReview.routes"));
 app.use("/api/library", require("./modules/library/library.routes"));
 app.use("/api/search", require("./modules/search/search.routes"));
 

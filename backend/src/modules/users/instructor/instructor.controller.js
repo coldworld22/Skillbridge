@@ -8,6 +8,7 @@ const path = require("path");
 const instructorService = require("./instructor.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const { availabilitySlotSchema } = require("./instructor.validator");
 
 
 /**

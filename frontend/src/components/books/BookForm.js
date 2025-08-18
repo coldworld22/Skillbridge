@@ -5,6 +5,7 @@ import { fetchBookTags, createBookTag } from "@/services/bookTagService";
 import { getLanguages } from "@/services/languageService";
 import debounce from "lodash/debounce";
 import { MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB } from "@/utils/constants";
+import { toast } from "react-hot-toast";
 
 export default function BookForm({
   onSubmit,
@@ -30,6 +31,7 @@ export default function BookForm({
       tags: [],
       is_free: false,
       allow_preview: false,
+      remove_preview_pages: false,
       ...(defaultValues || {}),
       status: defaultValues?.status ?? "pending",
     },
@@ -50,6 +52,7 @@ export default function BookForm({
         tags: defaultValues.tags || [],
         is_free: defaultValues.is_free ?? false,
         allow_preview: defaultValues.allow_preview ?? false,
+        remove_preview_pages: false,
         ...defaultValues,
         status: defaultValues.status ?? "pending",
       });
@@ -63,7 +66,7 @@ export default function BookForm({
         const langs = await getLanguages();
         setLanguages(langs);
       } catch (e) {
-        console.error("Failed to load languages", e);
+        toast.error("Failed to load languages");
       }
     };
     load();
@@ -90,7 +93,7 @@ export default function BookForm({
           setTagSuggestions(data);
         } catch (err) {
           if (err.name !== "CanceledError" && err.name !== "AbortError") {
-            console.error("Failed to fetch tags", err);
+            toast.error("Failed to fetch tags");
           }
         }
       }, 300),
@@ -127,9 +130,7 @@ export default function BookForm({
           .then((newTag) =>
             setTagSuggestions((prev) => [...prev, newTag])
           )
-          .catch((err) =>
-            console.error("Failed to create tag", err)
-          );
+          .catch(() => toast.error("Failed to create tag"));
       }
     }
     setTagInput("");
@@ -152,6 +153,9 @@ export default function BookForm({
       Array.from(data.preview_pages).forEach((file) =>
         formData.append("preview_pages", file)
       );
+    }
+    if (data.remove_preview_pages) {
+      formData.append("remove_preview_pages", 1);
     }
     formData.append("price", isFree ? 0 : data.price);
     formData.append("language", data.language);
@@ -457,6 +461,25 @@ export default function BookForm({
           <p className="text-red-500 text-sm mt-1">
             {errors.preview_pages.message}
           </p>
+        )}
+        {isEdit && defaultValues?.preview_pages?.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            {(() => {
+              const reg = register("remove_preview_pages");
+              return (
+                <input
+                  type="checkbox"
+                  {...reg}
+                  className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+                />
+              );
+            })()}
+            <label className="text-sm font-medium">
+              {t("booksCreate.clearPreviewPages", {
+                defaultValue: "Clear preview pages",
+              })}
+            </label>
+          </div>
         )}
       </div>
         <div className="flex items-center gap-2">

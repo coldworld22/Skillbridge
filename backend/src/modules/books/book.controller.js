@@ -167,7 +167,12 @@ exports.updateBook = catchAsync(async (req, res) => {
     }
 
   // exclude `is_free` field to align with existing database schema
-  const { tags: rawTags, is_free: _is_free, ...data } = req.body;
+  const {
+    tags: rawTags,
+    is_free: _is_free,
+    remove_preview_pages,
+    ...data
+  } = req.body;
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
@@ -178,8 +183,15 @@ exports.updateBook = catchAsync(async (req, res) => {
       req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
     );
   }
+  const removePreviews =
+    remove_preview_pages === "1" ||
+    remove_preview_pages === "true" ||
+    remove_preview_pages === 1 ||
+    remove_preview_pages === true;
 
-    const book = await service.updateBook(req.params.id, data);
+    const book = await service.updateBook(req.params.id, data, {
+      removePreviewPages: removePreviews,
+    });
 
     await service.clearBookTags(book.id);
     book.tags = await processTags(rawTags, book.id);
