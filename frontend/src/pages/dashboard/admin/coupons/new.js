@@ -23,6 +23,9 @@ const createCouponSchema = (t) =>
         .min(1, t("code_required"))
         .transform((val) => val.toUpperCase())
         .superRefine(async (val, ctx) => {
+          // Only check availability for codes with minimum valid length
+          if (val.length < 3) return;
+
           try {
             await validateCode(val);
             ctx.addIssue({
@@ -102,6 +105,7 @@ export default function NewCouponPage() {
       const message =
         err?.response?.data?.message || err?.message || t("create_failed");
       setServerError(message);
+      toast.error(message);
     }
   };
 
