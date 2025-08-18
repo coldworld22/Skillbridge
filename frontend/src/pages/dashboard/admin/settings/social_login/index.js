@@ -95,6 +95,22 @@ export default function SocialLoginSettingsPage() {
   const [customIcons, setCustomIcons] = useState({});
   const notify = useAdminNotice();
 
+  const getCurrentState = () => ({
+    globalActive,
+    providers: providers.map((p) => ({ ...p })),
+    recaptchaActive,
+    recaptchaSiteKey,
+    recaptchaSecretKey,
+  });
+
+  const restoreState = (state) => {
+    setGlobalActive(state.globalActive);
+    setProviders(state.providers);
+    setRecaptchaActive(state.recaptchaActive);
+    setRecaptchaSiteKey(state.recaptchaSiteKey);
+    setRecaptchaSecretKey(state.recaptchaSecretKey);
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -134,6 +150,7 @@ export default function SocialLoginSettingsPage() {
   }, []);
 
   const toggleGlobal = async () => {
+    const prevState = getCurrentState();
     const newState = !globalActive;
     const updatedProviders = providers.map((p) => ({
       ...p,
@@ -171,12 +188,14 @@ export default function SocialLoginSettingsPage() {
         `Social login ${newState ? "enabled" : "disabled"}`
       );
     } catch (err) {
+      restoreState(prevState);
       toast.error(err?.response?.data?.message || "Failed to update settings");
     }
   };
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
 
   const toggleProvider = async (index) => {
+    const prevState = getCurrentState();
     const updated = providers.map((p, i) =>
       i === index ? { ...p, active: !p.active } : p
     );
@@ -217,6 +236,7 @@ export default function SocialLoginSettingsPage() {
         `${adjusted[index].name} ${status}`
       );
     } catch (err) {
+      restoreState(prevState);
       toast.error(err?.response?.data?.message || "Failed to update settings");
     }
   };
@@ -239,6 +259,7 @@ export default function SocialLoginSettingsPage() {
   };
 
   const handleSave = async () => {
+    const prevState = getCurrentState();
     // ensure providers with credentials default to active unless explicitly disabled
     const adjusted = providers.map((p) => ({
       ...p,
@@ -273,11 +294,13 @@ export default function SocialLoginSettingsPage() {
       toast.success("Settings saved");
       notify("social_login_settings_updated", "Social login settings updated");
     } catch (err) {
+      restoreState(prevState);
       toast.error(err?.response?.data?.message || "Failed to save settings");
     }
   };
 
   const handleProviderSave = async (index) => {
+    const prevState = getCurrentState();
     const adjusted = providers.map((p) => ({
       ...p,
       active: p.active || providerHasCredentials(p),
@@ -313,6 +336,7 @@ export default function SocialLoginSettingsPage() {
         `${providers[index].name} settings updated`
       );
     } catch (err) {
+      restoreState(prevState);
       toast.error(err?.response?.data?.message || "Failed to save settings");
     }
   };
