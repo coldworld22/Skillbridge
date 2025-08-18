@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import useSEOConfigStore from '@/store/seoConfigStore';
@@ -6,13 +5,7 @@ import useSEOConfigStore from '@/store/seoConfigStore';
 export default function SeoTags() {
   const router = useRouter();
   const path = router.asPath.split('?')[0] || '/';
-  const fetchConfig = useSEOConfigStore((s) => s.fetch);
-  const loaded = useSEOConfigStore((s) => s.loaded);
   const settings = useSEOConfigStore((s) => s.settings);
-
-  useEffect(() => {
-    if (!loaded) fetchConfig();
-  }, [loaded, fetchConfig]);
 
   const meta = settings.metaTags?.[path] || {};
   const og = settings.openGraph?.[path] || {};

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import App from "next/app";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -8,7 +9,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
-import "@/styles/globals.css";    
+import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
 import useAppConfigStore from "@/store/appConfigStore";
@@ -18,6 +19,7 @@ import useCallStore from "@/store/call/callStore";
 import CallOverlay from "@/components/video-call/CallOverlay";
 import { listenCalls, listenMessages } from "@/services/messageService";
 import useSEOConfigStore from "@/store/seoConfigStore";
+import { fetchSEOConfig } from "@/services/admin/seoConfigService";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
@@ -37,9 +39,13 @@ const langFetcher = () => getLanguages();
  * - Injects per-page layout support
  * - Includes global toast notifications
  */
-function MyApp({ Component, pageProps, router }) {
+function MyApp({ Component, pageProps, router, seoSettings }) {
   // Support for per-page layout pattern
   const getLayout = Component.getLayout || ((page) => page);
+
+  if (seoSettings && !useSEOConfigStore.getState().loaded) {
+    useSEOConfigStore.setState({ settings: seoSettings, loaded: true });
+  }
 
   const fetchConfig = useAppConfigStore((state) => state.fetch);
   const configLoaded = useAppConfigStore((state) => state.loaded);
@@ -56,8 +62,6 @@ function MyApp({ Component, pageProps, router }) {
   const callAccepted = useCallStore((s) => s.acceptedCall);
   const callDeclined = useCallStore((s) => s.declined);
   const clearCallStatus = useCallStore((s) => s.clearStatus);
-  const seoLoaded = useSEOConfigStore((s) => s.loaded);
-  const fetchSEO = useSEOConfigStore((s) => s.fetch);
   
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
@@ -123,11 +127,6 @@ function MyApp({ Component, pageProps, router }) {
       .catch((err) => console.error('Failed to load Google Analytics', err));
   }, []);
 
-  useEffect(() => {
-    if (!seoLoaded) {
-      fetchSEO();
-    }
-  }, [seoLoaded, fetchSEO]);
 
   useEffect(() => {
     if (user) {
@@ -235,7 +234,18 @@ function MyApp({ Component, pageProps, router }) {
           </motion.div>
         </AnimatePresence>
       </>
-    );
+  );
 }
+
+MyApp.getInitialProps = async (appContext) => {
+  const appProps = await App.getInitialProps(appContext);
+  let seoSettings = {};
+  try {
+    seoSettings = await fetchSEOConfig();
+  } catch (err) {
+    // ignore errors so app can still render
+  }
+  return { ...appProps, seoSettings };
+};
 
 export default appWithTranslation(MyApp, nextI18NextConfig);
