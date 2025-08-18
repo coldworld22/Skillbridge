@@ -31,6 +31,7 @@ export default function BookForm({
       tags: [],
       is_free: false,
       allow_preview: false,
+      remove_preview_pages: false,
       ...(defaultValues || {}),
       status: defaultValues?.status ?? "pending",
     },
@@ -51,6 +52,7 @@ export default function BookForm({
         tags: defaultValues.tags || [],
         is_free: defaultValues.is_free ?? false,
         allow_preview: defaultValues.allow_preview ?? false,
+        remove_preview_pages: false,
         ...defaultValues,
         status: defaultValues.status ?? "pending",
       });
@@ -151,6 +153,9 @@ export default function BookForm({
       Array.from(data.preview_pages).forEach((file) =>
         formData.append("preview_pages", file)
       );
+    }
+    if (data.remove_preview_pages) {
+      formData.append("remove_preview_pages", 1);
     }
     formData.append("price", isFree ? 0 : data.price);
     formData.append("language", data.language);
@@ -456,6 +461,25 @@ export default function BookForm({
           <p className="text-red-500 text-sm mt-1">
             {errors.preview_pages.message}
           </p>
+        )}
+        {isEdit && defaultValues?.preview_pages?.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            {(() => {
+              const reg = register("remove_preview_pages");
+              return (
+                <input
+                  type="checkbox"
+                  {...reg}
+                  className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
+                />
+              );
+            })()}
+            <label className="text-sm font-medium">
+              {t("booksCreate.clearPreviewPages", {
+                defaultValue: "Clear preview pages",
+              })}
+            </label>
+          </div>
         )}
       </div>
         <div className="flex items-center gap-2">
