@@ -86,4 +86,23 @@ describe('payment commission calculations', () => {
       expect.objectContaining({ platform_fee: 10, instructor_amount: 40 })
     );
   });
+
+  it('calculates commission for tutorial payments', async () => {
+    configService.getSettings.mockResolvedValue({ platformCut: { tutorial: 30 } });
+    service.create.mockResolvedValue({ id: 'p3', reference_id: 'ref', status: 'paid' });
+
+    const res = await request(app).post('/api/payments/admin').send({
+      user_id: 'u1',
+      method_id: 'm1',
+      item_type: 'tutorial',
+      item_id: 'i3',
+      amount: 200,
+      status: 'paid',
+    });
+
+    expect(res.status).toBe(200);
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ platform_fee: 60, instructor_amount: 140 })
+    );
+  });
 });

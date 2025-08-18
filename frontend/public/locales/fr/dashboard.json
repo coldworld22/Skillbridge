@@ -882,7 +882,12 @@
     "rejected": "Rejected",
     "revenue_label": "Revenue ($)",
     "method_name_placeholder": "e.g. Stripe",
-    "configure": "Configure"
+    "configure": "Configure",
+    "item_types": {
+      "class": "Classe",
+      "book": "Livre",
+      "tutorial": "Tutoriel"
+    }
   },
   "tutorialsPage": {
     "title": "Manage Tutorials",
