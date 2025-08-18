@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "next-i18next";
 import {
@@ -56,7 +57,7 @@ export default function BookCard({
           {t(book.status)}
         </span>
       )}
-      <img
+      <Image
         src={coverUrl}
         alt={book.title}
         width={400}
