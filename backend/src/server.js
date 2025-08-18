@@ -11,6 +11,7 @@ const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const { verifyToken } = require("./middleware/auth/authMiddleware");
 const verifyEnrollment = require("./middleware/auth/verifyEnrollment");
+const verifyHostRole = require("./middleware/auth/verifyHostRole");
 const csrf = require("./middleware/csrf");
 const path = require("path");
 const startLessonReminderJob = require("./jobs/lessonReminderJob");
@@ -325,6 +326,7 @@ app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) =
 app.patch(
   "/api/video-calls/:roomId/participants/:id",
   verifyToken,
+  verifyHostRole,
   async (req, res) => {
     const { roomId, id } = req.params;
     const { isMuted, role } = req.body || {};
@@ -365,6 +367,7 @@ app.patch(
 app.delete(
   "/api/video-calls/:roomId/participants/:id",
   verifyToken,
+  verifyHostRole,
   async (req, res) => {
     const { roomId, id } = req.params;
     try {
