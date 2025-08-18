@@ -1363,6 +1363,8 @@
     },
     "sitemap": {
       "invalidPriority": "Priority must be between 0 and 1",
+      "invalidPath": "Paths must start with / and contain no spaces",
+      "duplicatePath": "Duplicate paths detected",
       "saved": "Sitemap saved",
       "saveFailed": "Failed to save",
       "heading": "Sitemap Manager",
