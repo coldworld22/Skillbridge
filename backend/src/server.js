@@ -304,23 +304,28 @@ io.on("connection", (socket) => {
   });
 });
 
-app.get("/api/video-calls/:roomId/participants", verifyToken, async (req, res) => {
-  try {
-    const rows = await db("video_call_participants")
-      .select(
-        "socket_id as id",
-        "name",
-        "role",
-        "is_muted as isMuted",
-        "joined_at"
-      )
-      .where({ room_id: req.params.roomId })
-      .andWhere("left_at", null);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch participants" });
+app.get(
+  "/api/video-calls/:roomId/participants",
+  verifyToken,
+  verifyEnrollment,
+  async (req, res) => {
+    try {
+      const rows = await db("video_call_participants")
+        .select(
+          "socket_id as id",
+          "name",
+          "role",
+          "is_muted as isMuted",
+          "joined_at"
+        )
+        .where({ room_id: req.params.roomId })
+        .andWhere("left_at", null);
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch participants" });
+    }
   }
-});
+);
 
 app.patch(
   "/api/video-calls/:roomId/participants/:id",
