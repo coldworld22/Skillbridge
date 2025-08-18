@@ -60,6 +60,18 @@ request's `Origin` header automatically.
 
 After completing these steps the **Sign in with GitHub** button should redirect back to `/auth/social-success` and automatically log the user in.
 
+## Facebook
+
+1. Go to the **Meta for Developers** portal and create a new app with the **Facebook Login** product.
+2. Under **Valid OAuth Redirect URIs**, add:
+   ```
+   https://<backend>/api/auth/facebook/callback
+   ```
+   Replace `<backend>` with your backend's base URL.
+3. Request the `email` and `public_profile` permissions for the app.
+4. Enter the generated **App ID** and **App Secret** in the admin panel under **Social Login Settings**. Saving will update `backend/.env`.
+5. Restart the backend so the Facebook strategy is initialized.
+
 ## reCAPTCHA
 
 SkillBridge can optionally validate a Google reCAPTCHA token during login and registration. This behaviour is controlled by the `social_login_settings` record stored in the database. When the `recaptcha.active` flag is `true` the backend will verify the provided token using Google's API before authenticating the user.
