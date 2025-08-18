@@ -35,7 +35,22 @@ export default function SitemapManager({ config, update, availablePages }) {
       toast.error(t("invalidPriority"));
       return;
     }
-    const updated = { ...config, sitemap: pages };
+
+    // Ensure paths are unique
+    const unique = Array.from(new Map(pages.map((p) => [p.path, p])).values());
+    if (unique.length !== pages.length) {
+      setPages(unique);
+      toast.error(t("duplicatePath"));
+      return;
+    }
+
+    // Validate paths
+    if (unique.some((p) => !p.path.startsWith("/") || p.path.includes(" "))) {
+      toast.error(t("invalidPath"));
+      return;
+    }
+
+    const updated = { ...config, sitemap: unique };
     update(updated);
     try {
       await updateSEOConfig(updated);

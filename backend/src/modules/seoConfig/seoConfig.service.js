@@ -2,6 +2,13 @@ const db = require("../../config/database");
 
 const SETTINGS_KEY = "seo_settings";
 
+const DEFAULT_GLOBAL_SEO = {
+  forceCanonical: true,
+  noindexSitewide: false,
+  nofollowSitewide: false,
+  autoPingSitemap: true,
+};
+
 exports.getSettings = async () => {
   const row = await db("settings").where({ key: SETTINGS_KEY }).first();
   const base = process.env.FRONTEND_URL || "http://localhost:3000";
