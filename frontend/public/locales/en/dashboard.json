@@ -1251,6 +1251,7 @@
     "bookFileLabel": "Book File (PDF)",
     "bookFileRequired": "Book file is required",
     "previewPagesLabel": "Preview Pages (optional)",
+    "clearPreviewPages": "Clear preview pages",
     "allowPreview": "Allow Preview",
     "isFree": "Free",
     "priceLabel": "Price",

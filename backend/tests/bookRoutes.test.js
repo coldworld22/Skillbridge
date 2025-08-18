@@ -137,7 +137,11 @@ describe('PUT /api/books/:id', () => {
     service.updateBook.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/books/1').send(payload);
     expect(res.status).toBe(200);
-    expect(service.updateBook).toHaveBeenCalledWith('1', expect.any(Object));
+    expect(service.updateBook).toHaveBeenCalledWith(
+      '1',
+      expect.any(Object),
+      { removePreviewPages: false }
+    );
     expect(notificationService.createNotification).toHaveBeenCalledWith({
       user_id: '2',
       type: 'book_updated',
