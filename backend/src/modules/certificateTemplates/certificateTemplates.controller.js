@@ -58,3 +58,13 @@ exports.toggle = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.duplicate = async (req, res, next) => {
+  try {
+    const template = await service.duplicate(req.params.id);
+    if (!template) return res.status(404).json({ message: "Template not found" });
+    sendSuccess(res, template, 201);
+  } catch (err) {
+    next(err);
+  }
+};
