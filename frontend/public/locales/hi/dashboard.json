@@ -259,6 +259,12 @@
     "processing": "Saving...",
     "currency_saved": "Currency saved!",
     "currency_updated": "Currency updated!",
+    "enter_new_exchange_rate": "नया विनिमय दर दर्ज करें",
+    "invalid_rate": "अमान्य दर",
+    "currency_name_placeholder": "उदा. अमेरिकी डॉलर",
+    "currency_code_placeholder": "उदा. USD",
+    "invalid_image_type": "केवल इमेज फ़ाइलें अनुमत हैं.",
+    "max_logo_size": "अधिकतम लोगो आकार 2MB है.",
     "failed_to_save": "Failed to save currency.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },

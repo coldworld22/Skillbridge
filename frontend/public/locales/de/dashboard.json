@@ -259,6 +259,12 @@
     "processing": "Saving...",
     "currency_saved": "Currency saved!",
     "currency_updated": "Currency updated!",
+    "enter_new_exchange_rate": "Neuen Wechselkurs eingeben",
+    "invalid_rate": "Ungültiger Kurs",
+    "currency_name_placeholder": "z. B. US-Dollar",
+    "currency_code_placeholder": "z. B. USD",
+    "invalid_image_type": "Es sind nur Bilddateien erlaubt.",
+    "max_logo_size": "Maximale Logogröße 2 MB.",
     "failed_to_save": "Failed to save currency.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },

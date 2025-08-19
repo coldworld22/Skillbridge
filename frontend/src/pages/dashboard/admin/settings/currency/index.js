@@ -98,7 +98,7 @@ function CurrencyManagerPage() {
     try {
       await updateCurrency(id, { is_active: !currency.is_active });
       mutate();
-      const status = currency.is_active ? "Inactive" : "Active";
+      const status = currency.is_active ? t('inactive') : t('active');
       toast.success(t('status_updated'));
       const message = `Currency "${currency.label}" status changed to ${status}.`;
       notify("currency_status_changed", message);
@@ -165,10 +165,10 @@ function CurrencyManagerPage() {
   const changeRate = async (id) => {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
-    const input = prompt("Enter new exchange rate", currency.exchange_rate);
+    const input = prompt(t('enter_new_exchange_rate'), currency.exchange_rate);
     if (!input) return;
     const value = parseFloat(input);
-    if (isNaN(value) || value <= 0) return alert("Invalid rate");
+    if (isNaN(value) || value <= 0) return alert(t('invalid_rate'));
     try {
       await updateCurrency(id, { exchange_rate: value });
       mutate();
