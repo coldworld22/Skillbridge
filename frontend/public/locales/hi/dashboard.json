@@ -1177,6 +1177,21 @@
     "save": "सहेजें",
     "saving": "सहेजा जा रहा है..."
   },
+  "contactPage": {
+    "title": "संपर्क पृष्ठ सेटिंग्स",
+    "public_email": "सार्वजनिक ईमेल",
+    "phone_number": "फ़ोन नंबर",
+    "address_line": "पता पंक्ति",
+    "city": "शहर",
+    "country": "देश",
+    "form_recipient_email": "फ़ॉर्म प्राप्तकर्ता का ईमेल",
+    "google_maps_embed_url": "गूगल मानचित्र एम्बेड URL",
+    "save_settings": "सेटिंग्स सहेजें",
+    "saving": "सहेजा जा रहा है...",
+    "load_failed": "सेटिंग्स लोड करने में विफल",
+    "save_success": "संपर्क सेटिंग्स सहेजी गई!",
+    "save_failed": "सेटिंग्स सहेजने में विफल"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",

@@ -1177,6 +1177,21 @@
     "save": "Enregistrer",
     "saving": "Enregistrement..."
   },
+  "contactPage": {
+    "title": "Paramètres de la page de contact",
+    "public_email": "E-mail public",
+    "phone_number": "Numéro de téléphone",
+    "address_line": "Adresse",
+    "city": "Ville",
+    "country": "Pays",
+    "form_recipient_email": "E-mail du destinataire du formulaire",
+    "google_maps_embed_url": "URL d'intégration Google Maps",
+    "save_settings": "Enregistrer les paramètres",
+    "saving": "Enregistrement...",
+    "load_failed": "Échec du chargement des paramètres",
+    "save_success": "Paramètres de contact enregistrés !",
+    "save_failed": "Échec de l'enregistrement des paramètres"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",

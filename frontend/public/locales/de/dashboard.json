@@ -1177,6 +1177,21 @@
     "save": "Speichern",
     "saving": "Speichern..."
   },
+  "contactPage": {
+    "title": "Einstellungen der Kontaktseite",
+    "public_email": "Öffentliche E-Mail",
+    "phone_number": "Telefonnummer",
+    "address_line": "Adresszeile",
+    "city": "Stadt",
+    "country": "Land",
+    "form_recipient_email": "E-Mail des Formular-Empfängers",
+    "google_maps_embed_url": "Google Maps Einbettungs-URL",
+    "save_settings": "Einstellungen speichern",
+    "saving": "Speichern...",
+    "load_failed": "Einstellungen konnten nicht geladen werden",
+    "save_success": "Kontakteinstellungen gespeichert!",
+    "save_failed": "Einstellungen konnten nicht gespeichert werden"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",

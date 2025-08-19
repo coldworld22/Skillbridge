@@ -1177,6 +1177,21 @@
     "save": "保存",
     "saving": "保存中..."
   },
+  "contactPage": {
+    "title": "联系页面设置",
+    "public_email": "公开邮箱",
+    "phone_number": "电话号码",
+    "address_line": "地址行",
+    "city": "城市",
+    "country": "国家",
+    "form_recipient_email": "表单接收邮箱",
+    "google_maps_embed_url": "Google 地图嵌入链接",
+    "save_settings": "保存设置",
+    "saving": "正在保存...",
+    "load_failed": "加载设置失败",
+    "save_success": "联系设置已保存！",
+    "save_failed": "保存设置失败"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",
