@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useAuthStore from "@/store/auth/authStore";
 
 export default function useTutorialProgress(tutorialId, chapters = []) {
@@ -39,36 +39,51 @@ export default function useTutorialProgress(tutorialId, chapters = []) {
     }
   }, [tutorialId, chapters, userId]);
 
-  const persist = (data) => {
-    setProgress(data);
-    if (tutorialId) {
-      const key = `progress-tutorial-${
-        userId ? `${userId}-` : ""
-      }${tutorialId}`;
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-  };
+  const persist = useCallback(
+    (data) => {
+      setProgress(data);
+      if (tutorialId) {
+        const key = `progress-tutorial-${
+          userId ? `${userId}-` : ""
+        }${tutorialId}`;
+        localStorage.setItem(key, JSON.stringify(data));
+      }
+    },
+    [tutorialId, userId]
+  );
 
-  const saveTime = (chapterId, time) => {
-    persist({
-      ...progress,
-      times: { ...progress.times, [chapterId]: time },
-    });
-  };
+  const saveTime = useCallback(
+    (chapterId, time) => {
+      persist({
+        ...progress,
+        times: { ...progress.times, [chapterId]: time },
+      });
+    },
+    [persist, progress]
+  );
 
-  const completeChapter = (index, chapterId) => {
-    if (!chapterId && chapterId !== 0) return;
-    const updated = Array.from(
-      new Set([...progress.completedChapters, chapterId]),
-    );
-    persist({ ...progress, completedChapters: updated, lastIndex: index });
-  };
+  const completeChapter = useCallback(
+    (index, chapterId) => {
+      if (!chapterId && chapterId !== 0) return;
+      const updated = Array.from(
+        new Set([...progress.completedChapters, chapterId])
+      );
+      persist({ ...progress, completedChapters: updated, lastIndex: index });
+    },
+    [persist, progress]
+  );
 
-  const setIndex = (index) => {
-    persist({ ...progress, lastIndex: index });
-  };
+  const setIndex = useCallback(
+    (index) => {
+      persist({ ...progress, lastIndex: index });
+    },
+    [persist, progress]
+  );
 
-  const startTimeFor = (chapterId) => progress.times?.[chapterId] || 0;
+  const startTimeFor = useCallback(
+    (chapterId) => progress.times?.[chapterId] || 0,
+    [progress.times]
+  );
 
   return { progress, saveTime, completeChapter, setIndex, startTimeFor };
 }
