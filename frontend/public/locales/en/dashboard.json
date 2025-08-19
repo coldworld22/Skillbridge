@@ -1120,6 +1120,12 @@
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
     "default": "Default"
   },
+  "languageConfigPage": {
+    "title": "Language Configuration",
+    "default_language": "Default Language",
+    "save": "Save",
+    "saving": "Saving..."
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",

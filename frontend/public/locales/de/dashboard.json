@@ -994,7 +994,7 @@
     "Go to Website": "Go to Website",
     "Help Center": "Help Center",
     "Instructors": "Instructors",
-    "Language Config": "Language Config",
+    "Language Config": "Sprachkonfiguration",
     "Language Manager": "Language Manager",
     "Manage Classes": "Manage Classes",
     "Manage Tutorials": "Manage Tutorials",
@@ -1119,6 +1119,12 @@
     "no_app_prefix": "Do not include the `App` prefix.",
     "firebase_hint": "Firebase Auth is used for phone number OTP during login. No toggle is required.",
     "default": "Default"
+  },
+  "languageConfigPage": {
+    "title": "Sprachkonfiguration",
+    "default_language": "Standardsprache",
+    "save": "Speichern",
+    "saving": "Speichern..."
   },
   "offersPage": {
     "title": "📚 My Offers Dashboard",

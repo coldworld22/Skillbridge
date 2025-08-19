@@ -4,8 +4,12 @@ import { fetchAppConfig, updateAppConfig } from "@/services/admin/appConfigServi
 import { getLanguages } from "@/services/languageService";
 import { FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function LanguageConfigPage() {
+  const { t, i18n } = useTranslation("dashboard");
   const [config, setConfig] = useState({ defaultLanguage: "en" });
   const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +25,7 @@ export default function LanguageConfigPage() {
         setLanguages(langs || []);
       } catch (err) {
         console.error("Failed to load data", err);
-        toast.error("Failed to load settings");
+        toast.error(t("settings_load_failed"));
       }
     };
     load();
@@ -32,10 +36,10 @@ export default function LanguageConfigPage() {
     try {
       const updated = await updateAppConfig(config);
       setConfig(updated);
-      toast.success("Settings saved");
+      toast.success(t("settings_saved"));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save settings");
+      toast.error(t("settings_save_failed"));
     } finally {
       setLoading(false);
     }
@@ -43,10 +47,10 @@ export default function LanguageConfigPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">Language Config</h1>
+      <div className="p-6 max-w-xl mx-auto space-y-6" dir={i18n.dir()}>
+        <h1 className="text-2xl font-bold">{t("languageConfigPage.title")}</h1>
         <div>
-          <label className="block font-semibold mb-1">Default Language</label>
+          <label className="block font-semibold mb-1">{t("languageConfigPage.default_language")}</label>
           <select
             className="w-full border p-2 rounded"
             value={config.defaultLanguage}
@@ -66,9 +70,17 @@ export default function LanguageConfigPage() {
           disabled={loading}
           className="bg-yellow-500 text-white px-4 py-2 rounded flex items-center gap-2"
         >
-          <FaSave /> {loading ? "Saving..." : "Save"}
+          <FaSave /> {loading ? t("languageConfigPage.saving") : t("languageConfigPage.save")}
         </button>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
