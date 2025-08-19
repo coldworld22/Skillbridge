@@ -44,15 +44,19 @@ export default function CreateCertificateTemplate() {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name.trim()) {
       toast.error("Template name is required.");
       return;
     }
-
-    saveTemplate(form);
-    toast.success("Template saved");
-    router.push("/dashboard/admin/settings/certificates");
+    try {
+      await saveTemplate(form);
+      toast.success("Template saved");
+      router.push("/dashboard/admin/settings/certificates");
+    } catch (err) {
+      console.error("Failed to save template", err);
+      toast.error("Failed to save template");
+    }
   };
 
   return (

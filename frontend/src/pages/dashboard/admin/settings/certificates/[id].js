@@ -20,12 +20,20 @@ export default function EditCertificateTemplate() {
 
   useEffect(() => {
     if (!id) return;
-    const existing = getTemplate(id);
-    if (existing) {
-      setForm(existing);
-      setLogoPreview(existing.logo || "/images/certificate/logo.png");
-      setBgPreview(existing.background || "/images/paper-texture.png");
-    }
+    const load = async () => {
+      try {
+        const existing = await getTemplate(id);
+        if (existing) {
+          setForm(existing);
+          setLogoPreview(existing.logo || "/images/certificate/logo.png");
+          setBgPreview(existing.background || "/images/paper-texture.png");
+        }
+      } catch (err) {
+        console.error("Failed to load template", err);
+        toast.error("Failed to load template");
+      }
+    };
+    load();
   }, [id]);
 
   const handleChange = (key, value) => {
@@ -49,15 +57,19 @@ export default function EditCertificateTemplate() {
     reader.readAsDataURL(file);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!form.name.trim()) {
       toast.error("Template name is required.");
       return;
     }
-
-    updateTemplate(id, form);
-    toast.success("Template updated");
-    router.push("/dashboard/admin/settings/certificates");
+    try {
+      await updateTemplate(id, form);
+      toast.success("Template updated");
+      router.push("/dashboard/admin/settings/certificates");
+    } catch (err) {
+      console.error("Failed to update template", err);
+      toast.error("Failed to update template");
+    }
   };
 
   if (!form) return <div className="p-8 text-gray-600">Loading template...</div>;
