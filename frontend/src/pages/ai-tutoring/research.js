@@ -1,24 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { askAI } from "@/services/aiService";
-
-const models = [
-  { key: "chatgpt", label: "ChatGPT 4" },
-  { key: "deepseek", label: "DeepSeek AI" }
-];
+import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 const modes = [
   { key: "summary", label: "Summarize" },
   { key: "explain", label: "Explain" }
 ];
-
 export default function ResearchAssistantPage() {
-  const [selectedModel, setSelectedModel] = useState("chatgpt");
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
   const [selectedMode, setSelectedMode] = useState("summary");
   const [inputText, setInputText] = useState("");
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [followUp, setFollowUp] = useState("");
   const [followUpResponse, setFollowUpResponse] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cfg = await fetchThirdPartyConfig();
+        const opts = [];
+        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
+          opts.push({ key: "chatgpt", label: "ChatGPT" });
+        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
+          opts.push({ key: "deepseek", label: "DeepSeek AI" });
+        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
+          opts.push({ key: "huggingface", label: "Hugging Face" });
+        setModels(opts);
+        if (opts.length === 1) setSelectedModel(opts[0].key);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
+  }, []);
 
   const handleAnalyze = async () => {
     if (!inputText.trim()) return;
