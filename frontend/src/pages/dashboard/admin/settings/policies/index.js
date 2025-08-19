@@ -3,6 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import dynamic from "next/dynamic";
 import { FaSave, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
 import DOMPurify from "dompurify";
 
@@ -11,37 +12,24 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
 const initialPolicies = {
-  "Privacy Policy": {
-    title: "Privacy Policy",
-    content:
-      '<p>We collect personal information that you provide, such as account details and usage data, to operate and improve the Service.</p>' +
-      '<p>Your information is stored securely and retained only as long as necessary or as required by law. We do not sell your data and share it only with trusted partners bound by confidentiality.</p>' +
-      '<p>You may request access to, correction of, or deletion of your personal data at any time. You may also withdraw consent for certain processing activities by contacting support.</p>',
-  },
-  "Terms of Service": {
-    title: "Terms of Service",
-    content:
-      '<p>By using the Service you agree to comply with all applicable laws and these terms. You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</p>' +
-      '<p>Acceptable use requires respectful behavior and prohibits unauthorized access, disruption of the Service, or use of the platform for unlawful or harmful purposes.</p>' +
-      "<p>The Service is provided on an \"as is\" basis without warranties of any kind. Skillbridge's liability is limited to the maximum extent permitted by law, and we are not liable for indirect, incidental, or consequential damages.</p>",
-  },
-  "Delete Account": {
-    title: "Delete Account",
-    content:
-      '<p>You may request deletion of your account at any time through the account settings page or by contacting support. Once verified, your account and personal data will be permanently removed.</p>' +
-      '<p>Certain information may be retained for legal, security, or backup purposes for a limited period. Retained data is securely stored and disposed of when no longer required.</p>',
-  },
-  Legal: {
-    title: "Legal",
-    content:
-      '<p>All content provided through the Service is for informational purposes only and does not constitute professional advice. We make no warranties regarding the accuracy or completeness of the information.</p>' +
-      '<p>These policies and your use of the Service are governed by the laws of the United States, and any disputes shall be resolved in the courts located in the State of California.</p>',
-  },
+  privacy_policy: { id: "privacy_policy", title: "Privacy Policy", content: "" },
+  terms_of_service: { id: "terms_of_service", title: "Terms of Service", content: "" },
+  delete_account: { id: "delete_account", title: "Delete Account", content: "" },
+  legal: { id: "legal", title: "Legal", content: "" },
 };
+
+const initialActive = Object.keys(initialPolicies)[0];
+
+const normalizeTitle = (title) =>
+  title
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function AdminPoliciesPage() {
   const [policies, setPolicies] = useState(initialPolicies);
-  const [activeTab, setActiveTab] = useState("Privacy Policy");
+  const [activeTab, setActiveTab] = useState(initialActive);
   const [isLoading, setIsLoading] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -64,7 +52,11 @@ export default function AdminPoliciesPage() {
       try {
         const data = await fetchPolicies();
         if (data && Object.keys(data).length) {
-          setPolicies({ ...initialPolicies, ...data });
+          setPolicies(data);
+          setActiveTab(Object.keys(data)[0]);
+        } else {
+          setPolicies(initialPolicies);
+          setActiveTab(initialActive);
         }
       } catch (err) {
         toast.error("Failed to load policies");
@@ -80,7 +72,7 @@ export default function AdminPoliciesPage() {
     try {
       const updated = await updatePolicies(policies);
       setPolicies(updated);
-      toast.success(`✅ ${activeTab} saved successfully!`);
+      toast.success(`✅ ${policies[activeTab].title} saved successfully!`);
     } catch (err) {
       toast.error("Failed to save policies");
     } finally {
@@ -114,7 +106,7 @@ export default function AdminPoliciesPage() {
                   : "text-gray-500 hover:text-yellow-600"
               }`}
             >
-              {tab}
+              {policies[tab].title}
             </button>
           ))}
         </div>
@@ -148,7 +140,7 @@ export default function AdminPoliciesPage() {
               disabled={isLoading}
               className={`bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-base flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaSave /> {isLoading ? 'Saving...' : `Save ${activeTab}`}
+              <FaSave /> {isLoading ? 'Saving...' : `Save ${policies[activeTab].title}`}
             </button>
           </div>
         </div>
@@ -182,15 +174,27 @@ export default function AdminPoliciesPage() {
               <button
                 onClick={() => {
                   const { title, content } = newPolicy;
-                  if (title && !policies[title]) {
-                    setPolicies((prev) => ({ ...prev, [title]: { title, content } }));
-                    setActiveTab(title);
-                    setShowAddModal(false);
-                    setNewPolicy({ title: "", content: "" });
-                    toast.success("✅ New policy added");
-                  } else {
-                    toast.error("⚠️ Invalid or duplicate policy title");
+                  const sanitizedTitle = normalizeTitle(title);
+                  if (!sanitizedTitle) {
+                    toast.error("⚠️ Policy title cannot be empty");
+                    return;
                   }
+                  const exists = Object.values(policies).some(
+                    (p) => p.title.toLowerCase() === sanitizedTitle.toLowerCase()
+                  );
+                  if (exists) {
+                    toast.error("⚠️ Policy title already exists");
+                    return;
+                  }
+                  const id = uuidv4();
+                  setPolicies((prev) => ({
+                    ...prev,
+                    [id]: { id, title: sanitizedTitle, content },
+                  }));
+                  setActiveTab(id);
+                  setShowAddModal(false);
+                  setNewPolicy({ title: "", content: "" });
+                  toast.success("✅ New policy added");
                 }}
                 className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700"
               >
