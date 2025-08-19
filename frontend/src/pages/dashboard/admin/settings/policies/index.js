@@ -11,10 +11,32 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
 const initialPolicies = {
-  "Privacy Policy": { title: "Privacy Policy", content: "" },
-  "Terms of Service": { title: "Terms of Service", content: "" },
-  "Delete Account": { title: "Delete Account", content: "" },
-  Legal: { title: "Legal", content: "" },
+  "Privacy Policy": {
+    title: "Privacy Policy",
+    content:
+      '<p>We collect personal information that you provide, such as account details and usage data, to operate and improve the Service.</p>' +
+      '<p>Your information is stored securely and retained only as long as necessary or as required by law. We do not sell your data and share it only with trusted partners bound by confidentiality.</p>' +
+      '<p>You may request access to, correction of, or deletion of your personal data at any time. You may also withdraw consent for certain processing activities by contacting support.</p>',
+  },
+  "Terms of Service": {
+    title: "Terms of Service",
+    content:
+      '<p>By using the Service you agree to comply with all applicable laws and these terms. You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account.</p>' +
+      '<p>Acceptable use requires respectful behavior and prohibits unauthorized access, disruption of the Service, or use of the platform for unlawful or harmful purposes.</p>' +
+      "<p>The Service is provided on an \"as is\" basis without warranties of any kind. Skillbridge's liability is limited to the maximum extent permitted by law, and we are not liable for indirect, incidental, or consequential damages.</p>",
+  },
+  "Delete Account": {
+    title: "Delete Account",
+    content:
+      '<p>You may request deletion of your account at any time through the account settings page or by contacting support. Once verified, your account and personal data will be permanently removed.</p>' +
+      '<p>Certain information may be retained for legal, security, or backup purposes for a limited period. Retained data is securely stored and disposed of when no longer required.</p>',
+  },
+  Legal: {
+    title: "Legal",
+    content:
+      '<p>All content provided through the Service is for informational purposes only and does not constitute professional advice. We make no warranties regarding the accuracy or completeness of the information.</p>' +
+      '<p>These policies and your use of the Service are governed by the laws of the United States, and any disputes shall be resolved in the courts located in the State of California.</p>',
+  },
 };
 
 export default function AdminPoliciesPage() {
