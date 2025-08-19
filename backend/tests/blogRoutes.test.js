@@ -32,6 +32,17 @@ describe('GET /api/blog', () => {
   });
 });
 
+describe('GET /api/blog/slug/:slug', () => {
+  it('returns post by slug', async () => {
+    const mock = { id: '1', slug: 'test' };
+    service.findBySlug.mockResolvedValue(mock);
+    const res = await request(app).get('/api/blog/slug/test');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(service.findBySlug).toHaveBeenCalledWith('test');
+  });
+});
+
 describe('POST /api/blog', () => {
   it('creates post', async () => {
     const payload = { title: 'Test' };
