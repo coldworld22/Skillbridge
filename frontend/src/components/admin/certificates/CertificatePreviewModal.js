@@ -17,13 +17,22 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
   const data = { ...defaultData, ...(mockData || {}) };
 
   const {
-    borderColor = "#FACC15",
-    fontFamily = "Georgia, serif",
-    titleFont = "'Great Vibes', cursive",
+    border_color,
+    font_family,
+    title_font,
     background = "/images/paper-texture.png",
     logo = "/images/certificate/logo.png",
-    showQR = true,
+    show_qr,
+    borderColor: legacyBorderColor,
+    fontFamily: legacyFontFamily,
+    titleFont: legacyTitleFont,
+    showQR: legacyShowQR,
   } = template;
+
+  const borderColor = border_color ?? legacyBorderColor ?? "#FACC15";
+  const fontFamily = font_family ?? legacyFontFamily ?? "Georgia, serif";
+  const titleFont = title_font ?? legacyTitleFont ?? "'Great Vibes', cursive";
+  const showQR = show_qr ?? legacyShowQR ?? true;
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-black/60 flex items-center justify-center z-50">

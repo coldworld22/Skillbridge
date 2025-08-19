@@ -1,4 +1,5 @@
 import api from "@/services/api/api";
+import { toSnakeCase } from "@/utils/case";
 
 export const getTemplates = async () => {
   const res = await api.get("/certificate-templates");
@@ -11,12 +12,18 @@ export const getTemplate = async (id) => {
 };
 
 export const saveTemplate = async (template) => {
-  const res = await api.post("/certificate-templates", template);
+  const res = await api.post(
+    "/certificate-templates",
+    toSnakeCase(template)
+  );
   return res.data?.data;
 };
 
 export const updateTemplate = async (id, data) => {
-  const res = await api.put(`/certificate-templates/${id}`, data);
+  const res = await api.put(
+    `/certificate-templates/${id}`,
+    toSnakeCase(data)
+  );
   return res.data?.data;
 };
 

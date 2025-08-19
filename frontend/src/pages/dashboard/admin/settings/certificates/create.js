@@ -11,10 +11,10 @@ export default function CreateCertificateTemplate() {
   const [form, setForm] = useState({
     name: "",
     type: "Completion",
-    borderColor: "#FACC15",
-    fontFamily: "Georgia, serif",
-    titleFont: "'Great Vibes', cursive",
-    showQR: true,
+    border_color: "#FACC15",
+    font_family: "Georgia, serif",
+    title_font: "'Great Vibes', cursive",
+    show_qr: true,
     logo: null,
     background: null,
   });
@@ -100,8 +100,8 @@ export default function CreateCertificateTemplate() {
               <div>
                 <label className="text-sm font-medium text-gray-600">Body Font</label>
                 <select
-                  value={form.fontFamily}
-                  onChange={(e) => handleChange("fontFamily", e.target.value)}
+                  value={form.font_family}
+                  onChange={(e) => handleChange("font_family", e.target.value)}
                   className="select select-bordered w-full mt-1"
                 >
                   <option value="Georgia, serif">Georgia</option>
@@ -112,8 +112,8 @@ export default function CreateCertificateTemplate() {
               <div>
                 <label className="text-sm font-medium text-gray-600">Title Font</label>
                 <select
-                  value={form.titleFont}
-                  onChange={(e) => handleChange("titleFont", e.target.value)}
+                  value={form.title_font}
+                  onChange={(e) => handleChange("title_font", e.target.value)}
                   className="select select-bordered w-full mt-1"
                 >
                   <option value="'Great Vibes', cursive">Great Vibes</option>
@@ -132,16 +132,16 @@ export default function CreateCertificateTemplate() {
                 <label className="text-sm font-medium text-gray-600 block mb-1">Border Color</label>
                 <input
                   type="color"
-                  value={form.borderColor}
-                  onChange={(e) => handleChange("borderColor", e.target.value)}
+                  value={form.border_color}
+                  onChange={(e) => handleChange("border_color", e.target.value)}
                   className="w-12 h-12 border rounded-md cursor-pointer"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={form.showQR}
-                  onChange={(e) => handleChange("showQR", e.target.checked)}
+                  checked={form.show_qr}
+                  onChange={(e) => handleChange("show_qr", e.target.checked)}
                   className="checkbox"
                 />
                 <span className="text-gray-700">Include QR Code</span>
