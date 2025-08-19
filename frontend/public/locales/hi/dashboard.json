@@ -1694,6 +1694,25 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "blogManagerPage": {
+    "title": "ब्लॉग पोस्ट प्रबंधित करें",
+    "post_title_placeholder": "पोस्ट शीर्षक",
+    "upload_image": "छवि अपलोड करें",
+    "excerpt_placeholder": "सारांश",
+    "add_post": "पोस्ट जोड़ें",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "edit": "संपादित करें",
+    "delete": "हटाएँ",
+    "confirm_delete": "क्या इस पोस्ट को हटाना है?",
+    "load_failed": "पोस्ट लोड करने में विफल",
+    "create_success": "पोस्ट बनाई गई",
+    "create_failed": "पोस्ट बनाने में विफल",
+    "delete_success": "पोस्ट हटाई गई",
+    "delete_failed": "पोस्ट हटाने में विफल",
+    "update_success": "पोस्ट अपडेट की गई",
+    "update_failed": "पोस्ट अपडेट करने में विफल"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",

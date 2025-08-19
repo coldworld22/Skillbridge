@@ -1695,6 +1695,25 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "blogManagerPage": {
+    "title": "Manage Blog Posts",
+    "post_title_placeholder": "Post Title",
+    "upload_image": "Upload Image",
+    "excerpt_placeholder": "Excerpt",
+    "add_post": "Add Post",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm_delete": "Delete this post?",
+    "load_failed": "Failed to load posts",
+    "create_success": "Post created",
+    "create_failed": "Failed to create post",
+    "delete_success": "Post deleted",
+    "delete_failed": "Failed to delete post",
+    "update_success": "Post updated",
+    "update_failed": "Failed to update post"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",
