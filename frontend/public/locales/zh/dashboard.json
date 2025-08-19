@@ -259,6 +259,12 @@
     "processing": "Saving...",
     "currency_saved": "Currency saved!",
     "currency_updated": "Currency updated!",
+    "enter_new_exchange_rate": "输入新的汇率",
+    "invalid_rate": "无效的汇率",
+    "currency_name_placeholder": "例如：美元",
+    "currency_code_placeholder": "例如：USD",
+    "invalid_image_type": "只允许图片文件。",
+    "max_logo_size": "徽标最大大小为2MB。",
     "failed_to_save": "Failed to save currency.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },

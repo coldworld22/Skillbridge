@@ -259,6 +259,12 @@
     "processing": "Saving...",
     "currency_saved": "Currency saved!",
     "currency_updated": "Currency updated!",
+    "enter_new_exchange_rate": "أدخل سعر صرف جديد",
+    "invalid_rate": "سعر غير صالح",
+    "currency_name_placeholder": "مثال: دولار أمريكي",
+    "currency_code_placeholder": "مثال: USD",
+    "invalid_image_type": "يُسمح بملفات الصور فقط.",
+    "max_logo_size": "الحد الأقصى لحجم الشعار 2 ميجابايت.",
     "failed_to_save": "Failed to save currency.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },
