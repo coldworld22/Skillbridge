@@ -67,13 +67,43 @@
     }
   },
   "dashboard": {
-    "tutorialEditPage": {
-      "loading": "Chargement du tutoriel...",
-      "not_found": "Tutoriel introuvable",
-      "save_changes": "Enregistrer les modifications",
-      "update_success": "Tutoriel mis à jour avec succès",
-      "notification_updated": "Notification mise à jour",
-      "update_failed": "Échec de la mise à jour du tutoriel"
-    }
+      "tutorialEditPage": {
+        "loading": "Chargement du tutoriel...",
+        "not_found": "Tutoriel introuvable",
+        "save_changes": "Enregistrer les modifications",
+        "update_success": "Tutoriel mis à jour avec succès",
+        "notification_updated": "Notification mise à jour",
+        "update_failed": "Échec de la mise à jour du tutoriel"
+      },
+      "appSettingsPage": {
+        "title": "Paramètres de l'application",
+        "save": "Enregistrer les paramètres",
+        "saving": "Enregistrement...",
+        "basic_settings": "Paramètres de base",
+        "application_name_label": "Nom de l'application",
+        "site_title_label": "Titre du site",
+        "contact_email_label": "Email de contact",
+        "app_name_placeholder": "Mon application géniale",
+        "site_title_placeholder": "Bienvenue sur mon application",
+        "contact_email_placeholder": "contact@example.com",
+        "media_settings": "Paramètres des médias",
+        "application_logo": "Logo de l'application",
+        "recommended_logo": "Recommandé : 300x100px (PNG transparent)",
+        "choose_file": "Choisir un fichier",
+        "upload": "Téléverser",
+        "favicon": "Favicon",
+        "recommended_favicon": "Recommandé : 64x64px (ICO ou PNG)",
+        "home_background": "Arrière-plan d'accueil",
+        "recommended_home_bg": "Recommandé : 1600x900px",
+        "load_failed": "Échec du chargement des paramètres",
+        "save_success": "Paramètres enregistrés avec succès",
+        "save_failed": "Échec de l'enregistrement des paramètres",
+        "logo_upload_success": "Logo téléversé avec succès",
+        "logo_upload_failed": "Échec du téléversement du logo",
+        "favicon_upload_success": "Favicon téléversé avec succès",
+        "favicon_upload_failed": "Échec du téléversement du favicon",
+        "background_upload_success": "Arrière-plan téléversé avec succès",
+        "background_upload_failed": "Échec du téléversement de l'arrière-plan"
+      }
   }
 }
