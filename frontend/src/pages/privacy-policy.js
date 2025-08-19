@@ -3,6 +3,7 @@ import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { getPolicies } from '@/services/policiesService';
+import DOMPurify from 'isomorphic-dompurify';
 
 export default function PrivacyPolicyPage() {
   const [content, setContent] = useState('');
@@ -11,7 +12,7 @@ export default function PrivacyPolicyPage() {
     const load = async () => {
       try {
         const data = await getPolicies();
-        setContent(data['Privacy Policy']?.content || '');
+        setContent(data.privacy_policy?.content || '');
       } catch (_err) {
         /* ignore */
       }
@@ -27,7 +28,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl font-bold text-yellow-500">Privacy Policy</h1>
         <div
           className="prose prose-sm max-w-none text-yellow-100"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
       </main>
       <Footer />

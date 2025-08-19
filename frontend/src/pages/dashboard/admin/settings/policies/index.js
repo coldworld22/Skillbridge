@@ -5,7 +5,7 @@ import { FaSave, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 
 // ReactQuill (lazy load to avoid SSR issues)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });

@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 const Preview = ({ content }) => (
   <div data-testid="preview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
