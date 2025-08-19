@@ -32,6 +32,7 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const template = await service.update(req.params.id, req.body);
+    if (!template) return res.status(404).json({ message: "Template not found" });
     sendSuccess(res, template);
   } catch (err) {
     next(err);
@@ -40,7 +41,8 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    await service.remove(req.params.id);
+    const removed = await service.remove(req.params.id);
+    if (!removed) return res.status(404).json({ message: "Template not found" });
     sendSuccess(res, { id: req.params.id });
   } catch (err) {
     next(err);

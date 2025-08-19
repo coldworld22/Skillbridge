@@ -14,12 +14,17 @@ exports.create = async (data) => {
 };
 
 exports.update = async (id, data) => {
-  const [row] = await db("certificate_templates").where({ id }).update(data).returning("*");
-  return row;
+  const rows = await db("certificate_templates")
+    .where({ id })
+    .update(data)
+    .returning("*");
+  if (!rows.length) return null;
+  return rows[0];
 };
 
 exports.remove = async (id) => {
-  return db("certificate_templates").where({ id }).del();
+  const deleted = await db("certificate_templates").where({ id }).del();
+  return deleted;
 };
 
 exports.toggleStatus = async (id) => {
