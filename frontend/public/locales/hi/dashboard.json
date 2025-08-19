@@ -266,6 +266,14 @@
     "invalid_image_type": "केवल इमेज फ़ाइलें अनुमत हैं.",
     "max_logo_size": "अधिकतम लोगो आकार 2MB है.",
     "failed_to_save": "Failed to save currency.",
+    "edit_rate": "Edit Exchange Rate",
+    "new_rate": "New Rate",
+    "update": "Update",
+    "cancel": "Cancel",
+    "invalid_rate": "Invalid rate",
+    "delete": "Delete",
+    "invalid_image_type": "Only image files are allowed.",
+    "image_too_large": "Image size must be under 2MB.",
     "showing": "Showing {{from}}–{{to}} of {{total}} currencies"
   },
   "languagesPage": {

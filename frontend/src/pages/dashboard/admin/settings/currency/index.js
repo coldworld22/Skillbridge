@@ -5,6 +5,7 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
@@ -60,6 +61,15 @@ function CurrencyManagerPage() {
   const [filter, setFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
   const [page, setPage] = useState(1);
+  const [rateModal, setRateModal] = useState({ isOpen: false, id: null, value: "" });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    cancelText: "",
+    onConfirm: () => {},
+  });
   const itemsPerPage = 10;
   const notify = useAdminNotice();
 
@@ -179,19 +189,26 @@ function CurrencyManagerPage() {
     }
   };
 
-  const changeRate = async (id) => {
-    const currency = currencies.find((c) => c.id === id);
-    if (!currency) return;
-    const input = prompt(t('enter_new_exchange_rate'), currency.exchange_rate);
-    if (!input) return;
-    const value = parseFloat(input);
-    if (isNaN(value) || value <= 0) return alert(t('invalid_rate'));
+  const openRateModal = (currency) => {
+    setRateModal({ isOpen: true, id: currency.id, value: currency.exchange_rate, label: currency.label });
+  };
+
+  const closeRateModal = () => setRateModal({ isOpen: false, id: null, value: "" });
+
+  const saveRate = async () => {
+    const value = parseFloat(rateModal.value);
+    if (isNaN(value) || value <= 0) {
+      toast.error(t('invalid_rate'));
+      return;
+    }
     try {
-      await updateCurrency(id, { exchange_rate: value });
+      await updateCurrency(rateModal.id, { exchange_rate: value });
       mutate();
       toast.success(t('rate_updated'));
-      const message = `Currency "${currency.label}" rate set to ${value}.`;
+      const currency = currencies.find((c) => c.id === rateModal.id);
+      const message = `Currency "${currency?.label || rateModal.id}" rate set to ${value}.`;
       notify("currency_rate_updated", message);
+      closeRateModal();
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.message || t('update_failed');
@@ -199,23 +216,44 @@ function CurrencyManagerPage() {
     }
   };
 
-  const deleteCurrency = async (id) => {
+  const openConfirmModal = ({ title, message, onConfirm }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText: t('delete'),
+      cancelText: t('cancel'),
+      onConfirm,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const deleteCurrency = (id) => {
     const currency = currencies.find((c) => c.id === id);
-    if (currency?.is_default) return alert(t('cannot_delete_default'));
-    if (window.confirm(t('confirm_delete', { name: currency.label })) ) {
-      try {
-        await deleteCurrencyApi(id);
-        mutate();
-        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-        toast.success(t('currency_deleted'));
-        const message = `Currency "${currency.label}" deleted.`;
-        notify("currency_deleted", message);
-      } catch (err) {
-        console.error(err);
-        const msg = err.response?.data?.message || t('delete_failed');
-        toast.error(msg);
-      }
+    if (currency?.is_default) {
+      toast.error(t('cannot_delete_default'));
+      return;
     }
+    openConfirmModal({
+      title: t('confirm_delete', { name: currency.label }),
+      onConfirm: async () => {
+        try {
+          await deleteCurrencyApi(id);
+          mutate();
+          setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+          toast.success(t('currency_deleted'));
+          const message = `Currency "${currency.label}" deleted.`;
+          notify("currency_deleted", message);
+        } catch (err) {
+          console.error(err);
+          const msg = err.response?.data?.message || t('delete_failed');
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   const toggleSelect = (id) => {
@@ -358,7 +396,7 @@ function CurrencyManagerPage() {
                 <td className="p-3">{c.symbol}</td>
                 <td
                   className="p-3 cursor-pointer"
-                  onClick={() => changeRate(c.id)}
+                  onClick={() => openRateModal(c)}
                   title="Click to edit"
                 >
                   {Number(c.exchange_rate).toFixed(2)}
@@ -440,6 +478,34 @@ function CurrencyManagerPage() {
             </button>
           </div>
         </div>
+        {rateModal.isOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow w-80">
+              <h2 className="text-lg font-semibold mb-4">{t('edit_rate')}</h2>
+              <input
+                type="number"
+                value={rateModal.value}
+                onChange={(e) => setRateModal((prev) => ({ ...prev, value: e.target.value }))}
+                className="w-full border p-2 rounded mb-4"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={closeRateModal}
+                  className="px-3 py-1 border rounded"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={saveRate}
+                  className="px-3 py-1 bg-yellow-500 text-white rounded"
+                >
+                  {t('update')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        <ConfirmModal {...confirmModal} onClose={closeConfirmModal} />
       </div>
   );
 }

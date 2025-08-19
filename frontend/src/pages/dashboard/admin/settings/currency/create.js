@@ -203,11 +203,11 @@ function CreateCurrencyPage() {
               const file = e.target.files[0];
               if (!file) return;
               if (!file.type.startsWith("image/")) {
-                alert(t('invalid_image_type'));
+                toast.error(t('invalid_image_type'));
                 return;
               }
               if (file.size > 2 * 1024 * 1024) {
-                alert(t('max_logo_size'));
+                toast.error(t('image_too_large'));
                 return;
               }
               const reader = new FileReader();
