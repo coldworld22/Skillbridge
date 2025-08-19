@@ -3,6 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import dynamic from "next/dynamic";
 import { FaSave, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
 
 // ReactQuill (lazy load to avoid SSR issues)
@@ -10,15 +11,24 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
 const initialPolicies = {
-  "Privacy Policy": { title: "Privacy Policy", content: "" },
-  "Terms of Service": { title: "Terms of Service", content: "" },
-  "Delete Account": { title: "Delete Account", content: "" },
-  Legal: { title: "Legal", content: "" },
+  privacy_policy: { id: "privacy_policy", title: "Privacy Policy", content: "" },
+  terms_of_service: { id: "terms_of_service", title: "Terms of Service", content: "" },
+  delete_account: { id: "delete_account", title: "Delete Account", content: "" },
+  legal: { id: "legal", title: "Legal", content: "" },
 };
+
+const initialActive = Object.keys(initialPolicies)[0];
+
+const normalizeTitle = (title) =>
+  title
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function AdminPoliciesPage() {
   const [policies, setPolicies] = useState(initialPolicies);
-  const [activeTab, setActiveTab] = useState("Privacy Policy");
+  const [activeTab, setActiveTab] = useState(initialActive);
   const [isLoading, setIsLoading] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -41,7 +51,11 @@ export default function AdminPoliciesPage() {
       try {
         const data = await fetchPolicies();
         if (data && Object.keys(data).length) {
-          setPolicies({ ...initialPolicies, ...data });
+          setPolicies(data);
+          setActiveTab(Object.keys(data)[0]);
+        } else {
+          setPolicies(initialPolicies);
+          setActiveTab(initialActive);
         }
       } catch (err) {
         toast.error("Failed to load policies");
@@ -57,7 +71,7 @@ export default function AdminPoliciesPage() {
     try {
       const updated = await updatePolicies(policies);
       setPolicies(updated);
-      toast.success(`✅ ${activeTab} saved successfully!`);
+      toast.success(`✅ ${policies[activeTab].title} saved successfully!`);
     } catch (err) {
       toast.error("Failed to save policies");
     } finally {
@@ -91,7 +105,7 @@ export default function AdminPoliciesPage() {
                   : "text-gray-500 hover:text-yellow-600"
               }`}
             >
-              {tab}
+              {policies[tab].title}
             </button>
           ))}
         </div>
@@ -125,7 +139,7 @@ export default function AdminPoliciesPage() {
               disabled={isLoading}
               className={`bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-base flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaSave /> {isLoading ? 'Saving...' : `Save ${activeTab}`}
+              <FaSave /> {isLoading ? 'Saving...' : `Save ${policies[activeTab].title}`}
             </button>
           </div>
         </div>
@@ -159,15 +173,27 @@ export default function AdminPoliciesPage() {
               <button
                 onClick={() => {
                   const { title, content } = newPolicy;
-                  if (title && !policies[title]) {
-                    setPolicies((prev) => ({ ...prev, [title]: { title, content } }));
-                    setActiveTab(title);
-                    setShowAddModal(false);
-                    setNewPolicy({ title: "", content: "" });
-                    toast.success("✅ New policy added");
-                  } else {
-                    toast.error("⚠️ Invalid or duplicate policy title");
+                  const sanitizedTitle = normalizeTitle(title);
+                  if (!sanitizedTitle) {
+                    toast.error("⚠️ Policy title cannot be empty");
+                    return;
                   }
+                  const exists = Object.values(policies).some(
+                    (p) => p.title.toLowerCase() === sanitizedTitle.toLowerCase()
+                  );
+                  if (exists) {
+                    toast.error("⚠️ Policy title already exists");
+                    return;
+                  }
+                  const id = uuidv4();
+                  setPolicies((prev) => ({
+                    ...prev,
+                    [id]: { id, title: sanitizedTitle, content },
+                  }));
+                  setActiveTab(id);
+                  setShowAddModal(false);
+                  setNewPolicy({ title: "", content: "" });
+                  toast.success("✅ New policy added");
                 }}
                 className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700"
               >
