@@ -6,19 +6,13 @@ import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
 import DOMPurify from "isomorphic-dompurify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 // ReactQuill (lazy load to avoid SSR issues)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
-
-const initialPolicies = {
-  privacy_policy: { id: "privacy_policy", title: "Privacy Policy", content: "" },
-  terms_of_service: { id: "terms_of_service", title: "Terms of Service", content: "" },
-  delete_account: { id: "delete_account", title: "Delete Account", content: "" },
-  legal: { id: "legal", title: "Legal", content: "" },
-};
-
-const initialActive = Object.keys(initialPolicies)[0];
 
 const normalizeTitle = (title) =>
   title
@@ -28,8 +22,17 @@ const normalizeTitle = (title) =>
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function AdminPoliciesPage() {
-  const [policies, setPolicies] = useState(initialPolicies);
-  const [activeTab, setActiveTab] = useState(initialActive);
+  const { t, i18n } = useTranslation("dashboard", { keyPrefix: "policiesPage" });
+
+  const defaultPolicies = {
+    privacy_policy: { id: "privacy_policy", title: t("privacy_policy"), content: "" },
+    terms_of_service: { id: "terms_of_service", title: t("terms_of_service"), content: "" },
+    delete_account: { id: "delete_account", title: t("delete_account"), content: "" },
+    legal: { id: "legal", title: t("legal"), content: "" },
+  };
+
+  const [policies, setPolicies] = useState(defaultPolicies);
+  const [activeTab, setActiveTab] = useState(Object.keys(defaultPolicies)[0]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -55,11 +58,11 @@ export default function AdminPoliciesPage() {
           setPolicies(data);
           setActiveTab(Object.keys(data)[0]);
         } else {
-          setPolicies(initialPolicies);
-          setActiveTab(initialActive);
+          setPolicies(defaultPolicies);
+          setActiveTab(Object.keys(defaultPolicies)[0]);
         }
       } catch (err) {
-        toast.error("Failed to load policies");
+        toast.error(t("load_failed"));
       } finally {
         setIsLoading(false);
       }
@@ -72,9 +75,9 @@ export default function AdminPoliciesPage() {
     try {
       const updated = await updatePolicies(policies);
       setPolicies(updated);
-      toast.success(`✅ ${policies[activeTab].title} saved successfully!`);
+      toast.success(t("save_success", { title: policies[activeTab].title }));
     } catch (err) {
-      toast.error("Failed to save policies");
+      toast.error(t("save_failed"));
     } finally {
       setIsLoading(false);
     }
@@ -82,15 +85,15 @@ export default function AdminPoliciesPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="max-w-5xl mx-auto px-6 py-10" dir={i18n.dir()}>
         {/* Header and Add Button */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">📄 Policy Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-4 py-2 rounded shadow flex items-center gap-2"
           >
-            <FaPlus /> Add Policy
+            <FaPlus /> {t("add_policy")}
           </button>
         </div>
 
@@ -118,7 +121,7 @@ export default function AdminPoliciesPage() {
             value={policies[activeTab].title}
             onChange={(e) => handleChange(activeTab, "title", e.target.value)}
             className="input-floating"
-            placeholder="Policy Title"
+            placeholder={t("policy_title_placeholder")}
           />
 
           <ReactQuill
@@ -133,14 +136,14 @@ export default function AdminPoliciesPage() {
               onClick={() => setShowPreview(true)}
               className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white px-4 py-2 rounded-md transition-base"
             >
-              👁 Preview
+              👁 {t("preview")}
             </button>
             <button
               onClick={handleSave}
               disabled={isLoading}
               className={`bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-6 py-2 rounded-xl shadow transition-base flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaSave /> {isLoading ? 'Saving...' : `Save ${policies[activeTab].title}`}
+              <FaSave /> {isLoading ? t("saving") : t("save", { title: policies[activeTab].title })}
             </button>
           </div>
         </div>
@@ -150,10 +153,10 @@ export default function AdminPoliciesPage() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4">
-            <h2 className="text-xl font-bold mb-2">➕ Add New Policy</h2>
+            <h2 className="text-xl font-bold mb-2">➕ {t("add_new_policy")}</h2>
             <input
               type="text"
-              placeholder="Policy Title"
+              placeholder={t("policy_title_placeholder")}
               value={newPolicy.title}
               onChange={(e) => setNewPolicy({ ...newPolicy, title: e.target.value })}
               className="input-floating"
@@ -169,21 +172,21 @@ export default function AdminPoliciesPage() {
                 onClick={() => setShowAddModal(false)}
                 className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-700 text-black dark:text-white"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 onClick={() => {
                   const { title, content } = newPolicy;
                   const sanitizedTitle = normalizeTitle(title);
                   if (!sanitizedTitle) {
-                    toast.error("⚠️ Policy title cannot be empty");
+                    toast.error(t("policy_title_empty"));
                     return;
                   }
                   const exists = Object.values(policies).some(
                     (p) => p.title.toLowerCase() === sanitizedTitle.toLowerCase()
                   );
                   if (exists) {
-                    toast.error("⚠️ Policy title already exists");
+                    toast.error(t("policy_title_exists"));
                     return;
                   }
                   const id = uuidv4();
@@ -194,11 +197,11 @@ export default function AdminPoliciesPage() {
                   setActiveTab(id);
                   setShowAddModal(false);
                   setNewPolicy({ title: "", content: "" });
-                  toast.success("✅ New policy added");
+                  toast.success(t("new_policy_added"));
                 }}
                 className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700"
               >
-                Add Policy
+                {t("add_policy")}
               </button>
             </div>
           </div>
@@ -225,4 +228,12 @@ export default function AdminPoliciesPage() {
       )}
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
