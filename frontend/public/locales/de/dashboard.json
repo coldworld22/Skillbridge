@@ -1694,6 +1694,25 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "blogManagerPage": {
+    "title": "Blogbeiträge verwalten",
+    "post_title_placeholder": "Beitragstitel",
+    "upload_image": "Bild hochladen",
+    "excerpt_placeholder": "Auszug",
+    "add_post": "Beitrag hinzufügen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "confirm_delete": "Diesen Beitrag löschen?",
+    "load_failed": "Beiträge konnten nicht geladen werden",
+    "create_success": "Beitrag erstellt",
+    "create_failed": "Beitrag konnte nicht erstellt werden",
+    "delete_success": "Beitrag gelöscht",
+    "delete_failed": "Beitrag konnte nicht gelöscht werden",
+    "update_success": "Beitrag aktualisiert",
+    "update_failed": "Beitrag konnte nicht aktualisiert werden"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",

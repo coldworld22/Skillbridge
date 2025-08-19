@@ -1694,6 +1694,25 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "blogManagerPage": {
+    "title": "管理博客文章",
+    "post_title_placeholder": "文章标题",
+    "upload_image": "上传图片",
+    "excerpt_placeholder": "摘要",
+    "add_post": "添加文章",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirm_delete": "删除此文章？",
+    "load_failed": "加载文章失败",
+    "create_success": "文章已创建",
+    "create_failed": "创建文章失败",
+    "delete_success": "文章已删除",
+    "delete_failed": "删除文章失败",
+    "update_success": "文章已更新",
+    "update_failed": "更新文章失败"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",

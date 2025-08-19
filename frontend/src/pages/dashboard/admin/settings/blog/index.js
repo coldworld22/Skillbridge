@@ -8,9 +8,13 @@ import {
   deletePost,
 } from "@/services/admin/blogService";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 export default function AdminBlogManager() {
   const [posts, setPosts] = useState([]);
+  const { t } = useTranslation("dashboard", { keyPrefix: "blogManagerPage" });
 
   const [newPost, setNewPost] = useState({
     title: "",
@@ -31,8 +35,8 @@ export default function AdminBlogManager() {
       const list = await fetchPosts();
       setPosts(list);
     } catch (err) {
-      console.error('Failed to load posts', err);
-      toast.error('Failed to load posts');
+      console.error("Failed to load posts", err);
+      toast.error(t("load_failed"));
     }
   };
 
@@ -47,22 +51,22 @@ export default function AdminBlogManager() {
       const saved = await createPost(form);
       setPosts((prev) => [...prev, saved]);
       resetForm();
-      toast.success("Post created");
+      toast.success(t("create_success"));
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to create post");
+      toast.error(err?.response?.data?.message || t("create_failed"));
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this post?")) return;
+    if (!confirm(t("confirm_delete"))) return;
     try {
       await deletePost(id);
       setPosts((prev) => prev.filter((post) => post.id !== id));
-      toast.success("Post deleted");
+      toast.success(t("delete_success"));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete post");
+      toast.error(t("delete_failed"));
     }
   };
 
@@ -88,10 +92,10 @@ export default function AdminBlogManager() {
       const updated = await updatePost(editId, form);
       setPosts((prev) => prev.map((p) => (p.id === editId ? updated : p)));
       resetForm();
-      toast.success("Post updated");
+      toast.success(t("update_success"));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update post");
+      toast.error(t("update_failed"));
     }
   };
 
@@ -113,12 +117,12 @@ export default function AdminBlogManager() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Manage Blog Posts</h1>
+        <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
 
         <div className="bg-white shadow rounded p-4 mb-8 space-y-4">
           <input
             type="text"
-            placeholder="Post Title"
+            placeholder={t("post_title_placeholder")}
             className="w-full border p-2 rounded"
             value={newPost.title}
             onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
@@ -126,7 +130,7 @@ export default function AdminBlogManager() {
 
           {/* Image upload with preview */}
           <div className="space-y-2">
-            <label className="block font-medium">Upload Image</label>
+            <label className="block font-medium">{t("upload_image")}</label>
             <input
               type="file"
               accept="image/*"
@@ -147,7 +151,7 @@ export default function AdminBlogManager() {
           </div>
 
           <textarea
-            placeholder="Excerpt"
+            placeholder={t("excerpt_placeholder")}
             className="w-full border p-2 rounded"
             value={newPost.excerpt}
             onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
@@ -163,15 +167,15 @@ export default function AdminBlogManager() {
             {editId ? (
               <>
                 <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2">
-                  <FaSave /> Save
+                  <FaSave /> {t("save")}
                 </button>
                 <button onClick={handleCancel} className="bg-gray-500 text-white px-4 py-2 rounded flex items-center gap-2">
-                  <FaTimes /> Cancel
+                  <FaTimes /> {t("cancel")}
                 </button>
               </>
             ) : (
               <button onClick={handleAdd} className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2">
-                <FaPlus /> Add Post
+                <FaPlus /> {t("add_post")}
               </button>
             )}
           </div>
@@ -195,10 +199,10 @@ export default function AdminBlogManager() {
                 <p className="text-gray-700 text-sm mb-4">{post.excerpt}</p>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(post.id)} className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1">
-                    <FaEdit /> Edit
+                    <FaEdit /> {t("edit")}
                   </button>
                   <button onClick={() => handleDelete(post.id)} className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1">
-                    <FaTrash /> Delete
+                    <FaTrash /> {t("delete")}
                   </button>
                 </div>
               </div>
@@ -208,4 +212,12 @@ export default function AdminBlogManager() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }

@@ -1651,6 +1651,25 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "blogManagerPage": {
+    "title": "إدارة مقالات المدونة",
+    "post_title_placeholder": "عنوان المقال",
+    "upload_image": "رفع صورة",
+    "excerpt_placeholder": "مقتطف",
+    "add_post": "إضافة مقال",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "confirm_delete": "حذف هذا المقال؟",
+    "load_failed": "فشل تحميل المقالات",
+    "create_success": "تم إنشاء المقال",
+    "create_failed": "فشل إنشاء المقال",
+    "delete_success": "تم حذف المقال",
+    "delete_failed": "فشل حذف المقال",
+    "update_success": "تم تحديث المقال",
+    "update_failed": "فشل تحديث المقال"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",
