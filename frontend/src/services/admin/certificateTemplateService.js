@@ -28,8 +28,11 @@ export const toggleTemplateStatus = async (id) => {
   const res = await api.patch(`/certificate-templates/${id}/toggle`);
   return res.data?.data;
 };
-
-export const duplicateTemplate = async (id) => {
-  const res = await api.post(`/certificate-templates/${id}/duplicate`);
-  return res.data?.data;
+export const uploadTemplateFile = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await api.post("/certificate-templates/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data?.data?.url;
 };
