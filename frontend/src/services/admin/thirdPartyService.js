@@ -6,6 +6,7 @@ export const fetchThirdPartyConfig = async () => {
 };
 
 export const updateThirdPartyConfig = async (payload) => {
-  const { data } = await api.put("/third-party-config", payload);
+  const { recaptcha, ...rest } = payload || {};
+  const { data } = await api.put("/third-party-config", rest);
   return data?.data;
 };

@@ -2,6 +2,8 @@
 
 SkillBridge lets administrators manage API keys and settings for various third-party services. These include the ChatGPT and Hugging Face AI providers used on the community "Ask" page.
 
+> **Note:** Google reCAPTCHA configuration is no longer managed here. Administrators can configure reCAPTCHA under the **Social Login** settings page.
+
 ## Backend
 
 - **Settings storage:** `backend/src/modules/thirdPartyConfig`

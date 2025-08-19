@@ -82,7 +82,7 @@ After completing these steps the **Sign in with GitHub** button should redirect 
 
 ## reCAPTCHA
 
-SkillBridge can optionally validate a Google reCAPTCHA token during login and registration. This behaviour is controlled by the `social_login_settings` record stored in the database. When the `recaptcha.active` flag is `true` the backend will verify the provided token using Google's API before authenticating the user.
+SkillBridge can optionally validate a Google reCAPTCHA token during login and registration. This behaviour is controlled by the `social_login_settings` record stored in the database. When the `recaptcha.active` flag is `true` the backend will verify the provided token using Google's API before authenticating the user. reCAPTCHA settings are only available under **Social Login Settings** in the admin dashboard.
 
 To temporarily disable reCAPTCHA you can call the configuration endpoint with admin credentials:
 
