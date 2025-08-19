@@ -85,6 +85,7 @@ const AskQuestionPage = () => {
             toast.warning('ChatGPT models not configured');
           }
         }
+        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false) opts.push('deepseek');
         if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false) opts.push('huggingface');
         setAiOptions(opts);
         if (opts.length === 0) toast.info('No AI integrations available');
@@ -319,7 +320,13 @@ const handleAcceptAIResponse = () => {
                 <option value="">Select AI Provider</option>
                 {aiOptions.map((opt) => (
                   <option key={opt} value={opt}>
-                    {opt}
+                    {opt === 'chatgpt'
+                      ? 'ChatGPT'
+                      : opt === 'huggingface'
+                      ? 'Hugging Face'
+                      : opt === 'deepseek'
+                      ? 'DeepSeek AI'
+                      : opt}
                   </option>
                 ))}
               </select>

@@ -41,3 +41,10 @@ After storing keys on the admin page, users can select ChatGPT or Hugging Face f
    endpoint (e.g. `gpt2` or `google/flan-t5-base`).
 4. Click **Save** to store the settings.
 5. Users can now choose `huggingface` as the provider when asking AI questions.
+
+### DeepSeek Configuration
+
+1. Generate an API key in your DeepSeek account.
+2. In the admin dashboard open **Settings → Third Party** and select **DeepSeek**.
+3. Provide the API key and the desired model name (e.g. `deepseek-chat`) and optional max tokens such as `1024`.
+4. Save the settings to enable DeepSeek. Other providers can be deactivated by toggling them off.

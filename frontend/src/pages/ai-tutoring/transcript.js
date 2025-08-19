@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaDownload, FaHistory } from "react-icons/fa";
 import { askAI } from "@/services/aiService";
+import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 const mockTranscript = {
   model: "ChatGPT 4",
@@ -20,8 +21,14 @@ export default function AITranscriptPage() {
   useEffect(() => {
     const load = async () => {
       try {
+        const cfg = await fetchThirdPartyConfig();
+        let provider = null;
+        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false) provider = 'deepseek';
+        else if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false) provider = 'chatgpt';
+        else if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false) provider = 'huggingface';
+        if (!provider) throw new Error('No provider');
         const { answer } = await askAI(
-          "chatgpt",
+          provider,
           "Provide a sample learning transcript as JSON"
         );
         const parsed = JSON.parse(answer);

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { askAI } from "@/services/aiService";
+import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 
 const goals = [
   "Improve coding skills",
@@ -11,16 +12,32 @@ const goals = [
   "Explore data science"
 ];
 
-const models = [
-  { key: "chatgpt", label: "ChatGPT 4" },
-  { key: "deepseek", label: "DeepSeek AI" }
-];
-
 export default function LessonPlannerPage() {
   const [selectedGoal, setSelectedGoal] = useState("");
+  const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cfg = await fetchThirdPartyConfig();
+        const opts = [];
+        if (cfg.chatgpt?.apiKey && cfg.chatgpt?.active !== false)
+          opts.push({ key: "chatgpt", label: "ChatGPT" });
+        if (cfg.deepseek?.apiKey && cfg.deepseek?.active !== false)
+          opts.push({ key: "deepseek", label: "DeepSeek AI" });
+        if (cfg.huggingface?.apiKey && cfg.huggingface?.active !== false)
+          opts.push({ key: "huggingface", label: "Hugging Face" });
+        setModels(opts);
+        if (opts.length === 1) setSelectedModel(opts[0].key);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
+  }, []);
 
   const handleGenerate = async () => {
     if (!selectedGoal || !selectedModel) return;

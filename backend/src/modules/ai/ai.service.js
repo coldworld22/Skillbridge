@@ -105,6 +105,34 @@ exports.answerWithAI = async (provider, question, model) => {
     }
   }
 
+  if (provider === 'deepseek') {
+    try {
+      const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${settings.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: settings.model || 'deepseek-chat',
+          messages: [{ role: 'user', content: question }],
+          max_tokens: settings.maxTokens || settings.max_tokens || 1024,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        return { answer: null, error: text };
+      }
+
+      const data = await res.json();
+      const answer = data.choices?.[0]?.message?.content?.trim();
+      return { answer, confidence: 0.9 };
+    } catch (err) {
+      return { answer: null, error: err.message };
+    }
+  }
+
   // Fallback stub for providers not yet implemented
   return {
     answer: `(${provider}) AI answer for: ${question}`,
