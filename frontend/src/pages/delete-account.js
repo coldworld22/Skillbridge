@@ -3,6 +3,7 @@ import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { getPolicies } from '@/services/policiesService';
+import DOMPurify from 'dompurify';
 
 export default function DeleteAccountPage() {
   const [content, setContent] = useState('');
@@ -11,7 +12,7 @@ export default function DeleteAccountPage() {
     const load = async () => {
       try {
         const data = await getPolicies();
-        setContent(data['Delete Account']?.content || '');
+        setContent(data.delete_account?.content || '');
       } catch (_err) {}
     };
     load();
@@ -25,7 +26,7 @@ export default function DeleteAccountPage() {
         <h1 className="text-3xl font-bold text-yellow-500">Delete Account</h1>
         <div
           className="prose prose-sm max-w-none text-yellow-100"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
       </main>
       <Footer />
