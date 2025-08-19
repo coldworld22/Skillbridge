@@ -72,7 +72,13 @@ exports.duplicate = async (req, res, next) => {
 exports.upload = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    const url = `/uploads/certificateTemplates/${req.file.filename}`;
+    // Use "/api/uploads" so the URL works behind reverse proxies (e.g., Nginx)
+    // that forward all "/api" requests to the backend. Returning a direct
+    // "/uploads" path causes the frontend to request the file from its own
+    // server instead of the backend, resulting in broken images. Prefixing the
+    // path with "/api" ensures the request is routed to the backend where the
+    // static file middleware serves uploaded certificate assets.
+    const url = `/api/uploads/certificateTemplates/${req.file.filename}`;
     sendSuccess(res, { url });
   } catch (err) {
     next(err);
