@@ -17,26 +17,46 @@ import {
   deleteTemplate,
   toggleTemplateStatus,
 } from "@/services/admin/certificateTemplateService";
+import { toast } from "react-toastify";
 
 export default function CertificateTemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [previewTemplate, setPreviewTemplate] = useState(null);
 
   useEffect(() => {
-    setTemplates(getTemplates());
+    refresh();
   }, []);
 
-  const refresh = () => setTemplates(getTemplates());
-
-  const toggleStatus = (id) => {
-    toggleTemplateStatus(id);
-    refresh();
+  const refresh = async () => {
+    try {
+      const data = await getTemplates();
+      setTemplates(data);
+    } catch (err) {
+      console.error("Failed to load templates", err);
+      toast.error("Failed to load templates");
+    }
   };
 
-  const handleDelete = (id) => {
-    if (confirm("Delete this template?")) {
-      deleteTemplate(id);
-      refresh();
+  const toggleStatus = async (id) => {
+    try {
+      await toggleTemplateStatus(id);
+      toast.success("Status updated");
+      await refresh();
+    } catch (err) {
+      console.error("Failed to update status", err);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this template?")) return;
+    try {
+      await deleteTemplate(id);
+      toast.success("Template deleted");
+      await refresh();
+    } catch (err) {
+      console.error("Failed to delete template", err);
+      toast.error("Failed to delete template");
     }
   };
 

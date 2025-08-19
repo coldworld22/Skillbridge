@@ -1,56 +1,30 @@
-export const STORAGE_KEY = "sb-certificate-templates";
+import api from "@/services/api/api";
 
-const read = () => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    console.error("Failed to parse templates", err);
-    return [];
-  }
+export const getTemplates = async () => {
+  const res = await api.get("/certificate-templates");
+  return res.data?.data || [];
 };
 
-const write = (templates) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+export const getTemplate = async (id) => {
+  const res = await api.get(`/certificate-templates/${id}`);
+  return res.data?.data || null;
 };
 
-export const getTemplates = () => read();
-
-export const getTemplate = (id) => read().find((t) => t.id === id);
-
-export const saveTemplate = (template) => {
-  const templates = read();
-  const newTemplate = { ...template, id: template.id || Date.now().toString(), active: true };
-  templates.push(newTemplate);
-  write(templates);
-  return newTemplate;
+export const saveTemplate = async (template) => {
+  const res = await api.post("/certificate-templates", template);
+  return res.data?.data;
 };
 
-export const updateTemplate = (id, data) => {
-  const templates = read();
-  const idx = templates.findIndex((t) => t.id === id);
-  if (idx !== -1) {
-    templates[idx] = { ...templates[idx], ...data };
-    write(templates);
-    return templates[idx];
-  }
-  return null;
+export const updateTemplate = async (id, data) => {
+  const res = await api.put(`/certificate-templates/${id}`, data);
+  return res.data?.data;
 };
 
-export const deleteTemplate = (id) => {
-  const filtered = read().filter((t) => t.id !== id);
-  write(filtered);
+export const deleteTemplate = async (id) => {
+  await api.delete(`/certificate-templates/${id}`);
 };
 
-export const toggleTemplateStatus = (id) => {
-  const templates = read();
-  const idx = templates.findIndex((t) => t.id === id);
-  if (idx !== -1) {
-    templates[idx].active = !templates[idx].active;
-    write(templates);
-    return templates[idx];
-  }
-  return null;
+export const toggleTemplateStatus = async (id) => {
+  const res = await api.patch(`/certificate-templates/${id}/toggle`);
+  return res.data?.data;
 };
