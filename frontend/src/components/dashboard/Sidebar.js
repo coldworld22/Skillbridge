@@ -8,16 +8,9 @@ import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
 
-import { adminNavLinks } from './SidebarLinks/adminLinks';
+import { getAdminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
-
-const navMap = {
-  admin: adminNavLinks,
-  superadmin: adminNavLinks,
-  instructor: instructorNavLinks,
-  student: studentNavLinks
-};
 
 export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
@@ -34,6 +27,13 @@ export default function Sidebar({ role = 'admin' }) {
   useEffect(() => {
     fetchAppConfig();
   }, [fetchAppConfig]);
+
+  const navMap = {
+    admin: getAdminNavLinks(t),
+    superadmin: getAdminNavLinks(t),
+    instructor: instructorNavLinks,
+    student: studentNavLinks
+  };
 
   const navLinks = navMap[role] || [];
 
@@ -70,8 +70,7 @@ export default function Sidebar({ role = 'admin' }) {
                       <div key={label} className="space-y-1">
                         <div
                           onClick={() => toggleDropdown(label)}
-                          className={`flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 ${activeDropdown === label ? 'bg-yellow-400 text-white shadow-md' : 'text-gray-700 dark:text-gray-300'
-                            }`}
+                          className={`flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 ${activeDropdown === label ? 'bg-yellow-400 text-white shadow-md' : 'text-gray-700 dark:text-gray-300'}`}
                         >
                           <div className="flex items-center gap-3">
                             <Icon className="w-4 h-4" />
@@ -104,8 +103,7 @@ export default function Sidebar({ role = 'admin' }) {
                   return (
                     <Link href={href} key={href} legacyBehavior>
                       <a
-                        className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'bg-yellow-400 text-white shadow-md' : 'text-gray-700 dark:text-gray-300'
-                          }`}
+                        className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'bg-yellow-400 text-white shadow-md' : 'text-gray-700 dark:text-gray-300'}`}
                       >
                         <Icon className="w-4 h-4" />
                         {t(label)}
