@@ -17,6 +17,7 @@ router.post("/upload", upload, controller.upload);
 router.get("/:id", controller.get);
 router.put("/:id", validate(updateTemplate), controller.update);
 router.patch("/:id/toggle", controller.toggle);
+router.post("/:id/duplicate", controller.duplicate);
 router.delete("/:id", controller.remove);
 
 module.exports = router;
