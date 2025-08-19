@@ -11,6 +11,7 @@ const fs = require('fs');
 const userModel = require('../users/user.model');
 const notificationService = require('../notifications/notifications.service');
 const messageService = require('../messages/messages.service');
+const messages = require('../../utils/messages');
 
 /**
  * Create a new currency.
@@ -20,12 +21,12 @@ const messageService = require('../messages/messages.service');
 exports.createCurrency = catchAsync(async (req, res) => {
   const { label, code, symbol, exchange_rate, tax_rate } = req.body;
   if (!label || !code || !symbol)
-    throw new AppError('Label, code and symbol are required', 400);
+    throw new AppError(messages.CURRENCY.FIELDS_REQUIRED, 400);
   if (exchange_rate && isNaN(Number(exchange_rate))) {
-    throw new AppError('Invalid exchange rate', 400);
+    throw new AppError(messages.CURRENCY.INVALID_EXCHANGE_RATE, 400);
   }
   if (tax_rate && isNaN(Number(tax_rate))) {
-    throw new AppError('Invalid tax rate', 400);
+    throw new AppError(messages.CURRENCY.INVALID_TAX_RATE, 400);
   }
 
   const data = { ...req.body };
@@ -41,7 +42,7 @@ exports.createCurrency = catchAsync(async (req, res) => {
 
   try {
     const currency = await service.create(data);
-    sendSuccess(res, currency, 'Currency created');
+    sendSuccess(res, currency, messages.CURRENCY.CREATED);
     const admins = await userModel.findAdmins();
     const senderId = req.user?.id;
     await Promise.all(
@@ -50,12 +51,12 @@ exports.createCurrency = catchAsync(async (req, res) => {
           notificationService.createNotification({
             user_id: admin.id,
             type: 'currency_created',
-            message: `Currency "${currency.label}" created`,
+            message: messages.CURRENCY.CREATED_NOTIFICATION(currency.label),
           }),
           messageService.createMessage({
             sender_id: senderId || admin.id,
             receiver_id: admin.id,
-            message: `Currency "${currency.label}" created`,
+            message: messages.CURRENCY.CREATED_NOTIFICATION(currency.label),
           }),
         ])
       )
@@ -63,7 +64,9 @@ exports.createCurrency = catchAsync(async (req, res) => {
   } catch (err) {
     if (err.code === '23505') {
       // duplicate currency code
-      return res.status(400).json({ message: 'Currency code already exists' });
+      return res
+        .status(400)
+        .json({ message: messages.CURRENCY.CODE_EXISTS });
     }
     throw err;
   }
@@ -80,23 +83,23 @@ exports.listCurrencies = catchAsync(async (_req, res) => {
  */
 exports.updateCurrency = catchAsync(async (req, res) => {
   const existing = await service.getById(req.params.id);
-  if (!existing) throw new AppError('Currency not found', 404);
+  if (!existing) throw new AppError(messages.CURRENCY.NOT_FOUND, 404);
 
   const { label, code, symbol, exchange_rate, tax_rate } = req.body;
   if (label !== undefined && !label) {
-    throw new AppError('Label is required', 400);
+    throw new AppError(messages.CURRENCY.LABEL_REQUIRED, 400);
   }
   if (code !== undefined && !code) {
-    throw new AppError('Code is required', 400);
+    throw new AppError(messages.CURRENCY.CODE_REQUIRED, 400);
   }
   if (symbol !== undefined && !symbol) {
-    throw new AppError('Symbol is required', 400);
+    throw new AppError(messages.CURRENCY.SYMBOL_REQUIRED, 400);
   }
   if (exchange_rate && isNaN(Number(exchange_rate))) {
-    throw new AppError('Invalid exchange rate', 400);
+    throw new AppError(messages.CURRENCY.INVALID_EXCHANGE_RATE, 400);
   }
   if (tax_rate && isNaN(Number(tax_rate))) {
-    throw new AppError('Invalid tax rate', 400);
+    throw new AppError(messages.CURRENCY.INVALID_TAX_RATE, 400);
   }
 
   const data = { ...req.body };
@@ -116,7 +119,7 @@ exports.updateCurrency = catchAsync(async (req, res) => {
 
   try {
     const updated = await service.update(req.params.id, data);
-    sendSuccess(res, updated, 'Currency updated');
+    sendSuccess(res, updated, messages.CURRENCY.UPDATED);
     const admins = await userModel.findAdmins();
     const senderId = req.user?.id;
     await Promise.all(
@@ -125,19 +128,19 @@ exports.updateCurrency = catchAsync(async (req, res) => {
           notificationService.createNotification({
             user_id: admin.id,
             type: 'currency_updated',
-            message: `Currency "${updated.label}" updated`,
+            message: messages.CURRENCY.UPDATED_NOTIFICATION(updated.label),
           }),
           messageService.createMessage({
             sender_id: senderId || admin.id,
             receiver_id: admin.id,
-            message: `Currency "${updated.label}" updated`,
+            message: messages.CURRENCY.UPDATED_NOTIFICATION(updated.label),
           }),
         ])
       )
     );
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(400).json({ message: 'Currency code already exists' });
+      return res.status(400).json({ message: messages.CURRENCY.CODE_EXISTS });
     }
     throw err;
   }
@@ -153,7 +156,7 @@ exports.deleteCurrency = catchAsync(async (req, res) => {
     if (fs.existsSync(old)) fs.unlinkSync(old);
   }
   await service.remove(req.params.id);
-  sendSuccess(res, null, 'Currency deleted');
+  sendSuccess(res, null, messages.CURRENCY.DELETED);
   const admins = await userModel.findAdmins();
   const senderId = req.user?.id;
   await Promise.all(
@@ -162,12 +165,16 @@ exports.deleteCurrency = catchAsync(async (req, res) => {
         notificationService.createNotification({
           user_id: admin.id,
           type: 'currency_deleted',
-          message: `Currency "${existing?.label || req.params.id}" deleted`,
+          message: messages.CURRENCY.DELETED_NOTIFICATION(
+            existing?.label || req.params.id
+          ),
         }),
         messageService.createMessage({
           sender_id: senderId || admin.id,
           receiver_id: admin.id,
-          message: `Currency "${existing?.label || req.params.id}" deleted`,
+          message: messages.CURRENCY.DELETED_NOTIFICATION(
+            existing?.label || req.params.id
+          ),
         }),
       ])
     )
