@@ -56,3 +56,13 @@ exports.toggle = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.upload = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const url = `/uploads/certificateTemplates/${req.file.filename}`;
+    sendSuccess(res, { url });
+  } catch (err) {
+    next(err);
+  }
+};

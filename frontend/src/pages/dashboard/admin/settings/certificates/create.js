@@ -3,7 +3,7 @@ import { useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
 import { FaSave, FaEye } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { saveTemplate } from "@/services/admin/certificateTemplateService";
+import { saveTemplate, uploadTemplateFile } from "@/services/admin/certificateTemplateService";
 import { useRouter } from "next/router";
 
 export default function CreateCertificateTemplate() {
@@ -27,12 +27,11 @@ export default function CreateCertificateTemplate() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleImageUpload = (e, type) => {
+  const handleImageUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target.result;
+    try {
+      const url = await uploadTemplateFile(file);
       if (type === "logo") {
         setLogoPreview(url);
         handleChange("logo", url);
@@ -40,8 +39,10 @@ export default function CreateCertificateTemplate() {
         setBgPreview(url);
         handleChange("background", url);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Upload failed", err);
+      toast.error("Failed to upload image");
+    }
   };
 
   const handleSubmit = async () => {

@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import {
   getTemplate,
   updateTemplate,
+  uploadTemplateFile,
 } from "@/services/admin/certificateTemplateService";
 
 export default function EditCertificateTemplate() {
@@ -40,12 +41,11 @@ export default function EditCertificateTemplate() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleImageUpload = (e, type) => {
+  const handleImageUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target.result;
+    try {
+      const url = await uploadTemplateFile(file);
       if (type === "logo") {
         setLogoPreview(url);
         handleChange("logo", url);
@@ -53,8 +53,10 @@ export default function EditCertificateTemplate() {
         setBgPreview(url);
         handleChange("background", url);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Upload failed", err);
+      toast.error("Failed to upload image");
+    }
   };
 
   const handleUpdate = async () => {
