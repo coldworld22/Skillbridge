@@ -16,6 +16,7 @@ import {
   getTemplates,
   deleteTemplate,
   toggleTemplateStatus,
+  duplicateTemplate,
 } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
 
@@ -60,6 +61,17 @@ export default function CertificateTemplatesPage() {
     }
   };
 
+  const handleDuplicate = async (id) => {
+    try {
+      await duplicateTemplate(id);
+      toast.success("Template duplicated");
+      await refresh();
+    } catch (err) {
+      console.error("Failed to duplicate template", err);
+      toast.error("Failed to duplicate template");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="p-6">
@@ -100,7 +112,27 @@ export default function CertificateTemplatesPage() {
                 <h2 className="font-semibold text-lg">{template.name}</h2>
                 <p className="text-sm text-gray-500 mb-2">Type: {template.type}</p>
 
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => toggleStatus(template.id)}
+                  className={`text-sm flex items-center gap-1 ${
+                    template.active ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  {template.active ? <FaToggleOn /> : <FaToggleOff />}
+                  {template.active ? "Active" : "Inactive"}
+                </button>
+
+                <div className="flex gap-2 text-gray-600">
+                  <Link href={`/dashboard/admin/settings/certificates/${template.id}`}>
+                    <FaEdit title="Edit" />
+                  </Link>
+                  <button onClick={() => handleDuplicate(template.id)}>
+                    <FaClone title="Duplicate" />
+                  </button>
+                  <button onClick={() => setPreviewTemplate(template)}>
+                    <FaEye title="Preview" />
+                  </button>
                   <button
                     onClick={() => toggleStatus(template.id)}
                     className={`text-sm flex items-center gap-1 ${
