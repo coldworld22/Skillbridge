@@ -7,6 +7,7 @@ router.use(verifyToken, isAdmin);
 
 router.get("/", controller.list);
 router.post("/", controller.create);
+router.post("/:id/duplicate", controller.duplicate);
 router.get("/:id", controller.get);
 router.put("/:id", controller.update);
 router.patch("/:id/toggle", controller.toggle);

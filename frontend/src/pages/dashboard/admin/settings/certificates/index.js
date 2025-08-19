@@ -16,6 +16,7 @@ import {
   getTemplates,
   deleteTemplate,
   toggleTemplateStatus,
+  duplicateTemplate,
 } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
 
@@ -57,6 +58,17 @@ export default function CertificateTemplatesPage() {
     } catch (err) {
       console.error("Failed to delete template", err);
       toast.error("Failed to delete template");
+    }
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      await duplicateTemplate(id);
+      toast.success("Template duplicated");
+      await refresh();
+    } catch (err) {
+      console.error("Failed to duplicate template", err);
+      toast.error("Failed to duplicate template");
     }
   };
 
@@ -102,7 +114,7 @@ export default function CertificateTemplatesPage() {
                   <Link href={`/dashboard/admin/settings/certificates/${template.id}`}>
                     <FaEdit title="Edit" />
                   </Link>
-                  <button onClick={() => alert("Duplicate")}>
+                  <button onClick={() => handleDuplicate(template.id)}>
                     <FaClone title="Duplicate" />
                   </button>
                   <button onClick={() => setPreviewTemplate(template)}>
