@@ -59,6 +59,16 @@ exports.toggle = async (req, res, next) => {
   }
 };
 
+exports.duplicate = async (req, res, next) => {
+  try {
+    const template = await service.duplicate(req.params.id);
+    if (!template) return res.status(404).json({ message: "Template not found" });
+    sendSuccess(res, template, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.upload = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
