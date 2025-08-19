@@ -202,7 +202,7 @@ export default function SocialLoginSettingsPage() {
     setProviders(updated);
     const adjusted = updated.map((p) => ({
       ...p,
-      active: p.active || providerHasCredentials(p),
+      active: p.active && providerHasCredentials(p),
     }));
     const payload = {
       enabled: globalActive,
@@ -260,10 +260,10 @@ export default function SocialLoginSettingsPage() {
 
   const handleSave = async () => {
     const prevState = getCurrentState();
-    // ensure providers with credentials default to active unless explicitly disabled
+    // ensure providers are only active when toggled on and have required credentials
     const adjusted = providers.map((p) => ({
       ...p,
-      active: p.active || providerHasCredentials(p),
+      active: p.active && providerHasCredentials(p),
     }));
 
     const payload = {
@@ -303,7 +303,7 @@ export default function SocialLoginSettingsPage() {
     const prevState = getCurrentState();
     const adjusted = providers.map((p) => ({
       ...p,
-      active: p.active || providerHasCredentials(p),
+      active: p.active && providerHasCredentials(p),
     }));
     const payload = {
       enabled: globalActive,

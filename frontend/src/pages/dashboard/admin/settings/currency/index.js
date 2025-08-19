@@ -23,6 +23,7 @@ import {
   updateCurrency,
   deleteCurrency as deleteCurrencyApi,
 } from "@/services/admin/currencyService";
+import { getAppConfig } from "@/services/appConfigService";
 import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff, FaEdit } from "react-icons/fa";
 
 const fetcher = () => fetchCurrencies();
@@ -108,7 +109,7 @@ function CurrencyManagerPage() {
     try {
       await updateCurrency(id, { is_active: !currency.is_active });
       mutate();
-      const status = currency.is_active ? "Inactive" : "Active";
+      const status = currency.is_active ? t('inactive') : t('active');
       toast.success(t('status_updated'));
       const message = `Currency "${currency.label}" status changed to ${status}.`;
       notify("currency_status_changed", message);
@@ -155,20 +156,36 @@ function CurrencyManagerPage() {
     const currency = currencies.find((c) => c.id === id);
     if (!currency) return;
     try {
+      let base = currencies.find((c) => c.is_default)?.code;
+      if (!base) {
+        const config = await getAppConfig().catch(() => ({}));
+        base = config?.currency;
+      }
+      if (!base) throw new Error('Base currency not configured');
+
       const res = await fetch(
-        `https://api.exchangerate.host/latest?base=USD&symbols=${currency.code}`
+        `https://api.exchangerate.host/latest?base=${base}&symbols=${currency.code}`
       );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Request failed with status ${res.status}`);
+      }
       const data = await res.json();
       const rate = data?.rates?.[currency.code];
-      if (!rate) throw new Error("Rate not found");
-      await updateCurrency(id, { exchange_rate: rate, last_updated: new Date().toISOString() });
+      if (!rate) throw new Error('Rate not found');
+
+      await updateCurrency(id, {
+        exchange_rate: rate,
+        last_updated: new Date().toISOString(),
+      });
       mutate();
       toast.success(t('rate_refreshed'));
       const message = `Currency "${currency.label}" rate refreshed.`;
-      notify("currency_rate_refreshed", message);
+      notify('currency_rate_refreshed', message);
     } catch (err) {
       console.error(err);
-      toast.error(t('failed_to_refresh'));
+      const msg = err?.message ? `${t('failed_to_refresh')}: ${err.message}` : t('failed_to_refresh');
+      toast.error(msg);
     }
   };
 

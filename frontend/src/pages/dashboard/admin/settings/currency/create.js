@@ -125,7 +125,7 @@ function CreateCurrencyPage() {
               name="label"
               value={form.label}
               onChange={handleChange}
-              placeholder="e.g. US Dollar"
+              placeholder={t('currency_name_placeholder')}
               required
               className="w-full border p-2 rounded"
             />
@@ -138,7 +138,7 @@ function CreateCurrencyPage() {
               name="code"
               value={form.code}
               onChange={handleChange}
-              placeholder="e.g. USD"
+              placeholder={t('currency_code_placeholder')}
               required
               className="w-full border p-2 rounded uppercase"
             />
