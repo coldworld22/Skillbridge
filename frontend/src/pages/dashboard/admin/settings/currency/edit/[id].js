@@ -193,11 +193,11 @@ function EditCurrencyPage() {
               const file = e.target.files[0];
               if (!file) return;
               if (!file.type.startsWith("image/")) {
-                alert("Only image files are allowed.");
+                toast.error(t('invalid_image_type'));
                 return;
               }
               if (file.size > 2 * 1024 * 1024) {
-                alert("Max file size is 2MB.");
+                toast.error(t('image_too_large'));
                 return;
               }
               const reader = new FileReader();

@@ -6,6 +6,9 @@ import PasswordField from "@/components/ui/PasswordField";
 import { FaSave, FaEnvelopeOpenText } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { fetchEmailConfig, updateEmailConfig } from "@/services/admin/emailConfigService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const defaultConfig = {
   fromName: "SkillBridge Admin",
@@ -20,6 +23,7 @@ const defaultConfig = {
 };
 
 export default function EmailConfigPage() {
+  const { t } = useTranslation('dashboard');
   const [form, setForm] = useState(defaultConfig);
 
   const [loading, setLoading] = useState(false);
@@ -30,13 +34,13 @@ export default function EmailConfigPage() {
         const data = await fetchEmailConfig();
         if (data) setForm({ ...defaultConfig, ...data });
       } catch (err) {
-        toast.error("Failed to load settings");
+        toast.error(t('settings_load_failed'));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,9 +51,9 @@ export default function EmailConfigPage() {
     setLoading(true);
     try {
       await updateEmailConfig(form);
-      toast.success("✅ Email configuration saved successfully!");
+      toast.success(t('emailConfigPage.settings_saved'), { theme: 'colored' });
     } catch (err) {
-      toast.error("Failed to save settings");
+      toast.error(t('settings_save_failed'));
     } finally {
       setLoading(false);
     }
@@ -57,10 +61,10 @@ export default function EmailConfigPage() {
 
   const sendTestEmail = () => {
     setLoading(true);
-    toast.info("📨 Sending test email...");
+    toast.info(t('emailConfigPage.test_email_sending'));
     setTimeout(() => {
       setLoading(false);
-      toast.success("✅ Test email sent successfully!");
+      toast.success(t('emailConfigPage.test_email_sent'), { theme: 'colored' });
     }, 1000);
   };
 
@@ -68,31 +72,31 @@ export default function EmailConfigPage() {
     <AdminLayout>
       <div className="max-w-3xl mx-auto px-6 py-10 bg-white shadow-xl rounded-lg dark:bg-gray-900">
         <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-          📧 Email Configuration
+          📧 {t('emailConfigPage.title')}
         </h2>
 
         <div className="space-y-12">
 
           {/* Sender Details */}
           <section className="form-section">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Sender Details</h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">{t('emailConfigPage.sender_details')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 name="fromName"
-                label="From Name"
+                label={t('emailConfigPage.from_name')}
                 value={form.fromName}
                 onChange={handleChange}
               />
               <FormField
                 name="fromEmail"
-                label="From Email"
+                label={t('emailConfigPage.from_email')}
                 type="email"
                 value={form.fromEmail}
                 onChange={handleChange}
               />
               <FormField
                 name="replyTo"
-                label="Reply-To Email"
+                label={t('emailConfigPage.reply_to_email')}
                 type="email"
                 value={form.replyTo}
                 onChange={handleChange}
@@ -102,24 +106,24 @@ export default function EmailConfigPage() {
 
           {/* SMTP Settings */}
           <section className="form-section">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">SMTP Settings</h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">{t('emailConfigPage.smtp_settings')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 name="smtpHost"
-                label="SMTP Host"
+                label={t('emailConfigPage.smtp_host')}
                 value={form.smtpHost}
                 onChange={handleChange}
               />
               <FormField
                 name="smtpPort"
-                label="SMTP Port"
+                label={t('emailConfigPage.smtp_port')}
                 type="number"
                 value={form.smtpPort}
                 onChange={handleChange}
               />
               <FormSelect
                 name="encryption"
-                label="Encryption"
+                label={t('emailConfigPage.encryption')}
                 value={form.encryption}
                 onChange={handleChange}
                 options={[
@@ -130,7 +134,7 @@ export default function EmailConfigPage() {
               />
               <FormSelect
                 name="method"
-                label="Sending Method"
+                label={t('emailConfigPage.sending_method')}
                 value={form.method}
                 onChange={handleChange}
                 options={[
@@ -140,13 +144,13 @@ export default function EmailConfigPage() {
               />
               <FormField
                 name="username"
-                label="SMTP Username"
+                label={t('emailConfigPage.smtp_username')}
                 value={form.username}
                 onChange={handleChange}
               />
               <PasswordField
                 name="password"
-                label="SMTP Password"
+                label={t('emailConfigPage.smtp_password')}
                 value={form.password}
                 onChange={handleChange}
               />
@@ -161,17 +165,25 @@ export default function EmailConfigPage() {
               disabled={loading}
             >
               <FaEnvelopeOpenText />
-              {loading ? "Sending..." : "Send Test Email"}
+              {loading ? t('emailConfigPage.send_test_email_loading') : t('emailConfigPage.send_test_email')}
             </button>
             <button
               onClick={handleSave}
               className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-5 py-2 rounded-xl shadow transition-base flex items-center gap-2"
             >
-              <FaSave /> Save Settings
+              <FaSave /> {loading ? t('emailConfigPage.save_settings_loading') : t('emailConfigPage.save_settings')}
             </button>
           </section>
         </div>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }

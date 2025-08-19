@@ -98,7 +98,7 @@ function CreateCurrencyPage() {
               name="label"
               value={form.label}
               onChange={handleChange}
-              placeholder="e.g. US Dollar"
+              placeholder={t('currency_name_placeholder')}
               required
               className="w-full border p-2 rounded"
             />
@@ -111,7 +111,7 @@ function CreateCurrencyPage() {
               name="code"
               value={form.code}
               onChange={handleChange}
-              placeholder="e.g. USD"
+              placeholder={t('currency_code_placeholder')}
               required
               className="w-full border p-2 rounded uppercase"
             />
@@ -176,11 +176,11 @@ function CreateCurrencyPage() {
               const file = e.target.files[0];
               if (!file) return;
               if (!file.type.startsWith("image/")) {
-                alert("Only image files are allowed.");
+                toast.error(t('invalid_image_type'));
                 return;
               }
               if (file.size > 2 * 1024 * 1024) {
-                alert("Max file size is 2MB.");
+                toast.error(t('image_too_large'));
                 return;
               }
               const reader = new FileReader();

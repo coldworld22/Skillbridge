@@ -114,9 +114,9 @@ router.get("/google/callback", socialAuthController.googleCallback);
 // Facebook login routes
 router.get("/facebook", socialAuthController.facebookAuth);
 router.get("/facebook/callback", socialAuthController.facebookCallback);
-// Apple routes are disabled until production deployment
-// router.get("/apple", socialAuthController.appleAuth);
-// router.post("/apple/callback", socialAuthController.appleCallback);
+// Apple login routes
+router.get("/apple", socialAuthController.appleAuth);
+router.post("/apple/callback", socialAuthController.appleCallback);
 
 // GitHub routes
 router.get("/github", socialAuthController.githubAuth);
