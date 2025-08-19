@@ -5,11 +5,7 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
+import useAdminNotice from "@/hooks/useAdminNotice";
 import Link from "next/link";
 import useSWR from "swr";
 import { useTranslation } from "next-i18next";
@@ -25,27 +21,6 @@ import {
 import { FaPlus, FaStar, FaSync, FaTrash, FaToggleOn, FaToggleOff, FaEdit } from "react-icons/fa";
 
 const fetcher = () => fetchCurrencies();
-// ─────────────────────
-// Helper to send notifications and messages to admins
-// ─────────────────────
-const useAdminNotice = () => {
-  const user = useAuthStore((state) => state.user);
-  const refreshNotifications = useNotificationStore((state) => state.fetch);
-  const refreshMessages = useMessageStore((state) => state.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to send notification";
-      toast.error(msg);
-    }
-  };
-};
-// ─────────────────────
 // React component: manage currencies with pagination
 // ─────────────────────
 function CurrencyManagerPage() {

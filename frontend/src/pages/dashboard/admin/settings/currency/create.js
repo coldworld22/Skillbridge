@@ -5,11 +5,7 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
+import useAdminNotice from "@/hooks/useAdminNotice";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/router";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
@@ -19,29 +15,6 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
-// ─────────────────────
-// Helper to notify all admins via notifications and chat
-// ─────────────────────
-const useAdminNotice = () => {
-  const user = useAuthStore((state) => state.user);
-  const refreshNotifications = useNotificationStore((state) => state.fetch);
-  const refreshMessages = useMessageStore((state) => state.fetch);
-
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to send notification";
-      toast.error(msg);
-    }
-  };
-};
-
-// ─────────────────────
 // React component: form to create a currency
 // ─────────────────────
 function CreateCurrencyPage() {
