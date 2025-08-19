@@ -14,6 +14,15 @@ export default function CertificatePreviewModal({ template, onClose }) {
     grade: "97%",
   };
 
+  const {
+    borderColor = "#FACC15",
+    fontFamily = "Georgia, serif",
+    titleFont = "'Great Vibes', cursive",
+    background = "/images/paper-texture.png",
+    logo = "/images/certificate/logo.png",
+    showQR = true,
+  } = template;
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-black/60 flex items-center justify-center z-50">
       <div className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl p-6 overflow-auto border border-gray-200">
@@ -29,22 +38,22 @@ export default function CertificatePreviewModal({ template, onClose }) {
         <div
           className="w-full border-[12px] rounded-xl p-10 text-center relative shadow-inner"
           style={{
-            backgroundImage: "url('/images/paper-texture.png')",
+            backgroundImage: `url('${background}')`,
             backgroundSize: "cover",
             backgroundRepeat: "no-repeat",
-            borderColor: "#FACC15",
-            fontFamily: "Georgia, serif",
+            borderColor,
+            fontFamily,
           }}
         >
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img src="/images/certificate/logo.png" alt="Logo" className="w-32" />
+            <img src={logo} alt="Logo" className="w-32" />
           </div>
 
           {/* Title */}
           <h1
             className="text-5xl font-bold text-yellow-600 mb-6"
-            style={{ fontFamily: "'Great Vibes', cursive" }}
+            style={{ fontFamily: titleFont }}
           >
             Certificate of {template.type || "Completion"}
           </h1>
@@ -84,15 +93,17 @@ export default function CertificatePreviewModal({ template, onClose }) {
             </div>
 
             {/* QR Code */}
-            <div className="text-center">
-              <div className="bg-white border border-gray-200 p-2 rounded-md inline-block shadow-sm">
-                <QRCode
-                  value={`https://yourplatform.com/certificate/verify/${mockData.id}`}
-                  size={80}
-                />
+            {showQR && (
+              <div className="text-center">
+                <div className="bg-white border border-gray-200 p-2 rounded-md inline-block shadow-sm">
+                  <QRCode
+                    value={`https://yourplatform.com/certificate/verify/${mockData.id}`}
+                    size={80}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1">Scan to Verify</p>
               </div>
-              <p className="text-[10px] text-gray-500 mt-1">Scan to Verify</p>
-            </div>
+            )}
 
             {/* Platform Signature */}
             <div className="text-center">

@@ -3,8 +3,11 @@ import { useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
 import { FaSave, FaEye } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { saveTemplate } from "@/services/admin/certificateTemplateService";
+import { useRouter } from "next/router";
 
 export default function CreateCertificateTemplate() {
+  const router = useRouter();
   const [form, setForm] = useState({
     name: "",
     type: "Completion",
@@ -27,14 +30,18 @@ export default function CreateCertificateTemplate() {
   const handleImageUpload = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (type === "logo") {
-      setLogoPreview(url);
-      handleChange("logo", file);
-    } else {
-      setBgPreview(url);
-      handleChange("background", file);
-    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target.result;
+      if (type === "logo") {
+        setLogoPreview(url);
+        handleChange("logo", url);
+      } else {
+        setBgPreview(url);
+        handleChange("background", url);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = () => {
@@ -43,8 +50,9 @@ export default function CreateCertificateTemplate() {
       return;
     }
 
-    toast.success("Template saved (mock)");
-    console.log("Submitting", form);
+    saveTemplate(form);
+    toast.success("Template saved");
+    router.push("/dashboard/admin/settings/certificates");
   };
 
   return (
