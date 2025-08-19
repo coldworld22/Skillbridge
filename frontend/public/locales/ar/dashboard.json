@@ -1197,6 +1197,21 @@
     "save": "حفظ",
     "saving": "جاري الحفظ..."
   },
+  "contactPage": {
+    "title": "إعدادات صفحة الاتصال",
+    "public_email": "البريد الإلكتروني العام",
+    "phone_number": "رقم الهاتف",
+    "address_line": "سطر العنوان",
+    "city": "المدينة",
+    "country": "الدولة",
+    "form_recipient_email": "البريد الإلكتروني لمستلم النموذج",
+    "google_maps_embed_url": "رابط تضمين خرائط جوجل",
+    "save_settings": "حفظ الإعدادات",
+    "saving": "جارٍ الحفظ...",
+    "load_failed": "فشل في تحميل الإعدادات",
+    "save_success": "تم حفظ إعدادات الاتصال!",
+    "save_failed": "فشل في حفظ الإعدادات"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",

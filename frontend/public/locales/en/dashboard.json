@@ -1177,6 +1177,21 @@
     "save": "Save",
     "saving": "Saving..."
   },
+  "contactPage": {
+    "title": "Contact Page Settings",
+    "public_email": "Public Email",
+    "phone_number": "Phone Number",
+    "address_line": "Address Line",
+    "city": "City",
+    "country": "Country",
+    "form_recipient_email": "Form Recipient Email",
+    "google_maps_embed_url": "Google Maps Embed URL",
+    "save_settings": "Save Settings",
+    "saving": "Saving...",
+    "load_failed": "Failed to load settings",
+    "save_success": "Contact settings saved!",
+    "save_failed": "Failed to save settings"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",
