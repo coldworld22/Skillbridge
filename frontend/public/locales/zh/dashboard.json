@@ -1192,6 +1192,7 @@
     "save_success": "联系设置已保存！",
     "save_failed": "保存设置失败"
   },
+
   "faqsPage": {
     "title": "Manage FAQs",
     "question_placeholder": "Question",
@@ -1207,6 +1208,7 @@
     "update_failed": "Failed to update FAQ",
     "delete_success": "FAQ deleted",
     "delete_failed": "Failed to delete FAQ"
+
   },
   "offersPage": {
     "title": "📚 My Offers Dashboard",

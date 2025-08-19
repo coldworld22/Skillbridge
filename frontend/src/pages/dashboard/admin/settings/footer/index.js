@@ -4,6 +4,9 @@ import { FaPlus, FaTrash } from "react-icons/fa";
 import { fetchAppConfig, updateAppConfig } from "@/services/admin/appConfigService";
 import useAppConfigStore from "@/store/appConfigStore";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const defaultFooter = {
   about: "SkillBridge connects learners with expert instructors worldwide.",
@@ -47,6 +50,7 @@ export default function FooterSettingsPage() {
   const [adsEnabled, setAdsEnabled] = useState(defaultFooter.adsEnabled);
   const [adsClientId, setAdsClientId] = useState(defaultFooter.adsClientId);
   const [paymentMethods, setPaymentMethods] = useState(defaultFooter.paymentMethods);
+  const { t } = useTranslation('dashboard', { keyPrefix: 'footerPage' });
 
   useEffect(() => {
     const load = async () => {
@@ -69,7 +73,7 @@ export default function FooterSettingsPage() {
         setPaymentMethods({ ...defaultFooter.paymentMethods, ...footer.paymentMethods });
         updateStore(data);
       } catch (_err) {
-        toast.error("Failed to load settings");
+        toast.error(t('load_failed'));
       }
     };
     load();
@@ -112,20 +116,20 @@ export default function FooterSettingsPage() {
       updateStore(updated);
 
       await fetchConfig();
-      toast.success("Settings saved");
+      toast.success(t('save_success'));
     } catch (_err) {
-      toast.error("Failed to save settings");
+      toast.error(t('save_failed'));
     }
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title={t('title')}>
       <div className="p-6 space-y-10">
-        <h1 className="text-2xl font-bold">Footer Settings</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
 
         {/* About */}
         <div>
-          <label className="block font-semibold mb-2">About Description</label>
+          <label className="block font-semibold mb-2">{t('about_label')}</label>
           <textarea
             value={about}
             onChange={(e) => setAbout(e.target.value)}
@@ -136,17 +140,17 @@ export default function FooterSettingsPage() {
 
         {/* Social Links */}
         <div>
-          <label className="block font-semibold mb-2">Social Media Links</label>
+          <label className="block font-semibold mb-2">{t('social_links_label')}</label>
           {socialLinks.map((link, index) => (
             <div key={index} className="flex gap-4 items-center mb-2">
               <input
-                placeholder="Platform (e.g., Facebook)"
+                placeholder={t('social_platform_placeholder')}
                 className="border p-2 flex-1"
                 value={link.platform}
                 onChange={(e) => handleSocialChange(index, "platform", e.target.value)}
               />
               <input
-                placeholder="URL"
+                placeholder={t('social_url_placeholder')}
                 className="border p-2 flex-1"
                 value={link.url}
                 onChange={(e) => handleSocialChange(index, "url", e.target.value)}
@@ -155,59 +159,59 @@ export default function FooterSettingsPage() {
             </div>
           ))}
           <button onClick={handleAddSocial} className="mt-2 text-sm bg-yellow-500 px-3 py-1 rounded text-black flex items-center gap-1">
-            <FaPlus /> Add Social Link
+            <FaPlus /> {t('add_social_link')}
           </button>
         </div>
 
         {/* Quick Links */}
         <div>
-          <label className="block font-semibold mb-2">Quick Links (Page Slugs)</label>
+          <label className="block font-semibold mb-2">{t('quick_links_label')}</label>
           <input
             type="text"
             value={quickLinks.join(", ")}
             onChange={(e) => setQuickLinks(e.target.value.split(",").map((s) => s.trim()))}
             className="w-full border rounded p-2 text-sm"
-            placeholder="e.g. about, contact, blog"
+            placeholder={t('quick_links_placeholder')}
           />
         </div>
 
         {/* Sitemap */}
         <div>
-          <label className="block font-semibold mb-2">Sitemap (Section Names)</label>
+          <label className="block font-semibold mb-2">{t('sitemap_label')}</label>
           <input
             type="text"
             value={sitemap.join(", ")}
             onChange={(e) => setSitemap(e.target.value.split(",").map((s) => s.trim()))}
             className="w-full border rounded p-2 text-sm"
-            placeholder="e.g. Courses, Instructors, Careers"
+            placeholder={t('sitemap_placeholder')}
           />
         </div>
 
         {/* Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block font-semibold mb-2">Email</label>
+            <label className="block font-semibold mb-2">{t('email_label')}</label>
             <input type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} className="w-full border rounded p-2" />
           </div>
           <div>
-            <label className="block font-semibold mb-2">Phone</label>
+            <label className="block font-semibold mb-2">{t('phone_label')}</label>
             <input type="text" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} className="w-full border rounded p-2" />
           </div>
           <div>
-            <label className="block font-semibold mb-2">Address</label>
+            <label className="block font-semibold mb-2">{t('address_label')}</label>
             <input type="text" value={contact.address} onChange={(e) => setContact({ ...contact, address: e.target.value })} className="w-full border rounded p-2" />
           </div>
         </div>
 
         {/* WhatsApp Contact */}
         <div>
-          <label className="block font-semibold mb-2">WhatsApp Number</label>
+          <label className="block font-semibold mb-2">{t('whatsapp_label')}</label>
           <input
             type="text"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             className="w-full border rounded p-2"
-            placeholder="e.g. 15551234567"
+            placeholder={t('whatsapp_placeholder')}
           />
         </div>
 
@@ -218,12 +222,12 @@ export default function FooterSettingsPage() {
             checked={showNewsletter}
             onChange={() => setShowNewsletter(!showNewsletter)}
           />
-          <label>Show Newsletter Subscription</label>
+          <label>{t('newsletter_label')}</label>
         </div>
 
         {/* Footer Note */}
         <div>
-          <label className="block font-semibold mb-2">Bottom Text / Legal Note</label>
+          <label className="block font-semibold mb-2">{t('footer_note_label')}</label>
           <textarea
             value={footerNote}
             onChange={(e) => setFooterNote(e.target.value)}
@@ -240,20 +244,20 @@ export default function FooterSettingsPage() {
               checked={adsEnabled}
               onChange={() => setAdsEnabled(!adsEnabled)}
             />
-            <label>Enable Google AdSense</label>
+            <label>{t('ads_toggle_label')}</label>
           </div>
           <input
             type="text"
             value={adsClientId}
             onChange={(e) => setAdsClientId(e.target.value)}
             className="w-full border rounded p-2"
-            placeholder="AdSense Client ID (e.g. ca-pub-xxxxxxxxxxxxxxxx)"
+            placeholder={t('ads_client_id_placeholder')}
           />
         </div>
 
         {/* Payment Methods */}
         <div>
-          <label className="block font-semibold mb-2">Accepted Payment Methods</label>
+          <label className="block font-semibold mb-2">{t('payment_methods_label')}</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Object.keys(paymentMethods).map((method) => (
               <div key={method} className="flex items-center gap-2">
@@ -275,10 +279,18 @@ export default function FooterSettingsPage() {
             onClick={handleSave}
             className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
           >
-            Save Settings
+            {t('save_settings')}
           </button>
         </div>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }

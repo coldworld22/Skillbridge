@@ -1192,6 +1192,7 @@
     "save_success": "¡Configuración de contacto guardada!",
     "save_failed": "No se pudo guardar la configuración"
   },
+
   "faqsPage": {
     "title": "Manage FAQs",
     "question_placeholder": "Question",
