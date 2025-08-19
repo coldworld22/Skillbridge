@@ -3,7 +3,7 @@ import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { getPolicies } from '@/services/policiesService';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 export default function LegalPage() {
   const [content, setContent] = useState('');
