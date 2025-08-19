@@ -5,6 +5,7 @@ import { FaSave, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
 import { fetchPolicies, updatePolicies } from "@/services/admin/policiesService";
+import DOMPurify from "dompurify";
 
 // ReactQuill (lazy load to avoid SSR issues)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
@@ -211,7 +212,7 @@ export default function AdminPoliciesPage() {
             <h2 className="text-xl font-bold mb-4">{policies[activeTab].title}</h2>
             <div
               className="prose dark:prose-invert max-h-[60vh] overflow-y-auto"
-              dangerouslySetInnerHTML={{ __html: policies[activeTab].content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policies[activeTab].content) }}
             />
             <button
               onClick={() => setShowPreview(false)}
