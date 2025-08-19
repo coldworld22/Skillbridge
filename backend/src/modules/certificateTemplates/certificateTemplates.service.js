@@ -23,13 +23,11 @@ exports.remove = async (id) => {
 };
 
 exports.toggleStatus = async (id) => {
-  const template = await exports.getById(id);
-  if (!template) return null;
   const [row] = await db("certificate_templates")
     .where({ id })
-    .update({ active: !template.active })
+    .update({ active: db.raw("NOT active") })
     .returning("*");
-  return row;
+  return row || null;
 };
 
 exports.duplicate = async (id) => {

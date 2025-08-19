@@ -1,7 +1,7 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
-import { FaSave, FaEye } from "react-icons/fa";
+import { FaSave, FaEye, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { saveTemplate } from "@/services/admin/certificateTemplateService";
 import { useRouter } from "next/router";
@@ -22,6 +22,7 @@ export default function CreateCertificateTemplate() {
   const [logoPreview, setLogoPreview] = useState("/images/certificate/logo.png");
   const [bgPreview, setBgPreview] = useState("/images/paper-texture.png");
   const [showPreview, setShowPreview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -49,6 +50,7 @@ export default function CreateCertificateTemplate() {
       toast.error("Template name is required.");
       return;
     }
+    setIsSubmitting(true);
     try {
       await saveTemplate(form);
       toast.success("Template saved");
@@ -56,6 +58,8 @@ export default function CreateCertificateTemplate() {
     } catch (err) {
       console.error("Failed to save template", err);
       toast.error("Failed to save template");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -172,8 +176,17 @@ export default function CreateCertificateTemplate() {
             <button
               className="btn bg-primary flex items-center gap-2"
               onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-              <FaSave /> Save 
+              {isSubmitting ? (
+                <>
+                  <FaSpinner className="animate-spin" /> Saving...
+                </>
+              ) : (
+                <>
+                  <FaSave /> Save
+                </>
+              )}
             </button>
           </section>
         </div>
