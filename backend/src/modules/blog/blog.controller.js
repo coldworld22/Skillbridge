@@ -35,6 +35,12 @@ exports.getPost = catchAsync(async (req, res) => {
   sendSuccess(res, post);
 });
 
+exports.getPostBySlug = catchAsync(async (req, res) => {
+  const post = await service.findBySlug(req.params.slug);
+  if (!post) throw new AppError("Post not found", 404);
+  sendSuccess(res, post);
+});
+
 exports.updatePost = catchAsync(async (req, res) => {
   const { id } = req.params;
   const existing = await service.getPostById(id);
