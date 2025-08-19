@@ -28,7 +28,6 @@ export const toggleTemplateStatus = async (id) => {
   const res = await api.patch(`/certificate-templates/${id}/toggle`);
   return res.data?.data;
 };
-
 export const uploadTemplateFile = async (file) => {
   const formData = new FormData();
   formData.append("file", file);

@@ -14,20 +14,35 @@ exports.create = async (data) => {
 };
 
 exports.update = async (id, data) => {
-  const [row] = await db("certificate_templates").where({ id }).update(data).returning("*");
-  return row;
+  const rows = await db("certificate_templates")
+    .where({ id })
+    .update(data)
+    .returning("*");
+  if (!rows.length) return null;
+  return rows[0];
 };
 
 exports.remove = async (id) => {
-  return db("certificate_templates").where({ id }).del();
+  const deleted = await db("certificate_templates").where({ id }).del();
+  return deleted;
 };
 
 exports.toggleStatus = async (id) => {
-  const template = await exports.getById(id);
-  if (!template) return null;
   const [row] = await db("certificate_templates")
     .where({ id })
-    .update({ active: !template.active })
+    .update({ active: db.raw("NOT active") })
     .returning("*");
+  return row || null;
+};
+
+exports.duplicate = async (id) => {
+  const template = await exports.getById(id);
+  if (!template) return null;
+  const newTemplate = { ...template };
+  delete newTemplate.id;
+  delete newTemplate.created_at;
+  delete newTemplate.updated_at;
+  newTemplate.name = `Copy of ${template.name}`;
+  const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
 };

@@ -10,7 +10,7 @@ router.get("/", controller.list);
 router.post("/", controller.create);
 router.post("/upload", upload, controller.upload);
 router.get("/:id", controller.get);
-router.put("/:id", controller.update);
+router.put("/:id", validate(updateTemplate), controller.update);
 router.patch("/:id/toggle", controller.toggle);
 router.delete("/:id", controller.remove);
 

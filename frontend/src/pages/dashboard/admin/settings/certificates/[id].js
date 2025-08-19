@@ -2,7 +2,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
-import { FaSave, FaEye } from "react-icons/fa";
+import { FaSave, FaEye, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   getTemplate,
@@ -18,6 +18,7 @@ export default function EditCertificateTemplate() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [bgPreview, setBgPreview] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -64,6 +65,7 @@ export default function EditCertificateTemplate() {
       toast.error("Template name is required.");
       return;
     }
+    setIsSubmitting(true);
     try {
       await updateTemplate(id, form);
       toast.success("Template updated");
@@ -71,6 +73,8 @@ export default function EditCertificateTemplate() {
     } catch (err) {
       console.error("Failed to update template", err);
       toast.error("Failed to update template");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -189,8 +193,17 @@ export default function EditCertificateTemplate() {
             <button
               className="btn btn-primary flex items-center gap-2"
               onClick={handleUpdate}
+              disabled={isSubmitting}
             >
-              <FaSave /> Update Template
+              {isSubmitting ? (
+                <>
+                  <FaSpinner className="animate-spin" /> Updating...
+                </>
+              ) : (
+                <>
+                  <FaSave /> Update Template
+                </>
+              )}
             </button>
           </section>
         </div>

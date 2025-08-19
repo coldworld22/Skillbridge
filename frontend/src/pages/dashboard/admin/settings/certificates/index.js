@@ -16,6 +16,7 @@ import {
   getTemplates,
   deleteTemplate,
   toggleTemplateStatus,
+  duplicateTemplate,
 } from "@/services/admin/certificateTemplateService";
 import { toast } from "react-toastify";
 
@@ -60,6 +61,17 @@ export default function CertificateTemplatesPage() {
     }
   };
 
+  const handleDuplicate = async (id) => {
+    try {
+      await duplicateTemplate(id);
+      toast.success("Template duplicated");
+      await refresh();
+    } catch (err) {
+      console.error("Failed to duplicate template", err);
+      toast.error("Failed to duplicate template");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="p-6">
@@ -73,19 +85,32 @@ export default function CertificateTemplatesPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
-            <div
-              key={template.id}
-              className="bg-white shadow rounded-xl p-4 border"
+        {templates.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-gray-600 mb-4">
+              No certificate templates found. Create one to get started.
+            </p>
+            <Link
+              href="/dashboard/admin/settings/certificates/create"
+              className="btn btn-primary flex items-center gap-2 justify-center"
             >
-              <img
-                src={template.background || "/images/paper-texture.png"}
-                alt={template.name}
-                className="w-full h-40 object-cover rounded-md mb-4"
-              />
-              <h2 className="font-semibold text-lg">{template.name}</h2>
-              <p className="text-sm text-gray-500 mb-2">Type: {template.type}</p>
+              <FaPlus /> Create Template
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className="bg-white shadow rounded-xl p-4 border"
+              >
+                <img
+                  src={template.background || "/images/paper-texture.png"}
+                  alt={template.name}
+                  className="w-full h-40 object-cover rounded-md mb-4"
+                />
+                <h2 className="font-semibold text-lg">{template.name}</h2>
+                <p className="text-sm text-gray-500 mb-2">Type: {template.type}</p>
 
               <div className="flex items-center justify-between">
                 <button
@@ -102,23 +127,44 @@ export default function CertificateTemplatesPage() {
                   <Link href={`/dashboard/admin/settings/certificates/${template.id}`}>
                     <FaEdit title="Edit" />
                   </Link>
-                  <button onClick={() => alert("Duplicate")}>
+                  <button onClick={() => handleDuplicate(template.id)}>
                     <FaClone title="Duplicate" />
                   </button>
                   <button onClick={() => setPreviewTemplate(template)}>
                     <FaEye title="Preview" />
                   </button>
                   <button
-                    onClick={() => handleDelete(template.id)}
-                    className="text-red-500"
+                    onClick={() => toggleStatus(template.id)}
+                    className={`text-sm flex items-center gap-1 ${
+                      template.active ? "text-green-600" : "text-gray-400"
+                    }`}
                   >
-                    <FaTrash title="Delete" />
+                    {template.active ? <FaToggleOn /> : <FaToggleOff />}
+                    {template.active ? "Active" : "Inactive"}
                   </button>
+
+                  <div className="flex gap-2 text-gray-600">
+                    <Link href={`/dashboard/admin/settings/certificates/${template.id}`}>
+                      <FaEdit title="Edit" />
+                    </Link>
+                    <button onClick={() => alert("Duplicate")}>
+                      <FaClone title="Duplicate" />
+                    </button>
+                    <button onClick={() => setPreviewTemplate(template)}>
+                      <FaEye title="Preview" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(template.id)}
+                      className="text-red-500"
+                    >
+                      <FaTrash title="Delete" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         {previewTemplate && (
           <CertificatePreviewModal
             template={previewTemplate}

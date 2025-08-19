@@ -1,18 +1,20 @@
 import { FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code";
 
-export default function CertificatePreviewModal({ template, onClose }) {
+export default function CertificatePreviewModal({ template, onClose, mockData }) {
   if (!template) return null;
 
-  const mockData = {
-    id: "abc123",
-    studentName: "Ayman Osman",
-    courseName: "Modern Web Development",
-    issueDate: "2025-05-01",
-    instructor: "Eng. Khalid Mahmoud",
-    platformName: "SkillBridge Academy",
-    grade: "97%",
+  const defaultData = {
+    id: "ABC123",
+    studentName: "Student Name",
+    courseName: "Course Title",
+    issueDate: new Date().toISOString().split("T")[0],
+    instructor: "Instructor Name",
+    platformName: "Platform Name",
+    grade: "A+",
   };
+
+  const data = { ...defaultData, ...(mockData || {}) };
 
   const {
     borderColor = "#FACC15",
@@ -60,23 +62,23 @@ export default function CertificatePreviewModal({ template, onClose }) {
 
           <p className="text-lg text-gray-700 mb-1">This certifies that</p>
 
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-4">{mockData.studentName}</h2>
+          <h2 className="text-4xl font-extrabold text-gray-800 mb-4">{data.studentName}</h2>
 
           <p className="text-lg text-gray-700 mb-1">has successfully completed</p>
 
-          <h3 className="text-2xl italic text-gray-700 mb-6">"{mockData.courseName}"</h3>
+          <h3 className="text-2xl italic text-gray-700 mb-6">"{data.courseName}"</h3>
 
-          {mockData.grade && (
+          {data.grade && (
             <p className="text-lg text-gray-600 mb-4">
-              Final Grade: <span className="text-green-600 font-bold text-2xl">{mockData.grade}</span>
+              Final Grade: <span className="text-green-600 font-bold text-2xl">{data.grade}</span>
             </p>
           )}
 
           <p className="text-sm text-gray-500 mb-1">
-            Issued on: <strong>{new Date(mockData.issueDate).toLocaleDateString()}</strong>
+            Issued on: <strong>{new Date(data.issueDate).toLocaleDateString()}</strong>
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            Serial Number: <strong>CERT-{mockData.id.slice(0, 6).toUpperCase()}</strong>
+            Serial Number: <strong>CERT-{data.id.slice(0, 6).toUpperCase()}</strong>
           </p>
 
           {/* Footer Row */}
@@ -84,7 +86,7 @@ export default function CertificatePreviewModal({ template, onClose }) {
             {/* Instructor Signature */}
             <div className="text-center">
               <p className="text-sm text-gray-500">Instructor</p>
-              <h4 className="font-bold text-gray-700">{mockData.instructor}</h4>
+              <h4 className="font-bold text-gray-700">{data.instructor}</h4>
               <img
                 src="/images/certificate/instructor-signature.png"
                 alt="Instructor Signature"
@@ -97,7 +99,7 @@ export default function CertificatePreviewModal({ template, onClose }) {
               <div className="text-center">
                 <div className="bg-white border border-gray-200 p-2 rounded-md inline-block shadow-sm">
                   <QRCode
-                    value={`https://yourplatform.com/certificate/verify/${mockData.id}`}
+                    value={`https://yourplatform.com/certificate/verify/${data.id}`}
                     size={80}
                   />
                 </div>
@@ -108,7 +110,7 @@ export default function CertificatePreviewModal({ template, onClose }) {
             {/* Platform Signature */}
             <div className="text-center">
               <p className="text-sm text-gray-500">Issued by</p>
-              <h4 className="font-bold text-gray-700">{mockData.platformName}</h4>
+              <h4 className="font-bold text-gray-700">{data.platformName}</h4>
             </div>
           </div>
         </div>
