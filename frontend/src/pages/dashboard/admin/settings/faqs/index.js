@@ -3,24 +3,39 @@ import useSWR from "swr";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaTrash, FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import api from "@/services/api/api";
+import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 
 export default function AdminFaqsPage() {
+  const { t, i18n } = useTranslation("dashboard", { keyPrefix: "faqsPage" });
   const { data: faqs = [], mutate } = useSWR("/faqs", fetcher);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [editId, setEditId] = useState(null);
 
   const handleAdd = async () => {
     if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
-    await api.post("/faqs", newFaq);
-    mutate();
-    setNewFaq({ question: "", answer: "" });
+    try {
+      await api.post("/faqs", newFaq);
+      mutate();
+      setNewFaq({ question: "", answer: "" });
+      toast.success(t("add_success"));
+    } catch (err) {
+      toast.error(t("add_failed"));
+    }
   };
 
   const handleDelete = async (id) => {
-    await api.delete(`/faqs/${id}`);
-    mutate();
+    try {
+      await api.delete(`/faqs/${id}`);
+      mutate();
+      toast.success(t("delete_success"));
+    } catch (err) {
+      toast.error(t("delete_failed"));
+    }
   };
 
   const handleEdit = (id) => {
@@ -30,10 +45,15 @@ export default function AdminFaqsPage() {
   };
 
   const handleSave = async () => {
-    await api.put(`/faqs/${editId}`, newFaq);
-    mutate();
-    setEditId(null);
-    setNewFaq({ question: "", answer: "" });
+    try {
+      await api.put(`/faqs/${editId}`, newFaq);
+      mutate();
+      setEditId(null);
+      setNewFaq({ question: "", answer: "" });
+      toast.success(t("update_success"));
+    } catch (err) {
+      toast.error(t("update_failed"));
+    }
   };
 
   const handleCancel = () => {
@@ -43,20 +63,20 @@ export default function AdminFaqsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Manage FAQs</h1>
+      <div className="p-6 max-w-4xl mx-auto" dir={i18n.dir()}>
+        <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
 
         {/* Form */}
         <div className="bg-white rounded shadow p-4 mb-8 space-y-4">
           <input
             type="text"
-            placeholder="Question"
+            placeholder={t("question_placeholder")}
             className="w-full border p-2 rounded"
             value={newFaq.question}
             onChange={(e) => setNewFaq((prev) => ({ ...prev, question: e.target.value }))}
           />
           <textarea
-            placeholder="Answer"
+            placeholder={t("answer_placeholder")}
             className="w-full border p-2 rounded"
             value={newFaq.answer}
             onChange={(e) => setNewFaq((prev) => ({ ...prev, answer: e.target.value }))}
@@ -68,13 +88,13 @@ export default function AdminFaqsPage() {
                   onClick={handleSave}
                   className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
                 >
-                  <FaSave /> Save
+                  <FaSave /> {t("save")}
                 </button>
                 <button
                   onClick={handleCancel}
                   className="bg-gray-500 text-white px-4 py-2 rounded flex items-center gap-2"
                 >
-                  <FaTimes /> Cancel
+                  <FaTimes /> {t("cancel")}
                 </button>
               </>
             ) : (
@@ -82,7 +102,7 @@ export default function AdminFaqsPage() {
                 onClick={handleAdd}
                 className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2"
               >
-                <FaPlus /> Add FAQ
+                <FaPlus /> {t("add_faq")}
               </button>
             )}
           </div>
@@ -101,13 +121,13 @@ export default function AdminFaqsPage() {
                   onClick={() => handleEdit(faq.id)}
                   className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1"
                 >
-                  <FaEdit /> Edit
+                  <FaEdit /> {t("edit")}
                 </button>
                 <button
                   onClick={() => handleDelete(faq.id)}
                   className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1"
                 >
-                  <FaTrash /> Delete
+                  <FaTrash /> {t("delete")}
                 </button>
               </div>
             </div>
@@ -116,4 +136,12 @@ export default function AdminFaqsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }

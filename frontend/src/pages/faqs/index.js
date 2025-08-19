@@ -1,25 +1,17 @@
 import { useState } from 'react';
+import useSWR from 'swr';
 import PageHead from '@/components/common/PageHead';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import api from '@/services/api/api';
+import { useTranslation } from 'next-i18next';
 
-const mockFaqs = [
-  {
-    question: "What is SkillBridge?",
-    answer: "SkillBridge is an online learning platform that connects learners with expert instructors.",
-  },
-  {
-    question: "How can I join a class?",
-    answer: "You can browse classes, select one you like, and join after registering and completing payment.",
-  },
-  {
-    question: "Do I get a certificate?",
-    answer: "Yes! Most courses include an auto-generated certificate you can download and verify via QR code.",
-  },
-];
+const fetcher = (url) => api.get(url).then((res) => res.data.data);
 
 export default function FaqPage() {
+  const { t } = useTranslation('common');
+  const { data: faqs = [] } = useSWR('/faqs', fetcher);
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggle = (index) => {
@@ -28,13 +20,13 @@ export default function FaqPage() {
 
   return (
     <>
-      <PageHead title="FAQs" />
+      <PageHead title={t('faqs')} />
 
       <div className="bg-gray-900 min-h-screen text-white">
         <Navbar />
 
         <header className="text-center py-24 px-4">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-4">FAQs</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-500 mb-4">{t('faqs')}</h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
             Everything you need to know before getting started with SkillBridge.
           </p>
@@ -42,7 +34,7 @@ export default function FaqPage() {
 
         <section className="bg-black py-16 px-4">
           <div className="max-w-3xl mx-auto space-y-6">
-            {mockFaqs.map((faq, index) => {
+            {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
                 <div

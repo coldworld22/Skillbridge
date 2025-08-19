@@ -160,6 +160,7 @@ app.use("/api/chat", require("./modules/chat/chat.routes"));
 app.use("/api/languages", require("./modules/languages/languages.routes"));
 app.use("/api/currencies", require("./modules/currencies/currencies.routes"));
 app.use("/api/blog", require("./modules/blog/blog.routes"));
+app.use("/api/faqs", require("./modules/faqs/faqs.routes"));
 app.use("/api/support", require("./modules/support/support.routes"));
 app.use("/api/tickets", require("./modules/tickets/tickets.routes"));
 app.use("/api/media", require("./modules/media/media.routes"));

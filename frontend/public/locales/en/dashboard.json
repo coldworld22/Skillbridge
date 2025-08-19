@@ -1192,6 +1192,22 @@
     "save_success": "Contact settings saved!",
     "save_failed": "Failed to save settings"
   },
+  "faqsPage": {
+    "title": "Manage FAQs",
+    "question_placeholder": "Question",
+    "answer_placeholder": "Answer",
+    "add_faq": "Add FAQ",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add_success": "FAQ added",
+    "add_failed": "Failed to add FAQ",
+    "update_success": "FAQ updated",
+    "update_failed": "Failed to update FAQ",
+    "delete_success": "FAQ deleted",
+    "delete_failed": "Failed to delete FAQ"
+  },
   "offersPage": {
     "title": "📚 My Offers Dashboard",
     "post_new": "Post New Request",
