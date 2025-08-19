@@ -2,14 +2,94 @@ exports.seed = async function (knex) {
   await knex('settings').where({ key: 'seo_settings' }).del();
   const now = new Date();
   const config = {
-    metaTags: {},
+    baseUrl: 'https://eduskillbridge.net',
+    siteName: 'SkillBridge',
+    metaTags: {
+      '/': {
+        title: 'SkillBridge | Launch Your Tech Career',
+        description:
+          'Gain real-world coding experience through mentored, project-based internships that accelerate your path to a software career.',
+        keywords:
+          'SkillBridge, software internships, coding experience, tech career, portfolio',
+        canonical: 'https://eduskillbridge.net/',
+        noindex: false,
+        nofollow: false,
+      },
+      '/about': {
+        title: 'About SkillBridge | Empowering Future Developers',
+        description:
+          'Discover how SkillBridge helps aspiring developers build job-ready skills and industry connections through immersive internships.',
+        keywords: 'about SkillBridge, developer mentorship, real projects',
+        canonical: 'https://eduskillbridge.net/about',
+        noindex: false,
+        nofollow: false,
+      },
+      '/contact': {
+        title: 'Contact SkillBridge',
+        description:
+          'Reach out to the SkillBridge team for support, partnerships, or general inquiries about our programs.',
+        keywords: 'contact SkillBridge, support, partnership inquiries',
+        canonical: 'https://eduskillbridge.net/contact',
+        noindex: false,
+        nofollow: false,
+      },
+    },
     sitemap: [
       { path: '/', include: true, priority: 1.0, freq: 'daily' },
+      { path: '/about', include: true, priority: 0.8, freq: 'monthly' },
+      { path: '/contact', include: true, priority: 0.6, freq: 'monthly' },
     ],
-    robots: '',
-    openGraph: {},
-    twitter: {},
-    siteName: '',
+    robots:
+      'User-agent: *\nDisallow: /dashboard/\nDisallow: /admin/\nAllow: /\n\nSitemap: https://eduskillbridge.net/sitemap.xml',
+    openGraph: {
+      '/': {
+        title: 'SkillBridge | Launch Your Tech Career',
+        description:
+          'Gain real-world coding experience through mentored, project-based internships that accelerate your path to a software career.',
+        type: 'website',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+      },
+      '/about': {
+        title: 'About SkillBridge | Empowering Future Developers',
+        description:
+          'Discover how SkillBridge helps aspiring developers build job-ready skills and industry connections through immersive internships.',
+        type: 'article',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+      },
+      '/contact': {
+        title: 'Contact SkillBridge',
+        description:
+          'Reach out to the SkillBridge team for support, partnerships, or general inquiries about our programs.',
+        type: 'website',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+      },
+    },
+    twitter: {
+      '/': {
+        title: 'SkillBridge | Launch Your Tech Career',
+        description:
+          'Gain real-world coding experience through mentored, project-based internships that accelerate your path to a software career.',
+        cardType: 'summary_large_image',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+        handle: '@SkillBridge',
+      },
+      '/about': {
+        title: 'About SkillBridge | Empowering Future Developers',
+        description:
+          'Discover how SkillBridge helps aspiring developers build job-ready skills and industry connections through immersive internships.',
+        cardType: 'summary_large_image',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+        handle: '@SkillBridge',
+      },
+      '/contact': {
+        title: 'Contact SkillBridge',
+        description:
+          'Reach out to the SkillBridge team for support, partnerships, or general inquiries about our programs.',
+        cardType: 'summary_large_image',
+        image: 'https://eduskillbridge.net/images/seo/og-default.jpg',
+        handle: '@SkillBridge',
+      },
+    },
     globalSEO: {
       forceCanonical: true,
       noindexSitewide: false,
