@@ -1109,6 +1109,27 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "emailConfigPage": {
+    "title": "Email Configuration",
+    "sender_details": "Sender Details",
+    "from_name": "From Name",
+    "from_email": "From Email",
+    "reply_to_email": "Reply-To Email",
+    "smtp_settings": "SMTP Settings",
+    "smtp_host": "SMTP Host",
+    "smtp_port": "SMTP Port",
+    "encryption": "Encryption",
+    "sending_method": "Sending Method",
+    "smtp_username": "SMTP Username",
+    "smtp_password": "SMTP Password",
+    "send_test_email": "Send Test Email",
+    "send_test_email_loading": "Sending...",
+    "save_settings": "Save Settings",
+    "save_settings_loading": "Saving...",
+    "test_email_sending": "Sending test email...",
+    "test_email_sent": "Test email sent successfully!",
+    "settings_saved": "Email configuration saved successfully!"
+  },
   "messagesConfigPage": {
     "title": "Messaging Providers Configuration",
     "sms_providers": "SMS Providers",
