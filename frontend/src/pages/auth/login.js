@@ -1,7 +1,7 @@
 // ───────────────────────────────────────
 // 📁 frontend/src/pages/auth/login.js
 //  ──────────────────────────────────────
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
@@ -13,7 +13,7 @@ import useAppConfigStore from "@/store/appConfigStore";
 import BackgroundAnimation from "@/shared/components/auth/BackgroundAnimation";
 import InputField from "@/shared/components/auth/InputField";
 import SocialLogin from "@/shared/components/auth/SocialLogin";
-import ReCAPTCHA from "react-google-recaptcha";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
@@ -26,7 +26,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 // ─────────────────────
 import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
 
-export default function Login() {
+function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
   const { t } = useTranslation("auth");
   const user = useAuthStore((state) => state.user);
@@ -35,9 +35,7 @@ export default function Login() {
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
-  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
-  const [cfgLoading, setCfgLoading] = useState(true);
-  const recaptchaRef = useRef(null);
+  const { executeRecaptcha } = useGoogleReCaptcha() || {};
 
   // ─────────────────────
   // 📝 Form setup
@@ -78,13 +76,6 @@ export default function Login() {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
-  useEffect(() => {
-    fetchSocialLoginConfig()
-      .then(setRecaptchaCfg)
-      .catch(() => {})
-      .finally(() => setCfgLoading(false));
-  }, []);
-
   // ─────────────────────────────
   // 🔑 Handle form submission
   // ─────────────────────────────
@@ -100,9 +91,8 @@ export default function Login() {
       setCfgLoading(false);
     }
     let token;
-    if (cfg?.recaptcha?.active && recaptchaRef.current) {
-      token = await recaptchaRef.current.executeAsync();
-      recaptchaRef.current.reset();
+    if (cfg?.recaptcha?.active && executeRecaptcha) {
+      token = await executeRecaptcha("login");
     }
     const loggedInUser = await login({ ...data, recaptchaToken: token });
     toast.success(t("login_successful"));
@@ -245,15 +235,41 @@ export default function Login() {
         </p>
       </motion.div>
 
-      {recaptchaCfg?.recaptcha?.active && (
-        <ReCAPTCHA
-          sitekey={recaptchaCfg.recaptcha.siteKey}
-          size="invisible"
-          badge="bottomleft"
-          ref={recaptchaRef}
-        />
-      )}
     </div>
+  );
+}
+
+export default function Login() {
+  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
+  const [cfgLoading, setCfgLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSocialLoginConfig()
+      .then(setRecaptchaCfg)
+      .catch(() => {})
+      .finally(() => setCfgLoading(false));
+  }, []);
+
+  if (recaptchaCfg?.recaptcha?.active) {
+    return (
+      <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
+        <LoginForm
+          recaptchaCfg={recaptchaCfg}
+          cfgLoading={cfgLoading}
+          setRecaptchaCfg={setRecaptchaCfg}
+          setCfgLoading={setCfgLoading}
+        />
+      </GoogleReCaptchaProvider>
+    );
+  }
+
+  return (
+    <LoginForm
+      recaptchaCfg={recaptchaCfg}
+      cfgLoading={cfgLoading}
+      setRecaptchaCfg={setRecaptchaCfg}
+      setCfgLoading={setCfgLoading}
+    />
   );
 }
 

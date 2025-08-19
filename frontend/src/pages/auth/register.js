@@ -1,5 +1,5 @@
 // 📁 src/pages/auth/register.js
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
@@ -17,22 +17,20 @@ import SocialRegister from "@/shared/components/auth/SocialRegister";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import { registerSchema } from "@/utils/auth/validationSchemas";
-import ReCAPTCHA from "react-google-recaptcha";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { fetchSocialLoginConfig } from "@/services/socialLoginService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 
-export default function Register() {
+function RegisterForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
   const { t } = useTranslation("auth");
   const { register: registerUser, user, hasHydrated } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
-  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
-  const [cfgLoading, setCfgLoading] = useState(true);
-  const recaptchaRef = useRef(null);
+  const { executeRecaptcha } = useGoogleReCaptcha() || {};
 
   const {
     register,
@@ -64,13 +62,6 @@ export default function Register() {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
-  useEffect(() => {
-    fetchSocialLoginConfig()
-      .then(setRecaptchaCfg)
-      .catch(() => {})
-      .finally(() => setCfgLoading(false));
-  }, []);
-
   const onSubmit = async (data) => {
     try {
       const { full_name, email, phone, password, role } = data;
@@ -81,9 +72,8 @@ export default function Register() {
         setCfgLoading(false);
       }
       let token;
-      if (cfg?.recaptcha?.active && recaptchaRef.current) {
-        token = await recaptchaRef.current.executeAsync();
-        recaptchaRef.current.reset();
+      if (cfg?.recaptcha?.active && executeRecaptcha) {
+        token = await executeRecaptcha("register");
       }
       await registerUser({
         full_name,
@@ -232,16 +222,41 @@ export default function Register() {
         </p>
       </motion.div>
 
-      {/* Avoid moving the reCAPTCHA badge when hovering the card */}
-      {recaptchaCfg?.recaptcha?.active && (
-        <ReCAPTCHA
-          sitekey={recaptchaCfg.recaptcha.siteKey}
-          size="invisible"
-          badge="bottomleft"
-          ref={recaptchaRef}
-        />
-      )}
     </div>
+  );
+}
+
+export default function Register() {
+  const [recaptchaCfg, setRecaptchaCfg] = useState(null);
+  const [cfgLoading, setCfgLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSocialLoginConfig()
+      .then(setRecaptchaCfg)
+      .catch(() => {})
+      .finally(() => setCfgLoading(false));
+  }, []);
+
+  if (recaptchaCfg?.recaptcha?.active) {
+    return (
+      <GoogleReCaptchaProvider reCaptchaKey={recaptchaCfg.recaptcha.siteKey}>
+        <RegisterForm
+          recaptchaCfg={recaptchaCfg}
+          cfgLoading={cfgLoading}
+          setRecaptchaCfg={setRecaptchaCfg}
+          setCfgLoading={setCfgLoading}
+        />
+      </GoogleReCaptchaProvider>
+    );
+  }
+
+  return (
+    <RegisterForm
+      recaptchaCfg={recaptchaCfg}
+      cfgLoading={cfgLoading}
+      setRecaptchaCfg={setRecaptchaCfg}
+      setCfgLoading={setCfgLoading}
+    />
   );
 }
 
