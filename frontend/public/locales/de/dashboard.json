@@ -1694,6 +1694,26 @@
     "quiz": "Quiz/Test",
     "pending_approved": "Pending/Approved"
   },
+  "policiesPage": {
+    "title": "Policy Management",
+    "add_policy": "Add Policy",
+    "policy_title_placeholder": "Policy Title",
+    "preview": "Preview",
+    "save": "Save {{title}}",
+    "saving": "Saving...",
+    "add_new_policy": "Add New Policy",
+    "cancel": "Cancel",
+    "policy_title_empty": "⚠️ Policy title cannot be empty",
+    "policy_title_exists": "⚠️ Policy title already exists",
+    "new_policy_added": "✅ New policy added",
+    "load_failed": "Failed to load policies",
+    "save_failed": "Failed to save policies",
+    "save_success": "✅ {{title}} saved successfully!",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "delete_account": "Delete Account",
+    "legal": "Legal"
+  },
   "couponsPage": {
     "new_coupon": "New Coupon",
     "code_placeholder": "CODE",
