@@ -38,12 +38,10 @@ export default function BlogPostPage() {
                 className="w-full h-auto rounded mb-6"
               />
             )}
-            {post.content && (
-              <div
-                className="prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-            )}
+            <div
+              className="prose prose-invert max-w-none text-white"
+              dangerouslySetInnerHTML={{ __html: post.content || "" }}
+            />
           </article>
         ) : (
           <div className="flex items-center justify-center py-24">
