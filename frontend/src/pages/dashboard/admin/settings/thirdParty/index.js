@@ -14,7 +14,6 @@ import {
   FaGoogle,
   FaChartBar,
   FaAd,
-  FaShieldAlt,
 } from "react-icons/fa";
 import { SiHuggingface } from "react-icons/si";
 
@@ -27,7 +26,6 @@ import HuggingFaceModal from "@/components/admin/integrations/HuggingFaceModal";
 import GoogleCalendarModal from "@/components/admin/integrations/GoogleCalendarModal";
 import GoogleAnalyticsModal from "@/components/admin/integrations/GoogleAnalyticsModal";
 import GoogleAdSenseModal from "@/components/admin/integrations/GoogleAdSenseModal";
-import ReCAPTCHAModal from "@/components/admin/integrations/reCAPTCHAmodal";
 
 export default function ThirdPartyIntegrationsPage() {
   const { t } = useTranslation('dashboard');
@@ -41,7 +39,6 @@ export default function ThirdPartyIntegrationsPage() {
   const [showGoogleCalendarModal, setShowGoogleCalendarModal] = useState(false);
   const [showGoogleAnalyticsModal, setShowGoogleAnalyticsModal] = useState(false);
   const [showGoogleAdSenseModal, setShowGoogleAdSenseModal] = useState(false);
-  const [showReCAPTCHAModal, setShowReCAPTCHAModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -132,13 +129,6 @@ export default function ThirdPartyIntegrationsPage() {
       description: "Display monetized ads using Google AdSense.",
       icon: <FaAd className="text-4xl text-yellow-600" />,
       onClick: () => setShowGoogleAdSenseModal(true),
-    },
-    {
-      key: 'recaptcha',
-      name: "reCAPTCHA v3",
-      description: "Protect your forms with Google reCAPTCHA.",
-      icon: <FaShieldAlt className="text-4xl text-blue-800" />,
-      onClick: () => setShowReCAPTCHAModal(true),
     },
   ];
 
@@ -232,13 +222,6 @@ export default function ThirdPartyIntegrationsPage() {
           initialData={settings.googleAdSense}
           onSave={(data) => saveSection('googleAdSense', data)}
           onClose={() => setShowGoogleAdSenseModal(false)}
-        />
-      )}
-      {showReCAPTCHAModal && (
-        <ReCAPTCHAModal
-          initialData={settings.recaptcha}
-          onSave={(data) => saveSection('recaptcha', data)}
-          onClose={() => setShowReCAPTCHAModal(false)}
         />
       )}
     </AdminLayout>

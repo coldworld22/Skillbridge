@@ -11,7 +11,8 @@ exports.getSettings = catchAsync(async (_req, res) => {
 });
 
 exports.updateSettings = catchAsync(async (req, res) => {
-  const settings = await service.updateSettings(req.body);
+  const { recaptcha, ...rest } = req.body || {};
+  const settings = await service.updateSettings(rest);
   sendSuccess(res, settings, "Settings updated");
 
   const admins = await userModel.findAdmins();
