@@ -5,11 +5,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
+import useAdminNotice from "@/hooks/useAdminNotice";
 import { fetchCurrencies, updateCurrency } from "@/services/admin/currencyService";
 import { useSWRConfig } from "swr";
 import Link from "next/link";
@@ -20,29 +16,6 @@ import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { API_BASE_URL } from "@/config/config";
 
-// ─────────────────────
-// Helper to notify admins of currency changes
-// ─────────────────────
-
-const useAdminNotice = () => {
-  const user = useAuthStore((state) => state.user);
-  const refreshNotifications = useNotificationStore((state) => state.fetch);
-  const refreshMessages = useMessageStore((state) => state.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to send notification";
-      toast.error(msg);
-    }
-  };
-};
-
-// ─────────────────────
 // React component: edit an existing currency
 // ─────────────────────
 function EditCurrencyPage() {
