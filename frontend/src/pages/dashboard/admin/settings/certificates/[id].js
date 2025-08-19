@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
 import { FaSave, FaEye } from "react-icons/fa";
 import { toast } from "react-toastify";
+import {
+  getTemplate,
+  updateTemplate,
+} from "@/services/admin/certificateTemplateService";
 
 export default function EditCertificateTemplate() {
   const router = useRouter();
@@ -14,24 +18,14 @@ export default function EditCertificateTemplate() {
   const [bgPreview, setBgPreview] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  // ✅ Mock fetch by ID
   useEffect(() => {
     if (!id) return;
-    // Simulate fetch from API
-    const existing = {
-      id,
-      name: "React Bootcamp",
-      type: "Completion",
-      borderColor: "#FACC15",
-      fontFamily: "Georgia, serif",
-      titleFont: "'Great Vibes', cursive",
-      showQR: true,
-      logo: null,
-      background: null,
-    };
-    setForm(existing);
-    setLogoPreview("/images/certificate/logo.png");
-    setBgPreview("/images/paper-texture.png");
+    const existing = getTemplate(id);
+    if (existing) {
+      setForm(existing);
+      setLogoPreview(existing.logo || "/images/certificate/logo.png");
+      setBgPreview(existing.background || "/images/paper-texture.png");
+    }
   }, [id]);
 
   const handleChange = (key, value) => {
@@ -41,14 +35,18 @@ export default function EditCertificateTemplate() {
   const handleImageUpload = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (type === "logo") {
-      setLogoPreview(url);
-      handleChange("logo", file);
-    } else {
-      setBgPreview(url);
-      handleChange("background", file);
-    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target.result;
+      if (type === "logo") {
+        setLogoPreview(url);
+        handleChange("logo", url);
+      } else {
+        setBgPreview(url);
+        handleChange("background", url);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUpdate = () => {
@@ -57,8 +55,9 @@ export default function EditCertificateTemplate() {
       return;
     }
 
-    toast.success("Template updated (mock)");
-    console.log("Updated Template:", form);
+    updateTemplate(id, form);
+    toast.success("Template updated");
+    router.push("/dashboard/admin/settings/certificates");
   };
 
   if (!form) return <div className="p-8 text-gray-600">Loading template...</div>;
