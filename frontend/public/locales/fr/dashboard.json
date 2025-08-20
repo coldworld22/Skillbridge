@@ -594,6 +594,7 @@
     "announcement_deleted": "Announcement deleted",
     "delete_failed": "Failed to delete announcement",
     "create_title": "Create Popup Announcement",
+    "edit_title": "Edit Popup Announcement",
     "message_label": "Message (Rich Text)",
     "target_audience": "Target Audience",
     "all_visitors": "All Visitors",
