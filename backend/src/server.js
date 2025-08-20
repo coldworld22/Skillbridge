@@ -102,8 +102,14 @@ app.use((req, res, next) => {
 app.use("/api/auth", require("./modules/auth/routes/auth.routes"));
 app.use("/api/users", require("./modules/users/user.routes"));
 app.use("/api/verify", require("./modules/verify/verify.routes"));
-app.use("/api/certificates", require("./modules/users/tutorials/certificate/certificatePublic.routes"));
-app.use("/api/certificates/admin", require("./modules/certificates/certificates.routes"));
+app.use(
+  "/api/certificates",
+  require("./modules/users/tutorials/certificate/certificatePublic.routes")
+);
+app.use(
+  "/api/certificates/admin",
+  require("./modules/users/tutorials/certificate/certificateAdmin.routes")
+);
 app.use("/api/certificate-templates", require("./modules/certificateTemplates/certificateTemplates.routes"));
 app.use("/api/bookings/admin", require("./modules/bookings/bookings.routes"));
 app.use("/api/bookings/student", require("./modules/bookings/student.routes"));
