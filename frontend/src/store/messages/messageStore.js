@@ -34,6 +34,8 @@ const useMessageStore = create((set, get) => ({
       set({ items: filtered, loading: false });
 
     } catch (err) {
+      console.error("Failed to fetch messages", err);
+      toast.error("Failed to fetch messages");
       set({ loading: false });
     }
   },
@@ -70,7 +72,10 @@ const useMessageStore = create((set, get) => ({
       set((state) => ({
         items: state.items.filter((m) => String(m.id) !== idStr),
       }));
-    } catch (_) {}
+    } catch (err) {
+      console.error("Failed to delete message", err);
+      toast.error("Failed to delete message");
+    }
   },
 
   startPolling: () => {
