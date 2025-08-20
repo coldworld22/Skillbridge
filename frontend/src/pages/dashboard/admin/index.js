@@ -58,25 +58,42 @@ function AdminDashboardHome() {
       setAlertsLoading(true);
       setFlagsLoading(true);
       setLicenseLoading(true);
-      try {
-        const [statsData, alertsData, flagsData, licenseData] = await Promise.all([
-          fetchAdminDashboardStats(),
-          fetchRecentAlerts(),
-          fetchFlaggedMessages(),
-          fetchLicenseStatus(),
-        ]);
-        setStats(statsData);
-        setAlerts(alertsData);
-        setFlaggedMessages(flagsData);
-        setLicenseStatus(licenseData);
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-      } finally {
-        setStatsLoading(false);
-        setAlertsLoading(false);
-        setFlagsLoading(false);
-        setLicenseLoading(false);
+
+      const [statsResult, alertsResult, flagsResult, licenseResult] = await Promise.allSettled([
+        fetchAdminDashboardStats(),
+        fetchRecentAlerts(),
+        fetchFlaggedMessages(),
+        fetchLicenseStatus(),
+      ]);
+
+      if (statsResult.status === "fulfilled") {
+        setStats(statsResult.value);
+      } else {
+        console.error("Failed to load dashboard stats", statsResult.reason);
       }
+
+      if (alertsResult.status === "fulfilled") {
+        setAlerts(alertsResult.value);
+      } else {
+        console.error("Failed to load recent alerts", alertsResult.reason);
+      }
+
+      if (flagsResult.status === "fulfilled") {
+        setFlaggedMessages(flagsResult.value);
+      } else {
+        console.error("Failed to load flagged messages", flagsResult.reason);
+      }
+
+      if (licenseResult.status === "fulfilled") {
+        setLicenseStatus(licenseResult.value);
+      } else {
+        console.error("Failed to load license status", licenseResult.reason);
+      }
+
+      setStatsLoading(false);
+      setAlertsLoading(false);
+      setFlagsLoading(false);
+      setLicenseLoading(false);
     };
     if (hydrated && user && ["admin", "superadmin"].includes(user.role?.toLowerCase())) {
       loadData();
