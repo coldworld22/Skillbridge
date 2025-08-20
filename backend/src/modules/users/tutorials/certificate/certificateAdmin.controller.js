@@ -1,3 +1,8 @@
+const db = require("../../../../config/database");
+const catchAsync = require("../../../../utils/catchAsync");
+const { sendSuccess } = require("../../../../utils/response");
+const AppError = require("../../../../utils/AppError");
+
 exports.revokeCertificate = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
