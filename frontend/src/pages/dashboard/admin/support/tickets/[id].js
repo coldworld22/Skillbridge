@@ -6,7 +6,8 @@ import {
   fetchTicketById,
   addMessage,
   updateStatus,
-  updatePriority
+  updatePriority,
+  uploadAttachment
 } from "@/services/supportService";
 import TicketDetailPanel from "@/components/support/TicketDetailPanel";
 import TicketReplyBox from "@/components/support/TicketReplyBox";
@@ -37,9 +38,10 @@ export default function AdminTicketDetail() {
     setLoading(true);
     try {
       const data = await fetchTicketById(id);
-      setTicket(data);
+      const normalizedPriority = data.priority?.toLowerCase() || "medium";
+      setTicket({ ...data, priority: normalizedPriority });
       setStatus(data.status);
-      setPriority(data.priority || "medium");
+      setPriority(normalizedPriority);
     } catch (err) {
       console.error("Failed to fetch ticket", err);
       toast.error(t("load_failed"));
@@ -48,11 +50,12 @@ export default function AdminTicketDetail() {
     }
   };
 
-  const handleReply = async (msg) => {
+  const handleReply = async (msg, file) => {
     if (!msg.trim()) return toast.warn(t("reply_required"));
     setReplying(true);
     try {
-      await addMessage(id, msg);
+      const message = await addMessage(id, msg);
+      if (file) await uploadAttachment(message.id, file);
       await load();
       toast.success(t("reply_sent"));
     } catch (err) {
@@ -84,10 +87,11 @@ export default function AdminTicketDetail() {
   };
 
   const handlePriorityChange = async (newPriority) => {
+    const normalizedPriority = newPriority.toLowerCase();
     try {
-      await updatePriority(id, newPriority);
-      setPriority(newPriority);
-      setTicket((prev) => ({ ...prev, priority: newPriority }));
+      await updatePriority(id, normalizedPriority);
+      setPriority(normalizedPriority);
+      setTicket((prev) => ({ ...prev, priority: normalizedPriority }));
       toast.success(t("priority_updated"));
     } catch (err) {
       console.error("Failed to update priority", err);

@@ -55,6 +55,17 @@ export const addMessage = async (id, message) => {
   return data?.data;
 };
 
+export const uploadAttachment = async (messageId, file) => {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post(
+    `/support/messages/${messageId}/attachments`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return data?.data;
+};
+
 export const deleteTicket = async (id) => {
   const { data } = await api.delete(`/support/tickets/${id}`);
   return data?.data;
@@ -66,7 +77,9 @@ export const updateStatus = async (id, status) => {
 };
 
 export const updatePriority = async (id, priority) => {
-  const { data } = await api.put(`/tickets/${id}/priority`, { priority });
+  const { data } = await api.patch(`/support/admin/tickets/${id}/priority`, {
+    priority,
+  });
   return data?.data;
 };
 
