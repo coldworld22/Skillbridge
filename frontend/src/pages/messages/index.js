@@ -63,38 +63,28 @@ const MessagesPage = () => {
     return `${API_BASE_URL}${url}`;
   };
 
-  const fetchMessages = useCallback(() => {
-    fetchMessagesStore();
-  }, [fetchMessagesStore]);
-
-  const startPolling = useCallback(() => {
-    startPollingStore();
-  }, [startPollingStore]);
-
   const router = useRouter();
 
-  // Keep unread counts from the backend so new chats show up in the sidebar
-  const adjustCounts = useCallback((list) => computeUnreadCounts(list, messages), [messages]);
-
   const fetchUsersList = useCallback(() => {
+    const storeMessages = useMessageStore.getState().items;
     return getUsers()
-      .then((data) => setUsers(adjustCounts(data)))
+      .then((data) => setUsers(computeUnreadCounts(data, storeMessages)))
       .catch(() => setUsers([]));
-  }, [adjustCounts]);
+  }, []);
 
   useEffect(() => {
     fetchUsersList();
     getGroups().then(setGroups).catch(() => setGroups([]));
-    fetchMessages();
-    startPolling();
+    fetchMessagesStore();
+    startPollingStore();
 
     const interval = setInterval(fetchUsersList, 30000);
     return () => clearInterval(interval);
-  }, [fetchUsersList, fetchMessages, startPolling]);
+  }, [fetchUsersList, fetchMessagesStore, startPollingStore]);
 
   useEffect(() => {
-    setUsers((prev) => adjustCounts(prev));
-  }, [messages, adjustCounts]);
+    setUsers((prev) => computeUnreadCounts(prev, messages));
+  }, [messages]);
 
   useEffect(() => {
     const lowerSearch = searchTerm.toLowerCase().trim();
