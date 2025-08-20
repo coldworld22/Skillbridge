@@ -11,6 +11,18 @@ import {
 } from "@/services/admin/certificateTemplateService";
 import { toSnakeCase } from "@/utils/case";
 
+const CERTIFICATE_TYPES = ["Completion", "Achievement", "Attendance"];
+const FONT_FAMILIES = [
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Times New Roman", value: "Times New Roman, serif" },
+  { label: "Arial", value: "Arial, sans-serif" },
+];
+const TITLE_FONTS = [
+  { label: "Great Vibes", value: "'Great Vibes', cursive" },
+  { label: "Playfair Display", value: "'Playfair Display', serif" },
+  { label: "Pacifico", value: "'Pacifico', cursive" },
+];
+
 export default function EditCertificateTemplate() {
   const router = useRouter();
   const { id } = router.query;
@@ -98,15 +110,17 @@ export default function EditCertificateTemplate() {
                 onChange={(e) => handleChange("name", e.target.value)}
                 className="input input-bordered w-full"
               />
-              <select
-                value={form.type}
-                onChange={(e) => handleChange("type", e.target.value)}
-                className="select select-bordered w-full"
-              >
-                <option value="Completion">Completion</option>
-                <option value="Achievement">Achievement</option>
-                <option value="Attendance">Attendance</option>
-              </select>
+                <select
+                  value={form.type}
+                  onChange={(e) => handleChange("type", e.target.value)}
+                  className="select select-bordered w-full"
+                >
+                  {CERTIFICATE_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
             </div>
           </section>
 
@@ -116,27 +130,31 @@ export default function EditCertificateTemplate() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Body Font</label>
-                <select
-                value={form.font_family}
-                onChange={(e) => handleChange("font_family", e.target.value)}
-                  className="select select-bordered w-full mt-1"
-                >
-                  <option value="Georgia, serif">Georgia</option>
-                  <option value="Times New Roman, serif">Times New Roman</option>
-                  <option value="Arial, sans-serif">Arial</option>
-                </select>
+                  <select
+                    value={form.font_family}
+                    onChange={(e) => handleChange("font_family", e.target.value)}
+                    className="select select-bordered w-full mt-1"
+                  >
+                    {FONT_FAMILIES.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Title Font</label>
-                <select
-                value={form.title_font}
-                onChange={(e) => handleChange("title_font", e.target.value)}
-                  className="select select-bordered w-full mt-1"
-                >
-                  <option value="'Great Vibes', cursive">Great Vibes</option>
-                  <option value="'Playfair Display', serif">Playfair Display</option>
-                  <option value="'Pacifico', cursive">Pacifico</option>
-                </select>
+                  <select
+                    value={form.title_font}
+                    onChange={(e) => handleChange("title_font", e.target.value)}
+                    className="select select-bordered w-full mt-1"
+                  >
+                    {TITLE_FONTS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
               </div>
             </div>
           </section>
