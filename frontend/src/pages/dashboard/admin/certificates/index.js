@@ -32,7 +32,9 @@ export default function AdminCertificatesPage() {
   const filteredCertificates = certificates.filter(c => {
     const matchesSearch = c.studentName.toLowerCase().includes(search.toLowerCase()) ||
                            c.className.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || c.status.toLowerCase() === filterStatus;
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (c.status && c.status.toLowerCase() === filterStatus);
     return matchesSearch && matchesStatus;
   });
 
@@ -90,18 +92,20 @@ export default function AdminCertificatesPage() {
                   <td className="p-3">{new Date(c.issueDate).toLocaleDateString()}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      c.status === 'Issued' ? 'bg-green-100 text-green-700' :
-                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
+                      c.status && c.status === 'Issued'
+                        ? 'bg-green-100 text-green-700'
+                        : c.status && c.status === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
                     }`}>
-                      {c.status}
+                      {c.status || ''}
                     </span>
                   </td>
                   <td className="p-3 flex gap-2">
                     <Link href={`/dashboard/admin/certificates/view/${c.id}`} className="text-blue-600 hover:text-blue-800">
                       <FaEye />
                     </Link>
-                    {c.status === 'Issued' && (
+                    {c.status && c.status === 'Issued' && (
                       <button
                         onClick={() => alert('🚀 Downloading certificate (mock)!')}
                         className="text-green-600 hover:text-green-800"
@@ -109,7 +113,7 @@ export default function AdminCertificatesPage() {
                         <FaDownload />
                       </button>
                     )}
-                    {c.status === 'Pending' && (
+                    {c.status && c.status === 'Pending' && (
                       <>
                         <button
                           onClick={() => alert('✅ Approving certificate (mock)!')}
