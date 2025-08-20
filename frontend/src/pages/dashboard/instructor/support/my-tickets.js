@@ -1,54 +1,14 @@
 import PageHead from "@/components/common/PageHead";
-import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { useEffect, useState } from "react";
-import { fetchMyTickets, deleteTicket } from "@/services/supportService";
-import StatusBadge from "@/components/support/StatusBadge";
-import { FaEye, FaTrashAlt } from "react-icons/fa";
-import { toast } from "react-toastify";
+import MyTicketsTable from "@/components/support/MyTicketsTable";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { ConfirmModal } from "@/components/common/Modal";
 
 export default function MyTicketsPage() {
-  const [tickets, setTickets] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [numberFilter, setNumberFilter] = useState("");
   const { t } = useTranslation('dashboard');
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const load = async () => {
-    try {
-      const data = await fetchMyTickets();
-      setTickets(data);
-      toast.success(t("tickets_loaded"));
-    } catch (err) {
-      toast.error(t("tickets_load_failed"));
-      console.error("Failed to load tickets", err);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm(t('confirm_delete_ticket'))) return;
-    try {
-      await deleteTicket(id);
-      setTickets(tickets.filter((t) => t.id !== id));
-      toast.success(t('ticket_deleted'));
-    } catch (err) {
-      console.error('Failed to delete ticket', err);
-      toast.error(t('delete_failed'));
-    }
-  };
-
-  const filteredTickets = tickets.filter(
-    (ticket) =>
-      (statusFilter === "All" || ticket.status === statusFilter) &&
-      (numberFilter === "" ||
-        ticket.ticket_number?.toString().includes(numberFilter))
-  );
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   return (
     <InstructorLayout>

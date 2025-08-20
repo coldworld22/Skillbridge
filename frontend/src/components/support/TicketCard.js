@@ -1,5 +1,6 @@
 import StatusBadge from './StatusBadge';
 import { FiClock, FiTag } from 'react-icons/fi';
+import Image from 'next/image';
 
 export default function TicketCard({ ticket, onClick }) {
   const bgColors = {
@@ -29,9 +30,17 @@ export default function TicketCard({ ticket, onClick }) {
           {ticket.priority}
         </span>
         <span className="flex items-center gap-1">
-          <img
+          <Image
             src={ticket.user_avatar || '/images/default-avatar.png'}
-            alt="avatar"
+            alt={
+              ticket.user_name
+                ? `${ticket.user_name}'s avatar`
+                : ticket.user
+                ? `${ticket.user}'s avatar`
+                : 'User avatar'
+            }
+            width={16}
+            height={16}
             className="w-4 h-4 rounded-full object-cover"
           />
           {ticket.user_name || ticket.user || 'Unknown'}

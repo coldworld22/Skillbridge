@@ -43,7 +43,6 @@ export const fetchTicketById = async (id) => {
   const { data } = await api.get(`/support/tickets/${id}`);
   const ticket = data?.data;
   if (!ticket) return null;
-  const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
     ...rest,
     createdAt: created_at,
@@ -82,7 +81,8 @@ export const deleteTicket = async (id) => {
 };
 
 export const updateStatus = async (id, status) => {
-  const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status });
+  const normalized = status?.toLowerCase();
+  const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status: normalized });
   return data?.data;
 };
 
