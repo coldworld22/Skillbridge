@@ -42,7 +42,7 @@ exports.listUserTickets = (user_id) => {
     .orderBy("created_at", "desc");
 };
 
-exports.listAllTickets = ({ status, search, ticketNumber } = {}) => {
+exports.listAllTickets = ({ status, search, ticketNumber, priority } = {}) => {
   const query = db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
     .select(
@@ -67,6 +67,10 @@ exports.listAllTickets = ({ status, search, ticketNumber } = {}) => {
 
   if (ticketNumber) {
     query.whereILike("support_tickets.ticket_number", `%${ticketNumber}%`);
+  }
+
+  if (priority) {
+    query.where("support_tickets.priority", priority);
   }
 
   return query;
