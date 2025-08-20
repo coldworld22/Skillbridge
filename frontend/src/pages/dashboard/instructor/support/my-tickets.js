@@ -2,19 +2,21 @@ import PageHead from "@/components/common/PageHead";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
-import { fetchMyTickets, deleteTicket } from "@/services/supportService";
+import { fetchMyTickets, deleteTicket as deleteTicketService } from "@/services/supportService";
 import StatusBadge from "@/components/support/StatusBadge";
 import { FaEye, FaTrashAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { ConfirmModal } from "@/components/common/Modal";
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [numberFilter, setNumberFilter] = useState("");
   const { t } = useTranslation('dashboard');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   useEffect(() => {
     load();
@@ -31,10 +33,9 @@ export default function MyTicketsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm(t('confirm_delete_ticket'))) return;
+  const deleteTicketConfirmed = async (id) => {
     try {
-      await deleteTicket(id);
+      await deleteTicketService(id);
       setTickets(tickets.filter((t) => t.id !== id));
       toast.success(t('ticket_deleted'));
     } catch (err) {
@@ -42,6 +43,20 @@ export default function MyTicketsPage() {
       toast.error(t('delete_failed'));
     }
   };
+
+  const confirmDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'confirm_delete_title',
+      message: 'confirm_delete_ticket',
+      confirmText: 'delete',
+      cancelText: 'cancel',
+      onConfirm: () => deleteTicketConfirmed(id),
+    });
+  };
+
+  const closeConfirmModal = () =>
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
   const filteredTickets = tickets.filter(
     (ticket) =>
@@ -121,7 +136,7 @@ export default function MyTicketsPage() {
                       </Link>
                       {(['resolved', 'closed'].includes(ticket.status?.toLowerCase())) && (
                         <button
-                          onClick={() => handleDelete(ticket.id)}
+                          onClick={() => confirmDelete(ticket.id)}
                           className="text-red-600 hover:underline ml-2 inline-flex items-center gap-1"
                         >
                           <FaTrashAlt /> {t('delete_ticket')}
@@ -134,6 +149,15 @@ export default function MyTicketsPage() {
             </table>
           </div>
         )}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          onClose={closeConfirmModal}
+          onConfirm={confirmModal.onConfirm}
+        />
       </div>
     </InstructorLayout>
   );
