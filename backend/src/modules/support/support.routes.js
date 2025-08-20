@@ -19,6 +19,7 @@ router.post(
 
 router.get("/admin/tickets", isAdmin, controller.listAllTickets);
 router.patch("/admin/tickets/:id/status", isAdmin, controller.updateStatus);
+router.patch("/admin/tickets/:id/priority", isAdmin, controller.updatePriority);
 router.get("/admin/recent-activity", isAdmin, controller.listRecentActivity);
 router.get("/admin/analytics", isAdmin, controller.getAnalytics);
 

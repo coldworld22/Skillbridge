@@ -124,6 +124,14 @@ exports.updateStatus = async (id, status) => {
   return row;
 };
 
+exports.updatePriority = async (id, priority) => {
+  const [row] = await db("support_tickets")
+    .where({ id })
+    .update({ priority, updated_at: db.fn.now() })
+    .returning("*");
+  return row;
+};
+
 exports.removeTicket = (id) =>
   db("support_tickets").where({ id }).del();
 
