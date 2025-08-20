@@ -28,7 +28,14 @@ export default function TicketDetailPanel({ ticket }) {
               className="w-6 h-6 rounded-full object-cover mt-1"
             />
             <div>
-              <div className="text-xs font-semibold text-gray-700">{m.sender_name || 'User'}</div>
+              <div className="text-xs font-semibold text-gray-700">
+                {m.sender_name || 'User'}
+                {m.createdAt && (
+                  <span className="ml-2 text-gray-400">
+                    {new Date(m.createdAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-600">{m.message}</p>
             </div>
           </div>
