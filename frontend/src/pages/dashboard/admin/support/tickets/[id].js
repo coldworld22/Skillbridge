@@ -6,7 +6,8 @@ import {
   fetchTicketById,
   addMessage,
   updateStatus,
-  updatePriority
+  updatePriority,
+  uploadAttachment
 } from "@/services/supportService";
 import TicketDetailPanel from "@/components/support/TicketDetailPanel";
 import TicketReplyBox from "@/components/support/TicketReplyBox";
@@ -48,11 +49,12 @@ export default function AdminTicketDetail() {
     }
   };
 
-  const handleReply = async (msg) => {
+  const handleReply = async (msg, file) => {
     if (!msg.trim()) return toast.warn(t("reply_required"));
     setReplying(true);
     try {
-      await addMessage(id, msg);
+      const message = await addMessage(id, msg);
+      if (file) await uploadAttachment(message.id, file);
       await load();
       toast.success(t("reply_sent"));
     } catch (err) {
