@@ -1,7 +1,8 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatAvatar = (url) => {
+// Normalize any URL returned from the API (avatars, attachments, etc.)
+const formatUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:"))
     return url;
@@ -26,10 +27,9 @@ export const fetchMyTickets = async () => {
 export const fetchAllTickets = async (filters = {}) => {
   const { data } = await api.get("/support/admin/tickets", { params: filters });
   const list = data?.data ?? [];
-  return list.map(({ created_at, user_avatar, ...rest }) => ({
-    ...rest,
-    createdAt: created_at,
-    user_avatar: formatAvatar(user_avatar),
+  return list.map((t) => ({
+    ...t,
+    user_avatar: formatUrl(t.user_avatar),
   }));
 };
 
@@ -39,13 +39,15 @@ export const fetchTicketById = async (id) => {
   if (!ticket) return null;
   const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
-    ...rest,
-    createdAt: created_at,
-    user_avatar: formatAvatar(user_avatar),
-    messages: messages.map(({ created_at: msgCreatedAt, sender_avatar, ...msgRest }) => ({
-      ...msgRest,
-      createdAt: msgCreatedAt,
-      sender_avatar: formatAvatar(sender_avatar),
+    ...ticket,
+    user_avatar: formatUrl(ticket.user_avatar),
+    messages: (ticket.messages || []).map((m) => ({
+      ...m,
+      sender_avatar: formatUrl(m.sender_avatar),
+      attachments: (m.attachments || []).map((a) => ({
+        ...a,
+        file_url: formatUrl(a.file_url),
+      })),
     })),
   };
 };

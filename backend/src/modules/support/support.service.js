@@ -97,7 +97,25 @@ exports.getTicketById = async (id) => {
     )
     .where({ ticket_id: id })
     .orderBy("support_messages.created_at", "asc");
-  return { ...ticket, messages };
+
+  // Fetch attachments for all messages in a single query
+  const ids = messages.map((m) => m.id);
+  let attachmentsByMessage = {};
+  if (ids.length) {
+    const rows = await db("support_attachments").whereIn("message_id", ids);
+    attachmentsByMessage = rows.reduce((acc, att) => {
+      acc[att.message_id] = acc[att.message_id] || [];
+      acc[att.message_id].push(att);
+      return acc;
+    }, {});
+  }
+
+  const messagesWithAttachments = messages.map((m) => ({
+    ...m,
+    attachments: attachmentsByMessage[m.id] || [],
+  }));
+
+  return { ...ticket, messages: messagesWithAttachments };
 };
 
 exports.addMessage = async ({ ticket_id, sender_id, message }) => {
@@ -107,14 +125,31 @@ exports.addMessage = async ({ ticket_id, sender_id, message }) => {
   return row;
 };
 
-exports.uploadAttachment = (messageId, file) =>
-  db("support_attachments")
-    .insert({
-      message_id: messageId,
-      file_url: file.path,
-      file_name: file.originalname,
-    })
+// ─────────────────────
+// 📎 Attachments helpers
+// ─────────────────────
+
+/**
+ * Store an attachment linked to a support message
+ * @param {Object} params
+ * @param {string} params.message_id - Related support message ID
+ * @param {string} params.file_url - Stored file path or URL
+ * @param {string} [params.file_name] - Original filename
+ */
+exports.addAttachment = async ({ message_id, file_url, file_name }) => {
+  const [row] = await db("support_attachments")
+    .insert({ message_id, file_url, file_name })
     .returning("*");
+  return row;
+};
+
+/**
+ * Retrieve all attachments for a given message
+ * @param {string} message_id
+ */
+exports.getAttachmentsByMessage = (message_id) =>
+  db("support_attachments").where({ message_id });
+
 
 exports.updateStatus = async (id, status) => {
   const [row] = await db("support_tickets")
