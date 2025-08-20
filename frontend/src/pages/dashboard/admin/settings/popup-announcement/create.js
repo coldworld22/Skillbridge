@@ -14,6 +14,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { createPopupAnnouncement } from "@/services/admin/popupAnnouncementService";
 import { fetchPageList } from "@/services/admin/seoConfigService";
+import PopupPreviewModal from "@/components/admin/settings/PopupPreviewModal";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -51,6 +52,7 @@ export default function CreateAnnouncementForm() {
   });
 
   const [allPages, setAllPages] = useState([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const loadPages = async () => {
@@ -256,12 +258,13 @@ export default function CreateAnnouncementForm() {
           <button
             type="button"
             className="border px-6 py-2 rounded shadow text-gray-800 hover:bg-gray-100"
-            onClick={() => alert("🔍 Preview not implemented")}
+            onClick={() => setShowPreview(true)}
           >
             <FaEye className="inline mr-2" /> {t('preview')}
           </button>
         </div>
       </form>
+      {showPreview && <PopupPreviewModal data={form} onClose={() => setShowPreview(false)} />}
     </AdminLayout>
   );
 }
