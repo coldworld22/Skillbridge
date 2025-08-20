@@ -213,6 +213,15 @@ exports.updateStatus = catchAsync(async (req, res) => {
   sendSuccess(res, ticket, "Status updated");
 });
 
+exports.updatePriority = catchAsync(async (req, res) => {
+  const ticket = await service.updatePriority(
+    req.params.id,
+    req.body.priority
+  );
+  if (!ticket) throw new AppError("Ticket not found", 404);
+  sendSuccess(res, ticket, "Priority updated");
+});
+
 exports.deleteTicket = catchAsync(async (req, res) => {
   const ticket = await service.getTicketById(req.params.id);
   if (!ticket) throw new AppError("Ticket not found", 404);
