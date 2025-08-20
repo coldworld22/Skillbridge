@@ -1,6 +1,10 @@
 import { FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code";
 
+const isTemplateAsset = (url) =>
+  typeof url === "string" &&
+  url.startsWith("/api/uploads/certificateTemplates/");
+
 export default function CertificatePreviewModal({ template, onClose, mockData }) {
   if (!template) return null;
 
@@ -33,6 +37,12 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
   const fontFamily = font_family ?? legacyFontFamily ?? "Georgia, serif";
   const titleFont = title_font ?? legacyTitleFont ?? "'Great Vibes', cursive";
   const showQR = show_qr ?? legacyShowQR ?? true;
+  const safeBackground = isTemplateAsset(background)
+    ? background
+    : "/images/paper-texture.png";
+  const safeLogo = isTemplateAsset(logo)
+    ? logo
+    : "/images/certificate/logo.png";
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-black/60 flex items-center justify-center z-50">
@@ -49,7 +59,7 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
         <div
           className="w-full border-[12px] rounded-xl p-10 text-center relative shadow-inner"
           style={{
-            backgroundImage: `url('${background}')`,
+            backgroundImage: `url('${safeBackground}')`,
             backgroundSize: "cover",
             backgroundRepeat: "no-repeat",
             borderColor,
@@ -58,7 +68,7 @@ export default function CertificatePreviewModal({ template, onClose, mockData })
         >
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img src={logo} alt="Logo" className="w-32" />
+            <img src={safeLogo} alt="Logo" className="w-32" />
           </div>
 
           {/* Title */}
