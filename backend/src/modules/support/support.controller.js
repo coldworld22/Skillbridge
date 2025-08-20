@@ -134,6 +134,7 @@ exports.listAllTickets = catchAsync(async (req, res) => {
     status: req.query.status,
     search: req.query.search,
     ticketNumber: req.query.ticketNumber,
+    priority: req.query.priority,
   };
   const tickets = await service.listAllTickets(filters);
   sendSuccess(res, tickets);
@@ -183,6 +184,16 @@ exports.addMessage = catchAsync(async (req, res) => {
   sendSuccess(res, msg, "Message added");
 });
 
+exports.uploadAttachment = catchAsync(async (req, res) => {
+  const file = req.file;
+  if (!file) throw new AppError("No file uploaded", 400);
+  const attachment = await service.uploadAttachment(
+    req.params.messageId,
+    file
+  );
+  sendSuccess(res, attachment, "Attachment uploaded");
+});
+
 exports.updateStatus = catchAsync(async (req, res) => {
   const ticket = await service.updateStatus(req.params.id, req.body.status);
   if (!ticket) throw new AppError("Ticket not found", 404);
@@ -211,6 +222,15 @@ exports.updateStatus = catchAsync(async (req, res) => {
     }
   }
   sendSuccess(res, ticket, "Status updated");
+});
+
+exports.updatePriority = catchAsync(async (req, res) => {
+  const ticket = await service.updatePriority(
+    req.params.id,
+    req.body.priority
+  );
+  if (!ticket) throw new AppError("Ticket not found", 404);
+  sendSuccess(res, ticket, "Priority updated");
 });
 
 exports.deleteTicket = catchAsync(async (req, res) => {

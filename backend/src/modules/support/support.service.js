@@ -42,7 +42,7 @@ exports.listUserTickets = (user_id) => {
     .orderBy("created_at", "desc");
 };
 
-exports.listAllTickets = ({ status, search, ticketNumber } = {}) => {
+exports.listAllTickets = ({ status, search, ticketNumber, priority } = {}) => {
   const query = db("support_tickets")
     .leftJoin("users", "support_tickets.user_id", "users.id")
     .select(
@@ -67,6 +67,10 @@ exports.listAllTickets = ({ status, search, ticketNumber } = {}) => {
 
   if (ticketNumber) {
     query.whereILike("support_tickets.ticket_number", `%${ticketNumber}%`);
+  }
+
+  if (priority) {
+    query.where("support_tickets.priority", priority);
   }
 
   return query;
@@ -146,10 +150,19 @@ exports.addAttachment = async ({ message_id, file_url, file_name }) => {
 exports.getAttachmentsByMessage = (message_id) =>
   db("support_attachments").where({ message_id });
 
+
 exports.updateStatus = async (id, status) => {
   const [row] = await db("support_tickets")
     .where({ id })
     .update({ status, updated_at: db.fn.now() })
+    .returning("*");
+  return row;
+};
+
+exports.updatePriority = async (id, priority) => {
+  const [row] = await db("support_tickets")
+    .where({ id })
+    .update({ priority, updated_at: db.fn.now() })
     .returning("*");
   return row;
 };

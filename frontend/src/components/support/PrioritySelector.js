@@ -1,4 +1,9 @@
-const options = ['Low', 'Medium', 'High', 'Urgent'];
+const options = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+];
 
 export default function PrioritySelector({ value, onChange }) {
   return (
@@ -8,8 +13,8 @@ export default function PrioritySelector({ value, onChange }) {
       onChange={(e) => onChange(e.target.value)}
     >
       {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
+        <option key={o.value} value={o.value}>
+          {o.label}
         </option>
       ))}
     </select>
