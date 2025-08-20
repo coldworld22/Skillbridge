@@ -16,18 +16,22 @@ export default function AdminCertificatesPage() {
   const [certificates, setCertificates] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchAllCertificates();
+        const data = await fetchAllCertificates(page, limit);
         setCertificates(data);
+        setHasMore(data.length === limit);
       } catch (err) {
         console.error('Failed to load certificates', err);
       }
     };
     load();
-  }, []);
+  }, [page]);
 
   const filteredCertificates = certificates.filter(c => {
     const matchesSearch = c.studentName.toLowerCase().includes(search.toLowerCase()) ||
@@ -137,6 +141,25 @@ export default function AdminCertificatesPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span>Page {page}</span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </AdminLayout>
