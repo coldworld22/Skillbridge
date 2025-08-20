@@ -4,9 +4,11 @@ import MyTicketsTable from "@/components/support/MyTicketsTable";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import { ConfirmModal } from "@/components/common/Modal";
 
 export default function MyTicketsPage() {
   const { t } = useTranslation('dashboard');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   return (
     <InstructorLayout>

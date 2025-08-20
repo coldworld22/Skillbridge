@@ -21,7 +21,12 @@ export const createTicket = async ({ subject, message }) => {
 
 export const fetchMyTickets = async () => {
   const { data } = await api.get("/support/my-tickets");
-  return data?.data ?? [];
+  const list = data?.data ?? [];
+  return list.map((t) => ({
+    ...t,
+    status: t.status?.toLowerCase(),
+    priority: t.priority?.toLowerCase(),
+  }));
 };
 
 export const fetchAllTickets = async (filters = {}) => {
@@ -29,6 +34,8 @@ export const fetchAllTickets = async (filters = {}) => {
   const list = data?.data ?? [];
   return list.map((t) => ({
     ...t,
+    status: t.status?.toLowerCase(),
+    priority: t.priority?.toLowerCase(),
     user_avatar: formatUrl(t.user_avatar),
   }));
 };
@@ -37,9 +44,10 @@ export const fetchTicketById = async (id) => {
   const { data } = await api.get(`/support/tickets/${id}`);
   const ticket = data?.data;
   if (!ticket) return null;
-  const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
     ...ticket,
+    status: ticket.status?.toLowerCase(),
+    priority: ticket.priority?.toLowerCase(),
     user_avatar: formatUrl(ticket.user_avatar),
     messages: (ticket.messages || []).map((m) => ({
       ...m,
@@ -74,7 +82,8 @@ export const deleteTicket = async (id) => {
 };
 
 export const updateStatus = async (id, status) => {
-  const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status });
+  const normalized = status?.toLowerCase();
+  const { data } = await api.patch(`/support/admin/tickets/${id}/status`, { status: normalized });
   return data?.data;
 };
 
@@ -87,7 +96,12 @@ export const updatePriority = async (id, priority) => {
 
 export const fetchRecentActivity = async () => {
   const { data } = await api.get("/support/admin/recent-activity");
-  return data?.data ?? [];
+  const list = data?.data ?? [];
+  return list.map((a) => ({
+    ...a,
+    status: a.status?.toLowerCase(),
+    priority: a.priority?.toLowerCase(),
+  }));
 };
 
 export const fetchSupportAnalytics = async () => {

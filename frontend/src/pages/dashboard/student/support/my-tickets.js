@@ -7,6 +7,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function MyTicketsPage() {
   const { t } = useTranslation("dashboard");
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   return (
     <StudentLayout>
