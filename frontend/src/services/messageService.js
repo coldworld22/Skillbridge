@@ -99,12 +99,20 @@ export const togglePinMessage = async (id) => {
 export const listenCalls = () => useCallStore.getState().listen();
 
 let msgListener = false;
+const msgHandler = () => {
+  useMessageStore.getState().fetch(true);
+};
+
 export const listenMessages = () => {
   if (msgListener) return;
-  socket.on("message-created", () => {
-    useMessageStore.getState().fetch(true);
-  });
+  socket.on("message-created", msgHandler);
   msgListener = true;
+};
+
+export const stopListenMessages = () => {
+  if (!msgListener) return;
+  socket.off("message-created", msgHandler);
+  msgListener = false;
 };
 
 // Helpers to read call status from the store
