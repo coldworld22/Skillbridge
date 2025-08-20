@@ -110,7 +110,7 @@ export default function PopupAnnouncementsIndex() {
                   <button title={t('preview')}>
                     <FaEye className="text-blue-500" />
                   </button>
-                  <a href={`/dashboard/admin/announcements/edit/${a.id}`}>
+                  <a href={`/dashboard/admin/settings/popup-announcement/edit/${a.id}`}>
                     <FaEdit className="text-yellow-500" />
                   </a>
                   <button onClick={() => deleteAnnouncement(a.id)} title={t('delete')}>
