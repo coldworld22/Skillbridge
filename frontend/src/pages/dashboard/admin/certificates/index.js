@@ -16,23 +16,29 @@ export default function AdminCertificatesPage() {
   const [certificates, setCertificates] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchAllCertificates();
+        const data = await fetchAllCertificates(page, limit);
         setCertificates(data);
+        setHasMore(data.length === limit);
       } catch (err) {
         console.error('Failed to load certificates', err);
       }
     };
     load();
-  }, []);
+  }, [page]);
 
   const filteredCertificates = certificates.filter(c => {
     const matchesSearch = c.studentName.toLowerCase().includes(search.toLowerCase()) ||
                            c.className.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || c.status.toLowerCase() === filterStatus;
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (c.status && c.status.toLowerCase() === filterStatus);
     return matchesSearch && matchesStatus;
   });
 
@@ -90,18 +96,20 @@ export default function AdminCertificatesPage() {
                   <td className="p-3">{new Date(c.issueDate).toLocaleDateString()}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      c.status === 'Issued' ? 'bg-green-100 text-green-700' :
-                      c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
+                      c.status && c.status === 'Issued'
+                        ? 'bg-green-100 text-green-700'
+                        : c.status && c.status === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
                     }`}>
-                      {c.status}
+                      {c.status || ''}
                     </span>
                   </td>
                   <td className="p-3 flex gap-2">
                     <Link href={`/dashboard/admin/certificates/view/${c.id}`} className="text-blue-600 hover:text-blue-800">
                       <FaEye />
                     </Link>
-                    {c.status === 'Issued' && (
+                    {c.status && c.status === 'Issued' && (
                       <button
                         onClick={() => alert('🚀 Downloading certificate (mock)!')}
                         className="text-green-600 hover:text-green-800"
@@ -109,7 +117,7 @@ export default function AdminCertificatesPage() {
                         <FaDownload />
                       </button>
                     )}
-                    {c.status === 'Pending' && (
+                    {c.status && c.status === 'Pending' && (
                       <>
                         <button
                           onClick={() => alert('✅ Approving certificate (mock)!')}
@@ -137,6 +145,25 @@ export default function AdminCertificatesPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span>Page {page}</span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </AdminLayout>

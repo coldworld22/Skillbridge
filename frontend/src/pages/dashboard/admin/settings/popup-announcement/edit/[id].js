@@ -6,36 +6,19 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
-import nextI18NextConfig from "../../../../../../next-i18next.config.js";
-import { createNotification } from "@/services/notificationService";
-import { sendChatMessage } from "@/services/messageService";
-import useAuthStore from "@/store/auth/authStore";
-import useNotificationStore from "@/store/notifications/notificationStore";
-import useMessageStore from "@/store/messages/messageStore";
-import { createPopupAnnouncement } from "@/services/admin/popupAnnouncementService";
+import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
+import useAdminNotice from "@/hooks/useAdminNotice";
+import {
+  fetchPopupAnnouncements,
+  updatePopupAnnouncement,
+} from "@/services/admin/popupAnnouncementService";
 import { fetchPageList } from "@/services/admin/seoConfigService";
-import PopupPreviewModal from "@/components/admin/settings/PopupPreviewModal";
 
 const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
 
-const useAdminNotice = () => {
-  const user = useAuthStore((s) => s.user);
-  const refreshNotifications = useNotificationStore((s) => s.fetch);
-  const refreshMessages = useMessageStore((s) => s.fetch);
-  return async (type, message) => {
-    try {
-      await createNotification({ user_id: user.id, type, message });
-      await sendChatMessage(user.id, { text: message });
-      refreshNotifications?.();
-      refreshMessages?.();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-};
-
-export default function CreateAnnouncementForm() {
+export default function EditAnnouncementForm() {
   const router = useRouter();
+  const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
   const notify = useAdminNotice();
   const [form, setForm] = useState({
@@ -52,7 +35,6 @@ export default function CreateAnnouncementForm() {
   });
 
   const [allPages, setAllPages] = useState([]);
-  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const loadPages = async () => {
@@ -66,6 +48,34 @@ export default function CreateAnnouncementForm() {
     };
     loadPages();
   }, [t]);
+
+  useEffect(() => {
+    const loadAnnouncement = async () => {
+      if (!id) return;
+      try {
+        const data = await fetchPopupAnnouncements();
+        const ann = (data || []).find((a) => String(a.id) === String(id));
+        if (ann) {
+          setForm({
+            title: ann.title || "",
+            message: ann.message || "",
+            audience: ann.audience || "all",
+            pages: Array.isArray(ann.pages) ? ann.pages : [],
+            start: ann.start_date || "",
+            end: ann.end_date || "",
+            position: ann.position || "center",
+            theme: ann.theme || "yellow",
+            oncePerSession: ann.once_per_session ?? true,
+            active: ann.active ?? true,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load announcement', err);
+        toast.error(t('loading_failed'));
+      }
+    };
+    loadAnnouncement();
+  }, [id, t]);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -81,11 +91,6 @@ export default function CreateAnnouncementForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || !form.message || !form.start || !form.end) return;
-
-    if (new Date(form.end) <= new Date(form.start)) {
-      toast.error(i18n.t('dashboard:end_before_start'));
-      return;
-    }
     const payload = {
       title: form.title,
       message: form.message,
@@ -99,9 +104,9 @@ export default function CreateAnnouncementForm() {
       active: form.active,
     };
     try {
-      await createPopupAnnouncement(payload);
+      await updatePopupAnnouncement(id, payload);
       toast.success(t('announcement_saved'));
-      notify("popup_created", `Popup announcement "${form.title}" created.`);
+      notify("popup_updated", `Popup announcement "${form.title}" updated.`);
       router.push("/dashboard/admin/settings/popup-announcement");
     } catch (err) {
       console.error(err);
@@ -110,10 +115,10 @@ export default function CreateAnnouncementForm() {
   };
 
   return (
-    <AdminLayout title={t('create_title')}>
+    <AdminLayout title={t('edit_title')}>
       <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto bg-white p-6 rounded shadow" dir={i18n.dir()}>
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          📝 {t('create_title')}
+          📝 {t('edit_title')}
         </h1>
 
         {/* TITLE */}
@@ -134,7 +139,8 @@ export default function CreateAnnouncementForm() {
           <label className="block font-semibold mb-1">{t('message_label')}</label>
           <RichTextEditor
             value={form.message}
-            onChange={(val) => handleChange("message", val)}
+            onChange={(value) => handleChange("message", value)}
+            className="bg-white"
             theme="snow"
           />
         </div>
@@ -147,14 +153,14 @@ export default function CreateAnnouncementForm() {
             onChange={(e) => handleChange("audience", e.target.value)}
             className="w-full border rounded px-3 py-2"
           >
-            <option value="all">🌐 {t('all_visitors')}</option>
-            <option value="logged-in">🔐 {t('logged_in')}</option>
-            <option value="student">🎓 {t('students_only')}</option>
-            <option value="instructor">🧑‍🏫 {t('instructors_only')}</option>
+            <option value="all">{t('all_visitors')}</option>
+            <option value="logged_in">{t('logged_in')}</option>
+            <option value="students">{t('students_only')}</option>
+            <option value="instructors">{t('instructors_only')}</option>
           </select>
         </div>
 
-        {/* TARGET PAGES */}
+        {/* PAGES */}
         <div>
           <label className="block font-semibold mb-2">{t('target_pages')}</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -263,21 +269,21 @@ export default function CreateAnnouncementForm() {
           <button
             type="button"
             className="border px-6 py-2 rounded shadow text-gray-800 hover:bg-gray-100"
-            onClick={() => setShowPreview(true)}
+            onClick={() => alert("🔍 Preview not implemented")}
           >
             <FaEye className="inline mr-2" /> {t('preview')}
           </button>
         </div>
       </form>
-      {showPreview && <PopupPreviewModal data={form} onClose={() => setShowPreview(false)} />}
     </AdminLayout>
   );
 }
 
-export async function getStaticProps({ locale }) {
+export async function getServerSideProps({ locale }) {
   return {
     props: {
       ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
     },
   };
 }
+

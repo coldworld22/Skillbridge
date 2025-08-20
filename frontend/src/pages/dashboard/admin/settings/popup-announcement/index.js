@@ -1,6 +1,7 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -10,10 +11,12 @@ import {
   updatePopupAnnouncement,
   deletePopupAnnouncement,
 } from "@/services/admin/popupAnnouncementService";
+import PopupPreviewModal from "@/components/admin/settings/PopupPreviewModal";
 
 export default function PopupAnnouncementsIndex() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'popupAnnouncementsPage' });
   const [announcements, setAnnouncements] = useState([]);
+  const [previewAnn, setPreviewAnn] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -34,7 +37,7 @@ export default function PopupAnnouncementsIndex() {
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   const toggleStatus = async (id) => {
     const ann = announcements.find((a) => a.id === id);
@@ -68,12 +71,12 @@ export default function PopupAnnouncementsIndex() {
     <AdminLayout title={t('title')}>
       <div className="flex justify-between items-center mb-6" dir={i18n.dir()}>
         <h1 className="text-2xl font-bold text-gray-800">📢 {t('title')}</h1>
-        <a
+        <Link
           href="/dashboard/admin/settings/popup-announcement/create"
           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow flex items-center gap-2"
         >
           <FaPlus /> {t('add_new')}
-        </a>
+        </Link>
       </div>
 
       <div className="overflow-x-auto" dir={i18n.dir()}>
@@ -107,10 +110,10 @@ export default function PopupAnnouncementsIndex() {
                   </button>
                 </td>
                 <td className="p-3 text-center flex justify-center gap-3">
-                  <button title={t('preview')}>
+                  <button title={t('preview')} onClick={() => setPreviewAnn(a)}>
                     <FaEye className="text-blue-500" />
                   </button>
-                  <a href={`/dashboard/admin/announcements/edit/${a.id}`}>
+                  <a href={`/dashboard/admin/settings/popup-announcement/edit/${a.id}`}>
                     <FaEdit className="text-yellow-500" />
                   </a>
                   <button onClick={() => deleteAnnouncement(a.id)} title={t('delete')}>
@@ -122,6 +125,7 @@ export default function PopupAnnouncementsIndex() {
           </tbody>
         </table>
       </div>
+      {previewAnn && <PopupPreviewModal data={previewAnn} onClose={() => setPreviewAnn(null)} />}
     </AdminLayout>
   );
 }

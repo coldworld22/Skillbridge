@@ -1,10 +1,8 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { useState } from "react";
-import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
-import { FaSave, FaEye, FaSpinner } from "react-icons/fa";
-import { toast } from "react-toastify";
-import { saveTemplate, uploadTemplateFile } from "@/services/admin/certificateTemplateService";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
+import { saveTemplate } from "@/services/admin/certificateTemplateService";
+import CertificateTemplateForm from "@/components/admin/certificates/CertificateTemplateForm";
 
 const CERTIFICATE_TYPES = ["Completion", "Achievement", "Attendance"];
 const FONT_FAMILIES = [
@@ -20,7 +18,8 @@ const TITLE_FONTS = [
 
 export default function CreateCertificateTemplate() {
   const router = useRouter();
-  const [form, setForm] = useState({
+
+  const initialValues = {
     name: "",
     type: CERTIFICATE_TYPES[0],
     border_color: "#FACC15",
@@ -29,50 +28,16 @@ export default function CreateCertificateTemplate() {
     show_qr: true,
     logo: null,
     background: null,
-  });
-
-  const [logoPreview, setLogoPreview] = useState("/images/certificate/logo.png");
-  const [bgPreview, setBgPreview] = useState("/images/paper-texture.png");
-  const [showPreview, setShowPreview] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleChange = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleImageUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleSubmit = async (data) => {
     try {
-      const url = await uploadTemplateFile(file);
-      if (type === "logo") {
-        setLogoPreview(url);
-        handleChange("logo", url);
-      } else {
-        setBgPreview(url);
-        handleChange("background", url);
-      }
-    } catch (err) {
-      console.error("Upload failed", err);
-      toast.error("Failed to upload image");
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.error("Template name is required.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await saveTemplate(form);
+      await saveTemplate(data);
       toast.success("Template saved");
       router.push("/dashboard/admin/settings/certificates");
     } catch (err) {
       console.error("Failed to save template", err);
       toast.error("Failed to save template");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -225,3 +190,4 @@ export default function CreateCertificateTemplate() {
     </AdminLayout>
   );
 }
+

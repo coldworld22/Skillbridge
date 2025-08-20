@@ -1,15 +1,13 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import CertificatePreviewModal from "@/components/admin/certificates/CertificatePreviewModal";
-import { FaSave, FaEye, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   getTemplate,
   updateTemplate,
-  uploadTemplateFile,
 } from "@/services/admin/certificateTemplateService";
 import { toSnakeCase } from "@/utils/case";
+import CertificateTemplateForm from "@/components/admin/certificates/CertificateTemplateForm";
 
 const CERTIFICATE_TYPES = ["Completion", "Achievement", "Attendance"];
 const FONT_FAMILIES = [
@@ -27,11 +25,7 @@ export default function EditCertificateTemplate() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [form, setForm] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [bgPreview, setBgPreview] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialValues, setInitialValues] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -39,9 +33,7 @@ export default function EditCertificateTemplate() {
       try {
         const existing = await getTemplate(id);
         if (existing) {
-          setForm(toSnakeCase(existing));
-          setLogoPreview(existing.logo || "/images/certificate/logo.png");
-          setBgPreview(existing.background || "/images/paper-texture.png");
+          setInitialValues(toSnakeCase(existing));
         }
       } catch (err) {
         console.error("Failed to load template", err);
@@ -51,47 +43,19 @@ export default function EditCertificateTemplate() {
     load();
   }, [id]);
 
-  const handleChange = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleImageUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleUpdate = async (data) => {
     try {
-      const url = await uploadTemplateFile(file);
-      if (type === "logo") {
-        setLogoPreview(url);
-        handleChange("logo", url);
-      } else {
-        setBgPreview(url);
-        handleChange("background", url);
-      }
-    } catch (err) {
-      console.error("Upload failed", err);
-      toast.error("Failed to upload image");
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!form.name.trim()) {
-      toast.error("Template name is required.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await updateTemplate(id, form);
+      await updateTemplate(id, data);
       toast.success("Template updated");
       router.push("/dashboard/admin/settings/certificates");
     } catch (err) {
       console.error("Failed to update template", err);
       toast.error("Failed to update template");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (!form) return <div className="p-8 text-gray-600">Loading template...</div>;
+  if (!initialValues)
+    return <div className="p-8 text-gray-600">Loading template...</div>;
 
   return (
     <AdminLayout>
@@ -241,3 +205,4 @@ export default function EditCertificateTemplate() {
     </AdminLayout>
   );
 }
+
