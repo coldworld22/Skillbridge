@@ -1,5 +1,8 @@
 const service = require("./certificateTemplates.service");
 const { sendSuccess } = require("../../utils/response");
+const path = require("path");
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
 exports.list = async (req, res, next) => {
   try {
@@ -72,13 +75,18 @@ exports.duplicate = async (req, res, next) => {
 exports.upload = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!ALLOWED_IMAGE_TYPES.includes(req.file.mimetype))
+      return res.status(400).json({ message: "Invalid file type" });
+    const sanitizedFilename = path
+      .basename(req.file.filename)
+      .replace(/[^\w.-]/g, "");
     // Use "/api/uploads" so the URL works behind reverse proxies (e.g., Nginx)
     // that forward all "/api" requests to the backend. Returning a direct
     // "/uploads" path causes the frontend to request the file from its own
     // server instead of the backend, resulting in broken images. Prefixing the
     // path with "/api" ensures the request is routed to the backend where the
     // static file middleware serves uploaded certificate assets.
-    const url = `/api/uploads/certificateTemplates/${req.file.filename}`;
+    const url = `/api/uploads/certificateTemplates/${sanitizedFilename}`;
     sendSuccess(res, { url });
   } catch (err) {
     next(err);
