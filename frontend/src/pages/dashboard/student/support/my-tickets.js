@@ -77,7 +77,7 @@ export default function MyTicketsPage() {
               type="text"
               value={numberFilter}
               onChange={(e) => setNumberFilter(e.target.value)}
-              placeholder="Ticket #"
+              placeholder={t("ticket_number")}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             />
             <select
@@ -85,11 +85,11 @@ export default function MyTicketsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             >
-              <option value="">{t("all_statuses")}</option>
-              <option value="open">{t("open")}</option>
-              <option value="pending">{t("pending")}</option>
-              <option value="resolved">{t("resolved")}</option>
-              <option value="closed">{t("closed")}</option>
+              <option value="All">{t("all_statuses")}</option>
+              <option value="Open">{t("open")}</option>
+              <option value="Pending">{t("pending")}</option>
+              <option value="Resolved">{t("resolved")}</option>
+              <option value="Closed">{t("closed")}</option>
             </select>
             <Link
               href="/support/submit"
