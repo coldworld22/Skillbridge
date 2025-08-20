@@ -11,6 +11,12 @@ exports.list = catchAsync(async (_req, res) => {
   sendSuccess(res, data);
 });
 
+exports.active = catchAsync(async (req, res) => {
+  const { audience, page } = req.query;
+  const data = await service.getActive({ audience, page });
+  sendSuccess(res, data);
+});
+
 exports.create = catchAsync(async (req, res) => {
   const {
     title,
