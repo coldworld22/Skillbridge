@@ -39,10 +39,14 @@ export const fetchTicketById = async (id) => {
   return {
     ...ticket,
     user_avatar: formatAvatar(ticket.user_avatar),
-    messages: (ticket.messages || []).map((m) => ({
-      ...m,
-      sender_avatar: formatAvatar(m.sender_avatar),
-    })),
+    messages: (ticket.messages || []).map((m) => {
+      const { created_at, sender_avatar, ...rest } = m;
+      return {
+        ...rest,
+        createdAt: created_at,
+        sender_avatar: formatAvatar(sender_avatar),
+      };
+    }),
   };
 };
 

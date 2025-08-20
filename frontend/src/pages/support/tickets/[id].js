@@ -75,7 +75,9 @@ export default function TicketDetailPage() {
             >
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-semibold text-gray-900">{msg.name}</span>
-                <span className="text-gray-600">{msg.timestamp}</span>
+                <span className="text-gray-600">
+                  {msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ''}
+                </span>
               </div>
               <p className="text-gray-900 whitespace-pre-line">{msg.message}</p>
             </div>
