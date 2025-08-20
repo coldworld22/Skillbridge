@@ -6,7 +6,7 @@ const validate = require("../../middleware/validate");
 const validator = require("./messages.validator");
 const rateLimit = require("express-rate-limit");
 
-// Limit email/WhatsApp notifications to prevent abuse
+// Limit messaging and call actions to prevent abuse
 const messageLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour window
   max: 20,
@@ -31,13 +31,15 @@ router.post(
 );
 router.post(
   "/:id/video-call",
+  messageLimiter,
   controller.startVideoCall
 );
 router.post(
   "/call/:id/respond",
+  messageLimiter,
   validate(validator.respondVideoCall),
   controller.respondVideoCall
 );
-router.post("/call/:id/end", controller.endVideoCall);
+router.post("/call/:id/end", messageLimiter, controller.endVideoCall);
 
 module.exports = router;
