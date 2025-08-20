@@ -38,9 +38,10 @@ export default function AdminTicketDetail() {
     setLoading(true);
     try {
       const data = await fetchTicketById(id);
+      const normalizedStatus = data.status?.toLowerCase() || "open";
       const normalizedPriority = data.priority?.toLowerCase() || "medium";
-      setTicket({ ...data, priority: normalizedPriority });
-      setStatus(data.status);
+      setTicket({ ...data, status: normalizedStatus, priority: normalizedPriority });
+      setStatus(normalizedStatus);
       setPriority(normalizedPriority);
     } catch (err) {
       console.error("Failed to fetch ticket", err);
@@ -67,18 +68,19 @@ export default function AdminTicketDetail() {
   };
 
   const handleStatusChange = async (newStatus) => {
+    const normalized = newStatus.toLowerCase();
     const confirmMsg =
-      newStatus === "resolved"
+      normalized === "resolved"
         ? t("confirm_close_ticket")
         : t("confirm_reopen_ticket");
     if (!confirm(confirmMsg)) return;
 
     try {
-      await updateStatus(id, newStatus);
-      setStatus(newStatus);
-      setTicket((prev) => ({ ...prev, status: newStatus }));
+      await updateStatus(id, normalized);
+      setStatus(normalized);
+      setTicket((prev) => ({ ...prev, status: normalized }));
       toast.success(
-        newStatus === "resolved" ? t("ticket_closed") : t("ticket_reopened")
+        normalized === "resolved" ? t("ticket_closed") : t("ticket_reopened")
       );
     } catch (err) {
       console.error("Failed to update status", err);

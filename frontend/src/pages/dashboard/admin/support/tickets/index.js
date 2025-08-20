@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
@@ -18,6 +19,7 @@ export default function AdminSupportTicketsPage() {
   const [dateRange, setDateRange] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation("dashboard");
+  const router = useRouter();
 
   useEffect(() => {
     load();
@@ -243,7 +245,7 @@ export default function AdminSupportTicketsPage() {
                   <TicketCard
                     ticket={ticket}
                     onClick={() =>
-                      (window.location.href = `/dashboard/admin/support/tickets/${ticket.id}`)
+                      router.push(`/dashboard/admin/support/tickets/${ticket.id}`)
                     }
                   />
                 </li>
