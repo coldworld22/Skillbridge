@@ -15,8 +15,8 @@ const messageLimiter = rateLimit({
 router.use(verifyToken);
 
 router.get("/", controller.getMyMessages);
-router.patch("/:id/read", controller.markRead);
-router.delete("/:id", controller.deleteMessage);
+router.patch("/:id/read", validate(validator.idParam), controller.markRead);
+router.delete("/:id", validate(validator.idParam), controller.deleteMessage);
 router.post(
   "/:id/email",
   messageLimiter,
@@ -31,7 +31,7 @@ router.post(
 );
 router.post(
   "/:id/video-call",
-  messageLimiter,
+  validate(validator.startVideoCall),
   controller.startVideoCall
 );
 router.post(
@@ -40,6 +40,10 @@ router.post(
   validate(validator.respondVideoCall),
   controller.respondVideoCall
 );
-router.post("/call/:id/end", messageLimiter, controller.endVideoCall);
+router.post(
+  "/call/:id/end",
+  validate(validator.endVideoCall),
+  controller.endVideoCall
+);
 
 module.exports = router;
