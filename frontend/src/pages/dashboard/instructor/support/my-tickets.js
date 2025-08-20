@@ -110,7 +110,7 @@ export default function MyTicketsPage() {
                       <StatusBadge status={ticket.status} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {new Date(ticket.created_at).toLocaleDateString()}
+                      {new Date(ticket.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <Link

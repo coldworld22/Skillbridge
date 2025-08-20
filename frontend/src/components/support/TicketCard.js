@@ -38,7 +38,7 @@ export default function TicketCard({ ticket, onClick }) {
         </span>
         <span className="flex items-center gap-1">
           <FiClock className="text-gray-400" />
-          {new Date(ticket.created_at).toLocaleDateString()}
+          {new Date(ticket.createdAt).toLocaleDateString()}
         </span>
       </div>
 

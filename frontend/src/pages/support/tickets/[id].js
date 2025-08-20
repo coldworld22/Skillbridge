@@ -78,7 +78,7 @@ export default function TicketDetailPage() {
             >
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-semibold text-gray-900">{msg.name || msg.sender_name}</span>
-                <span className="text-gray-600">{msg.timestamp || msg.created_at}</span>
+                <span className="text-gray-600">{msg.timestamp || msg.createdAt}</span>
               </div>
               <p className="text-gray-900 whitespace-pre-line">{msg.message}</p>
               {msg.attachments?.length > 0 && (
