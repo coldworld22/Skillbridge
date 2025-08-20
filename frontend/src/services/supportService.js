@@ -26,9 +26,10 @@ export const fetchMyTickets = async () => {
 export const fetchAllTickets = async (filters = {}) => {
   const { data } = await api.get("/support/admin/tickets", { params: filters });
   const list = data?.data ?? [];
-  return list.map((t) => ({
-    ...t,
-    user_avatar: formatAvatar(t.user_avatar),
+  return list.map(({ created_at, user_avatar, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatAvatar(user_avatar),
   }));
 };
 
@@ -36,17 +37,16 @@ export const fetchTicketById = async (id) => {
   const { data } = await api.get(`/support/tickets/${id}`);
   const ticket = data?.data;
   if (!ticket) return null;
+  const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
-    ...ticket,
-    user_avatar: formatAvatar(ticket.user_avatar),
-    messages: (ticket.messages || []).map((m) => {
-      const { created_at, sender_avatar, ...rest } = m;
-      return {
-        ...rest,
-        createdAt: created_at,
-        sender_avatar: formatAvatar(sender_avatar),
-      };
-    }),
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatAvatar(user_avatar),
+    messages: messages.map(({ created_at: msgCreatedAt, sender_avatar, ...msgRest }) => ({
+      ...msgRest,
+      createdAt: msgCreatedAt,
+      sender_avatar: formatAvatar(sender_avatar),
+    })),
   };
 };
 
