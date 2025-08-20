@@ -24,6 +24,7 @@ import Head from "next/head";
 import { getLanguages } from "@/services/languageService";
 import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
+import PopupAnnouncement from "@/components/common/PopupAnnouncement";
 import { API_BASE_URL } from "@/config/config";
 
 const langFetcher = () => getLanguages();
@@ -207,6 +208,7 @@ function MyApp({ Component, pageProps, router }) {
               )}
             </Head>
             <SeoTags />
+            <PopupAnnouncement />
             {/* Render page with layout */}
             {getLayout(<Component {...pageProps} />)}
 
