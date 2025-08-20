@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("");
   const [numberFilter, setNumberFilter] = useState("");
   const { t } = useTranslation("dashboard");
 
@@ -45,7 +45,7 @@ export default function MyTicketsPage() {
 
   const filteredTickets = tickets.filter(
     (ticket) =>
-      (statusFilter === "All" || ticket.status === statusFilter) &&
+      (statusFilter === "" || ticket.status?.toLowerCase() === statusFilter) &&
       (numberFilter === "" ||
         ticket.ticket_number?.toString().includes(numberFilter))
   );
@@ -70,11 +70,11 @@ export default function MyTicketsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             >
-              <option value="All">{t("all_statuses")}</option>
-              <option value="Open">Open</option>
-              <option value="Pending">Pending</option>
-              <option value="Resolved">Resolved</option>
-              <option value="Closed">Closed</option>
+              <option value="">{t("all_statuses")}</option>
+              <option value="open">{t("open")}</option>
+              <option value="pending">{t("pending")}</option>
+              <option value="resolved">{t("resolved")}</option>
+              <option value="closed">{t("closed")}</option>
             </select>
             <Link
               href="/support/submit"
@@ -120,7 +120,7 @@ export default function MyTicketsPage() {
                       >
                         <FaEye /> {t("view_details")}
                       </Link>
-                      {(["Resolved", "Closed"].includes(ticket.status)) && (
+                      {(["resolved", "closed"].includes(ticket.status?.toLowerCase())) && (
                         <button
                           onClick={() => handleDelete(ticket.id)}
                           className="text-red-600 hover:underline ml-2 inline-flex items-center gap-1"
