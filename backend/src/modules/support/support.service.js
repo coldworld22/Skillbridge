@@ -103,6 +103,15 @@ exports.addMessage = async ({ ticket_id, sender_id, message }) => {
   return row;
 };
 
+exports.uploadAttachment = (messageId, file) =>
+  db("support_attachments")
+    .insert({
+      message_id: messageId,
+      file_url: file.path,
+      file_name: file.originalname,
+    })
+    .returning("*");
+
 exports.updateStatus = async (id, status) => {
   const [row] = await db("support_tickets")
     .where({ id })

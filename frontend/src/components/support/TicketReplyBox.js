@@ -2,12 +2,15 @@ import { useState } from 'react';
 
 export default function TicketReplyBox({ onSend, loading = false, disabled = false }) {
   const [message, setMessage] = useState('');
+  const [attachment, setAttachment] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-    await onSend(message.trim());
+    await onSend(message.trim(), attachment);
     setMessage('');
+    setAttachment(null);
+    if (e.target?.reset) e.target.reset();
   };
 
   return (
@@ -22,6 +25,13 @@ export default function TicketReplyBox({ onSend, loading = false, disabled = fal
         placeholder="Type your response here..."
         disabled={loading || disabled}
         className="w-full min-h-[120px] border border-gray-300 rounded-lg px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 disabled:bg-gray-100"
+      />
+
+      <input
+        type="file"
+        onChange={(e) => setAttachment(e.target.files[0] || null)}
+        disabled={loading || disabled}
+        className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
       />
 
       <button

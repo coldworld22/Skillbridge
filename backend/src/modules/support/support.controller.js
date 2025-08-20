@@ -183,6 +183,16 @@ exports.addMessage = catchAsync(async (req, res) => {
   sendSuccess(res, msg, "Message added");
 });
 
+exports.uploadAttachment = catchAsync(async (req, res) => {
+  const file = req.file;
+  if (!file) throw new AppError("No file uploaded", 400);
+  const attachment = await service.uploadAttachment(
+    req.params.messageId,
+    file
+  );
+  sendSuccess(res, attachment, "Attachment uploaded");
+});
+
 exports.updateStatus = catchAsync(async (req, res) => {
   const ticket = await service.updateStatus(req.params.id, req.body.status);
   if (!ticket) throw new AppError("Ticket not found", 404);
