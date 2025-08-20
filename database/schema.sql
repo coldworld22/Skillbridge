@@ -29,3 +29,12 @@ CREATE TABLE IF NOT EXISTS book_reviews (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- support_attachments table
+CREATE TABLE IF NOT EXISTS support_attachments (
+  id SERIAL PRIMARY KEY,
+  message_id UUID REFERENCES support_messages(id) ON DELETE CASCADE,
+  file_url VARCHAR,
+  file_name VARCHAR,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

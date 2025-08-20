@@ -1,7 +1,8 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-const formatAvatar = (url) => {
+// Normalize any URL returned from the API (avatars, attachments, etc.)
+const formatUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:"))
     return url;
@@ -28,7 +29,7 @@ export const fetchAllTickets = async (filters = {}) => {
   const list = data?.data ?? [];
   return list.map((t) => ({
     ...t,
-    user_avatar: formatAvatar(t.user_avatar),
+    user_avatar: formatUrl(t.user_avatar),
   }));
 };
 
@@ -38,10 +39,14 @@ export const fetchTicketById = async (id) => {
   if (!ticket) return null;
   return {
     ...ticket,
-    user_avatar: formatAvatar(ticket.user_avatar),
+    user_avatar: formatUrl(ticket.user_avatar),
     messages: (ticket.messages || []).map((m) => ({
       ...m,
-      sender_avatar: formatAvatar(m.sender_avatar),
+      sender_avatar: formatUrl(m.sender_avatar),
+      attachments: (m.attachments || []).map((a) => ({
+        ...a,
+        file_url: formatUrl(a.file_url),
+      })),
     })),
   };
 };

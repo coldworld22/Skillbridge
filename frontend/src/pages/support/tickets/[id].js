@@ -11,6 +11,9 @@ import { fetchTicketById, addMessage } from "@/services/supportService";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 
+const isImage = (url) =>
+  url ? /\.(png|jpe?g|gif|webp|svg)$/i.test(url) : false;
+
 export default function TicketDetailPage() {
   const { t } = useTranslation('dashboard');
   const router = useRouter();
@@ -74,10 +77,34 @@ export default function TicketDetailPage() {
               className={`p-4 rounded-lg ${msg.sender === "user" ? "bg-gray-100" : "bg-gray-200"}`}
             >
               <div className="flex justify-between text-sm mb-1">
-                <span className="font-semibold text-gray-900">{msg.name}</span>
-                <span className="text-gray-600">{msg.timestamp}</span>
+                <span className="font-semibold text-gray-900">{msg.name || msg.sender_name}</span>
+                <span className="text-gray-600">{msg.timestamp || msg.created_at}</span>
               </div>
               <p className="text-gray-900 whitespace-pre-line">{msg.message}</p>
+              {msg.attachments?.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {msg.attachments.map((a) =>
+                    isImage(a.file_url) ? (
+                      <img
+                        key={a.id}
+                        src={a.file_url}
+                        alt={a.file_name || 'attachment'}
+                        className="max-h-40 rounded"
+                      />
+                    ) : (
+                      <a
+                        key={a.id}
+                        href={a.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline text-sm block"
+                      >
+                        {a.file_name || a.file_url.split('/').pop()}
+                      </a>
+                    )
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
