@@ -5,8 +5,11 @@ const db = require("../../config/database");
 
 /**
  * Fetch all certificates with related student and class info
+ * Supports simple pagination via `page` and `limit` parameters
  */
-exports.getAll = async () => {
+exports.getAll = async ({ page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+
   return db("certificates")
     .leftJoin("users", "certificates.user_id", "users.id")
     .leftJoin("online_classes", "certificates.class_id", "online_classes.id")
@@ -15,5 +18,7 @@ exports.getAll = async () => {
       "users.full_name as student_name",
       "online_classes.title as class_name"
     )
-    .orderBy("certificates.created_at", "desc");
+    .orderBy("certificates.created_at", "desc")
+    .offset(offset)
+    .limit(limit);
 };
