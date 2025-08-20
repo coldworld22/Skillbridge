@@ -163,7 +163,7 @@ export default function AdminTicketDetail() {
                     <FiUser className="mr-1.5" /> {ticket.customerName}
                   </span>
                   <span className="flex items-center">
-                    <FiCalendar className="mr-1.5" /> {new Date(ticket.createdAt).toLocaleString()}
+                    <FiCalendar className="mr-1.5" /> {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""}
                   </span>
                   <span className="flex items-center">
                     <FiTag className="mr-1.5" />
