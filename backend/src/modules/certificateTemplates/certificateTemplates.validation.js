@@ -10,9 +10,17 @@ const boolean = Joi.boolean()
 
 exports.createTemplate = Joi.object({
   name: Joi.string().required(),
-  type: Joi.string(),
-  font_family: Joi.string(),
-  title_font: Joi.string(),
+  type: Joi.string().valid("Completion", "Achievement", "Attendance"),
+  font_family: Joi.string().valid(
+    "Georgia, serif",
+    "Times New Roman, serif",
+    "Arial, sans-serif"
+  ),
+  title_font: Joi.string().valid(
+    "'Great Vibes', cursive",
+    "'Playfair Display', serif",
+    "'Pacifico', cursive"
+  ),
   border_color: Joi.string(),
   logo: Joi.string().allow("", null),
   background: Joi.string().allow("", null),
@@ -22,9 +30,17 @@ exports.createTemplate = Joi.object({
 
 exports.updateTemplate = Joi.object({
   name: Joi.string(),
-  type: Joi.string(),
-  font_family: Joi.string(),
-  title_font: Joi.string(),
+  type: Joi.string().valid("Completion", "Achievement", "Attendance"),
+  font_family: Joi.string().valid(
+    "Georgia, serif",
+    "Times New Roman, serif",
+    "Arial, sans-serif"
+  ),
+  title_font: Joi.string().valid(
+    "'Great Vibes', cursive",
+    "'Playfair Display', serif",
+    "'Pacifico', cursive"
+  ),
   border_color: Joi.string(),
   logo: Joi.string().allow("", null),
   background: Joi.string().allow("", null),
