@@ -25,6 +25,9 @@ exports.create = catchAsync(async (req, res) => {
     active = true,
   } = req.body || {};
   if (!title || !message) throw new AppError("Title and message required", 400);
+  if (start_date && end_date && new Date(end_date) <= new Date(start_date)) {
+    throw new AppError("end_date must be after start_date", 400);
+  }
   const payload = {
     title,
     message,
@@ -71,6 +74,10 @@ exports.create = catchAsync(async (req, res) => {
 });
 
 exports.update = catchAsync(async (req, res) => {
+  const { start_date, end_date } = req.body || {};
+  if (start_date && end_date && new Date(end_date) <= new Date(start_date)) {
+    throw new AppError("end_date must be after start_date", 400);
+  }
   const ann = await service.update(req.params.id, req.body);
   if (!ann) throw new AppError("Announcement not found", 404);
   sendSuccess(res, ann, "Announcement updated");

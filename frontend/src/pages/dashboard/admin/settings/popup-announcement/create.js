@@ -79,6 +79,11 @@ export default function CreateAnnouncementForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || !form.message || !form.start || !form.end) return;
+
+    if (new Date(form.end) <= new Date(form.start)) {
+      toast.error(i18n.t('dashboard:end_before_start'));
+      return;
+    }
     const payload = {
       title: form.title,
       message: form.message,
