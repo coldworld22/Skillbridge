@@ -94,7 +94,7 @@ export default function AdminSupportHome() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-900">New ticket #{item.id} created</p>
                   <p className="text-sm text-gray-500">{item.subject}</p>
-                  <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(item.created_at)}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(item.createdAt)}</p>
                 </div>
               </div>
             ))}

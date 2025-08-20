@@ -22,21 +22,20 @@ export const createTicket = async ({ subject, message }) => {
 export const fetchMyTickets = async () => {
   const { data } = await api.get("/support/my-tickets");
   const list = data?.data ?? [];
-  return list.map((t) => ({
-    ...t,
-    status: t.status?.toLowerCase(),
-    priority: t.priority?.toLowerCase(),
+  return list.map(({ created_at, user_avatar, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatUrl(user_avatar),
   }));
 };
 
 export const fetchAllTickets = async (filters = {}) => {
   const { data } = await api.get("/support/admin/tickets", { params: filters });
   const list = data?.data ?? [];
-  return list.map((t) => ({
-    ...t,
-    status: t.status?.toLowerCase(),
-    priority: t.priority?.toLowerCase(),
-    user_avatar: formatUrl(t.user_avatar),
+  return list.map(({ created_at, user_avatar, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatUrl(user_avatar),
   }));
 };
 
@@ -45,16 +44,16 @@ export const fetchTicketById = async (id) => {
   const ticket = data?.data;
   if (!ticket) return null;
   return {
-    ...ticket,
-    status: ticket.status?.toLowerCase(),
-    priority: ticket.priority?.toLowerCase(),
-    user_avatar: formatUrl(ticket.user_avatar),
-    messages: (ticket.messages || []).map((m) => ({
-      ...m,
-      sender_avatar: formatUrl(m.sender_avatar),
-      attachments: (m.attachments || []).map((a) => ({
-        ...a,
-        file_url: formatUrl(a.file_url),
+    ...rest,
+    createdAt: created_at,
+    user_avatar: formatUrl(user_avatar),
+    messages: messages.map(({ created_at: msgCreated, sender_avatar, attachments = [], ...msgRest }) => ({
+      ...msgRest,
+      createdAt: msgCreated,
+      sender_avatar: formatUrl(sender_avatar),
+      attachments: attachments.map(({ file_url, ...attRest }) => ({
+        ...attRest,
+        file_url: formatUrl(file_url),
       })),
     })),
   };
@@ -97,10 +96,9 @@ export const updatePriority = async (id, priority) => {
 export const fetchRecentActivity = async () => {
   const { data } = await api.get("/support/admin/recent-activity");
   const list = data?.data ?? [];
-  return list.map((a) => ({
-    ...a,
-    status: a.status?.toLowerCase(),
-    priority: a.priority?.toLowerCase(),
+  return list.map(({ created_at, ...rest }) => ({
+    ...rest,
+    createdAt: created_at,
   }));
 };
 
