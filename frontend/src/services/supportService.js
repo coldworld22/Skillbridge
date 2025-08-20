@@ -43,19 +43,22 @@ export const fetchTicketById = async (id) => {
   const { data } = await api.get(`/support/tickets/${id}`);
   const ticket = data?.data;
   if (!ticket) return null;
+  const { created_at, user_avatar, messages = [], ...rest } = ticket;
   return {
     ...rest,
     createdAt: created_at,
     user_avatar: formatUrl(user_avatar),
-    messages: messages.map(({ created_at: msgCreated, sender_avatar, attachments = [], ...msgRest }) => ({
-      ...msgRest,
-      createdAt: msgCreated,
-      sender_avatar: formatUrl(sender_avatar),
-      attachments: attachments.map(({ file_url, ...attRest }) => ({
-        ...attRest,
-        file_url: formatUrl(file_url),
-      })),
-    })),
+    messages: messages.map(
+      ({ created_at: msgCreated, sender_avatar, attachments = [], ...msgRest }) => ({
+        ...msgRest,
+        createdAt: msgCreated,
+        sender_avatar: formatUrl(sender_avatar),
+        attachments: attachments.map(({ file_url, ...attRest }) => ({
+          ...attRest,
+          file_url: formatUrl(file_url),
+        })),
+      })
+    ),
   };
 };
 
