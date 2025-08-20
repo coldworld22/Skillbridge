@@ -42,6 +42,9 @@ exports.duplicate = async (id) => {
   delete newTemplate.id;
   delete newTemplate.created_at;
   delete newTemplate.updated_at;
+  newTemplate.active = false;
+  newTemplate.created_at = db.fn.now();
+  newTemplate.updated_at = db.fn.now();
   newTemplate.name = `Copy of ${template.name}`;
   const [row] = await db("certificate_templates").insert(newTemplate).returning("*");
   return row;
