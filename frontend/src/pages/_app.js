@@ -16,7 +16,11 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useCallStore from "@/store/call/callStore";
 import CallOverlay from "@/components/video-call/CallOverlay";
-import { listenCalls, listenMessages } from "@/services/messageService";
+import {
+  listenCalls,
+  listenMessages,
+  stopListenMessages,
+} from "@/services/messageService";
 import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
@@ -131,14 +135,18 @@ function MyApp({ Component, pageProps, router }) {
   }, [seoLoaded, fetchSEO]);
 
   useEffect(() => {
-    if (user) {
-      fetchNotifs();
-      startNotifPolling();
-      fetchMsgs();
-      startMsgPolling();
-      listenCalls();
-      listenMessages();
-    }
+    if (!user) return;
+
+    fetchNotifs();
+    startNotifPolling();
+    fetchMsgs();
+    startMsgPolling();
+    listenCalls();
+    listenMessages();
+
+    return () => {
+      stopListenMessages();
+    };
   }, [user, fetchNotifs, startNotifPolling, fetchMsgs, startMsgPolling]);
 
   useEffect(() => {
