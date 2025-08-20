@@ -1,11 +1,17 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const fsPromises = require("fs/promises");
 
 const uploadDir = path.join(__dirname, "../../../uploads/certificateTemplates");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+
+(async () => {
+  try {
+    await fsPromises.mkdir(uploadDir, { recursive: true });
+  } catch (error) {
+    console.error("Error creating upload directory:", error);
+    throw error;
+  }
+})();
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
