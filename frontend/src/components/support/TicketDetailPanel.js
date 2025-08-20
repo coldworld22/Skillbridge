@@ -1,4 +1,5 @@
 import StatusBadge from './StatusBadge';
+import Image from 'next/image';
 
 const isImage = (url) =>
   url ? /\.(png|jpe?g|gif|webp|svg)$/i.test(url) : false;
@@ -8,9 +9,17 @@ export default function TicketDetailPanel({ ticket }) {
   return (
     <div className="p-4 bg-white rounded-lg shadow space-y-4">
       <div className="flex items-center gap-3">
-        <img
+        <Image
           src={ticket.user_avatar || '/images/default-avatar.png'}
-          alt="avatar"
+          alt={
+            ticket.user_name
+              ? `${ticket.user_name}'s avatar`
+              : ticket.user
+              ? `${ticket.user}'s avatar`
+              : 'User avatar'
+          }
+          width={32}
+          height={32}
           className="w-8 h-8 rounded-full object-cover"
         />
         <div>
@@ -25,9 +34,11 @@ export default function TicketDetailPanel({ ticket }) {
       <div className="space-y-3">
         {ticket.messages?.map((m) => (
           <div key={m.id} className="flex gap-3 items-start border p-2 rounded bg-gray-50">
-            <img
+            <Image
               src={m.sender_avatar || '/images/default-avatar.png'}
-              alt="avatar"
+              alt={m.sender_name ? `${m.sender_name}'s avatar` : 'User avatar'}
+              width={24}
+              height={24}
               className="w-6 h-6 rounded-full object-cover mt-1"
             />
             <div>
@@ -37,10 +48,12 @@ export default function TicketDetailPanel({ ticket }) {
                 <div className="mt-2 space-y-1">
                   {m.attachments.map((a) => (
                     isImage(a.file_url) ? (
-                      <img
+                      <Image
                         key={a.id}
                         src={a.file_url}
-                        alt={a.file_name || 'attachment'}
+                        alt={a.file_name || 'Image attachment'}
+                        width={160}
+                        height={160}
                         className="max-h-40 rounded"
                       />
                     ) : (
