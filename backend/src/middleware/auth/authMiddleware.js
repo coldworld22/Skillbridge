@@ -52,8 +52,11 @@ const verifyToken = async (req, res, next) => {
       return res.status(403).json({ message: "Account is not active" });
     }
     const roles = await userModel.getUserRoles(decoded.id);
-    const permissions = await userModel.getUserPermissions(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
+    let permissions = await userModel.getUserPermissions(decoded.id);
+    if (userRoles.map((r) => normalizeRole(r)).includes("superadmin")) {
+      permissions = await userModel.getAllPermissionCodes();
+    }
     const { password_hash, ...safeUser } = user;
     req.user = {
       ...decoded,
@@ -122,6 +125,10 @@ const isStudent = (req, res, next) => {
 };
 
 const hasPermission = (...perms) => (req, res, next) => {
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("superadmin")) {
+    return next();
+  }
   const userPerms = req.user?.permissions || [];
   if (perms.some((p) => userPerms.includes(p))) {
     return next();

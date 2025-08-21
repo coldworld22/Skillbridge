@@ -169,6 +169,11 @@ exports.getUserPermissions = async (userId) => {
   return [...new Set(rows.map((r) => r.code))];
 };
 
+exports.getAllPermissionCodes = async () => {
+  const rows = await db("permissions").select("code");
+  return rows.map((r) => r.code);
+};
+
 exports.setUserRoles = async (userId, roleIds) => {
   await db("user_roles").where({ user_id: userId }).del();
   if (roleIds.length) {
