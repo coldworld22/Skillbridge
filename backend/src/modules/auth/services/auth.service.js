@@ -75,6 +75,7 @@ exports.registerUser = async (data) => {
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
+  const permissions = await userModel.getUserPermissions(newUser.id);
 
   const welcomeMessage =
     newUser.role && newUser.role.toLowerCase() === "instructor"
@@ -133,7 +134,7 @@ exports.registerUser = async (data) => {
     console.error("Error sending registration emails:", err.message);
   }
   const safeUser = sanitizeUserUtil(newUser);
-  return { user: { ...safeUser, roles } };
+  return { user: { ...safeUser, roles, permissions } };
 };
 
 
@@ -182,6 +183,7 @@ exports.loginUser = async ({ email, password }) => {
   user.is_online = true;
 
   const roles = await userModel.getUserRoles(user.id);
+  const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
@@ -193,7 +195,7 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
   const safeUser = sanitizeUserUtil(user);
-  return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles } };
+  return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles, permissions } };
 };
 
 /**

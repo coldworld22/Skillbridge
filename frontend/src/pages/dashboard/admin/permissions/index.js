@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { PlusCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -8,7 +9,7 @@ import {
   deletePermission,
 } from "@/services/admin/roleService";
 
-export default function PermissionsPage() {
+function PermissionsPage() {
   const [permissions, setPermissions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
@@ -145,3 +146,5 @@ export default function PermissionsPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(PermissionsPage, { permissions: ["manage_permissions"] });

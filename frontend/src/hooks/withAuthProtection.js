@@ -4,7 +4,12 @@ import { useRouter } from "next/router";
 import useAuthStore from "@/store/auth/authStore";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
 
-export default function withAuthProtection(Component, allowedRoles = []) {
+export default function withAuthProtection(Component, rolesOrOptions = []) {
+  const { roles: allowedRoles = [], permissions: allowedPerms = [] } =
+    Array.isArray(rolesOrOptions)
+      ? { roles: rolesOrOptions }
+      : rolesOrOptions || {};
+
   return function ProtectedPage(props) {
     const { user, accessToken, logout } = useAuthStore();
     const router = useRouter();
@@ -22,15 +27,23 @@ export default function withAuthProtection(Component, allowedRoles = []) {
           logout();
           router.replace("/auth/login");
         } else if (
-          allowedRoles.length &&
-          !allowedRoles.includes(user.role?.toLowerCase())
+          (allowedRoles.length &&
+            !allowedRoles.includes(user.role?.toLowerCase())) ||
+          (allowedPerms.length &&
+            !allowedPerms.some((p) => user.permissions?.includes(p)))
         ) {
           router.replace("/error/403");
         }
       }
     }, [hydrated, user, accessToken]);
 
-    if (!hydrated || !user || (allowedRoles.length && !allowedRoles.includes(user.role?.toLowerCase()))) {
+    if (
+      !hydrated ||
+      !user ||
+      (allowedRoles.length && !allowedRoles.includes(user.role?.toLowerCase())) ||
+      (allowedPerms.length &&
+        !allowedPerms.some((p) => user.permissions?.includes(p)))
+    ) {
       return null;
     }
 
