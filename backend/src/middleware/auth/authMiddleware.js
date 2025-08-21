@@ -52,8 +52,11 @@ const verifyToken = async (req, res, next) => {
       return res.status(403).json({ message: "Account is not active" });
     }
     const roles = await userModel.getUserRoles(decoded.id);
-    const permissions = await userModel.getUserPermissions(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
+    let permissions = await userModel.getUserPermissions(decoded.id);
+    if (userRoles.map((r) => normalizeRole(r)).includes("superadmin")) {
+      permissions = await userModel.getAllPermissionCodes();
+    }
     const { password_hash, ...safeUser } = user;
     req.user = {
       ...decoded,
