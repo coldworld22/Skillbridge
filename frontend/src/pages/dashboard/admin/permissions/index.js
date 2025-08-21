@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
+import useAuthStore from "@/store/auth/authStore";
 import { PlusCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -8,11 +10,13 @@ import {
   deletePermission,
 } from "@/services/admin/roleService";
 
-export default function PermissionsPage() {
+function PermissionsPage() {
   const [permissions, setPermissions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthStore();
+  const canManage = user?.permissions?.includes("manage_permissions");
 
   useEffect(() => {
     (async () => {
@@ -30,7 +34,7 @@ export default function PermissionsPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!newPermission.trim()) return;
+    if (!canManage || !newPermission.trim()) return;
     if (permissions.some((p) => p.code === newPermission)) return;
     try {
       const created = await createPermission({ code: newPermission });
@@ -45,7 +49,7 @@ export default function PermissionsPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this permission?")) return;
+    if (!canManage || !confirm("Delete this permission?")) return;
     try {
       await deletePermission(id);
       setPermissions((perms) => perms.filter((p) => p.id !== id));
@@ -61,13 +65,15 @@ export default function PermissionsPage() {
       <div className="p-6 sm:p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Permissions</h1>
-          <button
-            className="inline-flex items-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600 transition px-4 py-2 rounded-lg shadow-sm"
-            onClick={() => setShowAddModal(true)}
-          >
-            <PlusCircle className="w-5 h-5" />
-            Add Permission
-          </button>
+          {canManage && (
+            <button
+              className="inline-flex items-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600 transition px-4 py-2 rounded-lg shadow-sm"
+              onClick={() => setShowAddModal(true)}
+            >
+              <PlusCircle className="w-5 h-5" />
+              Add Permission
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto bg-white rounded-xl shadow border">
@@ -75,7 +81,9 @@ export default function PermissionsPage() {
             <thead className="bg-gray-100 text-gray-700 text-left">
               <tr>
                 <th className="px-6 py-3 font-semibold">Permission</th>
-                <th className="px-6 py-3 text-right font-semibold">Actions</th>
+                {canManage && (
+                  <th className="px-6 py-3 text-right font-semibold">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y text-gray-800">
@@ -84,27 +92,35 @@ export default function PermissionsPage() {
                   <td className="px-6 py-3 capitalize">
                     {perm.code.replace(/_/g, " ")}
                   </td>
-                  <td className="px-6 py-3 text-right">
-                    <button
-                      onClick={() => handleDelete(perm.id)}
-                      className="text-red-600 hover:text-red-800 transition"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="px-6 py-3 text-right">
+                      <button
+                        onClick={() => handleDelete(perm.id)}
+                        className="text-red-600 hover:text-red-800 transition"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {permissions.length === 0 && !loading && (
                 <tr>
-                  <td className="px-6 py-4 text-center text-gray-500" colSpan="2">
+                  <td
+                    className="px-6 py-4 text-center text-gray-500"
+                    colSpan={canManage ? 2 : 1}
+                  >
                     No permissions found
                   </td>
                 </tr>
               )}
               {loading && (
                 <tr>
-                  <td className="px-6 py-4 text-center text-gray-500" colSpan="2">
+                  <td
+                    className="px-6 py-4 text-center text-gray-500"
+                    colSpan={canManage ? 2 : 1}
+                  >
                     Loading...
                   </td>
                 </tr>
@@ -114,7 +130,7 @@ export default function PermissionsPage() {
         </div>
 
         {/* Add Modal */}
-        {showAddModal && (
+        {showAddModal && canManage && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
             <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-xl">
               <h3 className="text-lg font-bold mb-4 text-gray-800">Add New Permission</h3>
@@ -145,3 +161,5 @@ export default function PermissionsPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(PermissionsPage, { permissions: ["view_permissions"] });

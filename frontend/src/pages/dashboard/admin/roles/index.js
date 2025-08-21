@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import RoleManagement from "@/components/admin/roles/RoleManagement";
+import withAuthProtection from "@/hooks/withAuthProtection";
 
-export default function RolesPage() {
+function RolesPage() {
   const [editingRules, setEditingRules] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
@@ -56,3 +57,5 @@ export default function RolesPage() {
     </AdminLayout>
   );
 }
+
+export default withAuthProtection(RolesPage, { permissions: ["view_roles"] });
