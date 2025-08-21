@@ -58,4 +58,4 @@ function RolesPage() {
   );
 }
 
-export default withAuthProtection(RolesPage, { permissions: ["manage_roles"] });
+export default withAuthProtection(RolesPage, { permissions: ["view_roles"] });
