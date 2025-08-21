@@ -189,6 +189,7 @@ exports.getFullProfile = async (req, res) => {
     res.json({
       ...user,
       roles: req.user.roles,
+      permissions: req.user.permissions,
       ...roleData,
       social_links: socialLinks,
     });

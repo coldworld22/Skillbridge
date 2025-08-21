@@ -9,7 +9,7 @@ jest.mock('../src/modules/roles/roles.service', () => ({
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (_req, _res, next) => next(),
-  isAdmin: (_req, _res, next) => next(),
+  hasPermission: () => (_req, _res, next) => next(),
 }));
 
 const service = require('../src/modules/roles/roles.service');
