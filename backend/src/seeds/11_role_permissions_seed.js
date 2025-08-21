@@ -10,7 +10,7 @@ exports.seed = async function(knex) {
   const rows = [];
 
   permissions.forEach((p) => {
-    rows.push({ role_id: roleId("SuperAdmin"), permission_id: p.id });
+    rows.push({ role_id: roleId("SuperAdmin"), permission_id: permId(p.code) });
   });
 
   ["view_roles", "view_permissions"].forEach((code) => {
