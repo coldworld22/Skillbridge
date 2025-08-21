@@ -122,6 +122,10 @@ const isStudent = (req, res, next) => {
 };
 
 const hasPermission = (...perms) => (req, res, next) => {
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("superadmin")) {
+    return next();
+  }
   const userPerms = req.user?.permissions || [];
   if (perms.some((p) => userPerms.includes(p))) {
     return next();
