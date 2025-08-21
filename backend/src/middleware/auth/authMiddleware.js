@@ -52,6 +52,7 @@ const verifyToken = async (req, res, next) => {
       return res.status(403).json({ message: "Account is not active" });
     }
     const roles = await userModel.getUserRoles(decoded.id);
+    const permissions = await userModel.getUserPermissions(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
     const { password_hash, ...safeUser } = user;
     req.user = {
@@ -59,6 +60,7 @@ const verifyToken = async (req, res, next) => {
       ...safeUser,
       roles: userRoles,
       role: userRoles[0],
+      permissions,
     };
     next();
   } catch (err) {
@@ -119,6 +121,14 @@ const isStudent = (req, res, next) => {
   return res.status(403).json({ message: "Access denied. Students only." });
 };
 
+const hasPermission = (...perms) => (req, res, next) => {
+  const userPerms = req.user?.permissions || [];
+  if (perms.some((p) => userPerms.includes(p))) {
+    return next();
+  }
+  return res.status(403).json({ message: "Insufficient permission" });
+};
+
 /**
  * 🔐 Middleware: Allows access if user is self or has admin/superadmin role
  */
@@ -137,5 +147,6 @@ module.exports = {
   isInstructorOrAdmin,
   isStudent,
   isSelfOrAdmin,
+  hasPermission,
   addTokenToBlacklist: (token) => tokenBlacklist.add(token),
 };
