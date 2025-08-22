@@ -21,15 +21,16 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
 
     useEffect(() => {
       if (hydrated) {
+        const role = user?.role?.toLowerCase();
         if (!user) {
           router.replace("/auth/login");
         } else if (!accessToken || isTokenExpired(accessToken)) {
           logout();
           router.replace("/auth/login");
         } else if (
-          (allowedRoles.length &&
-            !allowedRoles.includes(user.role?.toLowerCase())) ||
+          (allowedRoles.length && !allowedRoles.includes(role)) ||
           (allowedPerms.length &&
+            role !== "superadmin" &&
             !allowedPerms.some((p) => user.permissions?.includes(p)))
         ) {
           router.replace("/error/403");
@@ -37,11 +38,13 @@ export default function withAuthProtection(Component, rolesOrOptions = []) {
       }
     }, [hydrated, user, accessToken]);
 
+    const role = user?.role?.toLowerCase();
     if (
       !hydrated ||
       !user ||
-      (allowedRoles.length && !allowedRoles.includes(user.role?.toLowerCase())) ||
+      (allowedRoles.length && !allowedRoles.includes(role)) ||
       (allowedPerms.length &&
+        role !== "superadmin" &&
         !allowedPerms.some((p) => user.permissions?.includes(p)))
     ) {
       return null;
