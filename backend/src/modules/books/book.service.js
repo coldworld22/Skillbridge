@@ -2,6 +2,8 @@ const db = require("../../config/database");
 const { PRICE_RANGE_MAX } = require("../../config/books");
 const fs = require("fs");
 const path = require("path");
+const tagService = require("./bookTag.service");
+const slugify = require("slugify");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -92,10 +94,10 @@ exports.listBooks = async (params = {}) => {
 
 exports.getBookById = (id) => db("books").where({ id }).first();
 
-exports.addBookTags = async (bookId, tagIds) => {
+exports.addBookTags = async (bookId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ book_id: bookId, tag_id }));
-  await db("book_tag_map").insert(rows);
+  await trx("book_tag_map").insert(rows);
 };
 
 exports.getBookTags = (bookId) =>
@@ -104,8 +106,39 @@ exports.getBookTags = (bookId) =>
     .where("m.book_id", bookId)
     .select("t.id", "t.name", "t.slug");
 
-exports.clearBookTags = (bookId) =>
-  db("book_tag_map").where({ book_id: bookId }).del();
+exports.clearBookTags = (bookId, trx = db) =>
+  trx("book_tag_map").where({ book_id: bookId }).del();
+
+exports.updateBookTags = async (bookId, rawTags) => {
+  let tags = [];
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) tags = [];
+    } catch {
+      tags = [];
+    }
+  }
+
+  const tagIds = [];
+  for (const name of tags) {
+    const existing = await tagService.findByName(name);
+    const tag =
+      existing ||
+      (await tagService.createTag({
+        name,
+        slug: slugify(name, { lower: true, strict: true }),
+      }));
+    tagIds.push(tag.id);
+  }
+
+  await db.transaction(async (trx) => {
+    await exports.clearBookTags(bookId, trx);
+    if (tagIds.length) await exports.addBookTags(bookId, tagIds, trx);
+  });
+
+  return exports.getBookTags(bookId);
+};
 
 const removeFiles = async (files = []) => {
   await Promise.all(

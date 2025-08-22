@@ -193,8 +193,7 @@ exports.updateBook = catchAsync(async (req, res) => {
       removePreviewPages: removePreviews,
     });
 
-    await service.clearBookTags(book.id);
-    book.tags = await processTags(rawTags, book.id);
+    book.tags = await service.updateBookTags(book.id, rawTags);
 
     if (
       req.user.role !== "instructor" &&
