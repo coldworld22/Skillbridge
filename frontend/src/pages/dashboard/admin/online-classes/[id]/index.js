@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import Link from "next/link";
 import { fetchAdminClassById } from "@/services/admin/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
@@ -10,7 +11,7 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
 
-export default function AdminClassDetailPage() {
+function AdminClassDetailPage() {
   const { id } = useRouter().query;
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -244,6 +245,13 @@ export default function AdminClassDetailPage() {
 AdminClassDetailPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedAdminClassDetailPage = withAuthProtection(AdminClassDetailPage, {
+  permissions: ['manage_online_classes'],
+});
+ProtectedAdminClassDetailPage.getLayout = AdminClassDetailPage.getLayout;
+
+export default ProtectedAdminClassDetailPage;
 
 export async function getServerSideProps({ locale }) {
   return {

@@ -763,7 +763,9 @@ CreateOnlineClass.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, ['admin', 'superadmin']);
+const ProtectedCreateOnlineClass = withAuthProtection(CreateOnlineClass, {
+  permissions: ['manage_online_classes'],
+});
 ProtectedCreateOnlineClass.getLayout = CreateOnlineClass.getLayout;
 export default ProtectedCreateOnlineClass;
 export { CreateOnlineClass };
