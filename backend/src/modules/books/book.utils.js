@@ -1,6 +1,7 @@
 const service = require("./book.service");
 const tagService = require("./bookTag.service");
 const slugify = require("slugify");
+const db = require("../../config/database");
 
 exports.processTags = async (rawTags, bookId) => {
   let tags = [];
@@ -13,17 +14,23 @@ exports.processTags = async (rawTags, bookId) => {
     }
   }
   if (!tags.length) return [];
-  const tagIds = [];
-  for (const name of tags) {
-    const existing = await tagService.findByName(name);
-    const tag =
-      existing ||
-      (await tagService.createTag({
+
+  return await db.transaction(async (trx) => {
+    const existing = await tagService.findByNames(tags, trx);
+    const existingMap = new Map(
+      existing.map((t) => [t.name.toLowerCase(), t])
+    );
+    const newTagData = tags
+      .filter((name) => !existingMap.has(name.toLowerCase()))
+      .map((name) => ({
         name,
         slug: slugify(name, { lower: true, strict: true }),
       }));
-    tagIds.push(tag.id);
-  }
-  await service.addBookTags(bookId, tagIds);
-  return await service.getBookTags(bookId);
+    const newTags = newTagData.length
+      ? await tagService.createTags(newTagData, trx)
+      : [];
+    const tagIds = [...existing, ...newTags].map((t) => t.id);
+    await service.addBookTags(bookId, tagIds, trx);
+    return await service.getBookTags(bookId, trx);
+  });
 };
