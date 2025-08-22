@@ -1,10 +1,10 @@
 const router = require("express").Router();
 const ctrl = require("./classAssignment.controller");
-const { verifyToken, isInstructorOrAdmin } = require("../../../middleware/auth/authMiddleware");
+const { verifyToken, isInstructorOrAdmin, isAdmin } = require("../../../middleware/auth/authMiddleware");
 const validate = require("../../../middleware/validate");
 const validator = require("./classAssignment.validator");
 
-router.get("/admin", verifyToken, isInstructorOrAdmin, ctrl.getAllAssignments);
+router.get("/admin", verifyToken, isAdmin, ctrl.getAllAssignments);
 router.get("/class/:classId", ctrl.getAssignmentsByClass);
 router.post(
   "/class/:classId",

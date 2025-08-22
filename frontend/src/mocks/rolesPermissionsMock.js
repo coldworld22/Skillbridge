@@ -26,6 +26,8 @@ export const roles = [
     "revoke_certificate",
     "view_class_analytics",
     "view_student_progress",
+    "view_assignments",
+    "manage_assignments",
   ];
   
   export const rolePermissions = {
