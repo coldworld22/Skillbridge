@@ -17,6 +17,7 @@ import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, Fi
 // Switch removed as status is no longer a simple toggle
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
+import useBookTable from "@/hooks/useBookTable";
 
 function InstructorBooksPage() {
   const { t } = useTranslation("dashboard");
@@ -25,27 +26,46 @@ function InstructorBooksPage() {
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [filters, setFilters] = useState({
-    search: "", 
-    category: "", 
-    status: "", 
-    priceRange: 0, 
-    language: "", 
-    tags: [] 
-  });
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedBooks, setSelectedBooks] = useState([]);
-  const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
-  const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const perPage = 12;
 
-  const [bulkStatus, setBulkStatus] = useState("");
+  const {
+    filters,
+    setFilters,
+    selectedItems: selectedBooks,
+    setSelectedItems: setSelectedBooks,
+    allSelected,
+    handleSelect: handleSelectBook,
+    toggleSelectAll,
+    bulkStatus,
+    setBulkStatus,
+    page,
+    setPage,
+    meta,
+    setMeta,
+    resetFilters,
+    hasActiveFilters,
+    totalPages,
+    startIndex,
+    endIndex,
+    perPage,
+  } = useBookTable({
+    items: books,
+    perPage: 12,
+    storageKey: "instructorBooksFilters",
+    initialFilters: {
+      search: "",
+      category: "",
+      status: "",
+      priceRange: 0,
+      language: "",
+      tags: [],
+    },
+  });
 
   const [visibleCount, setVisibleCount] = useState(perPage);
   const loader = useRef(null);
@@ -101,16 +121,6 @@ function InstructorBooksPage() {
     }
   }, [router, t]);
 
-  // Load filters from localStorage on mount
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("instructorBooksFilters") : null;
-    if (saved) {
-      try {
-        setFilters(JSON.parse(saved));
-      } catch {}
-    }
-  }, []);
-
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -161,45 +171,6 @@ function InstructorBooksPage() {
     };
     loadBooks();
   }, [page, filters, sortBy, perPage, t]);
-
-  // Remember filters in localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("instructorBooksFilters", JSON.stringify(filters));
-    }
-  }, [filters]);
-
-  const filteredBooks = books;
-  const totalPages = meta?.totalPages ?? 1;
-  const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
-  const endIndex = books.length ? startIndex + books.length - 1 : 0;
-
-  const handleSelectBook = (id) => {
-    setSelectedBooks((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
-      setAllSelected(updated.length === filteredBooks.length);
-      return updated;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (allSelected) {
-      setSelectedBooks([]);
-      setAllSelected(false);
-    } else {
-      setSelectedBooks(filteredBooks.map((b) => b.id));
-      setAllSelected(true);
-    }
-  };
-
-  useEffect(() => {
-    setAllSelected(
-      filteredBooks.length > 0 &&
-        selectedBooks.length === filteredBooks.length
-    );
-  }, [filteredBooks, selectedBooks]);
 
   const handleBulkDelete = async () => {
     openConfirmModal({
@@ -262,28 +233,6 @@ function InstructorBooksPage() {
       toast.error(t("Failed to update status"));
     }
   };
-
-  const resetFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
-      search: "",
-      category: "",
-      status: "",
-      priceRange: 0,
-      language: "",
-      tags: []
-    }));
-    setPage(1);
-  };
-
-  const hasActiveFilters = (
-    filters.search || 
-    filters.category || 
-    filters.status || 
-    filters.priceRange > 0 || 
-    filters.language || 
-    filters.tags.length > 0
-  );
 
   const visibleBooks = sortedBooks.slice(0, visibleCount);
 
