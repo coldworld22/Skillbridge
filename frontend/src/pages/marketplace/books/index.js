@@ -16,6 +16,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import { mapBookForCart, mapBookForWishlist } from "@/utils/bookMapping";
 import { BOOK_PRICE_RANGE_DEFAULT } from "@/utils/constants";
+import debounce from "lodash/debounce";
 
 // Fallback to a sane default if the constant is missing during build/runtime
 const DEFAULT_PRICE_RANGE =
@@ -48,11 +49,17 @@ export default function BooksPage() {
   const addToWishlist = useBookWishlistStore((state) => state.addToWishlist);
   const addItem = useCartStore((state) => state.addItem);
 
+  const searchDebounce = useRef(
+    debounce((value) => {
+      setSearchQuery(value);
+      setBooks([]);
+      setPage(1);
+      setHasMore(true);
+    }, 300)
+  ).current;
+
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setBooks([]);
-    setPage(1);
-    setHasMore(true);
+    searchDebounce(e.target.value);
   };
 
   const handleSortChange = (e) => {
@@ -61,6 +68,12 @@ export default function BooksPage() {
     setPage(1);
     setHasMore(true);
   };
+
+  useEffect(() => {
+    return () => {
+      searchDebounce.cancel();
+    };
+  }, [searchDebounce]);
 
   useEffect(() => {
     const handleScroll = () => {
