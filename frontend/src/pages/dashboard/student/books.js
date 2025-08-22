@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import Image from "next/image";
 import { FiDownload, FiEye, FiHeart } from "react-icons/fi";
 import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
@@ -30,9 +31,11 @@ function BookCard({ book }) {
 
   return (
     <div className="border rounded-xl shadow-sm p-4 bg-white flex flex-col justify-between h-full">
-      <img
+      <Image
         src={cover}
         alt={book.title}
+        width={400}
+        height={192}
         className="w-full h-48 object-cover rounded-lg mb-4"
       />
       <div className="flex-1">
@@ -70,6 +73,7 @@ function BookCard({ book }) {
           <a
             href={book.preview_url}
             target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-1 text-indigo-600 hover:underline"
           >
             <FiEye className="text-lg" /> {t("preview")}
@@ -79,6 +83,7 @@ function BookCard({ book }) {
           <a
             href={book.pdf_url}
             target="_blank"
+            rel="noopener noreferrer"
             download
             className="flex items-center gap-1 text-green-600 hover:underline"
           >
