@@ -1,3 +1,4 @@
+
 exports.seed = async function (knex) {
   const permission = {
     code: 'view_course',

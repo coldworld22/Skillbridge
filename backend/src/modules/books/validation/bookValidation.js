@@ -19,14 +19,6 @@ exports.createBook = Joi.object({
     .falsy(0)
     .falsy('false')
     .default(false),
-  is_free: Joi.boolean()
-    .truthy('1')
-    .truthy(1)
-    .truthy('true')
-    .falsy('0')
-    .falsy(0)
-    .falsy('false')
-    .default(false),
   status: Joi.string().optional(),
   tags: Joi.alternatives(Joi.array().items(Joi.string()), Joi.string()).optional(),
 });

@@ -16,12 +16,13 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import withAuthProtection from '@/hooks/withAuthProtection';
 import { FaArrowLeft } from 'react-icons/fa';
 import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 
-export default function EditClassPage() {
+function EditClassPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
@@ -186,6 +187,13 @@ export default function EditClassPage() {
 EditClassPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedEditClassPage = withAuthProtection(EditClassPage, {
+  permissions: ['manage_online_classes'],
+});
+ProtectedEditClassPage.getLayout = EditClassPage.getLayout;
+
+export default ProtectedEditClassPage;
 
 export async function getServerSideProps({ locale }) {
   return {

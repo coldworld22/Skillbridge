@@ -26,7 +26,8 @@ import {
   FaEdit,
   FaTrash,
   FaChevronLeft,
-  FaChevronRight
+  FaChevronRight,
+  FaList
 } from "react-icons/fa";
 
 
@@ -45,6 +46,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   const { t } = useTranslation('dashboard');
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
+  const canManageRules = user?.permissions?.includes('ADD_ONLINE_CLASS_RULE');
 
   useEffect(() => {
     setClassList(classes);
@@ -377,6 +379,13 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
                       <FaEdit className="w-4 h-4" />
                     </button>
                   </Link>
+                  {canManageRules && (
+                    <Link href={`/dashboard/admin/online-classes/${cls.id}/rules`} title="Manage Rules">
+                      <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 rounded shadow">
+                        <FaList className="w-4 h-4" />
+                      </button>
+                    </Link>
+                  )}
                   <button title="Delete Class"
                     onClick={() => { setModalClass(cls); setModalType('delete'); }}
                     className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded shadow">

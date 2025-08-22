@@ -53,12 +53,17 @@ const verifyToken = async (req, res, next) => {
     }
     const roles = await userModel.getUserRoles(decoded.id);
     const userRoles = roles.length ? roles : [user.role];
+    let permissions = await userModel.getUserPermissions(decoded.id);
+    if (userRoles.map((r) => normalizeRole(r)).includes("superadmin")) {
+      permissions = await userModel.getAllPermissionCodes();
+    }
     const { password_hash, ...safeUser } = user;
     req.user = {
       ...decoded,
       ...safeUser,
       roles: userRoles,
       role: userRoles[0],
+      permissions,
     };
     next();
   } catch (err) {
@@ -119,6 +124,18 @@ const isStudent = (req, res, next) => {
   return res.status(403).json({ message: "Access denied. Students only." });
 };
 
+const hasPermission = (...perms) => (req, res, next) => {
+  const roles = req.user.roles || [req.user.role];
+  if (roles.map((r) => normalizeRole(r)).includes("superadmin")) {
+    return next();
+  }
+  const userPerms = req.user?.permissions || [];
+  if (perms.some((p) => userPerms.includes(p))) {
+    return next();
+  }
+  return res.status(403).json({ message: "Insufficient permission" });
+};
+
 /**
  * 🔐 Middleware: Allows access if user is self or has admin/superadmin role
  */
@@ -137,5 +154,6 @@ module.exports = {
   isInstructorOrAdmin,
   isStudent,
   isSelfOrAdmin,
+  hasPermission,
   addTokenToBlacklist: (token) => tokenBlacklist.add(token),
 };

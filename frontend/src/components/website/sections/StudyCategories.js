@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown, FaFilter } from "react-icons/fa";
-import { fetchCategoryTree } from "@/services/admin/categoryService";
+import { fetchCategoryTree } from "@/services/instructor/categoryService";
 import { API_BASE_URL } from "@/config/config";
 
 const renderTree = (nodes, level = 1) => {

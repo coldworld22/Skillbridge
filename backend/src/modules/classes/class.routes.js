@@ -30,6 +30,7 @@ router.use("/reviews", require("./reviews/classReview.routes"));
 router.use("/comments", require("./comments/classComment.routes"));
 // Final scoring and certificates
 router.use("/scores", require("./scores/classScore.routes"));
+router.use("/admin/:id/rules", require("./rules/classRule.routes"));
 
 router.post(
   "/admin",
