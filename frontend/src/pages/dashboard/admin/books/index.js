@@ -90,6 +90,7 @@ function AdminBooksPage() {
   }, [t]);
 
   const tagAbortRef = useRef(null);
+  const booksAbortRef = useRef(null);
 
   const debouncedFetchTags = useMemo(
     () =>
@@ -128,6 +129,9 @@ function AdminBooksPage() {
 
   const loadBooks = useCallback(
     async (currentPage = page) => {
+      booksAbortRef.current?.abort();
+      const controller = new AbortController();
+      booksAbortRef.current = controller;
       try {
         setLoading(true);
         const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
@@ -149,12 +153,15 @@ function AdminBooksPage() {
           filters: activeFilters,
           sort: { sortBy },
           admin: true,
+          signal: controller.signal,
         });
         setBooks(list);
         setMeta(meta);
       } catch (err) {
-        toast.error(t("Failed to load data"));
-        console.error("Error loading:", err);
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          toast.error(t("Failed to load data"));
+          console.error("Error loading:", err);
+        }
       } finally {
         setLoading(false);
       }
@@ -164,6 +171,9 @@ function AdminBooksPage() {
 
   useEffect(() => {
     loadBooks();
+    return () => {
+      booksAbortRef.current?.abort();
+    };
   }, [loadBooks]);
 
   // Remember filters in localStorage

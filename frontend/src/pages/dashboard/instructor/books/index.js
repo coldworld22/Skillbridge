@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
@@ -137,30 +137,45 @@ function InstructorBooksPage() {
       .catch(() => {});
   }, [tagInput]);
 
-  useEffect(() => {
-    const loadBooks = async () => {
+  const booksAbortRef = useRef(null);
+
+  const loadBooks = useCallback(
+    async (currentPage = page) => {
+      booksAbortRef.current?.abort();
+      const controller = new AbortController();
+      booksAbortRef.current = controller;
       try {
         setLoading(true);
         setError(null);
         const { books: list, meta } = await fetchInstructorBooks({
-          page,
+          page: currentPage,
           perPage,
           filters,
           sort: { sortBy },
+          signal: controller.signal,
         });
         setBooks(list);
         setMeta(meta);
       } catch (err) {
-        const message = t("Failed to load data");
-        toast.error(message);
-        console.error("Error loading:", err);
-        setError(message);
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          const message = t("Failed to load data");
+          toast.error(message);
+          console.error("Error loading:", err);
+          setError(message);
+        }
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [page, perPage, filters, sortBy, t]
+  );
+
+  useEffect(() => {
     loadBooks();
-  }, [page, filters, sortBy, perPage, t]);
+    return () => {
+      booksAbortRef.current?.abort();
+    };
+  }, [loadBooks]);
 
   // Remember filters in localStorage
   useEffect(() => {
