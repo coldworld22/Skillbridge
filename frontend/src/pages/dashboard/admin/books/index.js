@@ -18,32 +18,52 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import { buildUrl } from "@/utils/url";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useBookTable from "@/hooks/useBookTable";
 function AdminBooksPage() {
   const { t } = useTranslation("dashboard");
 
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [filters, setFilters] = useState({
-    search: "",
-    category: "",
-    status: "",
-    priceRange: null,
-    language: "",
-    tags: []
-  });
   const [tagInput, setTagInput] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooks, setSelectedBooks] = useState([]);
-  const [allSelected, setAllSelected] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
-  const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const perPage = 12;
 
-  const [bulkStatus, setBulkStatus] = useState("");
+  const {
+    filters,
+    setFilters,
+    selectedItems: selectedBooks,
+    setSelectedItems: setSelectedBooks,
+    allSelected,
+    handleSelect: handleSelectBook,
+    toggleSelectAll,
+    bulkStatus,
+    setBulkStatus,
+    page,
+    setPage,
+    meta,
+    setMeta,
+    resetFilters,
+    hasActiveFilters,
+    totalPages,
+    startIndex,
+    endIndex,
+    perPage,
+  } = useBookTable({
+    items: books,
+    perPage: 12,
+    storageKey: "adminBooksFilters",
+    initialFilters: {
+      search: "",
+      category: "",
+      status: "",
+      priceRange: null,
+      language: "",
+      tags: [],
+    },
+  });
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -63,16 +83,6 @@ function AdminBooksPage() {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // Load filters from localStorage on mount
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("adminBooksFilters") : null;
-    if (saved) {
-      try {
-        setFilters(JSON.parse(saved));
-      } catch {}
-    }
-  }, []);
-
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -90,6 +100,7 @@ function AdminBooksPage() {
   }, [t]);
 
   const tagAbortRef = useRef(null);
+  const booksAbortRef = useRef(null);
 
   const debouncedFetchTags = useMemo(
     () =>
@@ -128,6 +139,9 @@ function AdminBooksPage() {
 
   const loadBooks = useCallback(
     async (currentPage = page) => {
+      booksAbortRef.current?.abort();
+      const controller = new AbortController();
+      booksAbortRef.current = controller;
       try {
         setLoading(true);
         const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
@@ -149,12 +163,15 @@ function AdminBooksPage() {
           filters: activeFilters,
           sort: { sortBy },
           admin: true,
+          signal: controller.signal,
         });
         setBooks(list);
         setMeta(meta);
       } catch (err) {
-        toast.error(t("Failed to load data"));
-        console.error("Error loading:", err);
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          toast.error(t("Failed to load data"));
+          console.error("Error loading:", err);
+        }
       } finally {
         setLoading(false);
       }
@@ -164,44 +181,10 @@ function AdminBooksPage() {
 
   useEffect(() => {
     loadBooks();
+    return () => {
+      booksAbortRef.current?.abort();
+    };
   }, [loadBooks]);
-
-  // Remember filters in localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("adminBooksFilters", JSON.stringify(filters));
-    }
-  }, [filters]);
-
-  const totalPages = meta?.totalPages ?? 1;
-  const startIndex = books.length ? (page - 1) * perPage + 1 : 0;
-  const endIndex = books.length ? startIndex + books.length - 1 : 0;
-
-  const handleSelectBook = (id) => {
-    setSelectedBooks((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
-      setAllSelected(updated.length === books.length);
-      return updated;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (allSelected) {
-      setSelectedBooks([]);
-      setAllSelected(false);
-    } else {
-      setSelectedBooks(books.map((b) => b.id));
-      setAllSelected(true);
-    }
-  };
-
-  useEffect(() => {
-    setAllSelected(
-      books.length > 0 && selectedBooks.length === books.length
-    );
-  }, [books, selectedBooks]);
 
   const handleBulkDelete = async () => {
     openConfirmModal({
@@ -273,28 +256,6 @@ function AdminBooksPage() {
       toast.error(t("Failed to update status"));
     }
   };
-
-  const resetFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
-      search: "",
-      category: "",
-      status: "",
-      priceRange: null,
-      language: "",
-      tags: []
-    }));
-    setPage(1);
-  };
-
-  const hasActiveFilters = (
-    filters.search || 
-    filters.category || 
-    filters.status || 
-    filters.priceRange > 0 || 
-    filters.language || 
-    filters.tags.length > 0
-  );
 
   return (
     <AdminLayout>

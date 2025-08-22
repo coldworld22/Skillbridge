@@ -219,6 +219,7 @@ const Footer = () => {
         whileHover={{ scale: 1.2 }}
         href={`https://wa.me/${whatsappNumber}`}
         target="_blank"
+        rel="noopener noreferrer"
         className="fixed bottom-10 left-8 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition z-50"
       >
         <FaWhatsapp size={24} />

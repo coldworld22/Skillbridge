@@ -36,8 +36,9 @@ exports.listBooks = async (params = {}) => {
   }
   if (category) query.where("b.category_id", category);
   if (status) query.where("b.status", status);
-  if (priceRange)
-    query.where("b.price", "<=", Math.min(priceRange, PRICE_RANGE_MAX));
+  const parsedPriceRange = Number(priceRange);
+  if (Number.isFinite(parsedPriceRange) && parsedPriceRange >= 0)
+    query.where("b.price", "<=", Math.min(parsedPriceRange, PRICE_RANGE_MAX));
   if (language) query.where("b.language", language);
   if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
@@ -240,8 +241,20 @@ exports.checkout = async (studentId) => {
       .where({ student_id: studentId })
       .select('book_id');
     if (!items.length) return [];
+
+    const bookIds = items.map((i) => i.book_id);
+
+    const existing = await trx('book_purchases')
+      .where({ student_id: studentId })
+      .whereIn('book_id', bookIds)
+      .select('book_id');
+    if (existing.length) {
+      const ids = existing.map((e) => e.book_id).join(', ');
+      throw new AppError(`Book already purchased: ${ids}`, 409);
+    }
+
     const books = await trx('books')
-      .whereIn('id', items.map((i) => i.book_id))
+      .whereIn('id', bookIds)
       .select('id', 'price');
     const rows = books.map((b) => ({
       student_id: studentId,

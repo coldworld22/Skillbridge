@@ -20,7 +20,7 @@ const mockDb = knex({
 jest.mock('../../../config/database', () => mockDb);
 
 const db = require('../../../config/database');
-const { listBooks } = require('../book.service');
+const { listBooks, checkout } = require('../book.service');
 
 beforeAll(async () => {
   await db.schema.createTable('books', (table) => {
@@ -37,6 +37,20 @@ beforeAll(async () => {
     table.timestamp('created_at');
   });
 
+  await db.schema.createTable('book_cart', (table) => {
+    table.uuid('student_id');
+    table.integer('book_id');
+    table.integer('quantity').defaultTo(1);
+  });
+
+  await db.schema.createTable('book_purchases', (table) => {
+    table.increments('id');
+    table.uuid('student_id');
+    table.integer('book_id');
+    table.decimal('price_paid').notNullable().defaultTo(0);
+    table.timestamp('purchased_at');
+  });
+
   const books = [
     {
       id: 1,
@@ -46,6 +60,7 @@ beforeAll(async () => {
       detailed_description: 'DetailedDesc1',
       instructor_id: '1',
       created_at: new Date('2023-01-01'),
+      price: 10,
     },
     {
       id: 2,
@@ -55,6 +70,7 @@ beforeAll(async () => {
       detailed_description: 'DetailedDesc2',
       instructor_id: '2',
       created_at: new Date('2023-01-02'),
+      price: 15,
     },
     {
       id: 3,
@@ -64,6 +80,7 @@ beforeAll(async () => {
       detailed_description: 'DetailedMatch',
       instructor_id: '1',
       created_at: new Date('2023-01-03'),
+      price: 20,
     },
   ];
   await db('books').insert(books);
@@ -97,5 +114,41 @@ describe('listBooks', () => {
     const result = await listBooks({ search: 'DetailedMatch' });
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe(3);
+  });
+});
+
+describe('checkout', () => {
+  const studentId = 'student1';
+
+  beforeEach(async () => {
+    await db('book_cart').del();
+    await db('book_purchases').del();
+  });
+
+  test('throws error when book already purchased', async () => {
+    await db('book_cart').insert({ student_id: studentId, book_id: 1 });
+    await db('book_purchases').insert({
+      student_id: studentId,
+      book_id: 1,
+      price_paid: 10,
+    });
+
+    await expect(checkout(studentId)).rejects.toThrow('Book already purchased');
+
+    const purchases = await db('book_purchases').where({ student_id: studentId });
+    expect(purchases).toHaveLength(1);
+  });
+
+  test('completes checkout when no duplicates', async () => {
+    await db('book_cart').insert({ student_id: studentId, book_id: 2 });
+    const purchases = await checkout(studentId);
+    expect(purchases).toHaveLength(1);
+    const inDb = await db('book_purchases').where({
+      student_id: studentId,
+      book_id: 2,
+    });
+    expect(inDb).toHaveLength(1);
+    const cart = await db('book_cart').where({ student_id: studentId });
+    expect(cart).toHaveLength(0);
   });
 });

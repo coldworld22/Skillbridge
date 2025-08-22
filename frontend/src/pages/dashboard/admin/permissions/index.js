@@ -15,6 +15,8 @@ function PermissionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPermission, setNewPermission] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState(null);
   const { user } = useAuthStore();
   const canManage = user?.permissions?.includes("manage_permissions");
 
@@ -34,8 +36,15 @@ function PermissionsPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!canManage || !newPermission.trim()) return;
-    if (permissions.some((p) => p.code === newPermission)) return;
+    if (!canManage) return;
+    if (!newPermission.trim()) {
+      toast.error("Permission name is required");
+      return;
+    }
+    if (permissions.some((p) => p.code === newPermission)) {
+      toast.error("Permission already exists");
+      return;
+    }
     try {
       const created = await createPermission({ code: newPermission });
       setPermissions([...permissions, created]);
@@ -48,16 +57,32 @@ function PermissionsPage() {
     setShowAddModal(false);
   };
 
-  const handleDelete = async (id) => {
-    if (!canManage || !confirm("Delete this permission?")) return;
+  const openDeleteModal = (id) => {
+    if (!canManage) return;
+    setPermissionToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!canManage || !permissionToDelete) return;
     try {
-      await deletePermission(id);
-      setPermissions((perms) => perms.filter((p) => p.id !== id));
+      await deletePermission(permissionToDelete);
+      setPermissions((perms) =>
+        perms.filter((p) => p.id !== permissionToDelete)
+      );
       toast.success("Permission removed");
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete");
     }
+    setPermissionToDelete(null);
+    setShowDeleteModal(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPermissionToDelete(null);
+    toast("Deletion cancelled");
   };
 
   return (
@@ -95,7 +120,7 @@ function PermissionsPage() {
                   {canManage && (
                     <td className="px-6 py-3 text-right">
                       <button
-                        onClick={() => handleDelete(perm.id)}
+                        onClick={() => openDeleteModal(perm.id)}
                         className="text-red-600 hover:text-red-800 transition"
                         title="Delete"
                       >
@@ -152,6 +177,32 @@ function PermissionsPage() {
                   className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
                 >
                   Add
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Modal */}
+        {showDeleteModal && canManage && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-xl">
+              <h3 className="text-lg font-bold mb-4 text-gray-800">Confirm Deletion</h3>
+              <p className="mb-6 text-gray-700">
+                Are you sure you want to delete this permission?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleCancelDelete}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+                >
+                  Delete
                 </button>
               </div>
             </div>
