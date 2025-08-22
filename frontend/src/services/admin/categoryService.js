@@ -5,17 +5,17 @@
 import api from "@/services/api/api";
 
 export const fetchAllCategories = async (params = {}, config = {}) => {
-  const { data } = await api.get("/users/categories", { params, ...config });
+  const { data } = await api.get("/users/admin/categories", { params, ...config });
   return data?.data;
 };
 
 export const fetchCategoryTree = async () => {
-  const { data } = await api.get("/users/categories/tree");
+  const { data } = await api.get("/users/admin/categories/tree");
   return data?.data ?? [];
 };
 
 export const fetchCategoryById = async (id) => {
-  const { data } = await api.get(`/users/categories/${id}`);
+  const { data } = await api.get(`/users/admin/categories/${id}`);
   return data?.data;
 };
 

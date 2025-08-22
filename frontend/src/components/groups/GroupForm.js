@@ -4,7 +4,7 @@ import useAuthStore from '@/store/auth/authStore';
 import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import groupService from '@/services/groupService';
-import { fetchAllCategories } from '@/services/admin/categoryService';
+import { fetchAllCategories } from '@/services/instructor/categoryService';
 import userService from '@/services/profile/userService';
 import { sendChatMessage } from '@/services/messageService';
 import { createNotification } from '@/services/notificationService';
