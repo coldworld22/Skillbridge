@@ -4,6 +4,7 @@ import useAuthStore from "@/store/auth/authStore";
 import PermissionAssignment from "./PermissionAssignment";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
+import { toast } from "react-hot-toast";
 import {
   fetchAllRoles,
   fetchRoleById,
@@ -21,12 +22,21 @@ export default function RoleManagement() {
   const canManage = user?.permissions?.includes("manage_roles");
 
   useEffect(() => {
-    fetchAllRoles().then((data) => {
-      setRoles(data);
-      if (data.length) {
-        fetchRoleById(data[0].id).then((r) => setSelectedRole(r));
+    const loadRoles = async () => {
+      try {
+        const data = await fetchAllRoles();
+        setRoles(data);
+        if (data.length) {
+          const firstRole = await fetchRoleById(data[0].id);
+          setSelectedRole(firstRole);
+        }
+        toast.success("Roles loaded");
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load roles");
       }
-    });
+    };
+    loadRoles();
   }, []);
 
   const handleSelect = async (role) => {
@@ -36,24 +46,42 @@ export default function RoleManagement() {
 
   const handleAddRole = async (payload) => {
     if (!canManage) return;
-    const newRole = await createRole(payload);
-    setRoles((r) => [...r, newRole]);
-    setShowAdd(false);
+    try {
+      const newRole = await createRole(payload);
+      setRoles((r) => [...r, newRole]);
+      setShowAdd(false);
+      toast.success("Role added");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add role");
+    }
   };
 
   const handleUpdateRole = async (payload) => {
     if (!canManage) return;
-    const updated = await updateRole(editRole.id, payload);
-    setRoles((r) => r.map((ro) => (ro.id === updated.id ? updated : ro)));
-    setEditRole(null);
-    if (selectedRole?.id === updated.id) setSelectedRole(updated);
+    try {
+      const updated = await updateRole(editRole.id, payload);
+      setRoles((r) => r.map((ro) => (ro.id === updated.id ? updated : ro)));
+      setEditRole(null);
+      if (selectedRole?.id === updated.id) setSelectedRole(updated);
+      toast.success("Role updated");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update role");
+    }
   };
 
   const handleDeleteRole = async (id) => {
     if (!canManage || !confirm("Delete this role?")) return;
-    await deleteRole(id);
-    setRoles((r) => r.filter((ro) => ro.id !== id));
-    if (selectedRole?.id === id) setSelectedRole(null);
+    try {
+      await deleteRole(id);
+      setRoles((r) => r.filter((ro) => ro.id !== id));
+      if (selectedRole?.id === id) setSelectedRole(null);
+      toast.success("Role deleted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete role");
+    }
   };
 
   return (
