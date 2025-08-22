@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CheckCircle, CheckSquare, PlusCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 import useAuthStore from "@/store/auth/authStore";
 import {
   fetchAllPermissions,
@@ -17,12 +18,28 @@ export default function PermissionAssignment({ role, canManage }) {
   const canAddPermission = user?.permissions?.includes("manage_permissions");
 
   useEffect(() => {
-    fetchAllPermissions().then(setPermissions);
+    const loadPermissions = async () => {
+      try {
+        const all = await fetchAllPermissions();
+        setPermissions(all);
+      } catch (err) {
+        toast.error("Failed to load permissions");
+      }
+    };
+    loadPermissions();
   }, []);
 
   useEffect(() => {
     if (role) {
-      fetchRoleById(role.id).then((r) => setAssignedPermissions(r.permissions || []));
+      const loadRole = async () => {
+        try {
+          const r = await fetchRoleById(role.id);
+          setAssignedPermissions(r.permissions || []);
+        } catch (err) {
+          toast.error("Failed to load role");
+        }
+      };
+      loadRole();
     }
   }, [role]);
 
@@ -45,17 +62,21 @@ export default function PermissionAssignment({ role, canManage }) {
   };
 
   const handleAddNewPermission = async () => {
-    if (
-      !canAddPermission ||
-      !newPermission ||
-      permissions.some((p) => p.code === newPermission)
-    )
+    if (!canAddPermission || !newPermission) return;
+    if (permissions.some((p) => p.code === newPermission)) {
+      toast.error("Permission already exists");
       return;
-    const created = await createPermission({ code: newPermission });
-    setPermissions([...permissions, created]);
-    setAssignedPermissions([...assignedPermissions, created.code]);
-    setNewPermission("");
-    setShowAddModal(false);
+    }
+    try {
+      const created = await createPermission({ code: newPermission });
+      setPermissions([...permissions, created]);
+      setAssignedPermissions([...assignedPermissions, created.code]);
+      setNewPermission("");
+      setShowAddModal(false);
+      toast.success("Permission created");
+    } catch (err) {
+      toast.error("Failed to create permission");
+    }
   };
 
   const handleSave = async () => {
@@ -63,7 +84,12 @@ export default function PermissionAssignment({ role, canManage }) {
     const ids = assignedPermissions
       .map((code) => permissions.find((p) => p.code === code)?.id)
       .filter(Boolean);
-    await updateRolePermissions(role.id, ids);
+    try {
+      await updateRolePermissions(role.id, ids);
+      toast.success("Permissions saved");
+    } catch (err) {
+      toast.error("Failed to save permissions");
+    }
   };
 
   return (
