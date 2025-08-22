@@ -92,14 +92,14 @@ exports.listBooks = async (params = {}) => {
 
 exports.getBookById = (id) => db("books").where({ id }).first();
 
-exports.addBookTags = async (bookId, tagIds) => {
+exports.addBookTags = async (bookId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ book_id: bookId, tag_id }));
-  await db("book_tag_map").insert(rows);
+  await trx("book_tag_map").insert(rows);
 };
 
-exports.getBookTags = (bookId) =>
-  db("book_tag_map as m")
+exports.getBookTags = (bookId, trx = db) =>
+  trx("book_tag_map as m")
     .join("tags as t", "m.tag_id", "t.id")
     .where("m.book_id", bookId)
     .select("t.id", "t.name", "t.slug");
