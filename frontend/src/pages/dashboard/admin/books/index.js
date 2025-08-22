@@ -947,7 +947,10 @@ function AdminBooksPage() {
   );
 }
 
-export default withAuthProtection(AdminBooksPage, ["admin", "superadmin"]);
+const ProtectedAdminBooksPage = withAuthProtection(AdminBooksPage, {
+  permissions: ["view_books"],
+});
+export default ProtectedAdminBooksPage;
 
 export async function getStaticProps({ locale }) {
   return {

@@ -187,7 +187,9 @@ function EditTutorialPage() {
   );
 }
 
-export default withAuthProtection(EditTutorialPage, ["admin", "superadmin"]);
+export default withAuthProtection(EditTutorialPage, {
+  permissions: ["manage_tutorials"],
+});
 
 export async function getServerSideProps({ locale }) {
   return {

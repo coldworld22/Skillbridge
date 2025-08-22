@@ -256,7 +256,10 @@ function AdminEditBookPage() {
   );
 }
 
-export default withAuthProtection(AdminEditBookPage, ["admin", "superadmin"]);
+const ProtectedAdminEditBookPage = withAuthProtection(AdminEditBookPage, {
+  permissions: ["manage_books"],
+});
+export default ProtectedAdminEditBookPage;
 
 export async function getServerSideProps({ locale }) {
   return {

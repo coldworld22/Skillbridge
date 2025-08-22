@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchBook, deleteBook } from "@/services/bookService";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import {
   FiArrowLeft,
   FiEdit,
@@ -18,7 +19,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
-export default function AdminViewBookPage() {
+function AdminViewBookPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation(["dashboard", "errors"]);
@@ -302,6 +303,11 @@ export default function AdminViewBookPage() {
     </AdminLayout>
   );
 }
+
+const ProtectedAdminViewBookPage = withAuthProtection(AdminViewBookPage, {
+  permissions: ["manage_books"],
+});
+export default ProtectedAdminViewBookPage;
 
 export async function getServerSideProps({ locale }) {
   return {
