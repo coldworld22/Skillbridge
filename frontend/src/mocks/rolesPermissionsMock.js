@@ -26,10 +26,7 @@ export const roles = [
     "revoke_certificate",
     "view_class_analytics",
     "view_student_progress",
-    "view_assignments",
-    "manage_assignments",
-    "view_categories",
-    "manage_categories",
+    "ADD_ONLINE_CLASS_RULE",
   ];
   
   export const rolePermissions = {
