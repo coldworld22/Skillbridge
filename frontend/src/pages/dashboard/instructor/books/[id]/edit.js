@@ -44,8 +44,6 @@ function EditBookPage() {
         const parsedBook = {
           ...bookData,
           tags: bookData?.tags?.map((t) => t.name || t) || [],
-          is_free:
-            bookData?.is_free === 1 || bookData?.is_free === true,
           allow_preview:
             bookData?.allow_preview === 1 ||
             bookData?.allow_preview === true,
