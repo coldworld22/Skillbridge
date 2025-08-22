@@ -45,12 +45,30 @@ exports.deletePermission = (id) => db("permissions").where({ id }).del();
 
 exports.assignPermissions = async (roleId, permissionIds, userId) => {
   await db("role_permissions").where({ role_id: roleId }).del();
+
   const rows = permissionIds.map((pid) => ({
     role_id: roleId,
     permission_id: pid,
     assigned_by: userId,
     assigned_at: new Date(),
   }));
+
+  // Automatically ensure specific roles get the ADD_ONLINE_CLASS_RULE permission
+  const role = await db("roles").where({ id: roleId }).first("name");
+  if (role && ["Admin", "SuperAdmin"].includes(role.name)) {
+    const perm = await db("permissions")
+      .where({ code: "ADD_ONLINE_CLASS_RULE" })
+      .first("id");
+    if (perm && !permissionIds.includes(perm.id)) {
+      rows.push({
+        role_id: roleId,
+        permission_id: perm.id,
+        assigned_by: userId,
+        assigned_at: new Date(),
+      });
+    }
+  }
+
   if (rows.length) await db("role_permissions").insert(rows);
   return exports.getRoleById(roleId);
 };
