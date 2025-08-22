@@ -57,7 +57,7 @@ AdminOnlineClassesPage.getLayout = function getLayout(page) {
 
 const ProtectedAdminOnlineClassesPage = withAuthProtection(
   AdminOnlineClassesPage,
-  ["admin", "superadmin", "instructor"]
+  { permissions: ["view_online_classes"] }
 );
 
 ProtectedAdminOnlineClassesPage.getLayout = AdminOnlineClassesPage.getLayout;
