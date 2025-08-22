@@ -34,8 +34,9 @@ exports.listBooks = async (params = {}) => {
   }
   if (category) query.where("b.category_id", category);
   if (status) query.where("b.status", status);
-  if (priceRange)
-    query.where("b.price", "<=", Math.min(priceRange, PRICE_RANGE_MAX));
+  const parsedPriceRange = Number(priceRange);
+  if (Number.isFinite(parsedPriceRange) && parsedPriceRange >= 0)
+    query.where("b.price", "<=", Math.min(parsedPriceRange, PRICE_RANGE_MAX));
   if (language) query.where("b.language", language);
   if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
