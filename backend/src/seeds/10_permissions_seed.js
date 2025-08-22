@@ -12,16 +12,16 @@ exports.seed = async function(knex) {
       description: "Create/update/delete online classes",
       created_at: new Date(),
     },
-    { code: "view_assignments", description: "View assignments", created_at: new Date() },
+    { code: "view_tutorials", description: "View tutorials", created_at: new Date() },
     {
-      code: "manage_assignments",
-      description: "Create/update/delete assignments",
+      code: "manage_tutorials",
+      description: "Create/update/delete tutorials",
       created_at: new Date(),
     },
-    { code: "view_categories", description: "View categories", created_at: new Date() },
+    { code: "view_books", description: "View books", created_at: new Date() },
     {
-      code: "manage_categories",
-      description: "Create/update/delete categories",
+      code: "manage_books",
+      description: "Create/update/delete books",
       created_at: new Date(),
     },
   ]);
