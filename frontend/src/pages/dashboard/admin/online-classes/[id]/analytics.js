@@ -1,6 +1,7 @@
 // pages/dashboard/admin/online-classes/[id]/analytics.js
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import withAuthProtection from "@/hooks/withAuthProtection";
 import { useEffect, useState } from "react";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -40,7 +41,7 @@ const EMPTY_STATS = {
   registrationTrend: [],
 };
 
-export default function AnalyticsDashboard() {
+function AnalyticsDashboard() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard');
@@ -172,6 +173,13 @@ export default function AnalyticsDashboard() {
 AnalyticsDashboard.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
+
+const ProtectedAnalyticsDashboard = withAuthProtection(AnalyticsDashboard, {
+  permissions: ['manage_online_classes'],
+});
+ProtectedAnalyticsDashboard.getLayout = AnalyticsDashboard.getLayout;
+
+export default ProtectedAnalyticsDashboard;
 
 export async function getServerSideProps({ locale }) {
   return {
