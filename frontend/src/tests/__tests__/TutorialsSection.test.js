@@ -32,7 +32,7 @@ jest.mock('../../services/tutorialService', () => ({
   addTutorialToFavorites: jest.fn().mockResolvedValue({}),
   removeTutorialFromFavorites: jest.fn().mockResolvedValue({}),
 }));
-jest.mock('../../services/admin/categoryService', () => ({
+jest.mock('../../services/instructor/categoryService', () => ({
   fetchAllCategories: jest.fn().mockResolvedValue([]),
 }));
 

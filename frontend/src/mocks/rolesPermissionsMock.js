@@ -28,6 +28,8 @@ export const roles = [
     "view_student_progress",
     "view_assignments",
     "manage_assignments",
+    "view_categories",
+    "manage_categories",
   ];
   
   export const rolePermissions = {
