@@ -22,14 +22,12 @@ export default function BookForm({
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
     setValue,
     reset,
   } = useForm({
     defaultValues: {
       tags: [],
-      is_free: false,
       allow_preview: false,
       remove_preview_pages: false,
       ...(defaultValues || {}),
@@ -44,13 +42,11 @@ export default function BookForm({
   const [bookFileName, setBookFileName] = useState("");
   const [previewFiles, setPreviewFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
-  const isFree = watch("is_free");
 
   useEffect(() => {
     if (defaultValues) {
       reset({
         tags: defaultValues.tags || [],
-        is_free: defaultValues.is_free ?? false,
         allow_preview: defaultValues.allow_preview ?? false,
         remove_preview_pages: false,
         ...defaultValues,
@@ -157,10 +153,9 @@ export default function BookForm({
     if (data.remove_preview_pages) {
       formData.append("remove_preview_pages", 1);
     }
-    formData.append("price", isFree ? 0 : data.price);
+    formData.append("price", data.price);
     formData.append("language", data.language);
     formData.append("license_type", data.license_type);
-    formData.append("is_free", isFree ? 1 : 0);
     formData.append("allow_preview", data.allow_preview ? 1 : 0);
     formData.append("status", data.status);
     setUploadProgress(0);
@@ -499,26 +494,6 @@ export default function BookForm({
         </div>
 
 
-      <div className="flex items-center gap-2">
-        {(() => {
-          const reg = register("is_free");
-          return (
-            <input
-              type="checkbox"
-              {...reg}
-              onChange={(e) => {
-                reg.onChange(e);
-                if (e.target.checked) setValue("price", 0);
-              }}
-              className="h-4 w-4 text-yellow-500 border-gray-300 rounded"
-            />
-          );
-        })()}
-        <label className="text-sm font-medium">
-          {t("booksCreate.isFree")}
-        </label>
-      </div>
-
       <div>
         <label className="block text-sm font-medium mb-1">
           {t("booksCreate.priceLabel")}
@@ -527,10 +502,9 @@ export default function BookForm({
           type="number"
           step="0.01"
           {...register("price", {
-            required: !isFree && t("booksCreate.priceRequired"),
+            required: t("booksCreate.priceRequired"),
           })}
-          disabled={isFree}
-          className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100"
+          className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
         {errors.price && (
           <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>

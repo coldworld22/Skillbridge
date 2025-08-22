@@ -219,7 +219,9 @@ function CreateTutorialPage() {
   );
 }
 
-export default withAuthProtection(CreateTutorialPage, ["admin", "superadmin"]);
+export default withAuthProtection(CreateTutorialPage, {
+  permissions: ["manage_tutorials"],
+});
 
 export async function getStaticProps({ locale }) {
   return {

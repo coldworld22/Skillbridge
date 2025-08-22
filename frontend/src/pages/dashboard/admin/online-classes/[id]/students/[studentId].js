@@ -125,7 +125,7 @@ ManageStudentInClassPage.getLayout = function getLayout(page) {
 
 const ProtectedManageStudentInClassPage = withAuthProtection(
   ManageStudentInClassPage,
-  ["admin", "superadmin", "instructor"]
+  { permissions: ['manage_online_classes'] }
 );
 
 ProtectedManageStudentInClassPage.getLayout = ManageStudentInClassPage.getLayout;

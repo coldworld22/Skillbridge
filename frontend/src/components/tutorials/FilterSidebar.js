@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaChevronDown, FaChevronUp, FaTimesCircle } from "react-icons/fa";
-import { fetchCategoryTree } from "@/services/admin/categoryService";
+import { fetchCategoryTree } from "@/services/instructor/categoryService";
 
 const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [selectedCategories, setSelectedCategories] = useState([]);

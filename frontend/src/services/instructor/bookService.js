@@ -9,6 +9,7 @@ export const fetchInstructorBooks = async ({
   filters = {},
   sort = {},
   status,
+  ...config
 } = {}) => {
   const params = {
     ...(page !== undefined && { page }),
@@ -18,13 +19,12 @@ export const fetchInstructorBooks = async ({
     ...(status ? { status } : {}),
   };
 
-  let response;
-  if (Object.keys(params).length) {
-    response = await api.get("/instructor/books", { params });
-  } else {
-    response = await api.get("/instructor/books");
-  }
-  const { data } = response;
+  const requestConfig = Object.keys(params).length
+    ? { params, ...config }
+    : { ...config };
+  const { data } = Object.keys(requestConfig).length
+    ? await api.get("/instructor/books", requestConfig)
+    : await api.get("/instructor/books");
   const list = data?.data
     ? data.data.map((book) => ({
         ...book,

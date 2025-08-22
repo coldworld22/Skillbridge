@@ -2,6 +2,8 @@ const db = require("../../config/database");
 const { PRICE_RANGE_MAX } = require("../../config/books");
 const fs = require("fs");
 const path = require("path");
+const tagService = require("./bookTag.service");
+const slugify = require("slugify");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -34,8 +36,9 @@ exports.listBooks = async (params = {}) => {
   }
   if (category) query.where("b.category_id", category);
   if (status) query.where("b.status", status);
-  if (priceRange)
-    query.where("b.price", "<=", Math.min(priceRange, PRICE_RANGE_MAX));
+  const parsedPriceRange = Number(priceRange);
+  if (Number.isFinite(parsedPriceRange) && parsedPriceRange >= 0)
+    query.where("b.price", "<=", Math.min(parsedPriceRange, PRICE_RANGE_MAX));
   if (language) query.where("b.language", language);
   if (instructorId) query.where("b.instructor_id", instructorId);
   const tagArr = Array.isArray(tags) ? tags : tags ? [tags] : [];
@@ -92,20 +95,51 @@ exports.listBooks = async (params = {}) => {
 
 exports.getBookById = (id) => db("books").where({ id }).first();
 
-exports.addBookTags = async (bookId, tagIds) => {
+exports.addBookTags = async (bookId, tagIds, trx = db) => {
   if (!tagIds.length) return;
   const rows = tagIds.map((tag_id) => ({ book_id: bookId, tag_id }));
-  await db("book_tag_map").insert(rows);
+  await trx("book_tag_map").insert(rows);
 };
 
-exports.getBookTags = (bookId) =>
-  db("book_tag_map as m")
+exports.getBookTags = (bookId, trx = db) =>
+  trx("book_tag_map as m")
     .join("tags as t", "m.tag_id", "t.id")
     .where("m.book_id", bookId)
     .select("t.id", "t.name", "t.slug");
 
-exports.clearBookTags = (bookId) =>
-  db("book_tag_map").where({ book_id: bookId }).del();
+exports.clearBookTags = (bookId, trx = db) =>
+  trx("book_tag_map").where({ book_id: bookId }).del();
+
+exports.updateBookTags = async (bookId, rawTags) => {
+  let tags = [];
+  if (rawTags) {
+    try {
+      tags = typeof rawTags === "string" ? JSON.parse(rawTags) : rawTags;
+      if (!Array.isArray(tags)) tags = [];
+    } catch {
+      tags = [];
+    }
+  }
+
+  const tagIds = [];
+  for (const name of tags) {
+    const existing = await tagService.findByName(name);
+    const tag =
+      existing ||
+      (await tagService.createTag({
+        name,
+        slug: slugify(name, { lower: true, strict: true }),
+      }));
+    tagIds.push(tag.id);
+  }
+
+  await db.transaction(async (trx) => {
+    await exports.clearBookTags(bookId, trx);
+    if (tagIds.length) await exports.addBookTags(bookId, tagIds, trx);
+  });
+
+  return exports.getBookTags(bookId);
+};
 
 const removeFiles = async (files = []) => {
   await Promise.all(
@@ -207,8 +241,20 @@ exports.checkout = async (studentId) => {
       .where({ student_id: studentId })
       .select('book_id');
     if (!items.length) return [];
+
+    const bookIds = items.map((i) => i.book_id);
+
+    const existing = await trx('book_purchases')
+      .where({ student_id: studentId })
+      .whereIn('book_id', bookIds)
+      .select('book_id');
+    if (existing.length) {
+      const ids = existing.map((e) => e.book_id).join(', ');
+      throw new AppError(`Book already purchased: ${ids}`, 409);
+    }
+
     const books = await trx('books')
-      .whereIn('id', items.map((i) => i.book_id))
+      .whereIn('id', bookIds)
       .select('id', 'price');
     const rows = books.map((b) => ({
       student_id: studentId,
