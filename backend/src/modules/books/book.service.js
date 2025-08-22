@@ -2,6 +2,7 @@ const db = require("../../config/database");
 const { PRICE_RANGE_MAX } = require("../../config/books");
 const fs = require("fs");
 const path = require("path");
+const AppError = require("../../utils/AppError");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -208,8 +209,20 @@ exports.checkout = async (studentId) => {
       .where({ student_id: studentId })
       .select('book_id');
     if (!items.length) return [];
+
+    const bookIds = items.map((i) => i.book_id);
+
+    const existing = await trx('book_purchases')
+      .where({ student_id: studentId })
+      .whereIn('book_id', bookIds)
+      .select('book_id');
+    if (existing.length) {
+      const ids = existing.map((e) => e.book_id).join(', ');
+      throw new AppError(`Book already purchased: ${ids}`, 409);
+    }
+
     const books = await trx('books')
-      .whereIn('id', items.map((i) => i.book_id))
+      .whereIn('id', bookIds)
       .select('id', 'price');
     const rows = books.map((b) => ({
       student_id: studentId,
