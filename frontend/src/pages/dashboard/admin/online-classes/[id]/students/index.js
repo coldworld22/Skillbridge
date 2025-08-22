@@ -98,11 +98,9 @@ ClassStudentsPage.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
 };
 
-const ProtectedClassStudentsPage = withAuthProtection(ClassStudentsPage, [
-  "admin",
-  "superadmin",
-  "instructor",
-]);
+const ProtectedClassStudentsPage = withAuthProtection(ClassStudentsPage, {
+  permissions: ['manage_online_classes'],
+});
 
 ProtectedClassStudentsPage.getLayout = ClassStudentsPage.getLayout;
 
