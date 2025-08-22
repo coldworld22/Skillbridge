@@ -85,7 +85,14 @@ export default function ResourceUploadSection({ classId, isLive = false }) {
             <li key={i} className="bg-gray-700 px-4 py-2 rounded flex justify-between">
               <span>{res.name}</span>
               {res.type === "link" ? (
-                <a href={res.value} target="_blank" className="text-yellow-300 hover:underline">View</a>
+                <a
+                  href={res.value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-300 hover:underline"
+                >
+                  View
+                </a>
               ) : (
                 <span className="text-gray-400">Uploaded</span>
               )}
