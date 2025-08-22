@@ -504,7 +504,11 @@ function AdminTutorialsPage() {
   );
 }
 
-export default withAuthProtection(AdminTutorialsPage, ["admin", "superadmin"]);
+const ProtectedAdminTutorialsPage = withAuthProtection(AdminTutorialsPage, {
+  permissions: ["view_tutorials"],
+});
+
+export default ProtectedAdminTutorialsPage;
 
 export async function getStaticProps({ locale }) {
   return {
