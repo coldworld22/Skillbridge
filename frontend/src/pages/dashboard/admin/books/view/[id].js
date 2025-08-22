@@ -175,7 +175,7 @@ function AdminViewBookPage() {
                   <div className="space-y-1">
                     <h3 className="text-sm font-medium text-gray-500">{t("booksView.price")}</h3>
                     <p className="text-gray-900">
-                      {book.is_free
+                      {book.price === 0
                         ? t("booksView.free")
                         : book.price != null
                         ? `$${book.price.toFixed(2)}`

@@ -29,8 +29,7 @@ const removeUploadedFiles = async (files = {}) => {
 
 exports.createBook = catchAsync(async (req, res) => {
   try {
-    // exclude `is_free` since the database schema does not include this column
-    const { tags: rawTags, is_free: _is_free, ...data } = req.body;
+    const { tags: rawTags, ...data } = req.body;
     data.instructor_id = req.user.id;
     data.status = "pending";
     if (req.files?.cover_image?.[0])
@@ -166,13 +165,7 @@ exports.updateBook = catchAsync(async (req, res) => {
       throw new AppError("Access denied", 403);
     }
 
-  // exclude `is_free` field to align with existing database schema
-  const {
-    tags: rawTags,
-    is_free: _is_free,
-    remove_preview_pages,
-    ...data
-  } = req.body;
+  const { tags: rawTags, remove_preview_pages, ...data } = req.body;
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
