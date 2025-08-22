@@ -7,7 +7,7 @@ import { FaStar, FaClock, FaBookmark, FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
-import { fetchAllCategories } from "@/services/admin/categoryService";
+import { fetchAllCategories } from "@/services/instructor/categoryService";
 import { formatCurrency } from "@/utils/currency";
 import {
   fetchFeaturedTutorials,
