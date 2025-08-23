@@ -59,18 +59,40 @@ function AdminDashboardHome() {
       setFlagsLoading(true);
       setLicenseLoading(true);
       try {
-        const [statsData, alertsData, flagsData, licenseData] = await Promise.all([
+        const [statsRes, alertsRes, flagsRes, licenseRes] = await Promise.allSettled([
           fetchAdminDashboardStats(),
           fetchRecentAlerts(),
           fetchFlaggedMessages(),
           fetchLicenseStatus(),
         ]);
-        setStats(statsData);
-        setAlerts(alertsData);
-        setFlaggedMessages(flagsData);
-        setLicenseStatus(licenseData);
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
+
+        if (statsRes.status === "fulfilled") {
+          setStats(statsRes.value);
+        } else {
+          console.error("Failed to fetch dashboard stats", statsRes.reason);
+          setStats(null);
+        }
+
+        if (alertsRes.status === "fulfilled") {
+          setAlerts(alertsRes.value);
+        } else {
+          console.error("Failed to fetch recent alerts", alertsRes.reason);
+          setAlerts([]);
+        }
+
+        if (flagsRes.status === "fulfilled") {
+          setFlaggedMessages(flagsRes.value);
+        } else {
+          console.error("Failed to fetch flagged messages", flagsRes.reason);
+          setFlaggedMessages([]);
+        }
+
+        if (licenseRes.status === "fulfilled") {
+          setLicenseStatus(licenseRes.value);
+        } else {
+          console.error("Failed to fetch license status", licenseRes.reason);
+          setLicenseStatus(null);
+        }
       } finally {
         setStatsLoading(false);
         setAlertsLoading(false);
