@@ -13,11 +13,16 @@ const formatBook = (book) => {
     }
   }
 
+  let previewUrl = buildUrl(book?.preview_url);
+  if (book?.allow_preview && !previewUrl && previewPages.length > 0) {
+    previewUrl = previewPages[0];
+  }
+
   const formatted = {
     ...book,
     cover_image_url: buildUrl(book?.cover_image_url || book?.cover_image),
     pdf_url: buildUrl(book?.pdf_url),
-    preview_url: buildUrl(book?.preview_url),
+    preview_url: previewUrl,
     preview_pages: previewPages,
   };
 

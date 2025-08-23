@@ -141,6 +141,18 @@ describe("bookService", () => {
     });
   });
 
+  it("falls back to first preview page when preview_url is missing", async () => {
+    const apiData = {
+      id: 4,
+      allow_preview: true,
+      preview_pages: ["/uploads/a.png", "/uploads/b.png"],
+    };
+    api.get.mockResolvedValueOnce({ data: { data: apiData } });
+    const book = await fetchBook(4);
+    expect(book.preview_pages).toEqual(["/uploads/a.png", "/uploads/b.png"]);
+    expect(book.preview_url).toBe("/uploads/a.png");
+  });
+
   it("returns null when book is not found", async () => {
     const error = { response: { status: 404 } };
     api.get.mockRejectedValueOnce(error);
