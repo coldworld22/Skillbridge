@@ -4,6 +4,17 @@ const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const AppError = require("../../utils/AppError");
 
+const emitMessageCreated = (receiver_id) => {
+  try {
+    if (global.io && global.userSockets?.[receiver_id]) {
+      global.io.to(global.userSockets[receiver_id]).emit("message-created");
+    }
+  } catch (err) {
+    console.error("Failed to emit message-created event", err.message);
+    throw err;
+  }
+};
+
 exports.createMessage = async (
   { sender_id, receiver_id, message, booking_id, type },
   trx = null,
@@ -13,14 +24,7 @@ exports.createMessage = async (
     const [row] = await transaction("messages")
       .insert({ sender_id, receiver_id, message, booking_id, type })
       .returning("*");
-    try {
-      if (emit && global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    if (emit) emitMessageCreated(receiver_id);
     return row;
   };
 
@@ -94,15 +98,7 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
       console.error("Failed to send email", err.message);
       throw new AppError("Failed to send email", 502);
     }
-
-    try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    emitMessageCreated(receiver_id);
 
     return msg;
   });
@@ -127,15 +123,7 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
       console.error("Failed to send WhatsApp message", err.message);
       throw new AppError("Failed to send WhatsApp message", 502);
     }
-
-    try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    emitMessageCreated(receiver_id);
 
     return msg;
   });
