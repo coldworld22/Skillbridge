@@ -7,13 +7,15 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 1. Copy the example environment file and adjust values as needed:
 
    ```bash
-   cp backend/.env.example backend/.env
-   # edit backend/.env and set your secrets
-   # FRONTEND_URL defaults to http://localhost:3000
-   # set it to your frontend's domain if different and omit any trailing slash
-   # When using docker-compose make sure the value does
-   # not include an extra "FRONTEND_URL=" prefix.
-   ```
+    cp backend/.env.example backend/.env
+    # edit backend/.env and set your secrets
+    # FRONTEND_URL defaults to http://localhost:3000
+    # set it to your frontend's domain if different and omit any trailing slash
+    # When using docker-compose make sure the value does
+    # not include an extra "FRONTEND_URL=" prefix.
+    # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
+    # to control the seeded admin credentials
+    ```
 
 2. Initialize the database (run migrations and seeds):
 
@@ -21,6 +23,10 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
    npx knex migrate:latest --knexfile backend/knexfile.js
    npx knex seed:run --knexfile backend/knexfile.js
    ```
+
+   If `ADMIN_INITIAL_PASSWORD` or `SUPERADMIN_INITIAL_PASSWORD` are not set in
+   `backend/.env`, the seed scripts will generate secure random passwords and
+   print them to the console.
 
 3. Build and launch the entire stack:
 

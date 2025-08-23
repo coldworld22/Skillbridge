@@ -51,6 +51,14 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
 NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 ```
 
+### Initial admin passwords
+
+Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in
+`backend/.env` before running the seed scripts if you want to control the
+passwords for the seeded Admin and SuperAdmin accounts. When left unset, the
+seed process will generate secure random passwords and print them to the
+console.
+
 ### Frontend (optional)
 
 When using Docker Compose the frontend automatically points to the API on port

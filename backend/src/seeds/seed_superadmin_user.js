@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 exports.seed = async function(knex) {
   // Clear existing user accounts but keep role definitions
@@ -18,7 +19,12 @@ exports.seed = async function(knex) {
   }
 
   // 🔐 Create SuperAdmin User
-  const hashedPassword = await bcrypt.hash("supersecure123", 10); // Use a stronger password in production
+  const rawPassword =
+    process.env.SUPERADMIN_INITIAL_PASSWORD || crypto.randomBytes(16).toString("hex");
+  if (!process.env.SUPERADMIN_INITIAL_PASSWORD) {
+    console.log(`🔐 Generated SuperAdmin password: ${rawPassword}`);
+  }
+  const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const [superAdminUserId] = await knex("users")
     .insert({
