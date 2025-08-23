@@ -46,6 +46,11 @@ const verifyToken = async (req, res, next) => {
   }
 
   try {
+    if (!process.env.JWT_SECRET) {
+      return res
+        .status(500)
+        .json({ message: "JWT secret not configured" });
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await userModel.findById(decoded.id);
     if (!user) {
