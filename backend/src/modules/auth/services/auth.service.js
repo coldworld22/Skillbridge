@@ -384,13 +384,6 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     type: "security",
     message: "Your password was changed successfully",
   });
-
-
-  await messageService.createMessage({
-    sender_id: user.id,
-    receiver_id: user.id,
-    message: "Your password was changed successfully",
-  });
   return sanitizeUserUtil(user);
 };
 
