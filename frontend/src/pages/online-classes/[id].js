@@ -89,7 +89,7 @@ export default function ClassDetailsPage() {
     try {
       await addItem({ id: classInfo.id, name: classInfo.title, price: classInfo.price });
       toast.success(t('added_to_cart'));
-      router.push('/cart');
+      router.push(`/payments/checkout?itemId=${classInfo.id}&itemType=class`);
     } catch (err) {
       console.error('Failed to add to cart', err);
       toast.error(t('failed_to_add_to_cart'));
@@ -120,7 +120,7 @@ export default function ClassDetailsPage() {
         toast.error(t('failed_to_enroll'));
       }
     } else {
-      router.push(`/payments/checkout?classId=${classInfo.id}`);
+      router.push(`/payments/checkout?itemId=${classInfo.id}&itemType=class`);
     }
   };
 
