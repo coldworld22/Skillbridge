@@ -178,6 +178,7 @@ app.use("/api/notifications", require("./modules/notifications/notifications.rou
 app.use("/api/system-errors", require("./modules/errorLogs/errorLogs.routes"));
 app.use("/api/messages", require("./modules/messages/messages.routes"));
 app.use("/api/chat", require("./modules/chat/chat.routes"));
+app.use("/api/moderation", require("./modules/moderation/moderation.routes"));
 app.use("/api/languages", require("./modules/languages/languages.routes"));
 app.use("/api/currencies", require("./modules/currencies/currencies.routes"));
 app.use("/api/blog", require("./modules/blog/blog.routes"));
