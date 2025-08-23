@@ -5,6 +5,7 @@ import { useTranslation } from "next-i18next";
 import { toast } from "react-hot-toast";
 import useLibraryStore from "@/store/libraryStore";
 import useBookWishlistStore from "@/store/books/wishlistStore";
+import { API_BASE_URL } from "@/config/config";
 
 function BookCard({ book }) {
   const { t } = useTranslation("dashboard", { keyPrefix: "booksPage" });
@@ -79,17 +80,16 @@ function BookCard({ book }) {
             <FiEye className="text-lg" /> {t("preview")}
           </a>
         )}
-        {book.pdf_url && (
+        {
           <a
-            href={book.pdf_url}
+            href={`${API_BASE_URL}/library/download/${book.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            download
             className="flex items-center gap-1 text-green-600 hover:underline"
           >
             <FiDownload className="text-lg" /> {t("download")}
           </a>
-        )}
+        }
         <button
           className={
             isWishlisted ? "text-red-500" : "text-red-400 hover:text-red-500"

@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import { buildUrl } from "@/utils/url";
 import { formatCurrency } from "@/utils/currency";
+import { API_BASE_URL } from "@/config/config";
 
 export default function BookCard({
   book,
@@ -92,9 +93,9 @@ export default function BookCard({
             <FiEye />
             <span className="sr-only">{t("view")}</span>
           </Link>
-          {showReadLink && book.pdf_url && (
+          {showReadLink && book.id && (
             <a
-              href={book.pdf_url}
+              href={`${API_BASE_URL}/library/download/${book.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
