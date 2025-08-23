@@ -14,6 +14,13 @@ jest.mock('../src/config/database', () => {
     if (table === 'refresh_tokens') {
       return { insert: jest.fn().mockResolvedValue() };
     }
+    if (table === 'blacklisted_tokens') {
+      return {
+        where: jest.fn().mockReturnThis(),
+        first: jest.fn().mockResolvedValue(null),
+        insert: jest.fn().mockResolvedValue(),
+      };
+    }
     return {};
   });
   mockDb.fn = { now: jest.fn() };
