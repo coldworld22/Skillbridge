@@ -4,16 +4,11 @@ const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const AppError = require("../../utils/AppError");
 
-const emitMessageCreated = (receiver_id) => {
-  try {
-    if (global.io && global.userSockets?.[receiver_id]) {
-      global.io.to(global.userSockets[receiver_id]).emit("message-created");
-    }
-  } catch (err) {
-    console.error("Failed to emit message-created event", err.message);
-    throw err;
-  }
-};
+const MESSAGE_RETENTION_MS =
+  parseInt(process.env.MESSAGE_RETENTION_HOURS || "24", 10) *
+  60 *
+  60 *
+  1000;
 
 exports.createMessage = async (
   { sender_id, receiver_id, message, booking_id, type },
@@ -39,13 +34,9 @@ exports.createMessage = async (
   }
 };
 
-exports.getUserMessages = async (userId, { limit, offset } = {}) => {
-  const retentionHours = parseInt(
-    process.env.MESSAGE_RETENTION_HOURS || "24",
-    10,
-  );
-  if (retentionHours > 0) {
-    const threshold = new Date(Date.now() - retentionHours * 60 * 60 * 1000);
+exports.getUserMessages = async (userId) => {
+  if (MESSAGE_RETENTION_MS > 0) {
+    const threshold = new Date(Date.now() - MESSAGE_RETENTION_MS);
     await db("messages")
       .where({ receiver_id: userId, read: true })
       .andWhere("read_at", "<", threshold)
