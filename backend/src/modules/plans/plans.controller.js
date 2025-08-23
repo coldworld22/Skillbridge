@@ -18,6 +18,7 @@ exports.createPlan = catchAsync(async (req, res) => {
     color = '#1F2937',
     style = null,
     features = [],
+    target_role = 'student',
   } = req.body;
 
   if (!name) throw new AppError("Name is required", 400);
@@ -45,6 +46,8 @@ exports.createPlan = catchAsync(async (req, res) => {
   const planSlug = slug || slugify(name, { lower: true, strict: true });
   const exists = await service.findBySlug(planSlug);
   if (exists) throw new AppError("Plan slug already exists", 409);
+  if (!['student', 'instructor'].includes(target_role))
+    throw new AppError('Invalid target role', 400);
 
   const plan = await service.createPlan({
     name,
@@ -56,6 +59,7 @@ exports.createPlan = catchAsync(async (req, res) => {
     active,
     color,
     style,
+    target_role,
   });
 
   await service.setFeatures(plan.id, Array.isArray(features) ? features : []);
@@ -78,8 +82,9 @@ exports.createPlan = catchAsync(async (req, res) => {
   sendSuccess(res, full, "Plan created");
 });
 
-exports.getPlans = catchAsync(async (_req, res) => {
-  const plans = await service.getPlans();
+exports.getPlans = catchAsync(async (req, res) => {
+  const { role } = req.query;
+  const plans = await service.getPlans(role);
   sendSuccess(res, plans);
 });
 
@@ -102,6 +107,7 @@ exports.updatePlan = catchAsync(async (req, res) => {
     color,
     style,
     features,
+    target_role,
   } = req.body;
 
   const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
@@ -134,6 +140,11 @@ exports.updatePlan = catchAsync(async (req, res) => {
   if (active !== undefined) updates.active = active;
   if (color !== undefined) updates.color = color;
   if (style !== undefined) updates.style = style;
+  if (target_role !== undefined) {
+    if (!['student', 'instructor'].includes(target_role))
+      throw new AppError('Invalid target role', 400);
+    updates.target_role = target_role;
+  }
 
   if (slug || name) {
     const planSlug = slug || slugify(name, { lower: true, strict: true });

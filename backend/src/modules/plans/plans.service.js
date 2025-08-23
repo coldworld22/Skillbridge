@@ -7,8 +7,10 @@ exports.createPlan = async (data) => {
 
 exports.findBySlug = (slug) => db("plans").where({ slug }).first();
 
-exports.getPlans = async () => {
-  const plans = await db("plans").select("*").orderBy("id");
+exports.getPlans = async (role) => {
+  let query = db("plans").select("*").orderBy("id");
+  if (role) query = query.where({ target_role: role });
+  const plans = await query;
   const features = await db("plan_features").select("*");
   return plans.map((p) => ({
     ...p,

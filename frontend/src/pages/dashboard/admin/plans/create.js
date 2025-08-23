@@ -27,6 +27,7 @@ export default function CreatePlanPage() {
     gradientEnd: "",
     recommended: false,
     active: true,
+    target_role: "student",
   });
 
   const [features, setFeatures] = useState([]);
@@ -93,6 +94,7 @@ export default function CreatePlanPage() {
         price_monthly: Number(form.priceMonthly),
         price_yearly: Number(form.priceYearly),
         currency: form.currency,
+        target_role: form.target_role,
         color: form.color,
         style: JSON.stringify(style),
         recommended: form.recommended,
@@ -168,6 +170,17 @@ export default function CreatePlanPage() {
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('target_role')}</label>
+          <select
+            className="w-full border px-4 py-2 rounded"
+            value={form.target_role}
+            onChange={(e) => setForm({ ...form, target_role: e.target.value })}
+          >
+            <option value="student">{t('student')}</option>
+            <option value="instructor">{t('instructor')}</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">{t('plan_color')}</label>
