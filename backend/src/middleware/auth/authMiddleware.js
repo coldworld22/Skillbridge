@@ -5,21 +5,7 @@ const {
   addToken: addTokenToStore,
   isTokenBlacklisted,
 } = require("../../services/tokenBlacklistService");
-
-/**
- * ✅ Helper: Determines if a role has admin-level access
- */
-// Normalize role string for consistent comparisons
-// Guard against null/undefined or non-string values to avoid runtime errors
-const normalizeRole = (role) =>
-  typeof role === "string" ? role.toLowerCase().replace(/\s+/g, "") : "";
-
-const isAdminRole = (roles = []) => {
-  const arr = Array.isArray(roles) ? roles : [roles];
-  return arr
-    .map((r) => normalizeRole(r))
-    .some((r) => ["admin", "superadmin"].includes(r));
-};
+const { normalizeRole, isAdminRole } = require("../../utils/role");
 
 
 /**
