@@ -34,7 +34,7 @@ exports.createMessage = async (
   }
 };
 
-exports.getUserMessages = async (userId) => {
+exports.getUserMessages = async (userId, { limit, offset } = {}) => {
   const retentionHours = parseInt(
     process.env.MESSAGE_RETENTION_HOURS || "24",
     10,
@@ -47,11 +47,16 @@ exports.getUserMessages = async (userId) => {
       .del();
   }
 
-  return db("messages")
+  const query = db("messages")
     .select("messages.*", "users.full_name as sender_name")
     .leftJoin("users", "messages.sender_id", "users.id")
     .where({ receiver_id: userId })
     .orderBy("sent_at", "desc");
+
+  if (limit !== undefined) query.limit(limit);
+  if (offset !== undefined) query.offset(offset);
+
+  return query;
 };
 
 exports.markAsRead = async (id, userId) => {
