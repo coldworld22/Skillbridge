@@ -9,7 +9,6 @@ import {
   FaEdit,
   FaEye,
   FaTrash,
-  FaRegEye,
   FaRegComments,
   FaStar,
   FaUsers,
@@ -55,18 +54,26 @@ export default function InstructorTutorialsPage() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const load = async () => {
       try {
-        const data = await fetchInstructorTutorials();
+        const data = await fetchInstructorTutorials({ signal: controller.signal });
         setTutorials(data?.data || data || []);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
         setError(t("tutorials:list.load_error"));
       } finally {
         setLoading(false);
       }
     };
+
     load();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const handleSearch = (query) => {
@@ -301,7 +308,7 @@ export default function InstructorTutorialsPage() {
                   {/* Stats */}
                   <div className="grid grid-cols-4 gap-2 mt-4 text-center">
                     <div className="p-2 bg-blue-50 rounded-lg">
-                      <FaRegEye className="mx-auto text-blue-500" />
+                      <FaEye className="mx-auto text-blue-500" />
                       <span className="text-xs mt-1">{tutorial.views}</span>
                     </div>
                     <div className="p-2 bg-green-50 rounded-lg">

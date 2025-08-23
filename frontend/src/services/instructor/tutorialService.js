@@ -24,8 +24,8 @@ const mapStatus = (tut) =>
     ? "Rejected"
     : "Pending";
 
-export const fetchInstructorTutorials = async () => {
-  const { data } = await api.get("/users/tutorials/admin/my");
+export const fetchInstructorTutorials = async (config = {}) => {
+  const { data } = await api.get("/users/tutorials/admin/my", config);
   const list = data?.data ?? [];
   return list.map((t) => ({
     ...formatBase(t),

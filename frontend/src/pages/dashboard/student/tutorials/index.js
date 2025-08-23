@@ -12,9 +12,10 @@ export default function StudentTutorialsPage() {
   const [sortBy, setSortBy] = useState("title");
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       try {
-        const data = await fetchPublishedTutorials();
+        const data = await fetchPublishedTutorials({ signal: controller.signal });
         const enriched = data.map((tut) => {
           const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
           let progress = { completedChapters: [], completedQuiz: false };
@@ -33,14 +34,18 @@ export default function StudentTutorialsPage() {
           };
         });
         setTutorials(enriched);
-        setLoading(false);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
         setError("Failed to load tutorials");
+      } finally {
         setLoading(false);
       }
     };
     load();
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const filtered = tutorials.filter((tut) => {
