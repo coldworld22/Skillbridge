@@ -172,6 +172,13 @@ const Hero = () => {
     handleSearch(selectedValue);
   };
 
+  const scrollToSection = (id) => {
+    if (typeof document !== "undefined") {
+      const el = document.getElementById(id);
+      el && el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 50 }}
@@ -406,29 +413,25 @@ const Hero = () => {
           {/* CTA Buttons */}
           <motion.div className="flex flex-wrap justify-center gap-4">
 
-            <Link href="/community">
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
-                <FaQuestionCircle /> {t('ask_question')}
-              </button>
-            </Link>
+            <button onClick={() => scrollToSection('community')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
+              <FaQuestionCircle /> {t('ask_question')}
+            </button>
 
-            <Link href="/online-classes">
-              <button className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
-                <FaChalkboardTeacher /> {t('browse_online_classes')}
-              </button>
-            </Link>
+            <button onClick={() => scrollToSection('online-classes')}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg flex items-center gap-2">
+              <FaChalkboardTeacher /> {t('browse_online_classes')}
+            </button>
 
-            <Link href="/tutorials">
-              <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
-                <FaBookOpen /> {t('explore_tutorials')}
-              </button>
-            </Link>
+            <button onClick={() => scrollToSection('tutorials')}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center gap-2">
+              <FaBookOpen /> {t('explore_tutorials')}
+            </button>
 
-            <Link href="/marketplace/books">
-              <button className="px-6 py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition shadow-lg flex items-center gap-2">
-                <FaBook /> {t('explore_books')}
-              </button>
-            </Link>
+            <button onClick={() => scrollToSection('books')}
+              className="px-6 py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition shadow-lg flex items-center gap-2">
+              <FaBook /> {t('explore_books')}
+            </button>
           </motion.div>
         </div>
 

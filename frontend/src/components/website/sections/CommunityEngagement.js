@@ -57,7 +57,7 @@ const CommunityLandingPage = () => {
 
 
   return (
-    <div className="bg-gray-900 min-h-screen text-white">
+    <div id="community" className="bg-gray-900 min-h-screen text-white">
       <motion.section
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
