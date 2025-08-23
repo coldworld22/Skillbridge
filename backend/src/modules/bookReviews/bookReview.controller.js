@@ -10,6 +10,7 @@ exports.listReviews = catchAsync(async (req, res) => {
 
 exports.createReview = catchAsync(async (req, res) => {
   const payload = { ...req.body, user_id: req.user?.id };
+  await service.ensurePurchased(payload.user_id, payload.book_id);
   const [review] = await service.createReview(payload);
   sendSuccess(res, review, "Review created");
 });

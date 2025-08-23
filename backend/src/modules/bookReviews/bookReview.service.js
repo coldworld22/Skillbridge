@@ -1,4 +1,14 @@
 const model = require("./bookReview.model");
+const db = require("../../config/database");
+const AppError = require("../../utils/AppError");
+
+exports.ensurePurchased = async (studentId, bookId) => {
+  const row = await db("book_purchases")
+    .where({ student_id: studentId, book_id: bookId })
+    .first();
+  if (!row) throw new AppError("Book not purchased", 403);
+  return row;
+};
 
 exports.createReview = (data) => model.create(data);
 
