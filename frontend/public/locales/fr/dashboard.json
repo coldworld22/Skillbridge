@@ -1800,6 +1800,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "Mon emploi du temps d'enseignement",
+    "no_events": "Aucun événement à venir"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",

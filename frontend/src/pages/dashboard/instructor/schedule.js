@@ -4,8 +4,12 @@ import CalendarView from "@/components/shared/CalendarView";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
 import useScheduleStore from "@/store/schedule/scheduleStore";
 import { getLessonRoomLink } from "@/services/lessonService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 export default function InstructorSchedule() {
+  const { t } = useTranslation(["dashboard", "common"], { keyPrefix: "schedulePage" });
   const { events, clear, addEvents, prunePastEvents } = useScheduleStore();
 
   const [loading, setLoading] = useState(false);
@@ -32,7 +36,7 @@ export default function InstructorSchedule() {
   return (
     <InstructorLayout>
       <CalendarView
-        title="My Teaching Schedule"
+        title={t("title")}
         events={events}
         onEventClick={async (info) => {
           const id = info.event.id || "";
@@ -61,11 +65,21 @@ export default function InstructorSchedule() {
         }}
       />
       {loading && (
-        <p className="text-center text-gray-500 mt-4">Loading...</p>
+        <p className="text-center text-gray-500 mt-4">
+          {t("loading", { ns: "common" })}
+        </p>
       )}
       {!loading && events.length === 0 && (
-        <p className="text-center text-gray-500 mt-4">No upcoming events</p>
+        <p className="text-center text-gray-500 mt-4">{t("no_events")}</p>
       )}
     </InstructorLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard", "common"], nextI18NextConfig)),
+    },
+  };
 }

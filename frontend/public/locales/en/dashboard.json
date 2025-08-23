@@ -1801,6 +1801,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "My Teaching Schedule",
+    "no_events": "No upcoming events"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",
