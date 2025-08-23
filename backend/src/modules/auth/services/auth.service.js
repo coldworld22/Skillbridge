@@ -30,16 +30,37 @@ const REFRESH_EXPIRES_IN = "30d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
+// Track failed logins per email with timestamps to aid cleanup
 const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
-const LOCK_TIME = 15 * 60 * 1000;
+const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+const CLEANUP_INTERVAL = 60 * 1000; // Run cleanup every minute
 
 function recordFailedAttempt(email) {
-  const info = failedLoginAttempts.get(email) || { count: 0 };
-  const count = info.count + 1;
-  const lockUntil = count >= MAX_ATTEMPTS ? Date.now() + LOCK_TIME : info.lockUntil;
-  failedLoginAttempts.set(email, { count, lockUntil });
+  const info =
+    failedLoginAttempts.get(email) || { timestamps: [], lockUntil: null };
+  info.timestamps.push(Date.now());
+
+  if (info.timestamps.length >= MAX_ATTEMPTS) {
+    info.lockUntil = Date.now() + LOCK_TIME;
+  }
+
+  failedLoginAttempts.set(email, info);
 }
+
+/**
+ * Periodically purge expired lock entries to prevent memory leaks
+ */
+function cleanupFailedAttempts() {
+  const now = Date.now();
+  for (const [email, info] of failedLoginAttempts.entries()) {
+    if (info.lockUntil && info.lockUntil <= now) {
+      failedLoginAttempts.delete(email);
+    }
+  }
+}
+
+setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
 
 /**
  * Register a new user
@@ -153,6 +174,8 @@ exports.loginUser = async ({ email, password }) => {
     );
   }
 
+  // Clear out any expired lock entries before processing login
+  cleanupFailedAttempts();
   const attempt = failedLoginAttempts.get(email);
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
