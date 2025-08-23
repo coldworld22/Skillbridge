@@ -10,6 +10,7 @@ const rateLimit = require("express-rate-limit");
 const messageLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour window
   max: 20,
+  keyGenerator: (req) => req.user?.id || req.ip,
 });
 
 router.use(verifyToken);

@@ -16,8 +16,11 @@ export const getGroups = async () => {
   return res.data.data || res.data;
 };
 
-export const getMessages = async () => {
-  const res = await api.get("/messages");
+export const getMessages = async ({ limit, offset } = {}) => {
+  const params = {};
+  if (limit !== undefined) params.limit = limit;
+  if (offset !== undefined) params.offset = offset;
+  const res = await api.get("/messages", { params });
   return res.data.data || res.data;
 };
 

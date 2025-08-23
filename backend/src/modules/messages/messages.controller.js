@@ -4,7 +4,10 @@ const AppError = require("../../utils/AppError");
 const service = require("./messages.service");
 
 exports.getMyMessages = catchAsync(async (req, res) => {
-  const data = await service.getUserMessages(req.user.id);
+  let { limit, offset } = req.query;
+  if (limit !== undefined) limit = parseInt(limit, 10);
+  if (offset !== undefined) offset = parseInt(offset, 10);
+  const data = await service.getUserMessages(req.user.id, { limit, offset });
   sendSuccess(res, data);
 });
 
