@@ -1,3 +1,4 @@
+const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
 const express = require("express");
@@ -237,7 +238,7 @@ io.on("connection", (socket) => {
           name: caller?.full_name || "",
         });
       } catch (err) {
-        console.error("Failed to handle call-user event", err);
+        logger.error("Failed to handle call-user event", err);
       }
     }
   });
@@ -284,7 +285,7 @@ io.on("connection", (socket) => {
       .then(([row]) => {
         socket.participantDbId = row.id;
       })
-      .catch((err) => console.error("Failed to store participant", err));
+      .catch((err) => logger.error("Failed to store participant", err));
 
     socket.on("sending-signal", (payload) => {
       io.to(payload.userToSignal).emit("user-joined", {
@@ -312,7 +313,7 @@ io.on("connection", (socket) => {
         db("video_call_participants")
           .where({ id: socket.participantDbId })
           .update({ left_at: new Date() })
-          .catch((err) => console.error("Failed to update participant leave", err));
+          .catch((err) => logger.error("Failed to update participant leave", err));
       }
     });
   });
@@ -447,10 +448,10 @@ const PORT = process.env.PORT || 5002;
 async function startServer() {
   try {
     await db.migrate.latest({ directory: path.join(__dirname, "migrations") });
-    console.log("✅ Database migrations up to date");
+    logger.log("✅ Database migrations up to date");
     await initStrategies();
     server.listen(PORT, "0.0.0.0", () => {
-      console.log(`✅ Server running on port ${PORT}`);
+      logger.log(`✅ Server running on port ${PORT}`);
     });
     startLessonReminderJob();
     startLessonLiveJob();
@@ -459,7 +460,7 @@ async function startServer() {
     startCleanupJob();
     startContributorStatsJob();
   } catch (err) {
-    console.error("❌ Failed to start server:", err.message);
+    logger.error("❌ Failed to start server:", err.message);
     process.exit(1);
   }
 }

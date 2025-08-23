@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const classLessonService = require('../modules/classes/lessons/classLesson.service');
 const enrollmentService = require('../modules/classes/enrollments/classEnrollment.service');
 const userModel = require('../modules/users/user.model');
@@ -35,7 +36,7 @@ async function processLessons() {
             lesson.class_title + `\nJoin: ${url}`
           );
         } catch (err) {
-          console.error('Failed to send lesson live email', err.message);
+          logger.error('Failed to send lesson live email', err.message);
         }
       }
       const students = await enrollmentService.getByClass(lesson.class_id);
@@ -57,14 +58,14 @@ async function processLessons() {
               lesson.class_title + `\nJoin: ${url}`
             );
           } catch (err) {
-            console.error('Failed to send lesson live email', err.message);
+            logger.error('Failed to send lesson live email', err.message);
           }
         }
       }
       sent.add(lesson.id);
     }
   } catch (err) {
-    console.error('Lesson live job error:', err.message);
+    logger.error('Lesson live job error:', err.message);
   }
 }
 

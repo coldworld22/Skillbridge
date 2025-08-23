@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 
 module.exports = async function verifyHostRole(req, res, next) {
@@ -16,7 +17,7 @@ module.exports = async function verifyHostRole(req, res, next) {
     }
     next();
   } catch (err) {
-    console.error("Failed to verify host role", err);
+    logger.error("Failed to verify host role", err);
     res.status(500).json({ message: "Failed to verify host role" });
   }
 };

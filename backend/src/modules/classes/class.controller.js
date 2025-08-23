@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
@@ -64,7 +65,7 @@ exports.createClass = catchAsync(async (req, res) => {
         "Your class was created successfully and is now pending review. We'll notify you once it's published.",
     })
     .catch((err) =>
-      console.error("Failed to notify instructor of new class:", err.message)
+      logger.error("Failed to notify instructor of new class:", err.message)
     );
 
   const admins = await userModel.findAdmins();
@@ -93,7 +94,7 @@ exports.createClass = catchAsync(async (req, res) => {
         message: instructorMessage,
       })
       .catch((err) =>
-        console.error(
+        logger.error(
           "Failed to send instructor class message:",
           err.message
         )
@@ -113,7 +114,7 @@ exports.createClass = catchAsync(async (req, res) => {
   Promise.allSettled(adminNotificationPromises).then((results) => {
     results.forEach((result, idx) => {
       if (result.status === "rejected") {
-        console.error(
+        logger.error(
           "Failed to notify admin",
           admins[idx].id,
           result.reason?.message || result.reason
@@ -125,7 +126,7 @@ exports.createClass = catchAsync(async (req, res) => {
   Promise.allSettled(adminMessagePromises).then((results) => {
     results.forEach((result, idx) => {
       if (result.status === "rejected") {
-        console.error(
+        logger.error(
           "Failed to send admin message",
           admins[idx].id,
           result.reason?.message || result.reason

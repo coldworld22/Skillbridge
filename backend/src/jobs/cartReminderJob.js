@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const db = require("../config/database");
 const notificationService = require("../modules/notifications/notifications.service");
 const messageService = require("../modules/messages/messages.service");
@@ -30,7 +31,7 @@ function startCartReminderJob() {
         const user = await userModel.findById(item.user_id);
         if (user?.email) await sendCartReminderEmail(user.email, item.name);
       } catch (err) {
-        console.error("Error sending cart reminder email:", err.message);
+        logger.error("Error sending cart reminder email:", err.message);
       }
       await db("cart_items").where({ id: item.id }).update({ reminder_sent: true });
     }

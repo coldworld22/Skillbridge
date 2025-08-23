@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
@@ -70,7 +71,7 @@ exports.create = catchAsync(async (req, res) => {
   ).then((results) => {
     results.forEach((r) => {
       if (r.status === "rejected") {
-        console.error(
+        logger.error(
           "Failed to dispatch popup announcement notification:",
           r.reason?.message || r.reason
         );

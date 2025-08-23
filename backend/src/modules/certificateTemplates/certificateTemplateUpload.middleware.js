@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const multer = require("multer");
 const path = require("path");
 const fsPromises = require("fs/promises");
@@ -8,7 +9,7 @@ const uploadDir = path.join(__dirname, "../../../uploads/certificateTemplates");
   try {
     await fsPromises.mkdir(uploadDir, { recursive: true });
   } catch (error) {
-    console.error("Error creating upload directory:", error);
+    logger.error("Error creating upload directory:", error);
     throw error;
   }
 })();

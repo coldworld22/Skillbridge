@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 
 // 📁 src/services/mailService.js
 const { getSettings } = require("../modules/emailConfig/emailConfig.service");
@@ -19,9 +20,9 @@ module.exports = {
     };
     try {
       await transporter.sendMail(mailOptions);
-      console.log(`Sending email to ${to}`);
+      logger.log(`Sending email to ${to}`);
     } catch (err) {
-      console.error("Failed to send email", err);
+      logger.error("Failed to send email", err);
     }
   },
 };

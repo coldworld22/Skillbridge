@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const userModel = require("./user.model");
 const db = require("../../config/database");
 const notificationService = require("../notifications/notifications.service");
@@ -119,7 +120,7 @@ exports.updateProfile = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Profile update error:", err);
+    logger.error("Profile update error:", err);
     res.status(500).json({ error: "Failed to update profile" });
   }
 };
@@ -194,7 +195,7 @@ exports.getFullProfile = async (req, res) => {
       social_links: socialLinks,
     });
   } catch (err) {
-    console.error('Full profile fetch error:', err);
+    logger.error('Full profile fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 };

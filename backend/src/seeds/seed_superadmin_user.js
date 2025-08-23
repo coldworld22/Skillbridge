@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const bcrypt = require("bcrypt");
 
 exports.seed = async function(knex) {
@@ -50,5 +51,5 @@ exports.seed = async function(knex) {
     role_id: roleRecord.id || roleRecord,
   });
 
-  console.log("✅ SuperAdmin seeded");
+  logger.log("✅ SuperAdmin seeded");
 };

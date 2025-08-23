@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const notificationService = require("../notifications/notifications.service");
 const userModel = require("../users/user.model");
@@ -112,7 +113,7 @@ exports.logModerationEvent = async ({ userId, message, matchedWords }) => {
   );
   results.forEach((r, idx) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to notify admin ${admins[idx].id}:`,
         r.reason?.message || r.reason
       );

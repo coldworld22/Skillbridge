@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./groups.service");
@@ -408,7 +409,7 @@ exports.startVideoCall = catchAsync(async (req, res) => {
             });
         }
       } catch (err) {
-        console.error("Failed to emit video call event", err.message);
+        logger.error("Failed to emit video call event", err.message);
       }
     })
   );

@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 /**
  * @file admin.controller.js
  */
@@ -204,7 +205,7 @@ exports.uploadIdentityDoc = async (req, res) => {
       filePath,
     });
   } catch (err) {
-    console.error("Upload error:", err.message);
+    logger.error("Upload error:", err.message);
     res.status(500).json({ message: "Failed to upload identity document" });
   }
 };

@@ -1,3 +1,4 @@
+const logger = require('../../../../utils/logger.js');
 const { v4: uuidv4 } = require('uuid');
 const catchAsync = require('../../../../utils/catchAsync');
 const { sendSuccess } = require('../../../../utils/response');
@@ -46,13 +47,13 @@ exports.createAssignment = catchAsync(async (req, res) => {
               await smsService.sendSMS({ to: s.phone, text: message });
             }
           } catch (err) {
-            console.error('Error sending assignment email/SMS:', err.message);
+            logger.error('Error sending assignment email/SMS:', err.message);
           }
         })
       );
     }
   } catch (err) {
-    console.error('Error sending assignment notifications:', err.message);
+    logger.error('Error sending assignment notifications:', err.message);
   }
 
   sendSuccess(res, assignment, 'Assignment created');

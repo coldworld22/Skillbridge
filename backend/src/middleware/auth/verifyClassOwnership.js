@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
@@ -23,7 +24,7 @@ module.exports = async function verifyClassOwnership(req, res, next) {
 
     next();
   } catch (err) {
-    console.error("Failed to verify class ownership", err);
+    logger.error("Failed to verify class ownership", err);
     res.status(500).json({ message: "Failed to verify class ownership" });
   }
 };

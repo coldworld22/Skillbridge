@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
@@ -46,7 +47,7 @@ exports.createTicket = catchAsync(async (req, res) => {
   );
   adminEmailResults.forEach((r) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         "Failed to send admin support email:",
         r.reason?.message || r.reason
       );
@@ -61,7 +62,7 @@ exports.createTicket = catchAsync(async (req, res) => {
       ticket.ticket_number
     );
   } catch (err) {
-    console.error("Failed to send user support email:", err.message);
+    logger.error("Failed to send user support email:", err.message);
   }
 
   const adminNotifyResults = await Promise.allSettled(
@@ -75,7 +76,7 @@ exports.createTicket = catchAsync(async (req, res) => {
   );
   adminNotifyResults.forEach((r, idx) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to notify admin ${admins[idx].id} of support ticket:`,
         r.reason?.message || r.reason
       );
@@ -93,7 +94,7 @@ exports.createTicket = catchAsync(async (req, res) => {
   );
   adminMessageResults.forEach((r, idx) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to message admin ${admins[idx].id} about support ticket:`,
         r.reason?.message || r.reason
       );
@@ -114,7 +115,7 @@ exports.createTicket = catchAsync(async (req, res) => {
   ]);
   userDispatch.forEach((r) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         "Failed to dispatch user notification/message for ticket creation:",
         r.reason?.message || r.reason
       );
@@ -178,7 +179,7 @@ exports.addMessage = catchAsync(async (req, res) => {
           "Your support ticket has a new reply."
         );
     } catch (err) {
-      console.error("Error sending ticket reply email:", err.message);
+      logger.error("Error sending ticket reply email:", err.message);
     }
   }
   sendSuccess(res, msg, "Message added");
@@ -218,7 +219,7 @@ exports.updateStatus = catchAsync(async (req, res) => {
           `Your support ticket was ${req.body.status}.`
         );
     } catch (err) {
-      console.error("Error sending ticket status email:", err.message);
+      logger.error("Error sending ticket status email:", err.message);
     }
   }
   sendSuccess(res, ticket, "Status updated");

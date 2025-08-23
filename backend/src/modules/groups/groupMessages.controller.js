@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
@@ -64,7 +65,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
   );
   notifResults.forEach((res, idx) => {
     if (res.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to create notification for user ${recipients[idx]}:`,
         res.reason,
       );
@@ -82,7 +83,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
   );
   msgResults.forEach((res, idx) => {
     if (res.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to create private message for user ${recipients[idx]}:`,
         res.reason,
       );
@@ -107,7 +108,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
     );
     emailResults.forEach((res, idx) => {
       if (res.status === "rejected") {
-        console.error(
+        logger.error(
           `Failed to send email to user ${recipients[idx]}:`,
           res.reason,
         );
@@ -127,7 +128,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
     );
     waResults.forEach((res, idx) => {
       if (res.status === "rejected") {
-        console.error(
+        logger.error(
           `Failed to send WhatsApp message to user ${recipients[idx]}:`,
           res.reason,
         );

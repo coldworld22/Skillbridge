@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const db = require("../config/database");
 const notificationService = require("../modules/notifications/notifications.service");
 const messageService = require("../modules/messages/messages.service");
@@ -53,7 +54,7 @@ function startLessonReminderJob() {
             lesson.class_title
           );
         } catch (err) {
-          console.error("Error sending reminder email:", err.message);
+          logger.error("Error sending reminder email:", err.message);
         }
 
         const startTime = new Date(lesson.start_time).toLocaleString();
@@ -63,7 +64,7 @@ function startLessonReminderJob() {
           try {
             await smsService.sendSMS({ to: instructor.phone, text });
           } catch (err) {
-            console.error("Error sending instructor reminder SMS:", err.message);
+            logger.error("Error sending instructor reminder SMS:", err.message);
           }
         }
 
@@ -71,18 +72,18 @@ function startLessonReminderJob() {
         try {
           students = await enrollmentService.getPhonesByClass(lesson.class_id);
         } catch (err) {
-          console.error("Error fetching enrolled students for lesson:", err.message);
+          logger.error("Error fetching enrolled students for lesson:", err.message);
         }
         for (const student of students) {
           try {
             await smsService.sendSMS({ to: student.phone, text });
           } catch (err) {
-            console.error("Error sending lesson reminder SMS:", err.message);
+            logger.error("Error sending lesson reminder SMS:", err.message);
           }
         }
       }
     } catch (err) {
-      console.error("Lesson reminder job error:", err.message);
+      logger.error("Lesson reminder job error:", err.message);
     }
   }, 60 * 60 * 1000); // run hourly
 }

@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
@@ -131,7 +132,7 @@ exports.registerUser = async (data) => {
       )
     );
   } catch (err) {
-    console.error("Error sending registration emails:", err.message);
+    logger.error("Error sending registration emails:", err.message);
   }
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };

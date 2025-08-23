@@ -40,10 +40,12 @@ router.post(
   (req, res, next) => {
     upload.single("identity")(req, res, (err) => {
       if (err) {
-        console.error("Multer upload error:", err.message);
+        logger.error("Multer upload error:", err.message);
         return res.status(400).json({ message: err.message });
       }
-      logger.debug("Identity document upload request received");
+      if (process.env.NODE_ENV !== "production") {
+        logger.debug("Identity document upload request received");
+      }
       next();
     });
   },
