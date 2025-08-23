@@ -1756,5 +1756,28 @@
     "start_before_end": "Start date must be before expiration",
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
+  },
+  "permissionsPage": {
+    "title": "Permissions",
+    "add_permission": "Add Permission",
+    "permission": "Permission",
+    "actions": "Actions",
+    "permission_name_required": "Permission name is required",
+    "permission_exists": "Permission already exists",
+    "permission_added": "Permission added",
+    "permission_add_failed": "Failed to add permission",
+    "permission_removed": "Permission removed",
+    "permission_delete_failed": "Failed to delete",
+    "no_permissions": "No permissions found",
+    "loading": "Loading...",
+    "add_new_permission": "Add New Permission",
+    "placeholder": "e.g. manage_users",
+    "cancel": "Cancel",
+    "add": "Add",
+    "confirm_deletion": "Confirm Deletion",
+    "delete_question": "Are you sure you want to delete this permission?",
+    "delete": "Delete",
+    "deletion_cancelled": "Deletion cancelled",
+    "failed_to_load_permissions": "Failed to load permissions"
   }
 }
