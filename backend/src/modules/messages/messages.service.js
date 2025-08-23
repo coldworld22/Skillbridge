@@ -57,8 +57,8 @@ exports.getUserMessages = async (userId, { limit, offset } = {}) => {
     .where({ receiver_id: userId })
     .orderBy("sent_at", "desc");
 
-  if (limit !== undefined) query.limit(limit);
-  if (offset !== undefined) query.offset(offset);
+  if (Number.isFinite(limit)) query.limit(limit);
+  if (Number.isFinite(offset)) query.offset(offset);
 
   return query;
 };

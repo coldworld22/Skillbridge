@@ -2,8 +2,10 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./bank.controller");
 const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware");
+router.use(verifyToken, isAdmin);
 
-router.post("/:id/approve", verifyToken, isAdmin, controller.approveBankPayment);
-router.post("/:id/reject", verifyToken, isAdmin, controller.rejectBankPayment);
+router.get("/", controller.getBankPayments);
+router.post("/:id/approve", controller.approveBankPayment);
+router.post("/:id/reject", controller.rejectBankPayment);
 
 module.exports = router;

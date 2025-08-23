@@ -6,8 +6,14 @@ const service = require("./messages.service");
 exports.getMyMessages = catchAsync(async (req, res) => {
   let { limit, offset } = req.query;
   const options = {};
-  if (limit !== undefined) options.limit = parseInt(limit, 10);
-  if (offset !== undefined) options.offset = parseInt(offset, 10);
+  if (limit !== undefined) {
+    const parsed = parseInt(limit, 10);
+    if (!Number.isNaN(parsed)) options.limit = parsed;
+  }
+  if (offset !== undefined) {
+    const parsed = parseInt(offset, 10);
+    if (!Number.isNaN(parsed)) options.offset = parsed;
+  }
   const data = Object.keys(options).length
     ? await service.getUserMessages(req.user.id, options)
     : await service.getUserMessages(req.user.id);

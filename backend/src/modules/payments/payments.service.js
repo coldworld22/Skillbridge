@@ -20,7 +20,7 @@ exports.create = async (data, schedules = []) => {
   });
 };
 
-exports.getAll = async (status) => {
+exports.getAll = async (status, methodType) => {
   const query = db({ p: "payments" })
     .leftJoin("users as u", "p.user_id", "u.id")
     .leftJoin("payment_methods_config as m", "p.method_id", "m.id")
@@ -34,6 +34,10 @@ exports.getAll = async (status) => {
 
   if (status) {
     query.where("p.status", status);
+  }
+
+  if (methodType) {
+    query.andWhere("m.type", methodType);
   }
 
   return query;
