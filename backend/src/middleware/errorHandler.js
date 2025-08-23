@@ -21,6 +21,11 @@ module.exports = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') message = 'File too large';
   }
 
+  if (err.type === 'entity.too.large') {
+    status = 413;
+    message = 'Payload too large';
+  }
+
   const logger = require("../utils/logger");
   logger.error(`❌ ${status} - ${message}`);
   res.status(status).json({ message });
