@@ -8,14 +8,19 @@ const LOG_FILE = path.join(LOG_DIR, "error.log");
 if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR);
 }
+const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+
+logStream.on("error", (err) => {
+  console.error("Failed to write to log file:", err);
+});
 
 function append(type, args) {
   const line = `${new Date().toISOString()} [${type}] ${args.join(" ")}\n`;
-  try {
-    fs.appendFileSync(LOG_FILE, line);
-  } catch (_) {
-    // fail silently
-  }
+  logStream.write(line, (err) => {
+    if (err) {
+      console.error("Failed to write to log file:", err);
+    }
+  });
 }
 
 module.exports = {
