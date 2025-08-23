@@ -7,6 +7,12 @@ const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const { v4: uuidv4 } = require("uuid");
 
+exports.getBankPayments = catchAsync(async (req, res) => {
+  const { status } = req.query;
+  const data = await paymentsService.getAll(status, "bank");
+  sendSuccess(res, data);
+});
+
 exports.initiateBankPayment = catchAsync(async (req, res) => {
   const { item_type, item_id, amount, currency } = req.body;
   const user_id = req.user?.id;
