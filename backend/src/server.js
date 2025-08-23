@@ -75,10 +75,10 @@ app.use(
   })
 );
 
-
-// Increase body parser limits for large class uploads
-app.use(express.json({ limit: "500mb" }));
-app.use(express.urlencoded({ extended: true, limit: "500mb" }));
+// Set reasonable body parser limits; routes needing more can override per-route
+const defaultBodyLimit = "10mb";
+app.use(express.json({ limit: defaultBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(csrf);
