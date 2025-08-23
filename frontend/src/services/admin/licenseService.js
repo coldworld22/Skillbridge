@@ -5,3 +5,8 @@ export const fetchLicenseStatus = async () => {
   return data?.data ?? {};
 };
 
+export const fetchLicenseLogs = async () => {
+  const { data } = await api.get("/license/logs");
+  return data?.data ?? [];
+};
+

@@ -38,3 +38,37 @@ CREATE TABLE IF NOT EXISTS support_attachments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- licenses table
+CREATE TABLE IF NOT EXISTS licenses (
+  id SERIAL PRIMARY KEY,
+  purchase_code VARCHAR UNIQUE NOT NULL,
+  domain VARCHAR NOT NULL,
+  email VARCHAR NOT NULL,
+  ip VARCHAR,
+  status VARCHAR DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_check TIMESTAMP
+);
+
+-- license_logs table
+CREATE TABLE IF NOT EXISTS license_logs (
+  id SERIAL PRIMARY KEY,
+  license_id INTEGER REFERENCES licenses(id) ON DELETE CASCADE,
+  action VARCHAR NOT NULL,
+  ip VARCHAR,
+  domain VARCHAR,
+  device VARCHAR,
+  status VARCHAR,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- suspicious_logs table
+CREATE TABLE IF NOT EXISTS suspicious_logs (
+  id SERIAL PRIMARY KEY,
+  license_id INTEGER REFERENCES licenses(id) ON DELETE CASCADE,
+  issue VARCHAR NOT NULL,
+  details TEXT,
+  severity VARCHAR DEFAULT 'medium',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
