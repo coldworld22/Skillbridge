@@ -1,5 +1,6 @@
 // pages/dashboard/instructor/availability.js
 import { useEffect, useState, Fragment } from 'react';
+import { useTranslation } from 'next-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -27,6 +28,8 @@ export default function InstructorAvailabilityPage() {
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const [warningModal, setWarningModal] = useState({ open: false, message: '' });
   const [confirmModal, setConfirmModal] = useState({ open: false, message: '', onConfirm: null });
+
+  const { t } = useTranslation(['dashboard', 'common']);
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -113,7 +116,7 @@ export default function InstructorAvailabilityPage() {
   return (
     <InstructorLayout>
       <section className="py-10 px-4">
-        <h1 className="text-2xl font-bold mb-6">Set Your Availability</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('availability')}</h1>
         <div className="mb-6">
           <button
             onClick={async () => {
@@ -123,9 +126,9 @@ export default function InstructorAvailabilityPage() {
                 const updated = res?.is_online ?? newStatus;
                 setAvailable(updated);
                 setUser({ ...user, is_online: updated });
-                toast.success(updated ? 'You are now available' : 'You are now unavailable');
+                toast.success(updated ? t('available_now') : t('unavailable_now'));
               } catch (err) {
-                toast.error('Failed to update availability');
+                toast.error(t('availability_update_failed'));
               }
             }}
             className={`px-4 py-2 rounded-md text-sm font-medium ${available ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
