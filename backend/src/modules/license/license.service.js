@@ -39,3 +39,15 @@ exports.listLogs = () =>
       'lic.purchase_code'
     )
     .orderBy('l.timestamp', 'desc');
+
+exports.getStatus = async () => {
+  const license = await db('licenses').first();
+  if (!license) return null;
+  const [{ count }] = await db('suspicious_logs')
+    .where({ license_id: license.id })
+    .count('id as count');
+  return {
+    ...license,
+    unauthorized_count: Number(count) || 0,
+  };
+};

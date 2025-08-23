@@ -88,3 +88,16 @@ exports.listLogs = async (_req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * GET /api/license/status
+ * Return current license status and suspicious count.
+ */
+exports.getStatus = async (_req, res, next) => {
+  try {
+    const status = await service.getStatus();
+    res.json({ success: true, data: status });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -42,7 +42,7 @@ exports.createMessage = async (
   }
 };
 
-exports.getUserMessages = async (userId) => {
+exports.getUserMessages = async (userId, { limit, offset } = {}) => {
   if (MESSAGE_RETENTION_MS > 0) {
     const threshold = new Date(Date.now() - MESSAGE_RETENTION_MS);
     await db("messages")
