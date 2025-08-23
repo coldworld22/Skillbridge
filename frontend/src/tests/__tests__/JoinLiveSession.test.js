@@ -12,11 +12,25 @@ jest.mock('../../services/lessonService', () => ({
 }));
 const { getLessonRoomLink } = require('../../services/lessonService');
 
-jest.mock('../../components/shared/CalendarView', () => ({ onEventClick }) => (
-  <button onClick={() => onEventClick({ event: { id: 'lesson-1', start: new Date().toISOString(), extendedProps: {} } })}>cal</button>
-));
+jest.mock('../../components/shared/CalendarView', () => {
+  function MockCalendarView({ onEventClick }) {
+    return (
+      <button onClick={() => onEventClick({ event: { id: 'lesson-1', start: new Date().toISOString(), extendedProps: {} } })}>
+        cal
+      </button>
+    );
+  }
+  MockCalendarView.displayName = 'CalendarView';
+  return MockCalendarView;
+});
 
-jest.mock('../../components/layouts/InstructorLayout', () => ({ children }) => <div>{children}</div>);
+jest.mock('../../components/layouts/InstructorLayout', () => {
+  function MockInstructorLayout({ children }) {
+    return <div>{children}</div>;
+  }
+  MockInstructorLayout.displayName = 'InstructorLayout';
+  return MockInstructorLayout;
+});
 
 describe('Join live session link', () => {
   it('requests room link when lesson is live', async () => {

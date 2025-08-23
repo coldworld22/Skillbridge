@@ -12,8 +12,20 @@ jest.mock('../../store/cart/cartStore', () => ({
   default: (selector) => selector({ items: [], removeItem: mockRemoveItem }),
 }));
 
-jest.mock('../../components/website/sections/Navbar', () => () => <div />);
-jest.mock('../../components/website/sections/Footer', () => () => <div />);
+jest.mock('../../components/website/sections/Navbar', () => {
+  function MockNavbar() {
+    return <div />;
+  }
+  MockNavbar.displayName = 'Navbar';
+  return MockNavbar;
+});
+jest.mock('../../components/website/sections/Footer', () => {
+  function MockFooter() {
+    return <div />;
+  }
+  MockFooter.displayName = 'Footer';
+  return MockFooter;
+});
 
 jest.mock('../../services/classService', () => ({
   fetchClassDetails: jest.fn(),

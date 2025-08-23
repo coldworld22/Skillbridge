@@ -5,17 +5,36 @@ import useTutorialListsStore from '@/store/tutorials/tutorialListsStore';
 import useAuthStore from '@/store/auth/authStore';
 import * as tutorialService from '../../services/tutorialService';
 
-jest.mock('next/image', () => (props) => <img {...props} />);
+jest.mock('next/image', () => {
+  function NextImage(props) {
+    return <img {...props} />;
+  }
+  NextImage.displayName = 'NextImage';
+  return NextImage;
+});
 jest.mock('next/router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('next-i18next', () => ({ useTranslation: () => ({ t: (key) => key }) }));
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>,
-    h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
-    a: ({ children, ...props }) => <a {...props}>{children}</a>,
-    button: ({ children, ...props }) => <button {...props}>{children}</button>,
-  },
-}));
+jest.mock('framer-motion', () => {
+  const motion = {
+    div: function MotionDiv({ children, ...props }) {
+      return <div {...props}>{children}</div>;
+    },
+    h2: function MotionH2({ children, ...props }) {
+      return <h2 {...props}>{children}</h2>;
+    },
+    a: function MotionLink({ children, ...props }) {
+      return <a {...props}>{children}</a>;
+    },
+    button: function MotionButton({ children, ...props }) {
+      return <button {...props}>{children}</button>;
+    },
+  };
+  motion.div.displayName = 'motion.div';
+  motion.h2.displayName = 'motion.h2';
+  motion.a.displayName = 'motion.a';
+  motion.button.displayName = 'motion.button';
+  return { motion };
+});
 const addItem = jest.fn().mockResolvedValue(undefined);
 jest.mock('../../store/cart/cartStore', () => ({
   __esModule: true,
