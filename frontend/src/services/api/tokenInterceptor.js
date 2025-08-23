@@ -7,15 +7,7 @@ import api from "./api";
 import { toast } from "react-toastify";
 import Router from "next/router";
 import useAuthStore from "@/store/auth/authStore";
-
-// Helper to read a cookie value in the browser
-const getCookie = (name) => {
-  if (typeof document === "undefined") return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
+import { getCookie } from "@/utils/cookies";
 
 let isRefreshing = false;
 let failedQueue = [];

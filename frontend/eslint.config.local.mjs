@@ -9,6 +9,18 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [...compat.extends("next/core-web-vitals")];
+const noConsoleRule =
+  process.env.NODE_ENV === 'production'
+    ? ['error', { allow: ['warn', 'error'] }]
+    : ['warn', { allow: ['warn', 'error'] }];
+
+const eslintConfig = [
+  ...compat.extends('next/core-web-vitals'),
+  {
+    rules: {
+      'no-console': noConsoleRule,
+    },
+  },
+];
 
 export default eslintConfig;
