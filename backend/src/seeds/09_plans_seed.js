@@ -21,6 +21,7 @@ exports.seed = async function (knex) {
         buttonColor: '#2563EB',
         buttonTextColor: '#FFFFFF'
       }),
+      target_role: 'student',
       created_at: now,
       updated_at: now
     },
@@ -40,6 +41,7 @@ exports.seed = async function (knex) {
         buttonColor: '#3B82F6',
         buttonTextColor: '#FFFFFF'
       }),
+      target_role: 'student',
       created_at: now,
       updated_at: now
     },
@@ -60,6 +62,7 @@ exports.seed = async function (knex) {
         buttonColor: '#FBBF24',
         buttonTextColor: '#1F2937'
       }),
+      target_role: 'student',
       created_at: now,
       updated_at: now
     }

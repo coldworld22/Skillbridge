@@ -79,6 +79,7 @@ export default function EditPlanPage() {
             gradientEnd: styleConf.gradientEnd,
             recommended: data.recommended,
             active: data.active,
+            target_role: data.target_role || 'student',
           });
           setFeatures(data.features || []);
         }
@@ -130,6 +131,7 @@ export default function EditPlanPage() {
         price_monthly: Number(form.priceMonthly),
         price_yearly: Number(form.priceYearly),
         currency: form.currency,
+        target_role: form.target_role,
         color: form.color,
         style: JSON.stringify(style),
         recommended: form.recommended,
@@ -213,6 +215,17 @@ export default function EditPlanPage() {
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('target_role')}</label>
+          <select
+            className="w-full border px-4 py-2 rounded"
+            value={form.target_role}
+            onChange={(e) => setForm({ ...form, target_role: e.target.value })}
+          >
+            <option value="student">{t('student')}</option>
+            <option value="instructor">{t('instructor')}</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">{t('plan_color')}</label>

@@ -6,7 +6,7 @@ import { fetchPublicPlans } from "@/services/public/planService";
 
 
 
-const SubscriptionPlans = () => {
+const SubscriptionPlans = ({ role = "student" }) => {
   const { t } = useTranslation("website");
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -14,14 +14,14 @@ const SubscriptionPlans = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchPublicPlans();
+        const data = await fetchPublicPlans(role);
         setPlans(data.filter((p) => p.active));
       } catch (err) {
         console.error("Failed to load plans", err);
       }
     };
     load();
-  }, []);
+  }, [role]);
 
   return (
 
