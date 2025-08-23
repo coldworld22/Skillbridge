@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 
 const SETTINGS_KEY = "seo_settings";
@@ -51,7 +52,7 @@ exports.updateSettings = async (settings) => {
       fs.unlinkSync(robotsPath);
     }
   } catch (err) {
-    console.error("Failed to write robots.txt", err);
+    logger.error("Failed to write robots.txt", err);
   }
 
   return settings;
@@ -97,7 +98,7 @@ exports.generateSitemap = async () => {
       try {
         await fetch(url);
       } catch (err) {
-        console.error("Failed to ping", url, err);
+        logger.error("Failed to ping", url, err);
       }
     }
   }

@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
@@ -107,7 +108,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     platform_fee = (verifiedAmount * cut) / 100;
     instructor_amount = verifiedAmount - platform_fee;
   } catch (err) {
-    console.error("Failed to load payment settings:", err);
+    logger.error("Failed to load payment settings:", err);
   }
 
   const createData = {
@@ -136,7 +137,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     try {
       await couponService.incrementUsage(coupon_id);
     } catch (err) {
-      console.error("Failed to increment coupon usage:", err);
+      logger.error("Failed to increment coupon usage:", err);
     }
   }
 
@@ -148,7 +149,7 @@ exports.createPayment = catchAsync(async (req, res) => {
       await smsService.sendSMS({ to: user.phone, text });
     }
   } catch (err) {
-    console.error("Failed to send payment SMS:", err);
+    logger.error("Failed to send payment SMS:", err);
   }
 
   if (method.type === "bank" && user?.email) {
@@ -170,7 +171,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         html,
       });
     } catch (err) {
-      console.error("Failed to send invoice email:", err);
+      logger.error("Failed to send invoice email:", err);
     }
   }
 
@@ -178,7 +179,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     try {
       await libraryService.recordPurchase(user_id, item_id, verifiedAmount);
     } catch (err) {
-      console.error("Failed to record book purchase:", err);
+      logger.error("Failed to record book purchase:", err);
     }
   }
 
@@ -191,7 +192,7 @@ exports.createPayment = catchAsync(async (req, res) => {
           status: "enrolled",
         });
     } catch (err) {
-      console.error("Failed to enroll after payment:", err);
+      logger.error("Failed to enroll after payment:", err);
     }
   }
 
@@ -204,7 +205,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         status: "enrolled",
       });
     } catch (err) {
-      console.error("Failed to enroll in tutorial after payment:", err);
+      logger.error("Failed to enroll in tutorial after payment:", err);
     }
   }
 
@@ -241,7 +242,7 @@ exports.confirmPayment = catchAsync(async (req, res) => {
       )
     );
   } catch (err) {
-    console.error("Failed to notify admins of payment confirmation:", err);
+    logger.error("Failed to notify admins of payment confirmation:", err);
   }
 });
 
@@ -294,7 +295,7 @@ exports.updatePayment = catchAsync(async (req, res) => {
         }
       }
     } catch (err) {
-      console.error("Failed to notify student of payment status:", err);
+      logger.error("Failed to notify student of payment status:", err);
     }
   }
 });

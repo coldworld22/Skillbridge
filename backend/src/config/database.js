@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 require("dotenv").config();
 const knex = require("knex");
 
@@ -9,9 +10,9 @@ const db = knex({
 
 if (process.env.NODE_ENV !== "test") {
   db.raw("SELECT 1")
-    .then(() => console.log("✅ PostgreSQL Database Connected"))
+    .then(() => logger.log("✅ PostgreSQL Database Connected"))
     .catch((err) => {
-      console.error("❌ Database Connection Error:", err);
+      logger.error("❌ Database Connection Error:", err);
       process.exit(1);
     });
 }

@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const socialLoginConfigService = require('../socialLoginConfig/socialLoginConfig.service');
 
 // Allow this service to run on Node versions prior to 18 where `fetch` is not
@@ -31,7 +32,7 @@ exports.verify = async (token, remoteIp) => {
     const data = await res.json();
     return !!data.success;
   } catch (err) {
-    console.error('reCAPTCHA verify failed:', err.message);
+    logger.error('reCAPTCHA verify failed:', err.message);
     return false;
   }
 };

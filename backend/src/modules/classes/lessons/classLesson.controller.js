@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../../utils/catchAsync");
 const { sendSuccess } = require("../../../utils/response");
@@ -65,7 +66,7 @@ exports.createLesson = catchAsync(async (req, res) => {
       );
     }
   } catch (err) {
-    console.error("Error sending lesson scheduled email:", err.message);
+    logger.error("Error sending lesson scheduled email:", err.message);
   }
   sendSuccess(res, lesson, "Lesson created");
 });

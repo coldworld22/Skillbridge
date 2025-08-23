@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
@@ -18,7 +19,7 @@ exports.createMessage = async (
         global.io.to(global.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
+      logger.error("Failed to emit message-created event", err.message);
       throw err;
     }
     return row;
@@ -30,7 +31,7 @@ exports.createMessage = async (
     }
     return await db.transaction(async (transaction) => run(transaction));
   } catch (err) {
-    console.error("Failed to create message", err.message);
+    logger.error("Failed to create message", err.message);
     throw err;
   }
 };
@@ -91,7 +92,7 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
     try {
       await mailService.sendMail({ to: user.email, subject, html: message });
     } catch (err) {
-      console.error("Failed to send email", err.message);
+      logger.error("Failed to send email", err.message);
       throw new AppError("Failed to send email", 502);
     }
 
@@ -100,7 +101,7 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
         global.io.to(global.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
+      logger.error("Failed to emit message-created event", err.message);
       throw err;
     }
 
@@ -124,7 +125,7 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
     try {
       await whatsappService.sendWhatsApp({ to: user.phone, message });
     } catch (err) {
-      console.error("Failed to send WhatsApp message", err.message);
+      logger.error("Failed to send WhatsApp message", err.message);
       throw new AppError("Failed to send WhatsApp message", 502);
     }
 
@@ -133,7 +134,7 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
         global.io.to(global.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
+      logger.error("Failed to emit message-created event", err.message);
       throw err;
     }
 
@@ -189,7 +190,7 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
         });
     }
   } catch (err) {
-    console.error("Failed to emit video call events", err);
+    logger.error("Failed to emit video call events", err);
   }
 
   return { callId: call.id, roomId };
@@ -211,7 +212,7 @@ exports.respondVideoCall = async ({ call_id, user_id, action }) => {
         .emit("video-call-response", { callId: call_id, status });
     }
   } catch (err) {
-    console.error("Failed to emit video-call-response", err);
+    logger.error("Failed to emit video-call-response", err);
   }
   return updated;
 };
@@ -236,7 +237,7 @@ exports.endVideoCall = async ({ call_id, user_id }) => {
       );
     }
   } catch (err) {
-    console.error("Failed to emit video-call-ended", err);
+    logger.error("Failed to emit video-call-ended", err);
   }
   return updated;
 };

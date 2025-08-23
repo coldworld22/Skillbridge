@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 const authService = require("../services/auth.service");
 const userModel = require("../../users/user.model");
 const catchAsync = require("../../../utils/catchAsync");
@@ -25,11 +26,11 @@ exports.register = catchAsync(async (req, res, next) => {
     const { user } = await authService.registerUser(req.body);
     res.status(201).json({ message: "Registration successful", user });
   } catch (err) {
-    console.error("🔥 Registration error caught:");
-    console.error("Name:", err.name);
-    console.error("Code:", err.code);
-    console.error("Detail:", err.detail);
-    console.error("Message:", err.message);
+    logger.error("🔥 Registration error caught:");
+    logger.error("Name:", err.name);
+    logger.error("Code:", err.code);
+    logger.error("Detail:", err.detail);
+    logger.error("Message:", err.message);
 
     // ✅ PostgreSQL duplicate key error (code 23505)
     if (err.code === "23505") {
@@ -47,7 +48,7 @@ exports.register = catchAsync(async (req, res, next) => {
     }
 
     // ⛔ Unknown error — fallback to generic
-    console.error("Registration error:", err);
+    logger.error("Registration error:", err);
     return res.status(500).json({ error: "Registration failed. Please try again." });
   }
 });
@@ -78,9 +79,11 @@ exports.login = catchAsync(async (req, res) => {
  */
 exports.refreshToken = catchAsync(async (req, res) => {
   const token = req.cookies.refreshToken;
-  console.log("\uD83D\uDD04 Refresh token endpoint hit. Token present:", Boolean(token));
+  if (process.env.NODE_ENV !== "production") {
+    logger.debug("\uD83D\uDD04 Refresh token endpoint hit. Token present:", Boolean(token));
+  }
   if (!token) {
-    console.warn("\u26A0\uFE0F Missing refresh token cookie");
+    logger.warn("\u26A0\uFE0F Missing refresh token cookie");
     return res.status(401).json({ message: "Missing refresh token" });
   }
 
@@ -91,13 +94,15 @@ exports.refreshToken = catchAsync(async (req, res) => {
       role: decoded.role,
     });
     const csrfToken = authService.generateCsrfToken();
-    console.log("\u2705 Refresh token rotated for user", decoded.id);
+    if (process.env.NODE_ENV !== "production") {
+      logger.debug("\u2705 Refresh token rotated for user", decoded.id);
+    }
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
       .cookie("csrfToken", csrfToken, csrfCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
-    console.error("❌ Refresh token error:", err.message);
+    logger.error("❌ Refresh token error:", err.message);
     return res.status(401).json({ message: "Invalid or expired refresh token" });
   }
 });
@@ -117,7 +122,7 @@ exports.logout = catchAsync(async (req, res) => {
         updated_at: new Date(),
       });
     } catch (err) {
-      console.error("Failed to update online status on logout:", err.message);
+      logger.error("Failed to update online status on logout:", err.message);
     }
   }
   if (req.headers.authorization?.startsWith("Bearer ")) {

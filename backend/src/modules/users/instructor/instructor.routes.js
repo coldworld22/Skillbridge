@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 /**
  * Instructor profile controller
  * @file instructor.routes.js
@@ -124,7 +125,7 @@ router.patch(
         .update({ demo_video_url: demoVideoUrl });
       res.json({ demo_video_url: demoVideoUrl });
     } catch (err) {
-      console.error("Demo video upload error:", err);
+      logger.error("Demo video upload error:", err);
       res.status(500).json({ error: "Failed to upload demo video" });
     }
   }

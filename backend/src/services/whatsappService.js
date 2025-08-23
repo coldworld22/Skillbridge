@@ -1,6 +1,7 @@
+const logger = require('../utils/logger.js');
 module.exports = {
   sendWhatsApp: async ({ to, message }) => {
     // Integrate with Twilio or another provider here
-    console.log(`Sending WhatsApp message to ${to}: ${message}`);
+    logger.log(`Sending WhatsApp message to ${to}: ${message}`);
   },
 };

@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 const fs = require("fs");
 const path = require("path");
@@ -14,7 +15,7 @@ exports.getSettings = async () => {
       return null;
     }
   } catch (err) {
-    console.error("Failed to load social login settings", err);
+    logger.error("Failed to load social login settings", err);
     return null;
   }
 };

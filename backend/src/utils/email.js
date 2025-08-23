@@ -1,3 +1,4 @@
+const logger = require('./logger.js');
 // 📁 src/utils/email.js
 const nodemailer = require("nodemailer");
 const emailConfigService = require("../modules/emailConfig/emailConfig.service");
@@ -83,9 +84,9 @@ exports.sendOtpEmail = async (to, otp) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${to}`);
+    logger.log(`OTP sent to ${to}`);
   } catch (error) {
-    console.error("Error sending email: ", error);
+    logger.error("Error sending email: ", error);
   }
 };
 
@@ -133,9 +134,9 @@ exports.sendPasswordChangeEmail = async (to) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Password change notice sent to ${to}`);
+    logger.log(`Password change notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending password change email: ", error);
+    logger.error("Error sending password change email: ", error);
   }
 };
 
@@ -182,9 +183,9 @@ exports.sendWelcomeEmail = async (to, name) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Welcome email sent to ${to}`);
+    logger.log(`Welcome email sent to ${to}`);
   } catch (error) {
-    console.error("Error sending welcome email: ", error);
+    logger.error("Error sending welcome email: ", error);
   }
 };
 
@@ -232,9 +233,9 @@ exports.sendNewUserAdminEmail = async (to, user) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Admin new user notice sent to ${to}`);
+    logger.log(`Admin new user notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending admin new user email: ", error);
+    logger.error("Error sending admin new user email: ", error);
   }
 };
 
@@ -291,9 +292,9 @@ exports.sendLessonScheduledEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Lesson scheduled notice sent to ${to}`);
+    logger.log(`Lesson scheduled notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending lesson scheduled email: ", error);
+    logger.error("Error sending lesson scheduled email: ", error);
   }
 };
 
@@ -351,9 +352,9 @@ exports.sendLessonReminderEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Lesson reminder sent to ${to}`);
+    logger.log(`Lesson reminder sent to ${to}`);
   } catch (error) {
-    console.error("Error sending lesson reminder email: ", error);
+    logger.error("Error sending lesson reminder email: ", error);
   }
 };
 
@@ -409,9 +410,9 @@ exports.sendAssignmentEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Assignment notice sent to ${to}`);
+    logger.log(`Assignment notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending assignment email: ", error);
+    logger.error("Error sending assignment email: ", error);
   }
 };
 
@@ -469,9 +470,9 @@ exports.sendSupportTicketAdminEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Support ticket admin notice sent to ${to}`);
+    logger.log(`Support ticket admin notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending admin ticket email: ", error);
+    logger.error("Error sending admin ticket email: ", error);
   }
 };
 
@@ -528,9 +529,9 @@ exports.sendSupportTicketUserEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Support ticket receipt sent to ${to}`);
+    logger.log(`Support ticket receipt sent to ${to}`);
   } catch (error) {
-    console.error("Error sending ticket receipt email: ", error);
+    logger.error("Error sending ticket receipt email: ", error);
   }
 };
 
@@ -580,9 +581,9 @@ exports.sendSupportTicketUpdateEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Support ticket update sent to ${to}`);
+    logger.log(`Support ticket update sent to ${to}`);
   } catch (error) {
-    console.error("Error sending ticket update email: ", error);
+    logger.error("Error sending ticket update email: ", error);
   }
 };
 
@@ -632,9 +633,9 @@ exports.sendTutorialCreatedAdminEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Tutorial created admin notice sent to ${to}`);
+    logger.log(`Tutorial created admin notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending tutorial created admin email: ", error);
+    logger.error("Error sending tutorial created admin email: ", error);
   }
 };
 
@@ -679,9 +680,9 @@ exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Tutorial created instructor notice sent to ${to}`);
+    logger.log(`Tutorial created instructor notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending tutorial created instructor email: ", error);
+    logger.error("Error sending tutorial created instructor email: ", error);
   }
 };
 
@@ -726,9 +727,9 @@ exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Tutorial approved notice sent to ${to}`);
+    logger.log(`Tutorial approved notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending tutorial approved email: ", error);
+    logger.error("Error sending tutorial approved email: ", error);
   }
 };
 
@@ -776,9 +777,9 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Tutorial rejection notice sent to ${to}`);
+    logger.log(`Tutorial rejection notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending tutorial rejected email: ", error);
+    logger.error("Error sending tutorial rejected email: ", error);
   }
 };
 
@@ -824,9 +825,9 @@ exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`New discussion notice sent to ${to}`);
+    logger.log(`New discussion notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending new discussion email: ", error);
+    logger.error("Error sending new discussion email: ", error);
   }
 };
 
@@ -871,9 +872,9 @@ exports.sendCartReminderEmail = async (to, itemName) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Cart reminder email sent to ${to}`);
+    logger.log(`Cart reminder email sent to ${to}`);
   } catch (error) {
-    console.error("Error sending cart reminder email: ", error);
+    logger.error("Error sending cart reminder email: ", error);
   }
 };
 
@@ -918,9 +919,9 @@ exports.sendCartAddedEmail = async (to, itemName) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Cart added notice sent to ${to}`);
+    logger.log(`Cart added notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending cart added email: ", error);
+    logger.error("Error sending cart added email: ", error);
   }
 };
 
@@ -965,9 +966,9 @@ exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Ad submission notice sent to ${to}`);
+    logger.log(`Ad submission notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending ad submission email: ", error);
+    logger.error("Error sending ad submission email: ", error);
   }
 };
 
@@ -1012,9 +1013,9 @@ exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Admin new ad notice sent to ${to}`);
+    logger.log(`Admin new ad notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending new ad admin email: ", error);
+    logger.error("Error sending new ad admin email: ", error);
   }
 };
 
@@ -1059,8 +1060,8 @@ exports.sendAdApprovalEmail = async (to, adTitle) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Ad approval notice sent to ${to}`);
+    logger.log(`Ad approval notice sent to ${to}`);
   } catch (error) {
-    console.error("Error sending ad approval email: ", error);
+    logger.error("Error sending ad approval email: ", error);
   }
 };

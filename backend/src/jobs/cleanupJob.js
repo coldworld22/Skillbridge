@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const offerService = require("../modules/offers/offers.service");
 
 function startCleanupJob() {
@@ -5,7 +6,7 @@ function startCleanupJob() {
     try {
       await offerService.deleteExpiredOffers();
     } catch (err) {
-      console.error("Error running cleanup job:", err.message);
+      logger.error("Error running cleanup job:", err.message);
     }
   }, 60 * 60 * 1000); // hourly
 }

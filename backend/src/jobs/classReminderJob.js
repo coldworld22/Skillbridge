@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const classService = require("../modules/classes/class.service");
 const enrollmentService = require("../modules/classes/enrollments/classEnrollment.service");
 const smsService = require("../services/smsService");
@@ -19,7 +20,7 @@ function startClassReminderJob() {
             try {
               await smsService.sendSMS({ to: student.phone, text });
             } catch (err) {
-              console.error("Error sending class reminder SMS:", err.message);
+              logger.error("Error sending class reminder SMS:", err.message);
             }
           }
           if (student.email) {
@@ -31,13 +32,13 @@ function startClassReminderJob() {
                 student.locale
               );
             } catch (err) {
-              console.error("Error sending class reminder email:", err.message);
+              logger.error("Error sending class reminder email:", err.message);
             }
           }
         }
       }
     } catch (err) {
-      console.error("Class reminder job error:", err.message);
+      logger.error("Class reminder job error:", err.message);
     }
   }, 60 * 60 * 1000); // hourly
 }

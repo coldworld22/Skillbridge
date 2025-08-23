@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 /**
  * Student controller
  */
@@ -105,7 +106,7 @@ exports.updateProfile = async (req, res) => {
     res.json({ message: "Profile updated successfully" });
   } catch (err) {
     await trx.rollback();
-    console.error("Failed to update student profile", err.message);
+    logger.error("Failed to update student profile", err.message);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
@@ -126,7 +127,7 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
     res.json({ avatar_url: avatarUrl });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to update avatar" });
   }
 };
@@ -157,7 +158,7 @@ exports.updateIdentity = async (req, res) => {
     }
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
 };

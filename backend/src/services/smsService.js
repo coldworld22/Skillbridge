@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const messagesConfigService = require("../modules/messagesConfig/messagesConfig.service");
 
 const fetchFn =
@@ -41,7 +42,7 @@ exports.sendSMS = async ({ to, text }) => {
       const auth = provider.apiKey.trim().startsWith('App ')
         ? provider.apiKey.trim()
         : `App ${provider.apiKey.trim()}`;
-      console.log(
+      logger.log(
         '[SMS] Sending request to Infobip:',
         JSON.stringify(
           {
@@ -68,18 +69,18 @@ exports.sendSMS = async ({ to, text }) => {
         json = null;
       }
       if (!res.ok) {
-        console.error('Infobip SMS error:', json || text);
+        logger.error('Infobip SMS error:', json || text);
       } else if (json && Array.isArray(json.messages)) {
         const status = json.messages[0]?.status;
         const desc = status?.description || 'unknown status';
-        console.log(`SMS sent via Infobip to ${to}: ${desc}`);
+        logger.log(`SMS sent via Infobip to ${to}: ${desc}`);
       } else {
-        console.log(`[SMS] SMS sent via Infobip to ${to}`);
+        logger.log(`[SMS] SMS sent via Infobip to ${to}`);
       }
     } catch (err) {
-      console.error('Failed to send SMS via Infobip:', err.message);
+      logger.error('Failed to send SMS via Infobip:', err.message);
     }
   } else {
-    console.log(`[SMS MOCK ${provider.name}] to ${to}: ${text}`);
+    logger.log(`[SMS MOCK ${provider.name}] to ${to}: ${text}`);
   }
 };

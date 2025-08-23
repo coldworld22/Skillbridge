@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 // 📁 src/modules/users/tutorials/tutorial.controller.js
 const db = require("../../../config/database");
 const service = require("./tutorial.service");
@@ -225,7 +226,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
   try {
     await sendTutorialCreatedInstructorEmail(instructor.email, title);
   } catch (err) {
-    console.error("Error sending tutorial created email:", err.message);
+    logger.error("Error sending tutorial created email:", err.message);
   }
 
   sendSuccess(res, tutorial, "Tutorial with chapters created");
@@ -386,7 +387,7 @@ exports.approveTutorial = catchAsync(async (req, res) => {
       const instr = await userModel.findById(tut.instructor_id);
       if (instr) await sendTutorialApprovedEmail(instr.email, tut.title);
     } catch (err) {
-      console.error("Error sending tutorial approved email:", err.message);
+      logger.error("Error sending tutorial approved email:", err.message);
     }
   }
 
@@ -420,7 +421,7 @@ exports.rejectTutorial = catchAsync(async (req, res) => {
       if (instr)
         await sendTutorialRejectedEmail(instr.email, tut.title, reason);
     } catch (err) {
-      console.error("Error sending tutorial rejected email:", err.message);
+      logger.error("Error sending tutorial rejected email:", err.message);
     }
   }
 
@@ -458,7 +459,7 @@ exports.bulkApproveTutorials = catchAsync(async (req, res) => {
               if (instr)
                 await sendTutorialApprovedEmail(instr.email, tut.title);
             } catch (err) {
-              console.error(
+              logger.error(
                 "Error sending tutorial approved email:",
                 err.message
               );

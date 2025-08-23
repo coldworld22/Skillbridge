@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 
 const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
@@ -28,7 +29,7 @@ module.exports = async function verifyTutorialAccess(req, res, next) {
 
     next();
   } catch (err) {
-    console.error("Failed to verify tutorial access", err);
+    logger.error("Failed to verify tutorial access", err);
     res.status(500).json({ message: "Failed to verify tutorial access" });
   }
 };

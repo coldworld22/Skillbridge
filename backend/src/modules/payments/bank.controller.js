@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
@@ -27,7 +28,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     platform_fee = (amount * cut) / 100;
     instructor_amount = amount - platform_fee;
   } catch (err) {
-    console.error("Failed to load payment settings:", err);
+    logger.error("Failed to load payment settings:", err);
   }
 
   const paymentData = {

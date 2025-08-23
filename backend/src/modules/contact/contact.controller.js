@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const mailService = require("../../services/mailService");
@@ -37,7 +38,7 @@ exports.submitForm = catchAsync(async (req, res) => {
   );
   results.forEach((r, idx) => {
     if (r.status === "rejected") {
-      console.error(
+      logger.error(
         `Failed to notify admin ${admins[idx].id}:`,
         r.reason?.message || r.reason
       );

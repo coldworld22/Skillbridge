@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const { v4: uuidv4 } = require("uuid");
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
@@ -116,7 +117,7 @@ exports.createAd = catchAsync(async (req, res) => {
       )
     );
   } catch (err) {
-    console.error("Error sending ad creation emails:", err);
+    logger.error("Error sending ad creation emails:", err);
   }
 
   sendSuccess(res, ad, "Ad created");
@@ -261,7 +262,7 @@ exports.updateAd = catchAsync(async (req, res) => {
         await sendAdApprovalEmail(creator.email, updated.title);
       }
     } catch (err) {
-      console.error("Error sending ad approval email:", err);
+      logger.error("Error sending ad approval email:", err);
     }
   }
 

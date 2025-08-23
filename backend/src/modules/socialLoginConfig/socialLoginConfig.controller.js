@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./socialLoginConfig.service");
@@ -40,7 +41,7 @@ exports.updateSettings = catchAsync(async (req, res) => {
   try {
     await initStrategies();
   } catch (err) {
-    console.error("Failed to reinitialize passport strategies", err);
+    logger.error("Failed to reinitialize passport strategies", err);
   }
   sendSuccess(res, sanitize(settings, req), "Settings updated");
 

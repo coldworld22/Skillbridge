@@ -1,3 +1,4 @@
+const logger = require('../utils/logger.js');
 const db = require("../config/database");
 
 function startContributorStatsJob() {
@@ -36,7 +37,7 @@ function startContributorStatsJob() {
           .merge({ discussions_count: data.count, score: data.score });
       }
     } catch (err) {
-      console.error('Error reconciling contributor stats:', err.message);
+      logger.error('Error reconciling contributor stats:', err.message);
     }
   }, DAY);
 }

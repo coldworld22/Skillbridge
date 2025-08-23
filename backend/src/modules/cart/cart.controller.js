@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const service = require("./cart.service");
 const { sendSuccess } = require("../../utils/response");
 const catchAsync = require("../../utils/catchAsync");
@@ -18,7 +19,7 @@ exports.addItem = catchAsync(async (req, res) => {
     const user = await userModel.findById(req.user.id);
     if (user?.email) await sendCartAddedEmail(user.email, item.name);
   } catch (err) {
-    console.error("Error sending cart added email:", err.message);
+    logger.error("Error sending cart added email:", err.message);
   }
 
   sendSuccess(res, item, "Item added to cart");

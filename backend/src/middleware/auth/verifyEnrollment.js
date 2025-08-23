@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
 
 module.exports = async function verifyEnrollment(req, res, next) {
@@ -20,7 +21,7 @@ module.exports = async function verifyEnrollment(req, res, next) {
       return res.status(403).json({ message: "Not allowed" });
     next();
   } catch (err) {
-    console.error("Failed to verify enrollment", err);
+    logger.error("Failed to verify enrollment", err);
     res.status(500).json({ message: "Failed to verify enrollment" });
   }
 };

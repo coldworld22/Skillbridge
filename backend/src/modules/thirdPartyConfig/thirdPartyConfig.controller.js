@@ -1,3 +1,4 @@
+const logger = require('../../utils/logger.js');
 const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./thirdPartyConfig.service");
@@ -33,7 +34,7 @@ exports.updateSettings = catchAsync(async (req, res) => {
   ).then((results) => {
     results.forEach((r) => {
       if (r.status === "rejected") {
-        console.error(
+        logger.error(
           "Failed to dispatch third-party settings update notification:",
           r.reason?.message || r.reason
         );

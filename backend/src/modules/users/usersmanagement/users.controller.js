@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 // 📁 modules/users/usersmanagment/users.controller.js
 const db = require("../../../config/database");
 const service = require("./users.service");
@@ -53,10 +54,11 @@ exports.updateUserProfile = catchAsync(async (req, res) => {
 
 
 exports.updateUserStatus = catchAsync(async (req, res) => {
-  console.log("✅ Reached backend updateUserStatus controller");
-  console.log("🧪 Status value received:", req.body.status);
-  console.log("🧪 Status value received:", req.body.status);
-  console.log("🧪 Type:", typeof req.body.status);
+  if (process.env.NODE_ENV !== "production") {
+    logger.debug("✅ Reached backend updateUserStatus controller");
+    logger.debug("🧪 Status value received:", req.body.status);
+    logger.debug("🧪 Type:", typeof req.body.status);
+  }
 
   const { status } = req.body;
 
@@ -97,8 +99,10 @@ exports.resetUserPassword = catchAsync(async (req, res) => {
 exports.changeUserRole = catchAsync(async (req, res) => {
   let { role } = req.body;
 
-  console.log("🧪 Raw role value:", role);
-  console.log("🧪 Type of role:", typeof role);
+  if (process.env.NODE_ENV !== "production") {
+    logger.debug("🧪 Raw role value:", role);
+    logger.debug("🧪 Type of role:", typeof role);
+  }
 
   if (typeof role !== "string") {
     return res.status(400).json({ message: "Role must be a string" });

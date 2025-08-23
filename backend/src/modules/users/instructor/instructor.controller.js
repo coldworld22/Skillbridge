@@ -1,3 +1,4 @@
+const logger = require('../../../utils/logger.js');
 /**
  * @file instructor.controller.js
  */
@@ -113,7 +114,7 @@ exports.deleteCertificate = async (req, res) => {
     try {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch (err) {
-        console.warn("Could not delete file:", err.message);
+        logger.warn("Could not delete file:", err.message);
     }
 
     await db("instructor_certificates").where({ id: certId }).del();
@@ -165,7 +166,7 @@ exports.updateProfile = async (req, res) => {
     });
     res.json(updated);
   } catch (err) {
-    console.error("Profile update error:", err);
+    logger.error("Profile update error:", err);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
@@ -196,7 +197,9 @@ exports.getProfileStatus = async (req, res) => {
  * @access Instructor
  */
 exports.updateAvatar = async (req, res) => {
-    console.log("📥 Incoming avatar upload");
+    if (process.env.NODE_ENV !== "production") {
+        logger.debug("📥 Incoming avatar upload");
+    }
 
     try {
         if (!req.file) {
@@ -213,7 +216,7 @@ exports.updateAvatar = async (req, res) => {
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
-        console.error("❌ Avatar upload error:", err.message);
+        logger.error("❌ Avatar upload error:", err.message);
         res.status(500).json({ error: "Failed to upload avatar" });
     }
 };
@@ -235,7 +238,7 @@ exports.deleteAvatar = async (req, res) => {
     try {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch (err) {
-        console.error("❌ Failed to delete avatar:", err.message);
+        logger.error("❌ Failed to delete avatar:", err.message);
     }
 
     await db("users").where({ id: userId }).update({ avatar_url: null });
@@ -260,7 +263,7 @@ exports.deleteDemoVideo = async (req, res) => {
     try {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch (err) {
-        console.error("❌ Failed to delete demo video:", err.message);
+        logger.error("❌ Failed to delete demo video:", err.message);
     }
 
     await db("instructor_profiles").where({ user_id: userId }).update({ demo_video_url: null });
