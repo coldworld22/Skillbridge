@@ -23,5 +23,12 @@ exports.downloadBook = catchAsync(async (req, res) => {
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ message: "File not found" });
   }
-  res.download(filePath, `${book.title || "book"}.pdf`);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${(book.title || "book").replace(/"/g, '')}.pdf"`
+  );
+  const stream = fs.createReadStream(filePath);
+  stream.pipe(res);
 });

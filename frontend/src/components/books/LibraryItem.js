@@ -1,4 +1,4 @@
-import { buildUrl } from "@/utils/url";
+import { API_BASE_URL } from "@/config/config";
 
 export default function LibraryItem({ item }) {
   return (
@@ -10,7 +10,7 @@ export default function LibraryItem({ item }) {
         )}
       </div>
       <a
-        href={buildUrl(item.pdfUrl)}
+        href={`${API_BASE_URL}/library/download/${item.id}`}
         className="text-blue-600 underline"
       >
         Download

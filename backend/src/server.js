@@ -105,8 +105,17 @@ app.use(passport.initialize());
 
 
 
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-app.use("/api/uploads", express.static(path.join(__dirname, "../uploads")));
+// Restrict direct PDF access from the uploads folder
+const uploadsPath = path.join(__dirname, "../uploads");
+const serveUploads = express.static(uploadsPath);
+const blockPdfMiddleware = (req, res, next) => {
+  if (req.path.toLowerCase().endsWith(".pdf")) {
+    return res.status(403).json({ message: "Direct PDF access is forbidden" });
+  }
+  return serveUploads(req, res, next);
+};
+app.use("/uploads", blockPdfMiddleware);
+app.use("/api/uploads", blockPdfMiddleware);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Private-Network", "true");
   next();

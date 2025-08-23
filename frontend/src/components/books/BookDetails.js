@@ -7,6 +7,7 @@ import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
 import { mapBookForCart } from "@/utils/bookMapping";
+import { API_BASE_URL } from "@/config/config";
 
 export default function BookDetails({ book }) {
   const { t } = useTranslation(["website", "common"]);
@@ -36,11 +37,13 @@ export default function BookDetails({ book }) {
   };
 
   let actionButtons = null;
+  const downloadUrl = `${API_BASE_URL}/library/download/${book.id}`;
+
   if (book.is_paid) {
     if (book.user_has_access) {
       actionButtons = (
         <a
-          href={book.pdf_url}
+          href={downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block px-6 py-3 rounded-lg bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
@@ -74,7 +77,7 @@ export default function BookDetails({ book }) {
   } else {
     actionButtons = (
       <a
-        href={book.pdf_url}
+        href={downloadUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-block px-6 py-3 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-400 transition-colors"

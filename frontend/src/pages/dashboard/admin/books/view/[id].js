@@ -18,6 +18,7 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { API_BASE_URL } from "@/config/config";
 
 function AdminViewBookPage() {
   const router = useRouter();
@@ -253,7 +254,7 @@ function AdminViewBookPage() {
                 <div className="flex flex-wrap gap-4">
                   {book.pdf_url && (
                     <a
-                      href={book.pdf_url}
+                      href={`${API_BASE_URL}/library/download/${book.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-200"
