@@ -54,6 +54,7 @@ const MessagesPage = () => {
   const messages = useMessageStore((state) => state.items);
   const fetchMessagesStore = useMessageStore((state) => state.fetch);
   const startPollingStore = useMessageStore((state) => state.startPolling);
+  const stopPollingStore = useMessageStore((state) => state.stopPolling);
   const markMessageRead = useMessageStore((state) => state.markRead);
   const deleteMessageStore = useMessageStore((state) => state.delete);
 
@@ -79,8 +80,11 @@ const MessagesPage = () => {
     startPollingStore();
 
     const interval = setInterval(fetchUsersList, 30000);
-    return () => clearInterval(interval);
-  }, [fetchUsersList, fetchMessagesStore, startPollingStore]);
+    return () => {
+      clearInterval(interval);
+      stopPollingStore();
+    };
+  }, [fetchUsersList, fetchMessagesStore, startPollingStore, stopPollingStore]);
 
   useEffect(() => {
     setUsers((prev) => computeUnreadCounts(prev, messages));

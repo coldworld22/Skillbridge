@@ -7,6 +7,8 @@ import {
 } from "@/services/messageService";
 
 const HOUR_MS = 60 * 60 * 1000;
+// how often to poll for new messages
+const POLL_INTERVAL_MS = 60000;
 
 const useMessageStore = create((set, get) => ({
   items: [],
@@ -76,7 +78,7 @@ const useMessageStore = create((set, get) => ({
   startPolling: () => {
     if (get().poller) return;
 
-    const interval = setInterval(() => get().fetch(true), 60000);
+    const interval = setInterval(() => get().fetch(true), POLL_INTERVAL_MS);
 
     set({ poller: interval });
   },
