@@ -19,14 +19,7 @@ exports.createMessage = async (
     const [row] = await transaction("messages")
       .insert({ sender_id, receiver_id, message, booking_id, type })
       .returning("*");
-    try {
-      if (emit && global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    if (emit) emitMessageCreated(receiver_id);
     return row;
   };
 
@@ -50,11 +43,16 @@ exports.getUserMessages = async (userId) => {
       .del();
   }
 
-  return db("messages")
+  const query = db("messages")
     .select("messages.*", "users.full_name as sender_name")
     .leftJoin("users", "messages.sender_id", "users.id")
     .where({ receiver_id: userId })
     .orderBy("sent_at", "desc");
+
+  if (limit !== undefined) query.limit(limit);
+  if (offset !== undefined) query.offset(offset);
+
+  return query;
 };
 
 exports.markAsRead = async (id, userId) => {
@@ -96,15 +94,7 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
       console.error("Failed to send email", err.message);
       throw new AppError("Failed to send email", 502);
     }
-
-    try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    emitMessageCreated(receiver_id);
 
     return msg;
   });
@@ -129,44 +119,45 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
       console.error("Failed to send WhatsApp message", err.message);
       throw new AppError("Failed to send WhatsApp message", 502);
     }
-
-    try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
-      }
-    } catch (err) {
-      console.error("Failed to emit message-created event", err.message);
-      throw err;
-    }
+    emitMessageCreated(receiver_id);
 
     return msg;
   });
 
 exports.startVideoCall = async ({ sender_id, receiver_id }) => {
-  const sender = await db("users")
-    .select("id")
-    .where({ id: sender_id })
-    .first();
-  const receiver = await db("users")
-    .select("id")
-    .where({ id: receiver_id })
-    .first();
-  if (!sender || !receiver) throw new AppError("Invalid call participants", 400);
+  const { call, roomId } = await db.transaction(async (trx) => {
+    const sender = await trx("users")
+      .select("id")
+      .where({ id: sender_id })
+      .first();
+    const receiver = await trx("users")
+      .select("id")
+      .where({ id: receiver_id })
+      .first();
+    if (!sender || !receiver)
+      throw new AppError("Invalid call participants", 400);
 
-  const roomId = uuidv4();
-  const [call] = await db("video_calls")
-    .insert({
-      caller_id: sender_id,
-      receiver_id,
-      room_id: roomId,
-    })
-    .returning("*");
+    const roomId = uuidv4();
+    const [call] = await trx("video_calls")
+      .insert({
+        caller_id: sender_id,
+        receiver_id,
+        room_id: roomId,
+      })
+      .returning("*");
 
-  await exports.createMessage({
-    sender_id,
-    receiver_id,
-    message: roomId,
-    type: "video-call",
+    await exports.createMessage(
+      {
+        sender_id,
+        receiver_id,
+        message: roomId,
+        type: "video-call",
+      },
+      trx,
+      false,
+    );
+
+    return { call, roomId };
   });
 
   try {
@@ -175,6 +166,8 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
         .select("full_name")
         .where({ id: sender_id })
         .first();
+
+      global.io.to(global.userSockets[receiver_id]).emit("message-created");
 
       // Emit legacy event for compatibility
       global.io
