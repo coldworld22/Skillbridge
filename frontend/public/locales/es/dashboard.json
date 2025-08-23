@@ -1771,6 +1771,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "Mi horario de enseñanza",
+    "no_events": "No hay eventos próximos"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",

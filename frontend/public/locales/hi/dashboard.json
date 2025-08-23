@@ -1770,6 +1770,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "मेरी शिक्षण समय-सारणी",
+    "no_events": "कोई आगामी कार्यक्रम नहीं"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",

@@ -1757,6 +1757,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "جدول تدريسي",
+    "no_events": "لا توجد أحداث قادمة"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",

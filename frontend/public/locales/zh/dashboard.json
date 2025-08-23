@@ -1772,6 +1772,10 @@
     "create_success": "Coupon created successfully",
     "create_failed": "Failed to create coupon"
   },
+  "schedulePage": {
+    "title": "我的教学日程",
+    "no_events": "没有即将发生的活动"
+  },
   "permissionsPage": {
     "title": "Permissions",
     "add_permission": "Add Permission",
