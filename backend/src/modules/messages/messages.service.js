@@ -145,30 +145,39 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
   });
 
 exports.startVideoCall = async ({ sender_id, receiver_id }) => {
-  const sender = await db("users")
-    .select("id")
-    .where({ id: sender_id })
-    .first();
-  const receiver = await db("users")
-    .select("id")
-    .where({ id: receiver_id })
-    .first();
-  if (!sender || !receiver) throw new AppError("Invalid call participants", 400);
+  const { call, roomId } = await db.transaction(async (trx) => {
+    const sender = await trx("users")
+      .select("id")
+      .where({ id: sender_id })
+      .first();
+    const receiver = await trx("users")
+      .select("id")
+      .where({ id: receiver_id })
+      .first();
+    if (!sender || !receiver)
+      throw new AppError("Invalid call participants", 400);
 
-  const roomId = uuidv4();
-  const [call] = await db("video_calls")
-    .insert({
-      caller_id: sender_id,
-      receiver_id,
-      room_id: roomId,
-    })
-    .returning("*");
+    const roomId = uuidv4();
+    const [call] = await trx("video_calls")
+      .insert({
+        caller_id: sender_id,
+        receiver_id,
+        room_id: roomId,
+      })
+      .returning("*");
 
-  await exports.createMessage({
-    sender_id,
-    receiver_id,
-    message: roomId,
-    type: "video-call",
+    await exports.createMessage(
+      {
+        sender_id,
+        receiver_id,
+        message: roomId,
+        type: "video-call",
+      },
+      trx,
+      false,
+    );
+
+    return { call, roomId };
   });
 
   try {
@@ -177,6 +186,8 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
         .select("full_name")
         .where({ id: sender_id })
         .first();
+
+      global.io.to(global.userSockets[receiver_id]).emit("message-created");
 
       // Emit legacy event for compatibility
       global.io
