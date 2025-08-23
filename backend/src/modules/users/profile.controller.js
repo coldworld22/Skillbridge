@@ -147,6 +147,7 @@ exports.getFullProfile = async (req, res) => {
         'avatar_url',
         'is_email_verified',
         'is_phone_verified',
+        'is_online',
         'profile_complete',
         'created_at',
         'updated_at'
