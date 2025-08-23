@@ -1,14 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
-
-// Helper to read the CSRF token from cookies
-const getCsrfToken = () => {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("csrfToken="));
-  return match ? match.split("=")[1] : null;
-};
+import { getCsrfToken } from "@/services/api/csrf";
 
 export const createAd = async (payload) => {
   const headers = {};
