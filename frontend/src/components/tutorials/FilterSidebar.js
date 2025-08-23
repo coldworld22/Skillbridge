@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaChevronDown, FaChevronUp, FaTimesCircle } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 import { fetchCategoryTree } from "@/services/instructor/categoryService";
 
 const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
@@ -8,6 +9,7 @@ const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [priceRange, setPriceRange] = useState(100);
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const { t } = useTranslation("tutorials", { keyPrefix: "filters" });
 
   // Categories fetched from the API
   const [categories, setCategories] = useState({});
@@ -63,11 +65,11 @@ const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
   return (
     <motion.div className="bg-gray-800 p-6 rounded-lg shadow-lg w-64" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-      <h2 className="text-lg font-bold mb-4 text-yellow-400">Filters</h2>
+      <h2 className="text-lg font-bold mb-4 text-yellow-400">{t("title")}</h2>
 
       {/* Price Range */}
       <div className="mb-6">
-        <label className="text-gray-300">Max Price: ${priceRange}</label>
+        <label className="text-gray-300">{t("max_price", { price: priceRange })}</label>
         <input
           type="range"
           min="0"
@@ -83,7 +85,7 @@ const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
       {/* Categories & Subcategories */}
       <div className="mb-6">
-        <h3 className="text-gray-300 font-semibold">Categories</h3>
+        <h3 className="text-gray-300 font-semibold">{t("categories")}</h3>
         {Object.keys(categories).map((category) => (
           <div key={category} className="mt-2">
             <button className="flex items-center justify-between w-full bg-gray-700 p-2 rounded hover:bg-gray-600" onClick={() => toggleCategory(category)}>
@@ -106,18 +108,26 @@ const FilterSidebar = ({ onFilterChange, onResetFilters }) => {
 
       {/* Difficulty Levels */}
       <div className="mb-6">
-        <h3 className="text-gray-300 font-semibold">Difficulty Level</h3>
+        <h3 className="text-gray-300 font-semibold">{t("difficulty_level")}</h3>
         {["Beginner", "Intermediate", "Advanced"].map((level) => (
           <label key={level} className="flex items-center space-x-2 text-gray-300 mt-2">
-            <input type="checkbox" value={level} checked={selectedLevels.includes(level)} onChange={() => handleLevelChange(level)} />
-            <span>{level}</span>
+            <input
+              type="checkbox"
+              value={level}
+              checked={selectedLevels.includes(level)}
+              onChange={() => handleLevelChange(level)}
+            />
+            <span>{t(`level_${level.toLowerCase()}`)}</span>
           </label>
         ))}
       </div>
 
       {/* Reset Button */}
-      <button className="bg-red-500 text-white px-4 py-2 rounded-lg w-full mt-4 flex items-center justify-center gap-2 hover:bg-red-600 transition" onClick={resetFilters}>
-        <FaTimesCircle /> Reset Filters
+      <button
+        className="bg-red-500 text-white px-4 py-2 rounded-lg w-full mt-4 flex items-center justify-center gap-2 hover:bg-red-600 transition"
+        onClick={resetFilters}
+      >
+        <FaTimesCircle /> {t("reset")}
       </button>
     </motion.div>
   );

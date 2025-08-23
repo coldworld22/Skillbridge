@@ -125,4 +125,59 @@
       "publish_tutorial": "ट्यूटोरियल प्रकाशित करें"
     }
   }
+  ,
+  "filters": {
+    "title": "फ़िल्टर",
+    "max_price": "अधिकतम कीमत: ${{price}}",
+    "categories": "श्रेणियाँ",
+    "difficulty_level": "कठिनाई स्तर",
+    "level_beginner": "शुरुआती",
+    "level_intermediate": "मध्यम",
+    "level_advanced": "उन्नत",
+    "reset": "फ़िल्टर रीसेट करें"
+  },
+  "card": {
+    "instructor": "प्रशिक्षक",
+    "lessons": "पाठ",
+    "completed": "पूर्ण",
+    "in_progress": "प्रगति पर",
+    "review": "समीक्षा",
+    "continue": "जारी रखें",
+    "new": "नया",
+    "untitled": "शीर्षक रहित ट्यूटोरियल",
+    "unknown_instructor": "अज्ञात",
+    "views": "दृश्य",
+    "general": "सामान्य",
+    "na": "लागू नहीं",
+    "unknown_duration": "अज्ञात अवधि",
+    "explore": "ट्यूटोरियल देखें",
+    "add_to_cart": "कार्ट में जोड़ें",
+    "added_to_cart": "कार्ट में जोड़ा गया",
+    "failed_to_add_to_cart": "कार्ट में जोड़ने में विफल"
+  },
+  "studentPage": {
+    "heading": "📚 मेरे ट्यूटोरियल",
+    "found": "{{count}} मिला",
+    "search_label": "ट्यूटोरियल खोजें",
+    "search_placeholder": "ट्यूटोरियल खोजें...",
+    "filter_label": "ट्यूटोरियल फ़िल्टर करें",
+    "filter": {
+      "all": "सभी",
+      "completed": "पूर्ण",
+      "in_progress": "प्रगति पर"
+    },
+    "sort_label": "ट्यूटोरियल क्रमित करें",
+    "sort": {
+      "title": "शीर्षक",
+      "rating": "रेटिंग",
+      "progress": "प्रगति"
+    },
+    "no_match": "आपके मानदंड से मेल खाने वाले कोई ट्यूटोरियल नहीं।",
+    "browse_all": "सभी ट्यूटोरियल ब्राउज़ करें"
+  },
+  "favoritesPage": {
+    "heading": "मेरे पसंदीदा ट्यूटोरियल",
+    "empty": "आपके पास कोई पसंदीदा ट्यूटोरियल नहीं है।",
+    "remove": "हटाएं"
+  }
 }

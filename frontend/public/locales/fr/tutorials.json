@@ -125,5 +125,60 @@
       "publish_tutorial": "Publish Tutorial"
     }
   }
+  ,
+  "filters": {
+    "title": "Filtres",
+    "max_price": "Prix max : ${{price}}",
+    "categories": "Catégories",
+    "difficulty_level": "Niveau de difficulté",
+    "level_beginner": "Débutant",
+    "level_intermediate": "Intermédiaire",
+    "level_advanced": "Avancé",
+    "reset": "Réinitialiser les filtres"
+  },
+  "card": {
+    "instructor": "Instructeur",
+    "lessons": "leçons",
+    "completed": "Terminé",
+    "in_progress": "En cours",
+    "review": "Revoir",
+    "continue": "Continuer",
+    "new": "NOUVEAU",
+    "untitled": "Tutoriel sans titre",
+    "unknown_instructor": "Inconnu",
+    "views": "vues",
+    "general": "Général",
+    "na": "N/A",
+    "unknown_duration": "Durée inconnue",
+    "explore": "Explorer le tutoriel",
+    "add_to_cart": "Ajouter au panier",
+    "added_to_cart": "Ajouté au panier",
+    "failed_to_add_to_cart": "Échec de l'ajout au panier"
+  },
+  "studentPage": {
+    "heading": "📚 Mes tutoriels",
+    "found": "{{count}} trouvés",
+    "search_label": "Rechercher des tutoriels",
+    "search_placeholder": "Rechercher des tutoriels...",
+    "filter_label": "Filtrer les tutoriels",
+    "filter": {
+      "all": "Tous",
+      "completed": "Terminés",
+      "in_progress": "En cours"
+    },
+    "sort_label": "Trier les tutoriels",
+    "sort": {
+      "title": "Titre",
+      "rating": "Évaluation",
+      "progress": "Progression"
+    },
+    "no_match": "Aucun tutoriel ne correspond à vos critères.",
+    "browse_all": "Parcourir tous les tutoriels"
+  },
+  "favoritesPage": {
+    "heading": "Mes tutoriels favoris",
+    "empty": "Vous n'avez aucun tutoriel favori.",
+    "remove": "Supprimer"
+  }
 }
 

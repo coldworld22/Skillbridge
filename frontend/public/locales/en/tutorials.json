@@ -125,5 +125,60 @@
       "publish_tutorial": "Publish Tutorial"
     }
   }
+  ,
+  "filters": {
+    "title": "Filters",
+    "max_price": "Max Price: ${{price}}",
+    "categories": "Categories",
+    "difficulty_level": "Difficulty Level",
+    "level_beginner": "Beginner",
+    "level_intermediate": "Intermediate",
+    "level_advanced": "Advanced",
+    "reset": "Reset Filters"
+  },
+  "card": {
+    "instructor": "Instructor",
+    "lessons": "lessons",
+    "completed": "Completed",
+    "in_progress": "In Progress",
+    "review": "Review",
+    "continue": "Continue",
+    "new": "NEW",
+    "untitled": "Untitled Tutorial",
+    "unknown_instructor": "Unknown",
+    "views": "views",
+    "general": "General",
+    "na": "N/A",
+    "unknown_duration": "Unknown Duration",
+    "explore": "Explore Tutorial",
+    "add_to_cart": "Add to Cart",
+    "added_to_cart": "Added to cart",
+    "failed_to_add_to_cart": "Failed to add to cart"
+  },
+  "studentPage": {
+    "heading": "📚 My Tutorials",
+    "found": "{{count}} found",
+    "search_label": "Search tutorials",
+    "search_placeholder": "Search tutorials...",
+    "filter_label": "Filter tutorials",
+    "filter": {
+      "all": "All",
+      "completed": "Completed",
+      "in_progress": "In Progress"
+    },
+    "sort_label": "Sort tutorials",
+    "sort": {
+      "title": "Title",
+      "rating": "Rating",
+      "progress": "Progress"
+    },
+    "no_match": "No tutorials match your criteria.",
+    "browse_all": "Browse all tutorials"
+  },
+  "favoritesPage": {
+    "heading": "My Favorite Tutorials",
+    "empty": "You have no favorite tutorials.",
+    "remove": "Remove"
+  }
 }
 

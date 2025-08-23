@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { FaBookOpen, FaPlayCircle, FaCheckCircle, FaStar } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
 
 export default function StudentTutorialCard({ tutorial }) {
   const progressPercent = tutorial.totalLessons
     ? (tutorial.completedLessons / tutorial.totalLessons) * 100
     : 0;
+  const { t } = useTranslation("tutorials", { keyPrefix: "card" });
+  const tr = (key, def) => {
+    const res = t(key);
+    return res === key ? def : res;
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition">
@@ -24,7 +30,9 @@ export default function StudentTutorialCard({ tutorial }) {
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <FaBookOpen className="text-yellow-500" /> {tutorial.title}
         </h2>
-        <p className="text-sm text-gray-500">Instructor: {tutorial.instructor}</p>
+        <p className="text-sm text-gray-500">
+          {tr("instructor", "Instructor")}: {tutorial.instructor}
+        </p>
 
         <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
           <div
@@ -35,15 +43,15 @@ export default function StudentTutorialCard({ tutorial }) {
 
         <div className="flex justify-between text-xs text-gray-500">
           <span>
-            {tutorial.completedLessons}/{tutorial.totalLessons} lessons
+            {tutorial.completedLessons}/{tutorial.totalLessons} {tr("lessons", "lessons")}
           </span>
           {tutorial.isCompleted ? (
             <span className="text-green-600 flex items-center gap-1">
-              <FaCheckCircle /> Completed
+              <FaCheckCircle /> {tr("completed", "Completed")}
             </span>
           ) : (
             <span className="text-blue-600 flex items-center gap-1">
-              <FaPlayCircle /> In Progress
+              <FaPlayCircle /> {tr("in_progress", "In Progress")}
             </span>
           )}
         </div>
@@ -57,7 +65,7 @@ export default function StudentTutorialCard({ tutorial }) {
           href={`/tutorials/${tutorial.id}`}
           className="inline-flex items-center gap-2 text-sm mt-2 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors"
         >
-          {tutorial.isCompleted ? "Review" : "Continue"}
+          {tutorial.isCompleted ? tr("review", "Review") : tr("continue", "Continue")}
         </Link>
       </div>
     </div>

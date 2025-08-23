@@ -125,5 +125,60 @@
       "publish_tutorial": "Publish Tutorial"
     }
   }
+  ,
+  "filters": {
+    "title": "Filter",
+    "max_price": "Maximaler Preis: ${{price}}",
+    "categories": "Kategorien",
+    "difficulty_level": "Schwierigkeitsgrad",
+    "level_beginner": "Anfänger",
+    "level_intermediate": "Mittelstufe",
+    "level_advanced": "Fortgeschritten",
+    "reset": "Filter zurücksetzen"
+  },
+  "card": {
+    "instructor": "Kursleiter",
+    "lessons": "Lektionen",
+    "completed": "Abgeschlossen",
+    "in_progress": "In Bearbeitung",
+    "review": "Bewerten",
+    "continue": "Fortfahren",
+    "new": "NEU",
+    "untitled": "Unbenannter Kurs",
+    "unknown_instructor": "Unbekannt",
+    "views": "Aufrufe",
+    "general": "Allgemein",
+    "na": "k.A.",
+    "unknown_duration": "Unbekannte Dauer",
+    "explore": "Kurs ansehen",
+    "add_to_cart": "In den Warenkorb",
+    "added_to_cart": "Zum Warenkorb hinzugefügt",
+    "failed_to_add_to_cart": "Zum Warenkorb hinzufügen fehlgeschlagen"
+  },
+  "studentPage": {
+    "heading": "📚 Meine Tutorials",
+    "found": "{{count}} gefunden",
+    "search_label": "Tutorials suchen",
+    "search_placeholder": "Tutorials suchen...",
+    "filter_label": "Tutorials filtern",
+    "filter": {
+      "all": "Alle",
+      "completed": "Abgeschlossen",
+      "in_progress": "In Bearbeitung"
+    },
+    "sort_label": "Tutorials sortieren",
+    "sort": {
+      "title": "Titel",
+      "rating": "Bewertung",
+      "progress": "Fortschritt"
+    },
+    "no_match": "Keine Tutorials entsprechen deinen Kriterien.",
+    "browse_all": "Alle Tutorials durchsuchen"
+  },
+  "favoritesPage": {
+    "heading": "Meine Lieblingstutorials",
+    "empty": "Du hast keine Lieblingstutorials.",
+    "remove": "Entfernen"
+  }
 }
 
