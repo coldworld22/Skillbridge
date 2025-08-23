@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { getMyTutorialFavorites, removeTutorialFromFavorites } from '@/services/tutorialService';
+import nextI18NextConfig from '../../../../../next-i18next.config.js';
 
 export default function TutorialFavoritesPage() {
   const [favorites, setFavorites] = useState([]);
+  const { t } = useTranslation('tutorials');
+  const tr = (key, def) => {
+    const res = t(key);
+    return res === key ? def : res;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -28,9 +36,9 @@ export default function TutorialFavoritesPage() {
 
   return (
     <StudentLayout>
-      <h1 className="text-2xl font-bold mb-6">My Favorite Tutorials</h1>
+      <h1 className="text-2xl font-bold mb-6">{tr('favoritesPage.heading', 'My Favorite Tutorials')}</h1>
       {favorites.length === 0 ? (
-        <p className="text-gray-500">You have no favorite tutorials.</p>
+        <p className="text-gray-500">{tr('favoritesPage.empty', 'You have no favorite tutorials.')}</p>
       ) : (
         <ul className="space-y-2">
           {favorites.map((tutorial) => (
@@ -40,7 +48,7 @@ export default function TutorialFavoritesPage() {
                 onClick={() => removeFavorite(tutorial.id)}
                 className="text-red-500 text-sm"
               >
-                Remove
+                {tr('favoritesPage.remove', 'Remove')}
               </button>
             </li>
           ))}
@@ -48,4 +56,12 @@ export default function TutorialFavoritesPage() {
       )}
     </StudentLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['tutorials'], nextI18NextConfig)),
+    },
+  };
 }

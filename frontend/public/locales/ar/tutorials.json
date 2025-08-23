@@ -125,5 +125,60 @@
       "publish_tutorial": "Publish Tutorial"
     }
   }
+  ,
+  "filters": {
+    "title": "عوامل التصفية",
+    "max_price": "أقصى سعر: ${{price}}",
+    "categories": "الفئات",
+    "difficulty_level": "مستوى الصعوبة",
+    "level_beginner": "مبتدئ",
+    "level_intermediate": "متوسط",
+    "level_advanced": "متقدم",
+    "reset": "إعادة تعيين عوامل التصفية"
+  },
+  "card": {
+    "instructor": "المدرب",
+    "lessons": "دروس",
+    "completed": "مكتمل",
+    "in_progress": "قيد التقدم",
+    "review": "مراجعة",
+    "continue": "متابعة",
+    "new": "جديد",
+    "untitled": "درس بدون عنوان",
+    "unknown_instructor": "غير معروف",
+    "views": "مشاهدات",
+    "general": "عام",
+    "na": "غير متوفر",
+    "unknown_duration": "مدة غير معروفة",
+    "explore": "استكشف الدرس",
+    "add_to_cart": "أضف إلى السلة",
+    "added_to_cart": "تمت الإضافة إلى السلة",
+    "failed_to_add_to_cart": "فشل في الإضافة إلى السلة"
+  },
+  "studentPage": {
+    "heading": "📚 دروسي",
+    "found": "تم العثور على {{count}}",
+    "search_label": "ابحث عن الدروس",
+    "search_placeholder": "ابحث عن الدروس...",
+    "filter_label": "تصفية الدروس",
+    "filter": {
+      "all": "الكل",
+      "completed": "مكتمل",
+      "in_progress": "قيد التقدم"
+    },
+    "sort_label": "ترتيب الدروس",
+    "sort": {
+      "title": "العنوان",
+      "rating": "التقييم",
+      "progress": "التقدم"
+    },
+    "no_match": "لا توجد دروس مطابقة لبحثك.",
+    "browse_all": "تصفح جميع الدروس"
+  },
+  "favoritesPage": {
+    "heading": "دروسي المفضلة",
+    "empty": "ليس لديك أي دروس مفضلة.",
+    "remove": "إزالة"
+  }
 }
 

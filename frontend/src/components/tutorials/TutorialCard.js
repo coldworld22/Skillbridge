@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Star, Eye, PlayCircle } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 import { formatCurrency } from "@/utils/currency";
 import useCartStore from "@/store/cart/cartStore";
 import { toast } from "react-toastify";
@@ -12,9 +13,16 @@ const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 
 const TutorialCard = ({ tutorial = {} }) => {
   const addItem = useCartStore((state) => state.addItem);
+  const { t } = useTranslation("tutorials");
+  const tr = (key, def, opts) => {
+    const res = t(key, opts);
+    return res === key ? def : res;
+  };
 
   const formattedPrice =
-    Number(tutorial.price) > 0 ? formatCurrency(tutorial.price) : "Free";
+    Number(tutorial.price) > 0
+      ? formatCurrency(tutorial.price)
+      : tr("list.free", "Free");
 
   const handleAddToCart = async () => {
     const success = await addItem({
@@ -26,9 +34,9 @@ const TutorialCard = ({ tutorial = {} }) => {
       ...(tutorial.currency ? { currency: tutorial.currency } : {}),
     });
     if (success) {
-      toast.success("Added to cart");
+      toast.success(tr("card.added_to_cart", "Added to cart"));
     } else {
-      toast.error("Failed to add to cart");
+      toast.error(tr("card.failed_to_add_to_cart", "Failed to add to cart"));
     }
   };
 
@@ -42,7 +50,7 @@ const TutorialCard = ({ tutorial = {} }) => {
       <div className="relative">
         <img
           src={tutorial.thumbnail || DEFAULT_IMAGE}
-          alt={tutorial.title || "Tutorial"}
+          alt={tutorial.title || tr("card.untitled", "Untitled Tutorial")}
           className="w-full h-40 object-cover"
         />
 
@@ -54,7 +62,7 @@ const TutorialCard = ({ tutorial = {} }) => {
         {/* New Badge */}
         {tutorial.isNew && (
           <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-md">
-            NEW
+            {t("card.new")}
           </span>
         )}
       </div>
@@ -62,7 +70,7 @@ const TutorialCard = ({ tutorial = {} }) => {
       {/* Content */}
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-          {tutorial.title || "Untitled Tutorial"}
+          {tutorial.title || t("card.untitled")}
         </h3>
 
         <div className="flex items-center gap-2 mt-1">
@@ -72,7 +80,7 @@ const TutorialCard = ({ tutorial = {} }) => {
             className="w-6 h-6 rounded-full"
           />
           <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
-            {tutorial.instructor || "Unknown"}
+            {tutorial.instructor || tr("card.unknown_instructor", "Unknown")}
           </p>
         </div>
 
@@ -84,13 +92,13 @@ const TutorialCard = ({ tutorial = {} }) => {
           </div>
           <div className="flex items-center gap-1">
             <Eye className="w-4 h-4" />
-            {tutorial.views || 0} views
+            {tutorial.views || 0} {tr("card.views", "views")}
           </div>
         </div>
 
         {/* Category, Level, Price, Duration */}
         <div className="mt-3 text-xs text-gray-400 uppercase tracking-wider">
-          {tutorial.category || "General"} &middot; {tutorial.level || "N/A"}
+          {tutorial.category || tr("card.general", "General")} &middot; {tutorial.level || tr("card.na", "N/A")}
         </div>
         <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
           {(() => {
@@ -101,7 +109,7 @@ const TutorialCard = ({ tutorial = {} }) => {
               tutorial.discountPrice ?? tutorial.discount_price;
 
             if (Number(originalPrice) <= 0) {
-              return "Free";
+              return tr("list.free", "Free");
             }
 
             if (discountPrice && Number(discountPrice) < Number(originalPrice)) {
@@ -116,7 +124,7 @@ const TutorialCard = ({ tutorial = {} }) => {
             }
 
             return formatCurrency(originalPrice, { currency });
-          })()} &middot; {tutorial.duration || "Unknown Duration"}
+          })()} &middot; {tutorial.duration || tr("card.unknown_duration", "Unknown Duration")}
         </div>
 
         {/* Actions */}
@@ -126,7 +134,7 @@ const TutorialCard = ({ tutorial = {} }) => {
               className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-full transition"
               whileHover={{ scale: 1.03 }}
             >
-              Explore Tutorial
+              {tr("card.explore", "Explore Tutorial")}
             </motion.button>
           </Link>
           {Number(tutorial.price) > 0 && (
@@ -135,7 +143,7 @@ const TutorialCard = ({ tutorial = {} }) => {
               className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition"
               whileHover={{ scale: 1.03 }}
             >
-              Add to Cart
+              {tr("card.add_to_cart", "Add to Cart")}
             </motion.button>
           )}
         </div>
