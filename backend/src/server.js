@@ -6,6 +6,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const RedisStore = require("connect-redis").default;
+const { createClient } = require("redis");
 const { Server } = require("socket.io");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -21,6 +23,7 @@ const startClassReminderJob = require("./jobs/classReminderJob");
 const startCleanupJob = require("./jobs/cleanupJob");
 const startContributorStatsJob = require("./jobs/contributorStatsJob");
 const { createLessonRoomLink } = require("./utils/roomLink");
+const { refreshCookieOptions } = require("./utils/cookie");
 require("dotenv").config();
 
 // Ensure required environment secrets are present
@@ -81,11 +84,21 @@ app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(csrf);
-app.use(session({
+
+const sessionOptions = {
   secret: process.env.SESSION_SECRET || "skillbridge",
   resave: false,
   saveUninitialized: false,
-}));
+  cookie: { ...refreshCookieOptions },
+};
+
+if (process.env.REDIS_URL) {
+  const redisClient = createClient({ url: process.env.REDIS_URL });
+  redisClient.connect().catch(console.error);
+  sessionOptions.store = new RedisStore({ client: redisClient });
+}
+
+app.use(session(sessionOptions));
 
 app.use(passport.initialize());
 
