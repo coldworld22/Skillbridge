@@ -9,5 +9,6 @@ router.post('/activate', validate(validator.activate), controller.activateLicens
 router.post('/validate', validate(validator.validate), controller.validateLicense);
 router.post('/deactivate', validate(validator.deactivate), controller.deactivateLicense);
 router.get('/logs', verifyToken, isAdmin, controller.listLogs);
+router.get('/status', verifyToken, isAdmin, controller.getStatus);
 
 module.exports = router;
