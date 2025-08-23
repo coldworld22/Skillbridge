@@ -1,7 +1,6 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
-
-const normalizeRole = (role = "") => role.toLowerCase().replace(/\s+/g, "");
+const { normalizeRole, isAdminRole } = require("../../utils/role");
 
 module.exports = async function verifyTutorialAccess(req, res, next) {
   const { tutorialId } = req.params;
@@ -16,8 +15,8 @@ module.exports = async function verifyTutorialAccess(req, res, next) {
     if (!tutorial) return res.status(404).json({ message: "Tutorial not found" });
 
     const roles = req.user.roles || [req.user.role];
+    const isAdmin = isAdminRole(roles);
     const norm = roles.map((r) => normalizeRole(r));
-    const isAdmin = norm.some((r) => ["admin", "superadmin"].includes(r));
     const isInstructor = norm.includes("instructor") && tutorial.instructor_id === userId;
 
     if (!isAdmin && !isInstructor) {
