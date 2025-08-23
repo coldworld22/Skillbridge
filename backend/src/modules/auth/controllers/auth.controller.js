@@ -34,10 +34,10 @@ exports.register = catchAsync(async (req, res, next) => {
 
     // ✅ PostgreSQL duplicate key error (code 23505)
     if (err.code === "23505") {
-      if (err.detail.includes("users_email_unique")) {
+      if (err.detail?.includes("users_email_unique")) {
         return res.status(400).json({ error: "Email is already registered" });
       }
-      if (err.detail.includes("users_phone_unique")) {
+      if (err.detail?.includes("users_phone_unique")) {
         return res.status(400).json({ error: "Phone number is already registered" });
       }
     }
