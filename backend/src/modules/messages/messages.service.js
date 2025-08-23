@@ -19,7 +19,6 @@ exports.createMessage = async (
       }
     } catch (err) {
       console.error("Failed to emit message-created event", err.message);
-      throw err;
     }
     return row;
   };
