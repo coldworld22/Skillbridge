@@ -116,6 +116,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", require("./modules/auth/routes/auth.routes"));
 app.use("/api/users", require("./modules/users/user.routes"));
 app.use("/api/verify", require("./modules/verify/verify.routes"));
+app.use("/api/license", require("./modules/license/license.routes"));
 app.use(
   "/api/certificates",
   require("./modules/users/tutorials/certificate/certificatePublic.routes")
