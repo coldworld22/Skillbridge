@@ -6,7 +6,11 @@ import {
   deleteMessage as apiDeleteMessage,
 } from "@/services/messageService";
 
-const HOUR_MS = 60 * 60 * 1000;
+const RETENTION_MS =
+  parseInt(process.env.NEXT_PUBLIC_MESSAGE_RETENTION_HOURS || "24", 10) *
+  60 *
+  60 *
+  1000;
 
 const useMessageStore = create((set, get) => ({
   items: [],
@@ -18,7 +22,8 @@ const useMessageStore = create((set, get) => ({
     try {
       const data = await getMessages();
       const filtered = data.filter(
-        (m) => !(m.read && m.read_at && new Date() - new Date(m.read_at) > HOUR_MS)
+        (m) =>
+          !(m.read && m.read_at && new Date() - new Date(m.read_at) > RETENTION_MS),
       );
       const prevUnread = get().items.filter((m) => !m.read).length;
       const unread = filtered.filter((m) => !m.read).length;
@@ -56,11 +61,11 @@ const useMessageStore = create((set, get) => ({
               String(m.id) === idStr &&
               m.read &&
               m.read_at &&
-              new Date() - new Date(m.read_at) >= HOUR_MS
+              new Date() - new Date(m.read_at) >= RETENTION_MS
             ),
         ),
       }));
-    }, HOUR_MS);
+    }, RETENTION_MS);
   },
 
   delete: async (id) => {
