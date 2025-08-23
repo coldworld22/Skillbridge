@@ -108,11 +108,13 @@ const TutorialsSection = () => {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadTutorials = async () => {
       try {
-        const data = await fetchPublishedTutorials();
+        const data = await fetchPublishedTutorials({ signal: controller.signal });
         setTutorials(data?.data || data || []);
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         console.error(err);
         setError(t("load_error"));
       } finally {
@@ -120,6 +122,9 @@ const TutorialsSection = () => {
       }
     };
     loadTutorials();
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {

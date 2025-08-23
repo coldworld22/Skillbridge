@@ -5,22 +5,30 @@ import * as tutorialService from '../../services/tutorialService';
 
 const addItem = jest.fn();
 
-jest.mock('../../components/website/sections/Navbar', () => () => <div />);
-jest.mock('../../components/website/sections/Footer', () => () => <div />);
-jest.mock('../../components/shared/CustomVideoPlayer', () => () => <div />);
-jest.mock('../../components/tutorials/detail/TutorialHeader', () => () => <div />);
-jest.mock('../../components/tutorials/detail/TutorialOverview', () => () => <div />);
-jest.mock('../../components/tutorials/detail/InstructorBio', () => () => <div />);
-jest.mock('../../components/tutorials/detail/ChapterList', () => () => <div />);
-jest.mock('../../components/tutorials/detail/LoginPrompt', () => () => <div />);
-jest.mock('../../components/tutorials/detail/VideoPreviewList', () => () => <div />);
-jest.mock('../../components/tutorials/detail/TestQuiz', () => () => <div />);
-jest.mock('../../components/tutorials/detail/BackButton', () => () => <div />);
-jest.mock('../../components/tutorials/detail/ReviewsSection', () => () => <div />);
-jest.mock('../../components/tutorials/detail/CommentsSection', () => () => <div />);
-jest.mock('../../components/tutorials/detail/RelatedTutorials', () => () => <div />);
-jest.mock('../../components/classes/CourseProgress', () => () => <div />);
-jest.mock('../../components/tutorials/detail/TutorialSkeleton', () => () => <div />);
+function createMock(name) {
+  function Mock() {
+    return <div />;
+  }
+  Mock.displayName = name;
+  return Mock;
+}
+
+jest.mock('../../components/website/sections/Navbar', () => createMock('Navbar'));
+jest.mock('../../components/website/sections/Footer', () => createMock('Footer'));
+jest.mock('../../components/shared/CustomVideoPlayer', () => createMock('CustomVideoPlayer'));
+jest.mock('../../components/tutorials/detail/TutorialHeader', () => createMock('TutorialHeader'));
+jest.mock('../../components/tutorials/detail/TutorialOverview', () => createMock('TutorialOverview'));
+jest.mock('../../components/tutorials/detail/InstructorBio', () => createMock('InstructorBio'));
+jest.mock('../../components/tutorials/detail/ChapterList', () => createMock('ChapterList'));
+jest.mock('../../components/tutorials/detail/LoginPrompt', () => createMock('LoginPrompt'));
+jest.mock('../../components/tutorials/detail/VideoPreviewList', () => createMock('VideoPreviewList'));
+jest.mock('../../components/tutorials/detail/TestQuiz', () => createMock('TestQuiz'));
+jest.mock('../../components/tutorials/detail/BackButton', () => createMock('BackButton'));
+jest.mock('../../components/tutorials/detail/ReviewsSection', () => createMock('ReviewsSection'));
+jest.mock('../../components/tutorials/detail/CommentsSection', () => createMock('CommentsSection'));
+jest.mock('../../components/tutorials/detail/RelatedTutorials', () => createMock('RelatedTutorials'));
+jest.mock('../../components/classes/CourseProgress', () => createMock('CourseProgress'));
+jest.mock('../../components/tutorials/detail/TutorialSkeleton', () => createMock('TutorialSkeleton'));
 
 jest.mock('react-hot-toast', () => ({
   __esModule: true,

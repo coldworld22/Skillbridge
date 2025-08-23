@@ -3,9 +3,27 @@ import InstructorTutorialsPage from '../../pages/dashboard/instructor/tutorials'
 import { fetchInstructorTutorials, submitTutorialForReview } from '../../services/instructor/tutorialService';
 import { toast } from 'react-toastify';
 
-jest.mock('../../components/layouts/InstructorLayout', () => ({ children }) => <div>{children}</div>);
-jest.mock('../../components/tutorials/ProgressChecklistModal', () => () => null);
-jest.mock('../../components/common/ConfirmModal', () => () => null);
+jest.mock('../../components/layouts/InstructorLayout', () => {
+  function MockInstructorLayout({ children }) {
+    return <div>{children}</div>;
+  }
+  MockInstructorLayout.displayName = 'InstructorLayout';
+  return MockInstructorLayout;
+});
+jest.mock('../../components/tutorials/ProgressChecklistModal', () => {
+  function MockProgressChecklistModal() {
+    return null;
+  }
+  MockProgressChecklistModal.displayName = 'ProgressChecklistModal';
+  return MockProgressChecklistModal;
+});
+jest.mock('../../components/common/ConfirmModal', () => {
+  function MockConfirmModal() {
+    return null;
+  }
+  MockConfirmModal.displayName = 'ConfirmModal';
+  return MockConfirmModal;
+});
 
 jest.mock('next/router', () => ({
   useRouter: () => ({ push: jest.fn() }),

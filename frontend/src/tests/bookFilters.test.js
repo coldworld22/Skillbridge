@@ -6,16 +6,40 @@ jest.mock('../services/bookService', () => ({
 }));
 
 // Mock sidebar to control filter changes
-jest.mock('../components/books/FilterSidebar', () => ({ onFilterChange }) => (
-  <div>
-    <button onClick={() => onFilterChange({ category: 'cat1' })}>set-category</button>
-    <button onClick={() => onFilterChange({ category: '', priceRange: 30 })}>set-price</button>
-  </div>
-));
+jest.mock('../components/books/FilterSidebar', () => {
+  function MockFilterSidebar({ onFilterChange }) {
+    return (
+      <div>
+        <button onClick={() => onFilterChange({ category: 'cat1' })}>set-category</button>
+        <button onClick={() => onFilterChange({ category: '', priceRange: 30 })}>set-price</button>
+      </div>
+    );
+  }
+  MockFilterSidebar.displayName = 'FilterSidebar';
+  return MockFilterSidebar;
+});
 
-jest.mock('../components/website/sections/Navbar', () => () => <div />);
-jest.mock('../components/website/sections/Footer', () => () => <div />);
-jest.mock('../components/books/BookCard', () => () => <div />);
+jest.mock('../components/website/sections/Navbar', () => {
+  function MockNavbar() {
+    return <div />;
+  }
+  MockNavbar.displayName = 'Navbar';
+  return MockNavbar;
+});
+jest.mock('../components/website/sections/Footer', () => {
+  function MockFooter() {
+    return <div />;
+  }
+  MockFooter.displayName = 'Footer';
+  return MockFooter;
+});
+jest.mock('../components/books/BookCard', () => {
+  function MockBookCard() {
+    return <div />;
+  }
+  MockBookCard.displayName = 'BookCard';
+  return MockBookCard;
+});
 
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key })

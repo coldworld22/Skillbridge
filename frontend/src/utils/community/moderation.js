@@ -7,5 +7,5 @@ export const warnUser = (userId, reason) => {
 };
 
 export const lockDiscussion = (discussionId) => {
-  console.log(`Discussion ${discussionId} locked`);
+  console.warn(`Discussion ${discussionId} locked`);
 };
