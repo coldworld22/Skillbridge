@@ -1,5 +1,6 @@
 const logger = require('../utils/logger.js');
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 exports.seed = async function(knex) {
   // Ensure the Admin role exists
@@ -15,7 +16,12 @@ exports.seed = async function(knex) {
   }
 
   // 🔐 Create Admin User
-  const hashedPassword = await bcrypt.hash("adminsecure123", 10);
+  const rawPassword =
+    process.env.ADMIN_INITIAL_PASSWORD || crypto.randomBytes(16).toString("hex");
+  if (!process.env.ADMIN_INITIAL_PASSWORD) {
+    console.log(`🔐 Generated Admin password: ${rawPassword}`);
+  }
+  const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const [adminUserId] = await knex("users")
     .insert({
