@@ -127,7 +127,7 @@ exports.logout = catchAsync(async (req, res) => {
   }
   if (req.headers.authorization?.startsWith("Bearer ")) {
     const access = req.headers.authorization.split(" ")[1];
-    authMiddleware.addTokenToBlacklist(access);
+    await authMiddleware.addTokenToBlacklist(access);
   }
   res
     .clearCookie("refreshToken", refreshCookieOptions)
