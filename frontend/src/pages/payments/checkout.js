@@ -42,7 +42,9 @@ function resolveIconElement(method) {
     }
     if (iconMap[lower]) return iconMap[lower];
   }
-  return iconMap[method.type?.toLowerCase()] || <FaMoneyCheckAlt />;
+  return (
+    iconMap[(method.type || '').toString().trim().toLowerCase()] || <FaMoneyCheckAlt />
+  );
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -124,6 +126,11 @@ export default function CheckoutPage() {
     [itemInfo, discount]
   );
   const isFree = finalPrice === 0;
+  // Normalize the selected payment method to avoid case or whitespace mismatches
+  const normalizedMethod = (selectedMethod || '')
+    .toString()
+    .trim()
+    .toLowerCase();
 
   useEffect(() => {
     if (!itemId || !itemType) return;
@@ -143,7 +150,7 @@ export default function CheckoutPage() {
         if (!active) return;
         setMethods(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
-          setSelectedMethod((prev) => prev || data[0].type);
+          setSelectedMethod((prev) => prev || (data[0].type || '').trim());
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
@@ -198,7 +205,7 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async () => {
-    if (selectedMethod === 'bank') {
+    if (normalizedMethod === 'bank') {
       try {
         setPaymentStatus('processing');
         const payload = {
@@ -217,7 +224,7 @@ export default function CheckoutPage() {
       }
       return;
     }
-    if (selectedMethod === 'paypal') {
+    if (normalizedMethod === 'paypal') {
       try {
         setPaymentStatus('processing');
         const payload = {
@@ -234,10 +241,12 @@ export default function CheckoutPage() {
       }
       return;
     }
-    if (selectedMethod === 'usdt' || selectedMethod === 'nft') {
+    if (normalizedMethod === 'usdt' || normalizedMethod === 'nft') {
       try {
         setPaymentStatus('processing');
-        const method = methods.find((m) => m.type === selectedMethod);
+        const method = methods.find(
+          (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+        );
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
@@ -260,7 +269,7 @@ export default function CheckoutPage() {
 
 
   useEffect(() => {
-    if (selectedMethod !== 'bank') {
+    if (normalizedMethod !== 'bank') {
       setInvoicePreview(false);
       setBankInfo(null);
     }
@@ -303,7 +312,9 @@ export default function CheckoutPage() {
     ? methods.filter((m) => m.active !== false)
     : [];
   const selectedMethodLabel =
-    availableMethods.find((m) => m.type === selectedMethod)?.name || selectedMethod;
+    availableMethods.find(
+      (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+    )?.name || selectedMethod;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
@@ -332,11 +343,11 @@ export default function CheckoutPage() {
               {availableMethods.map((method) => (
                 <button
                   key={method.id || method.type}
-                  onClick={() => setSelectedMethod(method.type)}
+                  onClick={() => setSelectedMethod((method.type || '').trim())}
                   className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
-                  ${selectedMethod === method.type ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
+                  ${selectedMethod === (method.type || '').trim() ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
                 >
-                  <div className="text-2xl" data-testid={`payment-icon-${method.type}`}>
+                  <div className="text-2xl" data-testid={`payment-icon-${(method.type || '').trim()}`}>
                     {resolveIconElement(method)}
                   </div>
                   <div>{method.name}</div>
@@ -394,7 +405,7 @@ export default function CheckoutPage() {
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> Payment Successful! Redirecting...
             </div>
-          ) : selectedMethod === 'usdt' || selectedMethod === 'nft' ? (
+          ) : normalizedMethod === 'usdt' || normalizedMethod === 'nft' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Crypto Payment</strong></p>
               <p className="mb-2">You'll be redirected to complete this payment.</p>
@@ -402,7 +413,7 @@ export default function CheckoutPage() {
                 Pay with Crypto
               </button>
             </div>
-          ) : selectedMethod === 'paypal' ? (
+          ) : normalizedMethod === 'paypal' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300 text-center">
               <p><strong>PayPal Payment</strong></p>
               <p className="mb-2">You'll be redirected to PayPal to complete this payment.</p>
@@ -414,7 +425,7 @@ export default function CheckoutPage() {
                 {paymentStatus === 'processing' ? 'Processing...' : 'Pay with PayPal'}
               </button>
             </div>
-          ) : invoicePreview && selectedMethod === 'bank' ? (
+          ) : invoicePreview && normalizedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Invoice #{bankInfo?.invoiceNumber || bankInfo?.invoice_number || bankInfo?.reference}</strong></p>
               <p className="mt-2">{itemType === 'tutorial' ? 'Tutorial' : 'Class'}: {itemInfo.title}</p>
@@ -435,7 +446,7 @@ export default function CheckoutPage() {
             <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
               <input type="text" placeholder="Full Name" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
               <input type="email" placeholder="Email Address" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-              {selectedMethod !== 'bank' && (
+              {normalizedMethod !== 'bank' && (
                 <>
                   <input type="tel" placeholder="Card Number" required inputMode="numeric" className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
                   <input type="text" placeholder="Expiration Date (MM/YY)" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />

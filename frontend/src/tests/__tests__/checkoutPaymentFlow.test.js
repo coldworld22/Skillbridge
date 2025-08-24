@@ -55,7 +55,7 @@ afterEach(() => {
 test('renders payment logos from url and fallback', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://example.com/stripe.png' },
-    { id: 2, name: 'PayPal', type: 'paypal' },
+    { id: 2, name: 'PayPal', type: 'paypal ' },
   ]);
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
@@ -68,7 +68,7 @@ test('renders payment logos from url and fallback', async () => {
 test('adjusts inputs based on payment selection and displays invoice for bank', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
-    { id: 2, name: 'PayPal', type: 'paypal' },
+    { id: 2, name: 'PayPal', type: 'PayPal ' },
     { id: 3, name: 'Bank', type: 'bank' },
   ]);
   initiateBankPayment.mockResolvedValue({
