@@ -65,18 +65,13 @@ test('renders payment logos from url and fallback', async () => {
   expect(paypalIcon).not.toBeNull();
 });
 
-test('adjusts inputs based on payment selection and displays invoice for bank', async () => {
+test('adjusts inputs based on payment selection and submits bank details', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
   ]);
-  initiateBankPayment.mockResolvedValue({
-    invoiceNumber: 'INV-1',
-    bankName: 'Test Bank',
-    accountNumber: '123',
-    iban: 'IBAN',
-  });
+  initiateBankPayment.mockResolvedValue({});
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByPlaceholderText('Card Number')).toBeInTheDocument();
@@ -88,13 +83,12 @@ test('adjusts inputs based on payment selection and displays invoice for bank', 
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
-  expect(screen.getByPlaceholderText('Account Holder Name')).toBeInTheDocument();
-  expect(screen.getByPlaceholderText('Email Address')).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /Pay \$100 with PayPal/i })).toBeNull();
+  expect(screen.getByPlaceholderText('Bank Name')).toBeInTheDocument();
+  fireEvent.change(screen.getByPlaceholderText('Bank Name'), { target: { value: 'Test Bank' } });
   fireEvent.change(screen.getByPlaceholderText('Account Holder Name'), { target: { value: 'John' } });
-  fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
+  fireEvent.change(screen.getByPlaceholderText('Account Number / IBAN'), { target: { value: '123' } });
+  fireEvent.change(screen.getByPlaceholderText('SWIFT Code'), { target: { value: 'ABCDEF' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
-  expect(await screen.findByText(/Invoice #INV-1/)).toBeInTheDocument();
-  expect(screen.getByText(/Test Bank/)).toBeInTheDocument();
+  expect(await screen.findByText(/bank transfer request has been submitted/i)).toBeInTheDocument();
 });
