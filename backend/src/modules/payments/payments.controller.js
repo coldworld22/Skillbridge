@@ -3,6 +3,7 @@ const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const service = require("./payments.service");
+const { STATUS } = service;
 const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
@@ -232,11 +233,15 @@ exports.confirmPayment = catchAsync(async (req, res) => {
   if (!payment || payment.user_id !== req.user.id) {
     throw new AppError("Payment not found", 404);
   }
-  const { receipt_url } = req.body;
-  const updated = await service.update(req.params.id, {
-    status: "pending_review",
+  const { receipt_url, reference_id } = req.body;
+  const updateData = {
+    status: STATUS.AWAITING_APPROVAL,
     receipt_url,
-  });
+  };
+  if (reference_id) {
+    updateData.reference_id = reference_id;
+  }
+  const updated = await service.update(req.params.id, updateData);
   sendSuccess(res, updated, "Payment confirmation submitted");
 
   try {
