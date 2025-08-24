@@ -105,7 +105,7 @@ const OnlineClasses = () => {
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen text-white">
+    <div id="online-classes" className="bg-gray-900 min-h-screen text-white">
       <motion.section
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}

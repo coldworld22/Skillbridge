@@ -182,7 +182,7 @@ const LandingTutorialsSection = () => {
         });
 
   return (
-    <section className="bg-gray-950 py-16 text-white px-4 sm:px-6">
+    <section id="tutorials" className="bg-gray-950 py-16 text-white px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <motion.h2
           className="text-3xl sm:text-4xl font-bold text-center text-yellow-400 mb-4"
