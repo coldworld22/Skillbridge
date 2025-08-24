@@ -45,7 +45,11 @@ export const createDiscussion = async (payload) => {
 
 export const fetchTopContributors = async (limit = 5) => {
   const { data } = await api.get(`/community/contributors?limit=${limit}`);
-  return data?.data ?? [];
+  const list = data?.data ?? [];
+  return list.map(c => ({
+    ...c,
+    avatar: formatUrl(c.avatar),
+  }));
 };
 
 export const searchTags = async (q) => {

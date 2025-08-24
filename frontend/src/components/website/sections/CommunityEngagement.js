@@ -29,6 +29,7 @@ const CommunityLandingPage = () => {
             title: d.title,
             user: d.user_name || t("anonymous"),
             replies: d.replies || 0,
+            image_url: d.image_url,
           }))
         );
 
@@ -106,24 +107,39 @@ const CommunityLandingPage = () => {
               <FaCommentDots className="text-yellow-500" /> {t("trending_discussions")}
             </h3>
             <ul className="space-y-4">
-              {discussions.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase())).map((discussion) => (
-                <motion.li
-                  key={discussion.id}
-                  className="p-4 bg-gray-700 rounded-lg flex justify-between items-center hover:bg-gray-600 cursor-pointer transition"
-                  whileHover={{ scale: 1.03 }}
-                  onClick={() => {
-                    window.location.href = `/community/question/details?id=${discussion.id}`;
-                  }}
-                >
-                  <div>
-                    <h4 className="text-lg font-semibold">{discussion.title}</h4>
-                    <p className="text-gray-400">{t("by_author", { author: discussion.user })}</p>
-                  </div>
-                  <span className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
-                    {t("replies_count", { count: discussion.replies })}
-                  </span>
-                </motion.li>
-              ))}
+              {discussions
+                .filter((d) =>
+                  d.title.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((discussion) => (
+                  <motion.li
+                    key={discussion.id}
+                    className="p-4 bg-gray-700 rounded-lg flex justify-between items-center hover:bg-gray-600 cursor-pointer transition"
+                    whileHover={{ scale: 1.03 }}
+                    onClick={() => {
+                      window.location.href = `/community/question/details?id=${discussion.id}`;
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {discussion.image_url && (
+                        <img
+                          src={discussion.image_url}
+                          alt={discussion.title}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <h4 className="text-lg font-semibold">{discussion.title}</h4>
+                        <p className="text-gray-400">
+                          {t("by_author", { author: discussion.user })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
+                      {t("replies_count", { count: discussion.replies })}
+                    </span>
+                  </motion.li>
+                ))}
             </ul>
           </div>
 
@@ -165,6 +181,7 @@ const CommunityLandingPage = () => {
         <motion.div className="mt-6 text-sm text-gray-400">
           <Trans
             i18nKey="community_join_prompt"
+            t={t}
             components={{ link: <Link href="/auth/register" className="text-yellow-400 hover:underline" /> }}
           />
         </motion.div>
