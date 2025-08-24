@@ -75,7 +75,9 @@ test('applies promo code successfully', async () => {
   });
   fireEvent.click(screen.getByText('Apply'));
   await waitFor(() => expect(validateCode).toHaveBeenCalledWith('SAVE10', 'class', '1'));
-  expect(await screen.findByText('Discount Applied: -$10')).toBeInTheDocument();
+  expect(
+    await screen.findByText(/Discount Applied:\s*10% \(-\$10\.00\)/)
+  ).toBeInTheDocument();
   const { toast } = require('react-toastify');
   expect(toast.success).toHaveBeenCalledWith('Promo code applied');
 });

@@ -144,13 +144,14 @@ export default function CheckoutPage() {
   // as default, or the first active method if none is marked.
   const [selectedMethod, setSelectedMethod] = useState('');
   const [promoCode, setPromoCode] = useState('');
-  const [discount, setDiscount] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [couponId, setCouponId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const finalPrice = useMemo(
-    () => Math.max((itemInfo?.price ?? 0) - discount, 0),
-    [itemInfo, discount]
+    () => Math.max((itemInfo?.price ?? 0) - discountAmount, 0),
+    [itemInfo, discountAmount]
   );
   const isFree = finalPrice === 0;
   // Normalize the selected payment method to avoid case or whitespace mismatches
@@ -201,12 +202,16 @@ export default function CheckoutPage() {
     const formattedCode = promoCode.trim().toUpperCase();
     setPromoCode(formattedCode);
     try {
-      const data = await validateCode(formattedCode, itemType, itemId);
-      setDiscount(data.discount_percent);
+      const data = await validateCode(promoCode, itemType, itemId);
+      const percent = data.discount_percent || 0;
+      const amount = ((itemInfo?.price || 0) * percent) / 100;
+      setDiscountAmount(amount);
+      setDiscountPercent(percent);
       setCouponId(data.id);
       toast.success(t('promo_code_applied'));
     } catch (err) {
-      setDiscount(0);
+      setDiscountAmount(0);
+      setDiscountPercent(0);
       setCouponId(null);
       if (err?.response?.status === 404) {
         toast.error(t('invalid_promo_code'));
@@ -378,7 +383,11 @@ export default function CheckoutPage() {
                 : `Instructor: ${itemInfo.instructor}`}
             </p>
             <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
-            {discount > 0 && <p className="text-green-400">Discount Applied: -${discount}</p>}
+            {discountAmount > 0 && (
+              <p className="text-green-400">
+                Discount Applied: {discountPercent}% (-${discountAmount.toFixed(2)})
+              </p>
+            )}
           </div>
         </div>
 
