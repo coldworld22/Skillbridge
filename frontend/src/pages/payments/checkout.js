@@ -10,6 +10,10 @@ import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { toast } from 'react-toastify';
+import PayPalForm from '@/components/payments/forms/PayPalForm';
+import BankTransferForm from '@/components/payments/forms/BankTransferForm';
+import CryptoPaymentForm from '@/components/payments/forms/CryptoPaymentForm';
+import CardPaymentForm from '@/components/payments/forms/CardPaymentForm';
 import {
   FaCcStripe, FaPaypal, FaMoneyCheckAlt, FaUniversity,
   FaEthereum, FaFileInvoice, FaDownload, FaCheckCircle
@@ -43,8 +47,14 @@ function resolveIconElement(method) {
     if (iconMap[lower]) return iconMap[lower];
   }
   return (
-    iconMap[(method.type || '').toString().trim().toLowerCase()] || <FaMoneyCheckAlt />
+    iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
   );
+}
+
+function getMethodIdentifier(method) {
+  if (method?.type && method.type.trim()) return method.type.trim();
+  if (method?.name && method.name.trim()) return method.name.trim();
+  return '';
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -165,7 +175,7 @@ export default function CheckoutPage() {
         if (!active) return;
         setMethods(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
-          setSelectedMethod((prev) => prev || (data[0].type || '').trim());
+          setSelectedMethod((prev) => prev || getMethodIdentifier(data[0]));
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
@@ -219,7 +229,7 @@ export default function CheckoutPage() {
     );
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (_formData = {}) => {
     if (normalizedMethod === 'bank') {
       try {
         setPaymentStatus('processing');
@@ -260,13 +270,13 @@ export default function CheckoutPage() {
       try {
         setPaymentStatus('processing');
         const method = methods.find(
-          (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+          (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
         );
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
           amount: finalPrice,
-          method_type: method?.type,
+          method_type: method?.type || getMethodIdentifier(method),
         };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiateCryptoPayment(payload);
@@ -328,7 +338,7 @@ export default function CheckoutPage() {
     : [];
   const selectedMethodLabel =
     availableMethods.find(
-      (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+      (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
     )?.name || selectedMethod;
 
   return (
@@ -355,19 +365,22 @@ export default function CheckoutPage() {
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Select Payment Method</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-              {availableMethods.map((method) => (
-                <button
-                  key={method.id || method.type}
-                  onClick={() => setSelectedMethod((method.type || '').trim())}
-                  className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
-                  ${selectedMethod === (method.type || '').trim() ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
-                >
-                  <div className="text-2xl" data-testid={`payment-icon-${(method.type || '').trim()}`}>
-                    {resolveIconElement(method)}
-                  </div>
-                  <div>{method.name}</div>
-                </button>
-              ))}
+              {availableMethods.map((method) => {
+                const identifier = getMethodIdentifier(method);
+                return (
+                  <button
+                    key={method.id || identifier}
+                    onClick={() => setSelectedMethod(identifier)}
+                    className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
+                  ${selectedMethod === identifier ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
+                  >
+                    <div className="text-2xl" data-testid={`payment-icon-${identifier.toLowerCase()}`}>
+                      {resolveIconElement(method)}
+                    </div>
+                    <div>{method.name}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -420,26 +433,6 @@ export default function CheckoutPage() {
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> Payment Successful! Redirecting...
             </div>
-          ) : normalizedMethod === 'usdt' || normalizedMethod === 'nft' ? (
-            <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
-              <p><strong>Crypto Payment</strong></p>
-              <p className="mb-2">You'll be redirected to complete this payment.</p>
-              <button onClick={handlePayment} className="mt-2 bg-yellow-500 text-black px-4 py-2 rounded font-bold">
-                Pay with Crypto
-              </button>
-            </div>
-          ) : normalizedMethod === 'paypal' ? (
-            <div className="bg-gray-900 p-4 rounded text-sm text-gray-300 text-center">
-              <p><strong>PayPal Payment</strong></p>
-              <p className="mb-2">You'll be redirected to PayPal to complete this payment.</p>
-              <button
-                onClick={handlePayment}
-                disabled={paymentStatus === 'processing'}
-                className="mt-2 bg-yellow-500 text-black px-4 py-2 rounded font-bold"
-              >
-                {paymentStatus === 'processing' ? 'Processing...' : 'Pay with PayPal'}
-              </button>
-            </div>
           ) : invoicePreview && normalizedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Invoice #{bankInfo?.invoiceNumber || bankInfo?.invoice_number || bankInfo?.reference}</strong></p>
@@ -457,26 +450,34 @@ export default function CheckoutPage() {
                 onClick={() => router.push('/payments')}
               >Go to My Payments</button>
             </div>
+          ) : normalizedMethod === 'paypal' ? (
+            <PayPalForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              finalPrice={finalPrice}
+            />
+          ) : normalizedMethod === 'bank' ? (
+            <BankTransferForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              finalPrice={finalPrice}
+            />
+          ) : normalizedMethod === 'usdt' || normalizedMethod === 'nft' ? (
+            <CryptoPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              finalPrice={finalPrice}
+            />
           ) : (
-            <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>
-              <input type="text" placeholder="Full Name" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-              <input type="email" placeholder="Email Address" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-              {normalizedMethod !== 'bank' && (
-                <>
-                  <input type="tel" placeholder="Card Number" required inputMode="numeric" className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-                  <input type="text" placeholder="Expiration Date (MM/YY)" required className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white" />
-                  <input type="text" placeholder="CVC" required className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white" />
-                </>
-              )}
-              <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
-                {paymentStatus === 'processing'
-                  ? 'Processing...'
-                  : allowInstallments
-                  ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
-                  : `Pay $${finalPrice} with ${selectedMethodLabel}`}
-              </button>
-              <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
-            </form>
+            <CardPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              allowInstallments={allowInstallments}
+              installments={installments}
+              perInstallment={perInstallment}
+              finalPrice={finalPrice}
+              selectedMethodLabel={selectedMethodLabel}
+            />
           )}
         </div>
       </main>

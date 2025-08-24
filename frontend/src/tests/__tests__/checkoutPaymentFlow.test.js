@@ -55,7 +55,7 @@ afterEach(() => {
 test('renders payment logos from url and fallback', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://example.com/stripe.png' },
-    { id: 2, name: 'PayPal', type: 'paypal ' },
+    { id: 2, name: 'PayPal', type: null },
   ]);
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
@@ -68,7 +68,7 @@ test('renders payment logos from url and fallback', async () => {
 test('adjusts inputs based on payment selection and displays invoice for bank', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
-    { id: 2, name: 'PayPal', type: 'PayPal ' },
+    { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
   ]);
   initiateBankPayment.mockResolvedValue({
@@ -83,15 +83,15 @@ test('adjusts inputs based on payment selection and displays invoice for bank', 
   expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
   fireEvent.click(screen.getByText('PayPal'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
-  expect(screen.queryByPlaceholderText('Full Name')).toBeNull();
-  expect(screen.queryByPlaceholderText('Email Address')).toBeNull();
-  expect(screen.getByRole('button', { name: /Pay with PayPal/i })).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('PayPal Email')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
-  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Account Holder Name')).toBeInTheDocument();
   expect(screen.getByPlaceholderText('Email Address')).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /Pay with PayPal/i })).toBeNull();
-  fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John' } });
+  expect(screen.queryByRole('button', { name: /Pay \$100 with PayPal/i })).toBeNull();
+  fireEvent.change(screen.getByPlaceholderText('Account Holder Name'), { target: { value: 'John' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
