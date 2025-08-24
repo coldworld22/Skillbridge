@@ -158,6 +158,7 @@ app.use(
 );
 app.use("/api/payments/student", require("./modules/payments/student.routes"));
 app.use("/api/payments/bank", require("./modules/payments/bank.routes"));
+app.use("/api/payments/crypto", require("./modules/payments/crypto.routes"));
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
 app.use(
   "/api/admin/payments/bank",
