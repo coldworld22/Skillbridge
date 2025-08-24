@@ -17,7 +17,6 @@ name. To run non-interactively you can provide arguments:
 ```bash
 ./install.sh production yourdomain.com
 ```
-
 In either case the script updates the domain placeholders in `nginx/conf.d`
 and uses `certbot` (or `acme.sh`) to generate certificates at the paths
 referenced in `nginx/conf.d/ssl.conf`.

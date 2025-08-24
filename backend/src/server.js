@@ -121,6 +121,9 @@ app.use((req, res, next) => {
   next();
 });
 
+const installerPath = path.join(__dirname, "../../install");
+app.use("/install", express.static(installerPath));
+
 // ─── Routes ───
 app.use("/api/auth", require("./modules/auth/routes/auth.routes"));
 app.use("/api/users", require("./modules/users/user.routes"));
@@ -201,6 +204,7 @@ app.use("/api/instructor/books", require("./modules/books/instructorBook.routes"
 app.use("/api/book-reviews", require("./modules/bookReviews/bookReview.routes"));
 app.use("/api/library", require("./modules/library/library.routes"));
 app.use("/api/search", require("./modules/search/search.routes"));
+app.use("/api/install", require("./modules/install/install.routes"));
 
 // Generate secure video room link for a lesson
 app.post("/api/users/classes/lessons/:lessonId/room", verifyToken, async (req, res) => {

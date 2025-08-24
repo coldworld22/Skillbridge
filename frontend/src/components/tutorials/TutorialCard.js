@@ -25,10 +25,19 @@ const TutorialCard = ({ tutorial = {} }) => {
       : tr("list.free", "Free");
 
   const handleAddToCart = async () => {
+    const price = tutorial.discountPrice ?? tutorial.price;
+    if (price == null) {
+      console.error(
+        `Cannot add tutorial ${tutorial.id} to cart: missing price`,
+      );
+      toast.error(tr("card.failed_to_add_to_cart", "Failed to add to cart"));
+      return;
+    }
+
     const success = await addItem({
       id: tutorial.id,
       name: tutorial.title,
-      price: tutorial.price || 0,
+      price: price || 0,
       item_type: "tutorial",
       quantity: 1,
       ...(tutorial.currency ? { currency: tutorial.currency } : {}),

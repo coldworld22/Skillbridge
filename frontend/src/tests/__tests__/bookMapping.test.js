@@ -19,6 +19,7 @@ describe('bookMapping utilities', () => {
       category_name: 'Category',
       rating: 4.5,
       price: 9.99,
+      item_type: 'book',
       cover_url: '/cover.jpg',
     });
   });
