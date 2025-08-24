@@ -7,7 +7,16 @@ router.use(verifyToken, isStudent);
 
 router.get("/", controller.getMyPayments);
 router.post("/", controller.createPayment);
-router.post("/receipts", upload.single("receipt"), controller.uploadReceipt);
+router.post(
+  "/receipts",
+  (req, res, next) => {
+    upload.single("receipt")(req, res, (err) => {
+      if (err) return res.status(400).json({ message: err.message });
+      next();
+    });
+  },
+  controller.uploadReceipt
+);
 router.post("/:id/confirm", controller.confirmPayment);
 
 module.exports = router;
