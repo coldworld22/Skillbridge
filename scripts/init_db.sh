@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 # Determine docker compose command
 if command -v docker-compose >/dev/null 2>&1; then
   DOCKER_COMPOSE="docker-compose"
