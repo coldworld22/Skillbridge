@@ -33,6 +33,26 @@ describe('TutorialCard', () => {
     expect(toast.success).toHaveBeenCalledWith('Added to cart');
   });
 
+  it('uses discount price when available', async () => {
+    addItem.mockResolvedValue(true);
+    const tutorial = {
+      id: 3,
+      title: 'Discount Tutorial',
+      price: 20,
+      discountPrice: 15,
+    };
+    render(<TutorialCard tutorial={tutorial} />);
+    fireEvent.click(screen.getByRole('button', { name: /add to cart/i }));
+    await waitFor(() => expect(addItem).toHaveBeenCalled());
+    expect(addItem).toHaveBeenCalledWith({
+      id: 3,
+      name: 'Discount Tutorial',
+      price: 15,
+      item_type: 'tutorial',
+      quantity: 1,
+    });
+  });
+
   it('shows error toast when addItem fails', async () => {
     addItem.mockResolvedValue(false);
     const tutorial = { id: 2, title: 'Another Tutorial', price: 5 };
