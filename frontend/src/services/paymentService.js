@@ -12,3 +12,9 @@ export const initiateCryptoPayment = async (payload) => {
   return data?.data ?? data;
 };
 
+// Initiate PayPal payment
+export const initiatePayPalPayment = async (payload) => {
+  const { data } = await api.post("/payments/paypal/create", payload);
+  return data?.data ?? data;
+};
+
