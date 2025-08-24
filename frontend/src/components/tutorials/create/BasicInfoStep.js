@@ -1,12 +1,29 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import { fetchTutorialTags, createTutorialTag } from "@/services/instructor/tutorialTagService";
+import { getCurrencies } from "@/services/currencyService";
 
 export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, categories = [] }) {
   const { t } = useTranslation("tutorials");
   const [errors, setErrors] = useState({});
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [tagInput, setTagInput] = useState("");
+  const [currencyOptions, setCurrencyOptions] = useState([]);
+
+  useEffect(() => {
+    getCurrencies()
+      .then((currs) => {
+        setCurrencyOptions(currs);
+        const def = currs.find((c) => c.is_default) || currs[0];
+        if (def) {
+          setTutorialData((prev) => ({
+            ...prev,
+            currency: prev.currency || def.code,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [setTutorialData]);
 
   useEffect(() => {
     if (!tagInput) {
@@ -116,8 +133,15 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
     if (
       !tutorialData.isFree &&
       (!tutorialData.price || isNaN(tutorialData.price))
-    )
+    ) {
       newErrors.price = t("create.basic.validation.price_required");
+    }
+    if (!tutorialData.isFree && !tutorialData.currency) {
+      newErrors.currency = t(
+        "create.basic.validation.currency_required",
+        "Currency is required"
+      );
+    }
 
     setErrors(newErrors);
 
@@ -334,15 +358,32 @@ export default function BasicInfoStep({ tutorialData, setTutorialData, onNext, c
       {!tutorialData.isFree && (
         <div>
           <label className="font-semibold">{t("create.basic.price_label")}</label>
-          <input
-            type="number"
-            className="w-full p-2 border rounded mt-1"
-            value={tutorialData.price}
-            onChange={(e) => handleChange("price", e.target.value)}
-            placeholder={t("create.basic.price_placeholder")}
-          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              className="w-full p-2 border rounded mt-1"
+              value={tutorialData.price}
+              onChange={(e) => handleChange("price", e.target.value)}
+              placeholder={t("create.basic.price_placeholder")}
+            />
+            <select
+              className="p-2 border rounded mt-1"
+              value={tutorialData.currency || ""}
+              onChange={(e) => handleChange("currency", e.target.value)}
+            >
+              <option value="">{t("create.basic.select_currency", "Select")}</option>
+              {currencyOptions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code}
+                </option>
+              ))}
+            </select>
+          </div>
           {errors.price && (
             <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+          )}
+          {errors.currency && (
+            <p className="text-red-500 text-sm mt-1">{errors.currency}</p>
           )}
         </div>
       )}

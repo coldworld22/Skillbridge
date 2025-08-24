@@ -19,6 +19,7 @@ import useTutorialProgress from "@/hooks/useTutorialProgress";
 import EnrollBanner from "@/components/tutorials/detail/EnrollBanner";
 import LoginPrompt from "@/components/tutorials/detail/LoginPrompt";
 import { FaBookmark, FaHeart } from "react-icons/fa";
+import { formatCurrency } from "@/utils/currency";
 
 const RelatedTutorials = dynamic(() => import("@/components/tutorials/detail/RelatedTutorials"), { ssr: false });
 const CommentsSection = dynamic(() => import("@/components/tutorials/detail/CommentsSection"), { ssr: false });
@@ -466,7 +467,11 @@ export default function TutorialDetail() {
 
         <TutorialHeader
           {...tutorial}
-          price={Number(tutorial.price) > 0 ? `$${tutorial.price}` : t("free")}
+          price={
+            Number(tutorial.price) > 0
+              ? formatCurrency(tutorial.price, { currency: tutorial.currency })
+              : t("free")
+          }
         />
         <InstructorBio
           name={tutorial.instructor}
