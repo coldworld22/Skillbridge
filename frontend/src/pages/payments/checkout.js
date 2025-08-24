@@ -143,8 +143,6 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [couponId, setCouponId] = useState(null);
-  const [invoicePreview, setInvoicePreview] = useState(false);
-  const [bankInfo, setBankInfo] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const finalPrice = useMemo(
@@ -243,14 +241,13 @@ export default function CheckoutPage() {
           item_id: itemInfo.id,
           item_type: itemType,
           amount: finalPrice,
+          ..._formData,
         };
         if (couponId) payload.coupon_id = couponId;
-        const data = await initiateBankPayment(payload);
-        setBankInfo(data);
-        setInvoicePreview(true);
+        await initiateBankPayment(payload);
+        setPaymentStatus('submitted_bank');
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
-      } finally {
         setPaymentStatus('idle');
       }
       return;
@@ -299,36 +296,6 @@ export default function CheckoutPage() {
     setTimeout(completePayment, 1500);
   };
 
-
-  useEffect(() => {
-    if (normalizedMethod !== 'bank') {
-      setInvoicePreview(false);
-      setBankInfo(null);
-    }
-  }, [selectedMethod]);
-
-  const downloadInvoice = () => {
-    if (!bankInfo) return;
-    const invoiceNumber =
-      bankInfo.invoiceNumber || bankInfo.invoice_number || bankInfo.reference || Date.now();
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Invoice ${invoiceNumber}</title></head><body>` +
-      `<h1>Invoice #${invoiceNumber}</h1>` +
-      `<p>Item: ${itemInfo.title}</p>` +
-      `<p>Amount: $${finalPrice}</p>` +
-      `<p>Bank: ${bankInfo.bankName || bankInfo.bank_name}</p>` +
-      `<p>Account Number: ${bankInfo.accountNumber || bankInfo.account_number}</p>` +
-      `<p>IBAN: ${bankInfo.iban}</p>` +
-      `</body></html>`;
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `invoice-${invoiceNumber}.html`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
@@ -440,22 +407,9 @@ export default function CheckoutPage() {
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> Payment Successful! Redirecting...
             </div>
-          ) : invoicePreview && normalizedMethod === 'bank' ? (
-            <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
-              <p><strong>Invoice #{bankInfo?.invoiceNumber || bankInfo?.invoice_number || bankInfo?.reference}</strong></p>
-              <p className="mt-2">{itemType === 'tutorial' ? 'Tutorial' : 'Class'}: {itemInfo.title}</p>
-              <p>Price: ${finalPrice}</p>
-              <p>Bank: {bankInfo?.bankName || bankInfo?.bank_name}</p>
-              <p>Account Number: {bankInfo?.accountNumber || bankInfo?.account_number}</p>
-              <p>IBAN: {bankInfo?.iban}</p>
-              <button onClick={downloadInvoice} className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded mb-4">
-                <FaDownload /> Download Invoice
-              </button>
-              <p className="text-yellow-400">After completing the transfer, upload your receipt via "My Payments".</p>
-              <button
-                className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-                onClick={() => router.push('/payments')}
-              >Go to My Payments</button>
+          ) : paymentStatus === 'submitted_bank' ? (
+            <div className="text-yellow-400 text-center text-lg py-6">
+              Your bank transfer request has been submitted and is pending admin approval.
             </div>
           ) : normalizedMethod === 'paypal' ? (
             <PayPalForm
