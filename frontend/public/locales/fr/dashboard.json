@@ -801,24 +801,24 @@
     "create_assignment": "Create Assignment",
     "submissions": "Submissions",
     "certificates_title": "Certificates",
-    "search_placeholder": "Search students or classes",
-    "preview": "Preview",
-    "download": "Download"
+    "search_placeholder": "Rechercher des étudiants ou des cours",
+    "preview": "Aperçu",
+    "download": "Télécharger"
   },
   "classStudentsPage": {
-    "title": "Enrolled Students",
-    "no_students": "No students enrolled.",
-    "status": "Status",
-    "date_joined": "Date Joined",
-    "back_to_class": "Back to Class"
+    "title": "Étudiants inscrits",
+    "no_students": "Aucun étudiant inscrit.",
+    "status": "Statut",
+    "date_joined": "Date d'inscription",
+    "back_to_class": "Retour au cours"
   },
   "studentDetailPage": {
-    "title": "Student Overview",
-    "issue_certificate": "Issue Certificate",
-    "add_note": "Add Note",
-    "edit_attendance": "Edit Attendance",
-    "back_to_list": "Back to Student List",
-    "student_not_found": "Student not found"
+    "title": "Aperçu de l'étudiant",
+    "issue_certificate": "Délivrer un certificat",
+    "add_note": "Ajouter une note",
+    "edit_attendance": "Modifier la présence",
+    "back_to_list": "Retour à la liste des étudiants",
+    "student_not_found": "Étudiant introuvable"
   },
   "classAnalyticsPage": {
     "title": "Class Analytics",
