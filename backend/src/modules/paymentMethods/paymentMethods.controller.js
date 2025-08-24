@@ -7,6 +7,7 @@ const fs = require("fs");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const paypalService = require("../../services/paypalService");
 
 const sanitizeMethod = (method) => {
   if (method?.settings) {
@@ -165,18 +166,23 @@ exports.getPayPalCredentials = catchAsync(async (_req, res) => {
   sendSuccess(res, {
     client_id: settings.client_id || null,
     has_client_secret: Boolean(settings.client_secret),
+    mode: settings.mode,
   });
 });
 
 exports.updatePayPalCredentials = catchAsync(async (req, res) => {
-  const { client_id, client_secret } = req.body;
+  const { client_id, client_secret, mode } = req.body;
   if (!client_id || !client_secret) {
     throw new AppError("Client ID and secret are required", 400);
   }
-  await service.updatePayPalSettings({ client_id, client_secret });
+  if (mode && !["sandbox", "live"].includes(mode)) {
+    throw new AppError("Invalid PayPal mode", 400);
+  }
+  await service.updatePayPalSettings({ client_id, client_secret, mode });
+  paypalService.invalidateClient();
   sendSuccess(
     res,
-    { client_id, has_client_secret: true },
+    { client_id, has_client_secret: true, mode: mode || "sandbox" },
     "PayPal credentials updated"
   );
 });

@@ -50,7 +50,12 @@ exports.delete = (id) => {
 
 exports.getPayPalSettings = async () => {
   const row = await exports.getByType("paypal");
-  return row?.settings || {};
+  const settings = row?.settings || {};
+  return {
+    client_id: settings.client_id || process.env.PAYPAL_CLIENT_ID,
+    client_secret: settings.client_secret || process.env.PAYPAL_CLIENT_SECRET,
+    mode: settings.mode || process.env.PAYPAL_MODE || "sandbox",
+  };
 };
 
 exports.updatePayPalSettings = async (settings) => {
