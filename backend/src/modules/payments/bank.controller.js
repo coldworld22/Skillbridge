@@ -42,7 +42,18 @@ exports.getBankPayments = catchAsync(async (req, res) => {
 });
 
 exports.initiateBankPayment = catchAsync(async (req, res) => {
-  const { item_type, item_id, amount, currency } = req.body;
+  const {
+    item_type,
+    item_id,
+    amount,
+    currency,
+    bank_name,
+    account_holder_name,
+    account_number,
+    swift_code,
+    branch_address,
+    extra_instructions,
+  } = req.body;
   const user_id = req.user?.id;
 
   if (!user_id || !item_type || !item_id || amount === undefined) {
@@ -82,6 +93,15 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     logger.error("Failed to load payment settings:", err);
   }
 
+  const bank_details = {
+    bank_name,
+    account_holder_name,
+    account_number,
+    swift_code,
+    branch_address,
+    extra_instructions,
+  };
+
   const paymentData = {
     id: uuidv4(),
     user_id,
@@ -90,14 +110,19 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: "pending_payment",
+    status: "awaiting_approval",
     platform_fee,
     instructor_amount,
+    bank_details,
   };
 
-  const invoice = await paymentsService.create(paymentData);
+  const payment = await paymentsService.create(paymentData);
 
-  sendSuccess(res, { settings: bankMethod.settings, invoice }, "Bank payment initiated");
+  sendSuccess(
+    res,
+    payment,
+    "Bank transfer request submitted and pending admin approval"
+  );
 });
 
 exports.approveBankPayment = catchAsync(async (req, res) => {
