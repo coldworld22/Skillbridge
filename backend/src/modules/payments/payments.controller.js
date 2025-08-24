@@ -16,6 +16,12 @@ const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
 
+const DEFAULT_PLATFORM_CUT = {
+  class: 15,
+  book: 10,
+  tutorial: 20,
+};
+
 exports.createPayment = catchAsync(async (req, res) => {
   const {
     method_id,
@@ -104,7 +110,10 @@ exports.createPayment = catchAsync(async (req, res) => {
   let instructor_amount = verifiedAmount;
   try {
     const settings = await paymentConfigService.getSettings();
-    const cut = settings?.platformCut?.[item_type] || 0;
+    const cut =
+      settings?.platformCut?.[item_type] ??
+      DEFAULT_PLATFORM_CUT[item_type] ??
+      0;
     platform_fee = (verifiedAmount * cut) / 100;
     instructor_amount = verifiedAmount - platform_fee;
   } catch (err) {
