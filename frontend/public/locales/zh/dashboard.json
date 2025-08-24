@@ -1223,6 +1223,7 @@
     "save_failed": "保存设置失败"
   },
   "faqsPage": {
+
     "title": "管理常见问题解答",
     "question_placeholder": "问题",
     "answer_placeholder": "回答",
@@ -1644,6 +1645,7 @@
     "tutorials": "教程",
     "classes": "课程"
   },
+
   "tutorialViewPage": {
     "loading": "加载教程...",
     "not_found": "找不到教程。",
