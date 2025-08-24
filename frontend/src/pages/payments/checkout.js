@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
@@ -100,7 +100,8 @@ export default function CheckoutPage() {
   const [bankInfo, setBankInfo] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
-  const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const paypalLoaded = useRef(false);
+  const paypalButtonRendered = useRef('');
   const [paypalClientId, setPaypalClientId] = useState('');
 
   useEffect(() => {
@@ -210,7 +211,8 @@ export default function CheckoutPage() {
     if (!window.paypal) return;
     const container = document.getElementById('paypal-button-container');
     if (container) container.innerHTML = '';
-    window.paypal.Buttons({
+    window.paypal
+      .Buttons({
       createOrder: (_, actions) =>
         actions.order.create({
           purchase_units: [{ amount: { value: amount } }],
@@ -237,7 +239,11 @@ export default function CheckoutPage() {
         console.error('PayPal error', err);
         setPaymentStatus('idle');
       },
-    }).render('#paypal-button-container');
+    })
+      .render('#paypal-button-container')
+      .then(() => {
+        paypalButtonRendered.current = amount;
+      });
   };
 
   useEffect(() => {
@@ -245,19 +251,21 @@ export default function CheckoutPage() {
     const amountValue = itemInfo.price - discount;
     if (amountValue <= 0) return;
     const amount = amountValue.toString();
-    if (!paypalLoaded) {
+    if (!paypalClientId) return;
+    if (paypalButtonRendered.current === amount) return;
+
+    if (!paypalLoaded.current) {
       const script = document.createElement('script');
       script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
       script.addEventListener('load', () => {
-        setPaypalLoaded(true);
+        paypalLoaded.current = true;
         renderPayPalButton(amount);
       });
       document.body.appendChild(script);
     } else {
       renderPayPalButton(amount);
     }
-
-  }, [selectedMethod, itemInfo, discount, paypalLoaded]);
+  }, [selectedMethod, itemInfo, discount, paypalClientId]);
 
   useEffect(() => {
     if (selectedMethod !== 'bank') {
