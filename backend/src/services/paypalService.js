@@ -28,10 +28,10 @@ exports.invalidateClient = () => {
   client = null;
 };
 
-exports.createOrder = async ({ amount, currency = 'USD' }) => {
+exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
   const request = new paypal.orders.OrdersCreateRequest();
   request.prefer('return=representation');
-  request.requestBody({
+  const body = {
     intent: 'CAPTURE',
     purchase_units: [
       {
@@ -41,7 +41,13 @@ exports.createOrder = async ({ amount, currency = 'USD' }) => {
         },
       },
     ],
-  });
+  };
+  if (returnUrl || cancelUrl) {
+    body.application_context = {};
+    if (returnUrl) body.application_context.return_url = returnUrl;
+    if (cancelUrl) body.application_context.cancel_url = cancelUrl;
+  }
+  request.requestBody(body);
   const cli = await getClient();
   const response = await cli.execute(request);
   return response.result;

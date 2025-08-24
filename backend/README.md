@@ -8,6 +8,11 @@ The `/api/system-errors` route reads the latest lines from `logs/error.log` and 
 
 Students can upload proof of manual transfers via `POST /api/payments/student/receipts` using a multipart form field named `receipt`. The uploaded file URL can then be referenced by admins when recording payments. Each payment may optionally store this URL in the new `receipt_url` column.
 
+### PayPal and crypto payments
+
+- Students can initiate PayPal payments via `POST /api/payments/paypal/create`. The endpoint returns an approval URL and records the pending payment. PayPal redirects to `/api/payments/paypal/callback` after approval.
+- Crypto payments use NOWPayments through `POST /api/payments/nowpayments/create` with webhook notifications to `/api/payments/nowpayments/ipn`.
+
 ### Failed login attempt cleanup
 
 Authentication keeps a short-lived in-memory map of failed login attempts. Each entry stores timestamps of failed tries and a `lockUntil` field. A background task runs every minute to remove entries whose lock has expired, preventing unbounded growth of this map.
