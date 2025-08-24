@@ -396,9 +396,9 @@ export default function AdminPaymentsPage() {
                       </td>
                       <td className="px-4 py-2">{txn.type}</td>
                       <td className="px-4 py-2">{txn.method}</td>
-                      <td className="px-4 py-2 font-semibold text-green-600">${txn.amount.toFixed(2)}</td>
-                      <td className="px-4 py-2">${txn.platformFee.toFixed(2)}</td>
-                      <td className="px-4 py-2">${txn.instructorAmount.toFixed(2)}</td>
+                      <td className="px-4 py-2 font-semibold text-green-600">${parseFloat(txn.amount ?? 0).toFixed(2)}</td>
+                      <td className="px-4 py-2">${parseFloat(txn.platformFee ?? 0).toFixed(2)}</td>
+                      <td className="px-4 py-2">${parseFloat(txn.instructorAmount ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-2">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${txn.status === "paid"
@@ -632,7 +632,7 @@ export default function AdminPaymentsPage() {
                       <td className="px-4 py-2 font-mono">{p.id}</td>
                       <td className="px-4 py-2">{p.date}</td>
                       <td className="px-4 py-2 font-medium">{p.instructor}</td>
-                      <td className="px-4 py-2 text-green-600 font-semibold">${p.amount.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-green-600 font-semibold">${parseFloat(p.amount ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-2">{p.method}</td>
                       <td className="px-4 py-2">
                         {(() => {
