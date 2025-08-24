@@ -103,31 +103,40 @@ export default function CheckoutPage() {
   const paypalLoaded = useRef(false);
   const paypalButtonRendered = useRef('');
   const [paypalClientId, setPaypalClientId] = useState('');
+  const finalPrice = useMemo(
+    () => Math.max((itemInfo?.price ?? 0) - discount, 0),
+    [itemInfo, discount]
+  );
+  const isFree = finalPrice === 0;
 
   useEffect(() => {
     if (!itemId || !itemType) return;
+    let active = true;
     const load = async () => {
       try {
         const details =
           itemType === 'tutorial'
             ? await fetchTutorialDetails(itemId)
             : await fetchClassDetails(itemId);
-        setItemInfo(details?.data ?? details);
+        if (active) setItemInfo(details?.data ?? details);
       } catch (err) {
         console.error('Failed to load item', err);
       }
       try {
         const data = await fetchPaymentMethods();
+        if (!active) return;
         setMethods(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
-          // Select the first available method's type by default
-          setSelectedMethod(data[0].type);
+          setSelectedMethod((prev) => prev || data[0].type);
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
       }
     };
     load();
+    return () => {
+      active = false;
+    };
   }, [itemId, itemType]);
 
   useEffect(() => {
@@ -190,7 +199,7 @@ export default function CheckoutPage() {
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
-          amount: Math.max((itemInfo.price ?? 0) - discount, 0),
+          amount: finalPrice,
         };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiateBankPayment(payload);
@@ -210,7 +219,7 @@ export default function CheckoutPage() {
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
-          amount: Math.max((itemInfo.price ?? 0) - discount, 0),
+          amount: finalPrice,
           method_type: method?.type,
         };
         if (couponId) payload.coupon_id = couponId;
@@ -231,6 +240,7 @@ export default function CheckoutPage() {
     if (!window.paypal) return;
     const container = document.getElementById('paypal-button-container');
     if (container) container.innerHTML = '';
+    paypalButtonRendered.current = amount;
     window.paypal
       .Buttons({
       createOrder: (_, actions) =>
@@ -259,33 +269,34 @@ export default function CheckoutPage() {
         console.error('PayPal error', err);
         setPaymentStatus('idle');
       },
-    })
-      .render('#paypal-button-container')
-      .then(() => {
-        paypalButtonRendered.current = amount;
-      });
+    }).render('#paypal-button-container');
   };
 
   useEffect(() => {
-    if (selectedMethod !== 'paypal' || !itemInfo) return;
-    const amountValue = itemInfo.price - discount;
-    if (amountValue <= 0) return;
-    const amount = amountValue.toString();
-    if (!paypalClientId) return;
+    if (selectedMethod !== 'paypal' || finalPrice <= 0 || !paypalClientId) return;
+    const amount = finalPrice.toString();
     if (paypalButtonRendered.current === amount) return;
 
+    const render = () => renderPayPalButton(amount);
+
     if (!paypalLoaded.current) {
-      const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
-      script.addEventListener('load', () => {
+      const existing = document.querySelector('script[src*="paypal.com/sdk/js"]');
+      if (existing) {
         paypalLoaded.current = true;
-        renderPayPalButton(amount);
-      });
-      document.body.appendChild(script);
+        render();
+      } else {
+        const script = document.createElement('script');
+        script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
+        script.addEventListener('load', () => {
+          paypalLoaded.current = true;
+          render();
+        });
+        document.body.appendChild(script);
+      }
     } else {
-      renderPayPalButton(amount);
+      render();
     }
-  }, [selectedMethod, itemInfo, discount, paypalClientId]);
+  }, [selectedMethod, finalPrice, paypalClientId]);
 
   useEffect(() => {
     if (selectedMethod !== 'bank') {
@@ -319,8 +330,6 @@ export default function CheckoutPage() {
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const finalPrice = Math.max((itemInfo.price ?? 0) - discount, 0);
-  const isFree = finalPrice === 0;
   const installments = 3;
   const perInstallment = finalPrice / installments;
   const schedule = Array.from({ length: installments }, (_, i) => {
