@@ -82,11 +82,16 @@ test('adjusts inputs based on payment selection and displays invoice for bank', 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByPlaceholderText('Card Number')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
   fireEvent.click(screen.getByText('PayPal'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
+  expect(screen.queryByPlaceholderText('Full Name')).toBeNull();
+  expect(screen.queryByPlaceholderText('Email Address')).toBeNull();
   expect(screen.getByTestId('paypal-button-container')).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
+  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Email Address')).toBeInTheDocument();
   expect(screen.queryByTestId('paypal-button-container')).toBeNull();
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
