@@ -176,8 +176,8 @@
     "browse_all": "浏览所有教程"
   },
   "favoritesPage": {
-    "heading": "我的收藏教程",
-    "empty": "你没有收藏的教程。",
+    "heading": "我收藏的教程",
+    "empty": "您没有收藏的教程。",
     "remove": "移除"
   }
 }
