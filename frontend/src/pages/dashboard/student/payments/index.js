@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { FaCreditCard, FaClock, FaCheckCircle, FaFileInvoice } from "react-icons/fa";
-import { fetchMyPayments, confirmBankPayment } from "@/services/student/paymentService";
+import { fetchMyPayments, confirmPayment, uploadReceipt } from "@/services/student/paymentService";
 
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState([]);
@@ -38,7 +38,12 @@ export default function StudentPaymentsPage() {
     e.preventDefault();
     if (!selectedPayment) return;
     try {
-      await confirmBankPayment(selectedPayment.id, reference, receipt);
+      let receiptUrl;
+      if (receipt) {
+        const uploaded = await uploadReceipt(receipt);
+        receiptUrl = uploaded?.url;
+      }
+      await confirmPayment(selectedPayment.id, reference, receiptUrl);
       setPayments((prev) =>
         prev.map((p) =>
           p.id === selectedPayment.id
