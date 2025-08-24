@@ -47,8 +47,14 @@ function resolveIconElement(method) {
     if (iconMap[lower]) return iconMap[lower];
   }
   return (
-    iconMap[(method.type || '').toString().trim().toLowerCase()] || <FaMoneyCheckAlt />
+    iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
   );
+}
+
+function getMethodIdentifier(method) {
+  if (method?.type && method.type.trim()) return method.type.trim();
+  if (method?.name && method.name.trim()) return method.name.trim();
+  return '';
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -169,7 +175,7 @@ export default function CheckoutPage() {
         if (!active) return;
         setMethods(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
-          setSelectedMethod((prev) => prev || (data[0].type || '').trim());
+          setSelectedMethod((prev) => prev || getMethodIdentifier(data[0]));
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
@@ -264,13 +270,13 @@ export default function CheckoutPage() {
       try {
         setPaymentStatus('processing');
         const method = methods.find(
-          (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+          (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
         );
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
           amount: finalPrice,
-          method_type: method?.type,
+          method_type: method?.type || getMethodIdentifier(method),
         };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiateCryptoPayment(payload);
@@ -332,7 +338,7 @@ export default function CheckoutPage() {
     : [];
   const selectedMethodLabel =
     availableMethods.find(
-      (m) => (m.type || '').toString().trim().toLowerCase() === normalizedMethod
+      (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
     )?.name || selectedMethod;
 
   return (
@@ -359,19 +365,22 @@ export default function CheckoutPage() {
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Select Payment Method</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-              {availableMethods.map((method) => (
-                <button
-                  key={method.id || method.type}
-                  onClick={() => setSelectedMethod((method.type || '').trim())}
-                  className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
-                  ${selectedMethod === (method.type || '').trim() ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
-                >
-                  <div className="text-2xl" data-testid={`payment-icon-${(method.type || '').trim()}`}>
-                    {resolveIconElement(method)}
-                  </div>
-                  <div>{method.name}</div>
-                </button>
-              ))}
+              {availableMethods.map((method) => {
+                const identifier = getMethodIdentifier(method);
+                return (
+                  <button
+                    key={method.id || identifier}
+                    onClick={() => setSelectedMethod(identifier)}
+                    className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
+                  ${selectedMethod === identifier ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
+                  >
+                    <div className="text-2xl" data-testid={`payment-icon-${identifier.toLowerCase()}`}>
+                      {resolveIconElement(method)}
+                    </div>
+                    <div>{method.name}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
