@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
-import { fetchPaymentMethods, fetchPayPalClientId } from '../../services/paymentMethodService';
+import { fetchPaymentMethods } from '../../services/paymentMethodService';
 import { initiateBankPayment } from '../../services/paymentService';
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
@@ -27,13 +27,12 @@ jest.mock('../../services/classService', () => ({ fetchClassDetails: jest.fn() }
 jest.mock('../../services/tutorialService', () => ({ fetchTutorialDetails: jest.fn() }));
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
-  fetchPayPalClientId: jest.fn(),
 }));
 jest.mock('../../services/paymentService', () => ({
   initiateBankPayment: jest.fn(),
   initiateCryptoPayment: jest.fn(),
+  initiatePayPalPayment: jest.fn(),
 }));
-jest.mock('../../services/student/paymentService', () => ({ createPayment: jest.fn() }));
 
 const mockUseRouter = jest.fn();
 jest.mock('next/router', () => ({ useRouter: () => mockUseRouter() }));
@@ -47,7 +46,6 @@ beforeEach(() => {
   fetchClassDetails.mockResolvedValue({
     data: { id: 1, title: 'Test Class', instructor: 'Inst', price: 100, cover_image: '' },
   });
-  fetchPayPalClientId.mockResolvedValue('');
 });
 
 afterEach(() => {
@@ -87,12 +85,12 @@ test('adjusts inputs based on payment selection and displays invoice for bank', 
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
   expect(screen.queryByPlaceholderText('Full Name')).toBeNull();
   expect(screen.queryByPlaceholderText('Email Address')).toBeNull();
-  expect(screen.getByTestId('paypal-button-container')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Pay with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
   expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
   expect(screen.getByPlaceholderText('Email Address')).toBeInTheDocument();
-  expect(screen.queryByTestId('paypal-button-container')).toBeNull();
+  expect(screen.queryByRole('button', { name: /Pay with PayPal/i })).toBeNull();
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));

@@ -1,11 +1,10 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMethodService';
+import { useEffect, useState, useMemo } from 'react';
+import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
-import { initiateBankPayment, initiateCryptoPayment } from '@/services/paymentService';
-import { createPayment as createStudentPayment } from '@/services/student/paymentService';
+import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -120,9 +119,6 @@ export default function CheckoutPage() {
   const [bankInfo, setBankInfo] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
-  const paypalLoaded = useRef(false);
-  const paypalButtonRendered = useRef('');
-  const [paypalClientId, setPaypalClientId] = useState('');
   const finalPrice = useMemo(
     () => Math.max((itemInfo?.price ?? 0) - discount, 0),
     [itemInfo, discount]
@@ -159,17 +155,6 @@ export default function CheckoutPage() {
     };
   }, [itemId, itemType]);
 
-  useEffect(() => {
-    const loadId = async () => {
-      try {
-        const id = await fetchPayPalClientId();
-        setPaypalClientId(id || '');
-      } catch (err) {
-        console.error('Failed to load PayPal client ID', err);
-      }
-    };
-    loadId();
-  }, []);
 
   const handleApplyPromo = async () => {
     try {
@@ -232,6 +217,23 @@ export default function CheckoutPage() {
       }
       return;
     }
+    if (selectedMethod === 'paypal') {
+      try {
+        setPaymentStatus('processing');
+        const payload = {
+          item_id: itemInfo.id,
+          item_type: itemType,
+          amount: finalPrice,
+        };
+        const data = await initiatePayPalPayment(payload);
+        if (data?.approval_url) window.location.href = data.approval_url;
+      } catch (err) {
+        console.error('Failed to initiate PayPal payment', err);
+      } finally {
+        setPaymentStatus('idle');
+      }
+      return;
+    }
     if (selectedMethod === 'usdt' || selectedMethod === 'nft') {
       try {
         setPaymentStatus('processing');
@@ -256,67 +258,6 @@ export default function CheckoutPage() {
     setTimeout(completePayment, 1500);
   };
 
-  const renderPayPalButton = (amount) => {
-    if (!window.paypal) return;
-    const container = document.getElementById('paypal-button-container');
-    if (container) container.innerHTML = '';
-    paypalButtonRendered.current = amount;
-    window.paypal
-      .Buttons({
-      createOrder: (_, actions) =>
-        actions.order.create({
-          purchase_units: [{ amount: { value: amount } }],
-        }),
-      onApprove: async (data) => {
-        setPaymentStatus('processing');
-        try {
-          const method = methods.find((m) => m.type === 'paypal');
-          await createStudentPayment({
-            method_id: method?.id,
-            method_type: method?.type || 'paypal',
-            item_id: itemInfo.id,
-            item_type: itemType,
-            amount: parseFloat(amount),
-            reference_id: data.orderID,
-          });
-          completePayment();
-        } catch (err) {
-          console.error('Failed to record payment', err);
-          setPaymentStatus('idle');
-        }
-      },
-      onError: (err) => {
-        console.error('PayPal error', err);
-        setPaymentStatus('idle');
-      },
-    }).render('#paypal-button-container');
-  };
-
-  useEffect(() => {
-    if (selectedMethod !== 'paypal' || finalPrice <= 0 || !paypalClientId) return;
-    const amount = finalPrice.toString();
-    if (paypalButtonRendered.current === amount) return;
-
-    const render = () => renderPayPalButton(amount);
-
-    if (!paypalLoaded.current) {
-      const existing = document.querySelector('script[src*="paypal.com/sdk/js"]');
-      if (existing) {
-        paypalLoaded.current = true;
-        render();
-      } else {
-        const script = document.createElement('script');
-        script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}`;
-        script.addEventListener('load', () => {
-          paypalLoaded.current = true;
-          render();
-        });
-        document.body.appendChild(script);
-      }
-    } else {
-      render();
-    }
-  }, [selectedMethod, finalPrice, paypalClientId]);
 
   useEffect(() => {
     if (selectedMethod !== 'bank') {
@@ -461,6 +402,18 @@ export default function CheckoutPage() {
                 Pay with Crypto
               </button>
             </div>
+          ) : selectedMethod === 'paypal' ? (
+            <div className="bg-gray-900 p-4 rounded text-sm text-gray-300 text-center">
+              <p><strong>PayPal Payment</strong></p>
+              <p className="mb-2">You'll be redirected to PayPal to complete this payment.</p>
+              <button
+                onClick={handlePayment}
+                disabled={paymentStatus === 'processing'}
+                className="mt-2 bg-yellow-500 text-black px-4 py-2 rounded font-bold"
+              >
+                {paymentStatus === 'processing' ? 'Processing...' : 'Pay with PayPal'}
+              </button>
+            </div>
           ) : invoicePreview && selectedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Invoice #{bankInfo?.invoiceNumber || bankInfo?.invoice_number || bankInfo?.reference}</strong></p>
@@ -477,11 +430,6 @@ export default function CheckoutPage() {
                 className="mt-4 py-2 px-6 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
                 onClick={() => router.push('/payments')}
               >Go to My Payments</button>
-            </div>
-          ) : selectedMethod === 'paypal' ? (
-            <div>
-              <div id="paypal-button-container" data-testid="paypal-button-container" className="mb-4"></div>
-              <p className="text-sm text-gray-500 mt-2 text-center">You'll be redirected after successful payment.</p>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); handlePayment(); }}>

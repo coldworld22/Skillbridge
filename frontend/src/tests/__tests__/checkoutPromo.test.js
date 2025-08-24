@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { validateCode } from '../../services/couponService';
 import { fetchClassDetails } from '../../services/classService';
-import { fetchPaymentMethods, fetchPayPalClientId } from '../../services/paymentMethodService';
+import { fetchPaymentMethods } from '../../services/paymentMethodService';
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 
@@ -37,7 +37,6 @@ jest.mock('../../services/tutorialService', () => ({
 
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
-  fetchPayPalClientId: jest.fn(),
 }));
 
 jest.mock('../../services/couponService', () => ({
@@ -61,7 +60,6 @@ beforeEach(() => {
   fetchPaymentMethods.mockResolvedValue([
     { name: 'stripe', label: 'Stripe', icon: 'stripe', active: true },
   ]);
-  fetchPayPalClientId.mockResolvedValue('');
 });
 
 afterEach(() => {

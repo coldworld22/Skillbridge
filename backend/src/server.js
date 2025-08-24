@@ -159,6 +159,16 @@ app.use(
 app.use("/api/payments/student", require("./modules/payments/student.routes"));
 app.use("/api/payments/bank", require("./modules/payments/bank.routes"));
 app.use("/api/payments/crypto", require("./modules/payments/crypto.routes"));
+// Alias for NOWPayments crypto gateway
+app.use(
+  "/api/payments/nowpayments",
+  require("./modules/payments/crypto.routes")
+);
+// PayPal order creation and callback
+app.use(
+  "/api/payments/paypal",
+  require("./modules/payments/paypal.routes")
+);
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
 app.use(
   "/api/admin/payments/bank",
