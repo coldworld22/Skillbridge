@@ -7,6 +7,12 @@ describe('resolveCheckoutItem', () => {
     expect(resolveCheckoutItem(query, [])).toEqual({ id: '123', type: 'tutorial' });
   });
 
+  it('parses items when quotes are not URL-encoded', () => {
+    const items = '%5B%7B"id"%3A"123"%2C"itemType"%3A"tutorial"%7D%5D';
+    const query = { items };
+    expect(resolveCheckoutItem(query, [])).toEqual({ id: '123', type: 'tutorial' });
+  });
+
   it('falls back to cart items when query missing', () => {
     const cart = [{ id: '1', item_type: 'class' }];
     expect(resolveCheckoutItem({}, cart)).toEqual({ id: '1', type: 'class' });
