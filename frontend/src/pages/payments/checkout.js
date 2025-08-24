@@ -137,7 +137,8 @@ export default function CheckoutPage() {
     : '';
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
-  // Use the payment method "type" as identifier. Default to first active method once loaded.
+  // Use the payment method "type" as identifier. Default to the method marked
+  // as default, or the first active method if none is marked.
   const [selectedMethod, setSelectedMethod] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -173,9 +174,14 @@ export default function CheckoutPage() {
       try {
         const data = await fetchPaymentMethods();
         if (!active) return;
-        setMethods(Array.isArray(data) ? data : []);
-        if (Array.isArray(data) && data.length > 0) {
-          setSelectedMethod((prev) => prev || getMethodIdentifier(data[0]));
+        const methodsList = Array.isArray(data) ? data : [];
+        setMethods(methodsList);
+        if (methodsList.length > 0) {
+          const defaultMethod =
+            methodsList.find((m) => m.is_default) || methodsList[0];
+          setSelectedMethod((prev) =>
+            prev || getMethodIdentifier(defaultMethod)
+          );
         }
       } catch (err) {
         console.error('Failed to load payment methods', err);
@@ -257,6 +263,7 @@ export default function CheckoutPage() {
           item_type: itemType,
           amount: finalPrice,
         };
+        if (couponId) payload.coupon_id = couponId;
         const data = await initiatePayPalPayment(payload);
         if (data?.approval_url) window.location.href = data.approval_url;
       } catch (err) {
