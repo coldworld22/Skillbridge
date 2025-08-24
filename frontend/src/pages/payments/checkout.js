@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
+import { fetchBook } from '@/services/bookService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import useCartStore from '@/store/cart/cartStore';
@@ -166,6 +167,8 @@ export default function CheckoutPage() {
         const details =
           itemType === 'tutorial'
             ? await fetchTutorialDetails(itemId)
+            : itemType === 'book'
+            ? await fetchBook(itemId)
             : await fetchClassDetails(itemId);
         if (active) setItemInfo(details?.data ?? details);
       } catch (err) {
@@ -214,16 +217,29 @@ export default function CheckoutPage() {
   };
 
   const completePayment = async () => {
-    const storageKey = itemType === 'tutorial' ? 'enrolledTutorials' : 'enrolledClasses';
+    const storageKey =
+      itemType === 'tutorial'
+        ? 'enrolledTutorials'
+        : itemType === 'book'
+        ? 'purchasedBooks'
+        : 'enrolledClasses';
     const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const newItem = {
-      id: itemInfo.id,
-      title: itemInfo.title,
-      instructor: itemInfo.instructor,
-      startDate: new Date().toISOString(),
-      status: 'Live',
-      joined: true,
-    };
+    const newItem =
+      itemType === 'book'
+        ? {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            author: itemInfo.author,
+            purchaseDate: new Date().toISOString(),
+          }
+        : {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            instructor: itemInfo.instructor,
+            startDate: new Date().toISOString(),
+            status: 'Live',
+            joined: true,
+          };
     localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
       await Promise.resolve(removeItem(itemInfo.id));
@@ -344,15 +360,25 @@ export default function CheckoutPage() {
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
           <img
-            src={itemType === 'tutorial' ? itemInfo.thumbnail : itemInfo.cover_image}
+            src={
+              itemType === 'tutorial'
+                ? itemInfo.thumbnail
+                : itemType === 'book'
+                ? itemInfo.cover_image_url || itemInfo.cover_image
+                : itemInfo.cover_image
+            }
             alt={itemInfo.title}
             className="w-32 h-32 object-cover rounded-lg"
           />
           <div>
             <h2 className="text-xl font-semibold">{itemInfo.title}</h2>
-            <p className="text-sm text-gray-400">{t('instructor')}: {itemInfo.instructor}</p>
-            <p className="mt-2 font-bold text-lg">{t('price')}: ${itemInfo.price}</p>
-            {discount > 0 && <p className="text-green-400">{t('discount_applied')}: -${discount}</p>}
+            <p className="text-sm text-gray-400">
+              {itemType === 'book'
+                ? `Author: ${itemInfo.author}`
+                : `Instructor: ${itemInfo.instructor}`}
+            </p>
+            <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
+            {discount > 0 && <p className="text-green-400">Discount Applied: -${discount}</p>}
           </div>
         </div>
 
