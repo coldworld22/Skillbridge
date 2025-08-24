@@ -7,6 +7,7 @@ export const mapBookForCart = (book) => ({
   category_name: book.category_name,
   rating: book.rating,
   price: book.price,
+  item_type: "book",
   cover_url:
     book.cover_image_url ||
     buildUrl(book.cover_image) ||
