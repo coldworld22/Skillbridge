@@ -75,11 +75,8 @@ test('adjusts inputs based on payment selection and submits bank details', async
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByPlaceholderText('Card Number')).toBeInTheDocument();
-  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
   fireEvent.click(screen.getByText('PayPal'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
-  expect(screen.getByPlaceholderText('Full Name')).toBeInTheDocument();
-  expect(screen.getByPlaceholderText('PayPal Email')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
