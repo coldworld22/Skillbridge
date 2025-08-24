@@ -215,10 +215,9 @@ export default function CheckoutPage() {
         actions.order.create({
           purchase_units: [{ amount: { value: amount } }],
         }),
-      onApprove: async (_, actions) => {
+      onApprove: async (data) => {
         setPaymentStatus('processing');
         try {
-          const order = await actions.order.capture();
           const method = methods.find((m) => m.type === 'paypal');
           await createStudentPayment({
             method_id: method?.id,
@@ -226,7 +225,7 @@ export default function CheckoutPage() {
             item_id: itemInfo.id,
             item_type: itemType,
             amount: parseFloat(amount),
-            reference_id: order?.id,
+            reference_id: data.orderID,
           });
           completePayment();
         } catch (err) {

@@ -24,6 +24,10 @@ async function getClient() {
   return client;
 }
 
+exports.invalidateClient = () => {
+  client = null;
+};
+
 exports.createOrder = async ({ amount, currency = 'USD' }) => {
   const request = new paypal.orders.OrdersCreateRequest();
   request.prefer('return=representation');

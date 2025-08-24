@@ -7,6 +7,7 @@ const fs = require("fs");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const paypalService = require("../../services/paypalService");
 
 const sanitizeMethod = (method) => {
   if (method?.settings) {
@@ -178,6 +179,7 @@ exports.updatePayPalCredentials = catchAsync(async (req, res) => {
     throw new AppError("Invalid PayPal mode", 400);
   }
   await service.updatePayPalSettings({ client_id, client_secret, mode });
+  paypalService.invalidateClient();
   sendSuccess(
     res,
     { client_id, has_client_secret: true, mode: mode || "sandbox" },
