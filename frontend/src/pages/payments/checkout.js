@@ -28,6 +28,24 @@ const iconMap = {
   coinbase: <FaEthereum />,
 };
 
+function resolveIconElement(method) {
+  if (method.icon) {
+    const lower = method.icon.toLowerCase();
+    const isUrl = /^(https?:)?\/\//.test(method.icon) || method.icon.includes('.');
+    if (isUrl) {
+      return (
+        <img
+          src={method.icon}
+          alt={method.name}
+          className="w-8 h-8 object-contain"
+        />
+      );
+    }
+    if (iconMap[lower]) return iconMap[lower];
+  }
+  return iconMap[method.type?.toLowerCase()] || <FaMoneyCheckAlt />;
+}
+
 export function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
 
@@ -377,16 +395,8 @@ export default function CheckoutPage() {
                   className={`flex flex-col items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm text-center transition-all border
                   ${selectedMethod === method.type ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600'}`}
                 >
-                  <div className="text-2xl">
-                    {method.icon ? (
-                      <img
-                        src={method.icon}
-                        alt={method.name}
-                        className="w-8 h-8 object-contain"
-                      />
-                    ) : (
-                      iconMap[method.type?.toLowerCase()] || <FaMoneyCheckAlt />
-                    )}
+                  <div className="text-2xl" data-testid={`payment-icon-${method.type}`}>
+                    {resolveIconElement(method)}
                   </div>
                   <div>{method.name}</div>
                 </button>
@@ -479,7 +489,9 @@ export default function CheckoutPage() {
                   <input type="text" placeholder="CVC" required className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white" />
                 </>
               )}
-              {selectedMethod === 'paypal' && <div id="paypal-button-container" className="mb-4"></div>}
+              {selectedMethod === 'paypal' && (
+                <div id="paypal-button-container" data-testid="paypal-button-container" className="mb-4"></div>
+              )}
               {selectedMethod !== 'paypal' && (
                 <button type="submit" disabled={paymentStatus === 'processing'} className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all">
                   {paymentStatus === 'processing'
