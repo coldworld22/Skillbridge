@@ -4,7 +4,7 @@ import { fetchPaymentMethods, fetchPayPalClientId } from '@/services/paymentMeth
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { validateCode } from '@/services/couponService';
-import { initiateBankPayment } from '@/services/paymentService';
+import { initiateBankPayment, initiateCryptoPayment } from '@/services/paymentService';
 import { createPayment as createStudentPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import Navbar from '@/components/website/sections/Navbar';
@@ -197,6 +197,26 @@ export default function CheckoutPage() {
         setInvoicePreview(true);
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
+      } finally {
+        setPaymentStatus('idle');
+      }
+      return;
+    }
+    if (selectedMethod === 'usdt' || selectedMethod === 'nft') {
+      try {
+        setPaymentStatus('processing');
+        const method = methods.find((m) => m.type === selectedMethod);
+        const payload = {
+          item_id: itemInfo.id,
+          item_type: itemType,
+          amount: Math.max((itemInfo.price ?? 0) - discount, 0),
+          method_type: method?.type,
+        };
+        if (couponId) payload.coupon_id = couponId;
+        const data = await initiateCryptoPayment(payload);
+        if (data?.invoice_url) window.location.href = data.invoice_url;
+      } catch (err) {
+        console.error('Failed to initiate crypto payment', err);
       } finally {
         setPaymentStatus('idle');
       }
@@ -407,11 +427,10 @@ export default function CheckoutPage() {
           ) : selectedMethod === 'usdt' || selectedMethod === 'nft' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">
               <p><strong>Crypto Payment</strong></p>
-              <p className="mb-2">Connect your wallet to verify ownership.</p>
+              <p className="mb-2">You'll be redirected to complete this payment.</p>
               <button onClick={handlePayment} className="mt-2 bg-yellow-500 text-black px-4 py-2 rounded font-bold">
-                Connect Wallet & Verify
+                Pay with Crypto
               </button>
-              <p className="text-yellow-400 mt-2">You'll be redirected after validation.</p>
             </div>
           ) : invoicePreview && selectedMethod === 'bank' ? (
             <div className="bg-gray-900 p-4 rounded text-sm text-gray-300">

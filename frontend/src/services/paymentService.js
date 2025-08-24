@@ -6,3 +6,9 @@ export const initiateBankPayment = async (payload) => {
   return data?.data ?? data;
 };
 
+// Initiate crypto payment via NowPayments
+export const initiateCryptoPayment = async (payload) => {
+  const { data } = await api.post("/payments/crypto/initiate", payload);
+  return data?.data ?? data;
+};
+
