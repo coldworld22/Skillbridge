@@ -49,6 +49,14 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.
+For automated production setup run the installation wizard from the project root:
+
+```bash
+./install.sh
+```
+
+The script prompts for the environment and, in production mode, your domain name before configuring Nginx and requesting Let's Encrypt certificates. To supply values non-interactively use `./install.sh production yourdomain.com`.
+
 New users can follow the [Student Registration Guide](docs/student-registration-guide.md) to learn how to sign up and enroll in classes.
 If Google sign-in fails with `redirect_uri_mismatch`, see [docs/social-login-setup.md](docs/social-login-setup.md) for the required OAuth callback URL.
 
