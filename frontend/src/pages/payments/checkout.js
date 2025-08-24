@@ -68,13 +68,28 @@ export function resolveCheckoutItem(query, cartItems) {
       // ignore decode errors; we'll attempt to parse whatever we have
     }
 
+    const attemptParse = (str) => {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed) && parsed.length === 1) {
+          const p = parsed[0] || {};
+          if (!p.id) return null;
+          return { id: p.id, type: p.itemType || p.item_type || 'class' };
+        }
+      } catch {}
+      return null;
+    };
+
+    let result = attemptParse(decoded);
+    if (result) return result;
+
+    // Fallback: handle cases where the query was encoded without quoting keys/values
     try {
-      const parsed = JSON.parse(decoded);
-      if (Array.isArray(parsed) && parsed.length === 1) {
-        const p = parsed[0] || {};
-        if (!p.id) return null;
-        return { id: p.id, type: p.itemType || p.item_type || 'class' };
-      }
+      const fixed = decoded
+        .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
+        .replace(/:\s*([^,"}\]\s][^,}\]]*)/g, ':"$1"');
+      result = attemptParse(fixed);
+      if (result) return result;
     } catch (err) {
       console.error('Failed to parse checkout items', err);
     }
