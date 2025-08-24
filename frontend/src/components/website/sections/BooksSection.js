@@ -38,7 +38,7 @@ const BooksSection = () => {
   }, []);
 
   return (
-    <section className="bg-gray-950 py-16 text-white text-center">
+    <section id="books" className="bg-gray-950 py-16 text-white text-center">
       <motion.h2
         className="text-3xl sm:text-4xl font-bold text-yellow-400 mb-4"
         initial={{ opacity: 0, y: -20 }}

@@ -34,3 +34,4 @@ if [[ "$MODE" == "production" ]]; then
 else
   echo "Running in development mode; no deployment actions performed."
 fi
+
