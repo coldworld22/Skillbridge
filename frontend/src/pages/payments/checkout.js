@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
+import { fetchBook } from '@/services/bookService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import useCartStore from '@/store/cart/cartStore';
@@ -18,6 +19,7 @@ import {
   FaCcStripe, FaPaypal, FaMoneyCheckAlt, FaUniversity,
   FaEthereum, FaFileInvoice, FaDownload, FaCheckCircle
 } from 'react-icons/fa';
+import { useTranslation } from 'next-i18next';
 
 const iconMap = {
   stripe: <FaCcStripe />,
@@ -121,6 +123,7 @@ export function resolveCheckoutItem(query, cartItems) {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { t } = useTranslation('common');
   // Use shallow comparison so store updates unrelated to items do not trigger
   // unnecessary renders that can lead to nested update loops.
   const { items: cartItems, removeItem } = useCartStore(
@@ -133,7 +136,7 @@ export default function CheckoutPage() {
   const itemId = resolvedItem?.id;
   const itemType = resolvedItem?.type;
   const checkoutError = router.isReady && !resolvedItem
-    ? 'Please select exactly one item to checkout'
+    ? t('checkout_single_item_warning')
     : '';
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
@@ -165,6 +168,8 @@ export default function CheckoutPage() {
         const details =
           itemType === 'tutorial'
             ? await fetchTutorialDetails(itemId)
+            : itemType === 'book'
+            ? await fetchBook(itemId)
             : await fetchClassDetails(itemId);
         if (active) setItemInfo(details?.data ?? details);
       } catch (err) {
@@ -194,6 +199,8 @@ export default function CheckoutPage() {
 
 
   const handleApplyPromo = async () => {
+    const formattedCode = promoCode.trim().toUpperCase();
+    setPromoCode(formattedCode);
     try {
       const data = await validateCode(promoCode, itemType, itemId);
       const percent = data.discount_percent || 0;
@@ -201,30 +208,43 @@ export default function CheckoutPage() {
       setDiscountAmount(amount);
       setDiscountPercent(percent);
       setCouponId(data.id);
-      toast.success('Promo code applied');
+      toast.success(t('promo_code_applied'));
     } catch (err) {
       setDiscountAmount(0);
       setDiscountPercent(0);
       setCouponId(null);
       if (err?.response?.status === 404) {
-        toast.error('Invalid promo code');
+        toast.error(t('invalid_promo_code'));
       } else {
-        toast.error('Failed to apply promo code. Please try again.');
+        toast.error(t('promo_code_apply_failed'));
       }
     }
   };
 
   const completePayment = async () => {
-    const storageKey = itemType === 'tutorial' ? 'enrolledTutorials' : 'enrolledClasses';
+    const storageKey =
+      itemType === 'tutorial'
+        ? 'enrolledTutorials'
+        : itemType === 'book'
+        ? 'purchasedBooks'
+        : 'enrolledClasses';
     const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const newItem = {
-      id: itemInfo.id,
-      title: itemInfo.title,
-      instructor: itemInfo.instructor,
-      startDate: new Date().toISOString(),
-      status: 'Live',
-      joined: true,
-    };
+    const newItem =
+      itemType === 'book'
+        ? {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            author: itemInfo.author,
+            purchaseDate: new Date().toISOString(),
+          }
+        : {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            instructor: itemInfo.instructor,
+            startDate: new Date().toISOString(),
+            status: 'Live',
+            joined: true,
+          };
     localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
     try {
       await Promise.resolve(removeItem(itemInfo.id));
@@ -253,6 +273,7 @@ export default function CheckoutPage() {
         setPaymentStatus('submitted_bank');
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
+        toast.error('Failed to initiate bank transfer. Please try again.');
         setPaymentStatus('idle');
       }
       return;
@@ -270,6 +291,7 @@ export default function CheckoutPage() {
         if (data?.approval_url) window.location.href = data.approval_url;
       } catch (err) {
         console.error('Failed to initiate PayPal payment', err);
+        toast.error('Failed to initiate PayPal payment. Please try again.');
       } finally {
         setPaymentStatus('idle');
       }
@@ -292,6 +314,7 @@ export default function CheckoutPage() {
         if (data?.invoice_url) window.location.href = data.invoice_url;
       } catch (err) {
         console.error('Failed to initiate crypto payment', err);
+        toast.error('Failed to initiate crypto payment. Please try again.');
       } finally {
         setPaymentStatus('idle');
       }
@@ -301,9 +324,23 @@ export default function CheckoutPage() {
     setTimeout(completePayment, 1500);
   };
 
+  const installments = 3;
+  const perInstallment = useMemo(
+    () => finalPrice / installments,
+    [finalPrice, installments]
+  );
+  const schedule = useMemo(() => {
+    if (!allowInstallments) return [];
+    const amount = finalPrice / installments;
+    return Array.from({ length: installments }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() + i);
+      return { number: i + 1, date: d.toLocaleDateString(), amount: amount.toFixed(2) };
+    });
+  }, [finalPrice, allowInstallments, installments]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
-  if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
+  if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
   const installments = 3;
   const perInstallment = finalPrice / installments;
   const schedule = Array.from({ length: installments }, (_, i) => {
@@ -324,17 +361,27 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-20 mt-16">
-        <h1 className="text-3xl font-bold mb-6 text-yellow-400">Checkout</h1>
+        <h1 className="text-3xl font-bold mb-6 text-yellow-400">{t('checkout')}</h1>
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
           <img
-            src={itemType === 'tutorial' ? itemInfo.thumbnail : itemInfo.cover_image}
+            src={
+              itemType === 'tutorial'
+                ? itemInfo.thumbnail
+                : itemType === 'book'
+                ? itemInfo.cover_image_url || itemInfo.cover_image
+                : itemInfo.cover_image
+            }
             alt={itemInfo.title}
             className="w-32 h-32 object-cover rounded-lg"
           />
           <div>
             <h2 className="text-xl font-semibold">{itemInfo.title}</h2>
-            <p className="text-sm text-gray-400">Instructor: {itemInfo.instructor}</p>
+            <p className="text-sm text-gray-400">
+              {itemType === 'book'
+                ? `Author: ${itemInfo.author}`
+                : `Instructor: ${itemInfo.instructor}`}
+            </p>
             <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
             {discountAmount > 0 && (
               <p className="text-green-400">
@@ -346,7 +393,7 @@ export default function CheckoutPage() {
 
         {!isFree && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Select Payment Method</h2>
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('select_payment_method')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
               {availableMethods.map((method) => {
                 const identifier = getMethodIdentifier(method);
@@ -369,11 +416,11 @@ export default function CheckoutPage() {
         )}
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Promo Code</h2>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('promo_code')}</h2>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Enter promo code"
+              placeholder={t('enter_promo_code')}
               className="flex-1 p-2 rounded bg-gray-700 text-white"
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
@@ -381,21 +428,21 @@ export default function CheckoutPage() {
             <button
               onClick={handleApplyPromo}
               className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-            >Apply</button>
+            >{t('apply')}</button>
           </div>
         </div>
 
         {!isFree && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Installments</h2>
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('installments')}</h2>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={allowInstallments} onChange={(e) => setAllowInstallments(e.target.checked)} />
-              Pay in {installments} monthly installments
+              {t('pay_in_monthly_installments', { count: installments })}
             </label>
             {allowInstallments && (
               <ul className="mt-4 text-sm text-gray-300">
                 {schedule.map((s) => (
-                  <li key={s.number}>Installment {s.number}: ${s.amount} due {s.date}</li>
+                  <li key={s.number}>{t('installment_item', { number: s.number, amount: s.amount, date: s.date })}</li>
                 ))}
               </ul>
             )}
@@ -403,22 +450,22 @@ export default function CheckoutPage() {
         )}
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> Payment Details</h2>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('payment_details')}</h2>
 
           {isFree ? (
             <div className="text-center">
-              <p className="mb-4">This item is free. Click below to complete your enrollment.</p>
+              <p className="mb-4">{t('free_item_notice')}</p>
               <button onClick={completePayment} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
-                Enroll for Free
+                {t('enroll_for_free')}
               </button>
             </div>
           ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
-              <FaCheckCircle className="inline mr-2 text-2xl" /> Payment Successful! Redirecting...
+              <FaCheckCircle className="inline mr-2 text-2xl" /> {t('payment_successful_redirecting')}
             </div>
           ) : paymentStatus === 'submitted_bank' ? (
             <div className="text-yellow-400 text-center text-lg py-6">
-              Your bank transfer request has been submitted and is pending admin approval.
+              {t('bank_transfer_pending')}
             </div>
           ) : normalizedMethod === 'paypal' ? (
             <PayPalForm
