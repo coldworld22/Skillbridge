@@ -7,6 +7,7 @@ import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment } from '@/services/paymentService';
 import { createPayment as createStudentPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
+import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { toast } from 'react-toastify';
@@ -76,14 +77,15 @@ export function resolveCheckoutItem(query, cartItems) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items: cartItems, removeItem } = useCartStore((state) => ({
-    items: state.items,
-    removeItem: state.removeItem,
-  }));
+  // Use shallow comparison so store updates unrelated to items do not trigger
+  // unnecessary renders that can lead to nested update loops.
+  const { items: cartItems, removeItem } = useCartStore(
+    useShallow((state) => ({ items: state.items, removeItem: state.removeItem }))
+  );
   const resolvedItem = useMemo(() => {
     if (!router.isReady) return null;
     return resolveCheckoutItem(router.query, cartItems);
-  }, [router.isReady, router.asPath, cartItems]);
+  }, [router.isReady, router.query, cartItems]);
   const itemId = resolvedItem?.id;
   const itemType = resolvedItem?.type;
   const checkoutError = router.isReady && !resolvedItem
