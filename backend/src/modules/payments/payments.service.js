@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const AppError = require("../../utils/AppError");
 
 const STATUS = {
   PENDING_PAYMENT: "pending_payment",
@@ -83,22 +84,22 @@ exports.approveBankPayment = async (
 ) => {
   return db.transaction(async (trx) => {
     const payment = await trx("payments").where({ id }).first();
-    if (!payment) throw new Error("Payment not found");
+    if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
-      throw new Error("Payment is not awaiting approval");
+      throw new AppError("Payment is not awaiting approval", 400);
     }
 
     if (amount !== undefined && Number(payment.amount) !== Number(amount)) {
-      throw new Error("Payment amount does not match");
+      throw new AppError("Payment amount does not match", 400);
     }
 
     if (item_id !== undefined && payment.item_id !== item_id) {
-      throw new Error("Payment item does not match order");
+      throw new AppError("Payment item does not match order", 400);
     }
 
     if (item_type !== undefined && payment.item_type !== item_type) {
-      throw new Error("Payment item type does not match order");
+      throw new AppError("Payment item type does not match order", 400);
     }
 
     const [row] = await trx("payments")
@@ -116,22 +117,22 @@ exports.rejectBankPayment = async (
 ) => {
   return db.transaction(async (trx) => {
     const payment = await trx("payments").where({ id }).first();
-    if (!payment) throw new Error("Payment not found");
+    if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
-      throw new Error("Payment is not awaiting approval");
+      throw new AppError("Payment is not awaiting approval", 400);
     }
 
     if (amount !== undefined && Number(payment.amount) !== Number(amount)) {
-      throw new Error("Payment amount does not match");
+      throw new AppError("Payment amount does not match", 400);
     }
 
     if (item_id !== undefined && payment.item_id !== item_id) {
-      throw new Error("Payment item does not match order");
+      throw new AppError("Payment item does not match order", 400);
     }
 
     if (item_type !== undefined && payment.item_type !== item_type) {
-      throw new Error("Payment item type does not match order");
+      throw new AppError("Payment item type does not match order", 400);
     }
 
     const [row] = await trx("payments")
