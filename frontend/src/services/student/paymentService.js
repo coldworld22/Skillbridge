@@ -19,13 +19,14 @@ export const uploadReceipt = async (file) => {
   return data?.data;
 };
 
-export const confirmBankPayment = async (paymentId, reference, file) => {
-  const formData = new FormData();
-  formData.append("payment_id", paymentId);
-  formData.append("transaction_reference", reference);
-  if (file) formData.append("receipt", file);
-  const { data } = await api.post("/payments/bank/confirm", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+export const confirmPayment = async (paymentId, reference, receiptUrl) => {
+  const payload = {
+    reference_id: reference,
+    receipt_url: receiptUrl,
+  };
+  const { data } = await api.post(
+    `/payments/student/${paymentId}/confirm`,
+    payload
+  );
   return data?.data;
 };
