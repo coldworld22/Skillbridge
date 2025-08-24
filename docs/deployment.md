@@ -4,16 +4,22 @@ Follow these steps to run SkillBridge on a server or production host.
 
 ## Automated Nginx and SSL setup
 
-After pointing your domain DNS records to the server, run the deployment
-script to configure Nginx and request Let's Encrypt certificates:
+After pointing your domain DNS records to the server, run the installation
+wizard to configure Nginx and request Let's Encrypt certificates:
+
+```bash
+./install.sh
+```
+
+The script prompts for the environment and, in production mode, the domain
+name. To run non-interactively you can provide arguments:
 
 ```bash
 ./install.sh production yourdomain.com
 ```
-
-The script updates the domain placeholders in `nginx/conf.d` and uses
-`certbot` (or `acme.sh`) to generate certificates at the paths referenced in
-`nginx/conf.d/ssl.conf`.
+In either case the script updates the domain placeholders in `nginx/conf.d`
+and uses `certbot` (or `acme.sh`) to generate certificates at the paths
+referenced in `nginx/conf.d/ssl.conf`.
 
 ## Configure environment variables
 

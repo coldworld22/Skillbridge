@@ -4,6 +4,11 @@ set -euo pipefail
 # Script to configure nginx for a provided domain and obtain Let's Encrypt certificates.
 # Usage: ./scripts/deploy_server.sh <domain>
 
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root." >&2
+  exit 1
+fi
+
 DOMAIN=${1:-}
 if [[ -z "$DOMAIN" ]]; then
   echo "Usage: $0 <domain>" >&2
@@ -11,9 +16,12 @@ if [[ -z "$DOMAIN" ]]; then
 fi
 
 BARE_DOMAIN=${DOMAIN#www.}
-DEFAULT_CONF="nginx/conf.d/default.conf"
-SSL_CONF="nginx/conf.d/ssl.conf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+DEFAULT_CONF="$REPO_ROOT/nginx/conf.d/default.conf"
+SSL_CONF="$REPO_ROOT/nginx/conf.d/ssl.conf"
 
+echo "Updating Nginx config for $DOMAIN"
 # Replace domain placeholders in nginx config
 for file in "$DEFAULT_CONF" "$SSL_CONF"; do
   if [[ -f "$file" ]]; then
@@ -37,4 +45,9 @@ else
   exit 1
 fi
 
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl reload nginx
+elif command -v nginx >/dev/null 2>&1; then
+  nginx -s reload
+fi
 echo "Certificates installed to $CERT_PATH"
