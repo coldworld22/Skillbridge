@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatCurrency } from "@/utils/currency";
 
 const EnrollBanner = ({
   onEnroll,
@@ -9,10 +10,7 @@ const EnrollBanner = ({
   currency = "USD",
 }) => {
   const formattedPrice = isPaid
-    ? new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-      }).format(Number(price))
+    ? formatCurrency(price, { currency })
     : "Free";
 
   let actionButton;

@@ -30,6 +30,7 @@ export default function CreateTutorialPage() {
     thumbnail: null,
     preview: null,
     price: "",
+    currency: "",
     isFree: false,
   });
 
@@ -45,6 +46,7 @@ export default function CreateTutorialPage() {
         preview: null,
         language: draft.language || "",
         lessonCount: draft.lessonCount || 1,
+        currency: draft.currency || "",
       });
     }
 
@@ -80,6 +82,9 @@ export default function CreateTutorialPage() {
     formData.append("is_paid", (!tutorialData.isFree).toString());
     if (!tutorialData.isFree) {
       formData.append("price", tutorialData.price);
+      if (tutorialData.currency) {
+        formData.append("currency", tutorialData.currency);
+      }
     }
     if (tutorialData.tags.length) {
       formData.append("tags", JSON.stringify(tutorialData.tags));

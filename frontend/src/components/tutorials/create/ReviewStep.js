@@ -1,5 +1,6 @@
 import { FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
+import { formatCurrency } from "@/utils/currency";
 
 export default function ReviewStep({
   tutorialData,
@@ -114,7 +115,10 @@ export default function ReviewStep({
             <p className="text-green-600 font-semibold">{t("create.review.free")}</p>
           ) : (
             <p className="text-gray-800">
-              <strong>{t("create.review.price_label")}</strong> ${tutorialData.price}
+              <strong>{t("create.review.price_label")}</strong>{" "}
+              {formatCurrency(tutorialData.price, {
+                currency: tutorialData.currency,
+              })}
             </p>
           )}
         </div>
