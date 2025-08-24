@@ -296,16 +296,23 @@ export default function CheckoutPage() {
     setTimeout(completePayment, 1500);
   };
 
+  const installments = 3;
+  const perInstallment = useMemo(
+    () => finalPrice / installments,
+    [finalPrice, installments]
+  );
+  const schedule = useMemo(() => {
+    if (!allowInstallments) return [];
+    const amount = finalPrice / installments;
+    return Array.from({ length: installments }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() + i);
+      return { number: i + 1, date: d.toLocaleDateString(), amount: amount.toFixed(2) };
+    });
+  }, [finalPrice, allowInstallments, installments]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">Loading...</div>;
-  const installments = 3;
-  const perInstallment = finalPrice / installments;
-  const schedule = Array.from({ length: installments }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + i);
-    return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
-  });
   // Filter out inactive methods if any; the API already returns active ones
   const availableMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
