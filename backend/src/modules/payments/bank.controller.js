@@ -7,6 +7,12 @@ const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const { v4: uuidv4 } = require("uuid");
 
+const DEFAULT_PLATFORM_CUT = {
+  class: 15,
+  book: 10,
+  tutorial: 20,
+};
+
 exports.getBankPayments = catchAsync(async (req, res) => {
   const { status } = req.query;
   const data = await paymentsService.getAll(status, "bank");
@@ -30,7 +36,10 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   let instructor_amount = amount;
   try {
     const settings = await paymentConfigService.getSettings();
-    const cut = settings?.platformCut?.[item_type] || 0;
+    const cut =
+      settings?.platformCut?.[item_type] ??
+      DEFAULT_PLATFORM_CUT[item_type] ??
+      0;
     platform_fee = (amount * cut) / 100;
     instructor_amount = amount - platform_fee;
   } catch (err) {

@@ -12,7 +12,7 @@ jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
 }));
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
-  getById: jest.fn().mockResolvedValue({ type: 'card' }),
+  getById: jest.fn().mockResolvedValue({ type: 'card', active: true }),
 }));
 
 jest.mock('../src/services/paypalService', () => ({
@@ -32,7 +32,7 @@ jest.mock('../src/modules/library/library.service', () => ({
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (_req, _res, next) => next(),
+  verifyToken: (req, _res, next) => { req.user = { id: 'admin1' }; next(); },
   isAdmin: (_req, _res, next) => next(),
 }));
 
@@ -51,7 +51,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for class payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { class: 10 } });
-    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'paid' });
+    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -70,7 +70,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for book payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { book: 20 } });
-    service.create.mockResolvedValue({ id: 'p2', reference_id: 'ref', status: 'paid' });
+    service.create.mockResolvedValue({ id: 'p2', reference_id: 'ref', status: 'pending' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -89,7 +89,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for tutorial payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { tutorial: 30 } });
-    service.create.mockResolvedValue({ id: 'p3', reference_id: 'ref', status: 'paid' });
+    service.create.mockResolvedValue({ id: 'p3', reference_id: 'ref', status: 'pending' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -103,6 +103,25 @@ describe('payment commission calculations', () => {
     expect(res.status).toBe(200);
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ platform_fee: 60, instructor_amount: 140 })
+    );
+  });
+
+  it('falls back to default cut when settings missing', async () => {
+    configService.getSettings.mockResolvedValue(null);
+    service.create.mockResolvedValue({ id: 'p4', reference_id: 'ref', status: 'pending' });
+
+    const res = await request(app).post('/api/payments/admin').send({
+      user_id: 'u1',
+      method_id: 'm1',
+      item_type: 'class',
+      item_id: 'i4',
+      amount: 100,
+      status: 'paid',
+    });
+
+    expect(res.status).toBe(200);
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ platform_fee: 15, instructor_amount: 85 })
     );
   });
 });
