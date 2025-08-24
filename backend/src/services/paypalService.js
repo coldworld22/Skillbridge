@@ -9,11 +9,17 @@ async function getClient() {
   if (!settings?.client_id || !settings?.client_secret) {
     throw new Error('PayPal credentials are not configured');
   }
-  // Default to sandbox environment; adjust as needed
-  const environment = new paypal.core.SandboxEnvironment(
-    settings.client_id,
-    settings.client_secret
-  );
+  const mode = settings.mode === 'live' ? 'live' : 'sandbox';
+  const environment =
+    mode === 'live'
+      ? new paypal.core.LiveEnvironment(
+          settings.client_id,
+          settings.client_secret
+        )
+      : new paypal.core.SandboxEnvironment(
+          settings.client_id,
+          settings.client_secret
+        );
   client = new paypal.core.PayPalHttpClient(environment);
   return client;
 }

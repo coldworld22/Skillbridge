@@ -26,7 +26,8 @@ exports.seed = async function(knex) {
       active: true,
       settings: {
         client_id: '',
-        client_secret: ''
+        client_secret: '',
+        mode: 'sandbox'
       },
       is_default: false,
       created_at: now,
