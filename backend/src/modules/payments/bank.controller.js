@@ -13,6 +13,28 @@ const DEFAULT_PLATFORM_CUT = {
   tutorial: 20,
 };
 
+const ALLOWED_ITEM_TYPES = ["class", "book", "tutorial"];
+const SUPPORTED_CURRENCIES = [
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CNY",
+  "SAR",
+  "AED",
+  "KWD",
+  "INR",
+  "CAD",
+  "AUD",
+  "CHF",
+  "QAR",
+  "EGP",
+  "TRY",
+  "KRW",
+  "SGD",
+  "RUB",
+];
+
 exports.getBankPayments = catchAsync(async (req, res) => {
   const { status } = req.query;
   const data = await paymentsService.getAll(status, "bank");
@@ -23,8 +45,22 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   const { item_type, item_id, amount, currency } = req.body;
   const user_id = req.user?.id;
 
-  if (!user_id || !item_type || !item_id || !amount) {
+  if (!user_id || !item_type || !item_id || amount === undefined) {
     throw new AppError("Missing required fields", 400);
+  }
+
+  if (!ALLOWED_ITEM_TYPES.includes(item_type)) {
+    throw new AppError("Invalid item type", 400);
+  }
+
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    throw new AppError("Amount must be a positive number", 400);
+  }
+
+  const currencyCode = currency || "USD";
+  if (!SUPPORTED_CURRENCIES.includes(currencyCode)) {
+    throw new AppError("Unsupported currency", 400);
   }
 
   const bankMethod = await paymentMethodsService.getByType("bank");
@@ -33,15 +69,15 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   }
 
   let platform_fee = 0;
-  let instructor_amount = amount;
+  let instructor_amount = numericAmount;
   try {
     const settings = await paymentConfigService.getSettings();
     const cut =
       settings?.platformCut?.[item_type] ??
       DEFAULT_PLATFORM_CUT[item_type] ??
       0;
-    platform_fee = (amount * cut) / 100;
-    instructor_amount = amount - platform_fee;
+    platform_fee = (numericAmount * cut) / 100;
+    instructor_amount = numericAmount - platform_fee;
   } catch (err) {
     logger.error("Failed to load payment settings:", err);
   }
@@ -52,8 +88,8 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     method_id: bankMethod.id,
     item_type,
     item_id,
-    amount,
-    currency: currency || "USD",
+    amount: numericAmount,
+    currency: currencyCode,
     status: "pending_payment",
     platform_fee,
     instructor_amount,
