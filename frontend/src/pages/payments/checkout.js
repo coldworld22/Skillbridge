@@ -101,6 +101,7 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const paypalLoaded = useRef(false);
+  const paypalButtonRendered = useRef('');
   const [paypalClientId, setPaypalClientId] = useState('');
 
   useEffect(() => {
@@ -230,7 +231,8 @@ export default function CheckoutPage() {
     if (!window.paypal) return;
     const container = document.getElementById('paypal-button-container');
     if (container) container.innerHTML = '';
-    window.paypal.Buttons({
+    window.paypal
+      .Buttons({
       createOrder: (_, actions) =>
         actions.order.create({
           purchase_units: [{ amount: { value: amount } }],
@@ -257,7 +259,11 @@ export default function CheckoutPage() {
         console.error('PayPal error', err);
         setPaymentStatus('idle');
       },
-    }).render('#paypal-button-container');
+    })
+      .render('#paypal-button-container')
+      .then(() => {
+        paypalButtonRendered.current = amount;
+      });
   };
 
   useEffect(() => {
@@ -266,6 +272,7 @@ export default function CheckoutPage() {
     if (amountValue <= 0) return;
     const amount = amountValue.toString();
     if (!paypalClientId) return;
+    if (paypalButtonRendered.current === amount) return;
 
     if (!paypalLoaded.current) {
       const script = document.createElement('script');
@@ -278,7 +285,6 @@ export default function CheckoutPage() {
     } else {
       renderPayPalButton(amount);
     }
-
   }, [selectedMethod, itemInfo, discount, paypalClientId]);
 
   useEffect(() => {
