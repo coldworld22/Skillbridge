@@ -89,5 +89,8 @@
   "checkout_single_item_warning": "Please select exactly one item to checkout",
   "promo_code_applied": "Promo code applied",
   "invalid_promo_code": "Invalid promo code",
-  "promo_code_apply_failed": "Failed to apply promo code. Please try again."
+  "promo_code_apply_failed": "Failed to apply promo code. Please try again.",
+  "paypal_payment": "Paiement PayPal",
+  "paypal_redirect_notice": "Vous serez redirigé vers PayPal pour terminer ce paiement.",
+  "pay_with_paypal": "Payer ${{price}} avec PayPal"
 }
