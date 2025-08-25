@@ -92,5 +92,22 @@
   "promo_code_apply_failed": "Failed to apply promo code. Please try again.",
   "paypal_payment": "PayPal Payment",
   "paypal_redirect_notice": "You'll be redirected to PayPal to complete this payment.",
-  "pay_with_paypal": "Pay ${{price}} with PayPal"
+  "pay_with_paypal": "Pay ${{price}} with PayPal",
+  "bank_name_label": "Bank Name",
+  "bank_name_placeholder": "Bank Name",
+  "account_holder_label": "Account Holder Name",
+  "account_holder_placeholder": "Account Holder Name",
+  "account_number_label": "Account Number / IBAN",
+  "account_number_placeholder": "Account Number / IBAN",
+  "swift_code_label": "SWIFT Code",
+  "swift_code_placeholder": "SWIFT Code",
+  "branch_address_label": "Branch Address (optional)",
+  "branch_address_placeholder": "Branch Address",
+  "instructions_label": "Extra Instructions",
+  "instructions_placeholder": "Extra Instructions",
+  "pay_with_bank": "Pay ${{price}} with Bank",
+  "crypto_payment": "Crypto Payment",
+  "crypto_redirect_notice": "You'll be redirected to our crypto provider to complete this payment.",
+  "pay_with_crypto": "Pay ${{price}} with Crypto",
+  "processing": "Processing..."
 }
