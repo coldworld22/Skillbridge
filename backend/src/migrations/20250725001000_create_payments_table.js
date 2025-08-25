@@ -7,7 +7,7 @@ exports.up = function(knex) {
     table.uuid('item_id').notNullable();
     table.decimal('amount', 10, 2).notNullable();
     table.string('currency').notNullable().defaultTo('USD');
-    table.string('status').notNullable().defaultTo('pending');
+    table.string('status').notNullable().defaultTo('pending_payment');
     table.string('reference_id');
     table.timestamp('paid_at');
     table.timestamps(true, true);

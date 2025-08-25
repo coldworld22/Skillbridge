@@ -4,7 +4,7 @@ const AppError = require("../../utils/AppError");
 const STATUS = {
   PENDING_PAYMENT: "pending_payment",
   AWAITING_APPROVAL: "awaiting_approval",
-  COMPLETED: "completed",
+  PAID: "paid",
   REJECTED: "rejected",
 };
 
@@ -104,7 +104,7 @@ exports.approveBankPayment = async (
 
     const [row] = await trx("payments")
       .where({ id })
-      .update({ status: STATUS.COMPLETED, paid_at: new Date() })
+      .update({ status: STATUS.PAID, paid_at: new Date() })
       .returning("*");
 
     return row;

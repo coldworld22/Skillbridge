@@ -51,7 +51,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for class payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { class: 10 } });
-    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending' });
+    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -70,7 +70,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for book payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { book: 20 } });
-    service.create.mockResolvedValue({ id: 'p2', reference_id: 'ref', status: 'pending' });
+    service.create.mockResolvedValue({ id: 'p2', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -89,7 +89,7 @@ describe('payment commission calculations', () => {
 
   it('calculates commission for tutorial payments', async () => {
     configService.getSettings.mockResolvedValue({ platformCut: { tutorial: 30 } });
-    service.create.mockResolvedValue({ id: 'p3', reference_id: 'ref', status: 'pending' });
+    service.create.mockResolvedValue({ id: 'p3', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
@@ -108,7 +108,7 @@ describe('payment commission calculations', () => {
 
   it('falls back to default cut when settings missing', async () => {
     configService.getSettings.mockResolvedValue(null);
-    service.create.mockResolvedValue({ id: 'p4', reference_id: 'ref', status: 'pending' });
+    service.create.mockResolvedValue({ id: 'p4', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/admin').send({
       user_id: 'u1',
