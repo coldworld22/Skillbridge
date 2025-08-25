@@ -146,6 +146,21 @@ describe('POST /api/ads/admin', () => {
       message: 'New ad created: Test',
     });
   });
+
+  it('allows empty optional fields', async () => {
+    service.createAd.mockClear();
+    const payload = {
+      title: 'Blank',
+      image_url: 'img.jpg',
+      link_url: '',
+      start_at: '',
+      end_at: '',
+    };
+    service.createAd.mockResolvedValue({ id: '2', title: 'Blank' });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.createAd).toHaveBeenCalled();
+  });
 });
 
 describe('PUT /api/ads/:id', () => {
