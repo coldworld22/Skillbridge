@@ -3,6 +3,7 @@ const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const paymentsService = require("./payments.service");
+const { STATUS } = paymentsService;
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const notificationService = require("../notifications/notifications.service");
@@ -114,7 +115,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: "awaiting_approval",
+    status: STATUS.AWAITING_APPROVAL,
     platform_fee,
     instructor_amount,
     bank_details,

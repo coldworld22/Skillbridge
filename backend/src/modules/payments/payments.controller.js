@@ -67,7 +67,7 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   let verifiedAmount = amount;
   let verifiedCurrency = currency || "USD";
-  let finalStatus = status || "pending";
+  let finalStatus = status || STATUS.PENDING_PAYMENT;
   let verifiedReference = reference_id;
 
   if (method.type === "paypal") {
@@ -81,7 +81,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     verifiedAmount = parseFloat(info.amount?.value || amount);
     verifiedCurrency = info.amount?.currency_code || verifiedCurrency;
     verifiedReference = info.id || reference_id;
-    finalStatus = "paid";
+    finalStatus = STATUS.PAID;
   }
 
   if (coupon_id) {
@@ -134,7 +134,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     receipt_url,
     platform_fee,
     instructor_amount,
-    paid_at: finalStatus === "paid" ? new Date() : null,
+    paid_at: finalStatus === STATUS.PAID ? new Date() : null,
     installments: totalInstallments,
     installment_number: 1,
     next_due_date,
@@ -143,7 +143,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   if (schedules.length) createArgs.push(schedules);
   const payment = await service.create(...createArgs);
 
-  if (coupon_id && payment.status === "paid") {
+  if (coupon_id && payment.status === STATUS.PAID) {
     try {
       await couponService.incrementUsage(coupon_id);
     } catch (err) {
@@ -185,7 +185,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
-  if (item_type === "book" && payment.status === "paid") {
+  if (item_type === "book" && payment.status === STATUS.PAID) {
     try {
       await libraryService.recordPurchase(user_id, item_id, verifiedAmount);
     } catch (err) {
@@ -193,7 +193,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
-  if (item_type === "class" && payment.status === "paid") {
+  if (item_type === "class" && payment.status === STATUS.PAID) {
     try {
         await enrollmentService.createEnrollment({
           id: uuidv4(),
@@ -206,7 +206,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
-  if (item_type === "tutorial" && payment.status === "paid") {
+  if (item_type === "tutorial" && payment.status === STATUS.PAID) {
     try {
       await tutorialEnrollmentService.createEnrollment({
         id: uuidv4(),
@@ -287,10 +287,10 @@ exports.updatePayment = catchAsync(async (req, res) => {
       const user = await userModel.findById(payment.user_id);
       let message = "";
       let subject = "";
-      if (req.body.status === "paid") {
+      if (req.body.status === STATUS.PAID) {
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
-      } else if (req.body.status === "rejected") {
+      } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;
         subject = "Payment Rejected";
       }

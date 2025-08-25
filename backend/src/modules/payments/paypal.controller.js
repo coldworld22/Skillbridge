@@ -3,6 +3,7 @@ const catchAsync = require('../../utils/catchAsync');
 const AppError = require('../../utils/AppError');
 const { sendSuccess } = require('../../utils/response');
 const paymentsService = require('./payments.service');
+const { STATUS } = paymentsService;
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const paypalService = require('../../services/paypalService');
@@ -77,7 +78,7 @@ exports.createPayPalPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: 'pending_payment',
+    status: STATUS.PENDING_PAYMENT,
     reference_id: order.id,
     platform_fee,
     instructor_amount,
@@ -99,19 +100,39 @@ exports.handlePayPalCallback = catchAsync(async (req, res) => {
   const info = capture.purchase_units?.[0]?.payments?.captures?.[0];
   let statusUpdate = { reference_id: info?.id || orderId };
   if (capture.status === 'COMPLETED') {
-    statusUpdate.status = 'paid';
+    statusUpdate.status = STATUS.PAID;
     statusUpdate.paid_at = new Date();
   } else {
-    statusUpdate.status = 'rejected';
+    statusUpdate.status = STATUS.REJECTED;
   }
   const updated = await paymentsService.update(paymentId, statusUpdate);
 
-  if (updated.status === 'paid') {
-    await grantAccess(updated);
+  if (updated.status === STATUS.PAID) {
+    try {
+      if (updated.item_type === 'book') {
+        await libraryService.recordPurchase(updated.user_id, updated.item_id, updated.amount);
+      } else if (updated.item_type === 'class') {
+        await enrollmentService.createEnrollment({
+          id: uuidv4(),
+          user_id: updated.user_id,
+          class_id: updated.item_id,
+          status: 'enrolled',
+        });
+      } else if (updated.item_type === 'tutorial') {
+        await tutorialEnrollmentService.createEnrollment({
+          id: uuidv4(),
+          user_id: updated.user_id,
+          tutorial_id: updated.item_id,
+          status: 'enrolled',
+        });
+      }
+    } catch (err) {
+      logger.error('Failed to finalize enrollment after PayPal payment:', err);
+    }
   }
 
   if (process.env.FRONTEND_URL) {
-    const redirectUrl = `${process.env.FRONTEND_URL}/payments/${updated.status === 'paid' ? 'success' : 'error'}`;
+    const redirectUrl = `${process.env.FRONTEND_URL}/payments/${updated.status === STATUS.PAID ? 'success' : 'error'}`;
     return res.redirect(redirectUrl);
   }
   sendSuccess(res, updated, 'PayPal payment processed');

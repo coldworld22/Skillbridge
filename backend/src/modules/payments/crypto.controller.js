@@ -3,6 +3,7 @@ const catchAsync = require('../../utils/catchAsync');
 const AppError = require('../../utils/AppError');
 const { sendSuccess } = require('../../utils/response');
 const paymentsService = require('./payments.service');
+const { STATUS } = paymentsService;
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const nowPayments = require('../../services/nowPaymentsService');
@@ -87,7 +88,7 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: 'pending_payment',
+    status: STATUS.PENDING_PAYMENT,
     reference_id: invoice.id?.toString() || null,
     receipt_url: invoice.invoice_url,
     platform_fee,
@@ -115,9 +116,9 @@ exports.handleIPN = catchAsync(async (req, res) => {
   let statusUpdate = {};
   const status = payload.payment_status;
   if (status === 'finished') {
-    statusUpdate = { status: 'paid', reference_id: payload.payment_id, paid_at: new Date() };
+    statusUpdate = { status: STATUS.PAID, reference_id: payload.payment_id, paid_at: new Date() };
   } else if (status === 'failed') {
-    statusUpdate = { status: 'rejected', reference_id: payload.payment_id };
+    statusUpdate = { status: STATUS.REJECTED, reference_id: payload.payment_id };
   }
   if (Object.keys(statusUpdate).length) {
     const updated = await paymentsService.update(paymentId, statusUpdate);
