@@ -44,6 +44,7 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.479.0",
     "moment": "^2.30.1",
+    "qs": "^6.13.0",
     "next": "^15.3.0",
     "next-i18next": "^15.4.2",
     "nprogress": "^0.2.0",

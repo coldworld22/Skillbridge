@@ -2,15 +2,25 @@ import { resolveCheckoutItem } from '@/pages/payments/checkout';
 
 describe('resolveCheckoutItem', () => {
   it('parses encoded items query parameter', () => {
-    const items = encodeURIComponent(JSON.stringify([{ id: '123', itemType: 'tutorial' }]));
+    const items = encodeURIComponent(
+      JSON.stringify([{ id: '123', itemType: 'tutorial' }])
+    );
     const query = { items };
     expect(resolveCheckoutItem(query, [])).toEqual({ id: '123', type: 'tutorial' });
   });
 
-  it('parses items when quotes are not URL-encoded', () => {
-    const items = '%5B%7B"id"%3A"123"%2C"itemType"%3A"tutorial"%7D%5D';
+  it('parses double-encoded items query parameter', () => {
+    const items = encodeURIComponent(
+      encodeURIComponent(JSON.stringify([{ id: '123', itemType: 'tutorial' }]))
+    );
     const query = { items };
     expect(resolveCheckoutItem(query, [])).toEqual({ id: '123', type: 'tutorial' });
+  });
+
+  it('returns null on malformed items', () => {
+    const items = encodeURIComponent('[{id:123,itemType:tutorial}]');
+    const query = { items };
+    expect(resolveCheckoutItem(query, [])).toBeNull();
   });
 
   it('falls back to cart items when query missing', () => {

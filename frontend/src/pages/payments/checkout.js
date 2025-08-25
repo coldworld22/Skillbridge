@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
 import Footer from '@/components/website/sections/Footer';
 import { toast } from 'react-toastify';
+import { parseItemsQuery } from '@/utils/parseItemsQuery';
 import PayPalForm from '@/components/payments/forms/PayPalForm';
 import BankTransferForm from '@/components/payments/forms/BankTransferForm';
 import CryptoPaymentForm from '@/components/payments/forms/CryptoPaymentForm';
@@ -81,49 +82,7 @@ export function resolveCheckoutItem(query, cartItems) {
     return { id: itemId, type: itemType };
   }
 
-  const parseItems = (value) => {
-    if (!value) return null;
-
-    const raw = Array.isArray(value) ? value[0] : value;
-    if (typeof raw !== 'string') return null;
-
-    let decoded = raw;
-    try {
-      decoded = decodeURIComponent(decoded);
-      decoded = decodeURIComponent(decoded);
-    } catch {
-      // ignore decode errors; we'll attempt to parse whatever we have
-    }
-
-    const attemptParse = (str) => {
-      try {
-        const parsed = JSON.parse(str);
-        if (Array.isArray(parsed) && parsed.length === 1) {
-          const p = parsed[0] || {};
-          if (!p.id) return null;
-          return { id: p.id, type: p.itemType || p.item_type || 'class' };
-        }
-      } catch {}
-      return null;
-    };
-
-    let result = attemptParse(decoded);
-    if (result) return result;
-
-    // Fallback: handle cases where the query was encoded without quoting keys/values
-    try {
-      const fixed = decoded
-        .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
-        .replace(/:\s*([^,"}\]\s][^,}\]]*)/g, ':"$1"');
-      result = attemptParse(fixed);
-      if (result) return result;
-    } catch (err) {
-      console.error('Failed to parse checkout items', err);
-    }
-    return null;
-  };
-
-  const resolvedFromItems = parseItems(items);
+  const resolvedFromItems = parseItemsQuery(items);
   if (resolvedFromItems) return resolvedFromItems;
 
   if (Array.isArray(cartItems) && cartItems.length === 1) {
