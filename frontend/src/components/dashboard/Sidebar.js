@@ -8,7 +8,7 @@ import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
 
-import { getAdminNavLinks } from './SidebarLinks/adminLinks';
+import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
 
@@ -29,8 +29,8 @@ export default function Sidebar({ role = 'admin' }) {
   }, [fetchAppConfig]);
 
   const navMap = {
-    admin: getAdminNavLinks(t),
-    superadmin: getAdminNavLinks(t),
+    admin: adminNavLinks,
+    superadmin: adminNavLinks,
     instructor: instructorNavLinks,
     student: studentNavLinks
   };
