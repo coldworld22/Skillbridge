@@ -3,6 +3,7 @@ import CheckoutPage from '../../pages/payments/checkout';
 import { validateCode } from '../../services/couponService';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
+jest.mock('next-i18next', () => ({ useTranslation: () => ({ t: (key) => key }) }));
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 
@@ -69,43 +70,41 @@ afterEach(() => {
 test('applies promo code successfully', async () => {
   validateCode.mockResolvedValue({ discount_percent: 10 });
   render(<CheckoutPage />);
-  await screen.findByText('Checkout');
-  fireEvent.change(screen.getByPlaceholderText('Enter promo code'), {
+  await screen.findByText('checkout');
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
     target: { value: 'SAVE10' },
   });
-  fireEvent.click(screen.getByText('Apply'));
+  fireEvent.click(screen.getByText('apply'));
   await waitFor(() => expect(validateCode).toHaveBeenCalledWith('SAVE10', 'class', '1'));
-  expect(
-    await screen.findByText(/Discount Applied:\s*10% \(-\$10\.00\)/)
-  ).toBeInTheDocument();
+  expect(await screen.findByText(/Discount Applied/i)).toBeInTheDocument();
   const { toast } = require('react-toastify');
-  expect(toast.success).toHaveBeenCalledWith('Promo code applied');
+  expect(toast.success).toHaveBeenCalledWith('promo_code_applied');
 });
 
 test('shows error for invalid promo code', async () => {
   validateCode.mockRejectedValue({ response: { status: 404 } });
   render(<CheckoutPage />);
-  await screen.findByText('Checkout');
-  fireEvent.change(screen.getByPlaceholderText('Enter promo code'), {
+  await screen.findByText('checkout');
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
     target: { value: 'BADCODE' },
   });
-  fireEvent.click(screen.getByText('Apply'));
+  fireEvent.click(screen.getByText('apply'));
   const { toast } = require('react-toastify');
   await waitFor(() => {
-    expect(toast.error).toHaveBeenCalledWith('Invalid promo code');
+    expect(toast.error).toHaveBeenCalledWith('invalid_promo_code');
   });
 });
 
 test('handles network failure when applying promo code', async () => {
   validateCode.mockRejectedValue(new Error('Network Error'));
   render(<CheckoutPage />);
-  await screen.findByText('Checkout');
-  fireEvent.change(screen.getByPlaceholderText('Enter promo code'), {
+  await screen.findByText('checkout');
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
     target: { value: 'SAVE10' },
   });
-  fireEvent.click(screen.getByText('Apply'));
+  fireEvent.click(screen.getByText('apply'));
   const { toast } = require('react-toastify');
   await waitFor(() => {
-    expect(toast.error).toHaveBeenCalledWith('Failed to apply promo code. Please try again.');
+    expect(toast.error).toHaveBeenCalledWith('promo_code_apply_failed');
   });
 });

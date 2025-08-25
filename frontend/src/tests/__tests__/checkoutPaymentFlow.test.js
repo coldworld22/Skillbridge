@@ -3,6 +3,18 @@ import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 import { initiateBankPayment } from '../../services/paymentService';
+jest.mock('next-i18next', () => ({
+  useTranslation: () => ({
+    t: (key, params) => {
+      const translations = {
+        checkout: 'Checkout',
+        bank_transfer_pending: 'Your bank transfer request has been submitted and is pending admin approval.',
+      };
+      if (key === 'pay_with_paypal') return `Pay $${params?.price} with PayPal`;
+      return translations[key] || key;
+    },
+  }),
+}));
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 
