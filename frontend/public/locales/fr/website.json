@@ -28,7 +28,7 @@
   "contributions": "Contributions",
   "reputation": "Réputation",
   "footer_quick_links": "Liens rapides",
-  "footer_sitemap": "Sitemap",
+  "footer_sitemap": "Plan du site",
   "footer_contact_us": "Contactez-nous",
   "footer_subscribe": "Abonnez-vous à notre newsletter",
   "footer_payments": "Paiements acceptés",
@@ -43,7 +43,7 @@
   "ai_feature_adaptive_description": "L'IA analyse vos forces et vos faiblesses pour créer une feuille de route d'apprentissage personnalisée.",
   "ai_feature_quizzes_title": "Quiz généré par l'AI",
   "ai_feature_quizzes_description": "Pratiquez avec des quiz générés par l'IA en fonction de vos progrès d'apprentissage.",
-  "ai_feature_chat_title": "24/7 AI Chat Tutor",
+  "ai_feature_chat_title": "Tuteur de chat IA 24h/24 et 7j/7",
   "ai_feature_chat_description": "Posez des tuteurs alimentés par AI et recevez des réponses instantanées et en temps réel.",
   "ai_feature_feedback_title": "Rétroaction en temps réel",
   "ai_feature_feedback_description": "L'IA examine les affectations, les exercices de codage et les essais, donnant des commentaires détaillés.",
@@ -84,7 +84,7 @@
   "instructor_only_available": "Uniquement disponible maintenant",
   "instructor_show_favorites": "Montrer les favoris uniquement",
   "instructor_request_lesson": "Demander une leçon",
-  "instructor_chat": "Chat",
+  "instructor_chat": "Chat avec l'instructeur",
   "instructor_online": "En ligne",
   "instructor_offline": "Hors ligne",
   "instructor_verified": "Vérifié",
@@ -191,4 +191,4 @@
   "already_enrolled_class": "Vous êtes déjà inscrit à cette classe",
   "failed_to_add_to_cart": "Échec de l'ajout au panier",
   "failed_to_enroll": "Échec de l'inscription"
- }
+}
