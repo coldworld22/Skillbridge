@@ -341,13 +341,6 @@ export default function CheckoutPage() {
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
-  const installments = 3;
-  const perInstallment = finalPrice / installments;
-  const schedule = Array.from({ length: installments }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + i);
-    return { number: i + 1, date: d.toLocaleDateString(), amount: perInstallment.toFixed(2) };
-  });
   // Filter out inactive methods if any; the API already returns active ones
   const availableMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
