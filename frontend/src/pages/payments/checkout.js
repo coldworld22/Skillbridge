@@ -32,12 +32,17 @@ const iconMap = {
   usdt: <FaEthereum />,
   binance: <FaEthereum />,
   coinbase: <FaEthereum />,
+  nowpayments: <FaEthereum />,
 };
 
-function resolveIconElement(method) {
+export function resolveIconElement(method) {
   if (method.icon) {
     const lower = method.icon.toLowerCase();
-    const isUrl = /^(https?:)?\/\//.test(method.icon) || method.icon.includes('.');
+    const base = lower.split('/').pop().split('.')[0];
+    if (iconMap[lower]) return iconMap[lower];
+    if (iconMap[base]) return iconMap[base];
+    if (isPayPalMethod(base)) return iconMap.paypal;
+    const isUrl = /^(https?:)?\/\//.test(method.icon);
     if (isUrl) {
       return (
         <img
@@ -47,11 +52,10 @@ function resolveIconElement(method) {
         />
       );
     }
-    if (iconMap[lower]) return iconMap[lower];
   }
-  return (
-    iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
-  );
+  const identifier = getMethodIdentifier(method).toLowerCase();
+  if (isPayPalMethod(identifier)) return iconMap.paypal;
+  return iconMap[identifier] || <FaMoneyCheckAlt />;
 }
 
 function getMethodIdentifier(method) {
@@ -60,7 +64,23 @@ function getMethodIdentifier(method) {
   return '';
 }
 
-const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase'];
+function normalizeIdentifier(value) {
+  return (value || '')
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function isPayPalMethod(methodOrIdentifier) {
+  if (!methodOrIdentifier) return false;
+  const id =
+    typeof methodOrIdentifier === 'string'
+      ? methodOrIdentifier
+      : getMethodIdentifier(methodOrIdentifier);
+  return normalizeIdentifier(id).includes('paypal');
+}
+
+const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase', 'nowpayments'];
 
 function isCryptoMethod(methodOrIdentifier) {
   if (!methodOrIdentifier) return false;
@@ -306,7 +326,7 @@ export default function CheckoutPage() {
       }
       return;
     }
-    if (identifier === 'paypal') {
+    if (isPayPalMethod(method || identifier)) {
       try {
         setPaymentStatus('processing');
         const payload = {
@@ -398,6 +418,9 @@ export default function CheckoutPage() {
     : normalizedMethod;
   const selectedMethodLabel = selectedMethodObj?.name || selectedMethod;
   const isCryptoSelected = isCryptoMethod(
+    selectedMethodObj || selectedMethodIdentifier
+  );
+  const isPayPalSelected = isPayPalMethod(
     selectedMethodObj || selectedMethodIdentifier
   );
 
@@ -511,7 +534,7 @@ export default function CheckoutPage() {
             <div className="text-yellow-400 text-center text-lg py-6">
               {t('bank_transfer_pending')}
             </div>
-          ) : selectedMethodIdentifier === 'paypal' ? (
+          ) : isPayPalSelected ? (
             <PayPalForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}

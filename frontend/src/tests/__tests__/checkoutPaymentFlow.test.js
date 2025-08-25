@@ -68,30 +68,33 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-test('renders payment logos from url and fallback', async () => {
+test('renders payment logos using library icons with url fallback', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://example.com/stripe.png' },
     { id: 2, name: 'PayPal', type: null },
+    { id: 3, name: 'Custom', type: 'custom', icon: 'https://example.com/custom.png' },
   ]);
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  const stripeIcon = screen.getByTestId('payment-icon-stripe').querySelector('img');
-  expect(stripeIcon).toHaveAttribute('src', 'https://example.com/stripe.png');
+  const stripeIcon = screen.getByTestId('payment-icon-stripe').querySelector('svg');
+  expect(stripeIcon).not.toBeNull();
   const paypalIcon = screen.getByTestId('payment-icon-paypal').querySelector('svg');
   expect(paypalIcon).not.toBeNull();
+  const customIcon = screen.getByTestId('payment-icon-custom').querySelector('img');
+  expect(customIcon).toHaveAttribute('src', 'https://example.com/custom.png');
 });
 
 test('adjusts inputs based on payment selection and submits bank details', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
-    { id: 2, name: 'PayPal', type: null },
+    { id: 2, name: 'PayPal Payment Gateway', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
   ]);
   initiateBankPayment.mockResolvedValue({});
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByPlaceholderText('Card Number')).toBeInTheDocument();
-  fireEvent.click(screen.getByText('PayPal'));
+  fireEvent.click(screen.getByText('PayPal Payment Gateway'));
   expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
