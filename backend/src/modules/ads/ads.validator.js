@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-exports.create = z.object({
+exports.create = {
   body: z.object({
     title: z.string().min(3),
     description: z.string().optional(),
@@ -13,5 +13,5 @@ exports.create = z.object({
     ad_type: z.string().optional(),
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
-  })
-});
+  }),
+};
