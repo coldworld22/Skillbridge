@@ -1,8 +1,7 @@
 const logger = require('../utils/logger.js');
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 
-exports.seed = async function(knex) {
+exports.seed = async function (knex) {
   // Clear existing user accounts but keep role definitions
   await knex("user_roles").del();
   await knex("users").del();
@@ -19,12 +18,8 @@ exports.seed = async function(knex) {
       .returning("*");
   }
 
-  // 🔐 Create SuperAdmin User
-  const rawPassword =
-    process.env.SUPERADMIN_INITIAL_PASSWORD || crypto.randomBytes(16).toString("hex");
-  if (!process.env.SUPERADMIN_INITIAL_PASSWORD) {
-    console.log(`🔐 Generated SuperAdmin password: ${rawPassword}`);
-  }
+  // 🔐 Create SuperAdmin User with a fixed password
+  const rawPassword = "Javaheat@18880";
   const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
   const [superAdminUserId] = await knex("users")
@@ -33,7 +28,7 @@ exports.seed = async function(knex) {
       email: "support@eduskillbridge.net",
       phone: "+966531505513",
       password_hash: hashedPassword,
-      role: "SuperAdmin", // ✅ Role matches updated enum constraint
+      role: "SuperAdmin",
       avatar_url: null,
       is_email_verified: true,
       status: "active",
