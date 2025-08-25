@@ -255,12 +255,22 @@ export default function CreateAdPage() {
       await notify('ad_created', msg);
       router.push("/dashboard/admin/ads");
     } catch (err) {
-      const message = err?.response?.data?.message || t('failed');
-      if (message.toLowerCase().includes("title")) {
+      const data = err?.response?.data || {};
+      const baseMessage = data.message || t('failed');
+      if (data.errors?.length) {
+        const details = data.errors
+          .map((e) => {
+            const path = Array.isArray(e.path) ? e.path.join('.') : '';
+            return path ? `${path}: ${e.message}` : e.message;
+          })
+          .join(', ');
+        setError(details);
+        toast.error(details);
+      } else if (baseMessage.toLowerCase().includes('title')) {
         setTitleError(t('title_exists'));
       } else {
-        setError(message);
-        toast.error(message);
+        setError(baseMessage);
+        toast.error(baseMessage);
       }
     } finally {
       setIsSubmitting(false);
