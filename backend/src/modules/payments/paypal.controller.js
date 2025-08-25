@@ -7,9 +7,7 @@ const { STATUS } = paymentsService;
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const paypalService = require('../../services/paypalService');
-const libraryService = require('../library/library.service');
-const enrollmentService = require('../classes/enrollments/classEnrollment.service');
-const tutorialEnrollmentService = require('../users/tutorials/enrollments/tutorialEnrollment.service');
+const { grantAccess } = require('./paymentAccess');
 const { v4: uuidv4 } = require('uuid');
 
 const DEFAULT_PLATFORM_CUT = {
