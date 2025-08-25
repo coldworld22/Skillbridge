@@ -6,6 +6,7 @@ import { fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchBook } from '@/services/bookService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
+import { createPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -344,8 +345,28 @@ export default function CheckoutPage() {
       }
       return;
     }
-    setPaymentStatus('processing');
-    setTimeout(completePayment, 1500);
+    try {
+      setPaymentStatus('processing');
+      const payload = {
+        method_id: method?.id,
+        item_type: itemType,
+        item_id: itemInfo.id,
+        amount: finalPrice,
+        allow_installments: allowInstallments,
+        installments,
+      };
+      if (couponId) payload.coupon_id = couponId;
+      const response = await createPayment(payload);
+      if (response?.status === 'paid') {
+        await completePayment();
+      } else {
+        throw new Error('Payment not confirmed');
+      }
+    } catch (err) {
+      console.error('Failed to process payment', err);
+      toast.error('Failed to process payment. Please try again.');
+      setPaymentStatus('idle');
+    }
   };
 
   const installments = 3;
