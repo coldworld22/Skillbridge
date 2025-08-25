@@ -3,8 +3,13 @@ const catchAsync = require("../../utils/catchAsync");
 const AppError = require("../../utils/AppError");
 const { sendSuccess } = require("../../utils/response");
 const paymentsService = require("./payments.service");
+const { STATUS } = paymentsService;
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
+const notificationService = require("../notifications/notifications.service");
+const mailService = require("../../services/mailService");
+const userModel = require("../users/user.model");
+const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
 
 const DEFAULT_PLATFORM_CUT = {
@@ -110,7 +115,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: "awaiting_approval",
+    status: STATUS.AWAITING_APPROVAL,
     platform_fee,
     instructor_amount,
     bank_details,
@@ -130,6 +135,28 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     req.params.id,
     req.body
   );
+
+  await grantAccess(payment);
+
+  try {
+    const user = await userModel.findById(payment.user_id);
+    const message = `Your bank payment ${payment.id} has been approved.`;
+    await notificationService.createNotification({
+      user_id: payment.user_id,
+      type: "payment_status",
+      message,
+    });
+    if (user?.email) {
+      await mailService.sendMail({
+        to: user.email,
+        subject: "Payment Approved",
+        html: `<p>${message}</p>`,
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to notify student of payment approval:", err);
+  }
+
   sendSuccess(res, payment, "Bank payment approved");
 });
 

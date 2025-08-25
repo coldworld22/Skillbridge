@@ -3,10 +3,14 @@ const catchAsync = require('../../utils/catchAsync');
 const AppError = require('../../utils/AppError');
 const { sendSuccess } = require('../../utils/response');
 const paymentsService = require('./payments.service');
+const { STATUS } = paymentsService;
 const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const nowPayments = require('../../services/nowPaymentsService');
 const { v4: uuidv4 } = require('uuid');
+const libraryService = require('../library/library.service');
+const enrollmentService = require('../classes/enrollments/classEnrollment.service');
+const tutorialEnrollmentService = require('../users/tutorials/enrollments/tutorialEnrollment.service');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -84,7 +88,7 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     item_id,
     amount: numericAmount,
     currency: currencyCode,
-    status: 'pending_payment',
+    status: STATUS.PENDING_PAYMENT,
     reference_id: invoice.id?.toString() || null,
     receipt_url: invoice.invoice_url,
     platform_fee,
@@ -112,12 +116,39 @@ exports.handleIPN = catchAsync(async (req, res) => {
   let statusUpdate = {};
   const status = payload.payment_status;
   if (status === 'finished') {
-    statusUpdate = { status: 'paid', reference_id: payload.payment_id, paid_at: new Date() };
+    statusUpdate = { status: STATUS.PAID, reference_id: payload.payment_id, paid_at: new Date() };
   } else if (status === 'failed') {
-    statusUpdate = { status: 'rejected', reference_id: payload.payment_id };
+    statusUpdate = { status: STATUS.REJECTED, reference_id: payload.payment_id };
   }
   if (Object.keys(statusUpdate).length) {
-    await paymentsService.update(paymentId, statusUpdate);
+    const updated = await paymentsService.update(paymentId, statusUpdate);
+    if (updated.status === 'paid') {
+      try {
+        if (updated.item_type === 'book') {
+          await libraryService.recordPurchase(
+            updated.user_id,
+            updated.item_id,
+            updated.amount
+          );
+        } else if (updated.item_type === 'class') {
+          await enrollmentService.createEnrollment({
+            id: uuidv4(),
+            user_id: updated.user_id,
+            class_id: updated.item_id,
+            status: 'enrolled',
+          });
+        } else if (updated.item_type === 'tutorial') {
+          await tutorialEnrollmentService.createEnrollment({
+            id: uuidv4(),
+            user_id: updated.user_id,
+            tutorial_id: updated.item_id,
+            status: 'enrolled',
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to finalize enrollment after Crypto payment:', err);
+      }
+    }
   }
   res.json({ ok: true });
 });

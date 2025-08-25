@@ -6,6 +6,7 @@ import { fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchBook } from '@/services/bookService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
+import { createPayment } from '@/services/student/paymentService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -57,6 +58,21 @@ function getMethodIdentifier(method) {
   if (method?.type && method.type.trim()) return method.type.trim();
   if (method?.name && method.name.trim()) return method.name.trim();
   return '';
+}
+
+const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase'];
+
+function isCryptoMethod(methodOrIdentifier) {
+  if (!methodOrIdentifier) return false;
+  if (typeof methodOrIdentifier === 'string') {
+    return CRYPTO_IDENTIFIERS.includes(methodOrIdentifier.toLowerCase());
+  }
+  if (methodOrIdentifier.category && methodOrIdentifier.category.toLowerCase() === 'crypto') {
+    return true;
+  }
+  return CRYPTO_IDENTIFIERS.includes(
+    getMethodIdentifier(methodOrIdentifier).toLowerCase()
+  );
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -263,7 +279,15 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async (_formData = {}) => {
-    if (normalizedMethod === 'bank') {
+    const method = methods.find(
+      (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
+    );
+    const identifier = method
+      ? getMethodIdentifier(method).toLowerCase()
+      : normalizedMethod;
+    const isCrypto = isCryptoMethod(method || identifier);
+
+    if (identifier === 'bank') {
       try {
         setPaymentStatus('processing');
         const payload = {
@@ -282,7 +306,7 @@ export default function CheckoutPage() {
       }
       return;
     }
-    if (normalizedMethod === 'paypal') {
+    if (identifier === 'paypal') {
       try {
         setPaymentStatus('processing');
         const payload = {
@@ -301,12 +325,9 @@ export default function CheckoutPage() {
       }
       return;
     }
-    if (normalizedMethod === 'usdt' || normalizedMethod === 'nft') {
+    if (isCrypto) {
       try {
         setPaymentStatus('processing');
-        const method = methods.find(
-          (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
-        );
         const payload = {
           item_id: itemInfo.id,
           item_type: itemType,
@@ -324,8 +345,28 @@ export default function CheckoutPage() {
       }
       return;
     }
-    setPaymentStatus('processing');
-    setTimeout(completePayment, 1500);
+    try {
+      setPaymentStatus('processing');
+      const payload = {
+        method_id: method?.id,
+        item_type: itemType,
+        item_id: itemInfo.id,
+        amount: finalPrice,
+        allow_installments: allowInstallments,
+        installments,
+      };
+      if (couponId) payload.coupon_id = couponId;
+      const response = await createPayment(payload);
+      if (response?.status === 'paid') {
+        await completePayment();
+      } else {
+        throw new Error('Payment not confirmed');
+      }
+    } catch (err) {
+      console.error('Failed to process payment', err);
+      toast.error('Failed to process payment. Please try again.');
+      setPaymentStatus('idle');
+    }
   };
 
   const installments = 3;
@@ -349,10 +390,16 @@ export default function CheckoutPage() {
   const availableMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  const selectedMethodLabel =
-    availableMethods.find(
-      (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
-    )?.name || selectedMethod;
+  const selectedMethodObj = availableMethods.find(
+    (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
+  );
+  const selectedMethodIdentifier = selectedMethodObj
+    ? getMethodIdentifier(selectedMethodObj).toLowerCase()
+    : normalizedMethod;
+  const selectedMethodLabel = selectedMethodObj?.name || selectedMethod;
+  const isCryptoSelected = isCryptoMethod(
+    selectedMethodObj || selectedMethodIdentifier
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
@@ -464,19 +511,19 @@ export default function CheckoutPage() {
             <div className="text-yellow-400 text-center text-lg py-6">
               {t('bank_transfer_pending')}
             </div>
-          ) : normalizedMethod === 'paypal' ? (
+          ) : selectedMethodIdentifier === 'paypal' ? (
             <PayPalForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
-          ) : normalizedMethod === 'bank' ? (
+          ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
-          ) : normalizedMethod === 'usdt' || normalizedMethod === 'nft' ? (
+          ) : isCryptoSelected ? (
             <CryptoPaymentForm
               onSubmit={handlePayment}
               processing={paymentStatus === 'processing'}

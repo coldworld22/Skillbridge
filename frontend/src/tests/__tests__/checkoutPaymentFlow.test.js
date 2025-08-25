@@ -3,6 +3,7 @@ import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 import { initiateBankPayment } from '../../services/paymentService';
+import { createPayment } from '../../services/student/paymentService';
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({
     t: (key, params) => {
@@ -44,6 +45,9 @@ jest.mock('../../services/paymentService', () => ({
   initiateBankPayment: jest.fn(),
   initiateCryptoPayment: jest.fn(),
   initiatePayPalPayment: jest.fn(),
+}));
+jest.mock('../../services/student/paymentService', () => ({
+  createPayment: jest.fn(),
 }));
 
 const mockUseRouter = jest.fn();
@@ -100,4 +104,38 @@ test('adjusts inputs based on payment selection and submits bank details', async
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
   expect(await screen.findByText(/bank transfer request has been submitted/i)).toBeInTheDocument();
+});
+
+test('completes payment for unhandled methods on success', async () => {
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'Stripe', type: 'stripe' },
+  ]);
+  createPayment.mockResolvedValue({ status: 'paid' });
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John Doe' } });
+  fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
+  fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '4242424242424242' } });
+  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
+  fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
+  fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
+  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  expect(await screen.findByText(/payment_successful_redirecting/i)).toBeInTheDocument();
+});
+
+test('shows error when unhandled payment fails', async () => {
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'Stripe', type: 'stripe' },
+  ]);
+  createPayment.mockRejectedValue(new Error('fail'));
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John Doe' } });
+  fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
+  fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '4242424242424242' } });
+  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
+  fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
+  fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
+  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  expect(require('react-toastify').toast.error).toHaveBeenCalled();
 });

@@ -62,7 +62,7 @@ describe('POST /api/payments/student', () => {
   it('creates a payment using authenticated user id', async () => {
     methodService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
     configService.getSettings.mockResolvedValue({ platformCut: {} });
-    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending' });
+    service.create.mockResolvedValue({ id: 'p1', reference_id: 'ref', status: 'pending_payment' });
 
     const res = await request(app).post('/api/payments/student').send({
       user_id: 'other',

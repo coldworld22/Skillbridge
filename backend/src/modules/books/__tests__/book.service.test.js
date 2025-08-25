@@ -151,4 +151,13 @@ describe('checkout', () => {
     const cart = await db('book_cart').where({ student_id: studentId });
     expect(cart).toHaveLength(0);
   });
+
+  test('throws error when book ID is missing', async () => {
+    await db('book_cart').insert({ student_id: studentId, book_id: 999 });
+    await expect(checkout(studentId)).rejects.toThrow('Book not found');
+    const cart = await db('book_cart').where({ student_id: studentId });
+    expect(cart).toHaveLength(1);
+    const purchases = await db('book_purchases').where({ student_id: studentId });
+    expect(purchases).toHaveLength(0);
+  });
 });
