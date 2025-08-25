@@ -32,12 +32,16 @@ const iconMap = {
   usdt: <FaEthereum />,
   binance: <FaEthereum />,
   coinbase: <FaEthereum />,
+  nowpayments: <FaEthereum />,
 };
 
-function resolveIconElement(method) {
+export function resolveIconElement(method) {
   if (method.icon) {
     const lower = method.icon.toLowerCase();
-    const isUrl = /^(https?:)?\/\//.test(method.icon) || method.icon.includes('.');
+    const base = lower.split('/').pop().split('.')[0];
+    if (iconMap[lower]) return iconMap[lower];
+    if (iconMap[base]) return iconMap[base];
+    const isUrl = /^(https?:)?\/\//.test(method.icon);
     if (isUrl) {
       return (
         <img
@@ -47,7 +51,6 @@ function resolveIconElement(method) {
         />
       );
     }
-    if (iconMap[lower]) return iconMap[lower];
   }
   return (
     iconMap[getMethodIdentifier(method).toLowerCase()] || <FaMoneyCheckAlt />
@@ -60,7 +63,7 @@ function getMethodIdentifier(method) {
   return '';
 }
 
-const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase'];
+const CRYPTO_IDENTIFIERS = ['usdt', 'nft', 'binance', 'coinbase', 'nowpayments'];
 
 function isCryptoMethod(methodOrIdentifier) {
   if (!methodOrIdentifier) return false;
