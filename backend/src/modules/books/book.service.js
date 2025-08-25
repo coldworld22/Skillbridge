@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const tagService = require("./bookTag.service");
 const slugify = require("slugify");
+const AppError = require("../../utils/AppError");
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -256,6 +257,13 @@ exports.checkout = async (studentId) => {
     const books = await trx('books')
       .whereIn('id', bookIds)
       .select('id', 'price');
+
+    const validIds = books.map((b) => b.id);
+    if (books.length !== bookIds.length) {
+      const missing = bookIds.filter((id) => !validIds.includes(id));
+      throw new AppError(`Book not found: ${missing.join(', ')}`, 404);
+    }
+
     const rows = books.map((b) => ({
       student_id: studentId,
       book_id: b.id,
@@ -264,7 +272,10 @@ exports.checkout = async (studentId) => {
     const purchases = await trx('book_purchases')
       .insert(rows)
       .returning('*');
-    await trx('book_cart').where({ student_id: studentId }).del();
+    await trx('book_cart')
+      .where({ student_id: studentId })
+      .whereIn('book_id', validIds)
+      .del();
     return purchases;
   });
 };
