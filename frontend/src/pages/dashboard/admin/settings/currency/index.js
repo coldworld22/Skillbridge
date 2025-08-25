@@ -3,6 +3,7 @@
 // Lists currencies with pagination and allows editing.
 // ─────────────────────
 import AdminLayout from "@/components/layouts/AdminLayout";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "react-toastify";
 import useAdminNotice from "@/hooks/useAdminNotice";
