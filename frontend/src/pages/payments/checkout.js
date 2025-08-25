@@ -200,9 +200,13 @@ export default function CheckoutPage() {
 
   const handleApplyPromo = async () => {
     const formattedCode = promoCode.trim().toUpperCase();
+    if (!formattedCode) {
+      toast.error(t('enter_promo_code'));
+      return;
+    }
     setPromoCode(formattedCode);
     try {
-      const data = await validateCode(promoCode, itemType, itemId);
+      const data = await validateCode(formattedCode, itemType, itemId);
       const percent = data.discount_percent || 0;
       const amount = ((itemInfo?.price || 0) * percent) / 100;
       setDiscountAmount(amount);
