@@ -468,6 +468,25 @@
     "next": "Suivant",
     "no_alerts": "Aucune alerte trouvée."
   },
+  "blogManagerPage": {
+    "title": "Blog Manager",
+    "post_title_placeholder": "Enter post title",
+    "upload_image": "Upload Image",
+    "excerpt_placeholder": "Enter excerpt",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add_post": "Add Post",
+    "edit": "Edit",
+    "delete": "Delete",
+    "load_failed": "Failed to load posts",
+    "create_success": "Post created",
+    "create_failed": "Failed to create post",
+    "confirm_delete": "Are you sure you want to delete this post?",
+    "delete_success": "Post deleted",
+    "delete_failed": "Failed to delete post",
+    "update_success": "Post updated",
+    "update_failed": "Failed to update post"
+  },
   "instructorProfilePage": {
     "title": "Modifier le profil de l'instructeur",
     "profile_picture": "Photo de profil",
