@@ -10,13 +10,14 @@ exports.seed = async function (knex) {
         clientSecret: 'YOUR_GOOGLE_CLIENT_SECRET',
         redirectUrl: 'https://www.eduskillbridge.net/api/auth/google/callback',
         label: 'Sign in with Google',
-        icon: 'google',
-      },
-      facebook: { active: false },
-      apple: { active: false },
-      github: { active: false },
+        icon: 'google'
+      }
     },
-    recaptcha: { active: false, siteKey: '', secretKey: '' },
+    recaptcha: {
+      active: false,
+      siteKey: '',
+      secretKey: ''
+    }
   };
   await knex('settings').insert({
     key: 'social_login_settings',
