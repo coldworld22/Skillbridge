@@ -27,6 +27,7 @@ export default function Header() {
   const logout = useAuthStore((state) => state.logout);
   const userRole = user?.role?.toLowerCase();
   const { t } = useTranslation("common");
+  const { t: tDashboard } = useTranslation("dashboard");
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -84,9 +85,20 @@ export default function Header() {
   };
 
   const getPageTitle = () => {
-    const slug = router.pathname.split("/").pop();
-    if (!slug || slug === "index") return "Dashboard";
-    return slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+    const { pathname, query } = router;
+    switch (pathname) {
+      case "/dashboard/admin/settings/languages":
+        return tDashboard("languagesPage.title");
+      case "/dashboard/admin/settings/languages/create":
+        return tDashboard("languagesPage.create_title");
+      case "/dashboard/admin/settings/languages/edit/[code]":
+        return tDashboard("languagesPage.edit_title", { code: query.code });
+      default: {
+        const slug = pathname.split("/").pop();
+        if (!slug || slug === "index") return t("dashboard");
+        return slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+      }
+    }
   };
 
   useEffect(() => {
@@ -225,10 +237,10 @@ export default function Header() {
                           onClick={() => markMessageRead(m.id)}
                           className="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                         >
-                          {t('mark_as_read', 'Mark as Read')}
+                          {t('mark_as_read')}
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400">Read</span>
+                        <span className="text-xs text-gray-400">{t('read')}</span>
                       )}
                     </li>
                   ))}
@@ -286,7 +298,7 @@ export default function Header() {
                             onClick={() => markRead(n.id)}
                             className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                           >
-                            Mark as Read
+                            {t('mark_as_read')}
                           </button>
                         )}
                     </li>
@@ -340,7 +352,7 @@ export default function Header() {
             )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium text-gray-800 dark:text-white">
-                {user?.full_name || "Guest"}
+                {user?.full_name || t('guest')}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-300">
                 <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">

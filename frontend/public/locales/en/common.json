@@ -34,6 +34,8 @@
   "availability_update_failed": "Failed to update availability",
   "new": "new",
   "mark_as_read": "Mark as Read",
+  "read": "Read",
+  "guest": "Guest",
   "notifications_center": "Notifications Center",
   "system_alerts": "System Alerts",
   "system_messages": "System Messages",
