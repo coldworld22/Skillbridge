@@ -2,6 +2,7 @@ import nextI18NextConfig from './next-i18next.config.js';
 
 /** @type {import('next').NextConfig} */
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/api';
+const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
 const { protocol, hostname, port } = new URL(apiBase);
 const nextConfig = {
   images: {
@@ -65,6 +66,10 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      {
+        source: '/api/pgadmin/:path*',
+        destination: `${pgAdminBase}/:path*`,
+      },
       {
         source: '/api/:path*',
         destination: `${apiBase}/:path*`,
