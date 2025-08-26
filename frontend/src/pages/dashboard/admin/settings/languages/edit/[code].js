@@ -7,6 +7,9 @@ import { mutate } from "swr";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
 import { FaArrowLeft, FaSave, FaUpload } from "react-icons/fa";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../../next-i18next.config.js";
 
 const fetchTranslations = async (code) => {
   const data = {};
@@ -23,6 +26,7 @@ const namespaces = ["common", "website", "dashboard", "auth"];
 export default function EditLanguagePage() {
   const router = useRouter();
   const { code } = router.query;
+  const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'languagesPage' });
   const [translations, setTranslations] = useState({});
   const [loading, setLoading] = useState(false); // UI-only mode
   const [error, setError] = useState("");
@@ -65,13 +69,13 @@ export default function EditLanguagePage() {
         setTranslations(data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load translations");
+        setError(t('load_failed'));
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [code]);
+  }, [code, t]);
 
   const handleChange = (ns, key, value) => {
     setTranslations((prev) => ({
@@ -112,11 +116,11 @@ const handleIconChange = (file) => {
       const updated = await updateLanguage(language.id, fd);
       setLanguage(updated);
       setIconFile(null);
-      toast.success("Icon uploaded");
+      toast.success(t('icon_upload_success'));
       mutate("/languages");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to upload icon");
+      toast.error(t('icon_upload_failed'));
     } finally {
       setIconUploading(false);
     }
@@ -135,11 +139,11 @@ const handleIconChange = (file) => {
           body: JSON.stringify(translations[ns] || {}),
         });
       }
-      toast.success("Language updated");
+      toast.success(t('language_updated'));
       mutate("/languages");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save language");
+      toast.error(t('failed_to_save'));
     } finally {
       setLoading(false);
     }
@@ -147,18 +151,18 @@ const handleIconChange = (file) => {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-6 max-w-6xl mx-auto" dir={i18n.dir()}>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">🌐 Edit Language: {code}</h1>
+          <h1 className="text-2xl font-bold">🌐 {t('edit_title', { code })}</h1>
           <Link href="/dashboard/admin/settings/languages">
             <button className="flex items-center gap-2 text-gray-600 hover:text-black">
-              <FaArrowLeft /> Back
+              <FaArrowLeft /> {t('back')}
             </button>
           </Link>
         </div>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('loading')}</p>
         ) : error ? (
           <p className="text-red-600">{error}</p>
         ) : (
@@ -172,7 +176,7 @@ const handleIconChange = (file) => {
             <>
               <div className="bg-white shadow rounded p-4 flex flex-col gap-4">
                 <div>
-                  <label className="block font-semibold mb-1">Language Name</label>
+                  <label className="block font-semibold mb-1">{t('language_name')}</label>
                   <input
                     type="text"
                     name="name"
@@ -182,7 +186,7 @@ const handleIconChange = (file) => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Language Code</label>
+                  <label className="block font-semibold mb-1">{t('language_code')}</label>
                   <input
                     type="text"
                     name="code"
@@ -198,7 +202,7 @@ const handleIconChange = (file) => {
                     checked={langForm.is_default}
                     onChange={handleLangFormChange}
                   />
-                  <span className="text-sm">Set as Default</span>
+                  <span className="text-sm">{t('set_as_default')}</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -207,11 +211,11 @@ const handleIconChange = (file) => {
                     checked={langForm.is_active}
                     onChange={handleLangFormChange}
                   />
-                  <span className="text-sm">Active</span>
+                  <span className="text-sm">{t('active')}</span>
                 </label>
               </div>
               <div className="bg-white shadow rounded p-4">
-                <label className="block font-semibold mb-1">Language Icon</label>
+                <label className="block font-semibold mb-1">{t('language_icon')}</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -235,7 +239,7 @@ const handleIconChange = (file) => {
                   disabled={iconUploading || !iconFile || !language?.id}
                   className="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1 disabled:opacity-50"
                 >
-                  <FaUpload /> {iconUploading ? "Uploading..." : "Upload"}
+                  <FaUpload /> {iconUploading ? t('uploading') : t('upload')}
                 </button>
               </div>
             </>
@@ -256,17 +260,17 @@ const handleIconChange = (file) => {
                       onClick={() => handleDeleteKey(ns, key)}
                       className="text-red-600 text-sm"
                     >
-                      Delete
+                      {t('delete')}
                     </button>
                   </div>
                 ))}
                 {Object.keys(translations[ns] || {}).length === 0 && (
-                  <p className="text-sm text-gray-400 italic">No keys found in this namespace.</p>
+                  <p className="text-sm text-gray-400 italic">{t('no_keys_found')}</p>
                 )}
                 <div className="mt-4 flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="Key"
+                    placeholder={t('key')}
                     value={newKeys[ns]?.key || ""}
                     onChange={(e) =>
                       setNewKeys((prev) => ({
@@ -278,7 +282,7 @@ const handleIconChange = (file) => {
                   />
                   <input
                     type="text"
-                    placeholder="Value"
+                    placeholder={t('value')}
                     value={newKeys[ns]?.value || ""}
                     onChange={(e) =>
                       setNewKeys((prev) => ({
@@ -293,7 +297,7 @@ const handleIconChange = (file) => {
                     onClick={() => handleAddKey(ns)}
                     className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
                   >
-                    Add
+                    {t('add')}
                   </button>
                 </div>
               </div>
@@ -303,11 +307,19 @@ const handleIconChange = (file) => {
               type="submit"
               className="bg-yellow-500 text-white px-6 py-2 rounded shadow flex items-center gap-2"
             >
-              <FaSave /> Save Changes
+              <FaSave /> {t('save_changes')}
             </button>
           </form>
         )}
       </div>
     </AdminLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
