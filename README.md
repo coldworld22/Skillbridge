@@ -8,7 +8,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 curl -s https://example.com/install.sh | bash
 ```
 
-The script checks prerequisites, copies example env files, builds containers and seeds the database.
+The script checks prerequisites, copies example env files, builds containers and seeds the database for development setups.
 
 
 Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values.
@@ -34,6 +34,7 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
    npm --prefix backend run migrate
    npm --prefix backend run seed
    ```
+   Seeding is meant for development environments only and should not be executed in production.
 
    If `ADMIN_INITIAL_PASSWORD` or `SUPERADMIN_INITIAL_PASSWORD` are not set in
    `backend/.env`, the seed scripts will generate secure random passwords and
