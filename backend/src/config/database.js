@@ -1,23 +1,23 @@
 const logger = require('../utils/logger.js');
-require("dotenv").config();
-const knex = require("knex");
+require('dotenv').config();
+const knex = require('knex');
+const knexfile = require('../../knexfile.js');
 
-if (!process.env.DATABASE_URL) {
-  logger.error("DATABASE_URL is not defined");
+const environment = process.env.NODE_ENV || 'development';
+const config = knexfile[environment];
+
+if (!config || !config.connection) {
+  logger.error(`${environment} database configuration is missing`);
   process.exit(1);
 }
 
-const db = knex({
-  client: "pg",
-  connection: process.env.DATABASE_URL,
-  pool: { min: 2, max: 10 },
-});
+const db = knex({ ...config, pool: { min: 2, max: 10 } });
 
-if (process.env.NODE_ENV !== "test") {
-  db.raw("SELECT 1")
-    .then(() => logger.log("✅ PostgreSQL Database Connected"))
+if (environment !== 'test') {
+  db.raw('SELECT 1')
+    .then(() => logger.log('✅ PostgreSQL Database Connected'))
     .catch((err) => {
-      logger.error("❌ Database Connection Error:", err);
+      logger.error('❌ Database Connection Error:', err);
       process.exit(1);
     });
 }
