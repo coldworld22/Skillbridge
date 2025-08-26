@@ -21,6 +21,6 @@ module.exports = {
   },
   production: {
     ...baseConfig,
-    connection: process.env.PRODUCTION_DATABASE_URL
+    connection: process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL
   }
 };
