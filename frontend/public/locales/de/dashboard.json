@@ -650,14 +650,14 @@
       "contributors": "Contributors",
       "repliesThisWeek": "Replies This Week"
     },
-    "manageSections": "Manage Community Sections",
+    "manageSections": "Community-Bereiche verwalten",
     "nav": {
-      "manageDiscussions": "Manage Discussions",
-      "reportedPosts": "Reported Posts",
-      "manageTags": "Manage Tags",
-      "topContributors": "Top Contributors",
-      "postAnnouncement": "Post Announcement",
-      "settings": "Community Settings"
+      "manageDiscussions": "Diskussionen verwalten",
+      "reportedPosts": "Gemeldete Beiträge",
+      "manageTags": "Tags verwalten",
+      "topContributors": "Top-Mitwirkende",
+      "postAnnouncement": "Ankündigung veröffentlichen",
+      "settings": "Community-Einstellungen"
     },
     "topContributor": {
       "title": "🏆 Top Contributor",
