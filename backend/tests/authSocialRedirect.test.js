@@ -40,4 +40,14 @@ describe('social auth redirect', () => {
     expect(res.headers.location).toBe('http://frontend.com/auth/social-success');
     expect(res.headers.location).not.toContain('token=');
   });
+
+  it('sets refresh and csrf cookies', async () => {
+    const res = await request(app).get('/api/auth/google/callback');
+    expect(res.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('refreshToken=r'),
+        expect.stringContaining('csrfToken='),
+      ])
+    );
+  });
 });
