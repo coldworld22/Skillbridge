@@ -8,6 +8,9 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const availableIcons = {
   google: <FaGoogle />,
@@ -94,6 +97,7 @@ export default function SocialLoginSettingsPage() {
   const [recaptchaSecretKey, setRecaptchaSecretKey] = useState("");
   const [customIcons, setCustomIcons] = useState({});
   const notify = useAdminNotice();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'socialLoginSettingsPage' });
 
   const getCurrentState = () => ({
     globalActive,
@@ -182,14 +186,14 @@ export default function SocialLoginSettingsPage() {
     };
     try {
       await updateSocialLoginConfig(payload);
-      toast.success(`Social login ${newState ? "enabled" : "disabled"}`);
+      toast.success(t(newState ? 'social_login_enabled' : 'social_login_disabled'));
       notify(
         "social_login_settings_updated",
-        `Social login ${newState ? "enabled" : "disabled"}`
+        t(newState ? 'social_login_enabled' : 'social_login_disabled')
       );
     } catch (err) {
       restoreState(prevState);
-      toast.error(err?.response?.data?.message || "Failed to update settings");
+      toast.error(err?.response?.data?.message || t('update_failed'));
     }
   };
   const toggleRecaptcha = () => setRecaptchaActive(!recaptchaActive);
@@ -229,15 +233,14 @@ export default function SocialLoginSettingsPage() {
     try {
       await updateSocialLoginConfig(payload);
       setProviders(adjusted);
-      const status = adjusted[index].active ? "enabled" : "disabled";
-      toast.success(`${adjusted[index].name} ${status}`);
-      notify(
-        "social_provider_updated",
-        `${adjusted[index].name} ${status}`
-      );
+      const status = adjusted[index].active
+        ? t('provider_enabled', { name: adjusted[index].name })
+        : t('provider_disabled', { name: adjusted[index].name });
+      toast.success(status);
+      notify("social_provider_updated", status);
     } catch (err) {
       restoreState(prevState);
-      toast.error(err?.response?.data?.message || "Failed to update settings");
+      toast.error(err?.response?.data?.message || t('update_failed'));
     }
   };
 
@@ -291,11 +294,11 @@ export default function SocialLoginSettingsPage() {
     try {
       await updateSocialLoginConfig(payload);
       setProviders(adjusted);
-      toast.success("Settings saved");
-      notify("social_login_settings_updated", "Social login settings updated");
+      toast.success(t('settings_saved'));
+      notify("social_login_settings_updated", t('settings_updated'));
     } catch (err) {
       restoreState(prevState);
-      toast.error(err?.response?.data?.message || "Failed to save settings");
+      toast.error(err?.response?.data?.message || t('settings_save_failed'));
     }
   };
 
@@ -330,14 +333,14 @@ export default function SocialLoginSettingsPage() {
     try {
       await updateSocialLoginConfig(payload);
       setProviders(adjusted);
-      toast.success(`${providers[index].name} settings saved`);
+      toast.success(t('provider_settings_saved', { name: providers[index].name }));
       notify(
         "social_provider_updated",
-        `${providers[index].name} settings updated`
+        t('provider_settings_updated', { name: providers[index].name })
       );
     } catch (err) {
       restoreState(prevState);
-      toast.error(err?.response?.data?.message || "Failed to save settings");
+      toast.error(err?.response?.data?.message || t('settings_save_failed'));
     }
   };
 
@@ -362,13 +365,13 @@ export default function SocialLoginSettingsPage() {
 
 
   return (
-    <AdminLayout>
+    <AdminLayout title={t('title')}>
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Social Login Settings</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
 
         {/* Global Toggle */}
         <div className="mb-6 flex items-center justify-between p-4 bg-gray-100 rounded">
-          <span className="text-lg font-medium">Enable Social Login</span>
+          <span className="text-lg font-medium">{t('enable_social_login')}</span>
           <button onClick={toggleGlobal} className="text-2xl">
             {globalActive ? <FaToggleOn className="text-green-500" /> : <FaToggleOff className="text-gray-400" />}
           </button>
@@ -393,7 +396,7 @@ export default function SocialLoginSettingsPage() {
 
               <div className="space-y-2">
                 <div>
-                  <label className="block text-sm font-medium">Button Label</label>
+                  <label className="block text-sm font-medium">{t('button_label')}</label>
                   <input
                     type="text"
                     className="w-full border rounded p-2"
@@ -402,7 +405,7 @@ export default function SocialLoginSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Select Icon</label>
+                  <label className="block text-sm font-medium">{t('select_icon')}</label>
                   <select
                     className="w-full border rounded p-2"
                     value={provider.icon}
@@ -414,7 +417,7 @@ export default function SocialLoginSettingsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">Or Upload Custom Icon (SVG/PNG)</label>
+                  <label className="block text-sm font-medium">{t('upload_custom_icon')}</label>
                   <input
                     type="file"
                     accept="image/svg+xml,image/png"
@@ -424,7 +427,7 @@ export default function SocialLoginSettingsPage() {
                 {provider.key === "apple" ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium">Client ID</label>
+                      <label className="block text-sm font-medium">{t('client_id')}</label>
                       <input
                         type="text"
                         className="w-full border rounded p-2"
@@ -433,7 +436,7 @@ export default function SocialLoginSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium">Team ID</label>
+                      <label className="block text-sm font-medium">{t('team_id')}</label>
                       <input
                         type="text"
                         className="w-full border rounded p-2"
@@ -442,7 +445,7 @@ export default function SocialLoginSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium">Key ID</label>
+                      <label className="block text-sm font-medium">{t('key_id')}</label>
                       <input
                         type="text"
                         className="w-full border rounded p-2"
@@ -451,7 +454,7 @@ export default function SocialLoginSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium">Private Key</label>
+                      <label className="block text-sm font-medium">{t('private_key')}</label>
                       <textarea
                         rows={4}
                         className="w-full border rounded p-2"
@@ -463,7 +466,7 @@ export default function SocialLoginSettingsPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium">Client ID</label>
+                      <label className="block text-sm font-medium">{t('client_id')}</label>
                       <input
                         type="text"
                         className="w-full border rounded p-2"
@@ -472,7 +475,7 @@ export default function SocialLoginSettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium">Client Secret</label>
+                      <label className="block text-sm font-medium">{t('client_secret')}</label>
                       <input
                         type="text"
                         className="w-full border rounded p-2"
@@ -483,7 +486,7 @@ export default function SocialLoginSettingsPage() {
                   </>
                 )}
                 <div>
-                  <label className="block text-sm font-medium">Redirect URL</label>
+                  <label className="block text-sm font-medium">{t('redirect_url')}</label>
                   <input
                     type="text"
                     className="w-full border rounded p-2"
@@ -499,14 +502,14 @@ export default function SocialLoginSettingsPage() {
                   ? !provider.clientId || !provider.teamId || !provider.keyId || !provider.privateKey
                   : !provider.clientId || !provider.clientSecret)
               ) && (
-                <p className="mt-2 text-sm text-red-500">⚠️ Missing credentials</p>
+                <p className="mt-2 text-sm text-red-500">{t('missing_credentials')}</p>
               )}
               <div className="mt-4 text-right">
                 <button
                   className="bg-yellow-500 text-gray-900 px-4 py-1 rounded shadow hover:bg-yellow-600 transition"
                   onClick={() => handleProviderSave(index)}
                 >
-                  Save {provider.name}
+                  {t('save_provider', { name: provider.name })}
                 </button>
               </div>
             </div>
@@ -514,9 +517,9 @@ export default function SocialLoginSettingsPage() {
         </div>
 
         {/* Recaptcha Settings */}
-        <h2 className="text-xl font-bold mt-10 mb-4">reCAPTCHA Settings</h2>
+        <h2 className="text-xl font-bold mt-10 mb-4">{t('recaptcha_settings')}</h2>
         <div className="mb-4 flex items-center justify-between p-4 bg-gray-100 rounded">
-          <span className="text-lg font-medium">Enable reCAPTCHA</span>
+          <span className="text-lg font-medium">{t('enable_recaptcha')}</span>
           <button onClick={toggleRecaptcha} className="text-2xl">
             {recaptchaActive ? <FaToggleOn className="text-green-500" /> : <FaToggleOff className="text-gray-400" />}
           </button>
@@ -524,7 +527,7 @@ export default function SocialLoginSettingsPage() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium">Site Key</label>
+            <label className="block text-sm font-medium">{t('site_key')}</label>
             <input
               type="text"
               className="w-full border rounded p-2"
@@ -534,7 +537,7 @@ export default function SocialLoginSettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">Secret Key</label>
+            <label className="block text-sm font-medium">{t('secret_key')}</label>
             <input
               type="text"
               className="w-full border rounded p-2"
@@ -551,10 +554,18 @@ export default function SocialLoginSettingsPage() {
             className="bg-yellow-500 text-gray-900 px-6 py-2 rounded shadow hover:bg-yellow-600 transition"
             onClick={handleSave}
           >
-            Save Changes
+            {t('save_changes')}
           </button>
         </div>
       </div>
     </AdminLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
