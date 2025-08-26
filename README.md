@@ -31,8 +31,8 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 2. Initialize the database (run migrations and seeds):
 
    ```bash
-   npx knex migrate:latest --knexfile backend/knexfile.js
-   npx knex seed:run --knexfile backend/knexfile.js
+   npm --prefix backend run migrate
+   npm --prefix backend run seed
    ```
 
    If `ADMIN_INITIAL_PASSWORD` or `SUPERADMIN_INITIAL_PASSWORD` are not set in
