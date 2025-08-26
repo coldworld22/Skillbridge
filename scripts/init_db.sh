@@ -14,9 +14,13 @@ fi
 if [ -n "$($DOCKER_COMPOSE ps -q backend 2>/dev/null)" ]; then
   echo "Running migrations inside backend container..."
   $DOCKER_COMPOSE exec backend npx knex migrate:latest --knexfile knexfile.js
-  $DOCKER_COMPOSE exec backend npx knex seed:run --knexfile knexfile.js
+  if [ "$NODE_ENV" != "production" ]; then
+    $DOCKER_COMPOSE exec backend npx knex seed:run --knexfile knexfile.js
+  fi
 else
   echo "Running migrations locally..."
   npx knex migrate:latest --knexfile backend/knexfile.js
-  npx knex seed:run --knexfile backend/knexfile.js
+  if [ "$NODE_ENV" != "production" ]; then
+    npx knex seed:run --knexfile backend/knexfile.js
+  fi
 fi
