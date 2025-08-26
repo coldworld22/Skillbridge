@@ -19,6 +19,7 @@ export default function BackgroundAnimation() {
 
     const particlesArray = [];
     const numberOfParticles = 80;
+    const speed = 0.2; // slows particle movement for a calmer effect
 
     class Particle {
       constructor(x, y, directionX, directionY, size, color) {
@@ -56,8 +57,8 @@ export default function BackgroundAnimation() {
         let size = Math.random() * 3 + 1;
         let x = Math.random() * (canvas.width - size * 2) + size;
         let y = Math.random() * (canvas.height - size * 2) + size;
-        let directionX = Math.random() * 2 - 1;
-        let directionY = Math.random() * 2 - 1;
+        let directionX = (Math.random() * 2 - 1) * speed;
+        let directionY = (Math.random() * 2 - 1) * speed;
         let color = "rgba(234, 179, 8, 0.8)";
         particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
       }
