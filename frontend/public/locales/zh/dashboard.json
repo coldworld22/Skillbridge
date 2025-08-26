@@ -468,6 +468,25 @@
     "next": "下一个",
     "no_alerts": "找不到警报。"
   },
+  "blogManagerPage": {
+    "title": "Blog Manager",
+    "post_title_placeholder": "Enter post title",
+    "upload_image": "Upload Image",
+    "excerpt_placeholder": "Enter excerpt",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add_post": "Add Post",
+    "edit": "Edit",
+    "delete": "Delete",
+    "load_failed": "Failed to load posts",
+    "create_success": "Post created",
+    "create_failed": "Failed to create post",
+    "confirm_delete": "Are you sure you want to delete this post?",
+    "delete_success": "Post deleted",
+    "delete_failed": "Failed to delete post",
+    "update_success": "Post updated",
+    "update_failed": "Failed to update post"
+  },
   "instructorProfilePage": {
     "title": "编辑讲师资料",
     "profile_picture": "个人资料图片",
