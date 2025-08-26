@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export NODE_ENV=production
+
 # Script to configure nginx for a provided domain and obtain Let's Encrypt certificates.
 # Usage: ./scripts/deploy_server.sh <domain>
 

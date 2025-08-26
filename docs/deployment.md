@@ -110,6 +110,16 @@ container under `/app/uploads`. To keep them after a container restart, mount th
 
 This ensures custom branding files persist across deployments.
 
+## Preserve database and pgAdmin data
+
+PostgreSQL stores its data in the `postgres_data` volume and pgAdmin uses
+`pgadmin_data`. In production, avoid running `docker compose down -v` as the
+`-v` flag removes these volumes and wipes the database and pgAdmin settings.
+Use `docker compose stop` or `docker compose down` without `-v` to retain your
+data. Manually deleting the `postgres_data` or `pgadmin_data` volumes will also
+erase data. Consider mounting these volumes to external storage or setting up
+regular backups to protect critical information.
+
 ## Next.js image domains
 
 Uploads served from the backend domain are now automatically whitelisted for
