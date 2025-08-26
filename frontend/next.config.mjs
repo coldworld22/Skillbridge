@@ -49,6 +49,11 @@ const nextConfig = {
     ],
   },
   i18n: nextI18NextConfig.i18n,
+  // Increase the page data size limit to suppress build warnings for
+  // larger translation bundles.
+  experimental: {
+    largePageDataBytes: 256 * 1024,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
