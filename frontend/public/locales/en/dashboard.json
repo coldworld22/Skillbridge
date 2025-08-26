@@ -322,7 +322,21 @@
     "save_language": "Save Language",
     "language_added": "Language added",
     "language_exists": "Language code already exists.",
-    "failed_to_add": "Failed to add language"
+    "failed_to_add": "Failed to add language",
+    "edit_title": "Edit Language: {{code}}",
+    "loading": "Loading...",
+    "load_failed": "Failed to load translations",
+    "language_updated": "Language updated",
+    "failed_to_save": "Failed to save language",
+    "icon_upload_success": "Icon uploaded",
+    "icon_upload_failed": "Failed to upload icon",
+    "upload": "Upload",
+    "uploading": "Uploading...",
+    "no_keys_found": "No keys found in this namespace.",
+    "key": "Key",
+    "value": "Value",
+    "add": "Add",
+    "save_changes": "Save Changes"
   },
   "adsPage": {
     "title": "Ads Manager",
