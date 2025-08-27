@@ -169,7 +169,11 @@ const AskQuestionPage = () => {
       setRelatedQuestions(data.relatedQuestions || []);
     } catch (error) {
       console.error("AI Response Error:", error);
-      const msg = error.response?.data?.message || 'Error generating AI response.';
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Error generating AI response.';
       setAIResponse(`⚠️ ${msg}`);
     } finally {
       setIsProcessingAI(false);
