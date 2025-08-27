@@ -1251,7 +1251,10 @@
     "update_success": "FAQ updated",
     "update_failed": "Failed to update FAQ",
     "delete_success": "FAQ deleted",
-    "delete_failed": "Failed to delete FAQ"
+    "delete_failed": "Failed to delete FAQ",
+    "fill_required_fields": "Please fill in all required fields",
+    "faq_not_found": "FAQ not found",
+    "no_faqs": "No FAQs available"
   },
   "offersPage": {
     "title": "📚 My Offers Dashboard",

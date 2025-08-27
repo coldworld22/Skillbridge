@@ -1256,7 +1256,10 @@
     "update_success": "常见问题解答更新",
     "update_failed": "无法更新常见问题",
     "delete_success": "常见问题解答已删除",
-    "delete_failed": "无法删除常见问题"
+    "delete_failed": "无法删除常见问题",
+    "fill_required_fields": "请填写所有必填字段",
+    "faq_not_found": "未找到常见问题",
+    "no_faqs": "暂无常见问题"
   },
   "offersPage": {
     "title": "📚我提供仪表板",

@@ -1255,7 +1255,10 @@
     "update_success": "पूर्व प्रश्न",
     "update_failed": "प्रश्न अपडेट करने में विफल",
     "delete_success": "प्रश्न हटा दिया गया",
-    "delete_failed": "प्रश्न को हटाने में विफल"
+    "delete_failed": "प्रश्न को हटाने में विफल",
+    "fill_required_fields": "कृपया सभी आवश्यक फ़ील्ड भरें",
+    "faq_not_found": "प्रश्न नहीं मिला",
+    "no_faqs": "कोई FAQs उपलब्ध नहीं हैं"
   },
   "offersPage": {
     "title": "📚 मेरा प्रस्ताव डैशबोर्ड",

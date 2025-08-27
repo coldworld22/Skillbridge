@@ -1235,7 +1235,10 @@
     "update_success": "FAQ mise à jour",
     "update_failed": "Échec de la mise à jour de la FAQ",
     "delete_success": "FAQ supprimée",
-    "delete_failed": "Échec de la suppression de la FAQ"
+    "delete_failed": "Échec de la suppression de la FAQ",
+    "fill_required_fields": "Veuillez remplir tous les champs obligatoires",
+    "faq_not_found": "FAQ introuvable",
+    "no_faqs": "Aucune FAQ disponible"
   },
   "offersPage": {
     "title": "📚 Tableau de mes offres",
