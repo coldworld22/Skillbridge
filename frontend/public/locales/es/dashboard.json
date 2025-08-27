@@ -1255,7 +1255,10 @@
     "update_success": "Preguntas frecuentes actualizadas",
     "update_failed": "No se pudo actualizar las preguntas frecuentes",
     "delete_success": "Preguntas frecuentes eliminadas",
-    "delete_failed": "No se pudo eliminar las preguntas frecuentes"
+    "delete_failed": "No se pudo eliminar las preguntas frecuentes",
+    "fill_required_fields": "Por favor completa todos los campos requeridos",
+    "faq_not_found": "FAQ no encontrada",
+    "no_faqs": "No hay preguntas frecuentes disponibles"
   },
   "offersPage": {
     "title": "📚 mis ofertas Panel",

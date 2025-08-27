@@ -1269,7 +1269,10 @@
     "update_success": "FAQ aggiornati",
     "update_failed": "Impossibile aggiornare le domande frequenti",
     "delete_success": "FAQ Eliminati",
-    "delete_failed": "Impossibile eliminare le FAQ"
+    "delete_failed": "Impossibile eliminare le FAQ",
+    "fill_required_fields": "Per favore compila tutti i campi obbligatori",
+    "faq_not_found": "FAQ non trovata",
+    "no_faqs": "Nessuna FAQ disponibile"
   },
   "offersPage": {
     "title": "📚 Il mio dashboard offre",

@@ -17,13 +17,17 @@ export default function AdminFaqsPage() {
   const [editId, setEditId] = useState(null);
 
   const handleAdd = async () => {
-    if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+    if (!newFaq.question.trim() || !newFaq.answer.trim()) {
+      toast.error(t("fill_required_fields"));
+      return;
+    }
     try {
       await api.post("/faqs", newFaq);
       mutate();
       setNewFaq({ question: "", answer: "" });
       toast.success(t("add_success"));
     } catch (err) {
+      console.error(err);
       toast.error(t("add_failed"));
     }
   };
@@ -34,13 +38,18 @@ export default function AdminFaqsPage() {
       mutate();
       toast.success(t("delete_success"));
     } catch (err) {
+      console.error(err);
       toast.error(t("delete_failed"));
     }
   };
 
   const handleEdit = (id) => {
-    setEditId(id);
     const faq = faqs.find((f) => f.id === id);
+    if (!faq) {
+      toast.error(t("faq_not_found"));
+      return;
+    }
+    setEditId(id);
     setNewFaq({ question: faq.question, answer: faq.answer });
   };
 
@@ -52,6 +61,7 @@ export default function AdminFaqsPage() {
       setNewFaq({ question: "", answer: "" });
       toast.success(t("update_success"));
     } catch (err) {
+      console.error(err);
       toast.error(t("update_failed"));
     }
   };
@@ -68,18 +78,30 @@ export default function AdminFaqsPage() {
 
         {/* Form */}
         <div className="bg-white rounded shadow p-4 mb-8 space-y-4">
+          <label htmlFor="faq-question" className="sr-only">
+            {t("question_placeholder")}
+          </label>
           <input
+            id="faq-question"
             type="text"
             placeholder={t("question_placeholder")}
             className="w-full border p-2 rounded"
             value={newFaq.question}
-            onChange={(e) => setNewFaq((prev) => ({ ...prev, question: e.target.value }))}
+            onChange={(e) =>
+              setNewFaq((prev) => ({ ...prev, question: e.target.value }))
+            }
           />
+          <label htmlFor="faq-answer" className="sr-only">
+            {t("answer_placeholder")}
+          </label>
           <textarea
+            id="faq-answer"
             placeholder={t("answer_placeholder")}
             className="w-full border p-2 rounded"
             value={newFaq.answer}
-            onChange={(e) => setNewFaq((prev) => ({ ...prev, answer: e.target.value }))}
+            onChange={(e) =>
+              setNewFaq((prev) => ({ ...prev, answer: e.target.value }))
+            }
           />
           <div className="flex gap-4">
             {editId ? (
@@ -110,28 +132,35 @@ export default function AdminFaqsPage() {
 
         {/* List */}
         <div className="space-y-4">
-          {faqs.map((faq) => (
-            <div key={faq.id} className="bg-gray-100 p-4 rounded shadow flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{faq.question}</h3>
-                <p className="text-gray-700">{faq.answer}</p>
+          {faqs.length === 0 ? (
+            <p className="text-gray-500">{t("no_faqs")}</p>
+          ) : (
+            faqs.map((faq) => (
+              <div
+                key={faq.id}
+                className="bg-gray-100 p-4 rounded shadow flex justify-between items-start"
+              >
+                <div>
+                  <h3 className="font-semibold">{faq.question}</h3>
+                  <p className="text-gray-700">{faq.answer}</p>
+                </div>
+                <div className="flex gap-2 text-sm mt-1">
+                  <button
+                    onClick={() => handleEdit(faq.id)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1"
+                  >
+                    <FaEdit /> {t("edit")}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(faq.id)}
+                    className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1"
+                  >
+                    <FaTrash /> {t("delete")}
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2 text-sm mt-1">
-                <button
-                  onClick={() => handleEdit(faq.id)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1"
-                >
-                  <FaEdit /> {t("edit")}
-                </button>
-                <button
-                  onClick={() => handleDelete(faq.id)}
-                  className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1"
-                >
-                  <FaTrash /> {t("delete")}
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </AdminLayout>
