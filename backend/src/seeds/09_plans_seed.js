@@ -47,12 +47,32 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
-      name: 'Prime',
-      slug: 'prime',
-      price_monthly: 19.99,
-      price_yearly: 199.99,
+      name: 'Instructor Basic',
+      slug: 'instructor-basic',
+      price_monthly: 0,
+      price_yearly: 0,
       currency: 'USD',
       recommended: false,
+      active: true,
+      color: '#1F2937',
+      style: JSON.stringify({
+        gradientStart: '#1F2937',
+        gradientEnd: '#374151',
+        buttonColor: '#2563EB',
+        buttonTextColor: '#FFFFFF'
+      }),
+      target_role: 'instructor',
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'Instructor Pro',
+      slug: 'instructor-pro',
+      price_monthly: 29.99,
+      price_yearly: 299.99,
+      currency: 'USD',
+      recommended: true,
       active: true,
       color: '#F59E0B',
       style: JSON.stringify({
@@ -62,7 +82,7 @@ exports.seed = async function (knex) {
         buttonColor: '#FBBF24',
         buttonTextColor: '#1F2937'
       }),
-      target_role: 'student',
+      target_role: 'instructor',
       created_at: now,
       updated_at: now
     }
@@ -177,49 +197,77 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
+      plan_id: ids['instructor-basic'],
+      feature_key: 'commission_rate',
+      value: '0.2',
+      description: '20% commission on sales'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
       feature_key: 'ads_max_ads',
-      value: '10',
-      description: 'Up to 10 active ads'
+      value: '2',
+      description: 'Up to 2 active ads'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_max_ad_duration',
-      value: '30',
-      description: 'Each ad runs for 30 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_placements',
-      value: JSON.stringify(['dashboard','homepage','email','sidebar']),
-      description: 'All placements including email & sidebar'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_allow_branding',
-      value: 'true',
-      description: 'Custom branding'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
+      plan_id: ids['instructor-basic'],
       feature_key: 'ads_show_analytics',
-      value: 'true',
-      description: 'Analytics access'
+      value: 'false',
+      description: 'No analytics access'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
+      plan_id: ids['instructor-basic'],
       feature_key: 'groups_create',
       value: 'true',
       description: 'Can create groups'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
+      plan_id: ids['instructor-basic'],
+      feature_key: 'groups_join_limit',
+      value: '3',
+      description: 'Join up to 3 groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'commission_rate',
+      value: '0.1',
+      description: '10% commission on sales'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'ads_max_ads',
+      value: '10',
+      description: 'Up to 10 active ads'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'ads_allow_branding',
+      value: 'true',
+      description: 'Custom branding'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'ads_show_analytics',
+      value: 'true',
+      description: 'Analytics access'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'groups_create',
+      value: 'true',
+      description: 'Can create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
       feature_key: 'groups_join_limit',
       value: 'unlimited',
       description: 'Join unlimited groups'
