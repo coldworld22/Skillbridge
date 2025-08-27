@@ -7,29 +7,27 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import useSWR, { mutate as mutateGlobal } from "swr";
 
 export default function LanguageConfigPage() {
   const { t, i18n } = useTranslation("dashboard");
   const [config, setConfig] = useState({ defaultLanguage: "en" });
-  const [languages, setLanguages] = useState([]);
+  const { data: configData } = useSWR("/app-config", fetchAppConfig, {
+    onError: () => toast.error(t("settings_load_failed")),
+  });
+  const { data: languages } = useSWR("/languages", getLanguages, {
+    onError: () => toast.error(t("settings_load_failed")),
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [cfg, langs] = await Promise.all([
-          fetchAppConfig(),
-          getLanguages(),
-        ]);
-        setConfig({ ...cfg, defaultLanguage: cfg.defaultLanguage || "en" });
-        setLanguages(langs || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-        toast.error(t("settings_load_failed"));
-      }
-    };
-    load();
-  }, []);
+    if (configData) {
+      setConfig({
+        ...configData,
+        defaultLanguage: configData.defaultLanguage || "en",
+      });
+    }
+  }, [configData]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -37,6 +35,8 @@ export default function LanguageConfigPage() {
       const updated = await updateAppConfig(config);
       setConfig(updated);
       toast.success(t("settings_saved"));
+      mutateGlobal("/app-config");
+      mutateGlobal("/languages");
     } catch (err) {
       console.error(err);
       toast.error(t("settings_save_failed"));
@@ -58,7 +58,7 @@ export default function LanguageConfigPage() {
               setConfig((prev) => ({ ...prev, defaultLanguage: e.target.value }))
             }
           >
-            {languages.map((l) => (
+            {languages?.map((l) => (
               <option key={l.id} value={l.code}>
                 {l.name}
               </option>
