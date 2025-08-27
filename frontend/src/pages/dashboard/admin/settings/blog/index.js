@@ -19,6 +19,7 @@ export default function AdminBlogManager() {
   const [newPost, setNewPost] = useState({
     title: "",
     excerpt: "",
+    content: "",
     date: new Date().toISOString().split("T")[0],
     imageFile: null,
     preview: null,
@@ -41,11 +42,12 @@ export default function AdminBlogManager() {
   };
 
   const handleAdd = async () => {
-    if (!newPost.title || !newPost.excerpt || !newPost.imageFile) return;
+    if (!newPost.title || !newPost.excerpt || !newPost.content || !newPost.imageFile) return;
     try {
       const form = new FormData();
       form.append("title", newPost.title);
       form.append("excerpt", newPost.excerpt);
+      form.append("content", newPost.content);
       form.append("published_at", newPost.date);
       form.append("image", newPost.imageFile);
       const saved = await createPost(form);
@@ -76,6 +78,7 @@ export default function AdminBlogManager() {
     setNewPost({
       title: post.title,
       excerpt: post.excerpt,
+      content: post.content || "",
       date: post.published_at ? post.published_at.split("T")[0] : new Date().toISOString().split("T")[0],
       imageFile: null,
       preview: post.image_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${post.image_url}` : null,
@@ -87,6 +90,7 @@ export default function AdminBlogManager() {
       const form = new FormData();
       form.append("title", newPost.title);
       form.append("excerpt", newPost.excerpt);
+      form.append("content", newPost.content);
       form.append("published_at", newPost.date);
       if (newPost.imageFile) form.append("image", newPost.imageFile);
       const updated = await updatePost(editId, form);
@@ -108,6 +112,7 @@ export default function AdminBlogManager() {
     setNewPost({
       title: "",
       excerpt: "",
+      content: "",
       date: new Date().toISOString().split("T")[0],
       imageFile: null,
       preview: null,
@@ -155,6 +160,12 @@ export default function AdminBlogManager() {
             className="w-full border p-2 rounded"
             value={newPost.excerpt}
             onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
+          />
+          <textarea
+            placeholder={t("content_placeholder", "Enter content")}
+            className="w-full border p-2 rounded"
+            value={newPost.content}
+            onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
           />
           <input
             type="date"
