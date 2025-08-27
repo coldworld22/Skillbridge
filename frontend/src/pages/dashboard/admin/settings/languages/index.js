@@ -1,6 +1,6 @@
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { mutate as mutateGlobal } from "swr";
 import api from "@/services/api/api";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
+import { toast } from "react-toastify";
 
 const fetcher = url => api.get(url).then(res => res.data.data);
 
@@ -19,19 +20,37 @@ export default function LanguagesPage() {
   const ITEMS_PER_PAGE = 5;
 
   const toggleActive = async (lang) => {
-    await api.put(`/languages/${lang.id}`, { ...lang, is_active: !lang.is_active });
-    mutate();
+    try {
+      await api.put(`/languages/${lang.id}`, { ...lang, is_active: !lang.is_active });
+      mutate();
+      mutateGlobal("/app-config");
+      toast.success(t('language_updated'));
+    } catch (err) {
+      toast.error(t('failed_to_save'));
+    }
   };
 
   const setDefault = async (lang) => {
-    await api.put(`/languages/${lang.id}`, { ...lang, is_default: true });
-    mutate();
+    try {
+      await api.put(`/languages/${lang.id}`, { ...lang, is_default: true });
+      mutate();
+      mutateGlobal("/app-config");
+      toast.success(t('language_updated'));
+    } catch (err) {
+      toast.error(t('failed_to_save'));
+    }
   };
 
   const remove = async (id) => {
     if (confirm(t('confirm_delete'))) {
-      await api.delete(`/languages/${id}`);
-      mutate();
+      try {
+        await api.delete(`/languages/${id}`);
+        mutate();
+        mutateGlobal("/app-config");
+        toast.success(t('language_updated'));
+      } catch (err) {
+        toast.error(t('failed_to_save'));
+      }
     }
   };
 
