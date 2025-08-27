@@ -8,9 +8,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "react-toastify";
 import { createDiscussion, searchTags, createReply } from "@/services/communityService";
 import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
-
-// ✅ AI API URL - Update with your actual backend API endpoint
-const AI_API_URL = "/api/ai-assistance";
+import { askAI } from "@/services/aiService";
 
 // ✅ Predefined Popular Tags for Suggestions
 const popularTags = ["React", "Next.js", "JavaScript", "Node.js", "API", "MongoDB", "Tailwind CSS"];
@@ -158,30 +156,25 @@ const AskQuestionPage = () => {
     setConfidenceScore(null);
 
     try {
-      const response = await fetch(AI_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: title,
-          provider: selectedAI,
-          model: selectedAI === 'chatgpt' ? selectedModel : undefined,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setAIResponse(`⚠️ ${data.message || 'Error generating AI response.'}`);
-        return;
-      }
-      const ans = data.data?.answer ?? data.answer;
-      const conf = data.data?.confidence ?? data.confidence;
+      const data = await askAI(
+        selectedAI,
+        title,
+        selectedAI === 'chatgpt' ? selectedModel : undefined
+      );
+      const ans = data.answer;
+      const conf = data.confidence;
       setAIResponse(ans);
       setEditableResponse(ans);
       setConfidenceScore(conf);
-      setRelatedQuestions(data.data?.relatedQuestions || data.relatedQuestions || []);
+      setRelatedQuestions(data.relatedQuestions || []);
     } catch (error) {
       console.error("AI Response Error:", error);
-      setAIResponse("⚠️ Error generating AI response.");
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Error generating AI response.';
+      setAIResponse(`⚠️ ${msg}`);
     } finally {
       setIsProcessingAI(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaMicrophone, FaVolumeUp, FaStop } from "react-icons/fa";
+import api from "@/services/api/api";
 
 export default function AIVoiceTutor() {
   const [isListening, setIsListening] = useState(false);
@@ -29,12 +30,7 @@ export default function AIVoiceTutor() {
   };
 
   const fetchAIResponse = async (query) => {
-    const response = await fetch("/api/ai-voice-tutor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
-    const data = await response.json();
+    const { data } = await api.post("/ai-voice-tutor", { query });
     setAiResponse(data.response);
     speakResponse(data.response);
   };

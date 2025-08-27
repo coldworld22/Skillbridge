@@ -16,6 +16,9 @@ export const askAI = async (provider, question, model) => {
     question,
     model,
   });
+  if (data?.error) {
+    throw new Error(data.error.message || "AI request failed");
+  }
   return data?.data ?? data;
 };
 
