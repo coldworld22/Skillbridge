@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/plans/plans.service', () => ({
   consumeAdCredit: jest.fn(),
+  getPlanById: jest.fn(),
 }));
 
 jest.mock('../src/modules/ads/ads.service', () => ({
@@ -43,6 +44,8 @@ jest.mock('../src/middleware/auth/authMiddleware', () => {
       roles: ['instructor'],
       email: 'inst@example.com',
       full_name: 'Instructor One',
+      plan_id: 'plan1',
+      plan: { showAnalytics: true },
     };
     next();
   });
@@ -64,7 +67,14 @@ const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
 app.use(express.json());
+app.use((req, _res, next) => {
+  req.user = { plan: { showAnalytics: true } };
+  next();
+});
 app.use('/api/ads', routes);
+app.use((err, _req, res, _next) => {
+  res.status(err.statusCode || 500).json({ message: err.message });
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -131,12 +141,22 @@ describe('GET /api/ads/admin/check-title', () => {
 });
 
 describe('POST /api/ads/admin', () => {
-  it('creates ad', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg' };
+  it('creates ad within plan limits and consumes credit', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue([]);
     service.createAd.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
+    expect(planService.consumeAdCredit).toHaveBeenCalledWith('plan1');
     expect(sendAdSubmissionEmail).toHaveBeenCalledWith(
       'inst@example.com',
       'Instructor One',
@@ -158,11 +178,60 @@ describe('POST /api/ads/admin', () => {
       message: 'New ad created: Test',
     });
   });
+
+  it('rejects creation when ad credits exhausted', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg' };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 0,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue([]);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when branding not allowed', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'false' },
+      ],
+    });
+    service.getAds.mockResolvedValue([]);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when max ads exceeded', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg' };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '1' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue([{ id: 'existing' }]);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
 });
 
 describe('PUT /api/ads/:id', () => {
   it('updates ad', async () => {
     const payload = { title: 'Updated' };
+    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1' });
     service.updateAd = jest.fn().mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(200);
@@ -172,6 +241,7 @@ describe('PUT /api/ads/:id', () => {
 
 describe('DELETE /api/ads/:id', () => {
   it('deletes ad', async () => {
+    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1' });
     service.deleteAd = jest.fn().mockResolvedValue(1);
     const res = await request(app).delete('/api/ads/1');
     expect(res.status).toBe(200);
