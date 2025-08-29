@@ -37,6 +37,7 @@ router.put(
   verifyToken,
   isInstructorOrAdmin,
   upload,
+  validate(validator.update),
   controller.updateAd
 );
 router.delete(
