@@ -6,8 +6,14 @@ exports.createAd = async (data) => {
 };
 
 // Fetch ads with optional inclusion of inactive ones and ability to
-// restrict results to a specific creator or target role
-exports.getAds = async (includeInactive = false, createdBy, targetRole) => {
+// restrict results to a specific creator or target role. When
+// `onlyPurchased` is true, only ads that have been purchased are returned.
+exports.getAds = async (
+  includeInactive = false,
+  createdBy,
+  targetRole,
+  onlyPurchased = false
+) => {
   return db("ads")
     .modify((qb) => {
       if (!includeInactive) qb.where({ is_active: true });
@@ -20,8 +26,22 @@ exports.getAds = async (includeInactive = false, createdBy, targetRole) => {
           );
         });
       }
+      if (onlyPurchased) qb.whereNotNull("purchased_at");
     })
     .orderBy("created_at", "desc");
+};
+
+// Mark an ad as purchased by a user
+exports.purchaseAd = async (id, userId) => {
+  const [row] = await db("ads")
+    .where({ id, purchased_at: null })
+    .update({
+      purchased_by: userId,
+      purchased_at: db.fn.now(),
+      is_active: true,
+    })
+    .returning("*");
+  return row;
 };
 
 exports.getAdById = async (id) => {

@@ -1906,5 +1906,13 @@
     "settings_updated": "Social login settings updated",
     "provider_settings_saved": "{{name}} settings saved",
     "provider_settings_updated": "{{name}} settings updated"
+  },
+  "adsPurchasePage": {
+    "title": "Purchase Ads",
+    "purchase": "Purchase",
+    "purchased": "Purchased",
+    "purchase_failed": "Purchase failed",
+    "price": "Price",
+    "none_available": "No ad slots available"
   }
 }

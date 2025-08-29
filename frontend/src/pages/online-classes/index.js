@@ -7,6 +7,7 @@ import ClassFilters from '@/components/online-classes/ClassFilters';
 import ClassesGrid from '@/components/online-classes/ClassesGrid';
 import LoadMoreButton from '@/components/online-classes/LoadMoreButton';
 import { fetchPublishedClasses } from '@/services/classService';
+import { fetchAds as fetchAdBanners } from '@/services/adService';
 
 export default function OnlineClassesPage({ initialClasses = [] }) {
   const [allClasses, setAllClasses] = useState(initialClasses);
@@ -15,6 +16,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState({ search: '', category: '', date: '', priceRange: '' });
+  const [ads, setAds] = useState([]);
 
   useEffect(() => {
     if (initialClasses.length > 0) {
@@ -39,6 +41,10 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
     };
     load();
   }, [initialClasses]);
+
+  useEffect(() => {
+    fetchAdBanners().then(setAds).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setVisibleCount(6);
@@ -85,6 +91,19 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
 
       <main className="container mx-auto px-6 py-12 mt-16 max-w-7xl">
         <OnlineClassesHero />
+        {ads.map((ad) => (
+          <div key={ad.id} className="my-6">
+            <a href={ad.link} target="_blank" rel="noopener noreferrer">
+              {ad.image && (
+                <img
+                  src={ad.image}
+                  alt={ad.title}
+                  className="w-full h-48 object-cover rounded"
+                />
+              )}
+            </a>
+          </div>
+        ))}
 
         <section className="mt-10 space-y-10">
           <ClassFilters filters={filters} onChange={setFilters} />

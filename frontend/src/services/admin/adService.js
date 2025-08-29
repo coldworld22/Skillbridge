@@ -33,6 +33,9 @@ export const fetchAds = async () => {
     priority: ad.priority ?? 0,
     allowBranding: ad.allow_branding ?? false,
     isActive: ad.is_active ?? ad.isActive ?? false,
+    price: ad.price ?? 0,
+    purchasedAt: ad.purchased_at ?? ad.purchasedAt ?? null,
+    purchasedBy: ad.purchased_by ?? ad.purchasedBy ?? null,
   }));
 };
 
@@ -53,6 +56,9 @@ export const fetchAdById = async (id) => {
     priority: ad.priority ?? 0,
     allowBranding: ad.allow_branding ?? false,
     isActive: ad.is_active ?? ad.isActive ?? false,
+    price: ad.price ?? 0,
+    purchasedAt: ad.purchased_at ?? ad.purchasedAt ?? null,
+    purchasedBy: ad.purchased_by ?? ad.purchasedBy ?? null,
   };
 };
 
@@ -70,6 +76,14 @@ export const deleteAd = async (id) => {
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
   await api.delete(`/ads/${id}`, { headers });
+};
+
+export const purchaseAd = async (id) => {
+  const headers = {};
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  const { data } = await api.post(`/ads/${id}/purchase`, null, { headers });
+  return data?.data;
 };
 
 export const fetchAdAnalytics = async (id) => {

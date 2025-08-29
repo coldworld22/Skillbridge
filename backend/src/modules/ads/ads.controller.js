@@ -31,6 +31,7 @@ exports.createAd = catchAsync(async (req, res) => {
     ad_type,
     priority,
     allow_branding,
+    price,
   } = req.body;
 
   const title = rawTitle?.trim();
@@ -58,6 +59,7 @@ exports.createAd = catchAsync(async (req, res) => {
     allow_branding: allow_branding === "true" || allow_branding === true,
     created_by: req.user.id,
     is_active: false,
+    price: price ? Number(price) : 0,
   };
 
   if (target_roles) {
@@ -141,7 +143,7 @@ exports.checkTitle = catchAsync(async (req, res) => {
  */
 exports.getAds = catchAsync(async (req, res) => {
   const role = req.query.role?.toLowerCase();
-  const ads = await service.getAds(false, undefined, role);
+  const ads = await service.getAds(false, undefined, role, true);
   sendSuccess(res, ads);
 });
 
@@ -160,7 +162,8 @@ exports.getAllAds = catchAsync(async (req, res) => {
   const ads = await service.getAds(
     true,
     isAdmin ? undefined : req.user.id,
-    role
+    role,
+    false
   );
   sendSuccess(res, ads);
 });
@@ -188,6 +191,7 @@ exports.updateAd = catchAsync(async (req, res) => {
     ad_type,
     priority,
     allow_branding,
+    price,
   } = req.body;
   const title = rawTitle?.trim();
   const updates = {
@@ -199,6 +203,7 @@ exports.updateAd = catchAsync(async (req, res) => {
     ad_type,
     priority: priority ? Number(priority) : undefined,
     allow_branding: allow_branding === "true" || allow_branding === true,
+    price: price ? Number(price) : undefined,
   };
 
   if (target_roles) {
@@ -281,6 +286,15 @@ exports.deleteAd = catchAsync(async (req, res) => {
   // Skip sending system-wide notifications when ads are removed
 
   sendSuccess(res, null, "Ad deleted");
+});
+
+/**
+ * Purchase an ad.
+ */
+exports.purchaseAd = catchAsync(async (req, res) => {
+  const ad = await service.purchaseAd(req.params.id, req.user.id);
+  if (!ad) throw new AppError("Ad not found or already purchased", 400);
+  sendSuccess(res, ad, "Ad purchased");
 });
 
 /**

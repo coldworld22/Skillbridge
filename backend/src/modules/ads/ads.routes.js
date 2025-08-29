@@ -31,6 +31,12 @@ router.get("/", controller.getAds);
 router.post("/:id/view", controller.recordAdView);
 router.get("/:id/analytics", controller.getAdAnalytics);
 router.post("/:id/click", controller.recordAdClick);
+router.post(
+  "/:id/purchase",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.purchaseAd
+);
 router.get("/:id", controller.getAdById);
 router.put(
   "/:id",
