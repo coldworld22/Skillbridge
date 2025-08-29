@@ -14,7 +14,10 @@ exports.getAds = async (includeInactive = false, createdBy, targetRole) => {
       if (createdBy) qb.where({ created_by: createdBy });
       if (targetRole) {
         qb.where(function () {
-          this.whereRaw("target_roles = '{}' OR ? = ANY(target_roles)", [targetRole]);
+          this.whereRaw(
+            "target_roles IS NULL OR target_roles = '{}' OR ? = ANY(target_roles)",
+            [targetRole]
+          );
         });
       }
     })
