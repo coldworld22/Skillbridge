@@ -222,14 +222,15 @@ exports.updateAd = catchAsync(async (req, res) => {
   const normalizedRoles = roles.map((r) => String(r).toLowerCase());
   const isAdmin =
     normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
-
-  let previousAd;
-  if (updates.is_active !== undefined) {
-    if (!isAdmin) {
-      throw new AppError("Only admins can change ad status", 403);
-    }
-    previousAd = await service.getAdById(req.params.id);
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) throw new AppError("Ad not found", 404);
+  if (!isAdmin && ad.created_by !== req.user.id) {
+    throw new AppError("Forbidden", 403);
   }
+  if (updates.is_active !== undefined && !isAdmin) {
+    throw new AppError("Only admins can change ad status", 403);
+  }
+  const previousAd = ad;
 
   if (title) {
     const existing = await service.findByTitle(title);
@@ -280,6 +281,17 @@ exports.updateAd = catchAsync(async (req, res) => {
  * Delete an ad by id.
  */
 exports.deleteAd = catchAsync(async (req, res) => {
+  const roles = req.user.roles || [req.user.role];
+  const normalizedRoles = roles.map((r) => String(r).toLowerCase());
+  const isAdmin =
+    normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
+
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) throw new AppError("Ad not found", 404);
+  if (!isAdmin && ad.created_by !== req.user.id) {
+    throw new AppError("Forbidden", 403);
+  }
+
   const count = await service.deleteAd(req.params.id);
   if (!count) throw new AppError("Ad not found", 404);
 
@@ -292,9 +304,20 @@ exports.deleteAd = catchAsync(async (req, res) => {
  * Purchase an ad.
  */
 exports.purchaseAd = catchAsync(async (req, res) => {
-  const ad = await service.purchaseAd(req.params.id, req.user.id);
-  if (!ad) throw new AppError("Ad not found or already purchased", 400);
-  sendSuccess(res, ad, "Ad purchased");
+  const roles = req.user.roles || [req.user.role];
+  const normalizedRoles = roles.map((r) => String(r).toLowerCase());
+  const isAdmin =
+    normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
+
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) throw new AppError("Ad not found", 404);
+  if (!isAdmin && ad.created_by !== req.user.id) {
+    throw new AppError("Forbidden", 403);
+  }
+
+  const purchased = await service.purchaseAd(req.params.id, req.user.id);
+  if (!purchased) throw new AppError("Ad not found or already purchased", 400);
+  sendSuccess(res, purchased, "Ad purchased");
 });
 
 /**
