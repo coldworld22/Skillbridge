@@ -14,16 +14,24 @@ const storage = multer.diskStorage({
   },
 });
 
-const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const fileFilter = (_req, file, cb) => {
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type'), false);
+  const { fieldname, mimetype } = file;
+
+  if (['cover_image', 'preview_pages'].includes(fieldname)) {
+    if (imageTypes.includes(mimetype)) return cb(null, true);
+    return cb(new Error('Invalid file type'), false);
   }
+
+  if (fieldname === 'book_file') {
+    if (mimetype === 'application/pdf') return cb(null, true);
+    return cb(new Error('Invalid file type'), false);
+  }
+
+  return cb(new Error('Invalid file field'), false);
 };
 
-module.exports = multer({
+const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -32,3 +40,6 @@ module.exports = multer({
   { name: 'book_file', maxCount: 1 },
   { name: 'preview_pages', maxCount: 10 },
 ]);
+
+module.exports = upload;
+module.exports.fileFilter = fileFilter;
