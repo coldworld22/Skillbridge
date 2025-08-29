@@ -43,6 +43,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => {
       roles: ['instructor'],
       email: 'inst@example.com',
       full_name: 'Instructor One',
+      plan: { showAnalytics: true },
     };
     next();
   });
@@ -163,6 +164,9 @@ describe('POST /api/ads/admin', () => {
 describe('PUT /api/ads/:id', () => {
   it('updates ad', async () => {
     const payload = { title: 'Updated' };
+    service.getAdById = jest
+      .fn()
+      .mockResolvedValue({ id: '1', created_by: 'user1', is_active: false });
     service.updateAd = jest.fn().mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(200);
@@ -172,6 +176,9 @@ describe('PUT /api/ads/:id', () => {
 
 describe('DELETE /api/ads/:id', () => {
   it('deletes ad', async () => {
+    service.getAdById = jest
+      .fn()
+      .mockResolvedValue({ id: '1', created_by: 'user1' });
     service.deleteAd = jest.fn().mockResolvedValue(1);
     const res = await request(app).delete('/api/ads/1');
     expect(res.status).toBe(200);
@@ -180,7 +187,7 @@ describe('DELETE /api/ads/:id', () => {
 });
 
 describe('GET /api/ads/:id/analytics', () => {
-  it('returns ad analytics', async () => {
+  it('returns ad analytics when user has access', async () => {
     const analytics = { views: 5, ctr: 1, clicks: 2, unique_viewers: 3 };
     service.getAdAnalytics = jest.fn().mockResolvedValue(analytics);
     const res = await request(app).get('/api/ads/1/analytics');
@@ -188,6 +195,28 @@ describe('GET /api/ads/:id/analytics', () => {
     expect(service.getAdAnalytics).toHaveBeenCalledWith('1');
     expect(res.body.data.views).toBe(5);
     expect(res.body.data.conversions).toBe(2);
+  });
+
+  it('returns 401 when unauthenticated', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => next());
+    const res = await request(app).get('/api/ads/1/analytics');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when plan lacks analytics access', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = {
+        id: 'user1',
+        role: 'instructor',
+        roles: ['instructor'],
+        email: 'inst@example.com',
+        full_name: 'Instructor One',
+        plan: { showAnalytics: false },
+      };
+      next();
+    });
+    const res = await request(app).get('/api/ads/1/analytics');
+    expect(res.status).toBe(403);
   });
 });
 
