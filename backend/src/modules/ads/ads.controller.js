@@ -289,7 +289,7 @@ exports.deleteAd = catchAsync(async (req, res) => {
  */
 exports.recordAdView = catchAsync(async (req, res) => {
   const userId = req.user?.id || null;
-  await service.recordAdView(req.params.id, userId);
+  await service.recordView(req.params.id, userId);
   sendSuccess(res, null, "View recorded");
 });
 
