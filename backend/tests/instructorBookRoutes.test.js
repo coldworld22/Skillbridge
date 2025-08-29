@@ -4,6 +4,7 @@ const express = require('express');
 jest.mock('../src/modules/books/book.service', () => ({
   listBooks: jest.fn(),
   getInstructorBookAnalytics: jest.fn(),
+  createBook: jest.fn(),
 }));
 
 jest.mock('../src/modules/messages/messages.service', () => ({
@@ -14,8 +15,16 @@ jest.mock('../src/modules/notifications/notifications.service', () => ({
   createNotification: jest.fn(),
 }));
 
+jest.mock('../src/modules/books/book.utils', () => ({
+  processTags: jest.fn(),
+}));
+
 jest.mock('../src/services/mailService', () => ({
   sendMail: jest.fn(),
+}));
+
+jest.mock('../src/services/smsService', () => ({
+  sendSMS: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/user.model', () => ({
@@ -41,6 +50,7 @@ const errorHandler = require('../src/middleware/errorHandler');
 const auth = require('../src/middleware/auth/authMiddleware');
 
 const app = express();
+app.use(express.json());
 app.use('/api/instructor/books', routes);
 app.use(errorHandler);
 
@@ -96,5 +106,38 @@ describe('GET /api/instructor/books', () => {
       status: 'approved',
       instructorId: '1',
     });
+  });
+});
+
+describe('POST /api/instructor/books', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    auth.verifyToken.mockImplementation((req, _res, next) => {
+      req.user = { id: '1', role: 'instructor' };
+      next();
+    });
+    auth.isInstructorOrAdmin.mockImplementation((_req, _res, next) => next());
+  });
+
+  it('returns validation error for empty payload', async () => {
+    const res = await request(app).post('/api/instructor/books').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/validation error/i);
+    expect(Array.isArray(res.body.errors)).toBe(true);
+    expect(service.createBook).not.toHaveBeenCalled();
+  });
+
+  it('returns validation error for negative price', async () => {
+    const payload = {
+      title: 'Bad Book',
+      price: -5,
+      language: 'en',
+      license_type: 'standard',
+      category_id: '123e4567-e89b-12d3-a456-426614174000',
+    };
+    const res = await request(app).post('/api/instructor/books').send(payload);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/validation error/i);
+    expect(service.createBook).not.toHaveBeenCalled();
   });
 });
