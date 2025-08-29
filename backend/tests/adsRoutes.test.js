@@ -1,6 +1,10 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/modules/plans/plans.service', () => ({
+  consumeAdCredit: jest.fn(),
+}));
+
 jest.mock('../src/modules/ads/ads.service', () => ({
   getAds: jest.fn(),
   createAd: jest.fn(),
@@ -10,6 +14,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   deleteAd: jest.fn(),
   getAdAnalytics: jest.fn(),
   recordView: jest.fn(),
+  purchaseAd: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({
@@ -30,8 +35,8 @@ jest.mock('../src/utils/email', () => ({
   sendNewAdAdminEmail: jest.fn(),
 }));
 
-jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
+jest.mock('../src/middleware/auth/authMiddleware', () => {
+  const verifyToken = jest.fn((req, _res, next) => {
     req.user = {
       id: 'user1',
       role: 'instructor',
@@ -40,11 +45,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
       full_name: 'Instructor One',
     };
     next();
-  },
-  isInstructorOrAdmin: (_req, _res, next) => next(),
-}));
+  });
+  const isInstructorOrAdmin = jest.fn((_req, _res, next) => next());
+  return { verifyToken, isInstructorOrAdmin };
+});
 
 const service = require('../src/modules/ads/ads.service');
+const planService = require('../src/modules/plans/plans.service');
 const {
   sendAdSubmissionEmail,
   sendAdApprovalEmail,
@@ -52,6 +59,7 @@ const {
 } = require('../src/utils/email');
 const notificationService = require('../src/modules/notifications/notifications.service');
 const messageService = require('../src/modules/messages/messages.service');
+const auth = require('../src/middleware/auth/authMiddleware');
 const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
@@ -72,7 +80,7 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student');
+    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true);
     expect(res.body.data).toEqual(mock);
   });
 });
@@ -83,7 +91,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false);
     expect(res.body.data).toEqual(mock);
   });
 
@@ -92,7 +100,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student');
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false);
   });
 });
 
@@ -185,5 +193,59 @@ describe('POST /api/ads/:id/view', () => {
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
     expect(service.recordView).toHaveBeenCalledWith('1', null);
+  });
+});
+
+describe('POST /api/ads/:id/purchase', () => {
+  beforeEach(() => {
+    service.purchaseAd.mockReset();
+    planService.consumeAdCredit.mockReset();
+  });
+
+  it('purchases ad when plan allows', async () => {
+    planService.consumeAdCredit.mockResolvedValue(true);
+    service.purchaseAd.mockImplementation(async (id, userId) => {
+      const allowed = await planService.consumeAdCredit();
+      return allowed ? { id, purchased_by: userId } : null;
+    });
+    const res = await request(app).post('/api/ads/1/purchase');
+    expect(res.status).toBe(200);
+    expect(service.purchaseAd).toHaveBeenCalledWith('1', 'user1');
+  });
+
+  it('returns 400 when plan limit exceeded', async () => {
+    planService.consumeAdCredit.mockResolvedValue(false);
+    service.purchaseAd.mockImplementation(async (id, userId) => {
+      const allowed = await planService.consumeAdCredit();
+      return allowed ? { id, purchased_by: userId } : null;
+    });
+    const res = await request(app).post('/api/ads/1/purchase');
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('authorization on ad modifications', () => {
+  beforeEach(() => {
+    auth.isInstructorOrAdmin.mockClear();
+    service.updateAd.mockClear();
+    service.deleteAd.mockClear();
+  });
+
+  it('blocks unauthorized update', async () => {
+    auth.isInstructorOrAdmin.mockImplementationOnce((req, res) => {
+      res.status(403).json({ message: 'Forbidden' });
+    });
+    const res = await request(app).put('/api/ads/1').send({ title: 'Nope' });
+    expect(res.status).toBe(403);
+    expect(service.updateAd).not.toHaveBeenCalled();
+  });
+
+  it('blocks unauthorized delete', async () => {
+    auth.isInstructorOrAdmin.mockImplementationOnce((req, res) => {
+      res.status(403).json({ message: 'Forbidden' });
+    });
+    const res = await request(app).delete('/api/ads/1');
+    expect(res.status).toBe(403);
+    expect(service.deleteAd).not.toHaveBeenCalled();
   });
 });
