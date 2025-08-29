@@ -9,7 +9,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   updateAd: jest.fn(),
   deleteAd: jest.fn(),
   getAdAnalytics: jest.fn(),
-  recordAdView: jest.fn(),
+  recordView: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({
@@ -181,9 +181,9 @@ describe('GET /api/ads/:id/analytics', () => {
 
 describe('POST /api/ads/:id/view', () => {
   it('records ad view', async () => {
-    service.recordAdView.mockResolvedValue();
+    service.recordView.mockResolvedValue();
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
-    expect(service.recordAdView).toHaveBeenCalledWith('1', null);
+    expect(service.recordView).toHaveBeenCalledWith('1', null);
   });
 });

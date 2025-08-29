@@ -47,11 +47,6 @@ exports.deleteAd = (id) => {
   return db("ads").where({ id }).del();
 };
 
-// Record a single ad view. `userId` may be null for anonymous views.
-exports.recordAdView = async (adId, userId) => {
-  await db("ad_views").insert({ ad_id: adId, user_id: userId });
-};
-
 // Retrieve aggregated analytics for a given ad.
 exports.getAdAnalytics = async (adId) => {
   // Aggregate total views and unique viewers from ad_views table
