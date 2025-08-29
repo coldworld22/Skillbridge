@@ -15,6 +15,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   deleteAd: jest.fn(),
   getAdAnalytics: jest.fn(),
   recordView: jest.fn(),
+  recordClick: jest.fn(),
   purchaseAd: jest.fn(),
 }));
 
@@ -280,11 +281,52 @@ describe('GET /api/ads/:id/analytics', () => {
 });
 
 describe('POST /api/ads/:id/view', () => {
-  it('records ad view', async () => {
+  it('records ad view for active existing ad', async () => {
+    service.getAdById.mockResolvedValue({ id: '1', is_active: true });
     service.recordView.mockResolvedValue();
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
+    expect(service.getAdById).toHaveBeenCalledWith('1');
     expect(service.recordView).toHaveBeenCalledWith('1', null);
+  });
+
+  it('returns 404 for missing ad', async () => {
+    service.getAdById.mockResolvedValue(null);
+    const res = await request(app).post('/api/ads/1/view');
+    expect(res.status).toBe(404);
+    expect(service.recordView).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for inactive ad', async () => {
+    service.getAdById.mockResolvedValue({ id: '1', is_active: false });
+    const res = await request(app).post('/api/ads/1/view');
+    expect(res.status).toBe(403);
+    expect(service.recordView).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/ads/:id/click', () => {
+  it('records ad click for active existing ad', async () => {
+    service.getAdById.mockResolvedValue({ id: '1', is_active: true });
+    service.recordClick.mockResolvedValue();
+    const res = await request(app).post('/api/ads/1/click');
+    expect(res.status).toBe(200);
+    expect(service.getAdById).toHaveBeenCalledWith('1');
+    expect(service.recordClick).toHaveBeenCalledWith('1');
+  });
+
+  it('returns 404 for missing ad', async () => {
+    service.getAdById.mockResolvedValue(null);
+    const res = await request(app).post('/api/ads/1/click');
+    expect(res.status).toBe(404);
+    expect(service.recordClick).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for inactive ad', async () => {
+    service.getAdById.mockResolvedValue({ id: '1', is_active: false });
+    const res = await request(app).post('/api/ads/1/click');
+    expect(res.status).toBe(403);
+    expect(service.recordClick).not.toHaveBeenCalled();
   });
 });
 // Service-level test ensuring getAds filters by start and end dates

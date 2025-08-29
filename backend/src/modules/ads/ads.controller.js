@@ -364,8 +364,15 @@ exports.purchaseAd = catchAsync(async (req, res) => {
  * request is unauthenticated the view will be stored without a user id.
  */
 exports.recordAdView = catchAsync(async (req, res) => {
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) {
+    throw new AppError("Ad not found", 404);
+  }
+  if (!ad.is_active) {
+    throw new AppError("Ad is inactive", 403);
+  }
   const userId = req.user?.id || null;
-  await service.recordView(req.params.id, userId);
+  await service.recordView(ad.id, userId);
   sendSuccess(res, null, "View recorded");
 });
 
@@ -417,6 +424,13 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
  * Record a click for the given ad.
  */
 exports.recordAdClick = catchAsync(async (req, res) => {
-  await service.recordClick(req.params.id);
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) {
+    throw new AppError("Ad not found", 404);
+  }
+  if (!ad.is_active) {
+    throw new AppError("Ad is inactive", 403);
+  }
+  await service.recordClick(ad.id);
   sendSuccess(res, null, "Click recorded");
 });
