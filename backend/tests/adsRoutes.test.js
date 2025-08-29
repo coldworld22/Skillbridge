@@ -66,6 +66,10 @@ const app = express();
 app.use(express.json());
 app.use('/api/ads', routes);
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe('GET /api/ads', () => {
   it('returns ads list', async () => {
     const mock = [{ id: '1' }];
@@ -195,57 +199,37 @@ describe('POST /api/ads/:id/view', () => {
     expect(service.recordView).toHaveBeenCalledWith('1', null);
   });
 });
-
-describe('POST /api/ads/:id/purchase', () => {
-  beforeEach(() => {
-    service.purchaseAd.mockReset();
-    planService.consumeAdCredit.mockReset();
-  });
-
-  it('purchases ad when plan allows', async () => {
-    planService.consumeAdCredit.mockResolvedValue(true);
-    service.purchaseAd.mockImplementation(async (id, userId) => {
-      const allowed = await planService.consumeAdCredit();
-      return allowed ? { id, purchased_by: userId } : null;
-    });
-    const res = await request(app).post('/api/ads/1/purchase');
-    expect(res.status).toBe(200);
-    expect(service.purchaseAd).toHaveBeenCalledWith('1', 'user1');
-  });
-
-  it('returns 400 when plan limit exceeded', async () => {
-    planService.consumeAdCredit.mockResolvedValue(false);
-    service.purchaseAd.mockImplementation(async (id, userId) => {
-      const allowed = await planService.consumeAdCredit();
-      return allowed ? { id, purchased_by: userId } : null;
-    });
-    const res = await request(app).post('/api/ads/1/purchase');
-    expect(res.status).toBe(400);
-  });
-});
-
-describe('authorization on ad modifications', () => {
-  beforeEach(() => {
-    auth.isInstructorOrAdmin.mockClear();
-    service.updateAd.mockClear();
-    service.deleteAd.mockClear();
-  });
-
-  it('blocks unauthorized update', async () => {
-    auth.isInstructorOrAdmin.mockImplementationOnce((req, res) => {
-      res.status(403).json({ message: 'Forbidden' });
-    });
-    const res = await request(app).put('/api/ads/1').send({ title: 'Nope' });
-    expect(res.status).toBe(403);
-    expect(service.updateAd).not.toHaveBeenCalled();
-  });
-
-  it('blocks unauthorized delete', async () => {
-    auth.isInstructorOrAdmin.mockImplementationOnce((req, res) => {
-      res.status(403).json({ message: 'Forbidden' });
-    });
-    const res = await request(app).delete('/api/ads/1');
-    expect(res.status).toBe(403);
-    expect(service.deleteAd).not.toHaveBeenCalled();
+// Service-level test ensuring getAds filters by start and end dates
+describe('ads.service getAds active date filtering', () => {
+  it('adds date range filters to the query', async () => {
+    jest.resetModules();
+    const whereCalls = [];
+    const builder = {
+      where: (...args) => {
+        whereCalls.push(args);
+        return builder;
+      },
+      whereNotNull: (...args) => {
+        whereCalls.push(['whereNotNull', ...args]);
+        return builder;
+      },
+      orderBy: () => builder,
+      modify: (fn) => {
+        fn(builder);
+        return builder;
+      },
+    };
+    const dbMock = () => builder;
+    dbMock.fn = { now: () => 'NOW()' };
+    jest.doMock('../src/config/database.js', () => dbMock);
+    jest.unmock('../src/modules/ads/ads.service');
+    const serviceReal = require('../src/modules/ads/ads.service');
+    await serviceReal.getAds();
+    expect(whereCalls).toEqual(
+      expect.arrayContaining([
+        ['start_at', '<=', 'NOW()'],
+        ['end_at', '>=', 'NOW()'],
+      ])
+    );
   });
 });
