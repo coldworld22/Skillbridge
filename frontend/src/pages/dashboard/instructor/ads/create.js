@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import plansConfig from "@/config/plansConfig";
-import { createAd } from "@/services/admin/adService";
+import { createAd, fetchAds } from "@/services/admin/adService";
 import { FaSpinner, FaTrash, FaImage, FaVideo } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -42,7 +42,12 @@ export default function CreateAdPage() {
 
   const planKey = user?.plan || 'basic';
   const { allowBranding: allowBrandingEnabled } = plansConfig[planKey] || { allowBranding: false };
-  
+  const [existingAds, setExistingAds] = useState([]);
+
+  useEffect(() => {
+    fetchAds().then(setExistingAds).catch(() => setExistingAds([]));
+  }, []);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -192,7 +197,40 @@ export default function CreateAdPage() {
       setError(t('end_before_start'));
       return;
     }
-    
+
+    const config = plansConfig[planKey] || {};
+    const activeAds = existingAds.filter((a) => a.isActive).length;
+    if (config.maxAds && activeAds >= config.maxAds) {
+      const msg = tp('max_ads_reached', 'You have reached your ad limit');
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const duration = Math.ceil(
+      (new Date(formData.endAt) - new Date(formData.startAt)) /
+        (1000 * 60 * 60 * 24)
+    );
+    if (config.maxAdDuration && duration > config.maxAdDuration) {
+      const msg = tp('duration_exceeds_plan', {
+        defaultValue: `Ad duration exceeds ${config.maxAdDuration} days`,
+        days: config.maxAdDuration,
+      });
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (config.adCredits !== undefined) {
+      const purchased = existingAds.filter((a) => a.purchasedAt).length;
+      if (purchased >= config.adCredits) {
+        const msg = tp('no_ad_credits', 'No ad credits available');
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
+
     if (titleError) return;
 
     setIsSubmitting(true);

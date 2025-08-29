@@ -3,18 +3,32 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { fetchAds, purchaseAd } from "@/services/admin/adService";
+import plansConfig from "@/config/plansConfig";
 import { toast } from "react-toastify";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function PurchaseAdsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "adsPurchasePage" });
   const [ads, setAds] = useState([]);
+  const user = useAuthStore((s) => s.user);
+  const planKey = user?.plan || 'basic';
 
   useEffect(() => {
     fetchAds().then(setAds).catch(() => setAds([]));
   }, []);
 
   const handlePurchase = async (id) => {
+    const config = plansConfig[planKey] || {};
+    const purchased = ads.filter((a) => a.purchasedAt).length;
+    if (config.maxAds && purchased >= config.maxAds) {
+      toast.error(t('max_ads_reached', 'Ad limit reached'));
+      return;
+    }
+    if (config.adCredits !== undefined && purchased >= config.adCredits) {
+      toast.error(t('no_ad_credits', 'No ad credits available'));
+      return;
+    }
     try {
       await purchaseAd(id);
       toast.success(t("purchased"));
@@ -23,8 +37,9 @@ export default function PurchaseAdsPage() {
           ad.id === id ? { ...ad, purchasedAt: new Date().toISOString() } : ad
         )
       );
-    } catch {
-      toast.error(t("purchase_failed"));
+    } catch (err) {
+      const message = err?.response?.data?.message || t("purchase_failed");
+      toast.error(message);
     }
   };
 

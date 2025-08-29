@@ -7,11 +7,23 @@ const service = require("./ads.service");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const db = require("../../config/database");
+const planService = require("../plans/plans.service");
 const {
   sendAdSubmissionEmail,
   sendAdApprovalEmail,
   sendNewAdAdminEmail,
 } = require("../../utils/email");
+
+// Retrieve the active plan for a user
+const getUserPlan = async (userId) => {
+  const sub = await db("user_subscriptions")
+    .where({ user_id: userId, status: "active" })
+    .orderBy("start_date", "desc")
+    .first();
+  if (!sub) return null;
+  return planService.getPlanById(sub.plan_id);
+};
 
 /**
  * Controller functions for managing advertisement banners.
@@ -45,6 +57,50 @@ exports.createAd = catchAsync(async (req, res) => {
       !req.body.image_url &&
       !req.body.video_url) {
     throw new AppError("Image or video is required", 400);
+  }
+
+  // Retrieve instructor plan and validate limits
+  const plan = await getUserPlan(req.user.id);
+  if (!plan) throw new AppError("No active plan found", 403);
+  const features = plan.features || [];
+  const maxAds = Number(
+    features.find((f) => f.feature_key === "ads_max_ads")?.value || 0
+  );
+  const maxDuration = Number(
+    features.find((f) => f.feature_key === "ads_max_ad_duration")?.value || 0
+  );
+  const adCredits = plan.ad_credits;
+
+  if (maxAds) {
+    const [{ count }] = await db("ads")
+      .where({ created_by: req.user.id })
+      .andWhere({ is_active: true })
+      .count("id as count");
+    if (Number(count) >= maxAds) {
+      throw new AppError("Ad limit reached for your plan", 403);
+    }
+  }
+
+  if (maxDuration && start_at && end_at) {
+    const duration = Math.ceil(
+      (new Date(end_at) - new Date(start_at)) / (1000 * 60 * 60 * 24)
+    );
+    if (duration > maxDuration) {
+      throw new AppError(
+        `Ad duration exceeds plan limit of ${maxDuration} days`,
+        400
+      );
+    }
+  }
+
+  if (adCredits !== null && adCredits !== undefined) {
+    const [{ count: purchased }] = await db("ads")
+      .where({ created_by: req.user.id })
+      .whereNotNull("purchased_at")
+      .count("id as count");
+    if (Number(purchased) >= Number(adCredits)) {
+      throw new AppError("No ad credits available", 403);
+    }
   }
 
   const data = {
@@ -292,6 +348,25 @@ exports.deleteAd = catchAsync(async (req, res) => {
  * Purchase an ad.
  */
 exports.purchaseAd = catchAsync(async (req, res) => {
+  const plan = await getUserPlan(req.user.id);
+  if (!plan) throw new AppError("No active plan found", 403);
+  const features = plan.features || [];
+  const maxAds = Number(
+    features.find((f) => f.feature_key === "ads_max_ads")?.value || 0
+  );
+  const adCredits = plan.ad_credits;
+  const [{ count: purchased }] = await db("ads")
+    .where({ created_by: req.user.id })
+    .whereNotNull("purchased_at")
+    .count("id as count");
+  if (maxAds && Number(purchased) >= maxAds) {
+    throw new AppError("Ad limit reached for your plan", 403);
+  }
+  if (adCredits !== null && adCredits !== undefined) {
+    if (Number(purchased) >= Number(adCredits)) {
+      throw new AppError("No ad credits available", 403);
+    }
+  }
   const ad = await service.purchaseAd(req.params.id, req.user.id);
   if (!ad) throw new AppError("Ad not found or already purchased", 400);
   sendSuccess(res, ad, "Ad purchased");
