@@ -292,6 +292,42 @@ exports.updateAd = catchAsync(async (req, res) => {
     updates.image_url = null;
   }
 
+  // Load instructor plan and enforce ad feature limits
+  const plan = await planService.getPlanById(req.user.plan_id);
+  if (!plan) {
+    throw new AppError("Plan not found", 403);
+  }
+
+  const features = {};
+  (plan.features || []).forEach((f) => {
+    let val = f.value;
+    try {
+      val = JSON.parse(f.value);
+    } catch {
+      if (f.value === "true") val = true;
+      else if (f.value === "false") val = false;
+      else if (!isNaN(f.value)) val = Number(f.value);
+    }
+    features[f.feature_key] = val;
+  });
+
+  const maxAds = Number(features["ads_max_ads"] || 0);
+  if (maxAds) {
+    const existing = await service.getAds(true, req.user.id);
+    if (existing.length > maxAds) {
+      throw new AppError("Ad limit reached for your plan", 403);
+    }
+  }
+
+  const brandingAllowed = !!features["ads_allow_branding"];
+  const newBranding =
+    updates.allow_branding !== undefined
+      ? updates.allow_branding
+      : ad.allow_branding;
+  if (newBranding && !brandingAllowed) {
+    throw new AppError("Branding not allowed for your plan", 403);
+  }
+
   const updated = await service.updateAd(req.params.id, updates);
   if (!updated) throw new AppError("Ad not found", 404);
 

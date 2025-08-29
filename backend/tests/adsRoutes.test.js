@@ -227,11 +227,51 @@ describe('POST /api/ads/admin', () => {
 describe('PUT /api/ads/:id', () => {
   it('updates ad', async () => {
     const payload = { title: 'Updated' };
-    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1' });
+    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue([{ id: '1' }]);
     service.updateAd = jest.fn().mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(200);
     expect(service.updateAd).toHaveBeenCalledWith('1', expect.any(Object));
+  });
+
+  it('rejects update when branding not allowed', async () => {
+    const payload = { allow_branding: true };
+    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'false' },
+      ],
+    });
+    service.getAds.mockResolvedValue([{ id: '1' }]);
+    const res = await request(app).put('/api/ads/1').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.updateAd).not.toHaveBeenCalled();
+  });
+
+  it('rejects update when max ads exceeded', async () => {
+    const payload = { title: 'Updated' };
+    service.getAdById.mockResolvedValue({ id: '1', created_by: 'user1', allow_branding: false });
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      features: [
+        { feature_key: 'ads_max_ads', value: '1' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue([{ id: '1' }, { id: '2' }]);
+    const res = await request(app).put('/api/ads/1').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.updateAd).not.toHaveBeenCalled();
   });
 });
 
