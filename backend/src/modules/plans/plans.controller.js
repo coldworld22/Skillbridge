@@ -99,6 +99,11 @@ exports.getPlans = catchAsync(async (req, res) => {
   sendSuccess(res, plans);
 });
 
+exports.getPlanFeatures = catchAsync(async (_req, res) => {
+  const features = await service.getPlanFeatures();
+  sendSuccess(res, features);
+});
+
 exports.getPlan = catchAsync(async (req, res) => {
   const plan = await service.getPlanById(req.params.id);
   if (!plan) throw new AppError("Plan not found", 404);

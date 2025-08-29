@@ -3,8 +3,8 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
-import plansConfig from "@/config/plansConfig";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
+import { fetchPlanFeatures } from "@/services/planFeatureService";
 import { toast } from "react-toastify";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -28,7 +28,9 @@ export default function EditAdPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsEditPage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
-  const { maxAdDuration } = plansConfig[user?.plan || 'basic'] || {};
+  const planKey = user?.plan || 'basic';
+  const [planFeatures, setPlanFeatures] = useState(null);
+  const { maxAdDuration } = planFeatures?.[planKey] || {};
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +51,12 @@ export default function EditAdPage() {
       console.error("[EditAdPage] notification error", err);
     }
   };
+
+  useEffect(() => {
+    fetchPlanFeatures()
+      .then(setPlanFeatures)
+      .catch(() => setPlanFeatures({}));
+  }, []);
 
   useEffect(() => {
     if (id) {

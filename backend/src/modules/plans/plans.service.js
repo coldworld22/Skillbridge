@@ -54,3 +54,34 @@ exports.setFeatures = async (planId, features = []) => {
   }
   return db("plan_features").where({ plan_id: planId }).select("*");
 };
+
+exports.getPlanFeatures = async () => {
+  const plans = await db("plans").select("id", "slug");
+  const features = await db("plan_features").select(
+    "plan_id",
+    "feature_key",
+    "value"
+  );
+  const result = {};
+  const toCamel = (s) => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+  plans.forEach((plan) => {
+    const feats = {};
+    features
+      .filter((f) => f.plan_id === plan.id && f.feature_key.startsWith("ads_"))
+      .forEach((f) => {
+        const key = toCamel(f.feature_key.replace(/^ads_/, ""));
+        let val;
+        try {
+          val = JSON.parse(f.value);
+        } catch {
+          if (f.value === "true") val = true;
+          else if (f.value === "false") val = false;
+          else if (!isNaN(f.value)) val = Number(f.value);
+          else val = f.value;
+        }
+        feats[key] = val;
+      });
+    result[plan.slug] = feats;
+  });
+  return result;
+};

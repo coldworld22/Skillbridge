@@ -3,8 +3,8 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ImageCropUpload from "@/components/shared/ImageCropUpload";
-import plansConfig from "@/config/plansConfig";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
+import { fetchPlanFeatures } from "@/services/planFeatureService";
 import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";
@@ -24,8 +24,10 @@ export default function EditAdPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsEditPage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
+  const planKey = user?.plan || 'basic';
+  const [planFeatures, setPlanFeatures] = useState(null);
   const { maxAdDuration, allowBranding: allowBrandingEnabled } =
-    plansConfig[user?.plan || 'basic'] || {};
+    planFeatures?.[planKey] || {};
   
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
@@ -35,6 +37,12 @@ export default function EditAdPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    fetchPlanFeatures()
+      .then(setPlanFeatures)
+      .catch(() => setPlanFeatures({}));
+  }, []);
 
   useEffect(() => {
     if (id) {
