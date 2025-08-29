@@ -11,28 +11,33 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import { FiSave, FiCalendar, FiLink, FiType, FiInfo, FiImage } from "react-icons/fi";
+import { FiSave, FiCalendar, FiLink, FiType, FiInfo } from "react-icons/fi";
 import { IoMdAlert } from "react-icons/io";
 import { ImSpinner8 } from "react-icons/im";
+import { FaVideo, FaImage, FaTrash } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
-const currentUserPlan = "basic";
-const { maxAdDuration } = plansConfig[currentUserPlan];
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
 
 export default function EditAdPage() {
   const router = useRouter();
   const { id } = router.query;
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsEditPage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
+  const user = useAuthStore((s) => s.user);
+  const { maxAdDuration } = plansConfig[user?.plan || 'basic'] || {};
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const user = useAuthStore((s) => s.user);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+  const [mediaType, setMediaType] = useState('image');
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
 
   const notify = async (type, message) => {
     try {
@@ -48,28 +53,40 @@ export default function EditAdPage() {
   useEffect(() => {
     if (id) {
       setLoading(true);
-        fetchAdById(id)
-          .then((ad) => {
-            if (ad) {
-              setFormData({
-                ...ad,
-                startAt: ad.startAt.split('T')[0],
-                endAt: ad.endAt.split('T')[0]
-              });
-            } else {
-              setError(t('not_found'));
-              toast.error(t('not_found'));
-              router.push("/dashboard/instructor/ads");
+      fetchAdById(id)
+        .then((ad) => {
+          if (ad) {
+            setFormData({
+              ...ad,
+              startAt: ad.startAt.split('T')[0],
+              endAt: ad.endAt.split('T')[0]
+            });
+            if (ad.video) {
+              setMediaType('video');
+              setVideoPreview(ad.video);
             }
-          })
-          .catch((err) => {
-            setError(t('error_load'));
-            toast.error(t('error_load'));
-            console.error("[EditAdPage] fetch error:", err);
-          })
-          .finally(() => setLoading(false));
+          } else {
+            setError(t('not_found'));
+            toast.error(t('not_found'));
+            router.push("/dashboard/instructor/ads");
+          }
+        })
+        .catch((err) => {
+          setError(t('error_load'));
+          toast.error(t('error_load'));
+          console.error("[EditAdPage] fetch error:", err);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [id, t, router]);
+
+  useEffect(() => {
+    return () => {
+      if (videoPreview && videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreview);
       }
-    }, [id, t]);
+    };
+  }, [videoPreview]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -90,17 +107,71 @@ export default function EditAdPage() {
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      setError(t('invalid_video_type'));
+      return;
+    }
+
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError(t('video_too_large', { size: '50MB' }));
+      return;
+    }
+
+    if (videoPreview && videoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+    setError(null);
+  };
+
+  const handleMediaTypeChange = (e) => {
+    const type = e.target.value;
+    setMediaType(type);
+    if (type === 'image') {
+      if (videoPreview && videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      setVideoFile(null);
+      setVideoPreview('');
+    } else {
+      setFormData((prev) => ({ ...prev, image: null }));
+    }
+  };
+
+  const removeMedia = () => {
+    if (mediaType === 'image') {
+      setFormData((prev) => ({ ...prev, image: null }));
+    } else {
+      if (videoPreview && videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      setVideoFile(null);
+      setVideoPreview('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    
+
     const start = new Date(formData.startAt);
     const end = new Date(formData.endAt);
     const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-    // Validation
-    if (!formData.title || !formData.image || !formData.startAt || !formData.endAt) {
+    if (
+      !formData.title ||
+      (mediaType === 'image' && !formData.image) ||
+      (mediaType === 'video' && !videoFile && !formData.video) ||
+      !formData.startAt ||
+      !formData.endAt
+    ) {
       setError(t('required_fields'));
       setSubmitting(false);
       return;
@@ -118,32 +189,36 @@ export default function EditAdPage() {
 
     try {
       const payload = new FormData();
-      if (formData.image instanceof Blob) {
+      if (mediaType === 'image' && formData.image instanceof Blob) {
         const file =
           formData.image instanceof File
             ? formData.image
-            : new File([formData.image], "ad.jpg", { type: formData.image.type || "image/jpeg" });
-        payload.append("image", file);
+            : new File([formData.image], 'ad.jpg', {
+                type: formData.image.type || 'image/jpeg',
+              });
+        payload.append('image', file);
+      } else if (mediaType === 'video' && videoFile) {
+        payload.append('video', videoFile);
       }
-      payload.append("title", formData.title);
-      payload.append("description", formData.description);
-      payload.append("link_url", formData.link);
-      payload.append("adType", formData.adType);
-      payload.append("placement", formData.placement);
-      payload.append("priority", formData.priority);
-      payload.append("allowBranding", formData.allowBranding);
-      payload.append("startAt", new Date(formData.startAt).toISOString());
-      payload.append("endAt", new Date(formData.endAt).toISOString());
+      payload.append('title', formData.title);
+      payload.append('description', formData.description);
+      payload.append('link_url', formData.link);
+      payload.append('adType', formData.adType);
+      payload.append('placement', formData.placement);
+      payload.append('priority', formData.priority);
+      payload.append('allowBranding', formData.allowBranding);
+      payload.append('startAt', new Date(formData.startAt).toISOString());
+      payload.append('endAt', new Date(formData.endAt).toISOString());
 
-        await updateAd(id, payload);
-        toast.success(t('update_success'), { autoClose: 2000 });
-        await notify("ad_updated", t('ad_created_notification', { title: formData.title }));
-      setTimeout(() => router.push("/dashboard/instructor/ads"), 1500);
-      } catch (err) {
-        console.error("[EditAdPage] update error:", err);
-        setError(err.response?.data?.message || t('update_failed'));
-        toast.error(t('update_failed'));
-      } finally {
+      await updateAd(id, payload);
+      toast.success(t('update_success'), { autoClose: 2000 });
+      await notify('ad_updated', t('ad_created_notification', { title: formData.title }));
+      setTimeout(() => router.push('/dashboard/instructor/ads'), 1500);
+    } catch (err) {
+      console.error('[EditAdPage] update error:', err);
+      setError(err.response?.data?.message || t('update_failed'));
+      toast.error(t('update_failed'));
+    } finally {
       setSubmitting(false);
     }
   };
@@ -212,19 +287,96 @@ export default function EditAdPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <FiImage />
-                    {t('image_label')} *
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('media_type')} *
                   </label>
-                  <ImageCropUpload
-                    value={typeof formData.image === 'string' ? formData.image : undefined}
-                    onChange={(file) => setFormData((prev) => ({ ...prev, image: file }))}
-                    aspectRatio={16/9}
-                    className="border-2 border-dashed border-gray-300 rounded-lg"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{t('image_requirements')}</p>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mediaType"
+                        value="image"
+                        checked={mediaType === 'image'}
+                        onChange={handleMediaTypeChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="flex items-center gap-1 text-sm">
+                        <FaImage /> {t('image')}
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mediaType"
+                        value="video"
+                        checked={mediaType === 'video'}
+                        onChange={handleMediaTypeChange}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="flex items-center gap-1 text-sm">
+                        <FaVideo /> {t('video')}
+                      </span>
+                    </label>
+                  </div>
                 </div>
+
+                {mediaType === 'image' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                      <FaImage />
+                      {t('image_label')} *
+                    </label>
+                    <ImageCropUpload
+                      value={typeof formData.image === 'string' ? formData.image : undefined}
+                      onChange={(file) => setFormData((prev) => ({ ...prev, image: file }))}
+                      aspectRatio={16 / 9}
+                      className="border-2 border-dashed border-gray-300 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t('image_requirements')}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('video_label')} *
+                    </label>
+                    {videoPreview ? (
+                      <div className="relative group">
+                        <video
+                          src={videoPreview}
+                          className="w-full h-48 rounded-lg border border-gray-300 mb-2 bg-black"
+                          controls
+                        />
+                        <button
+                          type="button"
+                          onClick={removeMedia}
+                          className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          title={t('remove_video')}
+                        >
+                          <FaTrash size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <FaVideo className="w-8 h-8 mb-3 text-gray-400" />
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">{t('click_to_upload')}</span>
+                            </p>
+                            <p className="text-xs text-gray-500">{t('video_requirements')}</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept={ALLOWED_VIDEO_TYPES.join(',')}
+                            onChange={handleVideoChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
 
