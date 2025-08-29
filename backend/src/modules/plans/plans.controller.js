@@ -19,6 +19,8 @@ exports.createPlan = catchAsync(async (req, res) => {
     style = null,
     features = [],
     target_role = 'student',
+    max_courses = null,
+    ad_credits = 0,
   } = req.body;
 
   if (!name) throw new AppError("Name is required", 400);
@@ -49,6 +51,13 @@ exports.createPlan = catchAsync(async (req, res) => {
   if (!['student', 'instructor'].includes(target_role))
     throw new AppError('Invalid target role', 400);
 
+  if (target_role === 'instructor') {
+    if (max_courses !== null && isNaN(Number(max_courses)))
+      throw new AppError('Invalid max courses', 400);
+    if (ad_credits !== null && isNaN(Number(ad_credits)))
+      throw new AppError('Invalid ad credits', 400);
+  }
+
   const plan = await service.createPlan({
     name,
     slug: planSlug,
@@ -60,6 +69,8 @@ exports.createPlan = catchAsync(async (req, res) => {
     color,
     style,
     target_role,
+    max_courses: target_role === 'instructor' ? max_courses : null,
+    ad_credits: target_role === 'instructor' ? ad_credits : 0,
   });
 
   await service.setFeatures(plan.id, Array.isArray(features) ? features : []);
@@ -108,6 +119,8 @@ exports.updatePlan = catchAsync(async (req, res) => {
     style,
     features,
     target_role,
+    max_courses,
+    ad_credits,
   } = req.body;
 
   const isHex = (val) => /^#([0-9A-F]{3}){1,2}$/i.test(val);
@@ -144,6 +157,16 @@ exports.updatePlan = catchAsync(async (req, res) => {
     if (!['student', 'instructor'].includes(target_role))
       throw new AppError('Invalid target role', 400);
     updates.target_role = target_role;
+  }
+  if (max_courses !== undefined) {
+    if (max_courses !== null && isNaN(Number(max_courses)))
+      throw new AppError('Invalid max courses', 400);
+    updates.max_courses = max_courses;
+  }
+  if (ad_credits !== undefined) {
+    if (ad_credits !== null && isNaN(Number(ad_credits)))
+      throw new AppError('Invalid ad credits', 400);
+    updates.ad_credits = ad_credits;
   }
 
   if (slug || name) {

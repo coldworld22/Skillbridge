@@ -28,6 +28,8 @@ export default function CreatePlanPage() {
     recommended: false,
     active: true,
     target_role: "student",
+    maxCourses: 0,
+    adCredits: 0,
   });
 
   const [features, setFeatures] = useState([]);
@@ -99,6 +101,14 @@ export default function CreatePlanPage() {
         style: JSON.stringify(style),
         recommended: form.recommended,
         active: form.active,
+        max_courses:
+          form.target_role === 'instructor'
+            ? Number(form.maxCourses || 0)
+            : undefined,
+        ad_credits:
+          form.target_role === 'instructor'
+            ? Number(form.adCredits || 0)
+            : undefined,
         features: features.filter(
           (f) => f.feature_key || f.value || f.description
         ),
@@ -182,6 +192,28 @@ export default function CreatePlanPage() {
             <option value="instructor">{t('instructor')}</option>
           </select>
         </div>
+        {form.target_role === 'instructor' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('max_courses', 'Max Courses')}</label>
+              <input
+                type="number"
+                className="w-full border px-4 py-2 rounded"
+                value={form.maxCourses}
+                onChange={(e) => setForm({ ...form, maxCourses: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('ad_credits', 'Ad Credits')}</label>
+              <input
+                type="number"
+                className="w-full border px-4 py-2 rounded"
+                value={form.adCredits}
+                onChange={(e) => setForm({ ...form, adCredits: e.target.value })}
+              />
+            </div>
+          </>
+        )}
         <div>
           <label className="block text-sm font-medium mb-1">{t('plan_color')}</label>
           <input

@@ -13,6 +13,10 @@ export const initialPlanConfig = {
     community: {
       label: "Community",
       rules: ["canPost", "canReply"]
+    },
+    instructor: {
+      label: "Instructor",
+      rules: ["maxCourses", "adCredits"]
     }
   },
   plans: {
@@ -22,7 +26,9 @@ export const initialPlanConfig = {
       canViewPremium: { tutorials: false },
       canDownload: { tutorials: false },
       canPost: { community: false },
-      canReply: { community: false }
+      canReply: { community: false },
+      maxCourses: { instructor: 1 },
+      adCredits: { instructor: 0 }
     },
     Regular: {
       canJoin: { onlineClasses: true },
@@ -30,7 +36,9 @@ export const initialPlanConfig = {
       canViewPremium: { tutorials: true },
       canDownload: { tutorials: false },
       canPost: { community: true },
-      canReply: { community: true }
+      canReply: { community: true },
+      maxCourses: { instructor: 5 },
+      adCredits: { instructor: 100 }
     },
     Premium: {
       canJoin: { onlineClasses: true },
@@ -38,7 +46,9 @@ export const initialPlanConfig = {
       canViewPremium: { tutorials: true },
       canDownload: { tutorials: true },
       canPost: { community: true },
-      canReply: { community: true }
+      canReply: { community: true },
+      maxCourses: { instructor: 20 },
+      adCredits: { instructor: 1000 }
     }
   }
 };

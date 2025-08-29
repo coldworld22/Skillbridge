@@ -1,7 +1,12 @@
 const db = require("../../config/database");
 
 exports.createPlan = async (data) => {
-  const [row] = await db("plans").insert(data).returning("*");
+  const insertData = {
+    ...data,
+    max_courses: data.max_courses ?? null,
+    ad_credits: data.ad_credits ?? 0,
+  };
+  const [row] = await db("plans").insert(insertData).returning("*");
   return row;
 };
 
@@ -27,7 +32,10 @@ exports.getPlanById = async (id) => {
 };
 
 exports.updatePlan = async (id, data) => {
-  const [row] = await db("plans").where({ id }).update(data).returning("*");
+  const updateData = { ...data };
+  if (data.max_courses !== undefined) updateData.max_courses = data.max_courses;
+  if (data.ad_credits !== undefined) updateData.ad_credits = data.ad_credits;
+  const [row] = await db("plans").where({ id }).update(updateData).returning("*");
   return row;
 };
 
