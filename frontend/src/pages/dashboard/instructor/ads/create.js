@@ -10,7 +10,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import useAuthStore from "@/store/auth/authStore";
-import PreviewModal from "@/components/admin/ads/PreviewModalinstrutor";
+import PreviewModal from "@/components/admin/ads/PreviewModalInstructor";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useNotificationStore from "@/store/notifications/notificationStore";
