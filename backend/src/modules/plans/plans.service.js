@@ -31,6 +31,15 @@ exports.getPlanById = async (id) => {
   return plan;
 };
 
+// Decrement available ad credits for a plan
+exports.consumeAdCredit = async (planId) => {
+  if (!planId) return;
+  await db("plans")
+    .where({ id: planId })
+    .andWhere("ad_credits", ">", 0)
+    .decrement("ad_credits", 1);
+};
+
 exports.updatePlan = async (id, data) => {
   const updateData = { ...data };
   if (data.max_courses !== undefined) updateData.max_courses = data.max_courses;

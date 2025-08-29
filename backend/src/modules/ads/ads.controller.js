@@ -4,6 +4,7 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const AppError = require("../../utils/AppError");
 const service = require("./ads.service");
+const planService = require("../plans/plans.service");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
@@ -86,7 +87,45 @@ exports.createAd = catchAsync(async (req, res) => {
     data.image_url = null;
   }
 
+  // Load instructor plan and verify ad creation permissions
+  const plan = await planService.getPlanById(req.user.plan_id);
+  if (!plan) {
+    throw new AppError("Plan not found", 403);
+  }
+
+  const features = {};
+  (plan.features || []).forEach((f) => {
+    let val = f.value;
+    try {
+      val = JSON.parse(f.value);
+    } catch {
+      if (f.value === "true") val = true;
+      else if (f.value === "false") val = false;
+      else if (!isNaN(f.value)) val = Number(f.value);
+    }
+    features[f.feature_key] = val;
+  });
+
+  const maxAds = Number(features["ads_max_ads"] || 0);
+  if (maxAds) {
+    const existing = await service.getAds(true, req.user.id);
+    if (existing.length >= maxAds) {
+      throw new AppError("Ad limit reached for your plan", 403);
+    }
+  }
+
+  const brandingAllowed = !!features["ads_allow_branding"];
+  if (data.allow_branding && !brandingAllowed) {
+    throw new AppError("Branding not allowed for your plan", 403);
+  }
+
+  if ((plan.ad_credits ?? 0) <= 0) {
+    throw new AppError("Insufficient ad credits", 403);
+  }
+
   const ad = await service.createAd(data);
+  await planService.consumeAdCredit(plan.id);
+
   try {
     if (req.user?.email) {
       await sendAdSubmissionEmail(
