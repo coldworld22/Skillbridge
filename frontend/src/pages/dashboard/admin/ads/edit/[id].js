@@ -24,8 +24,8 @@ export default function EditAdPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adsEditPage' });
   const { t: tp } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
   const user = useAuthStore((s) => s.user);
-  const currentUserPlan = user?.plan || 'basic';
-  const { maxAdDuration, allowBranding: allowBrandingEnabled } = plansConfig[currentUserPlan] || {};
+  const { maxAdDuration, allowBranding: allowBrandingEnabled } =
+    plansConfig[user?.plan || 'basic'] || {};
   
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
