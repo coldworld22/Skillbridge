@@ -58,6 +58,10 @@ const app = express();
 app.use(express.json());
 app.use('/api/ads', routes);
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe('GET /api/ads', () => {
   it('returns ads list', async () => {
     const mock = [{ id: '1' }];
@@ -72,7 +76,7 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student');
+    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true);
     expect(res.body.data).toEqual(mock);
   });
 });
@@ -83,7 +87,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false);
     expect(res.body.data).toEqual(mock);
   });
 
@@ -92,7 +96,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student');
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false);
   });
 });
 
@@ -185,5 +189,40 @@ describe('POST /api/ads/:id/view', () => {
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
     expect(service.recordView).toHaveBeenCalledWith('1', null);
+  });
+});
+
+// Service-level test ensuring getAds filters by start and end dates
+describe('ads.service getAds active date filtering', () => {
+  it('adds date range filters to the query', async () => {
+    jest.resetModules();
+    const whereCalls = [];
+    const builder = {
+      where: (...args) => {
+        whereCalls.push(args);
+        return builder;
+      },
+      whereNotNull: (...args) => {
+        whereCalls.push(['whereNotNull', ...args]);
+        return builder;
+      },
+      orderBy: () => builder,
+      modify: (fn) => {
+        fn(builder);
+        return builder;
+      },
+    };
+    const dbMock = () => builder;
+    dbMock.fn = { now: () => 'NOW()' };
+    jest.doMock('../src/config/database.js', () => dbMock);
+    jest.unmock('../src/modules/ads/ads.service');
+    const serviceReal = require('../src/modules/ads/ads.service');
+    await serviceReal.getAds();
+    expect(whereCalls).toEqual(
+      expect.arrayContaining([
+        ['start_at', '<=', 'NOW()'],
+        ['end_at', '>=', 'NOW()'],
+      ])
+    );
   });
 });
