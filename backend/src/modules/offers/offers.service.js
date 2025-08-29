@@ -5,6 +5,31 @@ exports.createOffer = async (data) => {
   return row;
 };
 
+// Determine the fee to charge for an offer based on the creator's plan
+exports.calculateOfferFee = (user) => {
+  if (user?.role?.toLowerCase() !== "instructor") return 0;
+  // Instructors with a premium plan do not pay a fee
+  const plan = user.plan || user.subscription || "";
+  if (typeof plan === "string" && plan.toLowerCase() === "premium") {
+    return 0;
+  }
+  // Default fee for non-premium instructors
+  return 10; // flat fee; could be fetched from configuration later
+};
+
+// Summarise offers associated with a specific group
+exports.getGroupOfferSummary = async (groupId) => {
+  const row = await db("offers")
+    .where({ group_id: groupId })
+    .count("id as count")
+    .sum({ total_fee: "fee" })
+    .first();
+  return {
+    count: Number(row?.count || 0),
+    total_fee: Number(row?.total_fee || 0),
+  };
+};
+
 exports.getOffers = () => {
   return db("offers as o")
     .join("users as u", "o.student_id", "u.id")

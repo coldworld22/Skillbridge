@@ -40,6 +40,10 @@ const formatGroup = (g) => {
     contactPhone: g.contact_phone ?? g.contactPhone ?? null,
     phone: g.phone ?? g.contact_phone ?? g.contactPhone ?? null,
     tags,
+    offerSummary: g.offerSummary || g.offer_summary || {
+      count: g.offer_count ?? 0,
+      total_fee: g.total_fee ?? 0,
+    },
   };
 };
 

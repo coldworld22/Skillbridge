@@ -342,6 +342,15 @@ export default function AdminGroupDetailsPage() {
                       </span>
                     </p>
                   )}
+                  {group.offerSummary && (
+                    <>
+                      <p>Offers: {group.offerSummary.count}</p>
+                      <p>
+                        Fees Collected: $
+                        {Number(group.offerSummary.total_fee || 0).toFixed(2)}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-600"><strong>Purpose:</strong> {group.purpose}</p>

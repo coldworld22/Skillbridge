@@ -72,3 +72,9 @@ CREATE TABLE IF NOT EXISTS suspicious_logs (
   severity VARCHAR DEFAULT 'medium',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Link offers with groups and track fees
+ALTER TABLE IF EXISTS offers
+  ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES groups(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS offers
+  ADD COLUMN IF NOT EXISTS fee DECIMAL(10,2) DEFAULT 0;

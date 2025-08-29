@@ -9,6 +9,7 @@ exports.create = z.object({
     offer_type: z.enum(["class", "tutorial"]),
     tags: z.string().optional(),
     expires_at: z.string().optional(),
+    group_id: z.string().uuid(),
   }),
 });
 
