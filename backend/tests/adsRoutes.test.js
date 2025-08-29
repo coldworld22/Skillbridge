@@ -1,6 +1,10 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/modules/plans/plans.service', () => ({
+  consumeAdCredit: jest.fn(),
+}));
+
 jest.mock('../src/modules/ads/ads.service', () => ({
   getAds: jest.fn(),
   createAd: jest.fn(),
@@ -10,6 +14,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   deleteAd: jest.fn(),
   getAdAnalytics: jest.fn(),
   recordView: jest.fn(),
+  purchaseAd: jest.fn(),
 }));
 
 jest.mock('../src/modules/notifications/notifications.service', () => ({
@@ -30,8 +35,8 @@ jest.mock('../src/utils/email', () => ({
   sendNewAdAdminEmail: jest.fn(),
 }));
 
-jest.mock('../src/middleware/auth/authMiddleware', () => ({
-  verifyToken: (req, _res, next) => {
+jest.mock('../src/middleware/auth/authMiddleware', () => {
+  const verifyToken = jest.fn((req, _res, next) => {
     req.user = {
       id: 'user1',
       role: 'instructor',
@@ -40,11 +45,13 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
       full_name: 'Instructor One',
     };
     next();
-  },
-  isInstructorOrAdmin: (_req, _res, next) => next(),
-}));
+  });
+  const isInstructorOrAdmin = jest.fn((_req, _res, next) => next());
+  return { verifyToken, isInstructorOrAdmin };
+});
 
 const service = require('../src/modules/ads/ads.service');
+const planService = require('../src/modules/plans/plans.service');
 const {
   sendAdSubmissionEmail,
   sendAdApprovalEmail,
@@ -52,6 +59,7 @@ const {
 } = require('../src/utils/email');
 const notificationService = require('../src/modules/notifications/notifications.service');
 const messageService = require('../src/modules/messages/messages.service');
+const auth = require('../src/middleware/auth/authMiddleware');
 const routes = require('../src/modules/ads/ads.routes');
 
 const app = express();
@@ -191,7 +199,6 @@ describe('POST /api/ads/:id/view', () => {
     expect(service.recordView).toHaveBeenCalledWith('1', null);
   });
 });
-
 // Service-level test ensuring getAds filters by start and end dates
 describe('ads.service getAds active date filtering', () => {
   it('adds date range filters to the query', async () => {

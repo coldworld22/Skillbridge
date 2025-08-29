@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import plansConfig from "@/config/plansConfig";
 import { createAd } from "@/services/admin/adService";
+import { fetchPlanFeatures } from "@/services/planFeatureService";
 import { FaSpinner, FaTrash, FaImage, FaVideo } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -41,7 +41,9 @@ export default function CreateAdPage() {
   };
 
   const planKey = user?.plan || 'basic';
-  const { allowBranding: allowBrandingEnabled } = plansConfig[planKey] || { allowBranding: false };
+  const [planFeatures, setPlanFeatures] = useState(null);
+  const { allowBranding: allowBrandingEnabled } =
+    planFeatures?.[planKey] || { allowBranding: false };
   
   const [formData, setFormData] = useState({
     title: "",
@@ -65,6 +67,12 @@ export default function CreateAdPage() {
   const [imagePreview, setImagePreview] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    fetchPlanFeatures()
+      .then(setPlanFeatures)
+      .catch(() => setPlanFeatures({}));
+  }, []);
 
   const isFormValid =
     formData.title &&

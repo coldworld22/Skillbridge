@@ -4,6 +4,7 @@ import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { useEffect, useState } from "react";
 import PageHead from "@/components/common/PageHead";
 import { fetchAdById, fetchAdAnalytics } from "@/services/admin/adService";
+import useAuthStore from "@/store/auth/authStore";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, ResponsiveContainer
@@ -18,9 +19,14 @@ export default function InstructorAdAnalyticsPage() {
   const router = useRouter();
   const { id } = router.query;
   const [ad, setAd] = useState(null);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (!id) return;
+    if (user && !user?.plan?.showAnalytics) {
+      router.replace("/dashboard/instructor/ads");
+      return;
+    }
+    if (!id || !user?.plan?.showAnalytics) return;
     Promise.all([fetchAdById(id), fetchAdAnalytics(id)])
       .then(([adData, analytics]) => {
         if (adData) {
@@ -29,8 +35,8 @@ export default function InstructorAdAnalyticsPage() {
           setAd(null);
         }
       })
-      .catch(() => setAd(null));
-  }, [id]);
+      .catch(() => router.replace("/dashboard/instructor/ads"));
+  }, [id, user, router]);
 
   if (!ad) {
     return (
