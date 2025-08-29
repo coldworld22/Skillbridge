@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import AdCard from "@/components/admin/ads/AdCard";
 import PreviewModal from "@/components/admin/ads/PreviewModalInstructor";
@@ -18,6 +19,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function InstructorAdsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "adsPage" });
+  const router = useRouter();
   const [ads, setAds] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -54,11 +56,11 @@ export default function InstructorAdsPage() {
   }, [user?.id]);
 
   const handleEdit = (ad) => {
-    window.location.href = `/dashboard/instructor/ads/edit/${ad.id}`;
+    router.push(`/dashboard/instructor/ads/edit/${ad.id}`);
   };
 
   const handleAnalytics = (ad) => {
-    window.location.href = `/dashboard/instructor/ads/analytics/${ad.id}`;
+    router.push(`/dashboard/instructor/ads/analytics/${ad.id}`);
   };
 
   const handleDelete = async (ad) => {
