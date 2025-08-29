@@ -373,8 +373,11 @@ exports.recordAdView = catchAsync(async (req, res) => {
  * Return basic analytics for an ad.
  */
 exports.getAdAnalytics = catchAsync(async (req, res) => {
+  if (!req.user) {
+    throw new AppError("Unauthorized", 401);
+  }
   const canShowAnalytics =
-    req.user?.plan?.showAnalytics || req.user?.subscription?.showAnalytics;
+    req.user.plan?.showAnalytics || req.user.subscription?.showAnalytics;
   if (!canShowAnalytics) {
     throw new AppError("Analytics not available for your current plan", 403);
   }

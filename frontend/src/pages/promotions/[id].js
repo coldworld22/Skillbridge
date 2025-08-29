@@ -6,9 +6,11 @@ import Footer from "@/components/website/sections/Footer";
 import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
 import Link from "next/link";
+import { useTranslation } from "next-i18next";
 
 export default function PromotionPage() {
   const router = useRouter();
+  const { t } = useTranslation("promotions");
   const { id } = router.query;
 
   const [promotion, setPromotion] = useState(null);
@@ -21,7 +23,7 @@ export default function PromotionPage() {
     const fetchPromotion = async () => {
       try {
         const res = await fetch(`/api/ads/${id}`);
-        if (!res.ok) throw new Error("Promotion not found");
+        if (!res.ok) throw new Error(t('promotion_not_found'));
         const data = await res.json();
         setPromotion(data);
         if (data.endsAt) {
@@ -53,21 +55,21 @@ export default function PromotionPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex justify-center items-center text-xl text-gray-500">Loading...</div>;
+    return <div className="min-h-screen flex justify-center items-center text-xl text-gray-500">{t('common:loading')}</div>;
   }
 
   if (!promotion) {
     return (
       <div className="text-center mt-24">
-        <h1 className="text-3xl text-red-600 font-bold">Promotion Not Found</h1>
-        <Link href="/" className="text-blue-500 hover:underline block mt-4">⬅ Back to Home</Link>
+        <h1 className="text-3xl text-red-600 font-bold">{t('promotion_not_found')}</h1>
+        <Link href="/" className="text-blue-500 hover:underline block mt-4">{t('back_to_home')}</Link>
       </div>
     );
   }
 
   return (
     <>
-      <PageHead title={`${promotion.title} - Offer`} />
+      <PageHead title={`${promotion.title} - ${t('special_offer')}`} />
       <Head>
         <meta name="description" content={promotion.description} />
         <meta property="og:image" content={promotion.image} />
@@ -77,8 +79,8 @@ export default function PromotionPage() {
 
       <section className="container mx-auto px-4 py-10">
         <nav className="text-sm text-gray-400 mb-4">
-          <Link href="/" className="hover:text-blue-500">Home</Link> /
-          <Link href="/promotions" className="hover:text-blue-500"> Promotions</Link> /
+          <Link href="/" className="hover:text-blue-500">{t('common:home')}</Link> /
+          <Link href="/promotions" className="hover:text-blue-500"> {t('promotions')}</Link> /
           <span className="text-yellow-500"> {promotion.title}</span>
         </nav>
 
@@ -90,16 +92,16 @@ export default function PromotionPage() {
 
           {timeLeft > 0 ? (
             <div className="text-red-400 text-lg font-semibold mt-4">
-              Offer ends in: {formatTime(timeLeft)}
+              {t('offer_ends_in', { time: formatTime(timeLeft) })}
             </div>
           ) : (
-            <div className="text-red-400 text-lg font-semibold mt-4">Offer Expired!</div>
+            <div className="text-red-400 text-lg font-semibold mt-4">{t('offer_expired')}</div>
           )}
 
           {/* Optional Reviews */}
           {promotion.reviews?.length > 0 && (
             <div className="mt-6 bg-gray-800 p-4 rounded-lg">
-              <h3 className="text-yellow-400 font-semibold">What People Are Saying:</h3>
+              <h3 className="text-yellow-400 font-semibold">{t('what_people_are_saying')}</h3>
               {promotion.reviews.map((review, idx) => (
                 <p key={idx} className="text-gray-300 italic">“{review}”</p>
               ))}
@@ -110,21 +112,21 @@ export default function PromotionPage() {
           <div className="mt-4">
             <input
               type="text"
-              placeholder="Enter Discount Code"
+              placeholder={t('enter_discount_code')}
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value)}
               className="px-4 py-2 rounded-md border border-gray-700 bg-gray-800 text-white"
             />
             <button
               className="ml-2 px-4 py-2 bg-green-500 text-gray-900 rounded-md font-semibold hover:bg-green-600"
-              onClick={() => alert(`Applied: ${discountCode}`)}
+              onClick={() => alert(t('applied_code', { code: discountCode }))}
             >
-              Apply
+              {t('common:apply')}
             </button>
           </div>
 
           <Link href={`/checkout?promotion=${promotion.id}`} className="mt-6 inline-block bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600">
-            Claim Offer Now
+            {t('claim_offer_now')}
           </Link>
         </div>
       </section>
@@ -140,7 +142,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getServerSideProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'promotions'], nextI18NextConfig)),
     },
   };
 }

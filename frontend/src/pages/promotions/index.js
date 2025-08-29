@@ -6,6 +6,7 @@ import Footer from "@/components/website/sections/Footer";
 import Link from "next/link";
 import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
+import { useTranslation } from "next-i18next";
 
 const mockPromotions = {
   1: { title: "🔥 Black Friday Deal: 50% Off!", description: "All courses now at half price!", image: "/shared/assets/images/ads/black-friday.jpg", timeLeft: 3600, reviews: ["Great deal!", "Loved it!", "Highly recommended!"] },
@@ -15,6 +16,7 @@ const mockPromotions = {
 
 const PromotionsPage = () => {
   const router = useRouter();
+  const { t } = useTranslation("promotions");
   const { id } = router.query;
   const [promotion, setPromotion] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ const PromotionsPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-gray-500 text-xl">Loading promotion details...</p>
+        <p className="text-gray-500 text-xl">{t('loading_promotion_details')}</p>
       </div>
     );
   }
@@ -63,9 +65,9 @@ const PromotionsPage = () => {
   if (!promotion) {
     return (
       <div className="text-center mt-20">
-        <h1 className="text-3xl font-bold text-red-500">Promotion Not Found</h1>
+        <h1 className="text-3xl font-bold text-red-500">{t('promotion_not_found')}</h1>
         <Link href="/" legacyBehavior>
-          <a className="text-blue-500 hover:underline mt-4 inline-block">⬅ Go Back to Home</a>
+          <a className="text-blue-500 hover:underline mt-4 inline-block">{t('back_to_home')}</a>
         </Link>
       </div>
     );
@@ -73,7 +75,7 @@ const PromotionsPage = () => {
 
   return (
     <>
-      <PageHead title={`${promotion.title} - Special Offer`} />
+      <PageHead title={`${promotion.title} - ${t('special_offer')}`} />
       <Head>
         <meta name="description" content={promotion.description} />
         {/* SEO & Social Media Metadata */}
@@ -92,8 +94,8 @@ const PromotionsPage = () => {
       <section className="container mx-auto px-6 py-8 mt-16">
         {/* ✅ Breadcrumbs */}
         <nav className="mb-4 text-gray-400 text-sm">
-          <Link href="/" legacyBehavior><a className="hover:text-blue-500">Home</a></Link> / 
-          <Link href="/promotions" legacyBehavior><a className="hover:text-blue-500"> Promotions</a></Link> / 
+          <Link href="/" legacyBehavior><a className="hover:text-blue-500">{t('common:home')}</a></Link> /
+          <Link href="/promotions" legacyBehavior><a className="hover:text-blue-500"> {t('promotions')}</a></Link> /
           <span className="text-yellow-500"> {promotion.title}</span>
         </nav>
 
@@ -107,12 +109,14 @@ const PromotionsPage = () => {
 
           {/* ⏳ Countdown Timer */}
           <div className="text-red-400 text-lg font-bold mt-4">
-            {timeLeft > 0 ? `Offer expires in: ${formatTime(timeLeft)}` : "Offer Expired!"}
+            {timeLeft > 0
+              ? t('offer_expires_in', { time: formatTime(timeLeft) })
+              : t('offer_expired')}
           </div>
 
           {/* ⭐ User Reviews */}
           <div className="mt-6 bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-yellow-400 font-semibold">What People Are Saying:</h3>
+            <h3 className="text-yellow-400 font-semibold">{t('what_people_are_saying')}</h3>
             {promotion.reviews.map((review, index) => (
               <p key={index} className="text-gray-300 italic">“{review}”</p>
             ))}
@@ -122,23 +126,23 @@ const PromotionsPage = () => {
           <div className="mt-4">
             <input
               type="text"
-              placeholder="Enter Discount Code"
+              placeholder={t('enter_discount_code')}
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value)}
               className="px-4 py-2 rounded-md border border-gray-700 bg-gray-800 text-white"
             />
             <button
               className="ml-2 px-4 py-2 bg-green-500 text-gray-900 rounded-md font-semibold hover:bg-green-600 transition"
-              onClick={() => alert(`Applied Code: ${discountCode}`)}
+              onClick={() => alert(t('applied_code', { code: discountCode }))}
             >
-              Apply
+              {t('common:apply')}
             </button>
           </div>
 
           {/* ✅ Claim Offer Button */}
           <Link href={`/checkout?promotion=${id}`} legacyBehavior>
             <a className="mt-6 inline-block bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition">
-              Claim Offer Now
+              {t('claim_offer_now')}
             </a>
           </Link>
         </div>
@@ -158,7 +162,7 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 export async function getStaticProps({ locale }) {
   return {
     props: {
-      ...(await serverSideTranslations(locale, ['common'], nextI18NextConfig)),
+      ...(await serverSideTranslations(locale, ['common', 'promotions'], nextI18NextConfig)),
     },
   };
 }
