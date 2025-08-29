@@ -1,5 +1,6 @@
 
 import api from "@/services/api/api";
+import { getCsrfToken } from "@/services/api/csrf";
 import useCallStore from "@/store/call/callStore";
 import useAuthStore from "@/store/auth/authStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -25,13 +26,18 @@ export const getMessages = async ({ limit, offset } = {}) => {
 };
 
 export const markMessageAsRead = async (id) => {
-  const res = await api.patch(`/messages/${id}/read`);
+  const headers = {};
+  const token = getCsrfToken();
+  if (token) headers["x-csrf-token"] = token;
+  const res = await api.patch(`/messages/${id}/read`, {}, { headers });
   return res.data.data || res.data;
-
 };
 
 export const deleteMessage = async (id) => {
-  const res = await api.delete(`/messages/${id}`);
+  const headers = {};
+  const token = getCsrfToken();
+  if (token) headers["x-csrf-token"] = token;
+  const res = await api.delete(`/messages/${id}`, { headers });
   return res.data.data || res.data;
 };
 
