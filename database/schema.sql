@@ -73,6 +73,36 @@ CREATE TABLE IF NOT EXISTS suspicious_logs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- plans table
+CREATE TABLE IF NOT EXISTS plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR NOT NULL,
+  slug VARCHAR UNIQUE NOT NULL,
+  price_monthly DECIMAL(10,2) DEFAULT 0,
+  price_yearly DECIMAL(10,2) DEFAULT 0,
+  currency VARCHAR DEFAULT 'USD',
+  recommended BOOLEAN DEFAULT false,
+  active BOOLEAN DEFAULT true,
+  color VARCHAR DEFAULT '#1F2937',
+  style VARCHAR,
+  target_role VARCHAR DEFAULT 'student',
+  max_courses INTEGER,
+  ad_credits INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- plan_features table
+CREATE TABLE IF NOT EXISTS plan_features (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  plan_id UUID REFERENCES plans(id) ON DELETE CASCADE,
+  feature_key VARCHAR NOT NULL,
+  value TEXT,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Link offers with groups and track fees
 ALTER TABLE IF EXISTS offers
   ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES groups(id) ON DELETE CASCADE;
