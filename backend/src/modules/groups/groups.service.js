@@ -1,5 +1,6 @@
 const db = require("../../config/database");
 const { v4: uuidv4 } = require("uuid");
+const offerService = require("../offers/offers.service");
 
 exports.findByName = async (name) => {
   return db("groups").whereRaw("LOWER(name) = ?", [name.toLowerCase()]).first();
@@ -91,7 +92,8 @@ exports.getGroupById = async (id) => {
     .first();
   if (!group) return null;
   const tagsMap = await exports.getGroupTags(id);
-  return { ...group, tags: tagsMap[id] || [] };
+  const offerSummary = await offerService.getGroupOfferSummary(id);
+  return { ...group, tags: tagsMap[id] || [], offerSummary };
 };
 
 exports.updateGroup = async (id, data) => {

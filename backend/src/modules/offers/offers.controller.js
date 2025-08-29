@@ -7,6 +7,7 @@ const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const mailService = require("../../services/mailService");
+const groupService = require("../groups/groups.service");
 const slugify = require("slugify");
 const db = require("../../config/database");
 
@@ -19,10 +20,19 @@ exports.createOffer = catchAsync(async (req, res) => {
     timeframe,
     offer_type,
     expires_at,
+    group_id,
   } = req.body;
+
+  // ensure the group exists
+  const group = await groupService.getGroupById(group_id);
+  if (!group) {
+    return res.status(404).json({ message: "Group not found" });
+  }
+
   const data = {
     id: uuidv4(),
     student_id: req.user.id,
+    group_id,
     title,
     description,
     budget,
@@ -30,6 +40,9 @@ exports.createOffer = catchAsync(async (req, res) => {
     offer_type,
     status: "open",
   };
+
+  const fee = service.calculateOfferFee(req.user);
+  if (fee > 0) data.fee = fee;
   if (expires_at) {
     if (new Date(expires_at) <= new Date()) {
       return res.status(400).json({ message: "Expiration must be in the future" });
