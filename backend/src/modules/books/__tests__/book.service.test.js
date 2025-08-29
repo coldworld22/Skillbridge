@@ -61,6 +61,7 @@ beforeAll(async () => {
       instructor_id: '1',
       created_at: new Date('2023-01-01'),
       price: 10,
+      status: 'active',
     },
     {
       id: 2,
@@ -71,6 +72,7 @@ beforeAll(async () => {
       instructor_id: '2',
       created_at: new Date('2023-01-02'),
       price: 15,
+      status: 'active',
     },
     {
       id: 3,
@@ -81,6 +83,7 @@ beforeAll(async () => {
       instructor_id: '1',
       created_at: new Date('2023-01-03'),
       price: 20,
+      status: 'active',
     },
   ];
   await db('books').insert(books);
@@ -152,9 +155,29 @@ describe('checkout', () => {
     expect(cart).toHaveLength(0);
   });
 
+  test('throws error when book is inactive', async () => {
+    await db('books').insert({
+      id: 4,
+      title: 'D',
+      author: 'Author4',
+      short_description: 'ShortDesc4',
+      detailed_description: 'DetailedDesc4',
+      instructor_id: '1',
+      created_at: new Date('2023-01-04'),
+      price: 25,
+      status: 'inactive',
+    });
+    await db('book_cart').insert({ student_id: studentId, book_id: 4 });
+    await expect(checkout(studentId)).rejects.toThrow('inactive or not found');
+    const cart = await db('book_cart').where({ student_id: studentId });
+    expect(cart).toHaveLength(1);
+    const purchases = await db('book_purchases').where({ student_id: studentId });
+    expect(purchases).toHaveLength(0);
+  });
+
   test('throws error when book ID is missing', async () => {
     await db('book_cart').insert({ student_id: studentId, book_id: 999 });
-    await expect(checkout(studentId)).rejects.toThrow('Book not found');
+    await expect(checkout(studentId)).rejects.toThrow('inactive or not found');
     const cart = await db('book_cart').where({ student_id: studentId });
     expect(cart).toHaveLength(1);
     const purchases = await db('book_purchases').where({ student_id: studentId });

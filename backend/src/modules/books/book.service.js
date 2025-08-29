@@ -256,12 +256,13 @@ exports.checkout = async (studentId) => {
 
     const books = await trx('books')
       .whereIn('id', bookIds)
+      .where('status', 'active')
       .select('id', 'price');
 
-    const validIds = books.map((b) => b.id);
     if (books.length !== bookIds.length) {
+      const validIds = books.map((b) => b.id);
       const missing = bookIds.filter((id) => !validIds.includes(id));
-      throw new AppError(`Book not found: ${missing.join(', ')}`, 404);
+      throw new AppError(`Book inactive or not found: ${missing.join(', ')}`, 404);
     }
 
     const rows = books.map((b) => ({
@@ -274,7 +275,7 @@ exports.checkout = async (studentId) => {
       .returning('*');
     await trx('book_cart')
       .where({ student_id: studentId })
-      .whereIn('book_id', validIds)
+      .whereIn('book_id', bookIds)
       .del();
     return purchases;
   });
