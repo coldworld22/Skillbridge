@@ -1,5 +1,7 @@
 const knex = require('knex');
 const QueryBuilder = require('knex/lib/query/querybuilder');
+const fs = require('fs');
+const path = require('path');
 
 QueryBuilder.prototype.whereILike = function (column, value) {
   return this.whereRaw(`LOWER(${column}) LIKE LOWER(?)`, [value]);
@@ -20,7 +22,7 @@ const mockDb = knex({
 jest.mock('../../../config/database', () => mockDb);
 
 const db = require('../../../config/database');
-const { listBooks, checkout } = require('../book.service');
+const { listBooks, checkout, updateBook } = require('../book.service');
 
 beforeAll(async () => {
   await db.schema.createTable('books', (table) => {
@@ -35,6 +37,9 @@ beforeAll(async () => {
     table.string('language');
     table.string('instructor_id');
     table.timestamp('created_at');
+    table.string('cover_image_url');
+    table.string('pdf_url');
+    table.text('preview_pages');
   });
 
   await db.schema.createTable('book_cart', (table) => {
@@ -159,5 +164,39 @@ describe('checkout', () => {
     expect(cart).toHaveLength(1);
     const purchases = await db('book_purchases').where({ student_id: studentId });
     expect(purchases).toHaveLength(0);
+  });
+});
+
+describe('updateBook', () => {
+  test('removes old media files when new ones are uploaded', async () => {
+    const bookId = 100;
+    const uploadsDir = path.join(__dirname, '../../../../uploads/books');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const oldCover = path.join(uploadsDir, 'oldcover.jpg');
+    const oldPdf = path.join(uploadsDir, 'oldbook.pdf');
+    fs.writeFileSync(oldCover, 'old cover');
+    fs.writeFileSync(oldPdf, 'old pdf');
+
+    await db('books').insert({
+      id: bookId,
+      title: 'UpdateMe',
+      instructor_id: '1',
+      created_at: new Date(),
+      price: 0,
+      cover_image_url: '/uploads/books/oldcover.jpg',
+      pdf_url: '/uploads/books/oldbook.pdf',
+    });
+
+    await updateBook(bookId, {
+      cover_image_url: '/uploads/books/newcover.jpg',
+      pdf_url: '/uploads/books/newbook.pdf',
+    });
+
+    expect(fs.existsSync(oldCover)).toBe(false);
+    expect(fs.existsSync(oldPdf)).toBe(false);
+
+    const updated = await db('books').where({ id: bookId }).first();
+    expect(updated.cover_image_url).toBe('/uploads/books/newcover.jpg');
+    expect(updated.pdf_url).toBe('/uploads/books/newbook.pdf');
   });
 });

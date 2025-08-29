@@ -159,11 +159,17 @@ const removeFiles = async (files = []) => {
 };
 
 exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
+  const fields = [];
+  if (removePreviewPages || data.preview_pages) fields.push("preview_pages");
+  if (data.cover_image_url) fields.push("cover_image_url");
+  if (data.pdf_url) fields.push("pdf_url");
+
+  let existing = null;
+  if (fields.length) {
+    existing = await db("books").where({ id }).select(fields).first();
+  }
+
   if (removePreviewPages || data.preview_pages) {
-    const existing = await db("books")
-      .where({ id })
-      .select("preview_pages")
-      .first();
     let prev = [];
     if (existing?.preview_pages) {
       if (Array.isArray(existing.preview_pages)) prev = existing.preview_pages;
@@ -180,6 +186,15 @@ exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
       data.preview_pages = null;
     }
   }
+
+  if (data.cover_image_url && existing?.cover_image_url) {
+    await removeFiles([existing.cover_image_url]);
+  }
+
+  if (data.pdf_url && existing?.pdf_url) {
+    await removeFiles([existing.pdf_url]);
+  }
+
   const [row] = await db("books").where({ id }).update(data).returning("*");
   return row;
 };
