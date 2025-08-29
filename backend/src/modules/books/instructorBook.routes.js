@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const controller = require("./book.controller");
 const upload = require("./bookUploadMiddleware");
+const validate = require("../../middleware/validate");
+const validation = require("./validation/bookValidation");
 const {
   verifyToken,
   isInstructorOrAdmin,
@@ -10,6 +12,11 @@ router.use(verifyToken, isInstructorOrAdmin);
 
 router.get("/analytics", controller.getInstructorBookAnalytics);
 router.get("/", controller.listInstructorBooks);
-router.post("/", upload, controller.createBook);
+router.post(
+  "/",
+  upload,
+  validate({ body: validation.createBook }),
+  controller.createBook
+);
 
 module.exports = router;
