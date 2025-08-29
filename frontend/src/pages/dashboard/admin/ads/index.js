@@ -39,17 +39,19 @@ export default function AdminAdsPage() {
     // Handlers
     // ─────────────────────
     const toggleAdStatus = async (id) => {
+        const previousAds = [...ads];
         setAds((prev) =>
             prev.map((ad) =>
                 ad.id === id ? { ...ad, isActive: !ad.isActive } : ad
             )
         );
-        const ad = ads.find((a) => a.id === id);
+        const ad = previousAds.find((a) => a.id === id);
         if (ad) {
             try {
                 await updateAd(id, { is_active: !ad.isActive });
                 toast.success(t('status_updated'));
             } catch {
+                setAds(previousAds);
                 toast.error(t('error_generic'));
             }
         }
