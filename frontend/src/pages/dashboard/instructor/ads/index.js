@@ -4,7 +4,7 @@ import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import AdCard from "@/components/admin/ads/AdCard";
-import PreviewModal from "@/components/admin/ads/PreviewModalinstrutor";
+import PreviewModal from "@/components/admin/ads/PreviewModalInstructor";
 import { fetchAds, deleteAd } from "@/services/admin/adService";
 import { toast } from "react-toastify";
 import { createNotification } from "@/services/notificationService";
