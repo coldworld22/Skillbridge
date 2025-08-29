@@ -22,6 +22,7 @@ import {
 import { formatCurrency } from "@/utils/currency";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
+import { fetchAds as fetchAdBanners } from "@/services/adService";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial.
@@ -96,6 +97,7 @@ const TutorialsSection = () => {
   const loader = useRef(null);
   const { t } = useTranslation("tutorials", { keyPrefix: "list" });
   const addItem = useCartStore((state) => state.addItem);
+  const [ads, setAds] = useState([]);
 
   const toggleFavorite = async (id) => {
     if (!user) return router.push('/auth/login');
@@ -143,6 +145,10 @@ const TutorialsSection = () => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    fetchAdBanners().then(setAds).catch(() => {});
   }, []);
 
   const handleFilterChange = (f) => {
@@ -270,7 +276,20 @@ const TutorialsSection = () => {
     <section className="min-h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center opacity-10" />
       <Navbar />
-      
+      {ads.map((ad) => (
+        <div key={ad.id} className="max-w-7xl mx-auto mt-4">
+          <a href={ad.link} target="_blank" rel="noopener noreferrer">
+            {ad.image && (
+              <img
+                src={ad.image}
+                alt={ad.title}
+                className="w-full h-48 object-cover rounded"
+              />
+            )}
+          </a>
+        </div>
+      ))}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

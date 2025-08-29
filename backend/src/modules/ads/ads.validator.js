@@ -13,6 +13,7 @@ exports.create = {
     ad_type: z.string().optional(),
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
+    price: z.coerce.number().optional(),
   }),
 };
 
@@ -29,5 +30,6 @@ exports.update = {
     ad_type: z.string().optional(),
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
+    price: z.coerce.number().optional(),
   }),
 };
