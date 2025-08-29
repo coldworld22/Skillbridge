@@ -55,7 +55,7 @@ export default function PromotionPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex justify-center items-center text-xl text-gray-500">{t('common:loading')}</div>;
+    return <div className="min-h-screen flex justify-center items-center text-xl text-gray-500">{t('loading_promotion_details')}</div>;
   }
 
   if (!promotion) {

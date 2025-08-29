@@ -8,12 +8,6 @@ import PageHead from "@/components/common/PageHead";
 import Head from "next/head";
 import { useTranslation } from "next-i18next";
 
-const mockPromotions = {
-  1: { title: "🔥 Black Friday Deal: 50% Off!", description: "All courses now at half price!", image: "/shared/assets/images/ads/black-friday.jpg", timeLeft: 3600, reviews: ["Great deal!", "Loved it!", "Highly recommended!"] },
-  2: { title: "📢 Python Bootcamp Enrollment Open!", description: "Join our advanced Python bootcamp!", image: "/shared/assets/images/ads/python-bootcamp.jpg", timeLeft: 7200, reviews: ["Super informative!", "Best bootcamp!", "Worth every penny!"] },
-  3: { title: "🚀 AI Masterclass Discount!", description: "Learn AI from top instructors!", image: "/shared/assets/images/ads/ai-masterclass.jpg", timeLeft: 5400, reviews: ["Perfect for beginners!", "Very detailed", "Loved the instructors!"] },
-};
-
 const PromotionsPage = () => {
   const router = useRouter();
   const { t } = useTranslation("promotions");
@@ -22,6 +16,30 @@ const PromotionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(0);
   const [discountCode, setDiscountCode] = useState("");
+
+  const mockPromotions = {
+    1: {
+      title: t('mockPromotions.1.title'),
+      description: t('mockPromotions.1.description'),
+      image: '/shared/assets/images/ads/black-friday.jpg',
+      timeLeft: 3600,
+      reviews: t('mockPromotions.1.reviews', { returnObjects: true }),
+    },
+    2: {
+      title: t('mockPromotions.2.title'),
+      description: t('mockPromotions.2.description'),
+      image: '/shared/assets/images/ads/python-bootcamp.jpg',
+      timeLeft: 7200,
+      reviews: t('mockPromotions.2.reviews', { returnObjects: true }),
+    },
+    3: {
+      title: t('mockPromotions.3.title'),
+      description: t('mockPromotions.3.description'),
+      image: '/shared/assets/images/ads/ai-masterclass.jpg',
+      timeLeft: 5400,
+      reviews: t('mockPromotions.3.reviews', { returnObjects: true }),
+    },
+  };
 
   // Fetch Promotion Data or Use Mock Data
   useEffect(() => {
@@ -35,7 +53,7 @@ const PromotionsPage = () => {
       setTimeLeft(mockPromotions[1].timeLeft);
     }
     setLoading(false);
-  }, [id]);
+  }, [id, t]);
 
   // Countdown Timer
   useEffect(() => {
