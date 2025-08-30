@@ -9,6 +9,10 @@ exports.createEnrollment = async (data) => {
   return row;
 };
 
+exports.updateEnrollment = async (user_id, class_id, data) => {
+  return db("class_enrollments").where({ user_id, class_id }).update(data);
+};
+
 exports.countEnrollments = async (class_id) => {
   const [row] = await db("class_enrollments")
     .where({ class_id })

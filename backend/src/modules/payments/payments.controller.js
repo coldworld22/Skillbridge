@@ -197,12 +197,24 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   if (item_type === "class" && payment.status === STATUS.PAID) {
     try {
+      const existingEnrollment = await enrollmentService.findEnrollment(
+        user_id,
+        item_id
+      );
+      if (existingEnrollment) {
+        if (existingEnrollment.status !== "enrolled") {
+          await enrollmentService.updateEnrollment(user_id, item_id, {
+            status: "enrolled",
+          });
+        }
+      } else {
         await enrollmentService.createEnrollment({
           id: uuidv4(),
           user_id,
           class_id: item_id,
           status: "enrolled",
         });
+      }
     } catch (err) {
       logger.error("Failed to enroll after payment:", err);
     }
