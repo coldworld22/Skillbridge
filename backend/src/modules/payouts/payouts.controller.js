@@ -54,3 +54,39 @@ exports.deletePayout = catchAsync(async (req, res) => {
   await service.delete(req.params.id);
   sendSuccess(res, null, "Payout deleted");
 });
+
+// Instructor: Get wallet balance
+exports.getWallet = catchAsync(async (req, res) => {
+  const wallet = await walletService.getByInstructor(req.user.id);
+  sendSuccess(res, wallet || { balance: 0 });
+});
+
+// Instructor: Request payout for self after validating funds
+exports.requestPayout = catchAsync(async (req, res) => {
+  const { amount, currency, notes, instructor_id } = req.body;
+
+  if (instructor_id && instructor_id !== req.user.id) {
+    throw new AppError("Cannot request payout for another instructor", 403);
+  }
+
+  if (!amount) {
+    throw new AppError("Amount is required", 400);
+  }
+
+  const wallet = await walletService.getByInstructor(req.user.id);
+  const balance = wallet ? Number(wallet.balance) : 0;
+  if (balance < Number(amount)) {
+    throw new AppError("Insufficient wallet balance", 400);
+  }
+
+  const payout = await service.create({
+    id: uuidv4(),
+    instructor_id: req.user.id,
+    amount,
+    currency: currency || "USD",
+    status: "pending",
+    notes,
+  });
+
+  sendSuccess(res, payout, "Payout request created");
+});
