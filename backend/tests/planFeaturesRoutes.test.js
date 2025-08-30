@@ -19,4 +19,10 @@ describe('GET /api/plans/features', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
   });
+
+  it('forwards prefix query param to service', async () => {
+    service.getPlanFeatures.mockResolvedValue({});
+    await request(app).get('/api/plans/features?prefix=ads');
+    expect(service.getPlanFeatures).toHaveBeenCalledWith('ads');
+  });
 });
