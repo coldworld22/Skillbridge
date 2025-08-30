@@ -96,3 +96,6 @@ exports.getPlanFeatures = async () => {
   });
   return result;
 };
+
+exports.getPlanIdentifiers = () =>
+  db("plans").select("id", "slug").orderBy("id");

@@ -10,6 +10,11 @@ export const fetchPlanById = async (id) => {
   return data?.data ?? null;
 };
 
+export const fetchPlanIdentifiers = async () => {
+  const { data } = await api.get("/plans/identifiers");
+  return data?.data ?? [];
+};
+
 export const createPlan = async (payload) => {
   const { data } = await api.post("/plans", payload);
   return data?.data;

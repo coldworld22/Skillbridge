@@ -19,6 +19,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
 import { FaArrowLeft } from 'react-icons/fa';
 import { fetchAdminClassById, updateAdminClass } from '@/services/admin/classService';
+import { fetchPlanIdentifiers } from '@/services/admin/planService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 
@@ -39,7 +40,10 @@ function EditClassPage() {
     status: '',
     description: '',
     max_students: '',
+    access_type: 'paid',
+    included_plans: [],
   });
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     if (!id) return;
@@ -57,6 +61,8 @@ function EditClassPage() {
             status: data.status || '',
             description: data.description || '',
             max_students: data.max_students || '',
+            access_type: data.access_type || 'paid',
+            included_plans: data.included_plans || [],
           });
         }
       } catch (err) {
@@ -66,24 +72,46 @@ function EditClassPage() {
     load();
   }, [id]);
 
+  useEffect(() => {
+    fetchPlanIdentifiers()
+      .then(setPlans)
+      .catch(() => setPlans([]));
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const togglePlan = (slug) => {
+    setFormData((prev) => ({
+      ...prev,
+      included_plans: prev.included_plans.includes(slug)
+        ? prev.included_plans.filter((s) => s !== slug)
+        : [...prev.included_plans, slug],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await updateAdminClass(id, {
-        title: formData.title,
-        description: formData.description,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        category_id: formData.category,
-        price: formData.price,
-        max_students: formData.max_students,
-        status: formData.status,
-      });
+      const payload = new FormData();
+      if (formData.title) payload.append('title', formData.title);
+      if (formData.description) payload.append('description', formData.description);
+      if (formData.start_date) payload.append('start_date', formData.start_date);
+      if (formData.end_date) payload.append('end_date', formData.end_date);
+      if (formData.category) payload.append('category_id', formData.category);
+      if (formData.max_students) payload.append('max_students', formData.max_students);
+      payload.append('status', formData.status);
+      payload.append('access_type', formData.access_type);
+      if (formData.access_type === 'free') {
+        payload.append('price', '0');
+        if (formData.included_plans.length)
+          payload.append('included_plans', JSON.stringify(formData.included_plans));
+      } else if (formData.price || formData.price === 0) {
+        payload.append('price', formData.price);
+      }
+      await updateAdminClass(id, payload);
       toast.success(t('class_updated'));
       fetchNotifications();
       fetchMessages();
@@ -148,7 +176,50 @@ function EditClassPage() {
           onChange={handleChange}
           placeholder={t('price_label')}
           className="w-full border rounded px-4 py-2"
+          disabled={formData.access_type === 'free'}
         />
+        <div className="space-y-2">
+          <div className="flex items-center gap-4 mt-2">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="access_type"
+                value="paid"
+                checked={formData.access_type === 'paid'}
+                onChange={handleChange}
+                className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">{t('paid')}</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="access_type"
+                value="free"
+                checked={formData.access_type === 'free'}
+                onChange={handleChange}
+                className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
+            </label>
+          </div>
+          {formData.access_type === 'free' && (
+            <div className="flex flex-wrap gap-4">
+              {plans.map((p) => (
+                <label key={p.id} className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    value={p.slug}
+                    checked={formData.included_plans.includes(p.slug)}
+                    onChange={() => togglePlan(p.slug)}
+                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{p.slug}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <input
           name="max_students"
           type="number"
