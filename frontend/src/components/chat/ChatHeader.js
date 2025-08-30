@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { FaVideo, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import { API_BASE_URL } from "@/config/config";
 import formatRelativeTime from "@/utils/relativeTime";
+import dayjs from "dayjs";
 import ChatImage from "../shared/ChatImage";
 
 const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
@@ -29,6 +30,15 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const lastActive = selectedChat.lastActive || selectedChat.last_active;
   const hasPhone = !!selectedChat.phone;
   const email = selectedChat.email;
+
+  const formatLastActive = () => {
+    if (!lastActive) return "";
+    const date = dayjs(lastActive);
+    if (!date.isValid()) return "";
+    const absolute = date.format("YYYY-MM-DD HH:mm");
+    const relative = formatRelativeTime(lastActive);
+    return relative ? `${absolute} (${relative})` : absolute;
+  };
 
   const handleVideoCall = async () => {
     if (onStartVideoCall) {
@@ -90,7 +100,7 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
           </h3>
           {!selectedChat.isGroup && (
             <div className="text-sm text-gray-400">
-              {isOnline ? "Online" : `Last active ${formatRelativeTime(lastActive)}`}
+              {isOnline ? "Online" : `Last active ${formatLastActive()}`}
             </div>
           )}
         </div>
