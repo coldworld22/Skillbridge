@@ -70,7 +70,7 @@ export default function CreateAdPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    fetchPlanFeatures()
+    fetchPlanFeatures('ads')
       .then(setPlanFeatures)
       .catch(() => setPlanFeatures({}));
   }, []);

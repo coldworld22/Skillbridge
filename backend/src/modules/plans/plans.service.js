@@ -73,14 +73,22 @@ exports.getPlanFeatures = async (prefix) => {
     "feature_key",
     "value"
   );
-  if (prefix) featureQuery = featureQuery.where("feature_key", "like", `${prefix}_%`);
+  if (prefix)
+    featureQuery = featureQuery.where(
+      "feature_key",
+      "like",
+      `${prefix}_%`
+    );
   const features = await featureQuery;
 
   const result = {};
   const toCamel = (s) => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-  const stripPrefix = (key) => {
-    const idx = key.indexOf("_");
-    return idx >= 0 ? key.slice(idx + 1) : key;
+
+  const transformKey = (key) => {
+    if (prefix && key.startsWith(`${prefix}_`)) {
+      return toCamel(key.slice(prefix.length + 1));
+    }
+    return toCamel(key);
   };
 
   plans.forEach((plan) => {
@@ -88,7 +96,7 @@ exports.getPlanFeatures = async (prefix) => {
     features
       .filter((f) => f.plan_id === plan.id)
       .forEach((f) => {
-        const key = toCamel(stripPrefix(f.feature_key));
+        const key = transformKey(f.feature_key);
         let val;
         try {
           val = JSON.parse(f.value);

@@ -39,7 +39,7 @@ export default function EditAdPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    fetchPlanFeatures()
+    fetchPlanFeatures('ads')
       .then(setPlanFeatures)
       .catch(() => setPlanFeatures({}));
   }, []);
