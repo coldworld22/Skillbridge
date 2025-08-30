@@ -111,7 +111,6 @@ export default function InstructorProfileEdit() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newExpertise, setNewExpertise] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [newCertificate, setNewCertificate] = useState({
     title: "",
     file: null,
