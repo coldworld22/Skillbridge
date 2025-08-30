@@ -53,7 +53,7 @@ export default function EditAdPage() {
   };
 
   useEffect(() => {
-    fetchPlanFeatures()
+    fetchPlanFeatures('ads')
       .then(setPlanFeatures)
       .catch(() => setPlanFeatures({}));
   }, []);
