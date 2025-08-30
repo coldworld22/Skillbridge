@@ -5,6 +5,9 @@ const { sendSuccess } = require("../../../utils/response");
 const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
 const classService = require("../class.service");
+const db = require("../../../config/database");
+const paymentsService = require("../../payments/payments.service");
+const { hasActiveStudentSubscription } = require("../../plans/subscription.helper");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -22,6 +25,21 @@ exports.enroll = catchAsync(async (req, res) => {
   }
   const exists = await service.findEnrollment(user_id, classId);
   if (exists) return sendSuccess(res, exists, "Already enrolled");
+
+  if (Number(cls.price) > 0) {
+    const payment = await db("payments")
+      .where({
+        user_id,
+        item_id: classId,
+        item_type: "class",
+        status: paymentsService.STATUS.PAID,
+      })
+      .first();
+    const hasSubscription = await hasActiveStudentSubscription(user_id);
+    if (!payment && !hasSubscription) {
+      throw new AppError("Payment required", 400);
+    }
+  }
 
   const data = { id: uuidv4(), user_id, class_id: classId, status: "enrolled" };
   await service.createEnrollment(data);

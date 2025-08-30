@@ -40,6 +40,13 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isInstructor: (_req, _res, next) => next(),
 }));
 
+jest.mock('../../../plans/subscription.helper', () => ({
+  hasActiveStudentSubscription: jest.fn(),
+}));
+
+const { hasActiveStudentSubscription } = require('../../../plans/subscription.helper');
+const db = require('../../../../config/database');
+
 const routes = require('../../class.routes');
 
 const app = express();
@@ -91,6 +98,37 @@ describe('Class enrollment routes', () => {
     service.countEnrollments.mockResolvedValue(1);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
+  });
+
+  test('reject enrollment if class requires payment and user has not paid or subscribed', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      price: 50,
+    });
+    service.countEnrollments.mockResolvedValue(0);
+    service.findEnrollment.mockResolvedValue(null);
+    db.first.mockResolvedValueOnce(null); // payment check
+    db.first.mockResolvedValueOnce(null); // subscription check
+    hasActiveStudentSubscription.mockResolvedValue(false);
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('allow enrollment if class requires payment but user has active subscription', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      price: 50,
+    });
+    service.countEnrollments.mockResolvedValue(0);
+    service.findEnrollment.mockResolvedValue(null);
+    db.first.mockResolvedValueOnce(null); // payment check
+    hasActiveStudentSubscription.mockResolvedValue(true);
+    service.createEnrollment.mockResolvedValue({ id: '1' });
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(200);
+    expect(service.createEnrollment).toHaveBeenCalled();
   });
 
   test('get my enrollments', async () => {
