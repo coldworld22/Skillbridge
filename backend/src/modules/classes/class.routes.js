@@ -7,6 +7,7 @@ const validate = require("../../middleware/validate");
 const validator = require("./class.validator");
 const upload = require("./classUploadMiddleware");
 const verifyClassOwnership = require("../../middleware/auth/verifyClassOwnership");
+const verifyInstructorSubscription = require("../plans/verifyInstructorSubscription");
 const {
   verifyToken,
   isInstructorOrAdmin,
@@ -118,6 +119,7 @@ router.post(
   "/instructor",
   verifyToken,
   isInstructor,
+  verifyInstructorSubscription,
   upload,
   validate(validator.create),
   controller.createClass

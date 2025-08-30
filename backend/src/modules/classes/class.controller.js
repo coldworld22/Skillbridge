@@ -25,6 +25,24 @@ const generateUniqueSlug = async (title) => {
 };
 
 exports.createClass = catchAsync(async (req, res) => {
+  if (req.user?.role === "instructor") {
+    const sub = req.subscription;
+    if (!sub) {
+      return res
+        .status(403)
+        .json({ message: "Active instructor subscription required" });
+    }
+    if (
+      sub.max_courses !== null &&
+      sub.max_courses !== undefined &&
+      sub.current_courses >= sub.max_courses
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Maximum course limit reached" });
+    }
+  }
+
   const slug = await generateUniqueSlug(req.body.title);
   const { tags: rawTags, status, ...body } = req.body;
   const data = {
