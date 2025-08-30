@@ -49,6 +49,16 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isInstructor: (_req, _res, next) => next(),
 }));
 
+jest.mock('../../../../middleware/auth/verifyClassOwnership', () =>
+  jest.fn((_req, _res, next) => next())
+);
+jest.mock('../../../../middleware/auth/verifyLessonOwnership', () =>
+  jest.fn((_req, _res, next) => next())
+);
+jest.mock('../../../../middleware/auth/verifyClassAccess', () =>
+  jest.fn((_req, _res, next) => next())
+);
+
 const routes = require('../../class.routes');
 
 const app = express();
