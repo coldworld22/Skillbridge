@@ -9,6 +9,13 @@ exports.getAll = async () => {
   return db("payouts").select("*").orderBy("requested_at", "desc");
 };
 
+exports.getByInstructor = async (instructor_id) => {
+  return db("payouts")
+    .where({ instructor_id })
+    .select("*")
+    .orderBy("requested_at", "desc");
+};
+
 exports.getById = async (id) => {
   return db("payouts").where({ id }).first();
 };

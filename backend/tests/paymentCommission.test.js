@@ -72,7 +72,7 @@ const payoutRoutes = require('../src/modules/payouts/payouts.routes');
 const app = express();
 app.use(express.json());
 app.use('/api/payments/admin', routes);
-app.use('/api/payouts/admin', payoutRoutes);
+app.use('/api/payouts', payoutRoutes);
 
 describe('payment commission calculations', () => {
   beforeEach(() => {
@@ -184,7 +184,7 @@ describe('wallet credit and debit', () => {
     payoutService.update.mockResolvedValue({ id: 'po1', status: 'approved' });
     walletService.getByInstructor.mockResolvedValue({ balance: 100 });
 
-    const res = await request(app).patch('/api/payouts/admin/po1').send({ status: 'approved' });
+    const res = await request(app).patch('/api/payouts/po1').send({ status: 'approved' });
 
     expect(res.status).toBe(200);
     expect(walletService.decrement).toHaveBeenCalledWith('inst1', 50);
@@ -195,7 +195,7 @@ describe('wallet credit and debit', () => {
     payoutService.getById.mockResolvedValue({ id: 'po2', instructor_id: 'inst1', amount: 80, status: 'pending' });
     walletService.getByInstructor.mockResolvedValue({ balance: 50 });
 
-    const res = await request(app).patch('/api/payouts/admin/po2').send({ status: 'approved' });
+    const res = await request(app).patch('/api/payouts/po2').send({ status: 'approved' });
 
     expect(res.status).toBe(400);
     expect(walletService.decrement).not.toHaveBeenCalled();
