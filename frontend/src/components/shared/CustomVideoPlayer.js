@@ -27,10 +27,24 @@ export default function CustomVideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    const playIfNeeded = () => {
+      if (isPlaying) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {});
+        }
+      }
+    };
+
+    video.addEventListener('loadeddata', playIfNeeded);
     video.load();
-    setIsPlaying(false);
     setProgress(0);
-  }, [currentVideo]);
+
+    return () => {
+      video.removeEventListener('loadeddata', playIfNeeded);
+    };
+  }, [currentVideo, isPlaying]);
 
   // Seek to provided start time whenever it changes and metadata is already loaded
   useEffect(() => {
@@ -123,16 +137,12 @@ export default function CustomVideoPlayer({
   const handleNext = () => {
     if (currentIndex < videos.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setIsPlaying(true);
-      videoRef.current.play();
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      setIsPlaying(true);
-      videoRef.current.play();
     }
   };
 
