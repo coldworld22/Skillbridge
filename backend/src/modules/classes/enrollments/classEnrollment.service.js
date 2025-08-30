@@ -9,6 +9,13 @@ exports.createEnrollment = async (data) => {
   return row;
 };
 
+exports.countEnrollments = async (class_id) => {
+  const [row] = await db("class_enrollments")
+    .where({ class_id })
+    .count("id as count");
+  return parseInt(row.count, 10) || 0;
+};
+
 exports.markCompleted = async (user_id, class_id) => {
   return db("class_enrollments")
     .where({ user_id, class_id })
