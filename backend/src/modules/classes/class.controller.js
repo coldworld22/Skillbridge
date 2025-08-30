@@ -203,6 +203,9 @@ exports.updateClass = catchAsync(async (req, res) => {
     }
     data.demo_video_url = `/uploads/classes/${req.files.demo_video[0].filename}`;
   }
+  if (req.user.role === 'instructor') {
+    data.instructor_id = existing.instructor_id;
+  }
   const tags = rawTags ? JSON.parse(rawTags) : null;
   const cls = await service.updateClass(req.params.id, data);
   if (tags) {

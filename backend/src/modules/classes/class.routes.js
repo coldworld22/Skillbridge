@@ -85,7 +85,7 @@ router.put(
   verifyToken,
   isAdmin,
   upload,
-  validate(validator.update),
+  validate(validator.adminUpdate),
   controller.updateClass
 );
 router.delete(
