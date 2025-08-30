@@ -3,7 +3,12 @@ const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(),
-  STATUS: { PAID: 'paid', PENDING_PAYMENT: 'pending_payment' },
+  update: jest.fn(),
+  STATUS: {
+    PAID: 'paid',
+    PENDING_PAYMENT: 'pending_payment',
+    AWAITING_APPROVAL: 'awaiting_approval',
+  },
 }));
 
 jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
@@ -22,6 +27,10 @@ jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
   createEnrollment: jest.fn(),
   updateEnrollment: jest.fn(),
+  countEnrollments: jest.fn(),
+}));
+jest.mock('../src/modules/classes/class.service', () => ({
+  getClassById: jest.fn(),
 }));
 jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service', () => ({
   findEnrollment: jest.fn(),
@@ -42,6 +51,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 
 const paymentsService = require('../src/modules/payments/payments.service');
 const enrollmentService = require('../src/modules/classes/enrollments/classEnrollment.service');
+const classService = require('../src/modules/classes/class.service');
 const routes = require('../src/modules/payments/payments.routes');
 const { grantAccess } = require('../src/modules/payments/paymentAccess');
 
@@ -58,6 +68,8 @@ describe('duplicate enrollment prevention', () => {
 
   it('updates existing class enrollment instead of creating new one', async () => {
     paymentsService.create.mockResolvedValue({ id: 'p1', status: 'paid' });
+    classService.getClassById.mockResolvedValue({});
+    enrollmentService.countEnrollments.mockResolvedValue(0);
     enrollmentService.findEnrollment.mockResolvedValue({ user_id: 'u1', class_id: 'c1', status: 'pending' });
 
     const res = await request(app).post('/api/payments/admin').send({
@@ -75,11 +87,25 @@ describe('duplicate enrollment prevention', () => {
   });
 
   it('skips creation when enrollment already enrolled in grantAccess', async () => {
+    classService.getClassById.mockResolvedValue({});
+    enrollmentService.countEnrollments.mockResolvedValue(0);
     enrollmentService.findEnrollment.mockResolvedValue({ user_id: 'u1', class_id: 'c1', status: 'enrolled' });
 
     await grantAccess({ item_type: 'class', item_id: 'c1', user_id: 'u1', amount: 100 });
     expect(enrollmentService.findEnrollment).toHaveBeenCalledWith('u1', 'c1');
     expect(enrollmentService.createEnrollment).not.toHaveBeenCalled();
     expect(enrollmentService.updateEnrollment).not.toHaveBeenCalled();
+  });
+
+  it('flags payment when class is full', async () => {
+    classService.getClassById.mockResolvedValue({ max_students: 1 });
+    enrollmentService.countEnrollments.mockResolvedValue(1);
+
+    await grantAccess({ id: 'p1', item_type: 'class', item_id: 'c1', user_id: 'u1', amount: 100 });
+
+    expect(enrollmentService.findEnrollment).not.toHaveBeenCalled();
+    expect(enrollmentService.createEnrollment).not.toHaveBeenCalled();
+    expect(enrollmentService.updateEnrollment).not.toHaveBeenCalled();
+    expect(paymentsService.update).toHaveBeenCalledWith('p1', { status: 'awaiting_approval' });
   });
 });
