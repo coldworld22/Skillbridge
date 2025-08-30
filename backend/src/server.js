@@ -146,6 +146,10 @@ app.use("/api/community", require("./modules/community/public/public.routes"));
 app.use("/api/related-questions", require("./modules/community/public/relatedQuestions.routes"));
 app.use("/api/roles", require("./modules/roles/roles.routes"));
 app.use("/api/plans", require("./modules/plans/plans.routes"));
+app.use(
+  "/api/user-subscriptions",
+  require("./modules/subscriptions/subscriptions.routes")
+);
 // Register admin routes before public routes to prevent public routes from catching
 // requests intended for admin endpoints such as "/api/payment-methods/admin".
 app.use(
