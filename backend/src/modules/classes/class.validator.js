@@ -8,7 +8,7 @@ const toNumber = (val) => {
 
 exports.create = z.object({
   body: z.object({
-    instructor_id: z.string().uuid(),
+    instructor_id: z.string().uuid().optional(),
     title: z.string().min(3).max(255),
     description: z.string().optional(),
     level: z.string().optional(),

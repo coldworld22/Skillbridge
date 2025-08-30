@@ -34,6 +34,9 @@ exports.createClass = catchAsync(async (req, res) => {
     status: status === "published" ? "published" : "draft",
     moderation_status: "Pending",
   };
+  if (req.user?.role === "instructor") {
+    data.instructor_id = req.user.id;
+  }
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
   }
