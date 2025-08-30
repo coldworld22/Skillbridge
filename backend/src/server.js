@@ -193,6 +193,7 @@ app.use("/api/seo-config", require("./modules/seoConfig/seoConfig.routes"));
 app.use("/api/popup-announcements", require("./modules/popupAnnouncements/popupAnnouncements.routes"));
 app.use("/api/policies", require("./modules/policies/policies.routes"));
 app.use("/api/payouts/admin", require("./modules/payouts/payouts.routes"));
+app.use("/api/payouts/instructor", require("./modules/payouts/instructor.routes"));
 app.use("/api/ads", require("./modules/ads/ads.routes"));
 app.use("/api/coupons", require("./modules/coupons/coupons.routes"));
 app.use("/api/groups", require("./modules/groups/groups.routes"));
