@@ -14,7 +14,7 @@ jest.mock('../class.service', () => ({
   createClass: jest.fn(),
   getAllClasses: jest.fn(),
   getClassesByInstructor: jest.fn(),
-  getPublishedClasses: jest.fn(),
+  updateClass: jest.fn(),
   togglePublishStatus: jest.fn(),
   updateModeration: jest.fn()
 }));
@@ -40,6 +40,14 @@ jest.mock('../enrollments/classEnrollment.service', () => ({
   markCompleted: jest.fn(),
   getByUser: jest.fn(),
 }));
+jest.mock('../classUploadMiddleware', () => (req, _res, next) => next());
+const mockVerifyClassOwnership = jest.fn((req, _res, next) => next());
+jest.mock('../../../middleware/auth/verifyClassOwnership', () => mockVerifyClassOwnership);
+jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next());
+const mockVerifyInstructorSubscription = jest.fn((req, res, _next) =>
+  res.status(403).json({ message: 'Active instructor subscription required' })
+);
+jest.mock('../../plans/verifyInstructorSubscription', () => mockVerifyInstructorSubscription);
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -160,5 +168,21 @@ describe('Class routes', () => {
     expect(res.statusCode).toBe(200);
     expect(service.updateModeration).toHaveBeenCalledWith('1', 'Approved');
     expect(res.body.data).toEqual(approved);
+  });
+
+  test('instructor update blocked without active plan', async () => {
+    const res = await request(app)
+      .put('/classes/instructor/1')
+      .send({ title: 'Update' });
+    expect(res.statusCode).toBe(403);
+    expect(mockVerifyInstructorSubscription).toHaveBeenCalled();
+    expect(service.updateClass).not.toHaveBeenCalled();
+  });
+
+  test('instructor publish blocked without active plan', async () => {
+    const res = await request(app).patch('/classes/instructor/1/status');
+    expect(res.statusCode).toBe(403);
+    expect(mockVerifyInstructorSubscription).toHaveBeenCalled();
+    expect(service.togglePublishStatus).not.toHaveBeenCalled();
   });
 });
