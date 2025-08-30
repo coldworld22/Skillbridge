@@ -266,6 +266,9 @@ export default function InstructorProfileEdit() {
         }]
       }));
 
+      if (newCertificate.preview) {
+        URL.revokeObjectURL(newCertificate.preview);
+      }
       setNewCertificate({ title: "", file: null, preview: null });
         toast.success(t('certificate_upload_success'));
     } catch (error) {
@@ -821,6 +824,11 @@ export default function InstructorProfileEdit() {
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (!file) return;
+
+                        if (file.size > 10 * 1024 * 1024) {
+                          toast.error('File size must be 10MB or less');
+                          return;
+                        }
 
                         // Preview for images
                         let preview = null;
