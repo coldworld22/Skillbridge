@@ -53,6 +53,50 @@ exports.create = z.object({
 exports.update = z.object({
   body: z
     .object({
+      title: z.string().min(3).max(255).optional(),
+      description: z.string().optional(),
+      level: z.string().optional(),
+      cover_image: z.string().optional(),
+      start_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      end_date: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), {
+          message: "Invalid date format",
+        })
+        .optional(),
+      category_id: z.string().uuid().optional(),
+      price: z.preprocess(toNumber, z.number().optional()),
+      max_students: z.preprocess(toNumber, z.number().int().optional()),
+      language: z.string().optional(),
+      demo_video_url: z.string().optional(),
+      allow_installments: z.preprocess(
+        (v) => (typeof v === 'string' ? v === 'true' : v),
+        z.boolean().optional()
+      ),
+      tags: z.string().optional(),
+      slug: z.string().optional(),
+      status: z.enum(["draft", "published", "archived"]).optional(),
+    })
+    .refine(
+      (data) =>
+        !data.start_date ||
+        !data.end_date ||
+        new Date(data.end_date) >= new Date(data.start_date),
+      {
+        message: "end_date cannot be earlier than start_date",
+        path: ["end_date"],
+      }
+    )
+});
+
+exports.adminUpdate = z.object({
+  body: z
+    .object({
       instructor_id: z.string().uuid().optional(),
       title: z.string().min(3).max(255).optional(),
       description: z.string().optional(),
