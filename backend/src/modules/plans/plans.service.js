@@ -51,17 +51,19 @@ exports.updatePlan = async (id, data) => {
 exports.deletePlan = (id) => db("plans").where({ id }).del();
 
 exports.setFeatures = async (planId, features = []) => {
-  await db("plan_features").where({ plan_id: planId }).del();
-  if (features.length) {
-    const rows = features.map((f) => ({
-      plan_id: planId,
-      feature_key: f.feature_key,
-      value: f.value,
-      description: f.description || null,
-    }));
-    await db("plan_features").insert(rows);
-  }
-  return db("plan_features").where({ plan_id: planId }).select("*");
+  return db.transaction(async (trx) => {
+    await trx("plan_features").where({ plan_id: planId }).del();
+    if (features.length) {
+      const rows = features.map((f) => ({
+        plan_id: planId,
+        feature_key: f.feature_key,
+        value: f.value,
+        description: f.description || null,
+      }));
+      await trx("plan_features").insert(rows);
+    }
+    return trx("plan_features").where({ plan_id: planId }).select("*");
+  });
 };
 
 exports.getPlanFeatures = async () => {
