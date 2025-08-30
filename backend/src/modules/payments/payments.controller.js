@@ -18,6 +18,8 @@ const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
+const walletService = require("../payouts/wallet.service");
+const classService = require("../classes/class.service");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -196,6 +198,15 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (item_type === "class" && payment.status === STATUS.PAID) {
+    try {
+      const cls = await classService.getClassById(item_id);
+      if (cls?.instructor_id) {
+        await walletService.increment(cls.instructor_id, instructor_amount);
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
+
     try {
       const existingEnrollment = await enrollmentService.findEnrollment(
         user_id,

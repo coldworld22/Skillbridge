@@ -1,0 +1,27 @@
+const db = require("../../config/database");
+
+exports.getByInstructor = async (instructor_id) => {
+  return db("instructor_wallets").where({ instructor_id }).first();
+};
+
+exports.increment = async (instructor_id, amount) => {
+  const [row] = await db("instructor_wallets")
+    .insert({ instructor_id, balance: amount })
+    .onConflict("instructor_id")
+    .merge({ balance: db.raw('?? + ?', ['balance', amount]), updated_at: db.fn.now() })
+    .returning("*");
+  return row;
+};
+
+exports.decrement = async (instructor_id, amount) => {
+  const wallet = await exports.getByInstructor(instructor_id);
+  const balance = wallet ? Number(wallet.balance) : 0;
+  if (balance < Number(amount)) {
+    throw new Error("Insufficient balance");
+  }
+  const [row] = await db("instructor_wallets")
+    .where({ instructor_id })
+    .update({ balance: db.raw('?? - ?', ['balance', amount]), updated_at: db.fn.now() })
+    .returning("*");
+  return row;
+};
