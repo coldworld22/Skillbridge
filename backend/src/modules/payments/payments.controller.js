@@ -16,6 +16,8 @@ const paypalService = require("../../services/paypalService");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
+const plansService = require("../plans/plans.service");
+const subscriptionService = require("../subscriptions/subscription.service");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -216,6 +218,25 @@ exports.createPayment = catchAsync(async (req, res) => {
       });
     } catch (err) {
       logger.error("Failed to enroll in tutorial after payment:", err);
+    }
+  }
+
+  if (item_type === "plan" && payment.status === STATUS.PAID) {
+    try {
+      const plan = await plansService.getPlanById(item_id);
+      if (plan) {
+        const interval =
+          Number(verifiedAmount) === Number(plan.price_yearly)
+            ? "yearly"
+            : "monthly";
+        await subscriptionService.createOrRenewSubscription({
+          user_id,
+          plan_id: item_id,
+          interval,
+        });
+      }
+    } catch (err) {
+      logger.error("Failed to activate subscription after payment:", err);
     }
   }
 
