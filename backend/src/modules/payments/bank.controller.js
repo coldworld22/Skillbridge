@@ -9,6 +9,8 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
+const walletService = require("../payouts/wallet.service");
+const classService = require("../classes/class.service");
 const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
 
@@ -137,6 +139,20 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   );
 
   await grantAccess(payment);
+
+  if (payment.item_type === "class") {
+    try {
+      const cls = await classService.getClassById(payment.item_id);
+      if (cls?.instructor_id) {
+        await walletService.increment(
+          cls.instructor_id,
+          payment.instructor_amount
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
+  }
 
   try {
     const user = await userModel.findById(payment.user_id);
