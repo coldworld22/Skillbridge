@@ -5,8 +5,12 @@ exports.createClass = async (data) => {
   return ClassModel.create(data);
 };
 
-exports.getAllClasses = async () => {
-  return db("online_classes as c")
+exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+  const totalRow = await db("online_classes").count("id as count").first();
+  const total = parseInt(totalRow.count, 10) || 0;
+
+  const classes = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .leftJoin("class_tag_map as m", "c.id", "m.class_id")
@@ -42,7 +46,19 @@ exports.getAllClasses = async () => {
       "u.full_name",
       "cat.name"
     )
-    .orderBy("c.created_at", "desc");
+    .orderBy("c.created_at", "desc")
+    .limit(limit)
+    .offset(offset);
+
+  return {
+    data: classes,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 exports.getClassById = async (id) => {
@@ -69,8 +85,15 @@ exports.getClassById = async (id) => {
   return cls;
 };
 
-exports.getClassesByInstructor = async (instructorId) => {
-  return db("online_classes as c")
+exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+  const totalRow = await db("online_classes")
+    .where({ instructor_id: instructorId })
+    .count("id as count")
+    .first();
+  const total = parseInt(totalRow.count, 10) || 0;
+
+  const classes = await db("online_classes as c")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
     .leftJoin("class_tag_map as m", "c.id", "m.class_id")
     .leftJoin("class_tags as t", "m.tag_id", "t.id")
@@ -104,7 +127,19 @@ exports.getClassesByInstructor = async (instructorId) => {
       "c.moderation_status",
       "cat.name"
     )
-    .orderBy("c.created_at", "desc");
+    .orderBy("c.created_at", "desc")
+    .limit(limit)
+    .offset(offset);
+
+  return {
+    data: classes,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 exports.updateClass = async (id, data) => {
@@ -140,27 +175,47 @@ exports.updateModeration = async (id, status, reason = null) => {
   return updated;
 };
 
-exports.getPublishedClasses = async () => {
+exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+
+  const totalRow = await db("online_classes")
+    .where({ status: "published", moderation_status: "Approved" })
+    .count("id as count")
+    .first();
+  const total = parseInt(totalRow.count, 10) || 0;
+
   const subquery = db("class_enrollments")
     .whereRaw("enrolled_at >= NOW() - interval '7 days'")
     .groupBy("class_id")
     .select("class_id")
     .count("* as recent_enrollments");
 
-  const classes = await db("online_classes as c")
+  const rows = await db("online_classes as c")
     .leftJoin(subquery.as("e"), "e.class_id", "c.id")
     .where({ "c.status": "published", "c.moderation_status": "Approved" })
     .select(
       "c.*",
       db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments")
     )
-    .orderBy("c.created_at", "desc");
+    .orderBy("c.created_at", "desc")
+    .limit(limit)
+    .offset(offset);
 
-  return classes.map((cls) => ({
+  const classes = rows.map((cls) => ({
     ...cls,
     recent_enrollments: parseInt(cls.recent_enrollments, 10) || 0,
     trending: (parseInt(cls.recent_enrollments, 10) || 0) >= 5,
   }));
+
+  return {
+    data: classes,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 exports.getPublicClassDetails = async (id) => {

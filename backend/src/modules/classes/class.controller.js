@@ -158,9 +158,13 @@ exports.createClass = catchAsync(async (req, res) => {
 
 });
 
-exports.getAllClasses = catchAsync(async (_req, res) => {
-  const classes = await service.getAllClasses();
-  sendSuccess(res, classes);
+exports.getAllClasses = catchAsync(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await service.getAllClasses({
+    page: Number(page),
+    limit: Number(limit),
+  });
+  sendSuccess(res, result.data, undefined, result.meta);
 });
 
 exports.getClassById = catchAsync(async (req, res) => {
@@ -172,8 +176,12 @@ exports.getClassById = catchAsync(async (req, res) => {
 });
 
 exports.getMyClasses = catchAsync(async (req, res) => {
-  const classes = await service.getClassesByInstructor(req.user.id);
-  sendSuccess(res, classes);
+  const { page = 1, limit = 10 } = req.query;
+  const result = await service.getClassesByInstructor(req.user.id, {
+    page: Number(page),
+    limit: Number(limit),
+  });
+  sendSuccess(res, result.data, undefined, result.meta);
 });
 
 /**
@@ -282,9 +290,13 @@ exports.deleteClass = catchAsync(async (req, res) => {
   sendSuccess(res, null, "Class deleted");
 });
 
-exports.getPublishedClasses = catchAsync(async (_req, res) => {
-  const classes = await service.getPublishedClasses();
-  sendSuccess(res, classes);
+exports.getPublishedClasses = catchAsync(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const result = await service.getPublishedClasses({
+    page: Number(page),
+    limit: Number(limit),
+  });
+  sendSuccess(res, result.data, undefined, result.meta);
 });
 
 exports.getPublicClassDetails = catchAsync(async (req, res) => {
