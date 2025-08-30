@@ -46,7 +46,6 @@ describe('class.controller createClass', () => {
       body: { instructor_id: 'other', title: 'Test', status: 'published' },
       user: { id: 'instructor1', role: 'instructor' },
       files: {},
-      subscription: { current_courses: 0, max_courses: 5 },
     };
     const res = {
       status: jest.fn().mockReturnThis(),
