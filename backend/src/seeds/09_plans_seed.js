@@ -62,6 +62,8 @@ exports.seed = async function (knex) {
         buttonTextColor: '#FFFFFF'
       }),
       target_role: 'instructor',
+      max_courses: 5,
+      ad_credits: 10,
       created_at: now,
       updated_at: now
     },
@@ -83,6 +85,8 @@ exports.seed = async function (knex) {
         buttonTextColor: '#1F2937'
       }),
       target_role: 'instructor',
+      max_courses: 50,
+      ad_credits: 100,
       created_at: now,
       updated_at: now
     }
