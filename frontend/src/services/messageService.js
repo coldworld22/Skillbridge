@@ -9,12 +9,22 @@ import socket from "@/services/socketService";
 
 export const getUsers = async () => {
   const res = await api.get("/chat/users");
-  return res.data.data || res.data;
+  const data = res.data.data || res.data;
+  return (data || []).map((u) => ({
+    ...u,
+    lastMessage: u.lastMessage || u.last_message,
+    lastMessageAt: u.lastMessageAt || u.last_message_at,
+  }));
 };
 
 export const getGroups = async () => {
   const res = await api.get("/groups/my");
-  return res.data.data || res.data;
+  const data = res.data.data || res.data;
+  return (data || []).map((g) => ({
+    ...g,
+    lastMessage: g.lastMessage || g.last_message,
+    lastMessageAt: g.lastMessageAt || g.last_message_at,
+  }));
 };
 
 export const getMessages = async ({ limit, offset } = {}) => {

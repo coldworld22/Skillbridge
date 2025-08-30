@@ -27,7 +27,14 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
 
   const isOnline =
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
-  const lastActive = selectedChat.lastActive || selectedChat.last_active;
+  const lastActiveRaw = selectedChat.lastActive || selectedChat.last_active;
+  let lastActiveText = "Last active: unknown.";
+  if (lastActiveRaw) {
+    const formatted = formatRelativeTime(lastActiveRaw);
+    if (formatted && formatted !== "Invalid date") {
+      lastActiveText = `Last active ${formatted}`;
+    }
+  }
   const hasPhone = !!selectedChat.phone;
   const email = selectedChat.email;
 

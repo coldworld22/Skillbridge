@@ -11,6 +11,25 @@ exports.searchUsers = async (currentUserId, term) => {
     .groupBy("sender_id")
     .as("unread");
 
+  const lastMessageSub = db.raw(
+    `(
+      SELECT DISTINCT ON (other_user)
+        other_user AS user_id,
+        message,
+        EXTRACT(EPOCH FROM sent_at) * 1000 AS last_message_at
+      FROM (
+        SELECT
+          CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS other_user,
+          message,
+          sent_at
+        FROM messages
+        WHERE sender_id = ? OR receiver_id = ?
+      ) m
+      ORDER BY other_user, sent_at DESC
+    ) as last_msg`,
+    [currentUserId, currentUserId, currentUserId]
+  );
+
   return db("users")
     .select(
       "users.id",
@@ -20,9 +39,12 @@ exports.searchUsers = async (currentUserId, term) => {
       db.raw("COALESCE(users.avatar_url, '') as profileImage"),
       db.raw("COALESCE(unread.count, 0) as unreadMessages"),
       db.raw("COALESCE(users.is_online, false) as \"isOnline\""),
-      db.raw("EXTRACT(EPOCH FROM users.updated_at) * 1000 as \"lastActive\"")
+      db.raw("EXTRACT(EPOCH FROM users.updated_at) * 1000 as \"lastActive\""),
+      db.raw("COALESCE(last_msg.message, '') as last_message"),
+      db.raw("COALESCE(last_msg.last_message_at, 0) as last_message_at")
     )
     .leftJoin(subquery, "users.id", "unread.sender_id")
+    .leftJoin(lastMessageSub, "users.id", "last_msg.user_id")
     .modify((query) => {
       if (term) {
         const t = `%${term}%`;
