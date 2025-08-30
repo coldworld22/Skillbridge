@@ -42,10 +42,10 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
 }));
 
 jest.mock('../../../plans/subscription.helper', () => ({
-  hasActiveStudentSubscription: jest.fn(),
+  getActiveStudentPlanId: jest.fn(),
 }));
 
-const { hasActiveStudentSubscription } = require('../../../plans/subscription.helper');
+const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
 const db = require('../../../../config/database');
 
 const routes = require('../../class.routes');
@@ -110,26 +110,40 @@ describe('Class enrollment routes', () => {
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     db.first.mockResolvedValueOnce(null); // payment check
-    db.first.mockResolvedValueOnce(null); // subscription check
-    hasActiveStudentSubscription.mockResolvedValue(false);
+    getActiveStudentPlanId.mockResolvedValue(null);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
   });
 
-  test('allow enrollment if class requires payment but user has active subscription', async () => {
+  test('allow enrollment when class covered by subscription', async () => {
     classService.getClassById.mockResolvedValue({
       status: 'published',
       moderation_status: 'Approved',
       price: 50,
+      included_plans: ['plan1'],
     });
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    db.first.mockResolvedValueOnce(null); // payment check
-    hasActiveStudentSubscription.mockResolvedValue(true);
+    getActiveStudentPlanId.mockResolvedValue('plan1');
     service.createEnrollment.mockResolvedValue({ id: '1' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+  });
+
+  test('reject enrollment when subscription active but class not covered', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      price: 50,
+      included_plans: ['plan2'],
+    });
+    service.countEnrollments.mockResolvedValue(0);
+    service.findEnrollment.mockResolvedValue(null);
+    db.first.mockResolvedValueOnce(null); // payment check
+    getActiveStudentPlanId.mockResolvedValue('plan1');
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
   });
 
   test('reactivate cancelled enrollment when capacity available', async () => {
