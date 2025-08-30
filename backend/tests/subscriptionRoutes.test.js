@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/subscriptions/subscription.service', () => ({
   getActiveByUser: jest.fn(),
+  createOrRenewSubscription: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -25,5 +26,24 @@ describe('GET /api/user-subscriptions/me', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(service.getActiveByUser).toHaveBeenCalledWith('user1');
+  });
+});
+
+describe('POST /api/user-subscriptions', () => {
+  it('creates or renews a subscription for the authenticated user', async () => {
+    const mock = { id: 's1', plan_id: 'p1' };
+    service.createOrRenewSubscription.mockResolvedValue(mock);
+
+    const res = await request(app)
+      .post('/api/user-subscriptions')
+      .send({ plan_id: 'p1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(service.createOrRenewSubscription).toHaveBeenCalledWith({
+      user_id: 'user1',
+      plan_id: 'p1',
+      interval: 'monthly',
+    });
   });
 });
