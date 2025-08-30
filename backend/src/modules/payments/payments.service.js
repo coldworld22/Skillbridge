@@ -83,7 +83,7 @@ exports.approveBankPayment = async (
   { amount, item_id, item_type } = {}
 ) => {
   return db.transaction(async (trx) => {
-    const payment = await trx("payments").where({ id }).first();
+    const payment = await trx("payments").where({ id }).forUpdate().first();
     if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
@@ -116,7 +116,7 @@ exports.rejectBankPayment = async (
   { amount, item_id, item_type } = {}
 ) => {
   return db.transaction(async (trx) => {
-    const payment = await trx("payments").where({ id }).first();
+    const payment = await trx("payments").where({ id }).forUpdate().first();
     if (!payment) throw new AppError("Payment not found", 404);
 
     if (payment.status !== STATUS.AWAITING_APPROVAL) {
