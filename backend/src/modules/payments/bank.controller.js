@@ -11,6 +11,10 @@ const mailService = require("../../services/mailService");
 const userModel = require("../users/user.model");
 const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
+const couponService = require("../coupons/coupons.service");
+const classService = require("../classes/class.service");
+const bookService = require("../books/book.service");
+const tutorialService = require("../users/tutorials/tutorial.service");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -58,6 +62,7 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     swift_code,
     branch_address,
     extra_instructions,
+    coupon_id,
   } = req.body;
   const user_id = req.user?.id;
 
@@ -82,6 +87,52 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
   const bankMethod = await paymentMethodsService.getByType("bank");
   if (!bankMethod) {
     throw new AppError("Bank payment method not configured", 400);
+  }
+
+  let coupon = null;
+  if (coupon_id) {
+    coupon = await couponService.getCouponById(coupon_id);
+    if (!coupon) throw new AppError("Invalid coupon", 400);
+    if (coupon.applies_to && coupon.applies_to !== item_type) {
+      throw new AppError("Coupon not valid for this item type", 400);
+    }
+    if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
+      throw new AppError("Coupon not valid for this item", 400);
+    }
+    if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
+      throw new AppError("Coupon not active", 400);
+    }
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      throw new AppError("Coupon expired", 400);
+    }
+    if (
+      coupon.usage_limit !== null &&
+      coupon.times_used >= coupon.usage_limit
+    ) {
+      throw new AppError("Coupon usage limit reached", 400);
+    }
+  }
+
+  // Verify amount matches catalog price
+  let basePrice;
+  if (item_type === "class") {
+    const cls = await classService.getClassById(item_id);
+    if (!cls) throw new AppError("Class not found", 404);
+    basePrice = Number(cls.price);
+  } else if (item_type === "book") {
+    const book = await bookService.getBookById(item_id);
+    if (!book) throw new AppError("Book not found", 404);
+    basePrice = Number(book.price);
+  } else if (item_type === "tutorial") {
+    const tut = await tutorialService.getTutorialById(item_id);
+    if (!tut) throw new AppError("Tutorial not found", 404);
+    basePrice = Number(tut.price);
+  }
+  if (coupon) {
+    basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
+  }
+  if (Math.abs(numericAmount - basePrice) >= 0.01) {
+    throw new AppError("Payment amount does not match item price", 400);
   }
 
   let platform_fee = 0;

@@ -20,6 +20,8 @@ const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
 const walletService = require("../payouts/wallet.service");
 const classService = require("../classes/class.service");
+const bookService = require("../books/book.service");
+const tutorialService = require("../users/tutorials/tutorial.service");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -88,8 +90,9 @@ exports.createPayment = catchAsync(async (req, res) => {
     finalStatus = STATUS.PAID;
   }
 
+  let coupon = null;
   if (coupon_id) {
-    const coupon = await couponService.getCouponById(coupon_id);
+    coupon = await couponService.getCouponById(coupon_id);
     if (!coupon) throw new AppError("Invalid coupon", 400);
     if (coupon.applies_to && coupon.applies_to !== item_type) {
       throw new AppError("Coupon not valid for this item type", 400);
@@ -108,6 +111,56 @@ exports.createPayment = catchAsync(async (req, res) => {
       coupon.times_used >= coupon.usage_limit
     ) {
       throw new AppError("Coupon usage limit reached", 400);
+    }
+  }
+
+  // Validate amount against item price (after coupon discount if any)
+  const EPS = 0.01;
+  let planInterval = null;
+  let basePrice;
+  if (item_type === "class") {
+    const cls = await classService.getClassById(item_id);
+    if (!cls) throw new AppError("Class not found", 404);
+    basePrice = Number(cls.price);
+  } else if (item_type === "book") {
+    const book = await bookService.getBookById(item_id);
+    if (!book) throw new AppError("Book not found", 404);
+    basePrice = Number(book.price);
+  } else if (item_type === "tutorial") {
+    const tut = await tutorialService.getTutorialById(item_id);
+    if (!tut) throw new AppError("Tutorial not found", 404);
+    basePrice = Number(tut.price);
+  } else if (item_type === "plan") {
+    const plan = await plansService.getPlanById(item_id);
+    if (!plan) throw new AppError("Plan not found", 404);
+    let monthly = Number(plan.price_monthly);
+    let yearly = Number(plan.price_yearly);
+    if (coupon) {
+      monthly = +(monthly * (1 - coupon.discount_percent / 100)).toFixed(2);
+      yearly = +(yearly * (1 - coupon.discount_percent / 100)).toFixed(2);
+    }
+    const perMonthly =
+      totalInstallments > 1 ? monthly / totalInstallments : monthly;
+    const perYearly =
+      totalInstallments > 1 ? yearly / totalInstallments : yearly;
+    if (Math.abs(verifiedAmount - perYearly) < EPS) {
+      planInterval = "yearly";
+    } else if (Math.abs(verifiedAmount - perMonthly) < EPS) {
+      planInterval = "monthly";
+    } else {
+      throw new AppError("Payment amount does not match plan price", 400);
+    }
+    basePrice = null; // already validated
+  }
+
+  if (basePrice !== null && basePrice !== undefined) {
+    if (coupon) {
+      basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
+    }
+    const expected =
+      totalInstallments > 1 ? basePrice / totalInstallments : basePrice;
+    if (Math.abs(verifiedAmount - expected) >= EPS) {
+      throw new AppError("Payment amount does not match item price", 400);
     }
   }
 
@@ -249,9 +302,10 @@ exports.createPayment = catchAsync(async (req, res) => {
       const plan = await plansService.getPlanById(item_id);
       if (plan) {
         const interval =
-          Number(verifiedAmount) === Number(plan.price_yearly)
+          planInterval ||
+          (Number(verifiedAmount) === Number(plan.price_yearly)
             ? "yearly"
-            : "monthly";
+            : "monthly");
         await subscriptionService.createOrRenewSubscription({
           user_id,
           plan_id: item_id,
