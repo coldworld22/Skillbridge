@@ -13,6 +13,10 @@ jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
   getSettings: jest.fn(),
 }));
 
+jest.mock('../src/modules/payments/commission.helper', () => ({
+  getCommissionRate: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'u1' }; next(); },
   isStudent: (_req, _res, next) => next(),
@@ -21,6 +25,7 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 const paymentsService = require('../src/modules/payments/payments.service');
 const methodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
+const { getCommissionRate } = require('../src/modules/payments/commission.helper');
 const routes = require('../src/modules/payments/bank.routes');
 
 const app = express();

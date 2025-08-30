@@ -33,6 +33,7 @@ exports.createAd = catchAsync(async (req, res) => {
     priority,
     allow_branding,
     price,
+    placement,
   } = req.body;
 
   const title = rawTitle?.trim();
@@ -61,6 +62,7 @@ exports.createAd = catchAsync(async (req, res) => {
     created_by: req.user.id,
     is_active: false,
     price: price ? Number(price) : 0,
+    placement,
   };
 
   if (target_roles) {
@@ -105,6 +107,24 @@ exports.createAd = catchAsync(async (req, res) => {
     }
     features[f.feature_key] = val;
   });
+
+  const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+  if (maxDuration && data.start_at && data.end_at) {
+    const diff = new Date(data.end_at) - new Date(data.start_at);
+    const days = diff / (1000 * 60 * 60 * 24);
+    if (days > maxDuration) {
+      throw new AppError("Ad duration exceeds plan limit", 403);
+    }
+  }
+
+  const allowedPlacements = features["ads_placements"];
+  if (allowedPlacements) {
+    const placementValue = data.placement || allowedPlacements[0];
+    if (!allowedPlacements.includes(placementValue)) {
+      throw new AppError("Ad placement not allowed for your plan", 403);
+    }
+    data.placement = placementValue;
+  }
 
   const maxAds = Number(features["ads_max_ads"] || 0);
   if (maxAds) {
@@ -231,6 +251,7 @@ exports.updateAd = catchAsync(async (req, res) => {
     priority,
     allow_branding,
     price,
+    placement,
   } = req.body;
   const title = rawTitle?.trim();
   const updates = {
@@ -243,6 +264,7 @@ exports.updateAd = catchAsync(async (req, res) => {
     priority: priority ? Number(priority) : undefined,
     allow_branding: allow_branding === "true" || allow_branding === true,
     price: price ? Number(price) : undefined,
+    placement,
   };
 
   if (target_roles) {
@@ -310,6 +332,26 @@ exports.updateAd = catchAsync(async (req, res) => {
     }
     features[f.feature_key] = val;
   });
+
+  const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+  const finalStart = updates.start_at || ad.start_at;
+  const finalEnd = updates.end_at || ad.end_at;
+  if (maxDuration && finalStart && finalEnd) {
+    const diff = new Date(finalEnd) - new Date(finalStart);
+    const days = diff / (1000 * 60 * 60 * 24);
+    if (days > maxDuration) {
+      throw new AppError("Ad duration exceeds plan limit", 403);
+    }
+  }
+
+  const allowedPlacements = features["ads_placements"];
+  if (allowedPlacements) {
+    const placementValue = updates.placement || ad.placement || allowedPlacements[0];
+    if (!allowedPlacements.includes(placementValue)) {
+      throw new AppError("Ad placement not allowed for your plan", 403);
+    }
+    updates.placement = placementValue;
+  }
 
   const maxAds = Number(features["ads_max_ads"] || 0);
   if (maxAds) {

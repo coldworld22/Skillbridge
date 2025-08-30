@@ -14,6 +14,7 @@ exports.create = {
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
     price: z.coerce.number().optional(),
+    placement: z.string().optional(),
   }),
 };
 
@@ -31,5 +32,6 @@ exports.update = {
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
     price: z.coerce.number().optional(),
+    placement: z.string().optional(),
   }),
 };

@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const libraryService = require('../library/library.service');
 const enrollmentService = require('../classes/enrollments/classEnrollment.service');
 const tutorialEnrollmentService = require('../users/tutorials/enrollments/tutorialEnrollment.service');
+const { getCommissionRate } = require('./commission.helper');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -56,8 +57,11 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
   let platform_fee = 0;
   let instructor_amount = numericAmount;
   try {
-    const cfg = await paymentConfigService.getSettings();
-    const cut = cfg?.platformCut?.[item_type] ?? DEFAULT_PLATFORM_CUT[item_type] ?? 0;
+    let cut = await getCommissionRate(item_type, item_id);
+    if (cut === null || cut === undefined) {
+      const cfg = await paymentConfigService.getSettings();
+      cut = cfg?.platformCut?.[item_type] ?? DEFAULT_PLATFORM_CUT[item_type] ?? 0;
+    }
     platform_fee = (numericAmount * cut) / 100;
     instructor_amount = numericAmount - platform_fee;
   } catch (err) {

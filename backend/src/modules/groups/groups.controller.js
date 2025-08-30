@@ -27,6 +27,24 @@ exports.createGroup = catchAsync(async (req, res) => {
   if (await service.findByName(name)) {
     throw new AppError("Group name already exists", 409);
   }
+
+  const planService = require("../plans/plans.service");
+  const plan = await planService.getPlanById(req.user.plan_id);
+  const features = {};
+  (plan?.features || []).forEach((f) => {
+    let val = f.value;
+    try {
+      val = JSON.parse(f.value);
+    } catch {
+      if (f.value === "true") val = true;
+      else if (f.value === "false") val = false;
+      else if (!isNaN(f.value)) val = Number(f.value);
+    }
+    features[f.feature_key] = val;
+  });
+  if (!features["groups_create"]) {
+    throw new AppError("Group creation not allowed for your plan", 403);
+  }
   const group = await service.createGroup({
     id: uuidv4(),
     creator_id: req.user.id,
@@ -224,6 +242,29 @@ exports.joinGroup = catchAsync(async (req, res) => {
   const groupId = req.params.id;
   const group = await service.getGroupById(groupId);
   if (!group) throw new AppError("Group not found", 404);
+
+  const planService = require("../plans/plans.service");
+  const plan = await planService.getPlanById(req.user.plan_id);
+  const features = {};
+  (plan?.features || []).forEach((f) => {
+    let val = f.value;
+    try {
+      val = JSON.parse(f.value);
+    } catch {
+      if (f.value === "true") val = true;
+      else if (f.value === "false") val = false;
+      else if (!isNaN(f.value)) val = Number(f.value);
+    }
+    features[f.feature_key] = val;
+  });
+  const joinLimit = Number(features["groups_join_limit"] || 0);
+  if (joinLimit) {
+    const existing = await service.getUserGroups(req.user.id);
+    const count = existing.filter((g) => g.role !== "pending").length;
+    if (count >= joinLimit) {
+      throw new AppError("Group join limit reached", 403);
+    }
+  }
 
   if (group.requires_approval) {
     const reqRow = await service.requestJoin(groupId, req.user.id);

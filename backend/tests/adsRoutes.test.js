@@ -223,6 +223,47 @@ describe('POST /api/ads/admin', () => {
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
   });
+
+  it('rejects creation when duration exceeds limit', async () => {
+    const start = new Date();
+    const end = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+    const payload = {
+      title: 'Test',
+      image_url: 'img.jpg',
+      start_at: start.toISOString(),
+      end_at: end.toISOString(),
+    };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+        { feature_key: 'ads_max_ad_duration', value: '3' },
+      ],
+    });
+    service.getAds.mockResolvedValue([]);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when placement not allowed', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg', placement: 'homepage' };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+        { feature_key: 'ads_placements', value: JSON.stringify(['dashboard']) },
+      ],
+    });
+    service.getAds.mockResolvedValue([]);
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(403);
+    expect(service.createAd).not.toHaveBeenCalled();
+  });
 });
 
 describe('PUT /api/ads/:id', () => {

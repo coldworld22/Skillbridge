@@ -18,6 +18,7 @@ const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
+const { getCommissionRate } = require("./commission.helper");
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -112,11 +113,14 @@ exports.createPayment = catchAsync(async (req, res) => {
   let platform_fee = 0;
   let instructor_amount = verifiedAmount;
   try {
-    const settings = await paymentConfigService.getSettings();
-    const cut =
-      settings?.platformCut?.[item_type] ??
-      DEFAULT_PLATFORM_CUT[item_type] ??
-      0;
+    let cut = await getCommissionRate(item_type, item_id);
+    if (cut === null || cut === undefined) {
+      const settings = await paymentConfigService.getSettings();
+      cut =
+        settings?.platformCut?.[item_type] ??
+        DEFAULT_PLATFORM_CUT[item_type] ??
+        0;
+    }
     platform_fee = (verifiedAmount * cut) / 100;
     instructor_amount = verifiedAmount - platform_fee;
   } catch (err) {

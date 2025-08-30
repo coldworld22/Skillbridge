@@ -13,6 +13,10 @@ jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
   getSettings: jest.fn(),
 }));
 
+jest.mock('../src/modules/payments/commission.helper', () => ({
+  getCommissionRate: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('../src/services/paypalService', () => ({
   createOrder: jest.fn(),
 }));
@@ -26,6 +30,7 @@ const paymentsService = require('../src/modules/payments/payments.service');
 const methodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const paypalService = require('../src/services/paypalService');
+const { getCommissionRate } = require('../src/modules/payments/commission.helper');
 const routes = require('../src/modules/payments/paypal.routes');
 
 const app = express();
