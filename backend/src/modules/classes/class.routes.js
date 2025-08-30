@@ -170,6 +170,7 @@ router.put(
   verifyToken,
   isInstructor,
   verifyClassOwnership,
+  verifyInstructorSubscription,
   upload,
   validate(validator.update),
   controller.updateClass
@@ -186,6 +187,7 @@ router.patch(
   verifyToken,
   isInstructor,
   verifyClassOwnership,
+  verifyInstructorSubscription,
   controller.toggleClassStatus
 );
 
