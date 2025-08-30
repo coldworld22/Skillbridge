@@ -11,10 +11,10 @@ exports.createBook = async (data) => {
   return row;
 };
 
+const { parsePagination } = require("../../utils/pagination");
+
 exports.listBooks = async (params = {}) => {
   const {
-    page = 1,
-    perPage = 10,
     search,
     category,
     status,
@@ -24,6 +24,11 @@ exports.listBooks = async (params = {}) => {
     sortBy = "newest",
     instructorId,
   } = params;
+
+  const { page, limit: perPage, offset } = parsePagination({
+    page: params.page,
+    limit: params.perPage,
+  });
 
   const query = db("books as b");
 
@@ -78,16 +83,13 @@ exports.listBooks = async (params = {}) => {
   const { count } = await countQuery;
   const total = Number(count) || 0;
 
-  const books = await query
-    .clone()
-    .offset((page - 1) * perPage)
-    .limit(perPage);
+  const books = await query.clone().offset(offset).limit(perPage);
 
   return {
     data: books,
     meta: {
-      page: Number(page),
-      perPage: Number(perPage),
+      page,
+      perPage,
       total,
       totalPages: Math.ceil(total / perPage),
     },

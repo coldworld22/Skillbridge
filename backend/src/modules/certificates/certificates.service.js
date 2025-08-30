@@ -7,8 +7,10 @@ const db = require("../../config/database");
  * Fetch all certificates with related student and class info
  * Supports simple pagination via `page` and `limit` parameters
  */
+const { parsePagination } = require("../../utils/pagination");
+
 exports.getAll = async ({ page = 1, limit = 10 } = {}) => {
-  const offset = (page - 1) * limit;
+  const { limit: lim, offset } = parsePagination({ page, limit });
 
   return db("certificates")
     .leftJoin("users", "certificates.user_id", "users.id")
@@ -20,5 +22,5 @@ exports.getAll = async ({ page = 1, limit = 10 } = {}) => {
     )
     .orderBy("certificates.created_at", "desc")
     .offset(offset)
-    .limit(limit);
+    .limit(lim);
 };

@@ -8,16 +8,11 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
-exports.getAllTutorials = async (filters = {}) => {
-  const {
-    status,
-    category,
-    search,
-    page = 1,
-    limit = 10,
-  } = filters;
+const { parsePagination } = require("../../../utils/pagination");
 
-  const offset = (page - 1) * limit;
+exports.getAllTutorials = async (filters = {}) => {
+  const { status, category, search } = filters;
+  const { page, limit, offset } = parsePagination(filters);
 
   const baseQuery = db("tutorials as t")
     .leftJoin("categories as c", "t.category_id", "c.id")
@@ -57,8 +52,8 @@ exports.getAllTutorials = async (filters = {}) => {
   return {
     data: tutorials,
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page,
+      limit,
       total,
       totalPages: Math.ceil(total / limit),
     },
