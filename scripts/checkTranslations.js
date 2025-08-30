@@ -3,7 +3,13 @@ const path = require('path');
 
 const localesDir = path.join(__dirname, '..', 'frontend', 'public', 'locales');
 const baseLang = 'en';
-const languages = fs.readdirSync(localesDir).filter(l => l !== 'de');
+
+// Collect all language directories under locales. Previously German (de)
+// was excluded, but we now include every directory so that all translations
+// are checked.
+const languages = fs
+  .readdirSync(localesDir)
+  .filter((dir) => fs.statSync(path.join(localesDir, dir)).isDirectory());
 
 function getKeyPaths(obj, prefix = '') {
   let keys = [];
@@ -36,4 +42,11 @@ function compareFiles(file) {
   }
 }
 
-['auth.json', 'common.json', 'dashboard.json', 'website.json'].forEach(compareFiles);
+// Determine the files to compare based on the base language directory rather
+// than relying on a hard-coded list. This ensures new translation files are
+// automatically included in the checks.
+const files = fs
+  .readdirSync(path.join(localesDir, baseLang))
+  .filter((file) => file.endsWith('.json'));
+
+files.forEach(compareFiles);
