@@ -24,6 +24,10 @@ jest.mock('../src/services/smsService', () => ({
   sendSMS: jest.fn(),
 }));
 
+jest.mock('../src/services/mailService', () => ({
+  sendMail: jest.fn(),
+}));
+
 jest.mock('../src/modules/users/user.model', () => ({
   findById: jest.fn().mockResolvedValue({}),
 }));
@@ -32,8 +36,41 @@ jest.mock('../src/modules/library/library.service', () => ({
   recordPurchase: jest.fn(),
 }));
 
+jest.mock('../src/modules/coupons/coupons.service', () => ({
+  getCouponById: jest.fn(),
+  incrementUsage: jest.fn(),
+}));
+
+jest.mock('../src/modules/plans/plans.service', () => ({
+  getPlanById: jest.fn(),
+}));
+
+jest.mock('../src/modules/subscriptions/subscription.service', () => ({
+  createOrRenewSubscription: jest.fn(),
+}));
+
+jest.mock('../src/modules/notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+
+jest.mock('../src/modules/invoices/invoices.service', () => ({
+  generateFromPayment: jest.fn(),
+}));
+
+jest.mock('../src/modules/books/book.service', () => ({
+  getBookById: jest.fn().mockResolvedValue({ instructor_id: 'bookInst', price: 50 }),
+}));
+
+jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
+  getTutorialById: jest.fn().mockResolvedValue({ instructor_id: 'tutInst', price: 200 }),
+}));
+
+jest.mock('../src/modules/users/tutorials/enrollments/tutorialEnrollment.service', () => ({
+  createEnrollment: jest.fn().mockResolvedValue({}),
+}));
+
 jest.mock('../src/modules/classes/class.service', () => ({
-  getClassById: jest.fn().mockResolvedValue({ instructor_id: 'inst1' }),
+  getClassById: jest.fn().mockResolvedValue({ instructor_id: 'inst1', price: 100 }),
 }));
 
 jest.mock('../src/modules/payouts/wallet.service', () => ({
@@ -67,6 +104,8 @@ const routes = require('../src/modules/payments/payments.routes');
 const walletService = require('../src/modules/payouts/wallet.service');
 const payoutService = require('../src/modules/payouts/payouts.service');
 const classService = require('../src/modules/classes/class.service');
+const bookService = require('../src/modules/books/book.service');
+const tutorialService = require('../src/modules/users/tutorials/tutorial.service');
 const payoutRoutes = require('../src/modules/payouts/payouts.routes');
 
 const app = express();
@@ -177,6 +216,42 @@ describe('wallet credit and debit', () => {
     expect(res.status).toBe(200);
     expect(classService.getClassById).toHaveBeenCalledWith('class1');
     expect(walletService.increment).toHaveBeenCalledWith('inst1', 90);
+  });
+
+  it('credits instructor wallet on paid book payment', async () => {
+    configService.getSettings.mockResolvedValue({ platformCut: { book: 10 } });
+    service.create.mockResolvedValue({ id: 'p6', reference_id: 'ref', status: 'paid' });
+
+    const res = await request(app).post('/api/payments/admin').send({
+      user_id: 'u1',
+      method_id: 'm1',
+      item_type: 'book',
+      item_id: 'book1',
+      amount: 50,
+      status: 'paid',
+    });
+
+    expect(res.status).toBe(200);
+    expect(bookService.getBookById).toHaveBeenCalledWith('book1');
+    expect(walletService.increment).toHaveBeenCalledWith('bookInst', 45);
+  });
+
+  it('credits instructor wallet on paid tutorial payment', async () => {
+    configService.getSettings.mockResolvedValue({ platformCut: { tutorial: 20 } });
+    service.create.mockResolvedValue({ id: 'p7', reference_id: 'ref', status: 'paid' });
+
+    const res = await request(app).post('/api/payments/admin').send({
+      user_id: 'u1',
+      method_id: 'm1',
+      item_type: 'tutorial',
+      item_id: 'tut1',
+      amount: 200,
+      status: 'paid',
+    });
+
+    expect(res.status).toBe(200);
+    expect(tutorialService.getTutorialById).toHaveBeenCalledWith('tut1');
+    expect(walletService.increment).toHaveBeenCalledWith('tutInst', 160);
   });
 
   it('debits wallet on approved payout', async () => {

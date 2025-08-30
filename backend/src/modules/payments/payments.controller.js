@@ -250,6 +250,15 @@ exports.createPayment = catchAsync(async (req, res) => {
     } catch (err) {
       logger.error("Failed to record book purchase:", err);
     }
+
+    try {
+      const book = await bookService.getBookById(item_id);
+      if (book?.instructor_id) {
+        await walletService.increment(book.instructor_id, instructor_amount);
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
   }
 
   if (item_type === "class" && payment.status === STATUS.PAID) {
@@ -287,6 +296,15 @@ exports.createPayment = catchAsync(async (req, res) => {
   }
 
   if (item_type === "tutorial" && payment.status === STATUS.PAID) {
+    try {
+      const tut = await tutorialService.getTutorialById(item_id);
+      if (tut?.instructor_id) {
+        await walletService.increment(tut.instructor_id, instructor_amount);
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
+
     try {
       await tutorialEnrollmentService.createEnrollment({
         id: uuidv4(),
