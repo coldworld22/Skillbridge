@@ -2,8 +2,6 @@ const logger = require('../../../utils/logger.js');
 // 📁 src/modules/users/tutorials/tutorial.controller.js
 const db = require("../../../config/database");
 const service = require("./tutorial.service");
-const chapterService = require("./chapters/tutorialChapter.service");
-const tagService = require("./tutorialTag.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const userModel = require("../user.model");
@@ -11,20 +9,17 @@ const analyticsService = require("../../../services/analyticsService");
 const certificateService = require("./certificate/certificate.service");
 const enrollmentService = require("./enrollments/tutorialEnrollment.service");
 const AppError = require("../../../utils/AppError");
-const {
-  sendTutorialCreatedAdminEmail,
-  sendTutorialCreatedInstructorEmail,
-  sendTutorialApprovedEmail,
-  sendTutorialRejectedEmail,
-} = require("../../../utils/email");
+const { sendTutorialApprovedEmail, sendTutorialRejectedEmail } = require(
+  "../../../utils/email"
+);
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
 
 
 const { sendSuccess } = require("../../../utils/response");
-const slugify = require("slugify");
-const { parseTags } = require("./tutorial.helpers");
+const { parseTags, parseChapters } = require("./tutorial.helpers");
+const { sendCreationNotifications } = require("./tutorial.notifications");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -32,10 +27,6 @@ const getRoleDir = (req) => {
   if (["superadmin", "admin"].includes(role)) role = "admin";
   return role;
 };
-
-// ✅ Helper: Generate a slug based on title
-const generateUniqueSlug = (title) =>
-  slugify(title, { lower: true, strict: true });
 
 // Ensure the acting instructor owns the tutorial
 const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
@@ -54,24 +45,12 @@ exports.createTutorial = catchAsync(async (req, res) => {
     price,
     status = "draft",
     tags: rawTags,
-    chapters = [],
+    chapters: rawChapters,
     instructor_id: bodyInstructorId,
   } = req.body;
 
-  // In case chapters came as a serialized JSON string, parse it
-  let parsedChapters = chapters;
-  if (typeof parsedChapters === "string") {
-    try {
-      parsedChapters = JSON.parse(parsedChapters);
-    } catch (err) {
-      parsedChapters = [];
-    }
-  }
-
-  // Filter out any chapter objects missing a title
-  parsedChapters = Array.isArray(parsedChapters)
-    ? parsedChapters.filter((ch) => ch && ch.title)
-    : [];
+  const parsedChapters = parseChapters(rawChapters);
+  const tags = parseTags(rawTags);
 
   // 🚫 Prevent duplicate titles
   const existing = await db("tutorials")
@@ -81,13 +60,12 @@ exports.createTutorial = catchAsync(async (req, res) => {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }
 
-  let instructor = null;
   let instructor_id;
   if (
     ["admin", "superadmin"].includes(req.user.role) &&
     bodyInstructorId
   ) {
-    instructor = await userModel.findById(bodyInstructorId);
+    const instructor = await userModel.findById(bodyInstructorId);
     if (!instructor) {
       return res.status(404).json({ message: "Instructor not found" });
     }
@@ -96,18 +74,14 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id = req.user.id;
   }
 
-  let slug = generateUniqueSlug(title);
   const id = uuidv4();
-
   const roleDir = getRoleDir(req);
   const thumbnailFile = req.files?.thumbnail?.[0];
   const previewFile = req.files?.preview?.[0];
 
-  // Prepare tutorial data
   const tutorialData = {
     id,
     title,
-    slug,
     description,
     category_id,
     level,
@@ -125,109 +99,13 @@ exports.createTutorial = catchAsync(async (req, res) => {
       : null,
   };
 
-  // Parse tags safely
-  const tags = parseTags(rawTags);
-
-  let tutorial;
-  await db.transaction(async (trx) => {
-    try {
-      tutorial = await service.createTutorial(tutorialData, trx);
-    } catch (err) {
-      if (err.code === "23505") {
-        const randomSuffix = Math.random().toString(36).slice(2, 8);
-        slug = `${slug}-${randomSuffix}`;
-        tutorialData.slug = slug;
-        tutorial = await service.createTutorial(tutorialData, trx);
-      } else {
-        throw err;
-      }
-    }
-
-    if (tags.length) {
-      const tagIds = [];
-      for (const name of tags) {
-        const existing = await tagService.findByName(name, trx);
-        const tag =
-          existing ||
-          (await tagService.createTag(
-            { name, slug: slugify(name, { lower: true, strict: true }) },
-            trx
-          ));
-        tagIds.push(tag.id);
-      }
-      await service.addTutorialTags(id, tagIds, trx);
-      tutorial.tags = await service.getTutorialTags(id, trx);
-    }
-
-    // Save chapters (if any)
-    for (let i = 0; i < parsedChapters.length; i++) {
-      const ch = parsedChapters[i];
-      await chapterService.create(
-        {
-          id: uuidv4(),
-          tutorial_id: id,
-          title: ch.title,
-          video_url: ch.video_url,
-          duration: ch.duration,
-          order: ch.order ?? i + 1,
-          is_preview: ch.is_preview ?? false,
-        },
-        trx
-      );
-    }
-  });
-
-  await notificationService.createNotification({
-    user_id: instructor_id,
-    type: "tutorial_created",
-    message:
-      "New tutorial added successfully. It's under review and will be available after we approve it",
-  });
-
-  if (!instructor) {
-    instructor = await userModel.findById(instructor_id);
-  }
-  const admins = await userModel.findAdmins();
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "new_tutorial",
-        message: `Instructor ${instructor.full_name} added new tutorial \"${title}\" waiting for review`,
-      })
-    )
-  );
-  // Email admins about the new tutorial
-  await Promise.all(
-    admins.map((admin) =>
-      sendTutorialCreatedAdminEmail(admin.email, instructor.full_name, title)
-    )
+  const tutorial = await service.createTutorialWithRelations(
+    tutorialData,
+    tags,
+    parsedChapters
   );
 
-  // Send direct messages to admins about the new tutorial
-  if (admins.length) {
-    await Promise.all(
-      admins.map((admin) =>
-        messageService.createMessage({
-          sender_id: instructor_id,
-          receiver_id: admin.id,
-          message: `New tutorial \"${title}\" created by ${instructor.full_name} and awaiting your review`,
-        })
-      )
-    );
-  }
-
-  // Optional message to the instructor confirming creation
-  await messageService.createMessage({
-    sender_id: instructor_id,
-    receiver_id: instructor_id,
-    message: "Your tutorial was submitted and is pending review",
-  });
-  try {
-    await sendTutorialCreatedInstructorEmail(instructor.email, title);
-  } catch (err) {
-    logger.error("Error sending tutorial created email:", err.message);
-  }
+  await sendCreationNotifications(instructor_id, title);
 
   sendSuccess(res, tutorial, "Tutorial with chapters created");
 });
@@ -285,15 +163,10 @@ exports.updateTutorial = catchAsync(async (req, res) => {
     tags = parseTags(rawTags);
   }
   if (tags) {
-    const trx = await db.transaction();
-    try {
-      await service.updateTutorialTags(tutorial.id, tags, trx);
-      await trx.commit();
-      tutorial.tags = await service.getTutorialTags(tutorial.id);
-    } catch (err) {
-      await trx.rollback();
-      throw err;
-    }
+    tutorial.tags = await service.updateTutorialTagsTransactional(
+      tutorial.id,
+      tags
+    );
   }
 
   sendSuccess(res, tutorial);
