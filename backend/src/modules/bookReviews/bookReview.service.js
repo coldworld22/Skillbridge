@@ -12,6 +12,8 @@ exports.ensurePurchased = async (studentId, bookId) => {
 
 exports.createReview = (data) => model.create(data);
 
+exports.findById = (id) => model.findById(id);
+
 exports.listReviews = async (bookId) => {
   const reviews = await model.listByBook(bookId);
   const averageRating = await model.averageRating(bookId);
