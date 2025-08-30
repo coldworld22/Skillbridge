@@ -14,7 +14,6 @@ const classService = require("../classes/class.service");
 const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
 const couponService = require("../coupons/coupons.service");
-const classService = require("../classes/class.service");
 const bookService = require("../books/book.service");
 const tutorialService = require("../users/tutorials/tutorial.service");
 
