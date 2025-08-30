@@ -133,11 +133,23 @@ exports.cancelJoinRequest = async (groupId, userId) => {
 };
 
 exports.getUserGroups = async (userId) => {
+  const lastMessageSub = db.raw(
+    `(
+      SELECT DISTINCT ON (group_id)
+        group_id,
+        message,
+        EXTRACT(EPOCH FROM sent_at) * 1000 AS last_message_at
+      FROM group_messages
+      ORDER BY group_id, sent_at DESC
+    ) as last_msg`
+  );
+
   const memberQuery = db("group_members as gm")
     .join("groups as g", "gm.group_id", "g.id")
     .leftJoin("users as u", "g.creator_id", "u.id")
     .leftJoin("categories as c", "g.category_id", "c.id")
     .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+    .leftJoin(lastMessageSub, "g.id", "last_msg.group_id")
     .select(
       "g.*",
       "gm.role",
@@ -145,14 +157,25 @@ exports.getUserGroups = async (userId) => {
       db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw("COUNT(DISTINCT gm2.id) as members_count"),
+      db.raw("COALESCE(last_msg.message, '') as last_message"),
+      db.raw("COALESCE(last_msg.last_message_at, 0) as last_message_at"),
     )
     .where("gm.user_id", userId)
-    .groupBy("g.id", "gm.role", "u.full_name", "u.role", "c.name");
+    .groupBy(
+      "g.id",
+      "gm.role",
+      "u.full_name",
+      "u.role",
+      "c.name",
+      "last_msg.message",
+      "last_msg.last_message_at"
+    );
 
   const creatorQuery = db("groups as g")
     .leftJoin("users as u", "g.creator_id", "u.id")
     .leftJoin("categories as c", "g.category_id", "c.id")
     .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+    .leftJoin(lastMessageSub, "g.id", "last_msg.group_id")
     .select(
       "g.*",
       db.raw("'admin' as role"),
@@ -160,15 +183,25 @@ exports.getUserGroups = async (userId) => {
       db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw("COUNT(DISTINCT gm2.id) as members_count"),
+      db.raw("COALESCE(last_msg.message, '') as last_message"),
+      db.raw("COALESCE(last_msg.last_message_at, 0) as last_message_at"),
     )
     .where("g.creator_id", userId)
-    .groupBy("g.id", "u.full_name", "u.role", "c.name");
+    .groupBy(
+      "g.id",
+      "u.full_name",
+      "u.role",
+      "c.name",
+      "last_msg.message",
+      "last_msg.last_message_at"
+    );
 
   const pendingQuery = db("group_join_requests as gj")
     .join("groups as g", "gj.group_id", "g.id")
     .leftJoin("users as u", "g.creator_id", "u.id")
     .leftJoin("categories as c", "g.category_id", "c.id")
     .leftJoin("group_members as gm2", "g.id", "gm2.group_id")
+    .leftJoin(lastMessageSub, "g.id", "last_msg.group_id")
     .select(
       "g.*",
       db.raw("'pending' as role"),
@@ -176,10 +209,19 @@ exports.getUserGroups = async (userId) => {
       db.raw("COALESCE(u.role, '') as creator_role"),
       db.raw("COALESCE(c.name, '') as category"),
       db.raw("COUNT(DISTINCT gm2.id) as members_count"),
+      db.raw("COALESCE(last_msg.message, '') as last_message"),
+      db.raw("COALESCE(last_msg.last_message_at, 0) as last_message_at"),
     )
     .where("gj.user_id", userId)
     .andWhere("gj.status", "pending")
-    .groupBy("g.id", "u.full_name", "u.role", "c.name");
+    .groupBy(
+      "g.id",
+      "u.full_name",
+      "u.role",
+      "c.name",
+      "last_msg.message",
+      "last_msg.last_message_at"
+    );
 
   const [createdRows, memberRows, pendingRows] = await Promise.all([
     creatorQuery,
