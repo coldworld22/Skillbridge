@@ -111,7 +111,6 @@ export default function InstructorProfileEdit() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newExpertise, setNewExpertise] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [newCertificate, setNewCertificate] = useState({
     title: "",
     file: null,
@@ -266,6 +265,9 @@ export default function InstructorProfileEdit() {
         }]
       }));
 
+      if (newCertificate.preview) {
+        URL.revokeObjectURL(newCertificate.preview);
+      }
       setNewCertificate({ title: "", file: null, preview: null });
         toast.success(t('certificate_upload_success'));
     } catch (error) {
@@ -297,7 +299,7 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error(t('avatar_max_size'));
+    if (file.size > 10 * 1024 * 1024) return toast.error(t('avatar_max_size'));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
     setShowCropper(true);
@@ -821,6 +823,11 @@ export default function InstructorProfileEdit() {
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (!file) return;
+
+                        if (file.size > 10 * 1024 * 1024) {
+                          toast.error('File size must be 10MB or less');
+                          return;
+                        }
 
                         // Preview for images
                         let preview = null;
