@@ -5,6 +5,7 @@ const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware")
 
 router.get("/", controller.getPlans);
 router.get("/features", controller.getPlanFeatures);
+router.get("/identifiers", verifyToken, isAdmin, controller.getPlanIdentifiers);
 router.get("/:id", controller.getPlan);
 router.post("/", verifyToken, isAdmin, controller.createPlan);
 router.put("/:id", verifyToken, isAdmin, controller.updatePlan);

@@ -23,6 +23,7 @@ import { fetchAllCategories } from '@/services/admin/categoryService';
 import { createAdminClass } from '@/services/admin/classService';
 import { fetchClassTags } from '@/services/admin/classTagService';
 import { createClassLesson } from '@/services/instructor/classService';
+import { fetchPlanIdentifiers } from '@/services/admin/planService';
 import useAuthStore from '@/store/auth/authStore';
 import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
@@ -55,7 +56,8 @@ function CreateOnlineClass() {
     endDate: '',
     price: '',
     maxStudents: '',
-    isFree: false,
+    accessType: 'paid',
+    includedPlans: [],
     allowInstallments: false,
     isApproved: false,
     image: '',
@@ -70,6 +72,7 @@ function CreateOnlineClass() {
   const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
@@ -93,6 +96,9 @@ function CreateOnlineClass() {
     fetchClassTags()
       .then(setAllTags)
       .catch(() => setAllTags([]));
+    fetchPlanIdentifiers()
+      .then(setPlans)
+      .catch(() => setPlans([]));
   }, []);
 
   useEffect(() => {
@@ -192,6 +198,15 @@ function CreateOnlineClass() {
     setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
   };
 
+  const togglePlan = (slug) => {
+    setFormData((prev) => ({
+      ...prev,
+      includedPlans: prev.includedPlans.includes(slug)
+        ? prev.includedPlans.filter((s) => s !== slug)
+        : [...prev.includedPlans, slug],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (currentStep === 1) {
@@ -235,8 +250,11 @@ function CreateOnlineClass() {
         if (formData.endDate)
           payload.append('end_date', toDateTimeISO(formData.endDate));
 
-        if (formData.isFree) {
+        payload.append('access_type', formData.accessType);
+        if (formData.accessType === 'free') {
           payload.append('price', '0');
+          if (formData.includedPlans.length)
+            payload.append('included_plans', JSON.stringify(formData.includedPlans));
         } else if (formData.price || formData.price === 0) {
           payload.append('price', Number(formData.price).toFixed(2));
         }
@@ -464,7 +482,7 @@ function CreateOnlineClass() {
                           name="price"
                           value={formData.price}
                           onChange={handleChange}
-                          disabled={formData.isFree}
+                          disabled={formData.accessType === 'free'}
                         />
                         <FloatingInput
                           label={t('max_students_label')}
@@ -484,16 +502,46 @@ function CreateOnlineClass() {
                       />
 
                       <div className="space-y-2">
-                        <label className="inline-flex items-center">
-                          <input
-                            type="checkbox"
-                            name="isFree"
-                            checked={formData.isFree}
-                            onChange={handleChange}
-                            className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
-                        </label>
+                        <div className="flex items-center space-x-4">
+                          <label className="inline-flex items-center">
+                            <input
+                              type="radio"
+                              name="accessType"
+                              value="paid"
+                              checked={formData.accessType === 'paid'}
+                              onChange={handleChange}
+                              className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{t('paid')}</span>
+                          </label>
+                          <label className="inline-flex items-center">
+                            <input
+                              type="radio"
+                              name="accessType"
+                              value="free"
+                              checked={formData.accessType === 'free'}
+                              onChange={handleChange}
+                              className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{t('free_class')}</span>
+                          </label>
+                        </div>
+                        {formData.accessType === 'free' && (
+                          <div className="flex flex-wrap gap-4">
+                            {plans.map((p) => (
+                              <label key={p.id} className="inline-flex items-center">
+                                <input
+                                  type="checkbox"
+                                  value={p.slug}
+                                  checked={formData.includedPlans.includes(p.slug)}
+                                  onChange={() => togglePlan(p.slug)}
+                                  className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{p.slug}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
                         <label className="inline-flex items-center">
                           <input
                             type="checkbox"

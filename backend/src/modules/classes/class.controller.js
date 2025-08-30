@@ -44,7 +44,7 @@ exports.createClass = catchAsync(async (req, res) => {
   }
 
   const slug = await generateUniqueSlug(req.body.title);
-  const { tags: rawTags, status, ...body } = req.body;
+  const { tags: rawTags, status, included_plans, access_type, ...body } = req.body;
   const data = {
     ...body,
     id: uuidv4(),
@@ -52,6 +52,16 @@ exports.createClass = catchAsync(async (req, res) => {
     status: status === "published" ? "published" : "draft",
     moderation_status: "Pending",
   };
+  if (included_plans) {
+    try {
+      data.included_plans = JSON.parse(included_plans);
+    } catch {
+      data.included_plans = included_plans;
+    }
+  }
+  if (access_type) {
+    data.access_type = access_type;
+  }
   if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
   }
@@ -192,8 +202,18 @@ exports.getMyClasses = catchAsync(async (req, res) => {
  */
 exports.updateClass = catchAsync(async (req, res) => {
   const existing = await service.getClassById(req.params.id);
-  const { tags: rawTags, ...body } = req.body;
+  const { tags: rawTags, included_plans, access_type, ...body } = req.body;
   let data = { ...body };
+  if (included_plans !== undefined) {
+    try {
+      data.included_plans = JSON.parse(included_plans);
+    } catch {
+      data.included_plans = included_plans;
+    }
+  }
+  if (access_type !== undefined) {
+    data.access_type = access_type;
+  }
   if (data.title && data.title !== existing.title) {
     data.slug = await generateUniqueSlug(data.title);
   }

@@ -6,6 +6,19 @@ const toNumber = (val) => {
   return undefined;
 };
 
+const toStringArray = (val) => {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string' && val.trim() !== '') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
 exports.create = z.object({
   body: z.object({
     instructor_id: z.string().uuid().optional(),
@@ -37,6 +50,11 @@ exports.create = z.object({
     tags: z.string().optional(),
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
+    access_type: z.enum(["paid", "free"]).optional(),
+    included_plans: z.preprocess(
+      toStringArray,
+      z.array(z.string()).optional()
+    ),
   })
     .refine(
       (data) =>
@@ -81,6 +99,11 @@ exports.update = z.object({
       tags: z.string().optional(),
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
+      access_type: z.enum(["paid", "free"]).optional(),
+      included_plans: z.preprocess(
+        toStringArray,
+        z.array(z.string()).optional()
+      ),
     })
     .refine(
       (data) =>
@@ -126,6 +149,11 @@ exports.adminUpdate = z.object({
       tags: z.string().optional(),
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
+      access_type: z.enum(["paid", "free"]).optional(),
+      included_plans: z.preprocess(
+        toStringArray,
+        z.array(z.string()).optional()
+      ),
     })
     .refine(
       (data) =>
