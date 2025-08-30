@@ -99,8 +99,9 @@ exports.getPlans = catchAsync(async (req, res) => {
   sendSuccess(res, plans);
 });
 
-exports.getPlanFeatures = catchAsync(async (_req, res) => {
-  const features = await service.getPlanFeatures();
+exports.getPlanFeatures = catchAsync(async (req, res) => {
+  const { prefix } = req.query;
+  const features = await service.getPlanFeatures(prefix);
   sendSuccess(res, features);
 });
 
