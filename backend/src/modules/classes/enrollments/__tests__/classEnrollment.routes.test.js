@@ -16,12 +16,18 @@ jest.mock('../../../../config/database', () => {
 jest.mock('../classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
   createEnrollment: jest.fn(),
+  countEnrollments: jest.fn(),
   markCompleted: jest.fn(),
   getByUser: jest.fn(),
   getByClass: jest.fn(),
-  getStudent: jest.fn()
+  getStudent: jest.fn(),
 }));
 const service = require('../classEnrollment.service');
+
+jest.mock('../../class.service', () => ({
+  getClassById: jest.fn(),
+}));
+const classService = require('../../class.service');
 
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -46,11 +52,45 @@ describe('Class enrollment routes', () => {
   });
 
   test('enroll in class', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+    });
+    service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
     service.createEnrollment.mockResolvedValue({ id: '1' });
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+  });
+
+  test('reject enrollment if class not published', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'draft',
+      moderation_status: 'Approved',
+    });
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('reject enrollment if class not approved', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Pending',
+    });
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('reject enrollment if class full', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      max_students: 1,
+    });
+    service.countEnrollments.mockResolvedValue(1);
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
   });
 
   test('get my enrollments', async () => {
