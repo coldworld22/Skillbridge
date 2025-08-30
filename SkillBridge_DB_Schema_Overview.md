@@ -352,6 +352,12 @@
 - **Purpose**: Available tiers
 - **Primary Key**: `id`
 - **Foreign Keys**: `—`
+- **Key Columns**:
+  - `price_monthly` – monthly subscription cost
+  - `price_yearly` – annual subscription cost
+  - `target_role` – limits plan to a specific user type (e.g., student or instructor)
+  - `max_courses` – caps how many courses an instructor can publish
+  - `ad_credits` – credits instructors can spend on promoting their classes
 
 ### `plan_features`
 - **Purpose**: Matrix of toggles/limits
