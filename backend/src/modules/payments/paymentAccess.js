@@ -5,12 +5,29 @@ const tutorialEnrollmentService = require('../users/tutorials/enrollments/tutori
 const { v4: uuidv4 } = require('uuid');
 const plansService = require('../plans/plans.service');
 const subscriptionService = require('../subscriptions/subscription.service');
+const classService = require('../classes/class.service');
+const paymentsService = require('./payments.service');
+const { STATUS } = paymentsService;
 
 exports.grantAccess = async (payment) => {
   try {
     if (payment.item_type === 'book') {
       await libraryService.recordPurchase(payment.user_id, payment.item_id, payment.amount);
     } else if (payment.item_type === 'class') {
+      const cls = await classService.getClassById(payment.item_id);
+      if (cls?.max_students) {
+        const count = await enrollmentService.countEnrollments(payment.item_id);
+        if (count >= cls.max_students) {
+          await paymentsService.update(payment.id, {
+            status: STATUS.AWAITING_APPROVAL,
+          });
+          logger.warn(
+            `Class ${payment.item_id} is at capacity. Payment ${payment.id} flagged for review`
+          );
+          return;
+        }
+      }
+
       const existing = await enrollmentService.findEnrollment(
         payment.user_id,
         payment.item_id

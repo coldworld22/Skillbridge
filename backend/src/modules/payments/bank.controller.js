@@ -14,6 +14,8 @@ const classService = require("../classes/class.service");
 const { grantAccess } = require("./paymentAccess");
 const { v4: uuidv4 } = require("uuid");
 
+const invoiceService = require("../invoices/invoices.service");
+
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
   book: 10,
@@ -139,7 +141,6 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
   );
 
   await grantAccess(payment);
-
   if (payment.item_type === "class") {
     try {
       const cls = await classService.getClassById(payment.item_id);
@@ -153,9 +154,8 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
       logger.error("Failed to credit instructor wallet:", err);
     }
   }
-
   try {
-    const user = await userModel.findById(payment.user_id);
+    user = await userModel.findById(payment.user_id);
     const message = `Your bank payment ${payment.id} has been approved.`;
     await notificationService.createNotification({
       user_id: payment.user_id,
@@ -171,6 +171,14 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     }
   } catch (err) {
     logger.error("Failed to notify student of payment approval:", err);
+  }
+
+  try {
+    if (user) {
+      await invoiceService.generateFromPayment(payment, user);
+    }
+  } catch (err) {
+    logger.error("Failed to generate invoice:", err);
   }
 
   sendSuccess(res, payment, "Bank payment approved");

@@ -174,6 +174,8 @@ app.use(
   require("./modules/payments/paypal.routes")
 );
 app.use("/api/payments/admin", require("./modules/payments/payments.routes"));
+app.use("/api/invoices/admin", require("./modules/invoices/invoices.routes"));
+app.use("/api/invoices/student", require("./modules/invoices/student.routes"));
 app.use(
   "/api/admin/payments/bank",
   require("./modules/payments/bank.admin.routes")
