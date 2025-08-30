@@ -168,6 +168,17 @@ exports.updateProfile = async (req, res) => {
     res.json(updated);
   } catch (err) {
     logger.error("Profile update error:", err);
+
+    // Handle unique constraint violations for email and phone
+    if (err.code === "23505") {
+      if (err.constraint === "users_email_unique") {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (err.constraint === "users_phone_unique") {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
