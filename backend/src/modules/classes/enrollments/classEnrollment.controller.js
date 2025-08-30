@@ -24,7 +24,8 @@ exports.enroll = catchAsync(async (req, res) => {
     }
   }
   const exists = await service.findEnrollment(user_id, classId);
-  if (exists) return sendSuccess(res, exists, "Already enrolled");
+  if (exists && exists.status !== "cancelled")
+    return sendSuccess(res, exists, "Already enrolled");
 
   if (Number(cls.price) > 0) {
     const payment = await db("payments")
@@ -39,6 +40,18 @@ exports.enroll = catchAsync(async (req, res) => {
     if (!payment && !hasSubscription) {
       throw new AppError("Payment required", 400);
     }
+  }
+  if (exists && exists.status === "cancelled") {
+    const enrolled_at = new Date();
+    await service.updateEnrollment(user_id, classId, {
+      status: "enrolled",
+      enrolled_at,
+    });
+    return sendSuccess(
+      res,
+      { ...exists, status: "enrolled", enrolled_at },
+      "Enrolled successfully"
+    );
   }
 
   const data = { id: uuidv4(), user_id, class_id: classId, status: "enrolled" };

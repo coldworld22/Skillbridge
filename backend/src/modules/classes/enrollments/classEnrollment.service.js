@@ -16,6 +16,7 @@ exports.updateEnrollment = async (user_id, class_id, data) => {
 exports.countEnrollments = async (class_id) => {
   const [row] = await db("class_enrollments")
     .where({ class_id })
+    .whereNot({ status: "cancelled" })
     .count("id as count");
   return parseInt(row.count, 10) || 0;
 };

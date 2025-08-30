@@ -16,6 +16,7 @@ jest.mock('../../../../config/database', () => {
 jest.mock('../classEnrollment.service', () => ({
   findEnrollment: jest.fn(),
   createEnrollment: jest.fn(),
+  updateEnrollment: jest.fn(),
   countEnrollments: jest.fn(),
   markCompleted: jest.fn(),
   getByUser: jest.fn(),
@@ -129,6 +130,46 @@ describe('Class enrollment routes', () => {
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+  });
+
+  test('reactivate cancelled enrollment when capacity available', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      max_students: 1,
+    });
+    service.countEnrollments.mockResolvedValue(0);
+    service.findEnrollment.mockResolvedValue({
+      user_id: 'test-user',
+      class_id: 'abc',
+      status: 'cancelled',
+    });
+    service.updateEnrollment.mockResolvedValue(1);
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(200);
+    expect(service.updateEnrollment).toHaveBeenCalledWith(
+      'test-user',
+      'abc',
+      expect.objectContaining({ status: 'enrolled' })
+    );
+    expect(service.createEnrollment).not.toHaveBeenCalled();
+  });
+
+  test('prevent re-enrollment if class full after cancellation', async () => {
+    classService.getClassById.mockResolvedValue({
+      status: 'published',
+      moderation_status: 'Approved',
+      max_students: 1,
+    });
+    service.countEnrollments.mockResolvedValue(1);
+    service.findEnrollment.mockResolvedValue({
+      user_id: 'test-user',
+      class_id: 'abc',
+      status: 'cancelled',
+    });
+    const res = await request(app).post('/classes/enroll/abc');
+    expect(res.statusCode).toBe(400);
+    expect(service.updateEnrollment).not.toHaveBeenCalled();
   });
 
   test('get my enrollments', async () => {
