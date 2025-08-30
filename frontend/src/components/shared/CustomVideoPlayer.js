@@ -19,6 +19,7 @@ export default function CustomVideoPlayer({
   const [progress, setProgress] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [error, setError] = useState(false);
   const videoRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -30,6 +31,7 @@ export default function CustomVideoPlayer({
     video.load();
     setIsPlaying(false);
     setProgress(0);
+    setError(false);
   }, [currentVideo]);
 
   // Seek to provided start time whenever it changes and metadata is already loaded
@@ -174,6 +176,19 @@ export default function CustomVideoPlayer({
     }
   };
 
+  const handleError = () => {
+    setError(true);
+    setIsPlaying(false);
+  };
+
+  const handleRetry = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setError(false);
+    video.load();
+    video.play().then(() => setIsPlaying(true)).catch(() => {});
+  };
+
   return (
     <div
       ref={playerRef}
@@ -197,6 +212,28 @@ export default function CustomVideoPlayer({
       {locked && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white text-center p-4">
           <p>Login and enroll to watch full tutorial</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center p-4">
+          <p>Video unavailable</p>
+          <div className="mt-2 space-x-2">
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 bg-yellow-500 rounded"
+            >
+              Retry
+            </button>
+            {currentVideo && (
+              <button
+                onClick={downloadVideo}
+                className="px-4 py-2 bg-gray-700 rounded"
+              >
+                Download
+              </button>
+            )}
+          </div>
         </div>
       )}
 
