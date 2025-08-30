@@ -8,14 +8,14 @@ const BooksSection = () => {
   const { t } = useTranslation("website");
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
 
     const loadBooks = async () => {
       setLoading(true);
-      setError(null);
+      setError(false);
       try {
         const { books: list } = await fetchBooks({
           perPage: 3,
@@ -24,8 +24,8 @@ const BooksSection = () => {
         setBooks(list);
       } catch (err) {
         if (err.name !== "CanceledError" && err.name !== "AbortError") {
-          console.error("Failed to load books", err);
-          setError("Failed to load books");
+          console.error(t("failed_load_books"), err);
+          setError(true);
         }
       } finally {
         setLoading(false);
@@ -47,14 +47,12 @@ const BooksSection = () => {
       >
         📖 {t("explore_books")}
       </motion.h2>
-      <p className="text-gray-300 mb-8">
-        Discover our curated selection of books.
-      </p>
+      <p className="text-gray-300 mb-8">{t("discover_books")}</p>
 
       {loading ? (
-        <p className="text-gray-300 mb-8">Loading...</p>
+        <p className="text-gray-300 mb-8">{t("loading_books")}</p>
       ) : error ? (
-        <p className="text-red-500 mb-8">{error}</p>
+        <p className="text-red-500 mb-8">{t("failed_load_books")}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8 px-4">
           {books.map((book) => (
