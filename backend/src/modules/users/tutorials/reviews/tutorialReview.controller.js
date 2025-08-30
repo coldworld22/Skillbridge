@@ -2,12 +2,12 @@ const db = require("../../../../config/database");
 const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
 const AppError = require("../../../../utils/AppError");
+const { requireUserAndTutorial, requireValidTutorialId } = require("../utils");
 
 // Submit or update a review
 exports.submitReview = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
   const { rating, comment } = req.body;
-  const userId = req.user.id;
 
   const enrolled = await db("tutorial_enrollments")
     .where({ tutorial_id: tutorialId, user_id: userId })
@@ -41,7 +41,7 @@ exports.submitReview = catchAsync(async (req, res) => {
 
 // Get reviews for a tutorial
 exports.getReviews = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const tutorialId = requireValidTutorialId(req);
 
   const reviews = await db("tutorial_reviews")
     .join("users", "users.id", "tutorial_reviews.user_id")

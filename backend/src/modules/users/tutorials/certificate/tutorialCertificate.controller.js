@@ -4,10 +4,10 @@ const { sendSuccess } = require("../../../../utils/response");
 const AppError = require("../../../../utils/AppError");
 const db = require("../../../../config/database");
 const notificationService = require("../../../notifications/notifications.service");
+const { requireUserAndTutorial } = require("../utils");
 
 exports.generateCertificate = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
-  const userId = req.user.id;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
 
   // 1. Validate completion (including assignments)
   const completed = await service.isUserCompletedTutorial(userId, tutorialId);

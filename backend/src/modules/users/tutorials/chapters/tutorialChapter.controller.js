@@ -5,9 +5,12 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const uploadChapterVideo = require("./uploadChapterVideo");
 const db = require("../../../../config/database");
+const { requireUser, requireValidTutorialId } = require("../utils");
 
 // Ensure the requesting user is the tutorial's instructor or an admin
 const assertTutorialAccess = async (req, tutorialId) => {
+  requireUser(req);
+  requireValidTutorialId({ params: { tutorialId } });
   const tutorial = await db("tutorials")
     .select("instructor_id")
     .where({ id: tutorialId })
@@ -84,7 +87,7 @@ exports.deleteChapter = catchAsync(async (req, res) => {
 
 // List chapters by tutorial
 exports.getChaptersByTutorial = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const tutorialId = requireValidTutorialId(req);
   const tutorial = await db("tutorials")
     .where({ id: tutorialId, status: "published" })
     .first();
@@ -109,7 +112,7 @@ exports.getChaptersByTutorial = catchAsync(async (req, res) => {
 
 // Reorder chapters within a tutorial
 exports.reorderChapters = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const tutorialId = requireValidTutorialId(req);
   const { orderedIds } = req.body;
 
   if (!Array.isArray(orderedIds)) {
