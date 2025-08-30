@@ -41,6 +41,7 @@
     "jspdf": "^3.0.1",
     "leo-profanity": "^1.7.0",
     "lodash": "^4.17.21",
+    "localforage": "^1.10.0",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.479.0",
     "moment": "^2.30.1",
