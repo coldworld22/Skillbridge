@@ -52,6 +52,9 @@ jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   isAdmin: (_req, _res, next) => next(),
   isInstructor: (_req, _res, next) => next(),
 }));
+jest.mock('../../../../middleware/auth/verifyEnrollment', () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/auth/verifyClassOwnership', () => (_req, _res, next) => next());
+jest.mock('../../../../middleware/auth/verifyAssignmentOwnership', () => (_req, _res, next) => next());
 
 const routes = require('../../class.routes');
 const emailUtil = require('../../../../utils/email');
