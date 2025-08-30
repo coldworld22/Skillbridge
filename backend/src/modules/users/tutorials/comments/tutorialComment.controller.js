@@ -3,12 +3,13 @@ const catchAsync = require("../../../../utils/catchAsync");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const AppError = require("../../../../utils/AppError");
+const { requireUserAndTutorial, requireValidTutorialId } = require("../utils");
 
 // Post a comment
 exports.createComment = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
   const { message, parent_id } = req.body;
-  const user_id = req.user.id;
+  const user_id = userId;
 
   const enrolled = await db("tutorial_enrollments")
     .where({ tutorial_id: tutorialId, user_id })
@@ -33,7 +34,7 @@ exports.createComment = catchAsync(async (req, res) => {
 
 // Get comments for a tutorial
 exports.getComments = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const tutorialId = requireValidTutorialId(req);
 
   const comments = await db("tutorial_comments")
     .join("users", "users.id", "tutorial_comments.user_id")

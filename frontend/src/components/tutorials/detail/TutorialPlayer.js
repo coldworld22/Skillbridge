@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import {
   Play,
@@ -26,6 +27,8 @@ const TutorialPlayer = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  const completedRef = useRef(false);
+  const saveProgress = useRef(null);
 
   useEffect(() => {
     const savedTime = localStorage.getItem(`progress-${tutorialId}`);
@@ -35,31 +38,46 @@ const TutorialPlayer = ({
   }, [tutorialId]);
 
   useEffect(() => {
-    if (progress >= 98 && typeof onComplete === "function") {
+    if (progress >= 98 && typeof onComplete === "function" && !completedRef.current) {
+      completedRef.current = true;
       onComplete();
+      localStorage.removeItem(`progress-${tutorialId}`);
     }
-  }, [progress]);
+  }, [progress, onComplete, tutorialId]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (videoRef.current) {
-        localStorage.setItem(`progress-${tutorialId}`, videoRef.current.currentTime);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
+    let timeout;
+    saveProgress.current = (time) => {
+      if (completedRef.current) return;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        const persist = () => localStorage.setItem(`progress-${tutorialId}`, time);
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+          window.requestIdleCallback(persist);
+        } else {
+          persist();
+        }
+      }, 500);
+    };
+    return () => clearTimeout(timeout);
   }, [tutorialId]);
 
   const handleTimeUpdate = () => {
     const current = videoRef.current.currentTime;
     const total = videoRef.current.duration;
     setProgress((current / total) * 100);
+    saveProgress.current?.(current);
   };
 
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
+      try {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } catch (_) {
+        toast.error("Playback failed");
+      }
     } else {
       videoRef.current.pause();
       setIsPlaying(false);

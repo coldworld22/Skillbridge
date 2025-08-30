@@ -1,6 +1,9 @@
 // 📁 src/modules/users/tutorials/tutorial.service.js
 const db = require("../../../config/database");
 const tagService = require("./tutorialTag.service");
+const chapterService = require("./chapters/tutorialChapter.service");
+const { withTransaction } = require("../../../services/transaction.service");
+const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 
 exports.createTutorial = async (data, trx = db) => {

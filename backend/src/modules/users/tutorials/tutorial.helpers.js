@@ -32,4 +32,30 @@ function parseTags(rawTags) {
   throw new AppError('Invalid tags JSON', 400);
 }
 
-module.exports = { parseTags };
+/**
+ * Parse chapter data from request body into a normalized array.
+ * Accepts an array or JSON string; filters out chapters missing a title.
+ *
+ * @param {string|string[]|undefined|null} rawChapters
+ * @returns {Array<{title:string, video_url?:string, duration?:number, order?:number, is_preview?:boolean}>}
+ */
+function parseChapters(rawChapters) {
+  if (rawChapters === undefined || rawChapters === null || rawChapters === "") {
+    return [];
+  }
+
+  let parsed = rawChapters;
+  if (typeof rawChapters === "string") {
+    try {
+      parsed = JSON.parse(rawChapters);
+    } catch (err) {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed.filter((ch) => ch && ch.title);
+}
+
+module.exports = { parseTags, parseChapters };

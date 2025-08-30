@@ -3,11 +3,12 @@ const catchAsync = require("../../../../utils/catchAsync");
 const AppError = require("../../../../utils/AppError");
 const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
+const { requireUser, requireUserAndTutorial } = require("../utils");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
-  const user_id = req.user.id;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
+  const user_id = userId;
 
   const tutorial = await db("tutorials").where({ id: tutorialId }).first();
   if (!tutorial) throw new AppError("Tutorial not found", 404);
@@ -55,8 +56,8 @@ exports.enroll = catchAsync(async (req, res) => {
 
 // Mark as completed
 exports.complete = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
-  const user_id = req.user.id;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
+  const user_id = userId;
 
   // Ensure enrollment exists
   const enrollment = await db("tutorial_enrollments")
@@ -124,7 +125,7 @@ exports.complete = catchAsync(async (req, res) => {
 
 // Get all enrolled tutorials for student
 exports.getMyEnrollments = catchAsync(async (req, res) => {
-  const user_id = req.user.id;
+  const user_id = requireUser(req);
 
   const rows = await db("tutorial_enrollments")
     .join("tutorials", "tutorials.id", "tutorial_enrollments.tutorial_id")
@@ -136,8 +137,8 @@ exports.getMyEnrollments = catchAsync(async (req, res) => {
 
 // Get enrollment status and progress for a tutorial
 exports.getStatus = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
-  const user_id = req.user.id;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
+  const user_id = userId;
 
   const enrollment = await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })
@@ -163,9 +164,9 @@ exports.getStatus = catchAsync(async (req, res) => {
 
 // Update progress percentage for a tutorial
 exports.updateProgress = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const { userId, tutorialId } = requireUserAndTutorial(req);
   let { progress } = req.body;
-  const user_id = req.user.id;
+  const user_id = userId;
 
   const enrollment = await db("tutorial_enrollments")
     .where({ user_id, tutorial_id: tutorialId })

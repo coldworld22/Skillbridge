@@ -8,24 +8,26 @@ const enrollmentService = require('../enrollments/tutorialEnrollment.service');
 const notificationService = require('../../../notifications/notifications.service');
 const smsService = require('../../../../services/smsService');
 const { sendAssignmentEmail } = require('../../../../utils/email');
+const { requireValidTutorialId } = require('../utils');
 
 exports.getAssignmentsByTutorial = catchAsync(async (req, res) => {
-  const { tutorialId } = req.params;
+  const tutorialId = requireValidTutorialId(req);
   const assignments = await service.getByTutorial(tutorialId);
   sendSuccess(res, assignments);
 });
 
 exports.createAssignment = catchAsync(async (req, res) => {
+  const tutorialId = requireValidTutorialId(req);
   const data = {
     ...req.body,
     id: uuidv4(),
-    tutorial_id: req.params.tutorialId,
+    tutorial_id: tutorialId,
   };
   const assignment = await service.createAssignment(data);
 
   try {
-    const tutorial = await tutorialService.getTutorialById(req.params.tutorialId);
-    const students = await enrollmentService.getByTutorial(req.params.tutorialId);
+    const tutorial = await tutorialService.getTutorialById(tutorialId);
+    const students = await enrollmentService.getByTutorial(tutorialId);
     if (tutorial && students.length) {
       const message = `New assignment "${assignment.title}" posted for tutorial "${tutorial.title}".`;
       await Promise.all(
