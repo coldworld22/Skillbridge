@@ -297,7 +297,7 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error(t('avatar_max_size'));
+    if (file.size > 10 * 1024 * 1024) return toast.error(t('avatar_max_size'));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
     setShowCropper(true);

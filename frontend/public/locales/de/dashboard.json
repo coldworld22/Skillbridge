@@ -548,7 +548,7 @@
     "certificate_upload_failed": "Failed to upload certificate",
     "certificate_removed": "Certificate removed successfully",
     "certificate_remove_failed": "Failed to remove certificate",
-    "avatar_max_size": "Max size 2MB",
+    "avatar_max_size": "Max size 10MB",
     "avatar_upload_failed": "Failed to upload avatar",
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",

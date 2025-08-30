@@ -534,7 +534,7 @@
     "certificate_upload_failed": "प्रमाण पत्र अपलोड करने में विफल",
     "certificate_removed": "प्रमाणपत्र सफलतापूर्वक हटा दिया गया",
     "certificate_remove_failed": "प्रमाण पत्र निकालने में विफल",
-    "avatar_max_size": "अधिकतम आकार 2 एमबी",
+    "avatar_max_size": "अधिकतम आकार 10MB",
     "avatar_upload_failed": "अवतार अपलोड करने में विफल",
     "profile_update_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट किया गया!",
     "profile_update_failed": "प्रोफ़ाइल अपडेट करने में विफल",
