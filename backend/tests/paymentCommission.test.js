@@ -5,6 +5,7 @@ jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(),
   getAll: jest.fn(),
   getByUser: jest.fn(),
+  STATUS: { PAID: 'paid', PENDING_PAYMENT: 'pending_payment' },
 }));
 
 jest.mock('../src/modules/paymentConfig/paymentConfig.service', () => ({
@@ -31,6 +32,30 @@ jest.mock('../src/modules/library/library.service', () => ({
   recordPurchase: jest.fn(),
 }));
 
+jest.mock('../src/modules/classes/class.service', () => ({
+  getClassById: jest.fn().mockResolvedValue({ instructor_id: 'inst1' }),
+}));
+
+jest.mock('../src/modules/payouts/wallet.service', () => ({
+  increment: jest.fn().mockResolvedValue({}),
+  getByInstructor: jest.fn(),
+  decrement: jest.fn().mockResolvedValue({}),
+}));
+
+jest.mock('../src/modules/payouts/payouts.service', () => ({
+  create: jest.fn(),
+  getAll: jest.fn(),
+  getById: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+}));
+
+jest.mock('../src/modules/classes/enrollments/classEnrollment.service', () => ({
+  findEnrollment: jest.fn().mockResolvedValue(null),
+  createEnrollment: jest.fn().mockResolvedValue({}),
+  updateEnrollment: jest.fn().mockResolvedValue({}),
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'admin1' }; next(); },
   isAdmin: (_req, _res, next) => next(),
@@ -39,10 +64,15 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
 const service = require('../src/modules/payments/payments.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const routes = require('../src/modules/payments/payments.routes');
+const walletService = require('../src/modules/payouts/wallet.service');
+const payoutService = require('../src/modules/payouts/payouts.service');
+const classService = require('../src/modules/classes/class.service');
+const payoutRoutes = require('../src/modules/payouts/payouts.routes');
 
 const app = express();
 app.use(express.json());
 app.use('/api/payments/admin', routes);
+app.use('/api/payouts/admin', payoutRoutes);
 
 describe('payment commission calculations', () => {
   beforeEach(() => {
@@ -123,5 +153,52 @@ describe('payment commission calculations', () => {
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ platform_fee: 15, instructor_amount: 85 })
     );
+  });
+});
+
+describe('wallet credit and debit', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('credits instructor wallet on paid class payment', async () => {
+    configService.getSettings.mockResolvedValue({ platformCut: { class: 10 } });
+    service.create.mockResolvedValue({ id: 'p5', reference_id: 'ref', status: 'paid' });
+
+    const res = await request(app).post('/api/payments/admin').send({
+      user_id: 'u1',
+      method_id: 'm1',
+      item_type: 'class',
+      item_id: 'class1',
+      amount: 100,
+      status: 'paid',
+    });
+
+    expect(res.status).toBe(200);
+    expect(classService.getClassById).toHaveBeenCalledWith('class1');
+    expect(walletService.increment).toHaveBeenCalledWith('inst1', 90);
+  });
+
+  it('debits wallet on approved payout', async () => {
+    payoutService.getById.mockResolvedValue({ id: 'po1', instructor_id: 'inst1', amount: 50, status: 'pending' });
+    payoutService.update.mockResolvedValue({ id: 'po1', status: 'approved' });
+    walletService.getByInstructor.mockResolvedValue({ balance: 100 });
+
+    const res = await request(app).patch('/api/payouts/admin/po1').send({ status: 'approved' });
+
+    expect(res.status).toBe(200);
+    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 50);
+    expect(payoutService.update).toHaveBeenCalledWith('po1', expect.objectContaining({ status: 'approved' }));
+  });
+
+  it('rejects payout when balance insufficient', async () => {
+    payoutService.getById.mockResolvedValue({ id: 'po2', instructor_id: 'inst1', amount: 80, status: 'pending' });
+    walletService.getByInstructor.mockResolvedValue({ balance: 50 });
+
+    const res = await request(app).patch('/api/payouts/admin/po2').send({ status: 'approved' });
+
+    expect(res.status).toBe(400);
+    expect(walletService.decrement).not.toHaveBeenCalled();
+    expect(payoutService.update).not.toHaveBeenCalled();
   });
 });
