@@ -353,11 +353,11 @@
 - **Primary Key**: `id`
 - **Foreign Keys**: `—`
 - **Key Columns**:
-  - `price_monthly` – monthly subscription cost
-  - `price_yearly` – annual subscription cost
-  - `target_role` – limits plan to a specific user type (e.g., student or instructor)
-  - `max_courses` – caps how many courses an instructor can publish
-  - `ad_credits` – credits instructors can spend on promoting their classes
+  - `price_monthly` – monthly rate charged for a pay-as-you-go subscription
+  - `price_yearly` – annual rate, typically discounted for long-term commitment
+  - `target_role` – restricts eligibility to a specific user type (e.g., student or instructor)
+  - `max_courses` – sets how many courses an instructor may publish before needing to upgrade
+  - `ad_credits` – promotional credits instructors can spend to boost class visibility
 
 ### `plan_features`
 - **Purpose**: Matrix of toggles/limits
