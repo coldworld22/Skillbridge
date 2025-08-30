@@ -10,8 +10,9 @@ class Student {
     this.userId = userId;
   }
 
-  async discoverClasses() {
-    return classService.getPublishedClasses();
+  async discoverClasses(page = 1, limit = 10) {
+    const result = await classService.getPublishedClasses({ page, limit });
+    return result.data;
   }
 
   async viewClassDetails(classId) {
