@@ -14,6 +14,7 @@ jest.mock('../class.service', () => ({
   createClass: jest.fn(),
   getAllClasses: jest.fn(),
   getClassesByInstructor: jest.fn(),
+  getPublishedClasses: jest.fn(),
   updateClass: jest.fn(),
   togglePublishStatus: jest.fn(),
   updateModeration: jest.fn()
@@ -44,10 +45,6 @@ jest.mock('../classUploadMiddleware', () => (req, _res, next) => next());
 const mockVerifyClassOwnership = jest.fn((req, _res, next) => next());
 jest.mock('../../../middleware/auth/verifyClassOwnership', () => mockVerifyClassOwnership);
 jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next());
-const mockVerifyInstructorSubscription = jest.fn((req, res, _next) =>
-  res.status(403).json({ message: 'Active instructor subscription required' })
-);
-jest.mock('../../plans/verifyInstructorSubscription', () => mockVerifyInstructorSubscription);
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -170,19 +167,28 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(approved);
   });
 
-  test('instructor update blocked without active plan', async () => {
-    const res = await request(app)
-      .put('/classes/instructor/1')
-      .send({ title: 'Update' });
-    expect(res.statusCode).toBe(403);
-    expect(mockVerifyInstructorSubscription).toHaveBeenCalled();
-    expect(service.updateClass).not.toHaveBeenCalled();
+  test('instructor can create class without plan', async () => {
+    const data = { id: '1', instructor_id: 'test-user', title: 'Test Class' };
+    service.createClass.mockResolvedValue(data);
+    const res = await request(app).post('/classes/instructor').send(data);
+    expect(res.statusCode).toBe(200);
+    expect(service.createClass).toHaveBeenCalled();
   });
 
-  test('instructor publish blocked without active plan', async () => {
+  test('instructor can update class without plan', async () => {
+    const updated = { id: '1', title: 'Update' };
+    service.getClassById = jest.fn().mockResolvedValue({ id: '1', instructor_id: 'test-user', title: 'Old' });
+    service.updateClass.mockResolvedValue(updated);
+    const res = await request(app).put('/classes/instructor/1').send({ title: 'Update' });
+    expect(res.statusCode).toBe(200);
+    expect(service.updateClass).toHaveBeenCalledWith('1', expect.any(Object));
+  });
+
+  test('instructor can publish class without plan', async () => {
+    const updated = { id: '1', status: 'published', moderation_status: 'Pending' };
+    service.togglePublishStatus.mockResolvedValue(updated);
     const res = await request(app).patch('/classes/instructor/1/status');
-    expect(res.statusCode).toBe(403);
-    expect(mockVerifyInstructorSubscription).toHaveBeenCalled();
-    expect(service.togglePublishStatus).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(service.togglePublishStatus).toHaveBeenCalledWith('1');
   });
 });
