@@ -120,6 +120,13 @@ export default function CustomVideoPlayer({
     videoRef.current.currentTime += seconds;
   };
 
+  const handleKeyDown = (e, action) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
+  };
+
   const handleNext = () => {
     if (currentIndex < videos.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -178,6 +185,9 @@ export default function CustomVideoPlayer({
         className={`w-full ${videoClassName}`}
         src={currentVideo}
         onClick={togglePlay}
+        tabIndex={0}
+        onKeyDown={(e) => handleKeyDown(e, togglePlay)}
+        aria-label="Video player"
         autoPlay={isPlaying}
         muted={isMuted}
         preload="metadata"
@@ -200,6 +210,7 @@ export default function CustomVideoPlayer({
           value={progress}
           onChange={handleProgressChange}
           className="w-full h-1.5 mb-3 appearance-none bg-gray-600 rounded-full cursor-pointer"
+          aria-label="Video progress"
           style={{
             background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progress}%, #4b5563 ${progress}%, #4b5563 100%)`
           }}
@@ -212,6 +223,8 @@ export default function CustomVideoPlayer({
               onClick={togglePlay}
               className="text-white hover:text-yellow-400 transition-colors"
               aria-label={isPlaying ? "Pause" : "Play"}
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, togglePlay)}
             >
               {isPlaying ? <FaPause size={18} /> : <FaPlay size={18} />}
             </button>
@@ -221,6 +234,8 @@ export default function CustomVideoPlayer({
               onClick={() => skip(-10)}
               className="text-white hover:text-yellow-400 transition-colors"
               aria-label="Skip backward 10 seconds"
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, () => skip(-10))}
             >
               <MdReplay10 size={20} />
             </button>
@@ -230,6 +245,8 @@ export default function CustomVideoPlayer({
               onClick={() => skip(10)}
               className="text-white hover:text-yellow-400 transition-colors"
               aria-label="Skip forward 10 seconds"
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, () => skip(10))}
             >
               <MdForward10 size={20} />
             </button>
@@ -240,6 +257,8 @@ export default function CustomVideoPlayer({
                 onClick={toggleMute}
                 className="text-white hover:text-yellow-400 transition-colors mr-1"
                 aria-label={isMuted ? "Unmute" : "Mute"}
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, toggleMute)}
               >
                 {isMuted ? <FaVolumeMute size={18} /> : <FaVolumeUp size={18} />}
               </button>
@@ -251,6 +270,7 @@ export default function CustomVideoPlayer({
                 value={volume}
                 onChange={handleVolumeChange}
                 className="w-20 h-1.5 appearance-none bg-gray-600 rounded-full cursor-pointer"
+                aria-label="Volume control"
               />
             </div>
 
@@ -272,6 +292,8 @@ export default function CustomVideoPlayer({
               onClick={changeSpeed}
               className="text-white hover:text-yellow-400 transition-colors flex items-center"
               aria-label="Change playback speed"
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, changeSpeed)}
             >
               <MdSpeed size={18} className="mr-1" />
               <span className="text-sm">{playbackRate}x</span>
@@ -284,6 +306,8 @@ export default function CustomVideoPlayer({
                 disabled={currentIndex === 0}
                 className={`text-white hover:text-yellow-400 transition-colors ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 aria-label="Previous video"
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, handlePrev)}
               >
                 <FaStepBackward size={16} />
               </button>
@@ -296,6 +320,8 @@ export default function CustomVideoPlayer({
                 disabled={currentIndex === videos.length - 1}
                 className={`text-white hover:text-yellow-400 transition-colors ${currentIndex === videos.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 aria-label="Next video"
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, handleNext)}
               >
                 <FaStepForward size={16} />
               </button>
@@ -306,6 +332,8 @@ export default function CustomVideoPlayer({
               onClick={downloadVideo}
               className="text-white hover:text-yellow-400 transition-colors"
               aria-label="Download video"
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, downloadVideo)}
             >
               <FaDownload size={16} />
             </button>
@@ -315,6 +343,8 @@ export default function CustomVideoPlayer({
               onClick={toggleFullscreen}
               className="text-white hover:text-yellow-400 transition-colors"
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              tabIndex={0}
+              onKeyDown={(e) => handleKeyDown(e, toggleFullscreen)}
             >
               <FaExpand size={16} />
             </button>
