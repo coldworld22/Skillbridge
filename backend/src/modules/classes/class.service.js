@@ -6,9 +6,11 @@ exports.createClass = async (data) => {
 };
 
 exports.getAllClasses = async () => {
-  const classes = await db("online_classes as c")
+  return db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
+    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.id",
       "c.title",
@@ -21,37 +23,57 @@ exports.getAllClasses = async () => {
       "c.moderation_status",
       "c.instructor_id",
       "u.full_name as instructor",
-      "cat.name as category"
+      "cat.name as category",
+      db.raw(
+        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
+      )
+    )
+    .groupBy(
+      "c.id",
+      "c.title",
+      "c.slug",
+      "c.cover_image",
+      "c.start_date",
+      "c.end_date",
+      "c.price",
+      "c.status",
+      "c.moderation_status",
+      "c.instructor_id",
+      "u.full_name",
+      "cat.name"
     )
     .orderBy("c.created_at", "desc");
-  for (const cls of classes) {
-    cls.tags = await exports.getClassTags(cls.id);
-  }
-  return classes;
 };
 
 exports.getClassById = async (id) => {
   const cls = await db("online_classes as c")
     .leftJoin("users as u", "c.instructor_id", "u.id")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
+    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.*",
       "u.full_name as instructor",
       "u.avatar_url as instructor_image",
-      "cat.name as category"
+      "cat.name as category",
+      db.raw(
+        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
+      )
     )
     .where("c.id", id)
+    .groupBy("c.id", "u.full_name", "u.avatar_url", "cat.name")
     .first();
   if (cls) {
-    cls.tags = await exports.getClassTags(id);
     cls.views = await exports.getClassViewCount(id);
   }
   return cls;
 };
 
 exports.getClassesByInstructor = async (instructorId) => {
-  const classes = await db("online_classes as c")
+  return db("online_classes as c")
     .leftJoin("categories as cat", "c.category_id", "cat.id")
+    .leftJoin("class_tag_map as m", "c.id", "m.class_id")
+    .leftJoin("class_tags as t", "m.tag_id", "t.id")
     .select(
       "c.id",
       "c.title",
@@ -63,14 +85,26 @@ exports.getClassesByInstructor = async (instructorId) => {
       "c.max_students",
       "c.status",
       "c.moderation_status",
-      "cat.name as category"
+      "cat.name as category",
+      db.raw(
+        "COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'slug', t.slug)) FILTER (WHERE t.id IS NOT NULL), '[]'::json) as tags"
+      )
     )
     .where("c.instructor_id", instructorId)
+    .groupBy(
+      "c.id",
+      "c.title",
+      "c.slug",
+      "c.cover_image",
+      "c.start_date",
+      "c.end_date",
+      "c.price",
+      "c.max_students",
+      "c.status",
+      "c.moderation_status",
+      "cat.name"
+    )
     .orderBy("c.created_at", "desc");
-  for (const cls of classes) {
-    cls.tags = await exports.getClassTags(cls.id);
-  }
-  return classes;
 };
 
 exports.updateClass = async (id, data) => {
