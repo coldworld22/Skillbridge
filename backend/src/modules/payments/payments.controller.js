@@ -21,6 +21,8 @@ const subscriptionService = require("../subscriptions/subscription.service");
 const walletService = require("../payouts/wallet.service");
 const classService = require("../classes/class.service");
 
+const invoiceService = require("../invoices/invoices.service");
+
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
   book: 10,
@@ -263,6 +265,17 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
+  if (payment.status === STATUS.PAID) {
+    try {
+      if (!user) {
+        user = await userModel.findById(user_id);
+      }
+      await invoiceService.generateFromPayment(payment, user);
+    } catch (err) {
+      logger.error("Failed to generate invoice:", err);
+    }
+  }
+
   sendSuccess(res, payment, "Payment created");
 });
 
@@ -334,6 +347,11 @@ exports.updatePayment = catchAsync(async (req, res) => {
       if (req.body.status === STATUS.PAID) {
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
+        try {
+          await invoiceService.generateFromPayment(payment, user);
+        } catch (err) {
+          logger.error("Failed to generate invoice:", err);
+        }
       } else if (req.body.status === STATUS.REJECTED) {
         message = `Your payment ${payment.id} has been rejected.`;
         subject = "Payment Rejected";
