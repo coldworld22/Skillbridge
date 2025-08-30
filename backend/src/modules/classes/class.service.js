@@ -1,12 +1,13 @@
 const db = require("../../config/database");
 const ClassModel = require("./class.model");
+const { parsePagination } = require("../../utils/pagination");
 
 exports.createClass = async (data) => {
   return ClassModel.create(data);
 };
 
 exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
-  const offset = (page - 1) * limit;
+  const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
   const totalRow = await db("online_classes").count("id as count").first();
   const total = parseInt(totalRow.count, 10) || 0;
 
@@ -49,16 +50,16 @@ exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
       "cat.name"
     )
     .orderBy("c.created_at", "desc")
-    .limit(limit)
+    .limit(lim)
     .offset(offset);
 
   return {
     data: classes,
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page: pg,
+      limit: lim,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / lim),
     },
   };
 };
@@ -88,7 +89,7 @@ exports.getClassById = async (id) => {
 };
 
 exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } = {}) => {
-  const offset = (page - 1) * limit;
+  const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
   const totalRow = await db("online_classes")
     .where({ instructor_id: instructorId })
     .count("id as count")
@@ -132,16 +133,16 @@ exports.getClassesByInstructor = async (instructorId, { page = 1, limit = 10 } =
       "cat.name"
     )
     .orderBy("c.created_at", "desc")
-    .limit(limit)
+    .limit(lim)
     .offset(offset);
 
   return {
     data: classes,
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page: pg,
+      limit: lim,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / lim),
     },
   };
 };
@@ -180,7 +181,7 @@ exports.updateModeration = async (id, status, reason = null) => {
 };
 
 exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
-  const offset = (page - 1) * limit;
+  const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
 
   const totalRow = await db("online_classes")
     .where({ status: "published", moderation_status: "Approved" })
@@ -202,7 +203,7 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
       db.raw("COALESCE(e.recent_enrollments, 0) as recent_enrollments")
     )
     .orderBy("c.created_at", "desc")
-    .limit(limit)
+    .limit(lim)
     .offset(offset);
 
   const classes = rows.map((cls) => ({
@@ -214,10 +215,10 @@ exports.getPublishedClasses = async ({ page = 1, limit = 10 } = {}) => {
   return {
     data: classes,
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page: pg,
+      limit: lim,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / lim),
     },
   };
 };

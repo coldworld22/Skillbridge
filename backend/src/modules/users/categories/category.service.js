@@ -3,6 +3,7 @@
  * See docs/admin-category-management.md
  */
 const db = require("../../../config/database");
+const { parsePagination } = require("../../../utils/pagination");
 
 exports.create = async (data) => db("categories").insert(data).returning("*").then(rows => rows[0]);
 
@@ -38,7 +39,7 @@ exports.updateStatus = async (id, status) =>
   db("categories").where({ id }).update({ status });
 
 exports.getAll = async ({ search, status, page = 1, limit = 10 }) => {
-  const offset = (page - 1) * limit;
+  const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
 
   const baseQuery = db("categories").modify((query) => {
     if (search) query.whereILike("name", `%${search}%`);
@@ -46,15 +47,19 @@ exports.getAll = async ({ search, status, page = 1, limit = 10 }) => {
   });
 
   const totalQuery = baseQuery.clone().count("* as count").first();
-  const dataQuery = baseQuery.clone().limit(limit).offset(offset).orderBy("created_at", "desc");
+  const dataQuery = baseQuery
+    .clone()
+    .limit(lim)
+    .offset(offset)
+    .orderBy("created_at", "desc");
 
   const [totalResult, data] = await Promise.all([totalQuery, dataQuery]);
 
   return {
     total: parseInt(totalResult.count),
     data,
-    page: Number(page),
-    limit: Number(limit),
+    page: pg,
+    limit: lim,
   };
 };
 

@@ -11,102 +11,11 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
-/**
- * Generate a unique slug for the provided title.
- * Retries by appending a numeric suffix if slug already exists.
- */
-exports.generateUniqueSlug = async (title, trx = db) => {
-  const base = slugify(title, { lower: true, strict: true });
-  let slug = base;
-  let count = 1;
-  // eslint-disable-next-line no-await-in-loop
-  while (await trx("tutorials").where({ slug }).first()) {
-    slug = `${base}-${count++}`;
-  }
-  return slug;
-};
-
-/**
- * Insert tutorial chapters.
- */
-async function insertChapters(tutorialId, chapters, trx) {
-  for (let i = 0; i < chapters.length; i++) {
-    const ch = chapters[i];
-    // eslint-disable-next-line no-await-in-loop
-    await chapterService.create(
-      {
-        id: uuidv4(),
-        tutorial_id: tutorialId,
-        title: ch.title,
-        video_url: ch.video_url,
-        duration: ch.duration,
-        order: ch.order ?? i + 1,
-        is_preview: ch.is_preview ?? false,
-      },
-      trx
-    );
-  }
-}
-
-/**
- * Create a tutorial along with tags and chapters using a managed transaction.
- * Handles slug uniqueness with retry on conflicts.
- */
-exports.createTutorialWithRelations = async (data, tags = [], chapters = []) => {
-  return withTransaction(async (trx) => {
-    let tutorial;
-    let attempts = 0;
-    // retry a few times in case of slug conflicts
-    while (!tutorial && attempts < 5) {
-      data.slug = await exports.generateUniqueSlug(data.title, trx);
-      try {
-        tutorial = await exports.createTutorial(data, trx);
-      } catch (err) {
-        if (err.constraint === "tutorials_slug_key") {
-          attempts += 1;
-        } else {
-          throw err;
-        }
-      }
-    }
-
-    if (!tutorial) {
-      throw new Error("Unable to generate unique slug for tutorial");
-    }
-
-    if (tags.length) {
-      await exports.updateTutorialTags(tutorial.id, tags, trx);
-      tutorial.tags = await exports.getTutorialTags(tutorial.id, trx);
-    }
-
-    if (chapters.length) {
-      await insertChapters(tutorial.id, chapters, trx);
-    }
-
-    return tutorial;
-  });
-};
-
-/**
- * Update tutorial tags within a managed transaction and return updated tags.
- */
-exports.updateTutorialTagsTransactional = async (tutorialId, tags) => {
-  return withTransaction(async (trx) => {
-    await exports.updateTutorialTags(tutorialId, tags, trx);
-    return exports.getTutorialTags(tutorialId, trx);
-  });
-};
+const { parsePagination } = require("../../../utils/pagination");
 
 exports.getAllTutorials = async (filters = {}) => {
-  const {
-    status,
-    category,
-    search,
-    page = 1,
-    limit = 10,
-  } = filters;
-
-  const offset = (page - 1) * limit;
+  const { status, category, search } = filters;
+  const { page, limit, offset } = parsePagination(filters);
 
   const baseQuery = db("tutorials as t")
     .leftJoin("categories as c", "t.category_id", "c.id")
@@ -146,8 +55,8 @@ exports.getAllTutorials = async (filters = {}) => {
   return {
     data: tutorials,
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page,
+      limit,
       total,
       totalPages: Math.ceil(total / limit),
     },
