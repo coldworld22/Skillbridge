@@ -61,6 +61,12 @@ exports.getWallet = catchAsync(async (req, res) => {
   sendSuccess(res, wallet || { balance: 0 });
 });
 
+// Instructor: Get payout history
+exports.getMyPayouts = catchAsync(async (req, res) => {
+  const payouts = await service.getByInstructor(req.user.id);
+  sendSuccess(res, payouts);
+});
+
 // Instructor: Request payout for self after validating funds
 exports.requestPayout = catchAsync(async (req, res) => {
   const { amount, currency, notes, instructor_id } = req.body;

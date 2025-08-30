@@ -7,6 +7,7 @@ jest.mock('../src/modules/payouts/wallet.service', () => ({
 
 jest.mock('../src/modules/payouts/payouts.service', () => ({
   create: jest.fn(),
+  getByInstructor: jest.fn(),
 }));
 
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
@@ -15,30 +16,41 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
     next();
   },
   isInstructor: (_req, _res, next) => next(),
+  isAdmin: (_req, _res, next) => next(),
 }));
 
 const walletService = require('../src/modules/payouts/wallet.service');
 const payoutService = require('../src/modules/payouts/payouts.service');
-const routes = require('../src/modules/payouts/instructor.routes');
+const routes = require('../src/modules/payouts/payouts.routes');
 
 const app = express();
 app.use(express.json());
-app.use('/api/payouts/instructor', routes);
+app.use('/api/payouts', routes);
 app.use((err, _req, res, _next) => {
   res.status(err.statusCode || 500).json({ message: err.message });
 });
 
-describe('GET /api/payouts/instructor/wallet', () => {
+describe('GET /api/payouts/wallet', () => {
   it('returns wallet balance for instructor', async () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 100 });
-    const res = await request(app).get('/api/payouts/instructor/wallet');
+    const res = await request(app).get('/api/payouts/wallet');
     expect(res.status).toBe(200);
     expect(walletService.getByInstructor).toHaveBeenCalledWith('instr1');
     expect(res.body.data).toEqual({ balance: 100 });
   });
 });
 
-describe('POST /api/payouts/instructor', () => {
+describe('GET /api/payouts/history', () => {
+  it('returns payout history for instructor', async () => {
+    payoutService.getByInstructor.mockResolvedValue([{ id: 'p1' }]);
+    const res = await request(app).get('/api/payouts/history');
+    expect(res.status).toBe(200);
+    expect(payoutService.getByInstructor).toHaveBeenCalledWith('instr1');
+    expect(res.body.data).toEqual([{ id: 'p1' }]);
+  });
+});
+
+describe('POST /api/payouts/request', () => {
   beforeEach(() => {
     walletService.getByInstructor.mockReset();
     payoutService.create.mockReset();
@@ -49,7 +61,7 @@ describe('POST /api/payouts/instructor', () => {
     payoutService.create.mockResolvedValue({ id: 'p1' });
 
     const res = await request(app)
-      .post('/api/payouts/instructor')
+      .post('/api/payouts/request')
       .send({ amount: 50 });
 
     expect(res.status).toBe(200);
@@ -63,7 +75,7 @@ describe('POST /api/payouts/instructor', () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 200 });
 
     const res = await request(app)
-      .post('/api/payouts/instructor')
+      .post('/api/payouts/request')
       .send({ amount: 50, instructor_id: 'other' });
 
     expect(res.status).toBe(403);
@@ -74,7 +86,7 @@ describe('POST /api/payouts/instructor', () => {
     walletService.getByInstructor.mockResolvedValue({ balance: 40 });
 
     const res = await request(app)
-      .post('/api/payouts/instructor')
+      .post('/api/payouts/request')
       .send({ amount: 50 });
 
     expect(res.status).toBe(400);

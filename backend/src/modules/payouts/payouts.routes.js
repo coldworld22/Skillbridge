@@ -1,8 +1,35 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./payouts.controller");
-const { verifyToken, isAdmin } = require("../../middleware/auth/authMiddleware");
+const {
+  verifyToken,
+  isAdmin,
+  isInstructor,
+} = require("../../middleware/auth/authMiddleware");
 
+// Instructor routes
+router.post(
+  "/request",
+  verifyToken,
+  isInstructor,
+  controller.requestPayout
+);
+
+router.get(
+  "/wallet",
+  verifyToken,
+  isInstructor,
+  controller.getWallet
+);
+
+router.get(
+  "/history",
+  verifyToken,
+  isInstructor,
+  controller.getMyPayouts
+);
+
+// Admin-only routes for payout management
 router.use(verifyToken, isAdmin);
 
 router.post("/", controller.createPayout);
