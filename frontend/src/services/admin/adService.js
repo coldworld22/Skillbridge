@@ -16,12 +16,22 @@ export const checkAdTitle = async (title) => {
   return data?.data?.exists;
 };
 
-export const fetchAds = async ({ limit, offset, role } = {}) => {
+export const fetchAds = async ({
+  limit,
+  offset,
+  role,
+  status,
+  type,
+  search,
+} = {}) => {
   try {
     const params = {
       ...(limit !== undefined ? { limit } : {}),
       ...(offset !== undefined ? { offset } : {}),
       ...(role ? { role } : {}),
+      ...(status ? { status } : {}),
+      ...(type ? { type } : {}),
+      ...(search ? { search } : {}),
     };
     const config = Object.keys(params).length ? { params } : undefined;
     const { data } = await api.get("/ads/admin", config);

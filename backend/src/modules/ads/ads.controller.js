@@ -146,7 +146,12 @@ exports.createAd = catchAsync(async (req, res) => {
         req.user.id,
         undefined,
         false,
-        true
+        true,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined
       );
       if (existing.length >= maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
@@ -233,6 +238,9 @@ exports.getAds = catchAsync(async (req, res) => {
   const role = req.query.role?.toLowerCase();
   const limit = req.query.limit ? Number(req.query.limit) : undefined;
   const offset = req.query.offset ? Number(req.query.offset) : undefined;
+  const status = req.query.status ? String(req.query.status).toLowerCase() : undefined;
+  const type = req.query.type ? String(req.query.type).toLowerCase() : undefined;
+  const search = req.query.search;
   const result = await service.getAds(
     false,
     undefined,
@@ -240,7 +248,10 @@ exports.getAds = catchAsync(async (req, res) => {
     false,
     false,
     limit,
-    offset
+    offset,
+    status,
+    type,
+    search
   );
   sendSuccess(res, result.data, undefined, result.meta);
 });
@@ -259,6 +270,9 @@ exports.getAllAds = catchAsync(async (req, res) => {
   const role = req.query.role?.toLowerCase();
   const limit = req.query.limit ? Number(req.query.limit) : undefined;
   const offset = req.query.offset ? Number(req.query.offset) : undefined;
+  const status = req.query.status ? String(req.query.status).toLowerCase() : undefined;
+  const type = req.query.type ? String(req.query.type).toLowerCase() : undefined;
+  const search = req.query.search;
   const result = await service.getAds(
     true,
     isAdmin ? undefined : req.user.id,
@@ -266,7 +280,10 @@ exports.getAllAds = catchAsync(async (req, res) => {
     false,
     true,
     limit,
-    offset
+    offset,
+    status,
+    type,
+    search
   );
   sendSuccess(res, result.data, undefined, result.meta);
 });
@@ -407,7 +424,12 @@ exports.updateAd = catchAsync(async (req, res) => {
         req.user.id,
         undefined,
         false,
-        true
+        true,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined
       );
       if (existing.length > maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);

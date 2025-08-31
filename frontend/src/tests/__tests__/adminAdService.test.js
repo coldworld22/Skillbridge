@@ -1,12 +1,34 @@
 import api from "../../services/api/api";
 import { fetchAds } from "../../services/admin/adService";
 
-jest.mock("../../services/api/api", () => ({ get: jest.fn() }));
+jest.mock("../../services/api/api", () => ({
+  get: jest.fn(),
+}));
 
-describe("admin adService fetchAds", () => {
-  it("includes role in params when provided", async () => {
-    api.get.mockResolvedValue({ data: { data: [], meta: {} } });
-    await fetchAds({ role: "student" });
-    expect(api.get).toHaveBeenCalledWith("/ads/admin", { params: { role: "student" } });
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+describe("admin adService", () => {
+  it("forwards query params", async () => {
+    api.get.mockResolvedValueOnce({ data: { data: [], meta: {} } });
+    await fetchAds({
+      limit: 5,
+      offset: 10,
+      role: "student",
+      status: "active",
+      type: "promotion",
+      search: "hello",
+    });
+    expect(api.get).toHaveBeenCalledWith("/ads/admin", {
+      params: {
+        limit: 5,
+        offset: 10,
+        role: "student",
+        status: "active",
+        type: "promotion",
+        search: "hello",
+      },
+    });
   });
 });

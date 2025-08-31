@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -33,11 +33,13 @@ export default function AdminAdsPage() {
     // Fetch ads on mount
     // ─────────────────────
     useEffect(() => {
-        const roleParam = filterRole !== "all" ? filterRole : undefined;
         fetchAds({
             limit: ITEMS_PER_PAGE,
             offset: (currentPage - 1) * ITEMS_PER_PAGE,
-            role: roleParam,
+            role: filterRole !== "all" ? filterRole : undefined,
+            status: filterStatus !== "all" ? filterStatus : undefined,
+            type: filterType !== "all" ? filterType : undefined,
+            search: search || undefined,
         })
             .then((res) => {
                 setAds(res.data);
@@ -47,7 +49,7 @@ export default function AdminAdsPage() {
                 setAds([]);
                 setMeta({ total: 0 });
             });
-    }, [currentPage, filterRole]);
+    }, [currentPage, filterRole, filterStatus, filterType, search]);
 
     // ─────────────────────
     // Handlers
@@ -121,20 +123,6 @@ export default function AdminAdsPage() {
         setSelectedAds((prev) => prev.filter((id) => !successfulIds.includes(id)));
     };
 
-    const filteredAds = useMemo(() => {
-        return ads.filter((ad) => {
-            const matchesSearch = ad.title.toLowerCase().includes(search.toLowerCase()) ||
-                ad.description.toLowerCase().includes(search.toLowerCase());
-            const matchesStatus =
-                filterStatus === "all" ||
-                (filterStatus === "active" && ad.isActive) ||
-                (filterStatus === "inactive" && !ad.isActive);
-            const matchesType = filterType === "all" || ad.adType === filterType;
-
-            return matchesSearch && matchesStatus && matchesType;
-        });
-    }, [ads, search, filterStatus, filterType]);
-
     const totalPages = Math.ceil((meta.total || 0) / ITEMS_PER_PAGE);
 
     // ─────────────────────
@@ -200,12 +188,12 @@ export default function AdminAdsPage() {
                     </div>
                 )}
 
-                {filteredAds.length === 0 ? (
+                {ads.length === 0 ? (
                     <p className="text-gray-500 text-center mt-10">{t('no_ads')}</p>
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredAds.map((ad) => (
+                            {ads.map((ad) => (
                                 <AdCard
                                     key={ad.id}
                                     ad={ad}

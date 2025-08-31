@@ -1,5 +1,5 @@
 // pages/dashboard/instructor/ads/index.js
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -49,14 +49,16 @@ export default function InstructorAdsPage() {
     fetchAds({
       limit: ITEMS_PER_PAGE,
       offset: (currentPage - 1) * ITEMS_PER_PAGE,
-      role: "instructor",
+      status: filterStatus !== "all" ? filterStatus : undefined,
+      type: filterType !== "all" ? filterType : undefined,
+      search: search || undefined,
     })
       .then((res) => {
         setAds(res.data);
         setMeta(res.meta || {});
       })
       .catch(() => setAds([]));
-  }, [user?.id, currentPage]);
+  }, [user?.id, currentPage, filterStatus, filterType, search]);
 
   const handleEdit = (ad) => {
     router.push(`/dashboard/instructor/ads/edit/${ad.id}`);
@@ -86,21 +88,6 @@ export default function InstructorAdsPage() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
-
-  const filteredAds = useMemo(() => {
-    return ads.filter((ad) => {
-      const matchesSearch =
-        ad.title.toLowerCase().includes(search.toLowerCase()) ||
-        ad.description.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus =
-        filterStatus === "all" ||
-        (filterStatus === "active" && ad.isActive) ||
-        (filterStatus === "inactive" && !ad.isActive);
-      const matchesType = filterType === "all" || ad.adType === filterType;
-
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [ads, search, filterStatus, filterType]);
 
   const totalPages = Math.ceil((meta.total || 0) / ITEMS_PER_PAGE);
 
@@ -145,12 +132,12 @@ export default function InstructorAdsPage() {
           </select>
         </section>
 
-        {filteredAds.length === 0 ? (
+        {ads.length === 0 ? (
           <p className="text-gray-500 text-center mt-10">{t("no_ads")}</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAds.map((ad) => (
+              {ads.map((ad) => (
                 <AdCard
                   key={ad.id}
                   ad={ad}
