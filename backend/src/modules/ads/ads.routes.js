@@ -33,7 +33,7 @@ router.get(
   controller.getAllAds
 );
 router.get("/", validate(validator.list), controller.getAds);
-router.post("/:id/view", controller.recordAdView);
+router.post("/:id/view", viewLimiter, controller.recordAdView);
 router.get(
   "/:id/analytics",
   verifyToken,
