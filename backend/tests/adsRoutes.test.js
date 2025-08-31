@@ -1,6 +1,13 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/config/database', () => ({
+  transaction: jest.fn().mockResolvedValue({
+    commit: jest.fn(),
+    rollback: jest.fn(),
+  }),
+}));
+
 jest.mock('../src/modules/plans/plans.service', () => ({
   consumeAdCredit: jest.fn(),
   getPlanById: jest.fn(),
@@ -186,7 +193,10 @@ describe('POST /api/ads/admin', () => {
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
-    expect(planService.consumeAdCredit).toHaveBeenCalledWith('plan1');
+    expect(planService.consumeAdCredit).toHaveBeenCalledWith(
+      'plan1',
+      expect.anything()
+    );
     expect(sendAdSubmissionEmail).toHaveBeenCalledWith(
       'inst@example.com',
       'Instructor One',

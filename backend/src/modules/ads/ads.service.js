@@ -1,10 +1,8 @@
 const db = require("../../config/database");
 
-// Helper to calculate Click Through Rate (CTR) as a percentage
-const calculateCtr = (clicks, views) => (views ? (clicks / views) * 100 : 0);
-
-exports.createAd = async (data) => {
-  const [row] = await db("ads").insert(data).returning("*");
+exports.createAd = async (data, trx) => {
+  const query = trx || db;
+  const [row] = await query("ads").insert(data).returning("*");
   return row;
 };
 
