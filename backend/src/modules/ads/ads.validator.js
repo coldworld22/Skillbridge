@@ -12,9 +12,9 @@ exports.create = {
     end_at: z.coerce.date().optional(),
     target_roles: z.string().optional(),
     ad_type: z.string().optional(),
-    priority: z.coerce.number().optional(),
+    priority: z.coerce.number().nonnegative().optional(),
     allow_branding: z.coerce.boolean().optional(),
-    price: z.coerce.number().optional(),
+    price: z.coerce.number().nonnegative().optional(),
   }),
 };
 
@@ -30,9 +30,9 @@ exports.update = {
     end_at: z.coerce.date().optional(),
     target_roles: z.string().optional(),
     ad_type: z.string().optional(),
-    priority: z.coerce.number().optional(),
+    priority: z.coerce.number().nonnegative().optional(),
     allow_branding: z.coerce.boolean().optional(),
-    price: z.coerce.number().optional(),
+    price: z.coerce.number().nonnegative().optional(),
     is_active: z.coerce.boolean().optional(),
   }),
 };
