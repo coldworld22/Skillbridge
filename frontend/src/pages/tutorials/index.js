@@ -148,7 +148,7 @@ const TutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    fetchAdBanners().then(setAds).catch(() => {});
+    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
   }, []);
 
   const handleFilterChange = (f) => {

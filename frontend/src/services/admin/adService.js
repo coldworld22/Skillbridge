@@ -16,13 +16,15 @@ export const checkAdTitle = async (title) => {
   return data?.data?.exists;
 };
 
-export const fetchAds = async () => {
+export const fetchAds = async ({ limit, offset } = {}) => {
   try {
-    const { data } = await api.get("/ads/admin");
+    const params = { ...(limit !== undefined ? { limit } : {}), ...(offset !== undefined ? { offset } : {}) };
+    const config = Object.keys(params).length ? { params } : undefined;
+    const { data } = await api.get("/ads/admin", config);
 
     const ads = data?.data ?? [];
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-    return ads.map((ad) => ({
+    const mapped = ads.map((ad) => ({
       ...ad,
       image: ad.image_url ? `${base}${ad.image_url}` : null,
       video: ad.video_url ? `${base}${ad.video_url}` : null,
@@ -38,9 +40,10 @@ export const fetchAds = async () => {
       purchasedAt: ad.purchased_at ?? ad.purchasedAt ?? null,
       purchasedBy: ad.purchased_by ?? ad.purchasedBy ?? null,
     }));
+    return { data: mapped, meta: data?.meta };
   } catch (err) {
     if (err.response && err.response.status === 403) {
-      return [];
+      return { data: [], meta: {} };
     }
     throw err;
   }

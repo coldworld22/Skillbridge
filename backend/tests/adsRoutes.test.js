@@ -88,7 +88,7 @@ beforeEach(() => {
 describe('GET /api/ads', () => {
   it('returns ads list', async () => {
     const mock = [{ id: '1' }];
-    service.getAds.mockResolvedValue(mock);
+    service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
@@ -96,10 +96,10 @@ describe('GET /api/ads', () => {
 
   it('filters ads by role', async () => {
     const mock = [{ id: '1' }];
-    service.getAds.mockResolvedValue(mock);
+    service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true);
+    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true, false, undefined, undefined);
     expect(res.body.data).toEqual(mock);
   });
 });
@@ -107,19 +107,19 @@ describe('GET /api/ads', () => {
 describe('GET /api/ads/admin', () => {
   it('returns ads for the authenticated instructor', async () => {
     const mock = [{ id: '1', created_by: 'user1' }];
-    service.getAds.mockResolvedValue(mock);
+    service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false, true);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false, true, undefined, undefined);
     expect(res.body.data).toEqual(mock);
   });
 
   it('filters ads by target role', async () => {
     const mock = [{ id: '1', created_by: 'user1' }];
-    service.getAds.mockResolvedValue(mock);
+    service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false, true);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false, true, undefined, undefined);
   });
 });
 
@@ -188,7 +188,7 @@ describe('POST /api/ads/admin', () => {
         { feature_key: 'ads_allow_branding', value: 'true' },
       ],
     });
-    service.getAds.mockResolvedValue([]);
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
     service.createAd.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
@@ -229,7 +229,7 @@ describe('POST /api/ads/admin', () => {
         { feature_key: 'ads_allow_branding', value: 'true' },
       ],
     });
-    service.getAds.mockResolvedValue([]);
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
@@ -245,7 +245,7 @@ describe('POST /api/ads/admin', () => {
         { feature_key: 'ads_allow_branding', value: 'false' },
       ],
     });
-    service.getAds.mockResolvedValue([]);
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('POST /api/ads/admin', () => {
         { feature_key: 'ads_allow_branding', value: 'true' },
       ],
     });
-    service.getAds.mockResolvedValue([{ id: 'existing' }]);
+    service.getAds.mockResolvedValue({ data: [{ id: 'existing' }], meta: {} });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(403);
     expect(service.createAd).not.toHaveBeenCalled();
@@ -279,7 +279,7 @@ describe('PUT /api/ads/:id', () => {
         { feature_key: 'ads_allow_branding', value: 'true' },
       ],
     });
-    service.getAds.mockResolvedValue([{ id: '1' }]);
+    service.getAds.mockResolvedValue({ data: [{ id: '1' }], meta: {} });
     service.updateAd = jest.fn().mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(200);
@@ -296,7 +296,7 @@ describe('PUT /api/ads/:id', () => {
         { feature_key: 'ads_allow_branding', value: 'false' },
       ],
     });
-    service.getAds.mockResolvedValue([{ id: '1' }]);
+    service.getAds.mockResolvedValue({ data: [{ id: '1' }], meta: {} });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(403);
     expect(service.updateAd).not.toHaveBeenCalled();
@@ -312,7 +312,7 @@ describe('PUT /api/ads/:id', () => {
         { feature_key: 'ads_allow_branding', value: 'true' },
       ],
     });
-    service.getAds.mockResolvedValue([{ id: '1' }, { id: '2' }]);
+    service.getAds.mockResolvedValue({ data: [{ id: '1' }, { id: '2' }], meta: {} });
     const res = await request(app).put('/api/ads/1').send(payload);
     expect(res.status).toBe(403);
     expect(service.updateAd).not.toHaveBeenCalled();
@@ -436,6 +436,14 @@ describe('ads.service getAds active date filtering', () => {
         fn(builder);
         return builder;
       },
+      clone: () => builder,
+      clearSelect: () => builder,
+      clearOrder: () => builder,
+      count: () => builder,
+      first: () => Promise.resolve({ count: 0 }),
+      limit: () => builder,
+      offset: () => builder,
+      then: (resolve) => resolve([]),
     };
     const dbMock = () => builder;
     dbMock.fn = { now: () => 'NOW()' };

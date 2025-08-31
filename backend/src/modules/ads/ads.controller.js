@@ -127,7 +127,13 @@ exports.createAd = catchAsync(async (req, res) => {
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
-      const existing = await service.getAds(true, req.user.id, undefined, false, true);
+      const { data: existing } = await service.getAds(
+        true,
+        req.user.id,
+        undefined,
+        false,
+        true
+      );
       if (existing.length >= maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }
@@ -211,8 +217,18 @@ exports.checkTitle = catchAsync(async (req, res) => {
  */
 exports.getAds = catchAsync(async (req, res) => {
   const role = req.query.role?.toLowerCase();
-  const ads = await service.getAds(false, undefined, role, true);
-  sendSuccess(res, ads);
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  const offset = req.query.offset ? Number(req.query.offset) : undefined;
+  const result = await service.getAds(
+    false,
+    undefined,
+    role,
+    true,
+    false,
+    limit,
+    offset
+  );
+  sendSuccess(res, result.data, undefined, result.meta);
 });
 
 /**
@@ -227,14 +243,18 @@ exports.getAllAds = catchAsync(async (req, res) => {
   const isAdmin =
     normalized.includes("admin") || normalized.includes("superadmin");
   const role = req.query.role?.toLowerCase();
-  const ads = await service.getAds(
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  const offset = req.query.offset ? Number(req.query.offset) : undefined;
+  const result = await service.getAds(
     true,
     isAdmin ? undefined : req.user.id,
     role,
     false,
-    true
+    true,
+    limit,
+    offset
   );
-  sendSuccess(res, ads);
+  sendSuccess(res, result.data, undefined, result.meta);
 });
 
 /**
@@ -368,7 +388,13 @@ exports.updateAd = catchAsync(async (req, res) => {
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
-      const existing = await service.getAds(true, req.user.id, undefined, false, true);
+      const { data: existing } = await service.getAds(
+        true,
+        req.user.id,
+        undefined,
+        false,
+        true
+      );
       if (existing.length > maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }
