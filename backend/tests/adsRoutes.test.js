@@ -99,7 +99,7 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true, false, undefined, undefined);
+    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', false, false, undefined, undefined);
     expect(res.body.data).toEqual(mock);
   });
 });
