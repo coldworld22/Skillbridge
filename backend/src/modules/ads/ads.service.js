@@ -13,9 +13,11 @@ exports.getAds = async (
   createdBy,
   targetRole,
   onlyPurchased = false,
-  includeAllDates = false
+  includeAllDates = false,
+  limit,
+  offset
 ) => {
-  return db("ads")
+  const query = db("ads")
     .modify((qb) => {
       if (!includeInactive) qb.where({ is_active: true });
       if (createdBy) qb.where({ created_by: createdBy });
@@ -34,6 +36,28 @@ exports.getAds = async (
       }
     })
     .orderBy("created_at", "desc");
+
+  const countQuery = query
+    .clone()
+    .clearSelect()
+    .clearOrder()
+    .count("* as count")
+    .first();
+
+  if (Number.isFinite(limit)) query.limit(limit);
+  if (Number.isFinite(offset)) query.offset(offset);
+
+  const [rows, totalResult] = await Promise.all([query, countQuery]);
+  const total = parseInt(totalResult.count, 10) || 0;
+
+  return {
+    data: rows,
+    meta: {
+      total,
+      limit: Number.isFinite(limit) ? limit : undefined,
+      offset: Number.isFinite(offset) ? offset : undefined,
+    },
+  };
 };
 
 // Mark an ad as purchased by a user

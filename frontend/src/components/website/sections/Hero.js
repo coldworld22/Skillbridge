@@ -92,7 +92,7 @@ const Hero = () => {
           normalizedRole === "admin" || normalizedRole === "superadmin"
             ? undefined
             : normalizedRole;
-        const data = await getAds(roleParam);
+        const { data } = await getAds(roleParam);
         setAds(data);
         setAdsError(false);
       } catch (_err) {

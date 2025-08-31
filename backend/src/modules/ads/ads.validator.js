@@ -35,3 +35,11 @@ exports.update = {
     price: z.coerce.number().optional(),
   }),
 };
+
+exports.list = {
+  query: z.object({
+    role: z.string().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+    offset: z.coerce.number().int().nonnegative().optional(),
+  }),
+};

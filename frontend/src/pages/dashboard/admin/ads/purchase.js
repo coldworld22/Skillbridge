@@ -11,7 +11,7 @@ export default function PurchaseAdsPage() {
   const [ads, setAds] = useState([]);
 
   useEffect(() => {
-    fetchAds().then(setAds).catch(() => setAds([]));
+    fetchAds().then((res) => setAds(res.data)).catch(() => setAds([]));
   }, []);
 
   const handlePurchase = async (id) => {

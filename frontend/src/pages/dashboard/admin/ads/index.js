@@ -19,6 +19,7 @@ export default function AdminAdsPage() {
     const { t } = useTranslation('dashboard', { keyPrefix: 'adsPage' });
     const router = useRouter();
     const [ads, setAds] = useState([]);
+    const [meta, setMeta] = useState({ total: 0 });
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterRole, setFilterRole] = useState("all");
@@ -32,8 +33,16 @@ export default function AdminAdsPage() {
     // Fetch ads on mount
     // ─────────────────────
     useEffect(() => {
-        fetchAds().then(setAds).catch(() => setAds([]));
-    }, []);
+        fetchAds({ limit: ITEMS_PER_PAGE, offset: (currentPage - 1) * ITEMS_PER_PAGE })
+            .then((res) => {
+                setAds(res.data);
+                setMeta(res.meta || {});
+            })
+            .catch(() => {
+                setAds([]);
+                setMeta({ total: 0 });
+            });
+    }, [currentPage]);
 
     // ─────────────────────
     // Handlers
@@ -113,11 +122,7 @@ export default function AdminAdsPage() {
         });
     }, [ads, search, filterStatus, filterRole, filterType]);
 
-    const totalPages = Math.ceil(filteredAds.length / ITEMS_PER_PAGE);
-    const paginatedAds = filteredAds.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const totalPages = Math.ceil((meta.total || 0) / ITEMS_PER_PAGE);
 
     // ─────────────────────
     // Render
@@ -182,12 +187,12 @@ export default function AdminAdsPage() {
                     </div>
                 )}
 
-                {paginatedAds.length === 0 ? (
+                {filteredAds.length === 0 ? (
                     <p className="text-gray-500 text-center mt-10">{t('no_ads')}</p>
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {paginatedAds.map((ad) => (
+                            {filteredAds.map((ad) => (
                                 <AdCard
                                     key={ad.id}
                                     ad={ad}
@@ -206,10 +211,11 @@ export default function AdminAdsPage() {
                                 <button
                                     key={i + 1}
                                     onClick={() => setCurrentPage(i + 1)}
-                                    className={`px-3 py-1 rounded border text-sm font-medium transition-colors duration-200 ${currentPage === i + 1
+                                    className={`px-3 py-1 rounded border text-sm font-medium transition-colors duration-200 ${
+                                        currentPage === i + 1
                                             ? "bg-blue-600 text-white border-blue-600"
                                             : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                                        }`}
+                                    }`}
                                 >
                                     {i + 1}
                                 </button>

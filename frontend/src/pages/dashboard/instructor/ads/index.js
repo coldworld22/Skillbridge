@@ -21,6 +21,7 @@ export default function InstructorAdsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "adsPage" });
   const router = useRouter();
   const [ads, setAds] = useState([]);
+  const [meta, setMeta] = useState({ total: 0 });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -45,15 +46,13 @@ export default function InstructorAdsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    fetchAds()
-      .then((data) => {
-        const mine = data.filter(
-          (ad) => ad.created_by === user.id || ad.createdBy === user.id
-        );
-        setAds(mine);
+    fetchAds({ limit: ITEMS_PER_PAGE, offset: (currentPage - 1) * ITEMS_PER_PAGE })
+      .then((res) => {
+        setAds(res.data);
+        setMeta(res.meta || {});
       })
       .catch(() => setAds([]));
-  }, [user?.id]);
+  }, [user?.id, currentPage]);
 
   const handleEdit = (ad) => {
     router.push(`/dashboard/instructor/ads/edit/${ad.id}`);
@@ -99,11 +98,7 @@ export default function InstructorAdsPage() {
     });
   }, [ads, search, filterStatus, filterType]);
 
-  const totalPages = Math.ceil(filteredAds.length / ITEMS_PER_PAGE);
-  const paginatedAds = filteredAds.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const totalPages = Math.ceil((meta.total || 0) / ITEMS_PER_PAGE);
 
   return (
     <InstructorLayout>
@@ -146,12 +141,12 @@ export default function InstructorAdsPage() {
           </select>
         </section>
 
-        {paginatedAds.length === 0 ? (
+        {filteredAds.length === 0 ? (
           <p className="text-gray-500 text-center mt-10">{t("no_ads")}</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedAds.map((ad) => (
+              {filteredAds.map((ad) => (
                 <AdCard
                   key={ad.id}
                   ad={ad}

@@ -43,7 +43,7 @@ export default function OnlineClassesPage({ initialClasses = [] }) {
   }, [initialClasses]);
 
   useEffect(() => {
-    fetchAdBanners().then(setAds).catch(() => {});
+    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {

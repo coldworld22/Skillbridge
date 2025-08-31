@@ -25,9 +25,10 @@ router.get(
   "/admin",
   verifyToken,
   isInstructorOrAdmin,
+  validate(validator.list),
   controller.getAllAds
 );
-router.get("/", controller.getAds);
+router.get("/", validate(validator.list), controller.getAds);
 router.post("/:id/view", controller.recordAdView);
 router.get(
   "/:id/analytics",
