@@ -8,6 +8,7 @@ const planService = require("../plans/plans.service");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const { isAdminRole } = require("../../utils/role");
 const {
   sendAdSubmissionEmail,
   sendAdApprovalEmail,
@@ -87,7 +88,7 @@ exports.createAd = catchAsync(async (req, res) => {
     data.image_url = null;
   }
 
-  const isAdmin = (req.user.roles || [req.user.role]).some((r) => String(r).toLowerCase() === "admin");
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
 
   let ad;
   if (!isAdmin) {
@@ -114,7 +115,7 @@ exports.createAd = catchAsync(async (req, res) => {
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
-      const existing = await service.getAds(true, req.user.id);
+      const existing = await service.getAds(true, req.user.id, undefined, false, true);
       if (existing.length >= maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }
@@ -211,7 +212,8 @@ exports.getAllAds = catchAsync(async (req, res) => {
     true,
     isAdmin ? undefined : req.user.id,
     role,
-    false
+    false,
+    true
   );
   sendSuccess(res, ads);
 });
@@ -267,9 +269,7 @@ exports.updateAd = catchAsync(async (req, res) => {
   }
 
   const roles = req.user.roles || [req.user.role];
-  const normalizedRoles = roles.map((r) => String(r).toLowerCase());
-  const isAdmin =
-    normalizedRoles.includes("admin") || normalizedRoles.includes("superadmin");
+  const isAdmin = isAdminRole(roles);
   const ad = await service.getAdById(req.params.id);
   if (!ad) throw new AppError("Ad not found", 404);
   if (!isAdmin && ad.created_by !== req.user.id) {
@@ -301,42 +301,44 @@ exports.updateAd = catchAsync(async (req, res) => {
     updates.image_url = null;
   }
 
-  // Load instructor plan and enforce ad feature limits
-  const planId =
-    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
-  const plan = planId ? await planService.getPlanById(planId) : null;
-  if (!plan) {
-    throw new AppError("Plan not found", 403);
-  }
-
-  const features = {};
-  (plan.features || []).forEach((f) => {
-    let val = f.value;
-    try {
-      val = JSON.parse(f.value);
-    } catch {
-      if (f.value === "true") val = true;
-      else if (f.value === "false") val = false;
-      else if (!isNaN(f.value)) val = Number(f.value);
+  if (!isAdmin) {
+    // Load instructor plan and enforce ad feature limits
+    const planId =
+      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+    const plan = planId ? await planService.getPlanById(planId) : null;
+    if (!plan) {
+      throw new AppError("Plan not found", 403);
     }
-    features[f.feature_key] = val;
-  });
 
-  const maxAds = Number(features["ads_max_ads"] || 0);
-  if (maxAds) {
-    const existing = await service.getAds(true, req.user.id);
-    if (existing.length > maxAds) {
-      throw new AppError("Ad limit reached for your plan", 403);
+    const features = {};
+    (plan.features || []).forEach((f) => {
+      let val = f.value;
+      try {
+        val = JSON.parse(f.value);
+      } catch {
+        if (f.value === "true") val = true;
+        else if (f.value === "false") val = false;
+        else if (!isNaN(f.value)) val = Number(f.value);
+      }
+      features[f.feature_key] = val;
+    });
+
+    const maxAds = Number(features["ads_max_ads"] || 0);
+    if (maxAds) {
+      const existing = await service.getAds(true, req.user.id, undefined, false, true);
+      if (existing.length > maxAds) {
+        throw new AppError("Ad limit reached for your plan", 403);
+      }
     }
-  }
 
-  const brandingAllowed = !!features["ads_allow_branding"];
-  const newBranding =
-    updates.allow_branding !== undefined
-      ? updates.allow_branding
-      : ad.allow_branding;
-  if (newBranding && !brandingAllowed) {
-    throw new AppError("Branding not allowed for your plan", 403);
+    const brandingAllowed = !!features["ads_allow_branding"];
+    const newBranding =
+      updates.allow_branding !== undefined
+        ? updates.allow_branding
+        : ad.allow_branding;
+    if (newBranding && !brandingAllowed) {
+      throw new AppError("Branding not allowed for your plan", 403);
+    }
   }
 
   const updated = await service.updateAd(req.params.id, updates);
@@ -430,9 +432,10 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
   if (!req.user) {
     throw new AppError("Unauthorized", 401);
   }
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
   const canShowAnalytics =
     req.user.plan?.showAnalytics || req.user.subscription?.showAnalytics;
-  if (!canShowAnalytics) {
+  if (!isAdmin && !canShowAnalytics) {
     throw new AppError("Analytics not available for your current plan", 403);
   }
 
