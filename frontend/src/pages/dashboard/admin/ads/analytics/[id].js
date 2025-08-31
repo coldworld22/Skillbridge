@@ -217,11 +217,12 @@ export default function AdAnalyticsPage({ ad: initialAd, error }) {
   );
 }
 
-export async function getServerSideProps({ params, locale }) {
+export async function getServerSideProps({ params, locale, req }) {
   try {
+    const headers = req.headers?.cookie ? { cookie: req.headers.cookie } : {};
     const [adData, analytics] = await Promise.all([
-      fetchAdById(params.id),
-      fetchAdAnalytics(params.id),
+      fetchAdById(params.id, headers),
+      fetchAdAnalytics(params.id, headers),
     ]);
     if (!adData) {
       return { notFound: true };
