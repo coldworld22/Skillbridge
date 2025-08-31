@@ -125,6 +125,17 @@ exports.createAd = catchAsync(async (req, res) => {
       features[f.feature_key] = val;
     });
 
+    const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+    if (maxDuration && start_at && end_at) {
+      const diffDays = Math.ceil(
+        (new Date(end_at).getTime() - new Date(start_at).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+      if (diffDays > maxDuration) {
+        throw new AppError("Ad duration exceeds limit for your plan", 403);
+      }
+    }
+
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
       const { data: existing } = await service.getAds(
@@ -385,6 +396,17 @@ exports.updateAd = catchAsync(async (req, res) => {
       }
       features[f.feature_key] = val;
     });
+
+    const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+    if (maxDuration && newStart && newEnd) {
+      const diffDays = Math.ceil(
+        (new Date(newEnd).getTime() - new Date(newStart).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+      if (diffDays > maxDuration) {
+        throw new AppError("Ad duration exceeds limit for your plan", 403);
+      }
+    }
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
