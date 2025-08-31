@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import { createAd, checkAdTitle } from "@/services/admin/adService";
+import { createAd, checkAdTitle, fetchAds } from "@/services/admin/adService";
 import { fetchPlanFeatures } from "@/services/planFeatureService";
 import { FaSpinner, FaTrash, FaImage, FaVideo } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
@@ -41,8 +41,12 @@ export default function CreateAdPage() {
 
   const planKey = user?.plan || 'basic';
   const [planFeatures, setPlanFeatures] = useState(null);
-  const { allowBranding: allowBrandingEnabled } =
-    planFeatures?.[planKey] || { allowBranding: false };
+  const {
+    allowBranding: allowBrandingEnabled,
+    maxAdDuration,
+    maxAds,
+  } = planFeatures?.[planKey] || { allowBranding: false };
+  const [activeAdsCount, setActiveAdsCount] = useState(0);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -80,12 +84,32 @@ export default function CreateAdPage() {
       .catch(() => setPlanFeatures({}));
   }, []);
 
+  useEffect(() => {
+    if (!maxAds || !user?.id) return;
+    fetchAds()
+      .then((ads) => {
+        const count = ads.filter(
+          (a) =>
+            (a.createdBy ?? a.created_by) === user.id &&
+            a.isActive &&
+            new Date(a.endAt) >= new Date()
+        ).length;
+        setActiveAdsCount(count);
+      })
+      .catch(() => setActiveAdsCount(0));
+  }, [maxAds, user?.id]);
+
   const isFormValid =
     formData.title &&
     formData.startAt &&
     formData.endAt &&
     ((mediaType === 'image' && formData.image) || (mediaType === 'video' && videoFile));
-  const disableSubmit = !isFormValid || isSubmitting || isCheckingTitle || titleError;
+  const disableSubmit =
+    !isFormValid ||
+    isSubmitting ||
+    isCheckingTitle ||
+    titleError ||
+    (maxAds && activeAdsCount >= maxAds);
 
   useEffect(() => {
     if (!formData.title) {
@@ -150,7 +174,20 @@ export default function CreateAdPage() {
       setError(t('end_before_start'));
       return;
     }
-    
+
+    const start = new Date(formData.startAt);
+    const end = new Date(formData.endAt);
+    const diffInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    if (maxAdDuration && diffInDays > maxAdDuration) {
+      setError(t('duration_exceeded', { days: maxAdDuration }));
+      return;
+    }
+
+    if (maxAds && activeAdsCount >= maxAds) {
+      setError(t('ad_limit_reached', { count: maxAds }));
+      return;
+    }
+
     if (titleError || isCheckingTitle) return;
 
     setIsSubmitting(true);
@@ -228,6 +265,17 @@ export default function CreateAdPage() {
         {error && (
           <div className="bg-red-50 dark:bg-red-900/10 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6">
             {error}
+          </div>
+        )}
+
+        {(maxAds || maxAdDuration) && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-lg mb-6 space-y-1">
+            {maxAds && (
+              <p>{t('plan_limit_ads', { current: activeAdsCount, count: maxAds })}</p>
+            )}
+            {maxAdDuration && (
+              <p>{t('plan_limit_duration', { days: maxAdDuration })}</p>
+            )}
           </div>
         )}
 

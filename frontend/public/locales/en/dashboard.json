@@ -424,7 +424,11 @@
     "remove_video": "Remove Video",
     "video_requirements": "MP4, WEBM up to 50MB",
     "target_audience_help": "Select who will see this advertisement",
-    "allow_branding_help": "Show organization branding on this ad"
+    "allow_branding_help": "Show organization branding on this ad",
+    "duration_exceeded": "Duration cannot exceed {{days}} days.",
+    "ad_limit_reached": "Ad limit reached: maximum {{count}} active ads.",
+    "plan_limit_ads": "Active ads: {{current}} / {{count}}",
+    "plan_limit_duration": "Max duration per ad: {{days}} days"
   },
   "plansPage": {
     "title": "Subscription Plans",
