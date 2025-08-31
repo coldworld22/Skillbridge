@@ -152,7 +152,17 @@ export default function AdAnalyticsPage({ ad: initialAd, error }) {
               { label: "CTR", value: `${(ad.ctr ?? 0).toFixed(2)}%`, icon: "📈" },
               { label: "Conversions", value: ad.conversions, icon: "🎯" },
               { label: "Reach", value: ad.reach, icon: "📊" },
-              { label: "Top Devices", value: deviceList.length ? deviceList.join(", ") : "-", icon: "📱" }
+              {
+                label: "Top Devices",
+                value: deviceList.length
+                  ? deviceList
+                      .map((d) =>
+                        `${d.user_agent}${d.views ? ` (${d.views})` : ""}`
+                      )
+                      .join(", ")
+                  : "-",
+                icon: "📱",
+              }
             ].map((item) => (
               <div key={item.label} className="bg-gray-50 p-4 rounded border">
                 <div className="text-xs uppercase mb-1">{item.icon} {item.label}</div>
