@@ -4,6 +4,7 @@ import { fetchPaymentMethods } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchBook } from '@/services/bookService';
+import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import { createPayment } from '@/services/student/paymentService';
@@ -184,12 +185,18 @@ export default function CheckoutPage() {
     let active = true;
     const load = async () => {
       try {
-        const details =
-          itemType === 'tutorial'
-            ? await fetchTutorialDetails(itemId)
-            : itemType === 'book'
-            ? await fetchBook(itemId)
-            : await fetchClassDetails(itemId);
+        let details;
+        if (itemType === 'tutorial') {
+          details = await fetchTutorialDetails(itemId);
+        } else if (itemType === 'book') {
+          details = await fetchBook(itemId);
+        } else if (itemType === 'plan') {
+          details = await fetchPlanDetails(itemId);
+          const data = details?.data ?? details;
+          details = { ...data, title: data.name, price: Number(data.price_monthly) };
+        } else {
+          details = await fetchClassDetails(itemId);
+        }
         if (active) setItemInfo(details?.data ?? details);
       } catch (err) {
         console.error('Failed to load item', err);
@@ -245,6 +252,17 @@ export default function CheckoutPage() {
   };
 
   const completePayment = async () => {
+    if (itemType === 'plan') {
+      setPaymentStatus('success');
+      setTimeout(
+        () =>
+          router.push(
+            `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`
+          ),
+        1500
+      );
+      return;
+    }
     const storageKey =
       itemType === 'tutorial'
         ? 'enrolledTutorials'
@@ -411,24 +429,28 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-bold mb-6 text-yellow-400">{t('checkout')}</h1>
 
         <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-6 items-center">
-          <img
-            src={
-              itemType === 'tutorial'
-                ? itemInfo.thumbnail
-                : itemType === 'book'
-                ? itemInfo.cover_image_url || itemInfo.cover_image
-                : itemInfo.cover_image
-            }
-            alt={itemInfo.title}
-            className="w-32 h-32 object-cover rounded-lg"
-          />
+          {itemType !== 'plan' && (
+            <img
+              src={
+                itemType === 'tutorial'
+                  ? itemInfo.thumbnail
+                  : itemType === 'book'
+                  ? itemInfo.cover_image_url || itemInfo.cover_image
+                  : itemInfo.cover_image
+              }
+              alt={itemInfo.title}
+              className="w-32 h-32 object-cover rounded-lg"
+            />
+          )}
           <div>
             <h2 className="text-xl font-semibold">{itemInfo.title}</h2>
-            <p className="text-sm text-gray-400">
-              {itemType === 'book'
-                ? `Author: ${itemInfo.author}`
-                : `Instructor: ${itemInfo.instructor}`}
-            </p>
+            {itemType !== 'plan' && (
+              <p className="text-sm text-gray-400">
+                {itemType === 'book'
+                  ? `Author: ${itemInfo.author}`
+                  : `Instructor: ${itemInfo.instructor}`}
+              </p>
+            )}
             <p className="mt-2 font-bold text-lg">Price: ${itemInfo.price}</p>
             {discountAmount > 0 && (
               <p className="text-green-400">
