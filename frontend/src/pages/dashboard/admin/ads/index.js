@@ -33,7 +33,12 @@ export default function AdminAdsPage() {
     // Fetch ads on mount
     // ─────────────────────
     useEffect(() => {
-        fetchAds({ limit: ITEMS_PER_PAGE, offset: (currentPage - 1) * ITEMS_PER_PAGE })
+        const roleParam = filterRole !== "all" ? filterRole : undefined;
+        fetchAds({
+            limit: ITEMS_PER_PAGE,
+            offset: (currentPage - 1) * ITEMS_PER_PAGE,
+            role: roleParam,
+        })
             .then((res) => {
                 setAds(res.data);
                 setMeta(res.meta || {});
@@ -42,7 +47,7 @@ export default function AdminAdsPage() {
                 setAds([]);
                 setMeta({ total: 0 });
             });
-    }, [currentPage]);
+    }, [currentPage, filterRole]);
 
     // ─────────────────────
     // Handlers
@@ -114,13 +119,11 @@ export default function AdminAdsPage() {
                 filterStatus === "all" ||
                 (filterStatus === "active" && ad.isActive) ||
                 (filterStatus === "inactive" && !ad.isActive);
-            const matchesRole =
-                filterRole === "all" || ad.targetRoles.includes(filterRole);
             const matchesType = filterType === "all" || ad.adType === filterType;
 
-            return matchesSearch && matchesStatus && matchesRole && matchesType;
+            return matchesSearch && matchesStatus && matchesType;
         });
-    }, [ads, search, filterStatus, filterRole, filterType]);
+    }, [ads, search, filterStatus, filterType]);
 
     const totalPages = Math.ceil((meta.total || 0) / ITEMS_PER_PAGE);
 

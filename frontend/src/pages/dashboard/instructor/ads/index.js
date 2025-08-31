@@ -46,7 +46,11 @@ export default function InstructorAdsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    fetchAds({ limit: ITEMS_PER_PAGE, offset: (currentPage - 1) * ITEMS_PER_PAGE })
+    fetchAds({
+      limit: ITEMS_PER_PAGE,
+      offset: (currentPage - 1) * ITEMS_PER_PAGE,
+      role: "instructor",
+    })
       .then((res) => {
         setAds(res.data);
         setMeta(res.meta || {});

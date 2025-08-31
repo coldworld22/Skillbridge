@@ -28,22 +28,15 @@ const ChatHeader = ({ selectedChat, onStartVideoCall }) => {
   const isOnline =
     selectedChat.isOnline ?? selectedChat.is_online ?? selectedChat.status === "online";
   const lastActiveRaw = selectedChat.lastActive || selectedChat.last_active;
-  let lastActiveText = "Last active: unknown.";
-  if (lastActiveRaw) {
-    const formatted = formatRelativeTime(lastActiveRaw);
-    if (formatted && formatted !== "Invalid date") {
-      lastActiveText = `Last active ${formatted}`;
-    }
-  }
   const hasPhone = !!selectedChat.phone;
   const email = selectedChat.email;
 
   const formatLastActive = () => {
-    if (!lastActive) return "";
-    const date = dayjs(lastActive);
+    if (!lastActiveRaw) return "";
+    const date = dayjs(lastActiveRaw);
     if (!date.isValid()) return "";
     const absolute = date.format("YYYY-MM-DD HH:mm");
-    const relative = formatRelativeTime(lastActive);
+    const relative = formatRelativeTime(lastActiveRaw);
     return relative ? `${absolute} (${relative})` : absolute;
   };
 
