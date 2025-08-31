@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import useDebounce from "@/hooks/useDebounce";
 
 export default function AdminAdsPage() {
     // ─────────────────────
@@ -21,6 +22,7 @@ export default function AdminAdsPage() {
     const [ads, setAds] = useState([]);
     const [meta, setMeta] = useState({ total: 0 });
     const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 500);
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterRole, setFilterRole] = useState("all");
     const [filterType, setFilterType] = useState("all");
@@ -39,7 +41,7 @@ export default function AdminAdsPage() {
             role: filterRole !== "all" ? filterRole : undefined,
             status: filterStatus !== "all" ? filterStatus : undefined,
             type: filterType !== "all" ? filterType : undefined,
-            search: search || undefined,
+            search: debouncedSearch || undefined,
         })
             .then((res) => {
                 setAds(res.data);
@@ -49,7 +51,7 @@ export default function AdminAdsPage() {
                 setAds([]);
                 setMeta({ total: 0 });
             });
-    }, [currentPage, filterRole, filterStatus, filterType, search]);
+    }, [currentPage, filterRole, filterStatus, filterType, debouncedSearch]);
 
     // ─────────────────────
     // Handlers

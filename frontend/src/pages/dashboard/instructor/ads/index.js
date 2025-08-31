@@ -16,6 +16,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
+import useDebounce from "@/hooks/useDebounce";
 
 export default function InstructorAdsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "adsPage" });
@@ -23,6 +24,7 @@ export default function InstructorAdsPage() {
   const [ads, setAds] = useState([]);
   const [meta, setMeta] = useState({ total: 0 });
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,14 +53,14 @@ export default function InstructorAdsPage() {
       offset: (currentPage - 1) * ITEMS_PER_PAGE,
       status: filterStatus !== "all" ? filterStatus : undefined,
       type: filterType !== "all" ? filterType : undefined,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
     })
       .then((res) => {
         setAds(res.data);
         setMeta(res.meta || {});
       })
       .catch(() => setAds([]));
-  }, [user?.id, currentPage, filterStatus, filterType, search]);
+  }, [user?.id, currentPage, filterStatus, filterType, debouncedSearch]);
 
   const handleEdit = (ad) => {
     router.push(`/dashboard/instructor/ads/edit/${ad.id}`);
