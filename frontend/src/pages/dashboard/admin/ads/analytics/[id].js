@@ -149,7 +149,7 @@ export default function AdAnalyticsPage({ ad: initialAd, error }) {
           <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
             {[
               { label: "Views", value: ad.views, icon: "👁️" },
-              { label: "CTR", value: ad.ctr, icon: "📈" },
+              { label: "CTR", value: `${(ad.ctr ?? 0).toFixed(2)}%`, icon: "📈" },
               { label: "Conversions", value: ad.conversions, icon: "🎯" },
               { label: "Reach", value: ad.reach, icon: "📊" },
               { label: "Top Devices", value: deviceList.length ? deviceList.join(", ") : "-", icon: "📱" }

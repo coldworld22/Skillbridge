@@ -370,7 +370,12 @@ describe('POST /api/ads/:id/view', () => {
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
     expect(service.getAdById).toHaveBeenCalledWith('1');
-    expect(service.recordView).toHaveBeenCalledWith('1', null);
+  expect(service.recordView).toHaveBeenCalledWith(
+    '1',
+    null,
+    expect.any(String),
+    undefined
+  );
   });
 
   it('returns 404 for missing ad', async () => {

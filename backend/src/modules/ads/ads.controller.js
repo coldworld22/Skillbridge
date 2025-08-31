@@ -464,7 +464,9 @@ exports.recordAdView = catchAsync(async (req, res) => {
     throw new AppError("Ad is inactive", 403);
   }
   const userId = req.user?.id || null;
-  await service.recordView(ad.id, userId);
+  const viewerIp = req.ip;
+  const userAgent = req.get("user-agent");
+  await service.recordView(ad.id, userId, viewerIp, userAgent);
   sendSuccess(res, null, "View recorded");
 });
 
@@ -492,6 +494,7 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
     conversions: 0,
     reach: 0,
     devices: [],
+    ipStats: [],
     locationStats: [],
     analytics: [],
   };
@@ -507,6 +510,7 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
     reach: data.unique_viewers,
     // Include any additional analytics information if present on the record.
     devices: data.devices || base.devices,
+    ipStats: data.ip_stats || base.ipStats,
     locationStats: data.location_stats || base.locationStats,
     analytics: data.analytics || base.analytics,
   };
