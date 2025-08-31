@@ -106,6 +106,21 @@ exports.getAdAnalytics = async (adId) => {
     .groupBy("day")
     .orderBy("day", "asc");
 
+  // Aggregate views by device and IP
+  const deviceRows = await db("ad_views")
+    .select("user_agent")
+    .count("* as views")
+    .where({ ad_id: adId })
+    .groupBy("user_agent")
+    .orderBy("views", "desc");
+
+  const ipRows = await db("ad_views")
+    .select("ip_address")
+    .count("* as views")
+    .where({ ad_id: adId })
+    .groupBy("ip_address")
+    .orderBy("views", "desc");
+
   // Optional stored analytics such as clicks/ctr
   const row = await db("ad_analytics").where({ ad_id: adId }).first();
   const clicks = row?.clicks ?? 0;
@@ -116,14 +131,15 @@ exports.getAdAnalytics = async (adId) => {
     clicks,
     ctr: Number(ctr) || 0,
     unique_viewers: Number(agg?.unique_viewers) || 0,
-    devices: [],
+    devices: deviceRows.map((d) => ({ user_agent: d.user_agent, views: Number(d.views) })),
+    ip_stats: ipRows.map((i) => ({ ip_address: i.ip_address, views: Number(i.views) })),
     location_stats: [],
     analytics: daily.map((d) => ({ day: d.day, views: Number(d.views) })),
   };
 };
 
 // Increment view count and track unique viewers
-exports.recordView = async (adId, userId) => {
+exports.recordView = async (adId, userId, ipAddress, userAgent) => {
   return db.transaction(async (trx) => {
     // Check if this viewer is unique before inserting the view record
     let isUnique = false;
@@ -134,10 +150,22 @@ exports.recordView = async (adId, userId) => {
       if (!existing) {
         isUnique = true;
       }
+    } else if (ipAddress) {
+      const existing = await trx("ad_views")
+        .where({ ad_id: adId, ip_address: ipAddress })
+        .first();
+      if (!existing) {
+        isUnique = true;
+      }
     }
 
     // Log the view event
-    await trx("ad_views").insert({ ad_id: adId, user_id: userId || null });
+    await trx("ad_views").insert({
+      ad_id: adId,
+      user_id: userId || null,
+      ip_address: ipAddress || null,
+      user_agent: userAgent || null,
+    });
 
     const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
     if (analytics) {
