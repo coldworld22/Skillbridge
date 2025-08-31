@@ -49,6 +49,17 @@ exports.createAd = catchAsync(async (req, res) => {
     throw new AppError("Image or video is required", 400);
   }
 
+  if (
+    start_at &&
+    end_at &&
+    new Date(end_at).getTime() < new Date(start_at).getTime()
+  ) {
+    throw new AppError(
+      "end_at must be greater than or equal to start_at",
+      400
+    );
+  }
+
   const data = {
     id: uuidv4(),
     title,
@@ -290,6 +301,19 @@ exports.updateAd = catchAsync(async (req, res) => {
     throw new AppError("Only admins can change ad status", 403);
   }
   const previousAd = ad;
+
+  const newStart = start_at ?? ad.start_at;
+  const newEnd = end_at ?? ad.end_at;
+  if (
+    newStart &&
+    newEnd &&
+    new Date(newEnd).getTime() < new Date(newStart).getTime()
+  ) {
+    throw new AppError(
+      "end_at must be greater than or equal to start_at",
+      400
+    );
+  }
 
   if (title) {
     const existing = await service.findByTitle(title);
