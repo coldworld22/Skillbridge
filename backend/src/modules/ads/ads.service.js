@@ -220,49 +220,53 @@ exports.recordView = async (adId, userId, ipAddress, userAgent) => {
       user_agent: userAgent || null,
     });
 
-    const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
-    if (analytics) {
-      const views = analytics.views + 1;
-      const clicks = analytics.clicks;
-      const updates = {
-        views,
-        ctr: calculateCtr(clicks, views),
-      };
-      if (isUnique) {
-        updates.unique_viewers = analytics.unique_viewers + 1;
-      }
-      await trx("ad_analytics").where({ ad_id: adId }).update(updates);
-    } else {
-      await trx("ad_analytics").insert({
+    const uniqueInc = isUnique ? 1 : 0;
+    await trx("ad_analytics")
+      .insert({
         ad_id: adId,
         views: 1,
         clicks: 0,
         ctr: 0,
-        unique_viewers: isUnique ? 1 : 0,
+        unique_viewers: uniqueInc,
+      })
+      .onConflict("ad_id")
+      .merge({
+        views: trx.raw("ad_analytics.views + 1"),
+        unique_viewers: trx.raw("ad_analytics.unique_viewers + ?", [uniqueInc]),
       });
-    }
+
+    await trx("ad_analytics")
+      .where({ ad_id: adId })
+      .update({
+        ctr: trx.raw(
+          "CASE WHEN views > 0 THEN (clicks::float / views) * 100 ELSE 0 END"
+        ),
+      });
   });
 };
 
 // Increment click count and recompute CTR
 exports.recordClick = async (adId) => {
   return db.transaction(async (trx) => {
-    const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
-    if (analytics) {
-      const clicks = analytics.clicks + 1;
-      const ctr = calculateCtr(clicks, analytics.views);
-      await trx("ad_analytics").where({ ad_id: adId }).update({
-        clicks,
-        ctr,
-      });
-    } else {
-      await trx("ad_analytics").insert({
+    await trx("ad_analytics")
+      .insert({
         ad_id: adId,
         views: 0,
         clicks: 1,
         ctr: 0,
         unique_viewers: 0,
+      })
+      .onConflict("ad_id")
+      .merge({
+        clicks: trx.raw("ad_analytics.clicks + 1"),
       });
-    }
+
+    await trx("ad_analytics")
+      .where({ ad_id: adId })
+      .update({
+        ctr: trx.raw(
+          "CASE WHEN views > 0 THEN (clicks::float / views) * 100 ELSE 0 END"
+        ),
+      });
   });
 };
