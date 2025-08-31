@@ -233,7 +233,7 @@ describe('GET /api/ads/public/:id', () => {
 
 describe('POST /api/ads/admin', () => {
   it('creates ad within plan limits and consumes credit', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true };
+    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true, target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
       ad_credits: 2,
@@ -273,10 +273,11 @@ describe('POST /api/ads/admin', () => {
     });
     const callData = service.createAd.mock.calls[0][0];
     expect(callData.is_active).toBe(false);
+    expect(callData.target_roles).toEqual(['student']);
   });
 
   it('sets is_active false for instructor-created ads', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg' };
+    const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
       ad_credits: 1,
@@ -290,6 +291,23 @@ describe('POST /api/ads/admin', () => {
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd.mock.calls[0][0].is_active).toBe(false);
+  });
+
+  it('rejects creation when target_roles missing for instructor', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg' };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 2,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/target_roles/i);
+    expect(service.createAd).not.toHaveBeenCalled();
   });
 
   it('activates ad immediately for admin-created ads', async () => {
@@ -308,16 +326,18 @@ describe('POST /api/ads/admin', () => {
       image_url: 'img.jpg',
       start_at: '2024-01-01',
       end_at: '2024-02-01',
+      target_roles: JSON.stringify(['student']),
     };
     service.createAd.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd.mock.calls[0][0].is_active).toBe(true);
+    expect(service.createAd.mock.calls[0][0].target_roles).toBeNull();
     expect(planService.getPlanById).not.toHaveBeenCalled();
   });
 
   it('rejects creation when ad credits exhausted', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg' };
+    const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
       ad_credits: 0,
@@ -333,7 +353,7 @@ describe('POST /api/ads/admin', () => {
   });
 
   it('rejects creation when branding not allowed', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true };
+    const payload = { title: 'Test', image_url: 'img.jpg', allow_branding: true, target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
       ad_credits: 2,
@@ -349,7 +369,7 @@ describe('POST /api/ads/admin', () => {
   });
 
   it('rejects creation when max ads exceeded', async () => {
-    const payload = { title: 'Test', image_url: 'img.jpg' };
+    const payload = { title: 'Test', image_url: 'img.jpg', target_roles: JSON.stringify(['student']) };
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
       ad_credits: 2,

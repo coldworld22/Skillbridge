@@ -88,11 +88,19 @@ exports.createAd = catchAsync(async (req, res) => {
     price: price ? Number(price) : 0,
   };
 
-  if (target_roles) {
+  if (isAdmin) {
+    // Admin ads are visible to all roles regardless of provided target_roles
+    data.target_roles = null;
+  } else {
+    if (!target_roles) {
+      throw new AppError("target_roles are required for instructors", 400);
+    }
     try {
       data.target_roles = JSON.parse(target_roles);
     } catch {
-      data.target_roles = Array.isArray(target_roles) ? target_roles : [target_roles];
+      data.target_roles = Array.isArray(target_roles)
+        ? target_roles
+        : [target_roles];
     }
   }
 
@@ -337,11 +345,14 @@ exports.updateAd = catchAsync(async (req, res) => {
     price: price ? Number(price) : undefined,
   };
 
+  let parsedTargetRoles;
   if (target_roles) {
     try {
-      updates.target_roles = JSON.parse(target_roles);
+      parsedTargetRoles = JSON.parse(target_roles);
     } catch {
-      updates.target_roles = Array.isArray(target_roles) ? target_roles : [target_roles];
+      parsedTargetRoles = Array.isArray(target_roles)
+        ? target_roles
+        : [target_roles];
     }
   }
 
@@ -378,6 +389,13 @@ exports.updateAd = catchAsync(async (req, res) => {
     const existing = await service.findByTitle(title);
     if (existing && existing.id !== req.params.id)
       throw new AppError("Ad title already exists", 409);
+  }
+
+  if (isAdmin) {
+    // Admin ads remain visible to all roles
+    updates.target_roles = null;
+  } else if (parsedTargetRoles) {
+    updates.target_roles = parsedTargetRoles;
   }
 
   if (req.files?.image?.[0]) {
