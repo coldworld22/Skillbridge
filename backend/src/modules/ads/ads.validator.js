@@ -42,5 +42,8 @@ exports.list = {
     role: z.string().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
     offset: z.coerce.number().int().nonnegative().optional(),
+    status: z.enum(["active", "inactive"]).optional(),
+    type: z.string().optional(),
+    search: z.string().optional(),
   }),
 };

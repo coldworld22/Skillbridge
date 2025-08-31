@@ -16,17 +16,36 @@ exports.getAds = async (
   onlyPurchased = false,
   includeAllDates = false,
   limit,
-  offset
+  offset,
+  status,
+  adType,
+  search
 ) => {
   const query = db("ads")
     .modify((qb) => {
-      if (!includeInactive) qb.where({ is_active: true });
+      const normalizedStatus = status?.toLowerCase();
+      const normalizedType = adType?.toLowerCase();
+      if (!includeInactive || normalizedStatus === "active") {
+        qb.where({ is_active: true });
+      } else if (normalizedStatus === "inactive") {
+        qb.where({ is_active: false });
+      }
       if (createdBy) qb.where({ created_by: createdBy });
       if (targetRole) {
         qb.where(function () {
           this.whereRaw(
             "target_roles IS NULL OR target_roles = '{}' OR ? = ANY(target_roles)",
             [targetRole]
+          );
+        });
+      }
+      if (normalizedType) qb.where({ ad_type: normalizedType });
+      if (search) {
+        const term = `%${search.toLowerCase()}%`;
+        qb.where(function () {
+          this.whereRaw("LOWER(title) LIKE ?", [term]).orWhereRaw(
+            "LOWER(description) LIKE ?",
+            [term]
           );
         });
       }

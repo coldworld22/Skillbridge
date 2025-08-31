@@ -52,7 +52,18 @@ describe('ads.service getAds', () => {
       { id: adOther, title: 'Other', image_url: 'c.jpg', created_by: userId, is_active: true, target_roles: ['instructor'] },
     ]);
 
-    const { data: ads } = await service.getAds(false, undefined, 'student', false, true);
+    const { data: ads } = await service.getAds(
+      false,
+      undefined,
+      'student',
+      false,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     const ids = ads.map((a) => a.id).sort();
     const expected = [adEmpty, adNull].sort();
     expect(ids).toEqual(expected);

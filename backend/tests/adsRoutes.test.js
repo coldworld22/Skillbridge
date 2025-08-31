@@ -99,7 +99,18 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', false, false, undefined, undefined);
+    expect(service.getAds).toHaveBeenCalledWith(
+      false,
+      undefined,
+      'student',
+      false,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     expect(res.body.data).toEqual(mock);
   });
 });
@@ -110,7 +121,18 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false, true, undefined, undefined);
+    expect(service.getAds).toHaveBeenCalledWith(
+      true,
+      'user1',
+      undefined,
+      false,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     expect(res.body.data).toEqual(mock);
   });
 
@@ -119,7 +141,39 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false, true, undefined, undefined);
+    expect(service.getAds).toHaveBeenCalledWith(
+      true,
+      'user1',
+      'student',
+      false,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+  });
+
+  it('forwards status type and search filters', async () => {
+    const mock = [{ id: '1', created_by: 'user1' }];
+    service.getAds.mockResolvedValue({ data: mock, meta: {} });
+    const res = await request(app)
+      .get('/api/ads/admin')
+      .query({ status: 'active', type: 'promotion', search: 'hello' });
+    expect(res.status).toBe(200);
+    expect(service.getAds).toHaveBeenCalledWith(
+      true,
+      'user1',
+      undefined,
+      false,
+      true,
+      undefined,
+      undefined,
+      'active',
+      'promotion',
+      'hello'
+    );
   });
 });
 
