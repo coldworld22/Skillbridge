@@ -96,14 +96,24 @@ export default function AdminAdsPage() {
 
     const bulkDelete = async () => {
         if (!confirm(t('confirm_bulk_delete'))) return;
-        try {
-            await Promise.all(selectedAds.map((id) => deleteAd(id)));
-            setAds((prev) => prev.filter((ad) => !selectedAds.includes(ad.id)));
-            setSelectedAds([]);
+        const results = await Promise.allSettled(
+            selectedAds.map((id) => deleteAd(id))
+        );
+        const successfulIds = [];
+        results.forEach((res, index) => {
+            const id = selectedAds[index];
+            if (res.status === "fulfilled") {
+                successfulIds.push(id);
+            } else {
+                const ad = ads.find((a) => a.id === id);
+                toast.error(`${ad?.title || id}: ${t('delete_failed')}`);
+            }
+        });
+        if (successfulIds.length) {
+            setAds((prev) => prev.filter((ad) => !successfulIds.includes(ad.id)));
             toast.success(t('deleted'));
-        } catch {
-            toast.error(t('delete_failed'));
         }
+        setSelectedAds((prev) => prev.filter((id) => !successfulIds.includes(id)));
     };
 
     const filteredAds = useMemo(() => {
