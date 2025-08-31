@@ -2,7 +2,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import ImageCropUpload from "@/components/shared/ImageCropUpload";
 import { fetchAdById, updateAd } from "@/services/admin/adService";
 import { fetchPlanFeatures } from "@/services/planFeatureService";
 import { toast } from "react-toastify";
@@ -12,7 +11,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { FaSpinner, FaTrash, FaImage, FaVideo } from "react-icons/fa";
 import PreviewModal from "@/components/admin/ads/PreviewModal";
-import useAdMedia, { ALLOWED_VIDEO_TYPES } from "@/hooks/useAdMedia";
+import useAdMedia, { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from "@/hooks/useAdMedia";
 
 export default function EditAdPage() {
   const router = useRouter();
@@ -30,12 +29,15 @@ export default function EditAdPage() {
   const {
     mediaType,
     setMediaType,
-    handleVideoChange,
     handleMediaTypeChange,
+    handleImageChange,
+    handleVideoChange,
     removeMedia,
     videoFile,
     videoPreview,
     setVideoPreview,
+    imagePreview,
+    setImagePreview,
   } = useAdMedia({ setFormData, t, setError });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -53,6 +55,9 @@ export default function EditAdPage() {
         .then((ad) => {
           if (ad) {
             setFormData(ad);
+            if (ad.image) {
+              setImagePreview(ad.image);
+            }
             if (ad.video) {
               setMediaType('video');
               setVideoPreview(ad.video);
@@ -271,12 +276,12 @@ export default function EditAdPage() {
                   <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                     {t('image_label')} *
                   </label>
-                  {formData.image ? (
+                  {imagePreview ? (
                     <div className="relative group">
-                      <ImageCropUpload
-                        value={typeof formData.image === 'string' ? formData.image : undefined}
-                        onChange={(file) => setFormData(prev => ({ ...prev, image: file }))}
-                        previewClassName="w-full h-48 object-contain rounded-lg border border-gray-200 dark:border-gray-700 mb-2 bg-gray-100 dark:bg-gray-700"
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-contain rounded-lg border border-gray-200 dark:border-gray-700 mb-2 bg-gray-100 dark:bg-gray-700"
                       />
                       <button
                         type="button"
@@ -299,8 +304,10 @@ export default function EditAdPage() {
                             {t('image_requirements')}
                           </p>
                         </div>
-                        <ImageCropUpload
-                          onChange={(file) => setFormData(prev => ({ ...prev, image: file }))}
+                        <input
+                          type="file"
+                          accept={ALLOWED_IMAGE_TYPES.join(',')}
+                          onChange={handleImageChange}
                           className="hidden"
                         />
                       </label>
@@ -580,7 +587,7 @@ export default function EditAdPage() {
           ad={{
             title: formData.title,
             description: formData.description,
-            image: mediaType === 'image' ? (typeof formData.image === 'string' ? formData.image : null) : null,
+            image: mediaType === 'image' ? imagePreview : null,
             video: mediaType === 'video' ? videoPreview : null,
             startAt: formData.startAt,
             endAt: formData.endAt,
