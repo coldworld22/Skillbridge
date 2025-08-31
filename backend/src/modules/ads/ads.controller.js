@@ -15,6 +15,7 @@ const {
   sendNewAdAdminEmail,
 } = require("../../utils/email");
 const db = require("../../config/database");
+const { parsePlanFeatures } = require("./ads.utils");
 
 /**
  * Controller functions for managing advertisement banners.
@@ -121,18 +122,7 @@ exports.createAd = catchAsync(async (req, res) => {
       throw new AppError("Plan not found", 403);
     }
 
-    const features = {};
-    (plan.features || []).forEach((f) => {
-      let val = f.value;
-      try {
-        val = JSON.parse(f.value);
-      } catch {
-        if (f.value === "true") val = true;
-        else if (f.value === "false") val = false;
-        else if (!isNaN(f.value)) val = Number(f.value);
-      }
-      features[f.feature_key] = val;
-    });
+    const features = parsePlanFeatures(plan);
 
     const maxDuration = Number(features["ads_max_ad_duration"] || 0);
     if (!start) start = new Date();
@@ -397,18 +387,7 @@ exports.updateAd = catchAsync(async (req, res) => {
       throw new AppError("Plan not found", 403);
     }
 
-    const features = {};
-    (plan.features || []).forEach((f) => {
-      let val = f.value;
-      try {
-        val = JSON.parse(f.value);
-      } catch {
-        if (f.value === "true") val = true;
-        else if (f.value === "false") val = false;
-        else if (!isNaN(f.value)) val = Number(f.value);
-      }
-      features[f.feature_key] = val;
-    });
+    const features = parsePlanFeatures(plan);
 
     const maxDuration = Number(features["ads_max_ad_duration"] || 0);
     if (maxDuration && newStart && newEnd) {
