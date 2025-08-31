@@ -91,7 +91,7 @@ const Hero = () => {
         const roleParam =
           normalizedRole === "admin" || normalizedRole === "superadmin"
             ? undefined
-            : normalizedRole;
+            : normalizedRole || "student";
         const { data } = await getAds(roleParam);
         setAds(data);
         setAdsError(false);
