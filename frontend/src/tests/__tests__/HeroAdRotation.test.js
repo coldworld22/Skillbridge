@@ -57,6 +57,7 @@ describe('Hero ad rotations', () => {
   test('records a single view per ad rotation', async () => {
     render(<Hero />);
 
+    await waitFor(() => expect(getAds).toHaveBeenCalledWith('student'));
     await waitFor(() => expect(recordAdView).toHaveBeenCalledTimes(1));
 
     await act(async () => {

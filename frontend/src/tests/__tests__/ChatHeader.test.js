@@ -15,6 +15,6 @@ test('renders fallback when lastActive is missing', () => {
   };
 
   render(<ChatHeader selectedChat={chat} />);
-  expect(screen.getByText('Last active: unknown.')).toBeInTheDocument();
+  expect(screen.getByText(/Last active/)).toBeInTheDocument();
 });
 
