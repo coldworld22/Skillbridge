@@ -46,9 +46,9 @@ export const fetchAds = async () => {
   }
 };
 
-export const fetchAdById = async (id) => {
+export const fetchAdById = async (id, headers = {}) => {
   try {
-    const { data } = await api.get(`/ads/${id}`);
+    const { data } = await api.get(`/ads/${id}`, { headers });
     const ad = data?.data;
     if (!ad) return null;
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
@@ -122,8 +122,8 @@ export const purchaseAd = async (id) => {
   }
 };
 
-export const fetchAdAnalytics = async (id) => {
-  const { data } = await api.get(`/ads/${id}/analytics`);
+export const fetchAdAnalytics = async (id, headers = {}) => {
+  const { data } = await api.get(`/ads/${id}/analytics`, { headers });
   const res = data?.data || {};
   return {
     views: res.views ?? 0,
