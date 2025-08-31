@@ -87,46 +87,53 @@ exports.createAd = catchAsync(async (req, res) => {
     data.image_url = null;
   }
 
-  // Load instructor plan and verify ad creation permissions
-  const planId =
-    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
-  const plan = planId ? await planService.getPlanById(planId) : null;
-  if (!plan) {
-    throw new AppError("Plan not found", 403);
-  }
+  const isAdmin = (req.user.roles || [req.user.role]).some((r) => String(r).toLowerCase() === "admin");
 
-  const features = {};
-  (plan.features || []).forEach((f) => {
-    let val = f.value;
-    try {
-      val = JSON.parse(f.value);
-    } catch {
-      if (f.value === "true") val = true;
-      else if (f.value === "false") val = false;
-      else if (!isNaN(f.value)) val = Number(f.value);
+  let ad;
+  if (!isAdmin) {
+    // Load instructor plan and verify ad creation permissions
+    const planId =
+      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+    const plan = planId ? await planService.getPlanById(planId) : null;
+    if (!plan) {
+      throw new AppError("Plan not found", 403);
     }
-    features[f.feature_key] = val;
-  });
 
-  const maxAds = Number(features["ads_max_ads"] || 0);
-  if (maxAds) {
-    const existing = await service.getAds(true, req.user.id);
-    if (existing.length >= maxAds) {
-      throw new AppError("Ad limit reached for your plan", 403);
+    const features = {};
+    (plan.features || []).forEach((f) => {
+      let val = f.value;
+      try {
+        val = JSON.parse(f.value);
+      } catch {
+        if (f.value === "true") val = true;
+        else if (f.value === "false") val = false;
+        else if (!isNaN(f.value)) val = Number(f.value);
+      }
+      features[f.feature_key] = val;
+    });
+
+    const maxAds = Number(features["ads_max_ads"] || 0);
+    if (maxAds) {
+      const existing = await service.getAds(true, req.user.id);
+      if (existing.length >= maxAds) {
+        throw new AppError("Ad limit reached for your plan", 403);
+      }
     }
-  }
 
-  const brandingAllowed = !!features["ads_allow_branding"];
-  if (data.allow_branding && !brandingAllowed) {
-    throw new AppError("Branding not allowed for your plan", 403);
-  }
+    const brandingAllowed = !!features["ads_allow_branding"];
+    if (data.allow_branding && !brandingAllowed) {
+      throw new AppError("Branding not allowed for your plan", 403);
+    }
 
-  if ((plan.ad_credits ?? 0) <= 0) {
-    throw new AppError("Insufficient ad credits", 403);
-  }
+    if ((plan.ad_credits ?? 0) <= 0) {
+      throw new AppError("Insufficient ad credits", 403);
+    }
 
-  const ad = await service.createAd(data);
-  await planService.consumeAdCredit(plan.id);
+    ad = await service.createAd(data);
+    await planService.consumeAdCredit(plan.id);
+  } else {
+    ad = await service.createAd(data);
+  }
 
   try {
     if (req.user?.email) {
