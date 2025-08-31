@@ -223,7 +223,7 @@ exports.getAds = catchAsync(async (req, res) => {
     false,
     undefined,
     role,
-    true,
+    false,
     false,
     limit,
     offset

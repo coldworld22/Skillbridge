@@ -99,7 +99,7 @@ describe('GET /api/ads', () => {
     service.getAds.mockResolvedValue({ data: mock, meta: {} });
     const res = await request(app).get('/api/ads').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', true, false, undefined, undefined);
+    expect(service.getAds).toHaveBeenCalledWith(false, undefined, 'student', false, false, undefined, undefined);
     expect(res.body.data).toEqual(mock);
   });
 });
@@ -451,11 +451,9 @@ describe('ads.service getAds active date filtering', () => {
     jest.unmock('../src/modules/ads/ads.service');
     const serviceReal = require('../src/modules/ads/ads.service');
     await serviceReal.getAds();
-    expect(whereCalls).toEqual(
-      expect.arrayContaining([
-        ['start_at', '<=', 'NOW()'],
-        ['end_at', '>=', 'NOW()'],
-      ])
-    );
+    expect(whereCalls.length).toBe(3);
+    expect(whereCalls[0]).toEqual([{ is_active: true }]);
+    expect(typeof whereCalls[1][0]).toBe('function');
+    expect(typeof whereCalls[2][0]).toBe('function');
   });
 });

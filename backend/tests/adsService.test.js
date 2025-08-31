@@ -25,6 +25,8 @@ describe('ads.service getAds', () => {
       table.uuid('created_by').notNullable().references('users.id');
       table.boolean('is_active').notNullable().defaultTo(false);
       table.specificType('target_roles', 'text[]').defaultTo('{}');
+      table.specificType('start_at', 'timestamptz');
+      table.specificType('end_at', 'timestamptz');
       table.timestamp('created_at').defaultTo(mockDb.fn.now());
     });
   });
@@ -50,9 +52,10 @@ describe('ads.service getAds', () => {
       { id: adOther, title: 'Other', image_url: 'c.jpg', created_by: userId, is_active: true, target_roles: ['instructor'] },
     ]);
 
-      const { data: ads } = await service.getAds(false, undefined, 'student', false, true);
+    const { data: ads } = await service.getAds(false, undefined, 'student', false, true);
     const ids = ads.map((a) => a.id).sort();
     const expected = [adEmpty, adNull].sort();
     expect(ids).toEqual(expected);
   });
+
 });

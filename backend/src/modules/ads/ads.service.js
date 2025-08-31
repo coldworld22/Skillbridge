@@ -32,8 +32,12 @@ exports.getAds = async (
       }
       if (onlyPurchased) qb.whereNotNull("purchased_at");
       if (!includeAllDates) {
-        qb.where("start_at", "<=", db.fn.now());
-        qb.where("end_at", ">=", db.fn.now());
+        qb.where(function () {
+          this.where("start_at", "<=", db.fn.now()).orWhereNull("start_at");
+        });
+        qb.where(function () {
+          this.where("end_at", ">=", db.fn.now()).orWhereNull("end_at");
+        });
       }
     })
     .orderBy("created_at", "desc");
@@ -91,8 +95,12 @@ exports.getPublicAdById = async (id) => {
       "video_url"
     )
     .where({ id, is_active: true })
-    .where("start_at", "<=", db.fn.now())
-    .where("end_at", ">=", db.fn.now())
+    .where(function () {
+      this.where("start_at", "<=", db.fn.now()).orWhereNull("start_at");
+    })
+    .where(function () {
+      this.where("end_at", ">=", db.fn.now()).orWhereNull("end_at");
+    })
     .first();
 };
 
