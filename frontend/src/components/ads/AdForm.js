@@ -94,7 +94,10 @@ export default function AdForm({
     } else if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (name === "priority") {
-      setFormData((prev) => ({ ...prev, priority: Number(value) }));
+      setFormData((prev) => ({
+        ...prev,
+        priority: Math.max(0, Number(value)),
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -410,6 +413,7 @@ export default function AdForm({
               name="priority"
               value={formData.priority}
               onChange={handleChange}
+              min={0}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
             />
           </div>
