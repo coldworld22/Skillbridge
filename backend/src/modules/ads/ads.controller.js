@@ -88,7 +88,9 @@ exports.createAd = catchAsync(async (req, res) => {
   }
 
   // Load instructor plan and verify ad creation permissions
-  const plan = await planService.getPlanById(req.user.plan_id);
+  const planId =
+    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
   if (!plan) {
     throw new AppError("Plan not found", 403);
   }
@@ -293,7 +295,9 @@ exports.updateAd = catchAsync(async (req, res) => {
   }
 
   // Load instructor plan and enforce ad feature limits
-  const plan = await planService.getPlanById(req.user.plan_id);
+  const planId =
+    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
   if (!plan) {
     throw new AppError("Plan not found", 403);
   }

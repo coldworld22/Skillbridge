@@ -7,8 +7,9 @@ exports.create = {
     image_url: z.string().min(1).optional(),
     video_url: z.string().min(1).optional(),
     link_url: z.string().url().optional(),
-    start_at: z.string().datetime().optional(),
-    end_at: z.string().datetime().optional(),
+    // Allow broader date formats from HTML datetime-local inputs
+    start_at: z.coerce.date().optional(),
+    end_at: z.coerce.date().optional(),
     target_roles: z.string().optional(),
     ad_type: z.string().optional(),
     priority: z.coerce.number().optional(),
@@ -24,8 +25,9 @@ exports.update = {
     image_url: z.string().min(1).optional(),
     video_url: z.string().min(1).optional(),
     link_url: z.string().url().optional(),
-    start_at: z.string().datetime().optional(),
-    end_at: z.string().datetime().optional(),
+    // Allow broader date formats from HTML datetime-local inputs
+    start_at: z.coerce.date().optional(),
+    end_at: z.coerce.date().optional(),
     target_roles: z.string().optional(),
     ad_type: z.string().optional(),
     priority: z.coerce.number().optional(),
