@@ -249,7 +249,12 @@ describe('POST /api/ads/admin', () => {
       };
       next();
     });
-    const payload = { title: 'Admin Ad', image_url: 'img.jpg' };
+    const payload = {
+      title: 'Admin Ad',
+      image_url: 'img.jpg',
+      start_at: '2024-01-01',
+      end_at: '2024-02-01',
+    };
     service.createAd.mockResolvedValue({ id: '1', ...payload });
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
