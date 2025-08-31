@@ -87,9 +87,7 @@ exports.createAd = catchAsync(async (req, res) => {
     data.image_url = null;
   }
 
-  const isAdmin = (req.user.roles || [req.user.role]).some(
-    (r) => String(r).toLowerCase() === 'admin'
-  );
+  const isAdmin = (req.user.roles || [req.user.role]).some((r) => String(r).toLowerCase() === "admin");
 
   let ad;
   if (!isAdmin) {
