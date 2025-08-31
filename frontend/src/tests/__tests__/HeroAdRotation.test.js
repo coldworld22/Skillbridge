@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import Hero from '../../components/website/sections/Hero';
-import { getAds, recordAdView } from '../../services/adsService';
+import { getAds, recordAdView, recordAdClick } from '../../services/adsService';
 
 jest.mock('next/image', () => ({ src, alt, ...rest }) => <img src={src} alt={alt} {...rest} />);
 jest.mock('next/link', () => ({ children }) => <>{children}</>);
@@ -69,5 +69,15 @@ describe('Hero ad rotations', () => {
       jest.advanceTimersByTime(10000);
     });
     await waitFor(() => expect(recordAdView).toHaveBeenCalledTimes(3));
+  });
+
+  test('records a click when ad link is followed', async () => {
+    const { findByText } = render(<Hero />);
+
+    await waitFor(() => expect(getAds).toHaveBeenCalled());
+
+    fireEvent.click(await findByText('learn_more'));
+
+    expect(recordAdClick).toHaveBeenCalledWith(1);
   });
 });

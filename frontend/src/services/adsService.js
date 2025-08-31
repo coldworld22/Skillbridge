@@ -55,7 +55,10 @@ export const recordAdView = async (id) => {
   }
 };
 
-// Notify backend that an ad was clicked
+/**
+ * Notify backend that an ad was clicked.
+ * @param {number|string} id Identifier of the clicked ad
+ */
 export const recordAdClick = async (id) => {
   try {
     await api.post(`/ads/${id}/click`);
