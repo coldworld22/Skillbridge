@@ -565,6 +565,16 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
     throw new AppError("Unauthorized", 401);
   }
   const isAdmin = isAdminRole(req.user.roles || req.user.role);
+
+  // Fetch the ad and verify ownership when the requester is not an admin
+  const ad = await service.getAdById(req.params.id);
+  if (!ad) {
+    throw new AppError("Ad not found", 404);
+  }
+  if (!isAdmin && ad.created_by !== req.user.id) {
+    throw new AppError("Forbidden", 403);
+  }
+
   const canShowAnalytics =
     req.user.plan?.showAnalytics || req.user.subscription?.showAnalytics;
   if (!isAdmin && !canShowAnalytics) {
