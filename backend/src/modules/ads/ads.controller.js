@@ -115,7 +115,7 @@ exports.createAd = catchAsync(async (req, res) => {
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
-      const existing = await service.getAds(true, req.user.id);
+      const existing = await service.getAds(true, req.user.id, undefined, false, true);
       if (existing.length >= maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }
@@ -212,7 +212,8 @@ exports.getAllAds = catchAsync(async (req, res) => {
     true,
     isAdmin ? undefined : req.user.id,
     role,
-    false
+    false,
+    true
   );
   sendSuccess(res, ads);
 });
@@ -324,7 +325,7 @@ exports.updateAd = catchAsync(async (req, res) => {
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
-      const existing = await service.getAds(true, req.user.id);
+      const existing = await service.getAds(true, req.user.id, undefined, false, true);
       if (existing.length > maxAds) {
         throw new AppError("Ad limit reached for your plan", 403);
       }

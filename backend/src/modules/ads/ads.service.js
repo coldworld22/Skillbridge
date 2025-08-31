@@ -12,7 +12,8 @@ exports.getAds = async (
   includeInactive = false,
   createdBy,
   targetRole,
-  onlyPurchased = false
+  onlyPurchased = false,
+  includeAllDates = false
 ) => {
   return db("ads")
     .modify((qb) => {
@@ -27,8 +28,10 @@ exports.getAds = async (
         });
       }
       if (onlyPurchased) qb.whereNotNull("purchased_at");
-      qb.where("start_at", "<=", db.fn.now());
-      qb.where("end_at", ">=", db.fn.now());
+      if (!includeAllDates) {
+        qb.where("start_at", "<=", db.fn.now());
+        qb.where("end_at", ">=", db.fn.now());
+      }
     })
     .orderBy("created_at", "desc");
 };
