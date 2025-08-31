@@ -33,6 +33,7 @@ exports.update = {
     priority: z.coerce.number().optional(),
     allow_branding: z.coerce.boolean().optional(),
     price: z.coerce.number().optional(),
+    is_active: z.coerce.boolean().optional(),
   }),
 };
 
