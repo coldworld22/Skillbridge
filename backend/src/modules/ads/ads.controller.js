@@ -14,6 +14,7 @@ const {
   sendAdApprovalEmail,
   sendNewAdAdminEmail,
 } = require("../../utils/email");
+const db = require("../../config/database");
 
 /**
  * Controller functions for managing advertisement banners.
@@ -141,8 +142,15 @@ exports.createAd = catchAsync(async (req, res) => {
       throw new AppError("Insufficient ad credits", 403);
     }
 
-    ad = await service.createAd(data);
-    await planService.consumeAdCredit(plan.id);
+    const trx = await db.transaction();
+    try {
+      ad = await service.createAd(data, trx);
+      await planService.consumeAdCredit(plan.id, trx);
+      await trx.commit();
+    } catch (err) {
+      await trx.rollback();
+      throw err;
+    }
   } else {
     ad = await service.createAd(data);
   }
