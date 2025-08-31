@@ -18,6 +18,9 @@ const parseJson = (val) => {
   return val;
 };
 
+// Accept either a full URL (http/https) or a server-relative path
+const urlOrPath = z.string().url().or(z.string().startsWith("/"));
+
 exports.create = z.object({
   body: z.object({
     title: z.string().min(3),
@@ -45,7 +48,7 @@ exports.create = z.object({
             z.object({
               title: z.string(),
               content: z.string().optional(),
-              video_url: z.string().url().optional(),
+              video_url: urlOrPath.optional(),
               duration: z.preprocess(
                 (val) => (val === '' || val === undefined ? undefined : parseInt(val, 10)),
                 z.number().int().nonnegative()
@@ -56,8 +59,8 @@ exports.create = z.object({
           )
           .optional()
       ),
-    cover_image: z.string().url().optional(),
-    preview_video: z.string().url().optional(),
+    cover_image: urlOrPath.optional(),
+    preview_video: urlOrPath.optional(),
   }),
 });
 
