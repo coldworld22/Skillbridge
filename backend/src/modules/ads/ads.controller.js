@@ -61,6 +61,8 @@ exports.createAd = catchAsync(async (req, res) => {
     );
   }
 
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
+
   const data = {
     id: uuidv4(),
     title,
@@ -72,7 +74,7 @@ exports.createAd = catchAsync(async (req, res) => {
     priority: priority ? Number(priority) : 0,
     allow_branding: allow_branding === "true" || allow_branding === true,
     created_by: req.user.id,
-    is_active: false,
+    is_active: isAdmin,
     price: price ? Number(price) : 0,
   };
 
@@ -99,8 +101,6 @@ exports.createAd = catchAsync(async (req, res) => {
     data.video_url = req.body.video_url;
     data.image_url = null;
   }
-
-  const isAdmin = isAdminRole(req.user.roles || req.user.role);
 
   let ad;
   if (!isAdmin) {

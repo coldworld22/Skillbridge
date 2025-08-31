@@ -217,6 +217,44 @@ describe('POST /api/ads/admin', () => {
       receiver_id: 'admin1',
       message: 'New ad created: Test',
     });
+    const callData = service.createAd.mock.calls[0][0];
+    expect(callData.is_active).toBe(false);
+  });
+
+  it('sets is_active false for instructor-created ads', async () => {
+    const payload = { title: 'Test', image_url: 'img.jpg' };
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      ad_credits: 1,
+      features: [
+        { feature_key: 'ads_max_ads', value: '5' },
+        { feature_key: 'ads_allow_branding', value: 'true' },
+      ],
+    });
+    service.getAds.mockResolvedValue({ data: [], meta: {} });
+    service.createAd.mockResolvedValue({ id: '1', ...payload });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.createAd.mock.calls[0][0].is_active).toBe(false);
+  });
+
+  it('activates ad immediately for admin-created ads', async () => {
+    auth.verifyToken.mockImplementationOnce((req, _res, next) => {
+      req.user = {
+        id: 'admin1',
+        role: 'admin',
+        roles: ['admin'],
+        email: 'admin@example.com',
+        full_name: 'Admin One',
+      };
+      next();
+    });
+    const payload = { title: 'Admin Ad', image_url: 'img.jpg' };
+    service.createAd.mockResolvedValue({ id: '1', ...payload });
+    const res = await request(app).post('/api/ads/admin').send(payload);
+    expect(res.status).toBe(200);
+    expect(service.createAd.mock.calls[0][0].is_active).toBe(true);
+    expect(planService.getPlanById).not.toHaveBeenCalled();
   });
 
   it('rejects creation when ad credits exhausted', async () => {
