@@ -62,14 +62,23 @@ exports.createAd = catchAsync(async (req, res) => {
   }
 
   const isAdmin = isAdminRole(req.user.roles || req.user.role);
+  let start = start_at ? new Date(start_at) : null;
+  let end = end_at ? new Date(end_at) : null;
+
+  if (isAdmin) {
+    // Admins must explicitly set the ad duration
+    if (!start || !end) {
+      throw new AppError("start_at and end_at are required", 400);
+    }
+  }
 
   const data = {
     id: uuidv4(),
     title,
     description,
     link_url,
-    start_at,
-    end_at,
+    start_at: start,
+    end_at: end,
     ad_type,
     priority: priority ? Number(priority) : 0,
     allow_branding: allow_branding === "true" || allow_branding === true,
@@ -126,15 +135,19 @@ exports.createAd = catchAsync(async (req, res) => {
     });
 
     const maxDuration = Number(features["ads_max_ad_duration"] || 0);
-    if (maxDuration && start_at && end_at) {
+    if (!start) start = new Date();
+    if (!end && maxDuration) {
+      end = new Date(start.getTime() + maxDuration * 24 * 60 * 60 * 1000);
+    } else if (end) {
       const diffDays = Math.ceil(
-        (new Date(end_at).getTime() - new Date(start_at).getTime()) /
-          (1000 * 60 * 60 * 24)
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
       );
-      if (diffDays > maxDuration) {
+      if (maxDuration && diffDays > maxDuration) {
         throw new AppError("Ad duration exceeds limit for your plan", 403);
       }
     }
+    data.start_at = start;
+    data.end_at = end;
 
     const maxAds = Number(features["ads_max_ads"] || 0);
     if (maxAds) {
