@@ -1,4 +1,5 @@
 const db = require("../../config/database");
+const { calculateCtr } = require("./ads.utils");
 
 exports.createAd = async (data, trx) => {
   const query = trx || db;

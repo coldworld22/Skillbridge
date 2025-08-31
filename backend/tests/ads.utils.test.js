@@ -1,4 +1,4 @@
-const { parsePlanFeatures } = require('../src/modules/ads/ads.utils');
+const { parsePlanFeatures, calculateCtr } = require('../src/modules/ads/ads.utils');
 
 describe('parsePlanFeatures', () => {
   it('converts feature list to keyed object with parsed values', () => {
@@ -21,5 +21,18 @@ describe('parsePlanFeatures', () => {
   it('returns empty object when plan has no features', () => {
     expect(parsePlanFeatures({})).toEqual({});
     expect(parsePlanFeatures(null)).toEqual({});
+  });
+});
+
+describe('calculateCtr', () => {
+  it('returns percentage of clicks over views', () => {
+    expect(calculateCtr(50, 200)).toBeCloseTo(25);
+    expect(calculateCtr('10', '100')).toBeCloseTo(10);
+  });
+
+  it('returns 0 when views is 0 or invalid', () => {
+    expect(calculateCtr(5, 0)).toBe(0);
+    expect(calculateCtr(5, null)).toBe(0);
+    expect(calculateCtr('abc', 10)).toBe(0);
   });
 });
