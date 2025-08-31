@@ -42,7 +42,13 @@ router.post(
   isInstructorOrAdmin,
   controller.purchaseAd
 );
-router.get("/:id", controller.getAdById);
+router.get(
+  "/:id",
+  verifyToken,
+  isInstructorOrAdmin,
+  controller.getAdById
+);
+router.get("/public/:id", controller.getPublicAd);
 router.put(
   "/:id",
   verifyToken,

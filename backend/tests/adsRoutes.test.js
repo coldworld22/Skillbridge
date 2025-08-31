@@ -10,6 +10,7 @@ jest.mock('../src/modules/ads/ads.service', () => ({
   getAds: jest.fn(),
   createAd: jest.fn(),
   getAdById: jest.fn(),
+  getPublicAdById: jest.fn(),
   findByTitle: jest.fn(),
   updateAd: jest.fn(),
   deleteAd: jest.fn(),
@@ -102,7 +103,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin');
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', undefined, false, true);
     expect(res.body.data).toEqual(mock);
   });
 
@@ -111,7 +112,7 @@ describe('GET /api/ads/admin', () => {
     service.getAds.mockResolvedValue(mock);
     const res = await request(app).get('/api/ads/admin').query({ role: 'student' });
     expect(res.status).toBe(200);
-    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false);
+    expect(service.getAds).toHaveBeenCalledWith(true, 'user1', 'student', false, true);
   });
 });
 
@@ -134,6 +135,38 @@ describe('GET /api/ads/admin/check-title', () => {
     expect(res.status).toBe(200);
     expect(service.findByTitle).toHaveBeenCalledWith('Unknown');
     expect(res.body.data.exists).toBe(false);
+  });
+});
+
+describe('GET /api/ads/:id', () => {
+  it('requires auth and returns ad details', async () => {
+    const mock = { id: '1', title: 'Test' };
+    service.getAdById.mockResolvedValue(mock);
+    const res = await request(app).get('/api/ads/1');
+    expect(auth.verifyToken).toHaveBeenCalled();
+    expect(auth.isInstructorOrAdmin).toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+  });
+});
+
+describe('GET /api/ads/public/:id', () => {
+  it('returns only public ad fields', async () => {
+    const mock = {
+      id: '1',
+      title: 'Test',
+      description: 'Desc',
+      link_url: 'http://example.com',
+      start_at: '2024-01-01',
+      end_at: '2024-02-01',
+      image_url: '/img.jpg',
+      video_url: null,
+    };
+    service.getPublicAdById.mockResolvedValue(mock);
+    const res = await request(app).get('/api/ads/public/1');
+    expect(service.getPublicAdById).toHaveBeenCalledWith('1');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
   });
 });
 

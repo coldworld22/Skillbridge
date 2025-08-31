@@ -227,6 +227,17 @@ exports.getAdById = catchAsync(async (req, res) => {
 });
 
 /**
+ * Public: Fetch a single ad by id with only public fields.
+ */
+exports.getPublicAd = catchAsync(async (req, res) => {
+  const ad = await service.getPublicAdById(req.params.id);
+  if (!ad) {
+    throw new AppError("Ad not found", 404);
+  }
+  sendSuccess(res, ad);
+});
+
+/**
  * Update an existing ad.
  */
 exports.updateAd = catchAsync(async (req, res) => {
