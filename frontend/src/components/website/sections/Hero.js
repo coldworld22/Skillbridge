@@ -52,7 +52,6 @@ const Hero = () => {
   const configLoaded = useAppConfigStore((s) => s.loaded);
   const { t } = useTranslation("website");
   const userRole = useAuthStore((s) => s.user?.roles?.[0] || s.user?.role);
-  const userId = useAuthStore((s) => s.user?.id);
 
   const [heroBg, setHeroBg] = useState("");
 
@@ -487,7 +486,7 @@ const Hero = () => {
                 </p>
                 <a
                   href={ads[currentAd].link}
-                  onClick={() => recordAdClick(ads[currentAd].id, userId)}
+                  onClick={() => recordAdClick(ads[currentAd].id)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition font-semibold shadow-md"
                 >
                   {t('learn_more')} <FaArrowRight />
