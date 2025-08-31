@@ -83,7 +83,7 @@ export default function InstructorAdAnalyticsPage() {
                 <div className="text-xs uppercase mb-1">{label}</div>
                 <div className="text-base font-bold">
                   {label === "Views" ? ad.views :
-                   label === "CTR" ? ad.ctr :
+                   label === "CTR" ? `${(ad.ctr ?? 0).toFixed(2)}%` :
                    label === "Conversions" ? ad.conversions : ad.reach}
                 </div>
               </div>

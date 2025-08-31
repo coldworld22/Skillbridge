@@ -1,5 +1,8 @@
 const db = require("../../config/database");
 
+// Helper to calculate Click Through Rate (CTR) as a percentage
+const calculateCtr = (clicks, views) => (views ? (clicks / views) * 100 : 0);
+
 exports.createAd = async (data) => {
   const [row] = await db("ads").insert(data).returning("*");
   return row;
@@ -109,7 +112,7 @@ exports.getAdAnalytics = async (adId) => {
   // Optional stored analytics such as clicks/ctr
   const row = await db("ad_analytics").where({ ad_id: adId }).first();
   const clicks = row?.clicks ?? 0;
-  const ctr = row?.ctr ?? (agg.views ? clicks / agg.views : 0);
+  const ctr = row?.ctr ?? calculateCtr(clicks, agg.views);
 
   return {
     views: Number(agg?.views) || 0,
@@ -145,7 +148,7 @@ exports.recordView = async (adId, userId) => {
       const clicks = analytics.clicks;
       const updates = {
         views,
-        ctr: views ? (clicks / views) * 100 : 0,
+        ctr: calculateCtr(clicks, views),
       };
       if (isUnique) {
         updates.unique_viewers = analytics.unique_viewers + 1;
@@ -169,7 +172,7 @@ exports.recordClick = async (adId) => {
     const analytics = await trx("ad_analytics").where({ ad_id: adId }).first();
     if (analytics) {
       const clicks = analytics.clicks + 1;
-      const ctr = analytics.views ? (clicks / analytics.views) * 100 : 0;
+      const ctr = calculateCtr(clicks, analytics.views);
       await trx("ad_analytics").where({ ad_id: adId }).update({
         clicks,
         ctr,
