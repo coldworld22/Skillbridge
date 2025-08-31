@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaCheck, FaCreditCard, FaMoneyBillWave, FaWallet, FaEthereum } from "react-icons/fa";
+import { FaCheck } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
+import { useRouter } from "next/router";
 import { fetchPublicPlans } from "@/services/public/planService";
 
 
 
 const SubscriptionPlans = ({ role = "student" }) => {
   const { t } = useTranslation("website");
+  const router = useRouter();
   const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -98,7 +99,11 @@ const SubscriptionPlans = ({ role = "student" }) => {
                 <button
                   className="mt-6 px-6 py-3 rounded-lg font-semibold hover:opacity-90"
                   style={buttonStyles}
-                  onClick={() => setSelectedPlan(plan)}
+                  onClick={() =>
+                    router.push(
+                      `/payments/checkout?itemType=plan&itemId=${plan.id}`
+                    )
+                  }
                 >
                   {t("subscription_select_plan")}
                 </button>
@@ -106,45 +111,6 @@ const SubscriptionPlans = ({ role = "student" }) => {
             );
           })}
         </div>
-
-
-        {/* Payment Modal */}
-        {selectedPlan && (
-          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gray-900 p-6 rounded-lg text-white shadow-xl max-w-lg text-center"
-            >
-              <h3 className="text-xl font-bold mb-4">
-                {t("payment_complete_for", { plan: selectedPlan.name })}
-              </h3>
-              <p className="text-gray-300">
-                {selectedPlan.price_monthly} {selectedPlan.currency}/mo
-              </p>
-
-              {/* Payment Methods */}
-              <div className="mt-4 flex flex-col gap-4">
-                <button className="bg-blue-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-blue-600 transition">
-                  <FaCreditCard /> {t("pay_with_credit_card")}
-                </button>
-                <button className="bg-green-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-green-600 transition">
-                  <FaMoneyBillWave /> {t("pay_with_paypal")}
-                </button>
-                <button className="bg-purple-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-purple-600 transition">
-                  <FaEthereum /> {t("pay_with_crypto")}
-                </button>
-              </div>
-
-              <button
-                className="mt-6 bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition"
-                onClick={() => setSelectedPlan(null)}
-              >
-                {t("cancel")}
-              </button>
-            </motion.div>
-          </div>
-        )}
       </section>
     </motion.section>
 

@@ -1,27 +1,22 @@
 import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import { fetchPublicPlans } from "@/services/public/planService";
-import { subscribeToPlan } from "@/services/instructor/subscriptionService";
 import useAuthStore from "@/store/auth/authStore";
-import { toast } from "react-toastify";
+import { useRouter } from "next/router";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function InstructorPlansPage() {
   const [plans, setPlans] = useState([]);
   const user = useAuthStore((s) => s.user);
+  const router = useRouter();
 
   useEffect(() => {
     fetchPublicPlans("instructor").then(setPlans).catch(() => {});
   }, []);
 
-  const handleSubscribe = async (id) => {
-    try {
-      await subscribeToPlan(id);
-      toast.success("Subscription updated");
-    } catch (err) {
-      toast.error("Failed to subscribe");
-    }
+  const handleSubscribe = (id) => {
+    router.push(`/payments/checkout?itemType=plan&itemId=${id}`);
   };
 
   return (
