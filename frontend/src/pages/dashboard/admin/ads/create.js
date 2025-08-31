@@ -15,11 +15,10 @@ import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
+import useAdMedia, {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+} from "@/hooks/useAdMedia";
 
 export default function CreateAdPage() {
   const router = useRouter();
@@ -62,10 +61,16 @@ export default function CreateAdPage() {
   const [titleError, setTitleError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingTitle, setIsCheckingTitle] = useState(false);
-  const [mediaType, setMediaType] = useState('image');
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoPreview, setVideoPreview] = useState('');
-  const [imagePreview, setImagePreview] = useState('');
+  const {
+    mediaType,
+    handleMediaTypeChange,
+    handleImageChange,
+    handleVideoChange,
+    removeMedia,
+    videoFile,
+    videoPreview,
+    imagePreview,
+  } = useAdMedia({ setFormData, t, setError });
   const [showPreview, setShowPreview] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -107,30 +112,6 @@ export default function CreateAdPage() {
     };
   }, [formData.title, t]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setError(t('invalid_image_type'));
-      return;
-    }
-    
-    if (file.size > MAX_IMAGE_SIZE) {
-      setError(t('image_too_large', { size: '5MB' }));
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setError(null);
-      setFormData((prev) => ({ ...prev, image: file }));
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      setImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === "targetRoles") {
@@ -149,63 +130,6 @@ export default function CreateAdPage() {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
-  const handleVideoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-      setError(t('invalid_video_type'));
-      return;
-    }
-    
-    if (file.size > MAX_VIDEO_SIZE) {
-      setError(t('video_too_large', { size: '50MB' }));
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(file);
-      setVideoPreview(e.target.result);
-      setError(null);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleMediaTypeChange = (e) => {
-    const type = e.target.value;
-    setMediaType(type);
-    if (type === 'image') {
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(null);
-      setVideoPreview('');
-    } else {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      setFormData((prev) => ({ ...prev, image: null }));
-      setImagePreview('');
-    }
-  };
-
-  const removeMedia = () => {
-    if (mediaType === 'image') {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-      setFormData((prev) => ({ ...prev, image: null }));
-      setImagePreview('');
-    } else {
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(null);
-      setVideoPreview('');
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    };
-  }, [videoPreview, imagePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
