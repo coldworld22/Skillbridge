@@ -37,11 +37,32 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-module.exports = multer({
+const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for videos
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max per file
 }).fields([
   { name: "image", maxCount: 1 },
   { name: "video", maxCount: 1 },
 ]);
+
+module.exports = (req, res, next) => {
+  upload(req, res, (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        const field = err.field === "image" ? "Image" : "Video";
+        const limit = err.field === "image" ? "5MB" : "50MB";
+        return next(new Error(`${field} exceeds ${limit} limit.`));
+      }
+      return next(err);
+    }
+
+    const image = req.files?.image?.[0];
+    if (image && image.size > 5 * 1024 * 1024) {
+      fs.unlink(image.path, () => {});
+      return next(new Error("Image exceeds 5MB limit."));
+    }
+
+    next();
+  });
+};
