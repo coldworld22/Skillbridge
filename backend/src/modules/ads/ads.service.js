@@ -53,6 +53,24 @@ exports.getAdById = async (id) => {
   return db("ads").where({ id }).first();
 };
 
+exports.getPublicAdById = async (id) => {
+  return db("ads")
+    .select(
+      "id",
+      "title",
+      "description",
+      "link_url",
+      "start_at",
+      "end_at",
+      "image_url",
+      "video_url"
+    )
+    .where({ id, is_active: true })
+    .where("start_at", "<=", db.fn.now())
+    .where("end_at", ">=", db.fn.now())
+    .first();
+};
+
 exports.findByTitle = async (title) => {
   const normalized = title?.trim();
   if (!normalized) return null;
