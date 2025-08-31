@@ -31,6 +31,10 @@ export default function AdminAdsPage() {
     const [previewAd, setPreviewAd] = useState(null);
     const ITEMS_PER_PAGE = 6;
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, filterRole, filterStatus, filterType]);
+
     // ─────────────────────
     // Fetch ads on mount
     // ─────────────────────
@@ -155,7 +159,7 @@ export default function AdminAdsPage() {
                 </header>
 
                 <section className="flex flex-wrap gap-4 mb-6">
-                    <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-4 py-2 border rounded">
+                    <select value={filterType} onChange={(e) => { setCurrentPage(1); setFilterType(e.target.value); }} className="px-4 py-2 border rounded">
                         <option value="all">{t('all_types')}</option>
                         <option value="promotion">{t('promotion')}</option>
                         <option value="event">{t('event')}</option>
@@ -166,15 +170,15 @@ export default function AdminAdsPage() {
                         type="search"
                         placeholder={t('search_placeholder')}
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => { setCurrentPage(1); setSearch(e.target.value); }}
                         className="px-4 py-2 border rounded w-full md:w-1/3"
                     />
-                    <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2 border rounded">
+                    <select value={filterStatus} onChange={(e) => { setCurrentPage(1); setFilterStatus(e.target.value); }} className="px-4 py-2 border rounded">
                         <option value="all">{t('all_status')}</option>
                         <option value="active">{t('active')}</option>
                         <option value="inactive">{t('inactive')}</option>
                     </select>
-                    <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="px-4 py-2 border rounded">
+                    <select value={filterRole} onChange={(e) => { setCurrentPage(1); setFilterRole(e.target.value); }} className="px-4 py-2 border rounded">
                         <option value="all">{t('all_roles')}</option>
                         <option value="student">{t('student')}</option>
                         <option value="instructor">{t('instructor')}</option>

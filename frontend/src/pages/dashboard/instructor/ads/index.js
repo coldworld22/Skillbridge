@@ -35,6 +35,10 @@ export default function InstructorAdsPage() {
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, filterStatus, filterType]);
+
   const notify = async (type, message) => {
     try {
       await createNotification({ user_id: user.id, type, message });
@@ -110,12 +114,12 @@ export default function InstructorAdsPage() {
             type="search"
             placeholder={t("search_placeholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setCurrentPage(1); setSearch(e.target.value); }}
             className="px-4 py-2 border rounded w-full md:w-1/3"
           />
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => { setCurrentPage(1); setFilterType(e.target.value); }}
             className="px-4 py-2 border rounded"
           >
             <option value="all">{t("all_types")}</option>
@@ -125,7 +129,7 @@ export default function InstructorAdsPage() {
           </select>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setCurrentPage(1); setFilterStatus(e.target.value); }}
             className="px-4 py-2 border rounded"
           >
             <option value="all">{t("all_status")}</option>
