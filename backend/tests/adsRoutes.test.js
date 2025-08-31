@@ -434,6 +434,36 @@ describe('POST /api/ads/:id/view', () => {
     expect(res.status).toBe(403);
     expect(service.recordView).not.toHaveBeenCalled();
   });
+
+  it('returns 403 for ad not yet started', async () => {
+    const nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2024-01-01').getTime());
+    service.getAdById.mockResolvedValue({
+      id: '1',
+      is_active: true,
+      start_at: '2024-02-01',
+    });
+    const res = await request(app).post('/api/ads/1/view');
+    expect(res.status).toBe(403);
+    expect(service.recordView).not.toHaveBeenCalled();
+    nowSpy.mockRestore();
+  });
+
+  it('returns 403 for ad that has ended', async () => {
+    const nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2024-03-01').getTime());
+    service.getAdById.mockResolvedValue({
+      id: '1',
+      is_active: true,
+      end_at: '2024-02-01',
+    });
+    const res = await request(app).post('/api/ads/1/view');
+    expect(res.status).toBe(403);
+    expect(service.recordView).not.toHaveBeenCalled();
+    nowSpy.mockRestore();
+  });
 });
 
 describe('POST /api/ads/:id/click', () => {
@@ -458,6 +488,36 @@ describe('POST /api/ads/:id/click', () => {
     const res = await request(app).post('/api/ads/1/click');
     expect(res.status).toBe(403);
     expect(service.recordClick).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 for ad not yet started', async () => {
+    const nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2024-01-01').getTime());
+    service.getAdById.mockResolvedValue({
+      id: '1',
+      is_active: true,
+      start_at: '2024-02-01',
+    });
+    const res = await request(app).post('/api/ads/1/click');
+    expect(res.status).toBe(403);
+    expect(service.recordClick).not.toHaveBeenCalled();
+    nowSpy.mockRestore();
+  });
+
+  it('returns 403 for ad that has ended', async () => {
+    const nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2024-03-01').getTime());
+    service.getAdById.mockResolvedValue({
+      id: '1',
+      is_active: true,
+      end_at: '2024-02-01',
+    });
+    const res = await request(app).post('/api/ads/1/click');
+    expect(res.status).toBe(403);
+    expect(service.recordClick).not.toHaveBeenCalled();
+    nowSpy.mockRestore();
   });
 });
 // Service-level test ensuring getAds filters by start and end dates

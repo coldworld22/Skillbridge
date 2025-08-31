@@ -524,6 +524,13 @@ exports.recordAdView = catchAsync(async (req, res) => {
   if (!ad.is_active) {
     throw new AppError("Ad is inactive", 403);
   }
+  const now = Date.now();
+  if (
+    (ad.start_at && new Date(ad.start_at).getTime() > now) ||
+    (ad.end_at && new Date(ad.end_at).getTime() < now)
+  ) {
+    throw new AppError("Ad is outside its active window", 403);
+  }
   const userId = req.user?.id || null;
   const viewerIp = req.ip;
   const userAgent = req.get("user-agent");
@@ -588,6 +595,13 @@ exports.recordAdClick = catchAsync(async (req, res) => {
   }
   if (!ad.is_active) {
     throw new AppError("Ad is inactive", 403);
+  }
+  const now = Date.now();
+  if (
+    (ad.start_at && new Date(ad.start_at).getTime() > now) ||
+    (ad.end_at && new Date(ad.end_at).getTime() < now)
+  ) {
+    throw new AppError("Ad is outside its active window", 403);
   }
   await service.recordClick(ad.id);
   sendSuccess(res, null, "Click recorded");
