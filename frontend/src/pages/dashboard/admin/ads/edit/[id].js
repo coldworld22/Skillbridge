@@ -12,11 +12,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { FaSpinner, FaTrash, FaImage, FaVideo } from "react-icons/fa";
 import PreviewModal from "@/components/admin/ads/PreviewModal";
-
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
+import useAdMedia, { ALLOWED_VIDEO_TYPES } from "@/hooks/useAdMedia";
 
 export default function EditAdPage() {
   const router = useRouter();
@@ -31,9 +27,16 @@ export default function EditAdPage() {
   
   const [formData, setFormData] = useState(null);
   const [error, setError] = useState(null);
-  const [mediaType, setMediaType] = useState('image');
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoPreview, setVideoPreview] = useState('');
+  const {
+    mediaType,
+    setMediaType,
+    handleVideoChange,
+    handleMediaTypeChange,
+    removeMedia,
+    videoFile,
+    videoPreview,
+    setVideoPreview,
+  } = useAdMedia({ setFormData, t, setError });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -66,14 +69,6 @@ export default function EditAdPage() {
     }
   }, [id, t]);
 
-  useEffect(() => {
-    return () => {
-      if (videoPreview && videoPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(videoPreview);
-      }
-    };
-  }, [videoPreview]);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === "targetRoles") {
@@ -90,49 +85,6 @@ export default function EditAdPage() {
       setFormData((prev) => ({ ...prev, priority: Number(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleVideoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-      setError(t('invalid_video_type'));
-      return;
-    }
-    
-    if (file.size > MAX_VIDEO_SIZE) {
-      setError(t('video_too_large', { size: '50MB' }));
-      return;
-    }
-    
-    if (videoPreview && videoPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(videoPreview);
-    }
-    
-    setVideoFile(file);
-    setVideoPreview(URL.createObjectURL(file));
-    setError(null);
-  };
-
-  const handleMediaTypeChange = (e) => {
-    const type = e.target.value;
-    setMediaType(type);
-    if (type === 'video' && videoPreview) {
-      setFormData(prev => ({ ...prev, image: null }));
-    }
-  };
-
-  const removeMedia = () => {
-    if (mediaType === 'image') {
-      setFormData(prev => ({ ...prev, image: null }));
-    } else {
-      if (videoPreview && videoPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(videoPreview);
-      }
-      setVideoFile(null);
-      setVideoPreview('');
     }
   };
 
