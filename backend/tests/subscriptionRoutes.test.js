@@ -6,11 +6,17 @@ jest.mock('../src/modules/subscriptions/subscription.service', () => ({
   createOrRenewSubscription: jest.fn(),
 }));
 
+jest.mock('../src/modules/payments/payments.service', () => ({
+  getById: jest.fn(),
+  STATUS: { PAID: 'paid' },
+}));
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 'user1' }; next(); },
 }));
 
 const service = require('../src/modules/subscriptions/subscription.service');
+const paymentsService = require('../src/modules/payments/payments.service');
 const routes = require('../src/modules/subscriptions/subscriptions.routes');
 
 const app = express();
@@ -33,10 +39,17 @@ describe('POST /api/user-subscriptions', () => {
   it('creates or renews a subscription for the authenticated user', async () => {
     const mock = { id: 's1', plan_id: 'p1' };
     service.createOrRenewSubscription.mockResolvedValue(mock);
+    paymentsService.getById.mockResolvedValue({
+      id: 'pay1',
+      user_id: 'user1',
+      item_type: 'plan',
+      item_id: 'p1',
+      status: 'paid',
+    });
 
     const res = await request(app)
       .post('/api/user-subscriptions')
-      .send({ plan_id: 'p1' });
+      .send({ plan_id: 'p1', payment_id: 'pay1' });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
@@ -45,5 +58,16 @@ describe('POST /api/user-subscriptions', () => {
       plan_id: 'p1',
       interval: 'monthly',
     });
+    expect(paymentsService.getById).toHaveBeenCalledWith('pay1');
+  });
+
+  it('returns 400 if payment is missing or invalid', async () => {
+    paymentsService.getById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/user-subscriptions')
+      .send({ plan_id: 'p1', payment_id: 'bad' });
+
+    expect(res.status).toBe(400);
   });
 });

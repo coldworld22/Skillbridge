@@ -47,6 +47,26 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      name: 'Prime',
+      slug: 'prime',
+      price_monthly: 19.99,
+      price_yearly: 199.99,
+      currency: 'USD',
+      recommended: false,
+      active: true,
+      color: '#10B981',
+      style: JSON.stringify({
+        gradientStart: '#059669',
+        gradientEnd: '#10B981',
+        buttonColor: '#34D399',
+        buttonTextColor: '#FFFFFF'
+      }),
+      target_role: 'student',
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       name: 'Instructor Basic',
       slug: 'instructor-basic',
       price_monthly: 0,
@@ -198,6 +218,55 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: '5',
       description: 'Join up to 5 groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads_max_ads',
+      value: '10',
+      description: 'Up to 10 active ads'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads_max_ad_duration',
+      value: '30',
+      description: 'Each ad runs for 30 days'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads_placements',
+      value: JSON.stringify(['dashboard','homepage','sidebar']),
+      description: 'All ad placements'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads_allow_branding',
+      value: 'true',
+      description: 'Custom branding'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'ads_show_analytics',
+      value: 'true',
+      description: 'Analytics access'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'groups_create',
+      value: 'true',
+      description: 'Can create groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'groups_join_limit',
+      value: 'unlimited',
+      description: 'Join unlimited groups'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
