@@ -1,6 +1,13 @@
 const request = require('supertest');
 const express = require('express');
 
+jest.mock('../src/config/database', () => ({
+  transaction: jest.fn().mockResolvedValue({
+    commit: jest.fn(),
+    rollback: jest.fn(),
+  }),
+}));
+
 jest.mock('../src/modules/plans/plans.service', () => ({
   consumeAdCredit: jest.fn(),
   getPlanById: jest.fn(),
@@ -186,7 +193,10 @@ describe('POST /api/ads/admin', () => {
     const res = await request(app).post('/api/ads/admin').send(payload);
     expect(res.status).toBe(200);
     expect(service.createAd).toHaveBeenCalled();
-    expect(planService.consumeAdCredit).toHaveBeenCalledWith('plan1');
+    expect(planService.consumeAdCredit).toHaveBeenCalledWith(
+      'plan1',
+      expect.anything()
+    );
     expect(sendAdSubmissionEmail).toHaveBeenCalledWith(
       'inst@example.com',
       'Instructor One',
@@ -360,7 +370,12 @@ describe('POST /api/ads/:id/view', () => {
     const res = await request(app).post('/api/ads/1/view');
     expect(res.status).toBe(200);
     expect(service.getAdById).toHaveBeenCalledWith('1');
-    expect(service.recordView).toHaveBeenCalledWith('1', null);
+  expect(service.recordView).toHaveBeenCalledWith(
+    '1',
+    null,
+    expect.any(String),
+    undefined
+  );
   });
 
   it('returns 404 for missing ad', async () => {

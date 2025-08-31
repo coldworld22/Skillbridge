@@ -5,6 +5,10 @@ const validate = require("../../middleware/validate");
 const { verifyToken, isInstructorOrAdmin } = require("../../middleware/auth/authMiddleware");
 const validator = require("./ads.validator");
 const upload = require("./adsUploadMiddleware");
+const rateLimit = require("express-rate-limit");
+
+const viewLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
+const clickLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 
 router.get(
   "/admin/check-title",
@@ -36,7 +40,7 @@ router.get(
   isInstructorOrAdmin,
   controller.getAdAnalytics
 );
-router.post("/:id/click", controller.recordAdClick);
+router.post("/:id/click", clickLimiter, controller.recordAdClick);
 router.post(
   "/:id/purchase",
   verifyToken,
