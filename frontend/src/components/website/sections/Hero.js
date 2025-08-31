@@ -105,12 +105,6 @@ const Hero = () => {
     fetchAds();
   }, [userRole]);
 
-  useEffect(() => {
-    if (ads.length) {
-      recordAdView(ads[currentAd].id, userId);
-    }
-  }, [ads, currentAd, userId]);
-
   const AD_ROTATION_INTERVAL = 10000; // ms
   // Auto-rotate Ads Every 10 Seconds, pause when focused/hovered
   useEffect(() => {
