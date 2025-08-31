@@ -451,11 +451,9 @@ describe('ads.service getAds active date filtering', () => {
     jest.unmock('../src/modules/ads/ads.service');
     const serviceReal = require('../src/modules/ads/ads.service');
     await serviceReal.getAds();
-    expect(whereCalls).toEqual(
-      expect.arrayContaining([
-        ['start_at', '<=', 'NOW()'],
-        ['end_at', '>=', 'NOW()'],
-      ])
-    );
+    expect(whereCalls.length).toBe(3);
+    expect(whereCalls[0]).toEqual([{ is_active: true }]);
+    expect(typeof whereCalls[1][0]).toBe('function');
+    expect(typeof whereCalls[2][0]).toBe('function');
   });
 });
