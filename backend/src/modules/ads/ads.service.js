@@ -145,42 +145,50 @@ exports.deleteAd = (id) => {
 
 // Retrieve aggregated analytics for a given ad.
 exports.getAdAnalytics = async (adId) => {
-  // Aggregate total views and unique viewers from ad_views table
-  const [agg] = await db("ad_views")
+  // Prepare all analytics queries
+  const aggQuery = db("ad_views")
     .where({ ad_id: adId })
     .count("* as views")
-    .countDistinct("user_id as unique_viewers");
+    .countDistinct("user_id as unique_viewers")
+    .first();
 
-  // Group views by day for line chart data
-  const daily = await db("ad_views")
+  const dailyQuery = db("ad_views")
     .select(db.raw("DATE(viewed_at) as day"))
     .count("* as views")
     .where({ ad_id: adId })
     .groupBy("day")
     .orderBy("day", "asc");
 
-  // Aggregate views by device and IP
-  const deviceRows = await db("ad_views")
+  const deviceQuery = db("ad_views")
     .select("user_agent")
     .count("* as views")
     .where({ ad_id: adId })
     .groupBy("user_agent")
     .orderBy("views", "desc");
 
-  const ipRows = await db("ad_views")
+  const ipQuery = db("ad_views")
     .select("ip_address")
     .count("* as views")
     .where({ ad_id: adId })
     .groupBy("ip_address")
     .orderBy("views", "desc");
 
-  // Optional stored analytics such as clicks/ctr
-  const row = await db("ad_analytics").where({ ad_id: adId }).first();
+  const analyticsRowQuery = db("ad_analytics").where({ ad_id: adId }).first();
+
+  const [agg, daily, deviceRows, ipRows, row] = await Promise.all([
+    aggQuery,
+    dailyQuery,
+    deviceQuery,
+    ipQuery,
+    analyticsRowQuery,
+  ]);
+
   const clicks = row?.clicks ?? 0;
-  const ctr = row?.ctr ?? calculateCtr(clicks, agg.views);
+  const views = Number(agg?.views) || 0;
+  const ctr = row?.ctr ?? calculateCtr(clicks, views);
 
   return {
-    views: Number(agg?.views) || 0,
+    views,
     clicks,
     ctr: Number(ctr) || 0,
     unique_viewers: Number(agg?.unique_viewers) || 0,
