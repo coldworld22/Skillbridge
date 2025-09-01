@@ -21,8 +21,8 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 
 
 export default function Home() {
-  const { user, hasHydrated } = useAuthStore();
-  const planRole = user?.role?.toLowerCase() === "instructor" ? "instructor" : "student";
+  const { user } = useAuthStore();
+  const planRole = user?.role === "instructor" ? "instructor" : "student";
 
   const sections = [
     { component: Hero },
