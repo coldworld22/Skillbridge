@@ -177,7 +177,7 @@ export default function CheckoutPage() {
     () => Math.max((itemInfo?.price ?? 0) - discountAmount, 0),
     [itemInfo, discountAmount]
   );
-  const isFree = finalPrice === 0;
+  const isFree = finalPrice <= Number.EPSILON;
   // Normalize the selected payment method to avoid case or whitespace mismatches
   const normalizedMethod = (selectedMethod || '')
     .toString()
