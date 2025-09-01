@@ -37,6 +37,32 @@ const iconMap = {
   nowpayments: <FaEthereum />,
 };
 
+export const TRUSTED_ICON_HOSTS = ['skillbridge.com', 'cdn.skillbridge.com'];
+
+function isTrustedIcon(url) {
+  try {
+    const { hostname } = new URL(url, 'http://localhost');
+    return TRUSTED_ICON_HOSTS.some(
+      (host) => hostname === host || hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function TrustedIcon({ src, alt }) {
+  const [error, setError] = useState(false);
+  if (!src || error) return <FaMoneyCheckAlt />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-8 h-8 object-contain"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 export function resolveIconElement(method) {
   if (method.icon) {
     const lower = method.icon.toLowerCase();
@@ -44,14 +70,9 @@ export function resolveIconElement(method) {
     if (iconMap[lower]) return iconMap[lower];
     if (iconMap[base]) return iconMap[base];
     const isUrl = /^(https?:)?\/\//.test(method.icon);
-    if (isUrl) {
-      return (
-        <img
-          src={method.icon}
-          alt={method.name}
-          className="w-8 h-8 object-contain"
-        />
-      );
+    const trusted = !isUrl || isTrustedIcon(method.icon);
+    if (trusted) {
+      return <TrustedIcon src={method.icon} alt={method.name} />;
     }
   }
   return (
