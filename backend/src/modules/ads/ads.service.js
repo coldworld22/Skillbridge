@@ -1,6 +1,32 @@
 const db = require("../../config/database");
 const { calculateCtr } = require("./ads.utils");
 
+// Use native fetch when available; otherwise fall back to node-fetch
+const fetchFn =
+  typeof global.fetch === "function"
+    ? (...args) => global.fetch(...args)
+    : (...args) => import("node-fetch").then(({ default: f }) => f(...args));
+
+const isIp = (ip) =>
+  /^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip) ||
+  /^[0-9a-fA-F:]+$/.test(ip);
+
+async function lookupLocation(ip) {
+  if (!ip || !isIp(ip)) return null;
+  try {
+    const res = await fetchFn(
+      `http://ip-api.com/json/${ip}?fields=status,country`
+    );
+    const data = await res.json();
+    if (data.status === "success") {
+      return data.country || null;
+    }
+  } catch (e) {
+    // ignore network errors and return null
+  }
+  return null;
+}
+
 exports.createAd = async (data, trx) => {
   const query = trx || db;
   const [row] = await query("ads").insert(data).returning("*");
@@ -173,13 +199,22 @@ exports.getAdAnalytics = async (adId) => {
     .groupBy("ip_address")
     .orderBy("views", "desc");
 
+  const locationQuery = db("ad_views")
+    .select("location")
+    .count("* as views")
+    .where({ ad_id: adId })
+    .whereNotNull("location")
+    .groupBy("location")
+    .orderBy("views", "desc");
+
   const analyticsRowQuery = db("ad_analytics").where({ ad_id: adId }).first();
 
-  const [agg, daily, deviceRows, ipRows, row] = await Promise.all([
+  const [agg, daily, deviceRows, ipRows, locationRows, row] = await Promise.all([
     aggQuery,
     dailyQuery,
     deviceQuery,
     ipQuery,
+    locationQuery,
     analyticsRowQuery,
   ]);
 
@@ -194,13 +229,17 @@ exports.getAdAnalytics = async (adId) => {
     unique_viewers: Number(agg?.unique_viewers) || 0,
     devices: deviceRows.map((d) => ({ user_agent: d.user_agent, views: Number(d.views) })),
     ip_stats: ipRows.map((i) => ({ ip_address: i.ip_address, views: Number(i.views) })),
-    location_stats: [],
+    location_stats: locationRows.map((l) => ({
+      country: l.location,
+      views: Number(l.views),
+    })),
     analytics: daily.map((d) => ({ day: d.day, views: Number(d.views) })),
   };
 };
 
 // Increment view count and track unique viewers
 exports.recordView = async (adId, userId, ipAddress, userAgent) => {
+  const location = await lookupLocation(ipAddress);
   return db.transaction(async (trx) => {
     // Check if this viewer is unique before inserting the view record
     let isUnique = false;
@@ -226,6 +265,7 @@ exports.recordView = async (adId, userId, ipAddress, userAgent) => {
       user_id: userId || null,
       ip_address: ipAddress || null,
       user_agent: userAgent || null,
+      location: location || null,
     });
 
     const uniqueInc = isUnique ? 1 : 0;

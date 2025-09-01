@@ -106,15 +106,19 @@ export default function InstructorAdAnalyticsPage() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">🌍 {t('views_by_country')}</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={ad.locationStats}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="country" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="views" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
+          { (ad.locationStats ?? []).length ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={ad.locationStats}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="country" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="views" fill="#10b981" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-sm text-gray-500">{t('no_data', { defaultValue: 'No data' })}</p>
+          )}
         </div>
       </div>
     </InstructorLayout>
