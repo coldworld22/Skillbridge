@@ -1,7 +1,13 @@
 import api from "@/services/api/api";
 
-export const subscribeToPlan = async (planId, interval = "monthly") => {
-  const { data } = await api.post("/user-subscriptions", { plan_id: planId, interval });
+export const subscribeToPlan = async (
+  planId,
+  interval = "monthly",
+  paymentId
+) => {
+  const payload = { plan_id: planId, interval };
+  if (paymentId) payload.payment_id = paymentId;
+  const { data } = await api.post("/user-subscriptions", payload);
   return data?.data ?? null;
 };
 
