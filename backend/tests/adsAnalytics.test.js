@@ -30,6 +30,7 @@ describe('ads.service getAdAnalytics', () => {
       table.timestamp('viewed_at').defaultTo(mockDb.fn.now());
       table.string('ip_address');
       table.text('user_agent');
+      table.string('location');
     });
 
     await mockDb.schema.createTable('ad_analytics', (table) => {
@@ -53,6 +54,7 @@ describe('ads.service getAdAnalytics', () => {
         viewed_at: new Date('2024-01-01T10:00:00Z'),
         ip_address: 'ip1',
         user_agent: 'Chrome',
+        location: 'USA',
       },
       {
         ad_id: adId,
@@ -60,6 +62,7 @@ describe('ads.service getAdAnalytics', () => {
         viewed_at: new Date('2024-01-01T12:00:00Z'),
         ip_address: 'ip2',
         user_agent: 'Chrome',
+        location: 'USA',
       },
       {
         ad_id: adId,
@@ -67,6 +70,7 @@ describe('ads.service getAdAnalytics', () => {
         viewed_at: new Date('2024-01-02T15:00:00Z'),
         ip_address: 'ip3',
         user_agent: 'Firefox',
+        location: 'Canada',
       },
     ]);
 
@@ -102,6 +106,13 @@ describe('ads.service getAdAnalytics', () => {
         { ip_address: 'ip1', views: 1 },
         { ip_address: 'ip2', views: 1 },
         { ip_address: 'ip3', views: 1 },
+      ])
+    );
+
+    expect(analytics.location_stats).toEqual(
+      expect.arrayContaining([
+        { country: 'USA', views: 2 },
+        { country: 'Canada', views: 1 },
       ])
     );
 

@@ -26,6 +26,7 @@ describe('ads.service concurrency', () => {
       table.uuid('user_id');
       table.string('ip_address');
       table.text('user_agent');
+      table.string('location');
     });
 
     await mockDb.schema.createTable('ad_analytics', (table) => {
