@@ -8,9 +8,8 @@ const paymentConfigService = require('../paymentConfig/paymentConfig.service');
 const paymentMethodsService = require('../paymentMethods/paymentMethods.service');
 const nowPayments = require('../../services/nowPaymentsService');
 const { v4: uuidv4 } = require('uuid');
-const libraryService = require('../library/library.service');
-const enrollmentService = require('../classes/enrollments/classEnrollment.service');
-const tutorialEnrollmentService = require('../users/tutorials/enrollments/tutorialEnrollment.service');
+const { grantAccess } = require('./paymentAccess');
+const plansService = require('../plans/plans.service');
 
 const DEFAULT_PLATFORM_CUT = {
   class: 15,
@@ -18,7 +17,7 @@ const DEFAULT_PLATFORM_CUT = {
   tutorial: 20,
 };
 
-const ALLOWED_ITEM_TYPES = ['class', 'book', 'tutorial'];
+const ALLOWED_ITEM_TYPES = ['class', 'book', 'tutorial', 'plan'];
 
 const SUPPORTED_FIAT = [
   'USD','EUR','GBP','JPY','CNY','SAR','AED','KWD','INR','CAD','AUD','CHF','QAR','EGP','TRY','KRW','SGD','RUB',
@@ -40,6 +39,16 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
   const currencyCode = currency || 'USD';
   if (!SUPPORTED_FIAT.includes(currencyCode)) {
     throw new AppError('Unsupported currency', 400);
+  }
+
+  if (item_type === 'plan') {
+    const plan = await plansService.getPlanById(item_id);
+    if (!plan) throw new AppError('Plan not found', 404);
+    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
+    const valid = prices.some((p) => Math.abs(numericAmount - p) < 0.01);
+    if (!valid) {
+      throw new AppError('Payment amount does not match plan price', 400);
+    }
   }
 
   const method = await paymentMethodsService.getByType(method_type || 'crypto');
@@ -122,32 +131,8 @@ exports.handleIPN = catchAsync(async (req, res) => {
   }
   if (Object.keys(statusUpdate).length) {
     const updated = await paymentsService.update(paymentId, statusUpdate);
-    if (updated.status === 'paid') {
-      try {
-        if (updated.item_type === 'book') {
-          await libraryService.recordPurchase(
-            updated.user_id,
-            updated.item_id,
-            updated.amount
-          );
-        } else if (updated.item_type === 'class') {
-          await enrollmentService.createEnrollment({
-            id: uuidv4(),
-            user_id: updated.user_id,
-            class_id: updated.item_id,
-            status: 'enrolled',
-          });
-        } else if (updated.item_type === 'tutorial') {
-          await tutorialEnrollmentService.createEnrollment({
-            id: uuidv4(),
-            user_id: updated.user_id,
-            tutorial_id: updated.item_id,
-            status: 'enrolled',
-          });
-        }
-      } catch (err) {
-        logger.error('Failed to finalize enrollment after Crypto payment:', err);
-      }
+    if (updated.status === STATUS.PAID) {
+      await grantAccess(updated);
     }
   }
   res.json({ ok: true });
