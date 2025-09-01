@@ -26,9 +26,6 @@ describe("AdForm", () => {
     fireEvent.change(screen.getByLabelText("start_at *"), {
       target: { value: "2024-01-01" },
     });
-    fireEvent.change(screen.getByLabelText("end_at *"), {
-      target: { value: "2024-01-02" },
-    });
     const file = new File(["hello"], "hello.png", { type: "image/png" });
     fireEvent.change(screen.getByLabelText("click_to_upload"), {
       target: { files: [file] },

@@ -104,7 +104,8 @@ export default function AdForm({
     }
   };
 
-  const isScheduleValid = hideSchedule || (formData.startAt && formData.endAt);
+  // Only require a start date; leaving end date blank creates a continuous ad
+  const isScheduleValid = hideSchedule || Boolean(formData.startAt);
 
   const isFormValid =
     formData.title &&
@@ -396,7 +397,7 @@ export default function AdForm({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                  {t("end_at")} *
+                  {t("end_at")}
                 </label>
                 <input
                   type="date"
@@ -405,6 +406,9 @@ export default function AdForm({
                   onChange={handleChange}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t("leave_end_blank")}
+                </p>
               </div>
             </div>
           </div>

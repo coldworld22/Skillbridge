@@ -392,6 +392,7 @@
     "schedule": "Schedule",
     "start_date": "Start Date",
     "end_date": "End Date",
+    "leave_end_blank": "Leave blank for a continuous ad.",
     "configuration": "Configuration",
     "ad_type": "Ad Type",
     "priority": "Priority",

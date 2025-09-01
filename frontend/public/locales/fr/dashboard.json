@@ -378,6 +378,7 @@
     "schedule": "Programme",
     "start_date": "Date de début",
     "end_date": "Date de fin",
+    "leave_end_blank": "Laisser vide pour une annonce continue.",
     "configuration": "Configuration",
     "ad_type": "Type de publicité",
     "priority": "Priorité",

@@ -378,6 +378,7 @@
     "schedule": "Cronograma",
     "start_date": "Fecha de inicio",
     "end_date": "Fecha final",
+    "leave_end_blank": "Déjalo en blanco para un anuncio continuo.",
     "configuration": "Configuración",
     "ad_type": "Tipo AD",
     "priority": "Prioridad",
