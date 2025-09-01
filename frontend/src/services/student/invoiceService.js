@@ -5,3 +5,16 @@ export const fetchInvoiceByPaymentId = async (paymentId) => {
   const invoices = data?.data || [];
   return invoices.find((inv) => String(inv.payment_id) === String(paymentId)) || null;
 };
+
+export const downloadInvoice = async (invoiceId) => {
+  const res = await api.get(`/invoices/student/${invoiceId}/download`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `invoice-${invoiceId}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};

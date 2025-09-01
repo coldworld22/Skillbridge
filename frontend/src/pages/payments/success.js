@@ -10,7 +10,10 @@ import { fetchBook } from '@/services/bookService';
 import { enrollInTutorial, fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchPlanDetails } from '@/services/public/planService';
 import { fetchMyPayments } from '@/services/student/paymentService';
-import { fetchInvoiceByPaymentId } from '@/services/student/invoiceService';
+import {
+  fetchInvoiceByPaymentId,
+  downloadInvoice,
+} from '@/services/student/invoiceService';
 import { subscribeToPlan, fetchMySubscription } from '@/services/instructor/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
@@ -25,15 +28,20 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [subscriptionError, setSubscriptionError] = useState(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
 
   const confirmPlanSubscription = async () => {
     try {
-      const sub = await fetchMySubscription();
-      if (!sub || sub.plan_id !== itemId) {
+      let sub = await fetchMySubscription();
+      let current = Array.isArray(sub) ? sub[0] : sub;
+      if (!current || current.plan_id !== itemId) {
         await subscribeToPlan(itemId);
+        sub = await fetchMySubscription();
+        current = Array.isArray(sub) ? sub[0] : sub;
       }
+      setSubscriptionInfo(current);
       setSubscriptionError(null);
     } catch (_) {
       setSubscriptionError('Failed to activate subscription');
@@ -114,6 +122,10 @@ export default function PaymentSuccessPage() {
     loadData();
   }, [itemType, itemId, payment_id]);
 
+  const handleDownloadInvoice = () => {
+    if (invoiceInfo?.id) downloadInvoice(invoiceInfo.id);
+  };
+
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
 
   let message = 'Your payment was successful!';
@@ -139,9 +151,17 @@ export default function PaymentSuccessPage() {
     link = '/dashboard/student/tutorials';
     linkLabel = 'Go to My Tutorials';
   } else if (itemType === 'plan') {
-    message = itemInfo
-      ? `Your subscription to ${itemInfo.title || itemInfo.name} is now active.`
-      : 'Your subscription is now active.';
+    const planName =
+      subscriptionInfo?.name || itemInfo?.title || itemInfo?.name;
+    if (subscriptionInfo) {
+      const start = new Date(subscriptionInfo.start_date).toLocaleDateString();
+      const end = new Date(subscriptionInfo.end_date).toLocaleDateString();
+      message = `Your ${subscriptionInfo.interval} subscription to ${planName} is active from ${start} to ${end}.`;
+    } else {
+      message = planName
+        ? `Your subscription to ${planName} is now active.`
+        : 'Your subscription is now active.';
+    }
     link = '/dashboard/student/settings?tab=billing';
     linkLabel = 'Manage Billing';
   }
@@ -228,7 +248,11 @@ export default function PaymentSuccessPage() {
             <p>
               <strong>Payment Method:</strong> {paymentInfo?.method_name || '-'}
             </p>
-            <button className="mt-3 flex items-center gap-2 text-yellow-400 hover:underline">
+            <button
+              onClick={handleDownloadInvoice}
+              disabled={!invoiceInfo}
+              className="mt-3 flex items-center gap-2 text-yellow-400 hover:underline disabled:opacity-50"
+            >
               <FaRegFilePdf /> Download PDF Receipt
             </button>
           </div>
