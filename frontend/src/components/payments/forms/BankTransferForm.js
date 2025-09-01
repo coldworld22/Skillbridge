@@ -1,89 +1,88 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 export default function BankTransferForm({ onSubmit, processing, finalPrice }) {
-  const [bankName, setBankName] = useState('');
-  const [accountHolder, setAccountHolder] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [swiftCode, setSwiftCode] = useState('');
-  const [branchAddress, setBranchAddress] = useState('');
-  const [instructions, setInstructions] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm();
+
+  const submit = (data) => {
+    onSubmit({
+      bank_name: data.bankName,
+      account_holder_name: data.accountHolder,
+      account_number: data.accountNumber,
+      swift_code: data.swiftCode,
+      branch_address: data.branchAddress,
+      extra_instructions: data.instructions,
+    });
+  };
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit({
-          bank_name: bankName,
-          account_holder_name: accountHolder,
-          account_number: accountNumber,
-          swift_code: swiftCode,
-          branch_address: branchAddress,
-          extra_instructions: instructions,
-        });
-      }}
-      className="space-y-4"
-    >
+    <form onSubmit={handleSubmit(submit)} className="space-y-4">
       <label className="block">
         <span className="text-sm">Bank Name</span>
         <input
           type="text"
-          required
           placeholder="Bank Name"
-          value={bankName}
-          onChange={(e) => setBankName(e.target.value)}
-          className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          {...register('bankName', { required: 'Bank name is required' })}
         />
+        {errors.bankName && (
+          <p className="text-red-500 text-sm">{errors.bankName.message}</p>
+        )}
       </label>
       <label className="block">
         <span className="text-sm">Account Holder Name</span>
         <input
           type="text"
-          required
           placeholder="Account Holder Name"
-          value={accountHolder}
-          onChange={(e) => setAccountHolder(e.target.value)}
-          className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          {...register('accountHolder', { required: 'Account holder name is required' })}
         />
+        {errors.accountHolder && (
+          <p className="text-red-500 text-sm">{errors.accountHolder.message}</p>
+        )}
       </label>
       <label className="block">
         <span className="text-sm">Account Number / IBAN</span>
         <input
           type="text"
-          required
           placeholder="Account Number / IBAN"
-          value={accountNumber}
-          onChange={(e) => setAccountNumber(e.target.value)}
-          className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          {...register('accountNumber', { required: 'Account number is required' })}
         />
+        {errors.accountNumber && (
+          <p className="text-red-500 text-sm">{errors.accountNumber.message}</p>
+        )}
       </label>
       <label className="block">
         <span className="text-sm">SWIFT Code</span>
         <input
           type="text"
-          required
           placeholder="SWIFT Code"
-          value={swiftCode}
-          onChange={(e) => setSwiftCode(e.target.value)}
-          className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          {...register('swiftCode', { required: 'SWIFT code is required' })}
         />
+        {errors.swiftCode && (
+          <p className="text-red-500 text-sm">{errors.swiftCode.message}</p>
+        )}
       </label>
       <label className="block">
         <span className="text-sm">Branch Address (optional)</span>
         <input
           type="text"
           placeholder="Branch Address"
-          value={branchAddress}
-          onChange={(e) => setBranchAddress(e.target.value)}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          {...register('branchAddress')}
         />
       </label>
       <label className="block">
         <span className="text-sm">Extra Instructions</span>
         <textarea
           placeholder="Extra Instructions"
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white"
+          {...register('instructions')}
         />
       </label>
       <button

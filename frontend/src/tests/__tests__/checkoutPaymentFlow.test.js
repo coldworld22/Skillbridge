@@ -210,6 +210,7 @@ test('shows allowed payment methods for plans', async () => {
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
+    { id: 4, name: 'USDT', type: 'usdt' },
   ]);
 
   render(<CheckoutPage />);
@@ -217,4 +218,7 @@ test('shows allowed payment methods for plans', async () => {
   expect(screen.queryByText('PayPal')).toBeNull();
   expect(screen.queryByText('Bank')).toBeNull();
   expect(screen.getByText('Stripe')).toBeInTheDocument();
+  expect(screen.queryByText('PayPal')).toBeNull();
+  expect(screen.queryByText('Bank')).toBeNull();
+  expect(screen.queryByText('USDT')).toBeNull();
 });
