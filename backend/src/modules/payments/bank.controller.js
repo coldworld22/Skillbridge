@@ -187,6 +187,31 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
 
   const payment = await paymentsService.create(paymentData);
 
+  try {
+    const method = await paymentMethodsService.getByType("bank");
+    const bank = method?.settings || {};
+    const user = await userModel.findById(user_id);
+    if (user?.email) {
+      const html = `
+        <p>Dear ${user.full_name || ""},</p>
+        <p>Please complete your payment via bank transfer using the details below:</p>
+        <ul>
+          <li><strong>Bank:</strong> ${bank.bank_name || ""}</li>
+          <li><strong>Account Number:</strong> ${bank.account_number || ""}</li>
+          <li><strong>IBAN:</strong> ${bank.iban || ""}</li>
+        </ul>
+        <p>${bank.instructions || ""}</p>
+      `;
+      await mailService.sendMail({
+        to: user.email,
+        subject: "Bank Transfer Instructions",
+        html,
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to send bank transfer instructions:", err);
+  }
+
   sendSuccess(
     res,
     payment,
