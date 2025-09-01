@@ -1,32 +1,69 @@
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { useState, useEffect } from "react";
-import { FaUser, FaCogs, FaShieldAlt, FaCreditCard, FaPalette } from "react-icons/fa";
+import {
+  FaUser,
+  FaCogs,
+  FaShieldAlt,
+  FaCreditCard,
+  FaPalette,
+} from "react-icons/fa";
+import api from "@/services/api/api";
 
 export default function StudentSettingsPage() {
   const [activeTab, setActiveTab] = useState("account");
-  const [paymentMethod, setPaymentMethod] = useState("stripe");
-  const [paypalEmail, setPaypalEmail] = useState("");
-  const [bankDetails, setBankDetails] = useState({
-    iban: "",
-    swift: "",
-    bankName: "",
-    accountHolder: "",
-  });
+  const [subscription, setSubscription] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [loadingSub, setLoadingSub] = useState(true);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
 
-  useEffect(() => {
-    const savedMethod = localStorage.getItem("studentPaymentMethod");
-    if (savedMethod) setPaymentMethod(savedMethod);
-  }, []);
-
-  const handlePaymentChange = (e) => {
-    const value = e.target.value;
-    setPaymentMethod(value);
-    localStorage.setItem("studentPaymentMethod", value);
+  const loadSubscription = async () => {
+    setLoadingSub(true);
+    try {
+      const { data } = await api.get("/user-subscriptions/me");
+      const subs = data?.data || [];
+      setSubscription(subs[0] || null);
+    } catch (err) {
+      console.error("Failed to fetch subscription", err);
+      setSubscription(null);
+    } finally {
+      setLoadingSub(false);
+    }
   };
 
-  const handleBankChange = (e) => {
-    const { name, value } = e.target;
-    setBankDetails({ ...bankDetails, [name]: value });
+  const loadInvoices = async () => {
+    setLoadingInvoices(true);
+    try {
+      const { data } = await api.get("/invoices/student");
+      setInvoices(data?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch invoices", err);
+      setInvoices([]);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSubscription();
+    loadInvoices();
+  }, []);
+
+  const handleUpgrade = async () => {
+    try {
+      await api.post("/user-subscriptions/upgrade");
+      loadSubscription();
+    } catch (err) {
+      console.error("Upgrade failed", err);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await api.post("/user-subscriptions/cancel");
+      loadSubscription();
+    } catch (err) {
+      console.error("Cancel failed", err);
+    }
   };
 
   const tabs = [
@@ -110,74 +147,64 @@ export default function StudentSettingsPage() {
         {activeTab === "billing" && (
           <div className="bg-white rounded-xl shadow p-6 space-y-6">
             <h2 className="text-lg font-semibold">Billing</h2>
-            <label className="block font-medium">Default Payment Method</label>
-            <select
-              className="w-full border px-4 py-2 rounded"
-              value={paymentMethod}
-              onChange={handlePaymentChange}
-            >
-              <option value="stripe">Stripe</option>
-              <option value="paypal">PayPal</option>
-              <option value="moyasar">Moyasar</option>
-              <option value="bank">Bank Transfer</option>
-              <option value="nft">NFT</option>
-            </select>
 
-            {paymentMethod === "paypal" && (
+            {loadingSub ? (
+              <p>Loading subscription...</p>
+            ) : subscription ? (
               <div className="space-y-2">
-                <label className="block font-medium">PayPal Email</label>
-                <input
-                  type="email"
-                  value={paypalEmail}
-                  onChange={(e) => setPaypalEmail(e.target.value)}
-                  placeholder="Enter your PayPal email"
-                  className="w-full border px-4 py-2 rounded"
-                />
+                <p>
+                  <span className="font-medium">Plan:</span> {subscription.name}
+                </p>
+                <p>
+                  <span className="font-medium">Start:</span>{" "}
+                  {new Date(subscription.start_date).toLocaleDateString()}
+                </p>
+                <p>
+                  <span className="font-medium">End:</span>{" "}
+                  {new Date(subscription.end_date).toLocaleDateString()}
+                </p>
+                <div className="flex gap-4 pt-2">
+                  <button
+                    onClick={handleUpgrade}
+                    className="bg-yellow-500 px-4 py-2 rounded text-black font-medium hover:bg-yellow-600"
+                  >
+                    Upgrade
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="bg-red-500 px-4 py-2 rounded text-white font-medium hover:bg-red-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
+            ) : (
+              <p>No active subscription.</p>
             )}
 
-            {paymentMethod === "bank" && (
-              <div className="space-y-2">
-                <label className="block font-medium">IBAN</label>
-                <input
-                  type="text"
-                  name="iban"
-                  value={bankDetails.iban}
-                  onChange={handleBankChange}
-                  placeholder="Enter IBAN"
-                  className="w-full border px-4 py-2 rounded"
-                />
-                <label className="block font-medium">SWIFT/BIC</label>
-                <input
-                  type="text"
-                  name="swift"
-                  value={bankDetails.swift}
-                  onChange={handleBankChange}
-                  placeholder="Enter SWIFT Code"
-                  className="w-full border px-4 py-2 rounded"
-                />
-                <label className="block font-medium">Bank Name</label>
-                <input
-                  type="text"
-                  name="bankName"
-                  value={bankDetails.bankName}
-                  onChange={handleBankChange}
-                  placeholder="Enter Bank Name"
-                  className="w-full border px-4 py-2 rounded"
-                />
-                <label className="block font-medium">Account Holder</label>
-                <input
-                  type="text"
-                  name="accountHolder"
-                  value={bankDetails.accountHolder}
-                  onChange={handleBankChange}
-                  placeholder="Enter Account Holder Name"
-                  className="w-full border px-4 py-2 rounded"
-                />
-              </div>
-            )}
-
-            <p className="text-sm text-gray-500">You can view or download past invoices from your <a href="/dashboard/student/payments" className="text-blue-600 underline">Payment History</a>.</p>
+            <div>
+              <h3 className="font-medium">Invoices</h3>
+              {loadingInvoices ? (
+                <p>Loading invoices...</p>
+              ) : invoices.length ? (
+                <ul className="list-disc list-inside space-y-1">
+                  {invoices.map((inv) => (
+                    <li key={inv.id}>
+                      <a
+                        href={inv.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        Invoice {inv.id}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No invoices found.</p>
+              )}
+            </div>
           </div>
         )}
 
