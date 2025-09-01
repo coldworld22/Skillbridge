@@ -7,7 +7,7 @@ import ClassFilters from '@/components/online-classes/ClassFilters';
 import ClassesGrid from '@/components/online-classes/ClassesGrid';
 import LoadMoreButton from '@/components/online-classes/LoadMoreButton';
 import { fetchPublishedClasses } from '@/services/classService';
-import { fetchAds as fetchAdBanners } from '@/services/adService';
+import { fetchAds as fetchAdBanners } from '@/services/adsService';
 
 export default function OnlineClassesPage({ initialClasses = [] }) {
   const [allClasses, setAllClasses] = useState(initialClasses);

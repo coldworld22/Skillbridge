@@ -22,7 +22,7 @@ import {
 import { formatCurrency } from "@/utils/currency";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
-import { fetchAds as fetchAdBanners } from "@/services/adService";
+import { fetchAds as fetchAdBanners } from "@/services/adsService";
 
 /**
  * Retrieves enrollment status and progress percentage for a tutorial.

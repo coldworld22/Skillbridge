@@ -1,9 +1,13 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
 
-export const getAds = async (role, { limit, offset } = {}) => {
+export const fetchAds = async ({ role, limit, offset } = {}) => {
   try {
-    const params = { ...((role && { role }) || {}), ...(limit !== undefined ? { limit } : {}), ...(offset !== undefined ? { offset } : {}) };
+    const params = {
+      ...(role ? { role } : {}),
+      ...(limit !== undefined ? { limit } : {}),
+      ...(offset !== undefined ? { offset } : {}),
+    };
     const config = Object.keys(params).length ? { params } : undefined;
     const { data } = await api.get("/ads", config);
     // Backend already filters out inactive ads so simply map the returned list.
@@ -27,14 +31,15 @@ export const getAds = async (role, { limit, offset } = {}) => {
       const path = url.startsWith("/") ? url : `/${url}`;
       return `${base}${path}`;
     };
+
     const mapped = ads.map((ad) => ({
-      id: ad.id,
-      title: ad.title,
-      description: ad.description,
+      ...ad,
       image: formatUrl(ad.image_url || ad.image),
       video: formatUrl(ad.video_url || ad.video),
       link: ad.link_url || ad.link,
+      adType: ad.ad_type ?? ad.adType,
     }));
+
     return { data: mapped, meta: data?.meta };
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {

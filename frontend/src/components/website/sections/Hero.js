@@ -24,7 +24,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import useAppConfigStore from "@/store/appConfigStore";
 import { API_BASE_URL } from "@/config/config";
-import { getAds, recordAdView, recordAdClick } from "@/services/adsService";
+import { fetchAds, recordAdView, recordAdClick } from "@/services/adsService";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
@@ -91,7 +91,7 @@ const Hero = () => {
           normalizedRole === "admin" || normalizedRole === "superadmin"
             ? undefined
             : normalizedRole || "student";
-        const { data } = await getAds(roleParam);
+        const { data } = await fetchAds({ role: roleParam });
         setAds(data);
         setAdsError(false);
       } catch (_err) {
