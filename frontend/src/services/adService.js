@@ -1,16 +1,15 @@
 import api from "@/services/api/api";
-import { API_BASE_URL } from "@/config/config";
+import { buildAdMediaUrl } from "@/utils/adMedia";
 
-export const fetchAds = async ({ limit, offset } = {}) => {
+export const fetchAds = async ({ limit, offset } = {}, origin) => {
   const params = { ...(limit !== undefined ? { limit } : {}), ...(offset !== undefined ? { offset } : {}) };
   const config = Object.keys(params).length ? { params } : undefined;
   const { data } = await api.get("/ads", config);
   const ads = data?.data ?? [];
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
   const mapped = ads.map((ad) => ({
     ...ad,
-    image: ad.image_url ? `${base}${ad.image_url}` : null,
-    video: ad.video_url ? `${base}${ad.video_url}` : null,
+    image: buildAdMediaUrl(ad.image_url, origin),
+    video: buildAdMediaUrl(ad.video_url, origin),
     link: ad.link_url,
     adType: ad.ad_type ?? ad.adType,
   }));

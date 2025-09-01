@@ -1,11 +1,10 @@
-import { API_BASE_URL } from "@/config/config";
+import { buildAdMediaUrl } from "@/utils/adMedia";
 
-export const mapApiAdToClient = (ad) => {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
+export const mapApiAdToClient = (ad, origin) => {
   return {
     ...ad,
-    image: ad.image_url ? `${base}${ad.image_url}` : null,
-    video: ad.video_url ? `${base}${ad.video_url}` : null,
+    image: buildAdMediaUrl(ad.image_url, origin),
+    video: buildAdMediaUrl(ad.video_url, origin),
     link: ad.link_url,
     targetRoles: ad.targetRoles ?? ad.target_roles ?? [],
     startAt: ad.start_at ?? ad.startAt,
