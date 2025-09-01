@@ -16,6 +16,7 @@ const { v4: uuidv4 } = require("uuid");
 const couponService = require("../coupons/coupons.service");
 const bookService = require("../books/book.service");
 const tutorialService = require("../users/tutorials/tutorial.service");
+const plansService = require("../plans/plans.service");
 
 const invoiceService = require("../invoices/invoices.service");
 
@@ -25,7 +26,7 @@ const DEFAULT_PLATFORM_CUT = {
   tutorial: 20,
 };
 
-const ALLOWED_ITEM_TYPES = ["class", "book", "tutorial"];
+const ALLOWED_ITEM_TYPES = ["class", "book", "tutorial", "plan"];
 const SUPPORTED_CURRENCIES = [
   "USD",
   "EUR",
@@ -130,6 +131,15 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     const tut = await tutorialService.getTutorialById(item_id);
     if (!tut) throw new AppError("Tutorial not found", 404);
     basePrice = Number(tut.price);
+  } else if (item_type === "plan") {
+    const plan = await plansService.getPlanById(item_id);
+    if (!plan) throw new AppError("Plan not found", 404);
+    const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
+    const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
+    if (!matched) {
+      throw new AppError("Payment amount does not match plan price", 400);
+    }
+    basePrice = matched;
   }
   if (coupon) {
     basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
