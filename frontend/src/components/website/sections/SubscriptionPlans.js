@@ -11,6 +11,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
   const { t } = useTranslation("website");
   const router = useRouter();
   const [plans, setPlans] = useState([]);
+  const [interval, setInterval] = useState("monthly");
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +39,29 @@ const SubscriptionPlans = ({ role = "student" }) => {
           {t("subscription_description")}
 
         </p>
+
+        <div className="mb-8 flex justify-center gap-4">
+          <button
+            className={`px-4 py-2 rounded-l ${
+              interval === "monthly"
+                ? "bg-yellow-500 text-gray-900"
+                : "bg-gray-700"
+            }`}
+            onClick={() => setInterval("monthly")}
+          >
+            Monthly
+          </button>
+          <button
+            className={`px-4 py-2 rounded-r ${
+              interval === "yearly"
+                ? "bg-yellow-500 text-gray-900"
+                : "bg-gray-700"
+            }`}
+            onClick={() => setInterval("yearly")}
+          >
+            Yearly
+          </button>
+        </div>
 
         {/* Subscription Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto relative z-10">
@@ -85,7 +109,9 @@ const SubscriptionPlans = ({ role = "student" }) => {
 
                 <h3 className="text-2xl font-extrabold mb-2">{plan.name}</h3>
                 <p className="text-3xl font-bold mb-4">
-                  {plan.price_monthly} {plan.currency}/mo
+                  {interval === "monthly"
+                    ? `${plan.price_monthly} ${plan.currency}/mo`
+                    : `${plan.price_yearly} ${plan.currency}/yr`}
                 </p>
 
                 <ul className="space-y-2 text-gray-300">
@@ -100,7 +126,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
                   className="mt-6 px-6 py-3 rounded-lg font-semibold hover:opacity-90"
                   style={buttonStyles}
                   onClick={() => {
-                    const checkoutUrl = `/payments/checkout?itemType=plan&itemId=${plan.id}`;
+                    const checkoutUrl = `/payments/checkout?itemType=plan&itemId=${plan.id}&interval=${interval}`;
                     if (useAuthStore.getState().isAuthenticated()) {
                       router.push(checkoutUrl);
                     } else {

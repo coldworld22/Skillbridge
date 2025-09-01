@@ -155,6 +155,10 @@ export default function CheckoutPage() {
   }, [router.isReady, router.query, cartItems]);
   const itemId = resolvedItem?.id;
   const itemType = resolvedItem?.type;
+  const interval = useMemo(() => {
+    if (!router.isReady) return 'monthly';
+    return router.query.interval === 'yearly' ? 'yearly' : 'monthly';
+  }, [router.isReady, router.query.interval]);
   const checkoutError = router.isReady && !resolvedItem
     ? t('checkout_single_item_warning')
     : '';
@@ -193,7 +197,11 @@ export default function CheckoutPage() {
         } else if (itemType === 'plan') {
           details = await fetchPlanDetails(itemId);
           const data = details?.data ?? details;
-          details = { ...data, title: data.name, price: Number(data.price_monthly) };
+          const price =
+            interval === 'yearly'
+              ? Number(data.price_yearly)
+              : Number(data.price_monthly);
+          details = { ...data, title: data.name, price };
         } else {
           details = await fetchClassDetails(itemId);
         }
@@ -232,7 +240,7 @@ export default function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [itemId, itemType]);
+  }, [itemId, itemType, interval]);
 
 
   const handleApplyPromo = async () => {
@@ -387,6 +395,7 @@ export default function CheckoutPage() {
         allow_installments: allowInstallments,
         installments,
       };
+      if (itemType === 'plan') payload.interval = interval;
       if (couponId) payload.coupon_id = couponId;
       const response = await createPayment(payload);
       if (response?.status === 'paid') {
