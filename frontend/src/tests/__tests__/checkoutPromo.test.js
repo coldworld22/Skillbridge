@@ -108,3 +108,32 @@ test('handles network failure when applying promo code', async () => {
     expect(toast.error).toHaveBeenCalledWith('promo_code_apply_failed');
   });
 });
+
+test('treats near-zero final price as free', async () => {
+  // Simulate a price that suffers from floating point precision, e.g. 0.1 + 0.2
+  const price = 0.1 + 0.2;
+  const percent = (0.3 / (0.1 + 0.2)) * 100;
+  fetchClassDetails.mockResolvedValueOnce({
+    data: {
+      id: 1,
+      title: 'Tiny Price',
+      instructor: 'Inst',
+      price,
+      cover_image: '',
+    },
+  });
+  validateCode.mockResolvedValue({ discount_percent: percent });
+
+  render(<CheckoutPage />);
+  await screen.findByText('checkout');
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
+    target: { value: 'FREE' },
+  });
+  fireEvent.click(screen.getByText('apply'));
+
+  await waitFor(() => expect(validateCode).toHaveBeenCalled());
+  // Payment methods should be hidden and free enrollment message shown
+  await screen.findByText('free_item_notice');
+  expect(screen.getByText('enroll_for_free')).toBeInTheDocument();
+  expect(screen.queryByText('Stripe')).toBeNull();
+});
