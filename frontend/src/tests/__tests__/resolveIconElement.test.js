@@ -1,5 +1,9 @@
-import { resolveIconElement } from '@/pages/payments/checkout';
-import { FaPaypal } from 'react-icons/fa';
+import {
+  resolveIconElement,
+  TrustedIcon,
+  TRUSTED_ICON_HOSTS,
+} from '@/pages/payments/checkout';
+import { FaPaypal, FaMoneyCheckAlt } from 'react-icons/fa';
 
 describe('resolveIconElement', () => {
   it('returns react icon for known provider names', () => {
@@ -12,11 +16,17 @@ describe('resolveIconElement', () => {
     expect(el.type).toBe(FaPaypal);
   });
 
-  it('returns img for full URLs of unknown providers', () => {
+  it('returns TrustedIcon for URLs from trusted hosts', () => {
+    const url = `https://${TRUSTED_ICON_HOSTS[0]}/custom.png`;
+    const el = resolveIconElement({ icon: url, name: 'Custom' });
+    expect(el.type).toBe(TrustedIcon);
+    expect(el.props.src).toBe(url);
+  });
+
+  it('falls back to default icon for untrusted URLs', () => {
     const url = 'https://cdn.example.com/custom.png';
     const el = resolveIconElement({ icon: url, name: 'Custom' });
-    expect(el.type).toBe('img');
-    expect(el.props.src).toBe(url);
+    expect(el.type).toBe(FaMoneyCheckAlt);
   });
 });
 

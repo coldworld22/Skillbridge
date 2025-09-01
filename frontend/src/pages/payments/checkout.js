@@ -22,6 +22,7 @@ import {
   FaEthereum, FaFileInvoice, FaDownload, FaCheckCircle
 } from 'react-icons/fa';
 import { useTranslation } from 'next-i18next';
+import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
 
 const iconMap = {
   stripe: <FaCcStripe />,
@@ -36,6 +37,32 @@ const iconMap = {
   nowpayments: <FaEthereum />,
 };
 
+export const TRUSTED_ICON_HOSTS = ['skillbridge.com', 'cdn.skillbridge.com'];
+
+function isTrustedIcon(url) {
+  try {
+    const { hostname } = new URL(url, 'http://localhost');
+    return TRUSTED_ICON_HOSTS.some(
+      (host) => hostname === host || hostname.endsWith(`.${host}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function TrustedIcon({ src, alt }) {
+  const [error, setError] = useState(false);
+  if (!src || error) return <FaMoneyCheckAlt />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-8 h-8 object-contain"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 export function resolveIconElement(method) {
   if (method.icon) {
     const lower = method.icon.toLowerCase();
@@ -43,14 +70,9 @@ export function resolveIconElement(method) {
     if (iconMap[lower]) return iconMap[lower];
     if (iconMap[base]) return iconMap[base];
     const isUrl = /^(https?:)?\/\//.test(method.icon);
-    if (isUrl) {
-      return (
-        <img
-          src={method.icon}
-          alt={method.name}
-          className="w-8 h-8 object-contain"
-        />
-      );
+    const trusted = !isUrl || isTrustedIcon(method.icon);
+    if (trusted) {
+      return <TrustedIcon src={method.icon} alt={method.name} />;
     }
   }
   return (
@@ -103,49 +125,7 @@ export function resolveCheckoutItem(query, cartItems) {
     return { id: itemId, type: itemType };
   }
 
-  const parseItems = (value) => {
-    if (!value) return null;
-
-    const raw = Array.isArray(value) ? value[0] : value;
-    if (typeof raw !== 'string') return null;
-
-    let decoded = raw;
-    try {
-      decoded = decodeURIComponent(decoded);
-      decoded = decodeURIComponent(decoded);
-    } catch {
-      // ignore decode errors; we'll attempt to parse whatever we have
-    }
-
-    const attemptParse = (str) => {
-      try {
-        const parsed = JSON.parse(str);
-        if (Array.isArray(parsed) && parsed.length === 1) {
-          const p = parsed[0] || {};
-          if (!p.id) return null;
-          return { id: p.id, type: p.itemType || p.item_type || 'class' };
-        }
-      } catch {}
-      return null;
-    };
-
-    let result = attemptParse(decoded);
-    if (result) return result;
-
-    // Fallback: handle cases where the query was encoded without quoting keys/values
-    try {
-      const fixed = decoded
-        .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
-        .replace(/:\s*([^,"}\]\s][^,}\]]*)/g, ':"$1"');
-      result = attemptParse(fixed);
-      if (result) return result;
-    } catch (err) {
-      console.error('Failed to parse checkout items', err);
-    }
-    return null;
-  };
-
-  const resolvedFromItems = parseItems(items);
+  const resolvedFromItems = parseCheckoutItems(items);
   if (resolvedFromItems) return resolvedFromItems;
 
   if (Array.isArray(cartItems) && cartItems.length === 1) {
@@ -194,7 +174,7 @@ export default function CheckoutPage() {
     () => Math.max((itemInfo?.price ?? 0) - discountAmount, 0),
     [itemInfo, discountAmount]
   );
-  const isFree = finalPrice === 0;
+  const isFree = finalPrice <= Number.EPSILON;
   // Normalize the selected payment method to avoid case or whitespace mismatches
   const normalizedMethod = (selectedMethod || '')
     .toString()
@@ -324,7 +304,14 @@ export default function CheckoutPage() {
         : itemType === 'book'
         ? 'purchasedBooks'
         : 'enrolledClasses';
-    const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    let enrolled = [];
+    if (typeof window !== 'undefined') {
+      try {
+        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch {
+        enrolled = [];
+      }
+    }
     const newItem =
       itemType === 'book'
         ? {
@@ -341,7 +328,16 @@ export default function CheckoutPage() {
             status: 'Live',
             joined: true,
           };
-    localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify([...enrolled, newItem])
+        );
+      } catch {
+        // ignore storage write errors in non-browser environments
+      }
+    }
     try {
       await Promise.resolve(removeItem(itemInfo.id));
     } catch (err) {
