@@ -8,6 +8,7 @@ import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import { createPayment } from '@/services/student/paymentService';
+import { subscribeToPlan } from '@/services/instructor/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
 import Navbar from '@/components/website/sections/Navbar';
@@ -288,11 +289,43 @@ export default function CheckoutPage() {
 
   const completePayment = async () => {
     if (itemType === 'plan') {
+      setPaymentStatus('processing');
+      const eligible = filterEligibleMethods(methods, itemType);
+      const defaultMethod = eligible[0];
+      if (!defaultMethod) {
+        toast.error(t('payment_method_missing'));
+        setPaymentStatus('idle');
+        return;
+      }
+      let payment;
+      try {
+        payment = await createPayment({
+          method_id: defaultMethod.id,
+          item_type: itemType,
+          item_id: itemInfo.id,
+          amount: 0,
+          status: 'paid',
+          interval,
+        });
+      } catch (err) {
+        console.error('Failed to create payment', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+      try {
+        await subscribeToPlan(itemInfo.id, interval, payment?.id);
+      } catch (err) {
+        console.error('Failed to subscribe to plan', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
       setPaymentStatus('success');
       setTimeout(
         () =>
           router.push(
-            `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`
+            `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
           ),
         1500
       );
