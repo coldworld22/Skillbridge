@@ -8,6 +8,7 @@ import { FaCheckCircle, FaArrowRight, FaCalendarAlt, FaChalkboardTeacher, FaDown
 import { enrollInClass, fetchClassDetails } from '@/services/classService';
 import { fetchBook } from '@/services/bookService';
 import { enrollInTutorial, fetchTutorialDetails } from '@/services/tutorialService';
+import { fetchPlanDetails } from '@/services/public/planService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
@@ -61,6 +62,14 @@ export default function PaymentSuccessPage() {
           } catch (_) {
             setItemInfo(null);
           }
+        } else if (itemType === 'plan') {
+          try {
+            const details = await fetchPlanDetails(itemId);
+            const data = details?.data ?? details;
+            setItemInfo({ ...data, title: data.name });
+          } catch (_) {
+            setItemInfo(null);
+          }
         }
       } finally {
         await fetchLibrary();
@@ -94,6 +103,12 @@ export default function PaymentSuccessPage() {
       : 'You have successfully enrolled in the tutorial.';
     link = '/dashboard/student/tutorials';
     linkLabel = 'Go to My Tutorials';
+  } else if (itemType === 'plan') {
+    message = itemInfo
+      ? `Your subscription to ${itemInfo.title || itemInfo.name} is now active.`
+      : 'Your subscription is now active.';
+    link = '/dashboard/student/settings?tab=billing';
+    linkLabel = 'Manage Billing';
   }
 
   return (
@@ -129,6 +144,14 @@ export default function PaymentSuccessPage() {
             <div className="bg-gray-800 px-6 py-5 rounded-xl shadow-md w-full text-left mt-4">
               <p className="flex items-center gap-2 text-sm text-gray-300">
                 <FaChalkboardTeacher /> You can access this tutorial from your dashboard anytime.
+              </p>
+            </div>
+          )}
+
+          {itemType === 'plan' && (
+            <div className="bg-gray-800 px-6 py-5 rounded-xl shadow-md w-full text-left mt-4">
+              <p className="flex items-center gap-2 text-sm text-gray-300">
+                <FaCalendarAlt /> You can manage your subscription from your billing settings.
               </p>
             </div>
           )}
