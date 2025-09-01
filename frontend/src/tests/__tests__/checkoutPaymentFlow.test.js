@@ -155,7 +155,7 @@ test('shows error when unhandled payment fails', async () => {
   fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
   await waitFor(() => expect(createPayment).toHaveBeenCalled());
-  expect(require('react-toastify').toast.error).toHaveBeenCalled();
+  expect(require('react-toastify').toast.error).toHaveBeenCalledWith('payment_generic_failure');
 });
 
 test('processes plan card payments and redirects to billing for students', async () => {
@@ -197,7 +197,7 @@ test('processes plan card payments and redirects to billing for students', async
   expect(billingLink).toHaveAttribute('href', '/dashboard/student/settings?tab=billing');
 });
 
-test('shows all payment methods for plans', async () => {
+test('shows allowed payment methods for plans', async () => {
   mockUseRouter.mockReturnValue({
     query: { itemId: '1', itemType: 'plan' },
     isReady: true,
@@ -214,7 +214,7 @@ test('shows all payment methods for plans', async () => {
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(screen.getByText('PayPal')).toBeInTheDocument();
-  expect(screen.getByText('Bank')).toBeInTheDocument();
+  expect(screen.queryByText('PayPal')).toBeNull();
+  expect(screen.queryByText('Bank')).toBeNull();
   expect(screen.getByText('Stripe')).toBeInTheDocument();
 });

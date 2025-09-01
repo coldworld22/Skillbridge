@@ -94,5 +94,9 @@
   "promo_code_apply_failed": "Impossibile applicare il codice promozionale. Per favore riprova.",
   "paypal_payment": "Pagamento PayPal",
   "paypal_redirect_notice": "Verrai reindirizzato su PayPal per completare questo pagamento.",
-  "pay_with_paypal": "Paga ${{price}} con PayPal"
+  "pay_with_paypal": "Paga ${{price}} con PayPal",
+  "payment_bank_failure": "Failed to initiate bank transfer. Please try again.",
+  "payment_paypal_failure": "Failed to initiate PayPal payment. Please try again.",
+  "payment_crypto_failure": "Failed to initiate crypto payment. Please try again.",
+  "payment_generic_failure": "Failed to process payment. Please try again."
 }

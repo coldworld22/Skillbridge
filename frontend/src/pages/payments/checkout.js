@@ -383,7 +383,7 @@ export default function CheckoutPage() {
         setPaymentStatus('submitted_bank');
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
-        toast.error('Failed to initiate bank transfer. Please try again.');
+        toast.error(t('payment_bank_failure'));
         setPaymentStatus('idle');
       }
       return;
@@ -401,7 +401,7 @@ export default function CheckoutPage() {
         if (data?.approval_url) window.location.href = data.approval_url;
       } catch (err) {
         console.error('Failed to initiate PayPal payment', err);
-        toast.error('Failed to initiate PayPal payment. Please try again.');
+        toast.error(t('payment_paypal_failure'));
       } finally {
         setPaymentStatus('idle');
       }
@@ -421,7 +421,7 @@ export default function CheckoutPage() {
         if (data?.invoice_url) window.location.href = data.invoice_url;
       } catch (err) {
         console.error('Failed to initiate crypto payment', err);
-        toast.error('Failed to initiate crypto payment. Please try again.');
+        toast.error(t('payment_crypto_failure'));
       } finally {
         setPaymentStatus('idle');
       }
@@ -447,7 +447,7 @@ export default function CheckoutPage() {
       }
     } catch (err) {
       console.error('Failed to process payment', err);
-      toast.error('Failed to process payment. Please try again.');
+      toast.error(t('payment_generic_failure'));
       setPaymentStatus('idle');
     }
   };
