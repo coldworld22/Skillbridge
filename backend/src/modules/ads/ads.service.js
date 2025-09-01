@@ -7,6 +7,12 @@ const fetchFn =
     ? (...args) => global.fetch(...args)
     : (...args) => import("node-fetch").then(({ default: f }) => f(...args));
 
+// Base URL for IP lookup service. Allows override via environment variable
+// but defaults to the secure ip-api endpoint.
+const IP_API_BASE_URL = (
+  process.env.IP_API_BASE_URL || "https://ip-api.com"
+).replace(/\/$/, "");
+
 const isIp = (ip) =>
   /^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip) ||
   /^[0-9a-fA-F:]+$/.test(ip);
@@ -15,7 +21,7 @@ async function lookupLocation(ip) {
   if (!ip || !isIp(ip)) return null;
   try {
     const res = await fetchFn(
-      `http://ip-api.com/json/${ip}?fields=status,country`
+      `${IP_API_BASE_URL}/json/${ip}?fields=status,country`
     );
     const data = await res.json();
     if (data.status === "success") {
