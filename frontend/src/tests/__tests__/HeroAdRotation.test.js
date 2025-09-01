@@ -44,8 +44,24 @@ describe('Hero ad rotations', () => {
     jest.clearAllMocks();
     fetchAds.mockResolvedValue({
       data: [
-        { id: 1, title: 'Ad1', description: '', image: '', video: null, link: '#' },
-        { id: 2, title: 'Ad2', description: '', image: '', video: null, link: '#' },
+        {
+          id: 1,
+          title: 'Ad1',
+          description: '',
+          image: '',
+          video: null,
+          link: '#',
+          end_at: null,
+        },
+        {
+          id: 2,
+          title: 'Ad2',
+          description: '',
+          image: '',
+          video: null,
+          link: '#',
+          end_at: null,
+        },
       ],
     });
   });

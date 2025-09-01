@@ -51,26 +51,25 @@ exports.createAd = catchAsync(async (req, res) => {
     throw new AppError("Image or video is required", 400);
   }
 
-  if (
-    start_at &&
-    end_at &&
-    new Date(end_at).getTime() < new Date(start_at).getTime()
-  ) {
+  const isAdmin = isAdminRole(req.user.roles || req.user.role);
+  const defaultDuration =
+    Number(process.env.DEFAULT_AD_DURATION_DAYS) || 0;
+  let start = start_at ? new Date(start_at) : new Date();
+  let end;
+  if (end_at) {
+    end = new Date(end_at);
+  } else if (defaultDuration > 0) {
+    end = new Date(
+      start.getTime() + defaultDuration * 24 * 60 * 60 * 1000
+    );
+  } else {
+    end = null;
+  }
+  if (start && end && end.getTime() < start.getTime()) {
     throw new AppError(
       "end_at must be greater than or equal to start_at",
       400
     );
-  }
-
-  const isAdmin = isAdminRole(req.user.roles || req.user.role);
-  let start = start_at ? new Date(start_at) : null;
-  let end = end_at ? new Date(end_at) : null;
-
-  if (isAdmin) {
-    // Admins must explicitly set the ad duration
-    if (!start || !end) {
-      throw new AppError("start_at and end_at are required", 400);
-    }
   }
 
   const data = {
@@ -133,7 +132,6 @@ exports.createAd = catchAsync(async (req, res) => {
     const features = parsePlanFeatures(plan);
 
     const maxDuration = Number(features["ads_max_ad_duration"] || 0);
-    if (!start) start = new Date();
     if (!end && maxDuration) {
       end = new Date(start.getTime() + maxDuration * 24 * 60 * 60 * 1000);
     } else if (end) {
