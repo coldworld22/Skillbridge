@@ -197,7 +197,7 @@ test('processes plan card payments and redirects to billing for students', async
   expect(billingLink).toHaveAttribute('href', '/dashboard/student/settings?tab=billing');
 });
 
-test('shows all payment methods for plans', async () => {
+test('filters out bank, PayPal, and crypto for plans', async () => {
   mockUseRouter.mockReturnValue({
     query: { itemId: '1', itemType: 'plan' },
     isReady: true,
@@ -210,11 +210,13 @@ test('shows all payment methods for plans', async () => {
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
+    { id: 4, name: 'USDT', type: 'usdt' },
   ]);
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(screen.getByText('PayPal')).toBeInTheDocument();
-  expect(screen.getByText('Bank')).toBeInTheDocument();
   expect(screen.getByText('Stripe')).toBeInTheDocument();
+  expect(screen.queryByText('PayPal')).toBeNull();
+  expect(screen.queryByText('Bank')).toBeNull();
+  expect(screen.queryByText('USDT')).toBeNull();
 });
