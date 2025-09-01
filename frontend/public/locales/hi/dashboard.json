@@ -408,6 +408,7 @@
     "remove_video": "वीडियो निकालें",
     "video_requirements": "MP4, वेबएम 50MB तक",
     "target_audience_help": "इस विज्ञापन को कौन देखेगा, इसका चयन करें",
+    "target_audience_required": "कृपया कम से कम एक दर्शक चुनें।",
     "allow_branding_help": "इस विज्ञापन पर संगठन ब्रांडिंग दिखाएं"
   },
   "plansPage": {
@@ -1634,6 +1635,7 @@
     "remove_video": "वीडियो निकालें",
     "video_requirements": "MP4, वेबएम 50MB तक",
     "target_audience_help": "इस विज्ञापन को कौन देखेगा, इसका चयन करें",
+    "target_audience_required": "कृपया कम से कम एक दर्शक चुनें।",
     "placement": "प्लेसमेंट",
     "allow_branding_help": "इस विज्ञापन पर संगठन ब्रांडिंग दिखाएं",
     "activate_ad": "सक्रिय करें विज्ञापन",
