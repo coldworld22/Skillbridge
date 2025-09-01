@@ -5,7 +5,7 @@ const { getSettings } = require("../modules/emailConfig/emailConfig.service");
 const createTransporter = require("../utils/email").createTransporter;
 
 module.exports = {
-  sendMail: async ({ to, subject, html, from }) => {
+  sendMail: async ({ to, subject, html, from, attachments }) => {
     const cfg = (await getSettings()) || {};
     const transporter = await createTransporter();
 
@@ -17,6 +17,7 @@ module.exports = {
       to,
       subject,
       html,
+      attachments,
     };
     try {
       await transporter.sendMail(mailOptions);

@@ -342,7 +342,15 @@ exports.createPayment = catchAsync(async (req, res) => {
       if (!user) {
         user = await userModel.findById(user_id);
       }
-      await invoiceService.generateFromPayment(payment, user);
+      const invoice = await invoiceService.generateFromPayment(payment, user);
+      if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
+        await mailService.sendMail({
+          to: user.email,
+          subject: "Payment Invoice",
+          html: `<p>Please find your invoice attached.</p>`,
+          attachments: [{ path: invoice.pdf_url }],
+        });
+      }
     } catch (err) {
       logger.error("Failed to generate invoice:", err);
     }
@@ -420,7 +428,15 @@ exports.updatePayment = catchAsync(async (req, res) => {
         message = `Your payment ${payment.id} has been approved.`;
         subject = "Payment Approved";
         try {
-          await invoiceService.generateFromPayment(payment, user);
+          const invoice = await invoiceService.generateFromPayment(payment, user);
+          if (user?.email && !user?.invoice_email_opt_out && invoice?.pdf_url) {
+            await mailService.sendMail({
+              to: user.email,
+              subject: "Payment Invoice",
+              html: `<p>Please find your invoice attached.</p>`,
+              attachments: [{ path: invoice.pdf_url }],
+            });
+          }
         } catch (err) {
           logger.error("Failed to generate invoice:", err);
         }

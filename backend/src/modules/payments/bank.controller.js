@@ -285,7 +285,15 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
 
   try {
     if (user) {
-      await invoiceService.generateFromPayment(payment, user);
+      const invoice = await invoiceService.generateFromPayment(payment, user);
+      if (user.email && !user.invoice_email_opt_out && invoice?.pdf_url) {
+        await mailService.sendMail({
+          to: user.email,
+          subject: "Payment Invoice",
+          html: `<p>Please find your invoice attached.</p>`,
+          attachments: [{ path: invoice.pdf_url }],
+        });
+      }
     }
   } catch (err) {
     logger.error("Failed to generate invoice:", err);
