@@ -1,28 +1,14 @@
 import '@testing-library/jest-dom';
 
-// Provide a minimal localStorage mock for test environments without it
-if (typeof window === 'undefined') {
-  // eslint-disable-next-line no-global-assign
-  global.window = {};
-}
-
-if (typeof window !== 'undefined' && !window.localStorage) {
-  let store = {};
-  window.localStorage = {
-    getItem: (key) => (key in store ? store[key] : null),
-    setItem: (key, value) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
+const mockCreateToken = jest.fn().mockResolvedValue({ token: { id: 'tok_123' } });
+jest.mock('@stripe/react-stripe-js', () => {
+  const React = require('react');
+  return {
+    CardElement: (props) => React.createElement('div', { 'data-testid': 'card-element', ...props }),
+    useStripe: () => ({ createToken: mockCreateToken }),
+    useElements: () => ({ getElement: () => ({}) }),
+    __esModule: true,
   };
-}
+});
 
-// Ensure global.localStorage references the mock as well
-if (typeof global.localStorage === 'undefined' && typeof window !== 'undefined') {
-  global.localStorage = window.localStorage;
-}
+global.mockStripeCreateToken = mockCreateToken;

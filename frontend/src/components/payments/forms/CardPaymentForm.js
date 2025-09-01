@@ -1,12 +1,12 @@
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors }
-  } = useForm();
-
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState(null);
+  const stripe = useStripe();
+  const elements = useElements();
   const buttonText = processing
     ? 'Processing...'
     : allowInstallments
@@ -18,7 +18,20 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
   };
 
   return (
-    <form onSubmit={handleSubmit(submit)}>
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!stripe || !elements) return;
+        setError(null);
+        const cardElement = elements.getElement(CardElement);
+        const { error: stripeError, token } = await stripe.createToken(cardElement);
+        if (stripeError) {
+          setError(stripeError.message);
+          return;
+        }
+        onSubmit({ name, email, token: token.id });
+      }}
+    >
       <input
         type="text"
         placeholder="Full Name"
@@ -34,46 +47,13 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
         className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
         {...register('email', { required: 'Email is required' })}
       />
-      {errors.email && (
-        <p className="text-red-500 text-sm mb-2">{errors.email.message}</p>
-      )}
-      <input
-        type="tel"
-        placeholder="Card Number"
-        inputMode="numeric"
-        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
-        {...register('card', {
-          required: 'Card number is required',
-          pattern: {
-            value: /^\d{16}$/,
-            message: 'Invalid card number'
-          }
-        })}
-      />
-      {errors.card && (
-        <p className="text-red-500 text-sm mb-2">{errors.card.message}</p>
-      )}
-      <input
-        type="text"
-        placeholder="Expiration Date (MM/YY)"
-        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
-        {...register('expiry', { required: 'Expiration date is required' })}
-      />
-      {errors.expiry && (
-        <p className="text-red-500 text-sm mb-2">{errors.expiry.message}</p>
-      )}
-      <input
-        type="text"
-        placeholder="CVC"
-        className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white"
-        {...register('cvc', { required: 'CVC is required' })}
-      />
-      {errors.cvc && (
-        <p className="text-red-500 text-sm mb-2 -mt-5">{errors.cvc.message}</p>
-      )}
+      <div className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white">
+        <CardElement options={{ style: { base: { color: '#fff' } } }} />
+      </div>
+      {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
       <button
         type="submit"
-        disabled={processing}
+        disabled={processing || !stripe}
         className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all"
       >
         {buttonText}
