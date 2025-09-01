@@ -330,7 +330,14 @@ export default function CheckoutPage() {
         : itemType === 'book'
         ? 'purchasedBooks'
         : 'enrolledClasses';
-    const enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    let enrolled = [];
+    if (typeof window !== 'undefined') {
+      try {
+        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch {
+        enrolled = [];
+      }
+    }
     const newItem =
       itemType === 'book'
         ? {
@@ -347,7 +354,16 @@ export default function CheckoutPage() {
             status: 'Live',
             joined: true,
           };
-    localStorage.setItem(storageKey, JSON.stringify([...enrolled, newItem]));
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify([...enrolled, newItem])
+        );
+      } catch {
+        // ignore storage write errors in non-browser environments
+      }
+    }
     try {
       await Promise.resolve(removeItem(itemInfo.id));
     } catch (err) {
