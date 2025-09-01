@@ -378,6 +378,7 @@
     "schedule": "日程",
     "start_date": "开始日期",
     "end_date": "结束日期",
+    "leave_end_blank": "留空则广告持续有效。",
     "configuration": "配置",
     "ad_type": "广告类型",
     "priority": "优先级",

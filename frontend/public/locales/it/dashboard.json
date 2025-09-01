@@ -392,6 +392,7 @@
     "schedule": "Programma",
     "start_date": "Data di inizio",
     "end_date": "Data di fine",
+    "leave_end_blank": "Lascia vuoto per un annuncio continuo.",
     "configuration": "Configurazione",
     "ad_type": "Tipo di annuncio",
     "priority": "Priorità",

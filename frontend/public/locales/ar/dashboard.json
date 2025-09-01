@@ -378,6 +378,7 @@
     "schedule": "الجدولة",
     "start_date": "تاريخ البدء",
     "end_date": "تاريخ الانتهاء",
+    "leave_end_blank": "اتركه فارغًا لإعلان مستمر",
     "configuration": "الإعدادات",
     "ad_type": "نوع الإعلان",
     "priority": "الأولوية",
