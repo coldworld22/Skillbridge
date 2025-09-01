@@ -213,6 +213,30 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
     } catch (err) {
       logger.error("Failed to credit instructor wallet:", err);
     }
+  } else if (payment.item_type === "book") {
+    try {
+      const book = await bookService.getBookById(payment.item_id);
+      if (book?.instructor_id) {
+        await walletService.increment(
+          book.instructor_id,
+          payment.instructor_amount
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
+  } else if (payment.item_type === "tutorial") {
+    try {
+      const tut = await tutorialService.getTutorialById(payment.item_id);
+      if (tut?.instructor_id) {
+        await walletService.increment(
+          tut.instructor_id,
+          payment.instructor_amount
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to credit instructor wallet:", err);
+    }
   }
   try {
     user = await userModel.findById(payment.user_id);
