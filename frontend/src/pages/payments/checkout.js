@@ -207,16 +207,7 @@ export default function CheckoutPage() {
         const methodsList = Array.isArray(data) ? data : [];
         setMethods(methodsList);
         const activeMethods = methodsList.filter((m) => m.active !== false);
-        const eligibleMethods =
-          itemType === 'plan'
-            ? activeMethods.filter(
-                (m) =>
-                  !['bank', 'paypal'].includes(
-                    getMethodIdentifier(m).toLowerCase()
-                  ) &&
-                  !isCryptoMethod(m)
-              )
-            : activeMethods;
+        const eligibleMethods = activeMethods;
         if (eligibleMethods.length > 0) {
           const defaultMethod =
             eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
@@ -422,15 +413,7 @@ export default function CheckoutPage() {
   const availableMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  const filteredMethods = itemType === 'plan'
-    ? availableMethods.filter(
-        (m) =>
-          !['bank', 'paypal'].includes(
-            getMethodIdentifier(m).toLowerCase()
-          ) &&
-          !isCryptoMethod(m)
-      )
-    : availableMethods;
+  const filteredMethods = availableMethods;
   const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
   );
