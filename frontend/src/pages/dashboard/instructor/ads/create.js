@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -26,6 +26,19 @@ export default function CreateAdPage() {
   const allowBrandingEnabled =
     planFeatures?.[planKey]?.allowBranding ?? false;
 
+  const maxAdDuration = planFeatures?.[planKey]?.maxAdDuration;
+  const hideSchedule = Boolean(maxAdDuration);
+
+  const initialData = useMemo(() => {
+    if (!hideSchedule) return {};
+    const start = new Date();
+    const end = new Date(start.getTime() + maxAdDuration * 24 * 60 * 60 * 1000);
+    return {
+      startAt: start.toISOString().split("T")[0],
+      endAt: end.toISOString().split("T")[0],
+    };
+  }, [hideSchedule, maxAdDuration]);
+
   const handleSubmit = async (payload, setUploadProgress) => {
     await createAd(payload, {
       onUploadProgress: (e) => {
@@ -40,10 +53,12 @@ export default function CreateAdPage() {
   return (
     <InstructorLayout>
       <AdForm
+        initialData={initialData}
         onSubmit={handleSubmit}
         allowBrandingEnabled={allowBrandingEnabled}
         submitLabel={t("submit", { defaultValue: "Submit" })}
         tPrefix="adsCreatePage"
+        hideSchedule={hideSchedule}
       />
     </InstructorLayout>
   );

@@ -36,6 +36,9 @@ export default function EditAdPage() {
   const allowBrandingEnabled =
     planFeatures?.[planKey]?.allowBranding ?? false;
 
+  const maxAdDuration = planFeatures?.[planKey]?.maxAdDuration;
+  const hideSchedule = Boolean(maxAdDuration);
+
   const handleSubmit = async (payload, setUploadProgress) => {
     await updateAd(id, payload, {
       onUploadProgress: (e) => {
@@ -63,6 +66,7 @@ export default function EditAdPage() {
         allowBrandingEnabled={allowBrandingEnabled}
         submitLabel={t("submit", { defaultValue: "Submit" })}
         tPrefix="adsEditPage"
+        hideSchedule={hideSchedule}
       />
     </InstructorLayout>
   );

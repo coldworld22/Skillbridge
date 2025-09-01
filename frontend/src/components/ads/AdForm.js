@@ -18,6 +18,7 @@ export default function AdForm({
   checkTitle,
   submitLabel = "Submit",
   tPrefix,
+  hideSchedule = false,
 }) {
   const { t, i18n } = useTranslation("dashboard", { keyPrefix: tPrefix });
   const { t: tp } = useTranslation("dashboard", { keyPrefix: "adsPage" });
@@ -103,10 +104,11 @@ export default function AdForm({
     }
   };
 
+  const isScheduleValid = hideSchedule || (formData.startAt && formData.endAt);
+
   const isFormValid =
     formData.title &&
-    formData.startAt &&
-    formData.endAt &&
+    isScheduleValid &&
     ((mediaType === "image" && (formData.image || initialData.image)) ||
       (mediaType === "video" && (videoFile || initialData.video)));
 
@@ -123,7 +125,12 @@ export default function AdForm({
       return;
     }
 
-    if (new Date(formData.endAt) < new Date(formData.startAt)) {
+    if (
+      !hideSchedule &&
+      formData.startAt &&
+      formData.endAt &&
+      new Date(formData.endAt) < new Date(formData.startAt)
+    ) {
       setError(t("end_before_start"));
       return;
     }
@@ -137,8 +144,8 @@ export default function AdForm({
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("link_url", formData.link);
-      payload.append("start_at", formData.startAt);
-      payload.append("end_at", formData.endAt);
+      if (formData.startAt) payload.append("start_at", formData.startAt);
+      if (formData.endAt) payload.append("end_at", formData.endAt);
       payload.append("ad_type", formData.adType);
       payload.append("priority", String(formData.priority));
       payload.append(
@@ -361,41 +368,43 @@ export default function AdForm({
         </div>
       </section>
 
-      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-gray-200">
-            🗓️ {t("schedule")}
-          </h2>
-        </header>
-        <div className="px-5 py-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                {t("start_at")} *
-              </label>
-              <input
-                type="date"
-                name="startAt"
-                value={formData.startAt}
-                onChange={handleChange}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-                {t("end_at")} *
-              </label>
-              <input
-                type="date"
-                name="endAt"
-                value={formData.endAt}
-                onChange={handleChange}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
-              />
+      {!hideSchedule && (
+        <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-gray-200">
+              🗓️ {t("schedule")}
+            </h2>
+          </header>
+          <div className="px-5 py-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  {t("start_at")} *
+                </label>
+                <input
+                  type="date"
+                  name="startAt"
+                  value={formData.startAt}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  {t("end_at")} *
+                </label>
+                <input
+                  type="date"
+                  name="endAt"
+                  value={formData.endAt}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
