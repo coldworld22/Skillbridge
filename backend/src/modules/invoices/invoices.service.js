@@ -62,3 +62,5 @@ exports.generateFromPayment = async (payment, user) => {
 exports.getInvoices = () => model.getAll();
 exports.getInvoice = (id) => model.getById(id);
 exports.getInvoicesByUser = (user_id) => model.getByUser(user_id);
+exports.getInvoiceByPaymentId = (payment_id) =>
+  model.findByPayment(payment_id);
