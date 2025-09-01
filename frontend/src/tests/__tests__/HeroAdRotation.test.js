@@ -2,7 +2,7 @@ import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 import Hero from '../../components/website/sections/Hero';
-import { getAds, recordAdView, recordAdClick } from '../../services/adsService';
+import { fetchAds, recordAdView, recordAdClick } from '../../services/adsService';
 
 jest.mock('next/image', () => ({ src, alt, ...rest }) => <img src={src} alt={alt} {...rest} />);
 jest.mock('next/link', () => ({ children }) => <>{children}</>);
@@ -33,7 +33,7 @@ jest.mock('../../store/auth/authStore', () => ({
   default: (selector) => selector({ user: { id: 1, roles: ['student'] } }),
 }));
 jest.mock('../../services/adsService', () => ({
-  getAds: jest.fn(),
+  fetchAds: jest.fn(),
   recordAdView: jest.fn(),
   recordAdClick: jest.fn(),
 }));
@@ -42,7 +42,7 @@ describe('Hero ad rotations', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
-    getAds.mockResolvedValue({
+    fetchAds.mockResolvedValue({
       data: [
         { id: 1, title: 'Ad1', description: '', image: '', video: null, link: '#' },
         { id: 2, title: 'Ad2', description: '', image: '', video: null, link: '#' },
@@ -57,7 +57,7 @@ describe('Hero ad rotations', () => {
   test('records a single view per ad rotation', async () => {
     render(<Hero />);
 
-    await waitFor(() => expect(getAds).toHaveBeenCalledWith('student'));
+    await waitFor(() => expect(fetchAds).toHaveBeenCalledWith({ role: 'student' }));
     await waitFor(() => expect(recordAdView).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -74,7 +74,7 @@ describe('Hero ad rotations', () => {
   test('records a click when ad link is followed', async () => {
     const { findByText } = render(<Hero />);
 
-    await waitFor(() => expect(getAds).toHaveBeenCalled());
+    await waitFor(() => expect(fetchAds).toHaveBeenCalled());
 
     fireEvent.click(await findByText('learn_more'));
 
