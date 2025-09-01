@@ -2,7 +2,7 @@ import api from "@/services/api/api";
 import { getCsrfToken } from "@/services/api/csrf";
 import { mapApiAdToClient } from "./mapApiAdToClient";
 
-export const createAd = async (payload) => {
+export const createAd = async (payload, config = {}) => {
   const headers = {};
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
@@ -60,12 +60,12 @@ export const fetchAdById = async (id, headers = {}) => {
   }
 };
 
-export const updateAd = async (id, payload) => {
+export const updateAd = async (id, payload, config = {}) => {
   const headers = {};
   const csrfToken = getCsrfToken();
   if (csrfToken) headers["x-csrf-token"] = csrfToken;
   try {
-    const { data } = await api.put(`/ads/${id}`, payload, { headers });
+    const { data } = await api.put(`/ads/${id}`, payload, { headers, ...config });
     return data?.data;
   } catch (err) {
     if (err.response && err.response.status === 403) {

@@ -101,6 +101,9 @@ exports.createAd = catchAsync(async (req, res) => {
         ? target_roles
         : [target_roles];
     }
+    if (!data.target_roles || data.target_roles.length === 0) {
+      throw new AppError("At least one target role required", 400);
+    }
   }
 
   if (req.files?.image?.[0]) {
