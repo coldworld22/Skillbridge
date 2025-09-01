@@ -169,8 +169,8 @@ const MessagesPage = () => {
                   {messages.map((msg) => (
                     <li
                       key={msg.id}
-                      onClick={() => {
-                        if (!msg.read) markMessageRead(msg.id);
+                      onClick={async () => {
+                        if (!msg.read) await markMessageRead(msg.id);
                         const user = users.find((u) => u.id === msg.sender_id);
                         setSelectedChat(
                           user || { id: msg.sender_id, name: msg.sender_name }

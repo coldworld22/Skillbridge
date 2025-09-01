@@ -234,7 +234,11 @@ export default function Header() {
                       <span className="mr-2 flex-1">{m.message}</span>
                       {!m.read ? (
                         <button
-                          onClick={() => markMessageRead(m.id)}
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            await markMessageRead(m.id);
+                          }}
                           className="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                         >
                           {t('mark_as_read')}
