@@ -108,6 +108,7 @@ export default function AdForm({
 
   const isFormValid =
     formData.title &&
+    formData.targetRoles.length > 0 &&
     isScheduleValid &&
     ((mediaType === "image" && (formData.image || initialData.image)) ||
       (mediaType === "video" && (videoFile || initialData.video)));
@@ -121,7 +122,11 @@ export default function AdForm({
     setUploadProgress(0);
 
     if (!isFormValid) {
-      setError(t("title_image_required"));
+      if (formData.targetRoles.length === 0) {
+        setError(t("target_audience_required"));
+      } else {
+        setError(t("title_image_required"));
+      }
       return;
     }
 
@@ -405,6 +410,52 @@ export default function AdForm({
           </div>
         </section>
       )}
+
+      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-gray-200">
+            👥 {t("target_audience")}
+          </h2>
+        </header>
+        <div className="px-5 py-6 space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("target_audience_help")}
+          </p>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="targetRoles"
+                value="student"
+                checked={formData.targetRoles.includes("student")}
+                onChange={handleChange}
+                className="text-yellow-600 dark:text-yellow-400 focus:ring-yellow-500 dark:focus:ring-yellow-400"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {tp("student")}
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="targetRoles"
+                value="instructor"
+                checked={formData.targetRoles.includes("instructor")}
+                onChange={handleChange}
+                className="text-yellow-600 dark:text-yellow-400 focus:ring-yellow-500 dark:focus:ring-yellow-400"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {tp("instructor")}
+              </span>
+            </label>
+          </div>
+          {formData.targetRoles.length === 0 && (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {t("target_audience_required")}
+            </p>
+          )}
+        </div>
+      </section>
 
       <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">

@@ -408,6 +408,7 @@
     "remove_video": "移除视频",
     "video_requirements": "MP4、WEBM 最大 50MB",
     "target_audience_help": "选择可见此广告的用户",
+    "target_audience_required": "请选择至少一个受众。",
     "allow_branding_help": "显示组织品牌在此广告中"
   },
   "plansPage": {
@@ -1634,6 +1635,7 @@
     "remove_video": "删除视频",
     "video_requirements": "MP4，WebM高达50MB",
     "target_audience_help": "选择谁会看到这个广告",
+    "target_audience_required": "请选择至少一个受众。",
     "placement": "放置",
     "allow_branding_help": "在此广告上展示组织品牌",
     "activate_ad": "激活AD",

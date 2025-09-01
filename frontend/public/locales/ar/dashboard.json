@@ -408,6 +408,7 @@
     "remove_video": "إزالة الفيديو",
     "video_requirements": "MP4 أو WEBM حتى 50MB",
     "target_audience_help": "اختر من سيرى هذا الإعلان",
+    "target_audience_required": "يرجى اختيار جمهور واحد على الأقل.",
     "allow_branding_help": "عرض علامة المؤسسة على هذا الإعلان"
   },
   "plansPage": {
@@ -1634,6 +1635,7 @@
     "remove_video": "إزالة الفيديو",
     "video_requirements": "MP4 أو WEBM حتى 50MB",
     "target_audience_help": "حدد من سيرى هذا الإعلان",
+    "target_audience_required": "يرجى اختيار جمهور واحد على الأقل.",
     "placement": "الموضع",
     "allow_branding_help": "عرض العلامة التجارية للمنظمة على هذا الإعلان",
     "activate_ad": "تنشيط الإعلان",

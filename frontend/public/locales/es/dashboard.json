@@ -408,6 +408,7 @@
     "remove_video": "Eliminar video",
     "video_requirements": "MP4, WebM de hasta 50 MB",
     "target_audience_help": "Select who will see this advertisement",
+    "target_audience_required": "Por favor selecciona al menos una audiencia.",
     "allow_branding_help": "Mostrar la marca de la organización en este anuncio"
   },
   "plansPage": {
@@ -1634,6 +1635,7 @@
     "remove_video": "Eliminar video",
     "video_requirements": "MP4, WebM de hasta 50 MB",
     "target_audience_help": "Seleccione quién verá este anuncio",
+    "target_audience_required": "Por favor selecciona al menos una audiencia.",
     "placement": "Colocación",
     "allow_branding_help": "Mostrar la marca de la organización en este anuncio",
     "activate_ad": "Activar anuncio",
