@@ -101,6 +101,23 @@ function isCryptoMethod(methodOrIdentifier) {
   );
 }
 
+export function filterEligibleMethods(methods, itemType) {
+  const active = Array.isArray(methods)
+    ? methods.filter((m) => m.active !== false)
+    : [];
+  if (itemType === 'plan') {
+    return active.filter((m) => {
+      const identifier = getMethodIdentifier(m).toLowerCase();
+      return (
+        identifier !== 'bank' &&
+        identifier !== 'paypal' &&
+        !isCryptoMethod(identifier)
+      );
+    });
+  }
+  return active;
+}
+
 export function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
 
@@ -164,22 +181,10 @@ export default function CheckoutPage() {
     .trim()
     .toLowerCase();
 
-  const filteredMethods = useMemo(() => {
-    const active = Array.isArray(methods)
-      ? methods.filter((m) => m.active !== false)
-      : [];
-    if (itemType === 'plan') {
-      return active.filter((m) => {
-        const identifier = getMethodIdentifier(m).toLowerCase();
-        return (
-          identifier !== 'bank' &&
-          identifier !== 'paypal' &&
-          !isCryptoMethod(identifier)
-        );
-      });
-    }
-    return active;
-  }, [methods, itemType]);
+  const filteredMethods = useMemo(
+    () => filterEligibleMethods(methods, itemType),
+    [methods, itemType]
+  );
 
   const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
@@ -234,19 +239,8 @@ export default function CheckoutPage() {
         const data = await fetchPaymentMethods();
         if (!active) return;
         const methodsList = Array.isArray(data) ? data : [];
-        const activeMethods = methodsList.filter((m) => m.active !== false);
-        setMethods(activeMethods);
-        const eligibleMethods =
-          itemType === 'plan'
-            ? activeMethods.filter((m) => {
-                const identifier = getMethodIdentifier(m).toLowerCase();
-                return (
-                  identifier !== 'bank' &&
-                  identifier !== 'paypal' &&
-                  !isCryptoMethod(identifier)
-                );
-              })
-            : activeMethods;
+        setMethods(methodsList);
+        const eligibleMethods = filterEligibleMethods(methodsList, itemType);
         if (eligibleMethods.length > 0) {
           const defaultMethod =
             eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
