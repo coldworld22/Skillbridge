@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [card, setCard] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm();
 
   const buttonText = processing
     ? 'Processing...'
@@ -13,54 +13,64 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
       ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
       : `Pay $${finalPrice} with ${selectedMethodLabel}`;
 
+  const submit = (data) => {
+    onSubmit(data);
+  };
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit({ name, email, card, expiry, cvc });
-      }}
-    >
+    <form onSubmit={handleSubmit(submit)}>
       <input
         type="text"
         placeholder="Full Name"
-        required
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('name', { required: 'Full name is required' })}
       />
+      {errors.name && (
+        <p className="text-red-500 text-sm mb-2">{errors.name.message}</p>
+      )}
       <input
         type="email"
         placeholder="Email Address"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('email', { required: 'Email is required' })}
       />
+      {errors.email && (
+        <p className="text-red-500 text-sm mb-2">{errors.email.message}</p>
+      )}
       <input
         type="tel"
         placeholder="Card Number"
-        required
         inputMode="numeric"
-        value={card}
-        onChange={(e) => setCard(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('card', {
+          required: 'Card number is required',
+          pattern: {
+            value: /^\d{16}$/,
+            message: 'Invalid card number'
+          }
+        })}
       />
+      {errors.card && (
+        <p className="text-red-500 text-sm mb-2">{errors.card.message}</p>
+      )}
       <input
         type="text"
         placeholder="Expiration Date (MM/YY)"
-        required
-        value={expiry}
-        onChange={(e) => setExpiry(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('expiry', { required: 'Expiration date is required' })}
       />
+      {errors.expiry && (
+        <p className="text-red-500 text-sm mb-2">{errors.expiry.message}</p>
+      )}
       <input
         type="text"
         placeholder="CVC"
-        required
-        value={cvc}
-        onChange={(e) => setCvc(e.target.value)}
         className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('cvc', { required: 'CVC is required' })}
       />
+      {errors.cvc && (
+        <p className="text-red-500 text-sm mb-2 -mt-5">{errors.cvc.message}</p>
+      )}
       <button
         type="submit"
         disabled={processing}
