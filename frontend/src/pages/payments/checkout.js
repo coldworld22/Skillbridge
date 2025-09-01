@@ -206,9 +206,20 @@ export default function CheckoutPage() {
         if (!active) return;
         const methodsList = Array.isArray(data) ? data : [];
         setMethods(methodsList);
-        if (methodsList.length > 0) {
+        const activeMethods = methodsList.filter((m) => m.active !== false);
+        const eligibleMethods =
+          itemType === 'plan'
+            ? activeMethods.filter(
+                (m) =>
+                  !['bank', 'paypal'].includes(
+                    getMethodIdentifier(m).toLowerCase()
+                  ) &&
+                  !isCryptoMethod(m)
+              )
+            : activeMethods;
+        if (eligibleMethods.length > 0) {
           const defaultMethod =
-            methodsList.find((m) => m.is_default) || methodsList[0];
+            eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
           setSelectedMethod((prev) =>
             prev || getMethodIdentifier(defaultMethod)
           );
@@ -300,7 +311,7 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async (_formData = {}) => {
-    const method = methods.find(
+    const method = filteredMethods.find(
       (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
     );
     const identifier = method
@@ -411,7 +422,16 @@ export default function CheckoutPage() {
   const availableMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  const selectedMethodObj = availableMethods.find(
+  const filteredMethods = itemType === 'plan'
+    ? availableMethods.filter(
+        (m) =>
+          !['bank', 'paypal'].includes(
+            getMethodIdentifier(m).toLowerCase()
+          ) &&
+          !isCryptoMethod(m)
+      )
+    : availableMethods;
+  const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
   );
   const selectedMethodIdentifier = selectedMethodObj
@@ -463,8 +483,16 @@ export default function CheckoutPage() {
         {!isFree && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('select_payment_method')}</h2>
+            {itemType === 'plan' && (
+              <p className="text-sm text-yellow-400 mb-4">
+                {t(
+                  'plans_payment_methods_notice',
+                  'Bank transfer, PayPal, and cryptocurrency payment methods are not available for plans.'
+                )}
+              </p>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-              {availableMethods.map((method) => {
+              {filteredMethods.map((method) => {
                 const identifier = getMethodIdentifier(method);
                 return (
                   <button
