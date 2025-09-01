@@ -27,6 +27,15 @@ exports.getMyInvoice = catchAsync(async (req, res) => {
   sendSuccess(res, invoice);
 });
 
+exports.getMyInvoiceByPaymentId = catchAsync(async (req, res) => {
+  const invoice = await service.getInvoiceByPaymentId(
+    req.params.paymentId
+  );
+  if (!invoice || invoice.user_id !== req.user.id)
+    throw new AppError("Invoice not found", 404);
+  sendSuccess(res, invoice);
+});
+
 exports.downloadInvoice = catchAsync(async (req, res) => {
   const invoice = await service.getInvoice(req.params.id);
   if (!invoice) throw new AppError("Invoice not found", 404);

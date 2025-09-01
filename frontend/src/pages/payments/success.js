@@ -95,10 +95,14 @@ export default function PaymentSuccessPage() {
 
       if (payment_id) {
         try {
-          const payments = await fetchMyPayments();
-          const payment = payments.find((p) => String(p.id) === String(payment_id));
+          const [payments, invoice] = await Promise.all([
+            fetchMyPayments(),
+            fetchInvoiceByPaymentId(payment_id),
+          ]);
+          const payment = payments.find(
+            (p) => String(p.id) === String(payment_id)
+          );
           setPaymentInfo(payment || null);
-          const invoice = await fetchInvoiceByPaymentId(payment_id);
           setInvoiceInfo(invoice);
         } catch (_) {
           setFetchError('Failed to load payment details');
