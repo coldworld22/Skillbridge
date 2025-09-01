@@ -9,75 +9,110 @@ import { enrollInClass, fetchClassDetails } from '@/services/classService';
 import { fetchBook } from '@/services/bookService';
 import { enrollInTutorial, fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchPlanDetails } from '@/services/public/planService';
+import { fetchMyPayments } from '@/services/student/paymentService';
+import { fetchInvoiceByPaymentId } from '@/services/student/invoiceService';
+import { subscribeToPlan, fetchMySubscription } from '@/services/instructor/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
-  const { itemType, itemId } = router.query;
+  const { itemType, itemId, payment_id } = router.query;
   const [itemInfo, setItemInfo] = useState(null);
+  const [invoiceInfo, setInvoiceInfo] = useState(null);
+  const [paymentInfo, setPaymentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [subscriptionError, setSubscriptionError] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
 
-  useEffect(() => {
-    const handle = async () => {
-      if (!itemType || !itemId) {
-        await fetchLibrary();
-        setLoading(false);
-        return;
+  const confirmPlanSubscription = async () => {
+    try {
+      const sub = await fetchMySubscription();
+      if (!sub || sub.plan_id !== itemId) {
+        await subscribeToPlan(itemId);
+      }
+      setSubscriptionError(null);
+    } catch (_) {
+      setSubscriptionError('Failed to activate subscription');
+    }
+  };
+
+  const loadData = async () => {
+    if (!itemType || !itemId) {
+      await fetchLibrary();
+      setLoading(false);
+      return;
+    }
+
+    setFetchError(null);
+
+    try {
+      if (itemType === 'class') {
+        try {
+          await enrollInClass(itemId);
+          await removeItem(itemId);
+        } catch (_) {
+          toast.error('Failed to register for class');
+        }
+        try {
+          const details = await fetchClassDetails(itemId);
+          setItemInfo(details?.data ?? details);
+        } catch (_) {
+          setItemInfo(null);
+        }
+      } else if (itemType === 'book') {
+        try {
+          const details = await fetchBook(itemId);
+          setItemInfo(details?.data ?? details);
+        } catch (_) {
+          setItemInfo(null);
+        }
+      } else if (itemType === 'tutorial') {
+        try {
+          await enrollInTutorial(itemId);
+        } catch (_) {
+          toast.error('Failed to enroll in tutorial');
+        }
+        try {
+          const details = await fetchTutorialDetails(itemId);
+          setItemInfo(details?.data ?? details);
+        } catch (_) {
+          setItemInfo(null);
+        }
+      } else if (itemType === 'plan') {
+        try {
+          const details = await fetchPlanDetails(itemId);
+          const data = details?.data ?? details;
+          setItemInfo({ ...data, title: data.name });
+        } catch (_) {
+          setItemInfo(null);
+        }
+        await confirmPlanSubscription();
       }
 
-      try {
-        if (itemType === 'class') {
-          try {
-            await enrollInClass(itemId);
-            await removeItem(itemId);
-          } catch (_) {
-            toast.error('Failed to register for class');
-          }
-          try {
-            const details = await fetchClassDetails(itemId);
-            setItemInfo(details?.data ?? details);
-          } catch (_) {
-            setItemInfo(null);
-          }
-        } else if (itemType === 'book') {
-          try {
-            const details = await fetchBook(itemId);
-            setItemInfo(details?.data ?? details);
-          } catch (_) {
-            setItemInfo(null);
-          }
-        } else if (itemType === 'tutorial') {
-          try {
-            await enrollInTutorial(itemId);
-          } catch (_) {
-            toast.error('Failed to enroll in tutorial');
-          }
-          try {
-            const details = await fetchTutorialDetails(itemId);
-            setItemInfo(details?.data ?? details);
-          } catch (_) {
-            setItemInfo(null);
-          }
-        } else if (itemType === 'plan') {
-          try {
-            const details = await fetchPlanDetails(itemId);
-            const data = details?.data ?? details;
-            setItemInfo({ ...data, title: data.name });
-          } catch (_) {
-            setItemInfo(null);
-          }
+      if (payment_id) {
+        try {
+          const payments = await fetchMyPayments();
+          const payment = payments.find((p) => String(p.id) === String(payment_id));
+          setPaymentInfo(payment || null);
+          const invoice = await fetchInvoiceByPaymentId(payment_id);
+          setInvoiceInfo(invoice);
+        } catch (_) {
+          setFetchError('Failed to load payment details');
         }
-      } finally {
-        await fetchLibrary();
-        setLoading(false);
       }
-    };
-    handle();
-  }, [itemType, itemId, fetchLibrary, removeItem]);
+    } finally {
+      await fetchLibrary();
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [itemType, itemId, payment_id]);
 
   if (loading) return <div className="text-white text-center mt-32">Loading...</div>;
 
@@ -156,10 +191,43 @@ export default function PaymentSuccessPage() {
             </div>
           )}
 
+          {fetchError && (
+            <div className="bg-red-600 text-white px-4 py-2 rounded w-full">
+              {fetchError}
+              <button
+                onClick={loadData}
+                className="ml-2 underline text-yellow-200"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {subscriptionError && (
+            <div className="bg-red-600 text-white px-4 py-2 rounded w-full">
+              {subscriptionError}
+              <button
+                onClick={confirmPlanSubscription}
+                className="ml-2 underline text-yellow-200"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           <div className="text-left mt-6 text-sm text-gray-400 bg-gray-800 px-6 py-4 rounded-xl w-full">
-            <p><strong>Invoice ID:</strong> INV-{Date.now().toString().slice(-6)}</p>
-            <p><strong>Paid Amount:</strong> $49</p>
-            <p><strong>Payment Method:</strong> Simulated</p>
+            <p><strong>Invoice ID:</strong> {invoiceInfo?.id || paymentInfo?.id || '-'}</p>
+            <p>
+              <strong>Paid Amount:</strong>{' '}
+              {invoiceInfo
+                ? `${invoiceInfo.amount} ${invoiceInfo.currency}`
+                : paymentInfo
+                ? `$${paymentInfo.amount}`
+                : '-'}
+            </p>
+            <p>
+              <strong>Payment Method:</strong> {paymentInfo?.method_name || '-'}
+            </p>
             <button className="mt-3 flex items-center gap-2 text-yellow-400 hover:underline">
               <FaRegFilePdf /> Download PDF Receipt
             </button>
