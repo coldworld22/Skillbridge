@@ -31,6 +31,8 @@ The `/checkout` page requires the student to be logged in. A completed profile m
 ## 5. Payment Gateway
 Students are redirected to the configured payment processor (Stripe, Tap, PayPal or an NFT wallet). On successful payment they return to `/checkout/success` where the order is saved and the student is officially enrolled. Failures redirect to `/checkout/failure` with options to retry or contact support.
 
+For card payments, the checkout uses Stripe Elements to tokenize sensitive details in the browser. Only the tokenized payment identifier is sent to our server, keeping raw card numbers out of the application.
+
 If paying via bank transfer or another offline method, students may need to upload a payment receipt. Accepted formats are JPG, PNG or PDF files up to 5 MB.
 
 ## 6. Order & Invoicing

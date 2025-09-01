@@ -437,6 +437,7 @@ export default function CheckoutPage() {
         allow_installments: allowInstallments,
         installments,
       };
+      if (_formData.token) payload.token = _formData.token;
       if (itemType === 'plan') payload.interval = interval;
       if (couponId) payload.coupon_id = couponId;
       const response = await createPayment(payload);

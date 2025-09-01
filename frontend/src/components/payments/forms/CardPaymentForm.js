@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [card, setCard] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
+  const [error, setError] = useState(null);
+  const stripe = useStripe();
+  const elements = useElements();
 
   const buttonText = processing
     ? 'Processing...'
@@ -15,9 +16,17 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        onSubmit({ name, email, card, expiry, cvc });
+        if (!stripe || !elements) return;
+        setError(null);
+        const cardElement = elements.getElement(CardElement);
+        const { error: stripeError, token } = await stripe.createToken(cardElement);
+        if (stripeError) {
+          setError(stripeError.message);
+          return;
+        }
+        onSubmit({ name, email, token: token.id });
       }}
     >
       <input
@@ -36,34 +45,13 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
         onChange={(e) => setEmail(e.target.value)}
         className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
       />
-      <input
-        type="tel"
-        placeholder="Card Number"
-        required
-        inputMode="numeric"
-        value={card}
-        onChange={(e) => setCard(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
-      />
-      <input
-        type="text"
-        placeholder="Expiration Date (MM/YY)"
-        required
-        value={expiry}
-        onChange={(e) => setExpiry(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
-      />
-      <input
-        type="text"
-        placeholder="CVC"
-        required
-        value={cvc}
-        onChange={(e) => setCvc(e.target.value)}
-        className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white"
-      />
+      <div className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white">
+        <CardElement options={{ style: { base: { color: '#fff' } } }} />
+      </div>
+      {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
       <button
         type="submit"
-        disabled={processing}
+        disabled={processing || !stripe}
         className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all"
       >
         {buttonText}

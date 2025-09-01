@@ -77,6 +77,7 @@ beforeEach(() => {
   fetchClassDetails.mockResolvedValue({
     data: { id: 1, title: 'Test Class', instructor: 'Inst', price: 100, cover_image: '' },
   });
+  global.mockStripeCreateToken.mockResolvedValue({ token: { id: 'tok_123' } });
 });
 
 afterEach(() => {
@@ -108,12 +109,12 @@ test('adjusts inputs based on payment selection and submits bank details', async
   initiateBankPayment.mockResolvedValue({});
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(screen.getByPlaceholderText('Card Number')).toBeInTheDocument();
+  expect(screen.getByTestId('card-element')).toBeInTheDocument();
   fireEvent.click(screen.getByText('PayPal'));
-  expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
+  expect(screen.queryByTestId('card-element')).toBeNull();
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
-  expect(screen.queryByPlaceholderText('Card Number')).toBeNull();
+  expect(screen.queryByTestId('card-element')).toBeNull();
   expect(screen.getByPlaceholderText('Bank Name')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText('Bank Name'), { target: { value: 'Test Bank' } });
   fireEvent.change(screen.getByPlaceholderText('Account Holder Name'), { target: { value: 'John' } });
@@ -133,11 +134,9 @@ test('completes payment for unhandled methods on success', async () => {
   await screen.findByText('Checkout');
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John Doe' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
-  fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '4242424242424242' } });
-  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
-  fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
-  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
+  await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
   expect(await screen.findByText(/payment_successful_redirecting/i)).toBeInTheDocument();
 });
 
@@ -150,11 +149,9 @@ test('shows error when unhandled payment fails', async () => {
   await screen.findByText('Checkout');
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John Doe' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
-  fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '4242424242424242' } });
-  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
-  fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
-  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
+  await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
   expect(require('react-toastify').toast.error).toHaveBeenCalled();
 });
 
@@ -176,12 +173,10 @@ test('processes plan card payments and redirects to billing for students', async
 
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'Jane Doe' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'jane@example.com' } });
-  fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '4242424242424242' } });
-  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
-  fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$50 with Stripe/i }));
 
-  await waitFor(() => expect(createPayment).toHaveBeenCalled());
+  await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
+  await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
   jest.runAllTimers();
   await waitFor(() =>
     expect(push).toHaveBeenCalledWith('/payments/success?itemType=plan&itemId=1')
@@ -197,7 +192,7 @@ test('processes plan card payments and redirects to billing for students', async
   expect(billingLink).toHaveAttribute('href', '/dashboard/student/settings?tab=billing');
 });
 
-test('shows all payment methods for plans', async () => {
+test('shows available payment methods for plans', async () => {
   mockUseRouter.mockReturnValue({
     query: { itemId: '1', itemType: 'plan' },
     isReady: true,
@@ -214,7 +209,7 @@ test('shows all payment methods for plans', async () => {
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(screen.getByText('PayPal')).toBeInTheDocument();
-  expect(screen.getByText('Bank')).toBeInTheDocument();
-  expect(screen.getByText('Stripe')).toBeInTheDocument();
+  expect(screen.queryByText('PayPal')).toBeNull();
+  expect(screen.queryByText('Bank')).toBeNull();
+  expect(await screen.findByText('Stripe')).toBeInTheDocument();
 });
