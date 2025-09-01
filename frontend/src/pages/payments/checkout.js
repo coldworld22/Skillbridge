@@ -215,7 +215,17 @@ export default function CheckoutPage() {
         const methodsList = Array.isArray(data) ? data : [];
         setMethods(methodsList);
         const activeMethods = methodsList.filter((m) => m.active !== false);
-        const eligibleMethods = activeMethods;
+        const eligibleMethods =
+          itemType === 'plan'
+            ? activeMethods.filter((m) => {
+                const identifier = getMethodIdentifier(m).toLowerCase();
+                return (
+                  identifier !== 'bank' &&
+                  identifier !== 'paypal' &&
+                  !isCryptoMethod(identifier)
+                );
+              })
+            : activeMethods;
         if (eligibleMethods.length > 0) {
           const defaultMethod =
             eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
@@ -432,6 +442,22 @@ export default function CheckoutPage() {
   const isCryptoSelected = isCryptoMethod(
     selectedMethodObj || selectedMethodIdentifier
   );
+
+  useEffect(() => {
+    if (
+      filteredMethods.length > 0 &&
+      !filteredMethods.some(
+        (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
+      )
+    ) {
+      const defaultMethod =
+        filteredMethods.find((m) => m.is_default) || filteredMethods[0];
+      setSelectedMethod(getMethodIdentifier(defaultMethod));
+    }
+  }, [filteredMethods, normalizedMethod]);
+
+  if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
+  if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900 text-white">
