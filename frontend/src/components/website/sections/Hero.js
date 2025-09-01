@@ -83,7 +83,7 @@ const Hero = () => {
   ];
 
   useEffect(() => {
-    const fetchAds = async () => {
+    const loadAds = async () => {
       setLoadingAds(true);
       try {
         const normalizedRole = userRole?.toLowerCase();
@@ -101,7 +101,7 @@ const Hero = () => {
         setLoadingAds(false);
       }
     };
-    fetchAds();
+    loadAds();
   }, [userRole]);
 
   const AD_ROTATION_INTERVAL = 10000; // ms
