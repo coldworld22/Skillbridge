@@ -418,11 +418,10 @@ export default function CheckoutPage() {
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
-  // Filter out inactive methods if any; the API already returns active ones
-  const availableMethods = Array.isArray(methods)
+  // Include all active payment methods returned by the API
+  const filteredMethods = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  const filteredMethods = availableMethods;
   const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
   );
@@ -475,14 +474,6 @@ export default function CheckoutPage() {
         {!isFree && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('select_payment_method')}</h2>
-            {itemType === 'plan' && (
-              <p className="text-sm text-yellow-400 mb-4">
-                {t(
-                  'plans_payment_methods_notice',
-                  'Bank transfer, PayPal, and cryptocurrency payment methods are not available for plans.'
-                )}
-              </p>
-            )}
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
               {filteredMethods.map((method) => {
                 const identifier = getMethodIdentifier(method);

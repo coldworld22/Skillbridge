@@ -173,11 +173,6 @@ test('processes plan card payments and redirects to billing for students', async
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(
-    screen.getByText(
-      'Bank transfer, PayPal, and cryptocurrency payment methods are not available for plans.'
-    )
-  ).toBeInTheDocument();
 
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'Jane Doe' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'jane@example.com' } });
@@ -202,7 +197,7 @@ test('processes plan card payments and redirects to billing for students', async
   expect(billingLink).toHaveAttribute('href', '/dashboard/student/settings?tab=billing');
 });
 
-test('filters out bank and PayPal methods for plans', async () => {
+test('shows all payment methods for plans', async () => {
   mockUseRouter.mockReturnValue({
     query: { itemId: '1', itemType: 'plan' },
     isReady: true,
@@ -219,12 +214,7 @@ test('filters out bank and PayPal methods for plans', async () => {
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
-  expect(
-    screen.getByText(
-      'Bank transfer, PayPal, and cryptocurrency payment methods are not available for plans.'
-    )
-  ).toBeInTheDocument();
-  expect(screen.queryByText('PayPal')).toBeNull();
-  expect(screen.queryByText('Bank')).toBeNull();
+  expect(screen.getByText('PayPal')).toBeInTheDocument();
+  expect(screen.getByText('Bank')).toBeInTheDocument();
   expect(screen.getByText('Stripe')).toBeInTheDocument();
 });
