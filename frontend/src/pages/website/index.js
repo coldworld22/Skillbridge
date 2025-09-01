@@ -21,16 +21,27 @@ import nextI18NextConfig from '../../../next-i18next.config.js';
 
 
 export default function Home() {
+  const { user } = useAuthStore();
+  const planRole = user?.role === "instructor" ? "instructor" : "student";
+
   const sections = [
-    Hero, OnlineClasses, TutorialsSection, BooksSection, LearningMarketplace, StudyCategories,
-    StudyGroups, InstructorBooking, SubscriptionPlans
-    , AITutoring, CommunityEngagement, Footer // ✅ Removed last section before the footer
+    { component: Hero },
+    { component: OnlineClasses },
+    { component: TutorialsSection },
+    { component: BooksSection },
+    { component: LearningMarketplace },
+    { component: StudyCategories },
+    { component: StudyGroups },
+    { component: InstructorBooking },
+    { component: SubscriptionPlans, props: { role: planRole } },
+    { component: AITutoring },
+    { component: CommunityEngagement },
+    { component: Footer }, // ✅ Removed last section before the footer
   ];
 
   const sectionRefs = useRef(sections.map(() => useRef(null)));
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const { user, hasHydrated } = useAuthStore();
   // Intentionally no console logs to avoid leaking user data
 
   // Track scrolling position
@@ -67,9 +78,9 @@ export default function Home() {
       <Navbar />
       <IncompleteAlertModal />
 
-      {sections.map((Component, index) => (
+      {sections.map(({ component: Component, props }, index) => (
         <section key={index} ref={sectionRefs.current[index]}>
-          <Component />
+          <Component {...props} />
         </section>
       ))}
 
