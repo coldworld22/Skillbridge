@@ -205,6 +205,7 @@ test('shows available payment methods for plans', async () => {
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
+    { id: 4, name: 'USDT', type: 'usdt' },
   ]);
 
   render(<CheckoutPage />);

@@ -7,12 +7,15 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
   const [error, setError] = useState(null);
   const stripe = useStripe();
   const elements = useElements();
-
   const buttonText = processing
     ? 'Processing...'
     : allowInstallments
       ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
       : `Pay $${finalPrice} with ${selectedMethodLabel}`;
+
+  const submit = (data) => {
+    onSubmit(data);
+  };
 
   return (
     <form
@@ -32,18 +35,17 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
       <input
         type="text"
         placeholder="Full Name"
-        required
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('name', { required: 'Full name is required' })}
       />
+      {errors.name && (
+        <p className="text-red-500 text-sm mb-2">{errors.name.message}</p>
+      )}
       <input
         type="email"
         placeholder="Email Address"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full mb-3 p-3 text-sm rounded bg-gray-700 text-white"
+        className="w-full mb-1 p-3 text-sm rounded bg-gray-700 text-white"
+        {...register('email', { required: 'Email is required' })}
       />
       <div className="w-full mb-6 p-3 text-sm rounded bg-gray-700 text-white">
         <CardElement options={{ style: { base: { color: '#fff' } } }} />
