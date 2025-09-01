@@ -364,9 +364,11 @@ export default function CheckoutPage() {
     const method = filteredMethods.find(
       (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
     );
-    const identifier = method
-      ? getMethodIdentifier(method).toLowerCase()
-      : normalizedMethod;
+    if (!method) {
+      toast.error(t('payment_method_missing'));
+      return;
+    }
+    const identifier = getMethodIdentifier(method).toLowerCase();
     const isCrypto = isCryptoMethod(method || identifier);
 
     if (identifier === 'bank') {
