@@ -184,6 +184,47 @@ export default function CheckoutPage() {
     .trim()
     .toLowerCase();
 
+  const filteredMethods = useMemo(() => {
+    const active = Array.isArray(methods)
+      ? methods.filter((m) => m.active !== false)
+      : [];
+    if (itemType === 'plan') {
+      return active.filter((m) => {
+        const identifier = getMethodIdentifier(m).toLowerCase();
+        return (
+          identifier !== 'bank' &&
+          identifier !== 'paypal' &&
+          !isCryptoMethod(identifier)
+        );
+      });
+    }
+    return active;
+  }, [methods, itemType]);
+
+  const selectedMethodObj = filteredMethods.find(
+    (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
+  );
+  const selectedMethodIdentifier = selectedMethodObj
+    ? getMethodIdentifier(selectedMethodObj).toLowerCase()
+    : normalizedMethod;
+  const selectedMethodLabel = selectedMethodObj?.name || selectedMethod;
+  const isCryptoSelected = isCryptoMethod(
+    selectedMethodObj || selectedMethodIdentifier
+  );
+
+  useEffect(() => {
+    if (
+      filteredMethods.length > 0 &&
+      !filteredMethods.some(
+        (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
+      )
+    ) {
+      const defaultMethod =
+        filteredMethods.find((m) => m.is_default) || filteredMethods[0];
+      setSelectedMethod(getMethodIdentifier(defaultMethod));
+    }
+  }, [filteredMethods, normalizedMethod]);
+
   useEffect(() => {
     if (!itemId || !itemType) return;
     let active = true;
@@ -213,8 +254,8 @@ export default function CheckoutPage() {
         const data = await fetchPaymentMethods();
         if (!active) return;
         const methodsList = Array.isArray(data) ? data : [];
-        setMethods(methodsList);
         const activeMethods = methodsList.filter((m) => m.active !== false);
+        setMethods(activeMethods);
         const eligibleMethods =
           itemType === 'plan'
             ? activeMethods.filter((m) => {
@@ -425,36 +466,6 @@ export default function CheckoutPage() {
       return { number: i + 1, date: d.toLocaleDateString(), amount: amount.toFixed(2) };
     });
   }, [finalPrice, allowInstallments, installments]);
-
-  if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
-  if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;
-  // Include all active payment methods returned by the API
-  const filteredMethods = Array.isArray(methods)
-    ? methods.filter((m) => m.active !== false)
-    : [];
-  const selectedMethodObj = filteredMethods.find(
-    (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
-  );
-  const selectedMethodIdentifier = selectedMethodObj
-    ? getMethodIdentifier(selectedMethodObj).toLowerCase()
-    : normalizedMethod;
-  const selectedMethodLabel = selectedMethodObj?.name || selectedMethod;
-  const isCryptoSelected = isCryptoMethod(
-    selectedMethodObj || selectedMethodIdentifier
-  );
-
-  useEffect(() => {
-    if (
-      filteredMethods.length > 0 &&
-      !filteredMethods.some(
-        (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
-      )
-    ) {
-      const defaultMethod =
-        filteredMethods.find((m) => m.is_default) || filteredMethods[0];
-      setSelectedMethod(getMethodIdentifier(defaultMethod));
-    }
-  }, [filteredMethods, normalizedMethod]);
 
   if (checkoutError) return <div className="text-white text-center mt-32">{checkoutError}</div>;
   if (!itemInfo) return <div className="text-white text-center mt-32">{t('loading')}</div>;

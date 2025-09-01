@@ -263,6 +263,7 @@ exports.approveBankPayment = catchAsync(async (req, res) => {
       logger.error("Failed to credit instructor wallet:", err);
     }
   }
+  let user;
   try {
     user = await userModel.findById(payment.user_id);
     const message = `Your bank payment ${payment.id} has been approved.`;
