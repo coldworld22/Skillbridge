@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { FaCheck } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
+import useAuthStore from "@/store/auth/authStore";
 import { fetchPublicPlans } from "@/services/public/planService";
-
-
 
 const SubscriptionPlans = ({ role = "student" }) => {
   const { t } = useTranslation("website");
@@ -99,11 +99,17 @@ const SubscriptionPlans = ({ role = "student" }) => {
                 <button
                   className="mt-6 px-6 py-3 rounded-lg font-semibold hover:opacity-90"
                   style={buttonStyles}
-                  onClick={() =>
-                    router.push(
-                      `/payments/checkout?itemType=plan&itemId=${plan.id}`
-                    )
-                  }
+                  onClick={() => {
+                    const checkoutUrl = `/payments/checkout?itemType=plan&itemId=${plan.id}`;
+                    if (useAuthStore.getState().isAuthenticated()) {
+                      router.push(checkoutUrl);
+                    } else {
+                      toast.info(t("please_login_to_purchase"));
+                      router.push(
+                        `/auth/login?redirect=${encodeURIComponent(checkoutUrl)}`
+                      );
+                    }
+                  }}
                 >
                   {t("subscription_select_plan")}
                 </button>
