@@ -59,11 +59,13 @@ export default function PaymentSuccessPage() {
 
     try {
       if (itemType === 'class') {
-        try {
-          await enrollInClass(itemId);
-          await removeItem(itemId);
-        } catch (_) {
-          toast.error('Failed to register for class');
+        if (!payment_id) {
+          try {
+            await enrollInClass(itemId);
+            await removeItem(itemId);
+          } catch (_) {
+            toast.error('Failed to register for class');
+          }
         }
         try {
           const details = await fetchClassDetails(itemId);
@@ -79,10 +81,12 @@ export default function PaymentSuccessPage() {
           setItemInfo(null);
         }
       } else if (itemType === 'tutorial') {
-        try {
-          await enrollInTutorial(itemId);
-        } catch (_) {
-          toast.error('Failed to enroll in tutorial');
+        if (!payment_id) {
+          try {
+            await enrollInTutorial(itemId);
+          } catch (_) {
+            toast.error('Failed to enroll in tutorial');
+          }
         }
         try {
           const details = await fetchTutorialDetails(itemId);
