@@ -2,8 +2,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CardPaymentForm from '@/components/payments/forms/CardPaymentForm';
 
 describe('CardPaymentForm validation', () => {
-  it('shows error for invalid card number', async () => {
+  it('shows error when Stripe returns an error', async () => {
     const handleSubmit = jest.fn();
+    global.mockStripeCreateToken.mockResolvedValueOnce({ error: { message: 'Invalid card number' } });
     render(
       <CardPaymentForm
         onSubmit={handleSubmit}
@@ -16,9 +17,6 @@ describe('CardPaymentForm validation', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'John Doe' } });
     fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'john@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Card Number'), { target: { value: '123' } });
-    fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), { target: { value: '12/30' } });
-    fireEvent.change(screen.getByPlaceholderText('CVC'), { target: { value: '123' } });
 
     fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Stripe/i }));
 
