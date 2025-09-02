@@ -35,6 +35,7 @@ const userModel = require('../src/modules/users/user.model');
 const bookService = require('../src/modules/books/book.service');
 const invoiceService = require('../src/modules/invoices/invoices.service');
 const mailService = require('../src/services/mailService');
+const walletService = require('../src/modules/payouts/wallet.service');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -61,6 +62,7 @@ describe('invoice email dispatch', () => {
     const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
     const res = mockRes();
     await paymentsController.createPayment(req, res, () => {});
+    await new Promise(process.nextTick);
 
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
@@ -72,6 +74,7 @@ describe('invoice email dispatch', () => {
     const req = { body: { method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
     const res = mockRes();
     await paymentsController.createPayment(req, res, () => {});
+    await new Promise(process.nextTick);
 
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
@@ -80,7 +83,25 @@ describe('invoice email dispatch', () => {
     const req = { params: { id: 'p3' }, body: {}, user: { id: 'admin1' } };
     const res = mockRes();
     await bankController.approveBankPayment(req, res, () => {});
+    await new Promise(process.nextTick);
 
+    expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+  });
+
+  it('handles zero-amount payments without a method', async () => {
+    bookService.getBookById.mockResolvedValue({ price: 0, instructor_id: 'i1' });
+    paymentMethodsService.getByType.mockResolvedValue({ id: 'free', type: 'free', active: true });
+    paymentsService.create.mockResolvedValue({ id: 'p4', user_id: 'u1', method_id: 'free', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
+
+    const req = { body: { item_type: 'book', item_id: 'b1', amount: 0 }, user: { id: 'u1' } };
+    const res = mockRes();
+    await paymentsController.createPayment(req, res, () => {});
+    await new Promise(process.nextTick);
+
+    expect(paymentMethodsService.getByType).toHaveBeenCalledWith('free');
+    expect(paymentsService.create).toHaveBeenCalled();
+    expect(paymentsService.create.mock.calls[0][0].status).toBe('paid');
+    expect(walletService.increment).toHaveBeenCalledWith('i1', 0);
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
 });
