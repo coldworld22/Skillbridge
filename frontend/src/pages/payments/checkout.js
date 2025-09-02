@@ -273,7 +273,7 @@ export default function CheckoutPage() {
         console.error('Failed to load item', err);
       }
       const price =
-        existingPayment?.amount ?? Number((details?.data ?? details)?.price) || 0;
+        existingPayment?.amount ?? (Number((details?.data ?? details)?.price) || 0);
       if (price > Number.EPSILON) {
         try {
           const data = await fetchPaymentMethods();
