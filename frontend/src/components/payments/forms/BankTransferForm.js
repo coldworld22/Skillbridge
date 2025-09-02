@@ -1,88 +1,81 @@
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'next-i18next';
 
-export default function BankTransferForm({ onSubmit, processing, finalPrice }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors }
-  } = useForm();
+export default function BankTransferForm({ onSubmit, processing, finalPrice, bankDetails = {} }) {
+  const { t } = useTranslation('common');
+  const { register, handleSubmit } = useForm();
 
   const submit = (data) => {
     onSubmit({
-      bank_name: data.bankName,
-      account_holder_name: data.accountHolder,
-      account_number: data.accountNumber,
-      swift_code: data.swiftCode,
-      branch_address: data.branchAddress,
-      extra_instructions: data.instructions,
+      reference: data.reference || '',
+      receipt: data.receipt?.[0] || null,
     });
   };
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-4">
       <label className="block">
-        <span className="text-sm">Bank Name</span>
+        <span className="text-sm">{t('bank_name')}</span>
         <input
           type="text"
-          placeholder="Bank Name"
+          readOnly
+          value={bankDetails.bank_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
-          {...register('bankName', { required: 'Bank name is required' })}
         />
-        {errors.bankName && (
-          <p className="text-red-500 text-sm">{errors.bankName.message}</p>
-        )}
       </label>
       <label className="block">
-        <span className="text-sm">Account Holder Name</span>
+        <span className="text-sm">{t('account_holder_name')}</span>
         <input
           type="text"
-          placeholder="Account Holder Name"
+          readOnly
+          value={bankDetails.account_holder_name || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
-          {...register('accountHolder', { required: 'Account holder name is required' })}
         />
-        {errors.accountHolder && (
-          <p className="text-red-500 text-sm">{errors.accountHolder.message}</p>
-        )}
       </label>
       <label className="block">
-        <span className="text-sm">Account Number / IBAN</span>
+        <span className="text-sm">{t('account_number_iban')}</span>
         <input
           type="text"
-          placeholder="Account Number / IBAN"
+          readOnly
+          value={bankDetails.account_number || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
-          {...register('accountNumber', { required: 'Account number is required' })}
         />
-        {errors.accountNumber && (
-          <p className="text-red-500 text-sm">{errors.accountNumber.message}</p>
-        )}
       </label>
       <label className="block">
-        <span className="text-sm">SWIFT Code</span>
+        <span className="text-sm">{t('swift_code')}</span>
         <input
           type="text"
-          placeholder="SWIFT Code"
+          readOnly
+          value={bankDetails.swift_code || ''}
           className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
-          {...register('swiftCode', { required: 'SWIFT code is required' })}
         />
-        {errors.swiftCode && (
-          <p className="text-red-500 text-sm">{errors.swiftCode.message}</p>
-        )}
+      </label>
+      {bankDetails.branch_address && (
+        <label className="block">
+          <span className="text-sm">{t('branch_address')}</span>
+          <input
+            type="text"
+            readOnly
+            value={bankDetails.branch_address}
+            className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          />
+        </label>
+      )}
+      <label className="block">
+        <span className="text-sm">{t('payment_reference_optional')}</span>
+        <input
+          type="text"
+          placeholder={t('payment_reference_optional')}
+          className="w-full p-3 text-sm rounded bg-gray-700 text-white mb-1"
+          {...register('reference')}
+        />
       </label>
       <label className="block">
-        <span className="text-sm">Branch Address (optional)</span>
+        <span className="text-sm">{t('payment_receipt_optional')}</span>
         <input
-          type="text"
-          placeholder="Branch Address"
+          type="file"
           className="w-full p-3 text-sm rounded bg-gray-700 text-white"
-          {...register('branchAddress')}
-        />
-      </label>
-      <label className="block">
-        <span className="text-sm">Extra Instructions</span>
-        <textarea
-          placeholder="Extra Instructions"
-          className="w-full p-3 text-sm rounded bg-gray-700 text-white"
-          {...register('instructions')}
+          {...register('receipt')}
         />
       </label>
       <button
@@ -90,8 +83,9 @@ export default function BankTransferForm({ onSubmit, processing, finalPrice }) {
         disabled={processing}
         className="w-full py-3 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 transition-all"
       >
-        {processing ? 'Processing...' : `Pay $${finalPrice} with Bank`}
+        {processing ? 'Processing...' : t('pay_with_bank', { price: finalPrice })}
       </button>
     </form>
   );
 }
+

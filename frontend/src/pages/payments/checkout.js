@@ -437,17 +437,15 @@ export default function CheckoutPage() {
     if (identifier === 'bank') {
       try {
         setPaymentStatus('processing');
-        const payload = {
-          item_id: itemInfo.id,
-          item_type: itemType,
-          amount: finalPrice,
-          ..._formData,
-        };
-        if (couponId) payload.coupon_id = couponId;
-        const payment = await initiateBankPayment(payload);
-        router.push(
-          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
-        );
+        const formData = new FormData();
+        formData.append('item_id', itemInfo.id);
+        formData.append('item_type', itemType);
+        formData.append('amount', finalPrice);
+        if (couponId) formData.append('coupon_id', couponId);
+        if (_formData.reference) formData.append('reference', _formData.reference);
+        if (_formData.receipt) formData.append('receipt', _formData.receipt);
+        await initiateBankPayment(formData);
+        setPaymentStatus('submitted_bank');
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
         toast.error(t('payment_bank_failure'));
@@ -657,6 +655,7 @@ export default function CheckoutPage() {
           ) : selectedMethodIdentifier === 'bank' ? (
             <BankTransferForm
               onSubmit={handlePayment}
+              bankDetails={selectedMethodObj?.config || selectedMethodObj}
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />

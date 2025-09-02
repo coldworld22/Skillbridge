@@ -96,5 +96,13 @@
   "payment_bank_failure": "Failed to initiate bank transfer. Please try again.",
   "payment_paypal_failure": "Failed to initiate PayPal payment. Please try again.",
   "payment_crypto_failure": "Failed to initiate crypto payment. Please try again.",
-  "payment_generic_failure": "Failed to process payment. Please try again."
+  "payment_generic_failure": "Failed to process payment. Please try again.",
+  "pay_with_bank": "Pay ${{price}} with Bank",
+  "bank_name": "Bank Name",
+  "account_holder_name": "Account Holder Name",
+  "account_number_iban": "Account Number / IBAN",
+  "swift_code": "SWIFT Code",
+  "branch_address": "Branch Address",
+  "payment_reference_optional": "Reference / Notes (optional)",
+  "payment_receipt_optional": "Payment Receipt (optional)"
 }
