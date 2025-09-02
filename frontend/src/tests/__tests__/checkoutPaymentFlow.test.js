@@ -45,6 +45,30 @@ jest.mock('../../services/public/planService', () => ({ fetchPlanDetails: jest.f
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
 }));
+jest.mock('../../services/instructor/subscriptionService', () => ({
+  subscribeToPlan: jest.fn(),
+}));
+jest.mock('../../components/payments/forms/CardPaymentForm', () => {
+  return function MockCardForm({ onSubmit, finalPrice, selectedMethodLabel }) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          global.mockStripeCreateToken();
+          onSubmit({ token: 'tok_123', name: 'John Doe', email: 'john@example.com' });
+        }}
+      >
+        <input placeholder="Full Name" />
+        <input placeholder="Email Address" />
+        <input placeholder="Card Number" />
+        <input placeholder="Expiration Date (MM/YY)" />
+        <input placeholder="CVC" />
+        <div data-testid="card-element" />
+        <button type="submit">{`Pay $${finalPrice} with ${selectedMethodLabel}`}</button>
+      </form>
+    );
+  };
+});
 jest.mock('../../services/paymentService', () => ({
   initiateBankPayment: jest.fn(),
   initiateCryptoPayment: jest.fn(),
@@ -86,9 +110,9 @@ afterEach(() => {
 
 test('renders payment logos using library icons with url fallback', async () => {
   fetchPaymentMethods.mockResolvedValue([
-    { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://example.com/stripe.png' },
+    { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://skillbridge.com/stripe.png' },
     { id: 2, name: 'PayPal', type: null },
-    { id: 3, name: 'Custom', type: 'custom', icon: 'https://example.com/custom.png' },
+    { id: 3, name: 'Custom', type: 'custom', icon: 'https://skillbridge.com/custom.png' },
   ]);
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
@@ -97,7 +121,7 @@ test('renders payment logos using library icons with url fallback', async () => 
   const paypalIcon = screen.getByTestId('payment-icon-paypal').querySelector('svg');
   expect(paypalIcon).not.toBeNull();
   const customIcon = screen.getByTestId('payment-icon-custom').querySelector('img');
-  expect(customIcon).toHaveAttribute('src', 'https://example.com/custom.png');
+  expect(customIcon).toHaveAttribute('src', 'https://skillbridge.com/custom.png');
 });
 
 test('adjusts inputs based on payment selection and submits bank details', async () => {
