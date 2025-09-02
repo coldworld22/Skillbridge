@@ -48,7 +48,7 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   const user_id = req.user.id;
 
-  if (!method_id || !item_type || !item_id || !amount) {
+  if (amount === undefined || amount === null || !item_type || !item_id) {
     throw new AppError("Missing required fields", 400);
   }
 
@@ -68,14 +68,26 @@ exports.createPayment = catchAsync(async (req, res) => {
     next_due_date = schedules[0]?.due_date || null;
   }
 
-  const method = await paymentMethodsService.getById(method_id);
-  if (!method || !method.active) {
-    throw new AppError("Invalid payment method", 400);
+  let method;
+  if (method_id) {
+    method = await paymentMethodsService.getById(method_id);
+    if (!method || !method.active) {
+      throw new AppError("Invalid payment method", 400);
+    }
+  } else if (Number(amount) === 0) {
+    method = await paymentMethodsService.getByType("free");
+    if (!method) {
+      method = { id: null, type: "free", active: true };
+    } else if (!method.active) {
+      throw new AppError("Invalid payment method", 400);
+    }
+  } else {
+    throw new AppError("Missing required fields", 400);
   }
 
   let verifiedAmount = amount;
   let verifiedCurrency = currency || "USD";
-  let finalStatus = status || STATUS.PENDING_PAYMENT;
+  let finalStatus = status || (Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT);
   let verifiedReference = reference_id;
 
   if (method.type === "paypal") {
@@ -183,7 +195,7 @@ exports.createPayment = catchAsync(async (req, res) => {
   const createData = {
     id: uuidv4(),
     user_id,
-    method_id,
+    method_id: method?.id || method_id || null,
     item_type,
     item_id,
     amount: verifiedAmount,
