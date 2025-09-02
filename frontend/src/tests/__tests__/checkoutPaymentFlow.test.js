@@ -138,7 +138,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank', config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' } },
   ]);
-  initiateBankPayment.mockResolvedValue({});
+  initiateBankPayment.mockResolvedValue({ id: 42 });
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByTestId('card-element')).toBeInTheDocument();
@@ -151,7 +151,11 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   fireEvent.change(screen.getByPlaceholderText(/Reference/), { target: { value: 'ref' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
-  expect(await screen.findByText(/bank transfer request has been submitted/i)).toBeInTheDocument();
+  await waitFor(() =>
+    expect(push).toHaveBeenCalledWith(
+      '/payments/success?itemType=class&itemId=1&payment_id=42'
+    )
+  );
 });
 
 test('completes payment for unhandled methods on success', async () => {

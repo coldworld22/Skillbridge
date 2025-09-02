@@ -40,6 +40,11 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 
 `/api/payments/admin` – CRUD operations for user payments (admin only).
 
+`/api/payments/student`
+
+- `GET /api/payments/student` – list payments for the logged in student
+- `GET /api/payments/student/:id` – retrieve a payment belonging to the authenticated student
+
 ## Community Management
 
 `/api/community/admin` – manage announcements, reports, tags and settings.

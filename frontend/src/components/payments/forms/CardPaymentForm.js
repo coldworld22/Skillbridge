@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useForm } from 'react-hook-form';
 
 export default function CardPaymentForm({ onSubmit, processing, allowInstallments, installments, perInstallment, finalPrice, selectedMethodLabel }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [error, setError] = useState(null);
+  const { register, handleSubmit, formState: { errors } } = useForm();
   const stripe = useStripe();
   const elements = useElements();
   const buttonText = processing
@@ -13,25 +13,20 @@ export default function CardPaymentForm({ onSubmit, processing, allowInstallment
       ? `Pay $${perInstallment.toFixed(2)} (1/${installments}) with ${selectedMethodLabel}`
       : `Pay $${finalPrice} with ${selectedMethodLabel}`;
 
-  const submit = (data) => {
-    onSubmit(data);
+  const submit = async (data) => {
+    if (!stripe || !elements) return;
+    setError(null);
+    const cardElement = elements.getElement(CardElement);
+    const { error: stripeError, token } = await stripe.createToken(cardElement);
+    if (stripeError) {
+      setError(stripeError.message);
+      return;
+    }
+    onSubmit({ ...data, token: token.id });
   };
 
   return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (!stripe || !elements) return;
-        setError(null);
-        const cardElement = elements.getElement(CardElement);
-        const { error: stripeError, token } = await stripe.createToken(cardElement);
-        if (stripeError) {
-          setError(stripeError.message);
-          return;
-        }
-        onSubmit({ name, email, token: token.id });
-      }}
-    >
+    <form onSubmit={handleSubmit(submit)}>
       <input
         type="text"
         placeholder="Full Name"

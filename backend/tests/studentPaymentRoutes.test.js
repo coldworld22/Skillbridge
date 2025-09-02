@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   getByUser: jest.fn(),
+  getById: jest.fn(),
   create: jest.fn(),
 }));
 
@@ -51,6 +52,29 @@ describe('GET /api/payments/student', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
     expect(service.getByUser).toHaveBeenCalledWith('user1');
+  });
+});
+
+describe('GET /api/payments/student/:id', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns a payment for the authenticated user', async () => {
+    const payment = { id: 'p1', user_id: 'user1' };
+    service.getById.mockResolvedValue(payment);
+
+    const res = await request(app).get('/api/payments/student/p1');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(payment);
+    expect(service.getById).toHaveBeenCalledWith('p1');
+  });
+
+  it('returns 404 when payment belongs to another user', async () => {
+    service.getById.mockResolvedValue({ id: 'p1', user_id: 'other' });
+
+    const res = await request(app).get('/api/payments/student/p1');
+    expect(res.status).toBe(404);
   });
 });
 

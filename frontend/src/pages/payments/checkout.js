@@ -7,7 +7,7 @@ import { fetchBook } from '@/services/bookService';
 import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
-import { createPayment } from '@/services/student/paymentService';
+import { createPayment, fetchPayment } from '@/services/student/paymentService';
 import { subscribeToPlan } from '@/services/instructor/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -147,10 +147,18 @@ export default function CheckoutPage() {
   const { items: cartItems, removeItem } = useCartStore(
     useShallow((state) => ({ items: state.items, removeItem: state.removeItem }))
   );
+  const paymentId = useMemo(() => {
+    if (!router.isReady) return null;
+    return router.query.paymentId || null;
+  }, [router.isReady, router.query.paymentId]);
+  const [existingPayment, setExistingPayment] = useState(null);
   const resolvedItem = useMemo(() => {
     if (!router.isReady) return null;
+    if (existingPayment) {
+      return { id: existingPayment.item_id, type: existingPayment.item_type };
+    }
     return resolveCheckoutItem(router.query, cartItems);
-  }, [router.isReady, router.query, cartItems]);
+  }, [router.isReady, router.query, cartItems, existingPayment]);
   const itemId = resolvedItem?.id;
   const itemType = resolvedItem?.type;
   const interval = useMemo(() => {
@@ -212,6 +220,28 @@ export default function CheckoutPage() {
   }, [filteredMethods, normalizedMethod]);
 
   useEffect(() => {
+    if (!paymentId) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await fetchPayment(paymentId);
+        if (!active) return;
+        if (data) {
+          setExistingPayment(data);
+          setPaymentStatus(data.status || 'idle');
+          if ((data.installments || 1) > 1) setAllowInstallments(true);
+        }
+      } catch (err) {
+        console.error('Failed to load payment', err);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [paymentId]);
+
+  useEffect(() => {
     if (!itemId || !itemType) return;
     let active = true;
     const load = async () => {
@@ -232,11 +262,18 @@ export default function CheckoutPage() {
         } else {
           details = await fetchClassDetails(itemId);
         }
-        if (active) setItemInfo(details?.data ?? details);
+        if (active) {
+          let info = details?.data ?? details;
+          if (existingPayment && info) {
+            info = { ...info, price: existingPayment.amount };
+          }
+          setItemInfo(info);
+        }
       } catch (err) {
         console.error('Failed to load item', err);
       }
-      const price = Number((details?.data ?? details)?.price) || 0;
+      const price =
+        existingPayment?.amount ?? Number((details?.data ?? details)?.price) || 0;
       if (price > Number.EPSILON) {
         try {
           const data = await fetchPaymentMethods();
@@ -262,8 +299,13 @@ export default function CheckoutPage() {
     return () => {
       active = false;
     };
-  }, [itemId, itemType, interval]);
+  }, [itemId, itemType, interval, existingPayment]);
 
+  useEffect(() => {
+    if (!existingPayment || methods.length === 0) return;
+    const m = methods.find((mt) => mt.id === existingPayment.method_id);
+    if (m) setSelectedMethod(getMethodIdentifier(m));
+  }, [existingPayment, methods]);
 
   const handleApplyPromo = async () => {
     const formattedCode = promoCode.trim().toUpperCase();
@@ -294,11 +336,11 @@ export default function CheckoutPage() {
 
 
   const completePayment = async () => {
+    let payment;
     if (itemType === 'plan') {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
       const defaultMethod = eligible[0];
-      let payment;
       try {
         const payload = {
           item_type: itemType,
@@ -603,10 +645,6 @@ export default function CheckoutPage() {
           ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> {t('payment_successful_redirecting')}
-            </div>
-          ) : paymentStatus === 'submitted_bank' ? (
-            <div className="text-yellow-400 text-center text-lg py-6">
-              {t('bank_transfer_pending')}
             </div>
           ) : selectedMethodIdentifier === 'paypal' ? (
             <PayPalForm
