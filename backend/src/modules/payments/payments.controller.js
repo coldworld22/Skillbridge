@@ -421,9 +421,8 @@ exports.getMyPayments = catchAsync(async (req, res) => {
 
 exports.getMyPayment = catchAsync(async (req, res) => {
   const payment = await service.getById(req.params.id);
-  if (!payment || payment.user_id !== req.user.id) {
+  if (!payment || payment.user_id !== req.user.id)
     throw new AppError("Payment not found", 404);
-  }
   sendSuccess(res, payment);
 });
 
