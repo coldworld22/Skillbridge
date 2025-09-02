@@ -2,7 +2,8 @@ import api from "@/services/api/api";
 
 // Initiate Bank Transfer
 export const initiateBankPayment = async (payload) => {
-  const { data } = await api.post("/payments/bank/initiate", payload);
+  const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const { data } = await api.post("/payments/bank/initiate", payload, config);
   return data?.data ?? data;
 };
 

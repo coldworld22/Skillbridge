@@ -12,8 +12,16 @@ jest.mock('next-i18next', () => ({
       const translations = {
         checkout: 'Checkout',
         bank_transfer_pending: 'Your bank transfer request has been submitted and is pending admin approval.',
+          payment_reference_optional: 'Reference / Notes (optional)',
+          payment_receipt_optional: 'Payment Receipt (optional)',
+          bank_name: 'Bank Name',
+          account_holder_name: 'Account Holder Name',
+          account_number_iban: 'Account Number / IBAN',
+          swift_code: 'SWIFT Code',
+          branch_address: 'Branch Address',
       };
       if (key === 'pay_with_paypal') return `Pay $${params?.price} with PayPal`;
+        if (key === 'pay_with_bank') return `Pay $${params?.price} with Bank`;
       if (typeof params === 'string') return params;
       return translations[key] || key;
     },
@@ -124,11 +132,11 @@ test('renders payment logos using library icons with url fallback', async () => 
   expect(customIcon).toHaveAttribute('src', 'https://skillbridge.com/custom.png');
 });
 
-test('adjusts inputs based on payment selection and submits bank details', async () => {
+test('adjusts inputs based on payment selection and submits bank reference', async () => {
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
-    { id: 3, name: 'Bank', type: 'bank' },
+    { id: 3, name: 'Bank', type: 'bank', config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' } },
   ]);
   initiateBankPayment.mockResolvedValue({});
   render(<CheckoutPage />);
@@ -139,11 +147,8 @@ test('adjusts inputs based on payment selection and submits bank details', async
   expect(screen.getByRole('button', { name: /Pay \$100 with PayPal/i })).toBeInTheDocument();
   fireEvent.click(screen.getByText('Bank'));
   expect(screen.queryByTestId('card-element')).toBeNull();
-  expect(screen.getByPlaceholderText('Bank Name')).toBeInTheDocument();
-  fireEvent.change(screen.getByPlaceholderText('Bank Name'), { target: { value: 'Test Bank' } });
-  fireEvent.change(screen.getByPlaceholderText('Account Holder Name'), { target: { value: 'John' } });
-  fireEvent.change(screen.getByPlaceholderText('Account Number / IBAN'), { target: { value: '123' } });
-  fireEvent.change(screen.getByPlaceholderText('SWIFT Code'), { target: { value: 'ABCDEF' } });
+  expect(screen.getByDisplayValue('Test Bank')).toBeInTheDocument();
+  fireEvent.change(screen.getByPlaceholderText(/Reference/), { target: { value: 'ref' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
   expect(await screen.findByText(/bank transfer request has been submitted/i)).toBeInTheDocument();
