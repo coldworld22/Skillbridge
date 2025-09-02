@@ -5,6 +5,11 @@ export const fetchMyPayments = async () => {
   return data?.data ?? [];
 };
 
+export const fetchPayment = async (id) => {
+  const { data } = await api.get(`/payments/student/${id}`);
+  return data?.data ?? null;
+};
+
 export const createPayment = async (payload) => {
   const { data } = await api.post("/payments/student", payload);
   return data?.data ?? data;
