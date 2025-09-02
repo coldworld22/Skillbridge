@@ -419,6 +419,14 @@ exports.getMyPayments = catchAsync(async (req, res) => {
   sendSuccess(res, data);
 });
 
+exports.getMyPayment = catchAsync(async (req, res) => {
+  const payment = await service.getById(req.params.id);
+  if (!payment || payment.user_id !== req.user.id) {
+    throw new AppError("Payment not found", 404);
+  }
+  sendSuccess(res, payment);
+});
+
 exports.getPayment = catchAsync(async (req, res) => {
   const payment = await service.getById(req.params.id);
   if (!payment) throw new AppError("Payment not found", 404);
