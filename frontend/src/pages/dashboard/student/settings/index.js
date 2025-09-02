@@ -8,27 +8,15 @@ import {
   FaPalette,
 } from "react-icons/fa";
 import api from "@/services/api/api";
+import useSubscriptionStore from "@/store/subscriptionStore";
 
 export default function StudentSettingsPage() {
   const [activeTab, setActiveTab] = useState("account");
-  const [subscription, setSubscription] = useState(null);
+  const subscription = useSubscriptionStore((state) => state.plan);
+  const loadingSub = useSubscriptionStore((state) => state.loading);
+  const fetchSubscription = useSubscriptionStore((state) => state.fetch);
   const [invoices, setInvoices] = useState([]);
-  const [loadingSub, setLoadingSub] = useState(true);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
-
-  const loadSubscription = async () => {
-    setLoadingSub(true);
-    try {
-      const { data } = await api.get("/user-subscriptions/me");
-      const subs = data?.data || [];
-      setSubscription(subs[0] || null);
-    } catch (err) {
-      console.error("Failed to fetch subscription", err);
-      setSubscription(null);
-    } finally {
-      setLoadingSub(false);
-    }
-  };
 
   const loadInvoices = async () => {
     setLoadingInvoices(true);
@@ -44,14 +32,14 @@ export default function StudentSettingsPage() {
   };
 
   useEffect(() => {
-    loadSubscription();
+    fetchSubscription();
     loadInvoices();
-  }, []);
+  }, [fetchSubscription]);
 
   const handleUpgrade = async () => {
     try {
       await api.post("/user-subscriptions/upgrade");
-      loadSubscription();
+      await fetchSubscription();
     } catch (err) {
       console.error("Upgrade failed", err);
     }
@@ -60,7 +48,7 @@ export default function StudentSettingsPage() {
   const handleCancel = async () => {
     try {
       await api.post("/user-subscriptions/cancel");
-      loadSubscription();
+      await fetchSubscription();
     } catch (err) {
       console.error("Cancel failed", err);
     }
