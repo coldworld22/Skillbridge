@@ -20,7 +20,8 @@ import {
   LifeBuoy,
   UsersRound,
   Home,
-  Book
+  Book,
+  Settings
 } from 'lucide-react';
 
 export const instructorNavLinks = [
@@ -93,6 +94,7 @@ export const instructorNavLinks = [
     title: 'Account',
     items: [
       { label: 'Profile', href: '/dashboard/instructor/profile', icon: GraduationCap },
+      { label: 'Settings', href: '/dashboard/instructor/settings', icon: Settings },
     ]
   }
 ];

@@ -149,8 +149,8 @@ export default function CheckoutPage() {
   );
   const paymentId = useMemo(() => {
     if (!router.isReady) return null;
-    return router.query.paymentId || null;
-  }, [router.isReady, router.query.paymentId]);
+    return router.query.paymentId || router.query.payment_id || null;
+  }, [router.isReady, router.query.paymentId, router.query.payment_id]);
   const [existingPayment, setExistingPayment] = useState(null);
   const resolvedItem = useMemo(() => {
     if (!router.isReady) return null;
@@ -335,9 +335,9 @@ export default function CheckoutPage() {
   };
 
 
-  const completePayment = async () => {
-    let payment;
-    if (itemType === 'plan') {
+  const completePayment = async (existingPayment) => {
+    let payment = existingPayment;
+    if (itemType === 'plan' && !payment) {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
       const defaultMethod = eligible[0];
@@ -345,7 +345,7 @@ export default function CheckoutPage() {
         const payload = {
           item_type: itemType,
           item_id: itemInfo.id,
-          amount: 0,
+          amount: finalPrice,
           status: 'paid',
           interval,
         };
@@ -444,8 +444,10 @@ export default function CheckoutPage() {
         if (couponId) formData.append('coupon_id', couponId);
         if (_formData.reference) formData.append('reference', _formData.reference);
         if (_formData.receipt) formData.append('receipt', _formData.receipt);
-        await initiateBankPayment(formData);
-        setPaymentStatus('submitted_bank');
+        const payment = await initiateBankPayment(formData);
+        router.push(
+          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
+        );
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
         toast.error(t('payment_bank_failure'));
