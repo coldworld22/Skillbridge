@@ -125,12 +125,18 @@ test('renders payment logos using library icons with url fallback', async () => 
 });
 
 test('adjusts inputs based on payment selection and submits bank details', async () => {
+  const push = jest.fn();
+  mockUseRouter.mockReturnValue({
+    query: { itemId: '1', itemType: 'class' },
+    isReady: true,
+    push,
+  });
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
     { id: 3, name: 'Bank', type: 'bank' },
   ]);
-  initiateBankPayment.mockResolvedValue({});
+  initiateBankPayment.mockResolvedValue({ id: 42 });
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.getByTestId('card-element')).toBeInTheDocument();
@@ -146,7 +152,11 @@ test('adjusts inputs based on payment selection and submits bank details', async
   fireEvent.change(screen.getByPlaceholderText('SWIFT Code'), { target: { value: 'ABCDEF' } });
   fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with Bank/i }));
   await waitFor(() => expect(initiateBankPayment).toHaveBeenCalled());
-  expect(await screen.findByText(/bank transfer request has been submitted/i)).toBeInTheDocument();
+  await waitFor(() =>
+    expect(push).toHaveBeenCalledWith(
+      '/payments/success?itemType=class&itemId=1&payment_id=42'
+    )
+  );
 });
 
 test('completes payment for unhandled methods on success', async () => {

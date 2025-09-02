@@ -336,11 +336,11 @@ export default function CheckoutPage() {
 
 
   const completePayment = async () => {
+    let payment;
     if (itemType === 'plan') {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
       const defaultMethod = eligible[0];
-      let payment;
       try {
         const payload = {
           item_type: itemType,
@@ -444,8 +444,10 @@ export default function CheckoutPage() {
           ..._formData,
         };
         if (couponId) payload.coupon_id = couponId;
-        await initiateBankPayment(payload);
-        setPaymentStatus('submitted_bank');
+        const payment = await initiateBankPayment(payload);
+        router.push(
+          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
+        );
       } catch (err) {
         console.error('Failed to initiate bank transfer', err);
         toast.error(t('payment_bank_failure'));
@@ -645,10 +647,6 @@ export default function CheckoutPage() {
           ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> {t('payment_successful_redirecting')}
-            </div>
-          ) : paymentStatus === 'submitted_bank' ? (
-            <div className="text-yellow-400 text-center text-lg py-6">
-              {t('bank_transfer_pending')}
             </div>
           ) : selectedMethodIdentifier === 'paypal' ? (
             <PayPalForm
