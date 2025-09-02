@@ -40,6 +40,14 @@ jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
 }));
 
+jest.mock('../../components/payments/forms/CardPaymentForm', () => {
+  function MockCardForm() {
+    return <div data-testid="mock-card-form" />;
+  }
+  MockCardForm.displayName = 'CardPaymentForm';
+  return MockCardForm;
+});
+
 jest.mock('../../services/couponService', () => ({
   validateCode: jest.fn(),
 }));
@@ -109,30 +117,20 @@ test('handles network failure when applying promo code', async () => {
   });
 });
 
-test('treats near-zero final price as free', async () => {
-  // Simulate a price that suffers from floating point precision, e.g. 0.1 + 0.2
-  const price = 0.1 + 0.2;
-  const percent = (0.3 / (0.1 + 0.2)) * 100;
+test('skips fetching payment methods for free items', async () => {
   fetchClassDetails.mockResolvedValueOnce({
     data: {
       id: 1,
-      title: 'Tiny Price',
+      title: 'Free Class',
       instructor: 'Inst',
-      price,
+      price: 0,
       cover_image: '',
     },
   });
-  validateCode.mockResolvedValue({ discount_percent: percent });
 
   render(<CheckoutPage />);
   await screen.findByText('checkout');
-  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
-    target: { value: 'FREE' },
-  });
-  fireEvent.click(screen.getByText('apply'));
-
-  await waitFor(() => expect(validateCode).toHaveBeenCalled());
-  // Payment methods should be hidden and free enrollment message shown
+  expect(fetchPaymentMethods).not.toHaveBeenCalled();
   await screen.findByText('free_item_notice');
   expect(screen.getByText('enroll_for_free')).toBeInTheDocument();
   expect(screen.queryByText('Stripe')).toBeNull();

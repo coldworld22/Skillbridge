@@ -215,8 +215,8 @@ export default function CheckoutPage() {
     if (!itemId || !itemType) return;
     let active = true;
     const load = async () => {
+      let details;
       try {
-        let details;
         if (itemType === 'tutorial') {
           details = await fetchTutorialDetails(itemId);
         } else if (itemType === 'book') {
@@ -236,21 +236,26 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error('Failed to load item', err);
       }
-      try {
-        const data = await fetchPaymentMethods();
-        if (!active) return;
-        const methodsList = Array.isArray(data) ? data : [];
-        setMethods(methodsList);
-        const eligibleMethods = filterEligibleMethods(methodsList, itemType);
-        if (eligibleMethods.length > 0) {
-          const defaultMethod =
-            eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
-          setSelectedMethod((prev) =>
-            prev || getMethodIdentifier(defaultMethod)
-          );
+      const price = Number((details?.data ?? details)?.price) || 0;
+      if (price > Number.EPSILON) {
+        try {
+          const data = await fetchPaymentMethods();
+          if (!active) return;
+          const methodsList = Array.isArray(data) ? data : [];
+          setMethods(methodsList);
+          const eligibleMethods = filterEligibleMethods(methodsList, itemType);
+          if (eligibleMethods.length > 0) {
+            const defaultMethod =
+              eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
+            setSelectedMethod((prev) =>
+              prev || getMethodIdentifier(defaultMethod)
+            );
+          }
+        } catch (err) {
+          console.error('Failed to load payment methods', err);
         }
-      } catch (err) {
-        console.error('Failed to load payment methods', err);
+      } else {
+        setMethods([]);
       }
     };
     load();
@@ -287,30 +292,23 @@ export default function CheckoutPage() {
     }
   };
 
-  const completePayment = async (existingPayment) => {
-    setPaymentStatus('processing');
-    let payment = existingPayment;
-    if (!payment) {
-      let methodId = selectedMethodObj?.id || null;
-      if (itemType === 'plan') {
-        const eligible = filterEligibleMethods(methods, itemType);
-        const defaultMethod = eligible[0];
-        if (!defaultMethod) {
-          toast.error(t('payment_method_missing'));
-          setPaymentStatus('idle');
-          return;
-        }
-        methodId = defaultMethod.id;
-      }
+
+  const completePayment = async () => {
+    if (itemType === 'plan') {
+      setPaymentStatus('processing');
+      const eligible = filterEligibleMethods(methods, itemType);
+      const defaultMethod = eligible[0];
+      let payment;
       try {
-        payment = await createPayment({
-          method_id: methodId,
+        const payload = {
           item_type: itemType,
           item_id: itemInfo.id,
           amount: 0,
           status: 'paid',
-          ...(itemType === 'plan' ? { interval } : {}),
-        });
+          interval,
+        };
+        if (defaultMethod?.id) payload.method_id = defaultMethod.id;
+        payment = await createPayment(payload);
       } catch (err) {
         console.error('Failed to create payment', err);
         toast.error(t('payment_generic_failure'));
@@ -327,7 +325,46 @@ export default function CheckoutPage() {
         setPaymentStatus('idle');
         return;
       }
-    } else {
+      setPaymentStatus('success');
+      setTimeout(() => {
+        const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
+        router.push(
+          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}${paymentIdParam}`
+        );
+      }, 1500);
+      return;
+    }
+    const storageKey =
+      itemType === 'tutorial'
+        ? 'enrolledTutorials'
+        : itemType === 'book'
+        ? 'purchasedBooks'
+        : 'enrolledClasses';
+    let enrolled = [];
+    if (typeof window !== 'undefined') {
+      try {
+        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch {
+        enrolled = [];
+      }
+    }
+    const newItem =
+      itemType === 'book'
+        ? {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            author: itemInfo.author,
+            purchaseDate: new Date().toISOString(),
+          }
+        : {
+            id: itemInfo.id,
+            title: itemInfo.title,
+            instructor: itemInfo.instructor,
+            startDate: new Date().toISOString(),
+            status: 'Live',
+            joined: true,
+          };
+    if (typeof window !== 'undefined') {
       try {
         await Promise.resolve(removeItem(itemInfo.id));
       } catch (err) {
@@ -495,7 +532,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {!isFree && (
+        {!isFree && filteredMethods.length > 0 && (
           <div className="bg-gray-800 p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaFileInvoice /> {t('select_payment_method')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
