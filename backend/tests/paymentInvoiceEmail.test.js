@@ -67,15 +67,16 @@ describe('invoice email dispatch', () => {
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
 
-  it('sends invoice email for free payments', async () => {
+  it('sends invoice email for zero-amount payments', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm2', type: 'free', active: true });
-    paymentsService.create.mockResolvedValue({ id: 'p2', user_id: 'u1', method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 100, currency: 'USD', status: 'paid' });
+    paymentsService.create.mockResolvedValue({ id: 'p2', user_id: 'u1', method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
 
-    const req = { body: { method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
+    const req = { body: { method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, status: 'paid' }, user: { id: 'u1' } };
     const res = mockRes();
     await paymentsController.createPayment(req, res, () => {});
     await new Promise(process.nextTick);
 
+    expect(paymentsService.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 0, status: 'paid' }));
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
   });
 
