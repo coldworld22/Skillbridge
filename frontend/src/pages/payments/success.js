@@ -18,10 +18,12 @@ import { subscribeToPlan, fetchMySubscription } from '@/services/instructor/subs
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
+import { useTranslation } from 'next-i18next';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const { itemType, itemId, payment_id } = router.query;
+  const { t } = useTranslation('common');
   const [itemInfo, setItemInfo] = useState(null);
   const [invoiceInfo, setInvoiceInfo] = useState(null);
   const [paymentInfo, setPaymentInfo] = useState(null);
@@ -183,6 +185,12 @@ export default function PaymentSuccessPage() {
           <FaCheckCircle size={64} className="text-green-400 animate-pulse" />
           <h1 className="text-4xl font-bold text-yellow-400">Payment Successful!</h1>
           <p className="text-lg text-gray-300">{message}</p>
+
+          {paymentInfo?.status === 'awaiting_approval' && (
+            <div className="bg-gray-800 px-6 py-5 rounded-xl shadow-md w-full text-left mt-4">
+              <p className="text-sm text-yellow-400">{t('bank_transfer_pending')}</p>
+            </div>
+          )}
 
           {itemType === 'class' && (
             <div className="bg-gray-800 px-6 py-5 rounded-xl shadow-md w-full text-left mt-4">
