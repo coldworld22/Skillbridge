@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import api from "@/services/api/api";
+import { fetchMySubscription } from "@/services/instructor/subscriptionService";
 
 const useSubscriptionStore = create(
   persist(
@@ -10,12 +10,8 @@ const useSubscriptionStore = create(
       async fetch() {
         set({ loading: true });
         try {
-          const { data } = await api.get("/subscriptions");
-          const list = data?.data ?? data ?? [];
-          const active = Array.isArray(list)
-            ? list.find((s) => s.status === "active") || list[0] || null
-            : list;
-          set({ plan: active || null, loading: false });
+          const sub = await fetchMySubscription();
+          set({ plan: sub || null, loading: false });
         } catch (err) {
           set({ plan: null, loading: false });
         }
