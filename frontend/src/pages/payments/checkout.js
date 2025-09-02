@@ -287,25 +287,29 @@ export default function CheckoutPage() {
     }
   };
 
-  const completePayment = async () => {
-    if (itemType === 'plan') {
-      setPaymentStatus('processing');
-      const eligible = filterEligibleMethods(methods, itemType);
-      const defaultMethod = eligible[0];
-      if (!defaultMethod) {
-        toast.error(t('payment_method_missing'));
-        setPaymentStatus('idle');
-        return;
+  const completePayment = async (existingPayment) => {
+    setPaymentStatus('processing');
+    let payment = existingPayment;
+    if (!payment) {
+      let methodId = selectedMethodObj?.id || null;
+      if (itemType === 'plan') {
+        const eligible = filterEligibleMethods(methods, itemType);
+        const defaultMethod = eligible[0];
+        if (!defaultMethod) {
+          toast.error(t('payment_method_missing'));
+          setPaymentStatus('idle');
+          return;
+        }
+        methodId = defaultMethod.id;
       }
-      let payment;
       try {
         payment = await createPayment({
-          method_id: defaultMethod.id,
+          method_id: methodId,
           item_type: itemType,
           item_id: itemInfo.id,
           amount: 0,
           status: 'paid',
-          interval,
+          ...(itemType === 'plan' ? { interval } : {}),
         });
       } catch (err) {
         console.error('Failed to create payment', err);
@@ -313,6 +317,8 @@ export default function CheckoutPage() {
         setPaymentStatus('idle');
         return;
       }
+    }
+    if (itemType === 'plan') {
       try {
         await subscribeToPlan(itemInfo.id, interval, payment?.id);
       } catch (err) {
@@ -321,64 +327,19 @@ export default function CheckoutPage() {
         setPaymentStatus('idle');
         return;
       }
-      setPaymentStatus('success');
-      setTimeout(
-        () =>
-          router.push(
-            `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
-          ),
-        1500
-      );
-      return;
-    }
-    const storageKey =
-      itemType === 'tutorial'
-        ? 'enrolledTutorials'
-        : itemType === 'book'
-        ? 'purchasedBooks'
-        : 'enrolledClasses';
-    let enrolled = [];
-    if (typeof window !== 'undefined') {
+    } else {
       try {
-        enrolled = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      } catch {
-        enrolled = [];
+        await Promise.resolve(removeItem(itemInfo.id));
+      } catch (err) {
+        console.error('Failed to remove from cart', err);
       }
-    }
-    const newItem =
-      itemType === 'book'
-        ? {
-            id: itemInfo.id,
-            title: itemInfo.title,
-            author: itemInfo.author,
-            purchaseDate: new Date().toISOString(),
-          }
-        : {
-            id: itemInfo.id,
-            title: itemInfo.title,
-            instructor: itemInfo.instructor,
-            startDate: new Date().toISOString(),
-            status: 'Live',
-            joined: true,
-          };
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify([...enrolled, newItem])
-        );
-      } catch {
-        // ignore storage write errors in non-browser environments
-      }
-    }
-    try {
-      await Promise.resolve(removeItem(itemInfo.id));
-    } catch (err) {
-      console.error('Failed to remove from cart', err);
     }
     setPaymentStatus('success');
     setTimeout(
-      () => router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`),
+      () =>
+        router.push(
+          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
+        ),
       1500
     );
   };
@@ -467,7 +428,7 @@ export default function CheckoutPage() {
       if (couponId) payload.coupon_id = couponId;
       const response = await createPayment(payload);
       if (response?.status === 'paid') {
-        await completePayment();
+        await completePayment(response);
       } else {
         throw new Error('Payment not confirmed');
       }
@@ -598,7 +559,7 @@ export default function CheckoutPage() {
           {isFree ? (
             <div className="text-center">
               <p className="mb-4">{t('free_item_notice')}</p>
-              <button onClick={completePayment} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
+              <button onClick={() => completePayment()} className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded">
                 {t('enroll_for_free')}
               </button>
             </div>
