@@ -19,6 +19,7 @@ import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
 import { useTranslation } from 'next-i18next';
+import useSubscriptionStore from '@/store/subscriptionStore';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function PaymentSuccessPage() {
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
+  const fetchSubscription = useSubscriptionStore((state) => state.fetch);
 
   const confirmPlanSubscription = async () => {
     try {
@@ -45,6 +47,7 @@ export default function PaymentSuccessPage() {
       }
       setSubscriptionInfo(current);
       setSubscriptionError(null);
+      await fetchSubscription();
     } catch (_) {
       setSubscriptionError('Failed to activate subscription');
     }
