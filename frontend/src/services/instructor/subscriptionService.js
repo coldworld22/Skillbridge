@@ -8,7 +8,7 @@ export const subscribeToPlan = async (
   const payload = { plan_id: planId, interval };
   if (paymentId) payload.payment_id = paymentId;
   const { data } = await api.post("/user-subscriptions", payload);
-  return data?.data ?? null;
+  return { subscription: data?.data ?? null, message: data?.message };
 };
 
 export const fetchMySubscription = async () => {

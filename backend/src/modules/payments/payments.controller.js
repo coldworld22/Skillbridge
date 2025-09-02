@@ -338,11 +338,33 @@ exports.createPayment = catchAsync(async (req, res) => {
           (Number(verifiedAmount) === Number(plan.price_yearly)
             ? "yearly"
             : "monthly");
-        await subscriptionService.createOrRenewSubscription({
+        const subscription = await subscriptionService.createOrRenewSubscription({
           user_id,
           plan_id: item_id,
           interval,
         });
+
+        try {
+          const start = new Date(subscription.start_date).toLocaleDateString();
+          const end = new Date(subscription.end_date).toLocaleDateString();
+          const message = `Your ${plan.name} plan is active from ${start} to ${end}.`;
+
+          await notificationService.createNotification({
+            user_id,
+            type: "plan_subscription",
+            message,
+          });
+
+          if (user?.email) {
+            await mailService.sendMail({
+              to: user.email,
+              subject: "Subscription Activated",
+              html: `<p>${message}</p>`,
+            });
+          }
+        } catch (err) {
+          logger.error("Failed to send subscription notification:", err);
+        }
       }
     } catch (err) {
       logger.error("Failed to activate subscription after payment:", err);
