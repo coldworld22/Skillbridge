@@ -36,6 +36,9 @@ const bookService = require('../src/modules/books/book.service');
 const invoiceService = require('../src/modules/invoices/invoices.service');
 const mailService = require('../src/services/mailService');
 const walletService = require('../src/modules/payouts/wallet.service');
+const plansService = require('../src/modules/plans/plans.service');
+const subscriptionService = require('../src/modules/subscriptions/subscription.service');
+const notificationService = require('../src/modules/notifications/notifications.service');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -104,6 +107,23 @@ describe('invoice email dispatch', () => {
     expect(paymentsService.create.mock.calls[0][0].status).toBe('paid');
     expect(walletService.increment).toHaveBeenCalledWith('i1', 0);
     expect(mailService.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'u@test.com', attachments: [{ path: '/inv.pdf' }] }));
+  });
+
+  it('triggers notification for paid plan payments', async () => {
+    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'card', active: true });
+    plansService.getPlanById.mockResolvedValue({ id: 'plan1', name: 'Gold', price_monthly: 100, price_yearly: 1000 });
+    subscriptionService.createOrRenewSubscription.mockResolvedValue({ start_date: '2024-01-01', end_date: '2024-02-01' });
+    paymentsService.create.mockResolvedValue({ id: 'p5', user_id: 'u1', method_id: 'm1', item_type: 'plan', item_id: 'plan1', amount: 100, currency: 'USD', status: 'paid' });
+
+    const req = { body: { method_id: 'm1', item_type: 'plan', item_id: 'plan1', amount: 100, status: 'paid' }, user: { id: 'u1' } };
+    const res = mockRes();
+    await paymentsController.createPayment(req, res, () => {});
+    await new Promise(process.nextTick);
+
+    expect(subscriptionService.createOrRenewSubscription).toHaveBeenCalledWith({ user_id: 'u1', plan_id: 'plan1', interval: 'monthly' });
+    expect(notificationService.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'u1', type: 'plan_subscription' })
+    );
   });
 });
 

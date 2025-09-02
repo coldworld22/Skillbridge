@@ -31,6 +31,7 @@ export default function PaymentSuccessPage() {
   const [fetchError, setFetchError] = useState(null);
   const [subscriptionError, setSubscriptionError] = useState(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
+  const [bannerMessage, setBannerMessage] = useState(null);
   const removeItem = useCartStore((state) => state.removeItem);
   const { fetchLibrary } = useLibraryStore();
 
@@ -39,7 +40,8 @@ export default function PaymentSuccessPage() {
       let sub = await fetchMySubscription();
       let current = Array.isArray(sub) ? sub[0] : sub;
       if (!current || current.plan_id !== itemId) {
-        await subscribeToPlan(itemId);
+        const { message } = await subscribeToPlan(itemId);
+        if (message) setBannerMessage(message);
         sub = await fetchMySubscription();
         current = Array.isArray(sub) ? sub[0] : sub;
       }
@@ -181,6 +183,11 @@ export default function PaymentSuccessPage() {
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 py-24 text-center">
+        {bannerMessage && (
+          <div className="bg-green-600 text-white px-4 py-3 rounded-md mb-6">
+            {bannerMessage}
+          </div>
+        )}
         <div className="flex flex-col items-center space-y-6">
           <FaCheckCircle size={64} className="text-green-400 animate-pulse" />
           <h1 className="text-4xl font-bold text-yellow-400">Payment Successful!</h1>
