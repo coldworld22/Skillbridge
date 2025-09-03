@@ -4,12 +4,15 @@ const express = require('express');
 jest.mock('../../../../config/database', () => {
   const db = jest.fn(() => db);
   db.where = jest.fn(() => db);
+  db.whereNot = jest.fn(() => db);
   db.first = jest.fn(() => Promise.resolve(null));
   db.join = jest.fn(() => db);
   db.leftJoin = jest.fn(() => db);
   db.select = jest.fn(() => db);
   db.insert = jest.fn(() => db);
   db.update = jest.fn(() => db);
+  db.forUpdate = jest.fn(() => db);
+  db.transaction = jest.fn(async (fn) => fn(db));
   return db;
 });
 
@@ -24,11 +27,6 @@ jest.mock('../classEnrollment.service', () => ({
   getStudent: jest.fn(),
 }));
 const service = require('../classEnrollment.service');
-
-jest.mock('../../class.service', () => ({
-  getClassById: jest.fn(),
-}));
-const classService = require('../../class.service');
 
 jest.mock('../../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
@@ -60,7 +58,7 @@ describe('Class enrollment routes', () => {
   });
 
   test('enroll in class', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
     });
@@ -73,7 +71,7 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment if class not published', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'draft',
       moderation_status: 'Approved',
     });
@@ -82,7 +80,7 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment if class not approved', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Pending',
     });
@@ -91,7 +89,7 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment if class full', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,
@@ -102,21 +100,22 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment if class requires payment and user has not paid or subscribed', async () => {
-    classService.getClassById.mockResolvedValue({
-      status: 'published',
-      moderation_status: 'Approved',
-      price: 50,
-    });
+    db.first
+      .mockResolvedValueOnce({
+        status: 'published',
+        moderation_status: 'Approved',
+        price: 50,
+      })
+      .mockResolvedValueOnce(null); // payment check
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    db.first.mockResolvedValueOnce(null); // payment check
     getActiveStudentPlanId.mockResolvedValue(null);
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
   });
 
   test('allow enrollment when class covered by subscription', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
       price: 50,
@@ -132,22 +131,23 @@ describe('Class enrollment routes', () => {
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
-    classService.getClassById.mockResolvedValue({
-      status: 'published',
-      moderation_status: 'Approved',
-      price: 50,
-      included_plans: ['plan2'],
-    });
+    db.first
+      .mockResolvedValueOnce({
+        status: 'published',
+        moderation_status: 'Approved',
+        price: 50,
+        included_plans: ['plan2'],
+      })
+      .mockResolvedValueOnce(null); // payment check
     service.countEnrollments.mockResolvedValue(0);
     service.findEnrollment.mockResolvedValue(null);
-    db.first.mockResolvedValueOnce(null); // payment check
     getActiveStudentPlanId.mockResolvedValue('plan1');
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(400);
   });
 
   test('reactivate cancelled enrollment when capacity available', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,
@@ -164,13 +164,14 @@ describe('Class enrollment routes', () => {
     expect(service.updateEnrollment).toHaveBeenCalledWith(
       'test-user',
       'abc',
-      expect.objectContaining({ status: 'enrolled' })
+      expect.objectContaining({ status: 'enrolled' }),
+      expect.anything()
     );
     expect(service.createEnrollment).not.toHaveBeenCalled();
   });
 
   test('prevent re-enrollment if class full after cancellation', async () => {
-    classService.getClassById.mockResolvedValue({
+    db.first.mockResolvedValueOnce({
       status: 'published',
       moderation_status: 'Approved',
       max_students: 1,

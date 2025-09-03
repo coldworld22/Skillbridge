@@ -1,24 +1,30 @@
 const db = require("../../../config/database");
 
-exports.findEnrollment = async (user_id, class_id) => {
-  return db("class_enrollments").where({ user_id, class_id }).first();
+// Helper to use either the provided transaction or the default knex instance
+const useDb = (trx) => trx || db;
+
+exports.findEnrollment = async (user_id, class_id, trx = null) => {
+  const query = useDb(trx)("class_enrollments").where({ user_id, class_id });
+  if (trx && trx.isTransaction) query.forUpdate();
+  return query.first();
 };
 
-exports.createEnrollment = async (data) => {
-  const [row] = await db("class_enrollments").insert(data).returning("*");
+exports.createEnrollment = async (data, trx = null) => {
+  const [row] = await useDb(trx)("class_enrollments").insert(data).returning("*");
   return row;
 };
 
-exports.updateEnrollment = async (user_id, class_id, data) => {
-  return db("class_enrollments").where({ user_id, class_id }).update(data);
+exports.updateEnrollment = async (user_id, class_id, data, trx = null) => {
+  return useDb(trx)("class_enrollments").where({ user_id, class_id }).update(data);
 };
 
-exports.countEnrollments = async (class_id) => {
-  const [row] = await db("class_enrollments")
+exports.countEnrollments = async (class_id, trx = null) => {
+  const query = useDb(trx)("class_enrollments")
     .where({ class_id })
-    .whereNot({ status: "cancelled" })
-    .count("id as count");
-  return parseInt(row.count, 10) || 0;
+    .whereNot({ status: "cancelled" });
+  if (trx && trx.isTransaction) query.forUpdate();
+  const rows = await query.select("id");
+  return rows.length;
 };
 
 exports.markCompleted = async (user_id, class_id) => {
