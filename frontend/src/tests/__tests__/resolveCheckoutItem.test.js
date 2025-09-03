@@ -22,4 +22,9 @@ describe('resolveCheckoutItem', () => {
     const cart = [{ id: '1' }, { id: '2' }];
     expect(resolveCheckoutItem({}, cart)).toBeNull();
   });
+
+  it('rejects unsupported item types', () => {
+    const query = { itemId: '99', itemType: 'invalid' };
+    expect(resolveCheckoutItem(query, [])).toBeNull();
+  });
 });

@@ -122,17 +122,26 @@ export function filterEligibleMethods(methods, itemType) {
 export function resolveCheckoutItem(query, cartItems) {
   const { itemId, itemType, items } = query;
 
+  const isSupportedType = (type) =>
+    ['class', 'tutorial', 'book', 'plan'].includes((type || '').toLowerCase());
+
   if (itemId && itemType) {
+    if (!isSupportedType(itemType)) return null;
     return { id: itemId, type: itemType };
   }
 
   const resolvedFromItems = parseCheckoutItems(items);
-  if (resolvedFromItems) return resolvedFromItems;
+  if (resolvedFromItems) {
+    if (!isSupportedType(resolvedFromItems.type)) return null;
+    return resolvedFromItems;
+  }
 
   if (Array.isArray(cartItems) && cartItems.length === 1) {
     const c = cartItems[0];
     if (c && c.id) {
-      return { id: c.id, type: c.item_type || 'class' };
+      const type = c.item_type || 'class';
+      if (!isSupportedType(type)) return null;
+      return { id: c.id, type };
     }
   }
 
