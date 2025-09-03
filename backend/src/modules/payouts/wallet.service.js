@@ -14,14 +14,25 @@ exports.increment = async (instructor_id, amount) => {
 };
 
 exports.decrement = async (instructor_id, amount) => {
-  const wallet = await exports.getByInstructor(instructor_id);
-  const balance = wallet ? Number(wallet.balance) : 0;
-  if (balance < Number(amount)) {
-    throw new Error("Insufficient balance");
-  }
-  const [row] = await db("instructor_wallets")
-    .where({ instructor_id })
-    .update({ balance: db.raw('?? - ?', ['balance', amount]), updated_at: db.fn.now() })
-    .returning("*");
-  return row;
+  return db.transaction(async (trx) => {
+    const wallet = await trx("instructor_wallets")
+      .where({ instructor_id })
+      .forUpdate()
+      .first();
+
+    const balance = wallet ? Number(wallet.balance) : 0;
+    if (balance < Number(amount)) {
+      throw new Error("Insufficient balance");
+    }
+
+    const [row] = await trx("instructor_wallets")
+      .where({ instructor_id })
+      .update({
+        balance: trx.raw('?? - ?', ['balance', amount]),
+        updated_at: trx.fn.now(),
+      })
+      .returning("*");
+
+    return row;
+  });
 };

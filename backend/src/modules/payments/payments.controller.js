@@ -8,28 +8,16 @@ const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
-const enrollmentService = require("../classes/enrollments/classEnrollment.service");
-const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutorialEnrollment.service");
-const paymentConfigService = require("../paymentConfig/paymentConfig.service");
-const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
-const paypalService = require("../../services/paypalService");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
-const walletService = require("../payouts/wallet.service");
-const classService = require("../classes/class.service");
-const bookService = require("../books/book.service");
-const tutorialService = require("../users/tutorials/tutorial.service");
-
 const invoiceService = require("../invoices/invoices.service");
-
-const DEFAULT_PLATFORM_CUT = {
-  class: 15,
-  book: 10,
-  tutorial: 20,
-};
+const { validatePaymentData } = require("./helpers/validation");
+const { calculatePlatformFee } = require("./helpers/platformFee");
+const { creditInstructorWallet } = require("./helpers/wallet");
+const { handleEnrollment } = require("./helpers/enrollment");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -182,19 +170,10 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
-  let platform_fee = 0;
-  let instructor_amount = verifiedAmount;
-  try {
-    const settings = await paymentConfigService.getSettings();
-    const cut =
-      settings?.platformCut?.[item_type] ??
-      DEFAULT_PLATFORM_CUT[item_type] ??
-      0;
-    platform_fee = (verifiedAmount * cut) / 100;
-    instructor_amount = verifiedAmount - platform_fee;
-  } catch (err) {
-    logger.error("Failed to load payment settings:", err);
-  }
+  const { platform_fee, instructor_amount } = await calculatePlatformFee(
+    item_type,
+    verifiedAmount
+  );
 
   const createData = {
     id: uuidv4(),
@@ -266,71 +245,11 @@ exports.createPayment = catchAsync(async (req, res) => {
     } catch (err) {
       logger.error("Failed to record book purchase:", err);
     }
-
-    try {
-      const book = await bookService.getBookById(item_id);
-      if (book?.instructor_id) {
-        await walletService.increment(book.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
   }
 
-  if (item_type === "class" && payment.status === STATUS.PAID) {
-    try {
-      const cls = await classService.getClassById(item_id);
-      if (cls?.instructor_id) {
-        await walletService.increment(cls.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-
-    try {
-      const existingEnrollment = await enrollmentService.findEnrollment(
-        user_id,
-        item_id
-      );
-      if (existingEnrollment) {
-        if (existingEnrollment.status !== "enrolled") {
-          await enrollmentService.updateEnrollment(user_id, item_id, {
-            status: "enrolled",
-          });
-        }
-      } else {
-        await enrollmentService.createEnrollment({
-          id: uuidv4(),
-          user_id,
-          class_id: item_id,
-          status: "enrolled",
-        });
-      }
-    } catch (err) {
-      logger.error("Failed to enroll after payment:", err);
-    }
-  }
-
-  if (item_type === "tutorial" && payment.status === STATUS.PAID) {
-    try {
-      const tut = await tutorialService.getTutorialById(item_id);
-      if (tut?.instructor_id) {
-        await walletService.increment(tut.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-
-    try {
-      await tutorialEnrollmentService.createEnrollment({
-        id: uuidv4(),
-        user_id,
-        tutorial_id: item_id,
-        status: "enrolled",
-      });
-    } catch (err) {
-      logger.error("Failed to enroll in tutorial after payment:", err);
-    }
+  if (payment.status === STATUS.PAID) {
+    await creditInstructorWallet(item_type, item_id, instructor_amount);
+    await handleEnrollment(item_type, user_id, item_id);
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {

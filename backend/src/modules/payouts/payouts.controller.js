@@ -38,12 +38,14 @@ exports.updatePayout = catchAsync(async (req, res) => {
 
   const updateData = { ...req.body };
   if (req.body.status === "approved" && existing.status !== "approved") {
-    const wallet = await walletService.getByInstructor(existing.instructor_id);
-    const balance = wallet ? Number(wallet.balance) : 0;
-    if (balance < Number(existing.amount)) {
-      throw new AppError("Insufficient wallet balance", 400);
+    try {
+      await walletService.decrement(existing.instructor_id, existing.amount);
+    } catch (err) {
+      if (err.message === "Insufficient balance") {
+        throw new AppError("Insufficient wallet balance", 400);
+      }
+      throw err;
     }
-    await walletService.decrement(existing.instructor_id, existing.amount);
     updateData.processed_at = new Date();
   }
   const payout = await service.update(req.params.id, updateData);
