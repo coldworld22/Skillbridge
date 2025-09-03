@@ -6,6 +6,10 @@ import Footer from '@/components/website/sections/Footer';
 import { FaDownload } from 'react-icons/fa';
 import QRCode from 'react-qr-code';
 import { uploadReceipt } from '@/services/student/paymentService';
+import {
+  fetchInvoiceByPaymentId,
+  downloadInvoice,
+} from '@/services/student/invoiceService';
 
 export default function InvoicePage() {
   const router = useRouter();
@@ -13,32 +17,35 @@ export default function InvoicePage() {
   const [invoiceData, setInvoiceData] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      // Replace with API fetch in production
-      setInvoiceData({
-        id: id,
-        studentName: 'Ali Al-Omari',
-        classTitle: 'React & Next.js Bootcamp',
-        instructor: 'Ayman Khalid',
-        date: '2025-05-13',
-        paymentMethod: 'bank', // stripe | paypal | moyasar | bank
-        status: 'pending', // or 'paid'
-        price: 49,
-        discount: 10,
-        iban: 'SA442000000123456789',
-        bankName: 'Al Rajhi'
-      });
-    }
+    if (!id) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await fetchInvoiceByPaymentId(id);
+        if (active) setInvoiceData(data);
+      } catch (err) {
+        console.error('Failed to load invoice', err);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const downloadPDF = () => {
-    window.print();
+    if (invoiceData?.id) {
+      downloadInvoice(invoiceData.id);
+    }
   };
 
   if (!invoiceData) return <div className="text-white text-center mt-32">Loading Invoice...</div>;
 
-  const total = invoiceData.price - invoiceData.discount;
-  const isBank = invoiceData.paymentMethod === 'bank';
+  const subtotal = Number(invoiceData.price ?? invoiceData.amount ?? 0);
+  const discount = Number(invoiceData.discount ?? invoiceData.discount_amount ?? 0);
+  const total = invoiceData.total ?? subtotal - discount;
+  const method = (invoiceData.payment_method || invoiceData.paymentMethod || '').toLowerCase();
+  const isBank = method === 'bank';
 
   const handleReceiptUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -63,21 +70,21 @@ export default function InvoicePage() {
           </div>
 
           <div className="mb-4 text-sm text-gray-300">
-            <p><strong>Student:</strong> {invoiceData.studentName}</p>
-            <p><strong>Class:</strong> {invoiceData.classTitle}</p>
-            <p><strong>Instructor:</strong> {invoiceData.instructor}</p>
-            <p><strong>Date:</strong> {invoiceData.date}</p>
-            <p><strong>Payment Method:</strong> {invoiceData.paymentMethod}</p>
+            <p><strong>Student:</strong> {invoiceData.studentName || invoiceData.student_name}</p>
+            <p><strong>Class:</strong> {invoiceData.classTitle || invoiceData.item_name}</p>
+            <p><strong>Instructor:</strong> {invoiceData.instructor || invoiceData.instructor_name}</p>
+            <p><strong>Date:</strong> {invoiceData.date || invoiceData.created_at}</p>
+            <p><strong>Payment Method:</strong> {method}</p>
           </div>
 
           <div className="my-6 border-t border-gray-700 pt-6">
             <div className="flex justify-between mb-2 text-gray-400">
               <span>Subtotal:</span>
-              <span>${invoiceData.price}</span>
+              <span>${subtotal}</span>
             </div>
             <div className="flex justify-between mb-2 text-gray-400">
               <span>Discount:</span>
-              <span className="text-red-400">-${invoiceData.discount}</span>
+              <span className="text-red-400">-${discount}</span>
             </div>
             <div className="flex justify-between font-semibold text-lg">
               <span>Total:</span>
@@ -88,8 +95,8 @@ export default function InvoicePage() {
           {isBank && (
             <div className="mt-8 bg-gray-900 p-4 rounded">
               <p className="mb-1 text-yellow-400 font-bold">Bank Transfer Details</p>
-              <p><strong>Bank:</strong> {invoiceData.bankName}</p>
-              <p><strong>IBAN:</strong> {invoiceData.iban}</p>
+              <p><strong>Bank:</strong> {invoiceData.bankName || invoiceData.bank_name}</p>
+              <p><strong>IBAN:</strong> {invoiceData.iban || invoiceData.bank_iban}</p>
               <p className="mt-2 text-sm text-gray-400">Send transfer proof to <strong>support@skillbridge.com</strong></p>
 
               <div className="mt-4">
@@ -103,9 +110,9 @@ export default function InvoicePage() {
             </div>
           )}
 
-          {['stripe', 'paypal', 'moyasar'].includes(invoiceData.paymentMethod) && (
+          {['stripe', 'paypal', 'moyasar'].includes(method) && (
             <div className="mt-10 text-sm text-gray-400">
-              <p>You will be redirected to complete your payment securely via <strong className="capitalize">{invoiceData.paymentMethod}</strong>.</p>
+              <p>You will be redirected to complete your payment securely via <strong className="capitalize">{method}</strong>.</p>
             </div>
           )}
 
