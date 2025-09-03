@@ -20,22 +20,9 @@ const { creditInstructorWallet } = require("./helpers/wallet");
 const { handleEnrollment } = require("./helpers/enrollment");
 
 exports.createPayment = catchAsync(async (req, res) => {
-  const {
-    method_id,
-    item_type,
-    item_id,
-    amount,
-    currency,
-    status,
-    reference_id,
-    allow_installments,
-    installments,
-    receipt_url,
-    coupon_id,
-  } = req.body;
+  const { method_id, item_type, item_id, receipt_url, coupon_id } = req.body;
 
   const user_id = req.user.id;
-
   if (amount === undefined || amount === null || !item_type || !item_id) {
     throw new AppError("Missing required fields", 400);
   }
@@ -165,16 +152,17 @@ exports.createPayment = catchAsync(async (req, res) => {
     basePrice = null; // already validated
   }
 
-  if (basePrice !== null && basePrice !== undefined) {
-    if (coupon) {
-      basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
-    }
-    const expected =
-      totalInstallments > 1 ? basePrice / totalInstallments : basePrice;
-    if (Math.abs(verifiedAmount - expected) >= EPS) {
-      throw new AppError("Payment amount does not match item price", 400);
-    }
-  }
+  const {
+    method,
+    verifiedAmount,
+    verifiedCurrency,
+    finalStatus,
+    verifiedReference,
+    planInterval,
+    schedules,
+    next_due_date,
+    totalInstallments,
+  } = validation;
 
   const { platform_fee, instructor_amount } = await calculatePlatformFee(
     item_type,
