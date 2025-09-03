@@ -62,6 +62,12 @@ exports.createPayment = catchAsync(async (req, res) => {
     if (!method || !method.active) {
       throw new AppError("Invalid payment method", 400);
     }
+    if (method.type === "bank") {
+      throw new AppError(
+        "Bank payments must use the bank transfer API",
+        400
+      );
+    }
   } else if (Number(amount) === 0) {
     method = await paymentMethodsService.getByType("free");
     if (!method) {
@@ -216,28 +222,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     logger.error("Failed to send payment SMS:", err);
   }
 
-  if (method.type === "bank" && user?.email) {
-    try {
-      const bank = method.settings || {};
-      const html = `
-        <p>Dear ${user.full_name || ""},</p>
-        <p>Please complete your payment via bank transfer using the details below:</p>
-        <ul>
-          <li><strong>Bank:</strong> ${bank.bank_name || ""}</li>
-          <li><strong>Account Number:</strong> ${bank.account_number || ""}</li>
-          <li><strong>IBAN:</strong> ${bank.iban || ""}</li>
-        </ul>
-        <p>${bank.instructions || ""}</p>
-      `;
-      await mailService.sendMail({
-        to: user.email,
-        subject: "Payment Invoice",
-        html,
-      });
-    } catch (err) {
-      logger.error("Failed to send invoice email:", err);
-    }
-  }
+  // Bank payments are handled separately via /payments/bank/initiate
 
   if (item_type === "book" && payment.status === STATUS.PAID) {
     try {

@@ -72,4 +72,20 @@ describe('payment amount validation', () => {
     expect(err.message).toBe('Invalid amount');
     expect(paymentsService.create).not.toHaveBeenCalled();
   });
+
+  it('rejects bank payment via createPayment', async () => {
+    paymentMethodsService.getById.mockResolvedValue({ id: 'm1', type: 'bank', active: true });
+
+    const req = { body: { method_id: 'm1', item_type: 'book', item_id: 'b1', amount: 10 }, user: { id: 'u1' } };
+    const res = mockRes();
+    const next = jest.fn();
+
+    await paymentsController.createPayment(req, res, next);
+    await new Promise(process.nextTick);
+
+    expect(next).toHaveBeenCalled();
+    const err = next.mock.calls[0][0];
+    expect(err.message).toBe('Bank payments must use the bank transfer API');
+    expect(paymentsService.create).not.toHaveBeenCalled();
+  });
 });
