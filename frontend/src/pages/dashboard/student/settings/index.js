@@ -32,14 +32,14 @@ export default function StudentSettingsPage() {
   };
 
   useEffect(() => {
-    fetchSubscription();
+    fetchSubscription("student");
     loadInvoices();
   }, [fetchSubscription]);
 
   const handleUpgrade = async () => {
     try {
       await api.post("/user-subscriptions/upgrade");
-      await fetchSubscription();
+      await fetchSubscription("student");
     } catch (err) {
       console.error("Upgrade failed", err);
     }
@@ -48,7 +48,7 @@ export default function StudentSettingsPage() {
   const handleCancel = async () => {
     try {
       await api.post("/user-subscriptions/cancel");
-      await fetchSubscription();
+      await fetchSubscription("student");
     } catch (err) {
       console.error("Cancel failed", err);
     }
