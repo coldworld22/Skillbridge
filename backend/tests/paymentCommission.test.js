@@ -268,12 +268,12 @@ describe('wallet credit and debit', () => {
 
   it('rejects payout when balance insufficient', async () => {
     payoutService.getById.mockResolvedValue({ id: 'po2', instructor_id: 'inst1', amount: 80, status: 'pending' });
-    walletService.getByInstructor.mockResolvedValue({ balance: 50 });
+    walletService.decrement.mockImplementation(() => { throw new Error('Insufficient balance'); });
 
     const res = await request(app).patch('/api/payouts/po2').send({ status: 'approved' });
 
     expect(res.status).toBe(400);
-    expect(walletService.decrement).not.toHaveBeenCalled();
+    expect(walletService.decrement).toHaveBeenCalledWith('inst1', 80);
     expect(payoutService.update).not.toHaveBeenCalled();
   });
 });
