@@ -14,6 +14,7 @@ const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
 const invoiceService = require("../invoices/invoices.service");
+const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
 const { creditInstructorWallet } = require("./helpers/wallet");
