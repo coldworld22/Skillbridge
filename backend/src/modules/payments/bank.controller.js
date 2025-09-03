@@ -187,10 +187,11 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
 
   const payment = await paymentsService.create(paymentData);
 
+  let user;
   try {
     const method = await paymentMethodsService.getByType("bank");
     const bank = method?.settings || {};
-    const user = await userModel.findById(user_id);
+    user = await userModel.findById(user_id);
     if (user?.email) {
       const html = `
         <p>Dear ${user.full_name || ""},</p>
@@ -210,6 +211,52 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     }
   } catch (err) {
     logger.error("Failed to send bank transfer instructions:", err);
+  }
+
+  try {
+    const admins = await userModel.findAdmins();
+    const summary = `${user?.full_name || "A user"} submitted bank payment request ${payment.id} for ${numericAmount} ${currencyCode}.`;
+
+    const notifResults = await Promise.allSettled(
+      admins.map((admin) =>
+        notificationService.createNotification({
+          user_id: admin.id,
+          type: "bank_payment_request",
+          message: summary,
+        })
+      )
+    );
+    notifResults.forEach((r, idx) => {
+      if (r.status === "rejected") {
+        logger.error(
+          "Failed to notify admin",
+          admins[idx].id,
+          r.reason?.message || r.reason
+        );
+      }
+    });
+
+    const emailAdmins = admins.filter((a) => a.email);
+    const emailResults = await Promise.allSettled(
+      emailAdmins.map((admin) =>
+        mailService.sendMail({
+          to: admin.email,
+          subject: "New Bank Payment Request",
+          html: `<p>${summary}</p>`,
+        })
+      )
+    );
+    emailResults.forEach((r, idx) => {
+      if (r.status === "rejected") {
+        logger.error(
+          "Failed to email admin",
+          emailAdmins[idx].id,
+          r.reason?.message || r.reason
+        );
+      }
+    });
+  } catch (err) {
+    logger.error("Failed to notify admins of bank payment request:", err);
   }
 
   sendSuccess(
