@@ -42,7 +42,8 @@ export const TRUSTED_ICON_HOSTS = ['skillbridge.com', 'cdn.skillbridge.com'];
 
 function isTrustedIcon(url) {
   try {
-    const { hostname } = new URL(url, 'http://localhost');
+    const { protocol, hostname } = new URL(url, 'http://localhost');
+    if (protocol !== 'http:' && protocol !== 'https:') return false;
     return TRUSTED_ICON_HOSTS.some(
       (host) => hostname === host || hostname.endsWith(`.${host}`)
     );
@@ -70,10 +71,16 @@ export function resolveIconElement(method) {
     const base = lower.split('/').pop().split('.')[0];
     if (iconMap[lower]) return iconMap[lower];
     if (iconMap[base]) return iconMap[base];
-    const isUrl = /^(https?:)?\/\//.test(method.icon);
-    const trusted = !isUrl || isTrustedIcon(method.icon);
-    if (trusted) {
-      return <TrustedIcon src={method.icon} alt={method.name} />;
+    try {
+      const parsed = new URL(method.icon, 'http://localhost');
+      const isExternal = parsed.origin !== 'http://localhost';
+      const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      const trusted = isHttp && (!isExternal || isTrustedIcon(parsed.href));
+      if (trusted) {
+        return <TrustedIcon src={method.icon} alt={method.name} />;
+      }
+    } catch {
+      // Invalid URLs fall through to the default icon
     }
   }
   return (

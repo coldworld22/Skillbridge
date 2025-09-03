@@ -2,6 +2,10 @@
 
 SkillBridge displays icons for payment methods during checkout. To avoid loading images from untrusted locations, icons are only loaded from approved hosts or from assets bundled with the application.
 
+## Supported schemes
+
+Only `http` and `https` schemes are supported for payment method icons. Icons using other schemes (e.g. `javascript:` or `data:`) are rejected.
+
 ## Trusted domains
 
 Payment method icons may be served from the following domains:
