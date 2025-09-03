@@ -5,6 +5,15 @@ const path = require("path");
 const tagService = require("./bookTag.service");
 const slugify = require("slugify");
 const AppError = require("../../utils/AppError");
+const paymentsService = require("../payments/payments.service");
+const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
+const paymentConfigService = require("../paymentConfig/paymentConfig.service");
+const libraryService = require("../library/library.service");
+const { v4: uuidv4 } = require("uuid");
+
+const { STATUS: PAYMENT_STATUS } = paymentsService;
+
+const DEFAULT_PLATFORM_CUT = { book: 10 };
 
 exports.createBook = async (data) => {
   const [row] = await db("books").insert(data).returning("*");
@@ -254,6 +263,9 @@ exports.removeFromCart = (studentId, bookId) =>
   db('book_cart').where({ student_id: studentId, book_id: bookId }).del();
 
 exports.checkout = async (studentId) => {
+  const bankMethod = await paymentMethodsService.getByType('bank');
+  if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
+
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
       .where({ student_id: studentId })
@@ -282,19 +294,49 @@ exports.checkout = async (studentId) => {
       throw new AppError(`Book inactive or not found: ${missing.join(', ')}`, 404);
     }
 
-    const rows = books.map((b) => ({
-      student_id: studentId,
-      book_id: b.id,
-      price_paid: b.price,
-    }));
-    const purchases = await trx('book_purchases')
-      .insert(rows)
-      .returning('*');
+    let settings = null;
+    try {
+      settings = await paymentConfigService.getSettings();
+    } catch (err) {
+      settings = null;
+    }
+
+    const payments = [];
+    for (const b of books) {
+      let platform_fee = 0;
+      let instructor_amount = Number(b.price);
+      try {
+        const cut =
+          settings?.platformCut?.book ?? DEFAULT_PLATFORM_CUT.book;
+        platform_fee = (Number(b.price) * cut) / 100;
+        instructor_amount = Number(b.price) - platform_fee;
+      } catch (_) {}
+
+      const paymentData = {
+        id: uuidv4(),
+        user_id: studentId,
+        method_id: bankMethod.id,
+        item_type: 'book',
+        item_id: b.id,
+        amount: b.price,
+        status: PAYMENT_STATUS.AWAITING_APPROVAL,
+        platform_fee,
+        instructor_amount,
+      };
+
+      const payment = await paymentsService.create(paymentData);
+      if (payment.status === PAYMENT_STATUS.PAID) {
+        await libraryService.recordPurchase(studentId, b.id, b.price);
+      }
+      payments.push(payment);
+    }
+
     await trx('book_cart')
       .where({ student_id: studentId })
       .whereIn('book_id', bookIds)
       .del();
-    return purchases;
+
+    return payments;
   });
 };
 

@@ -23,6 +23,8 @@ jest.mock('../../../config/database', () => mockDb);
 
 const db = require('../../../config/database');
 const { listBooks, checkout, updateBook } = require('../book.service');
+const paymentsService = require('../../payments/payments.service');
+const { grantAccess } = require('../../payments/paymentAccess');
 
 beforeAll(async () => {
   await db.schema.createTable('books', (table) => {
@@ -54,6 +56,34 @@ beforeAll(async () => {
     table.integer('book_id');
     table.decimal('price_paid').notNullable().defaultTo(0);
     table.timestamp('purchased_at');
+  });
+
+  await db.schema.createTable('payment_methods_config', (table) => {
+    table.uuid('id');
+    table.string('type');
+    table.boolean('active');
+    table.string('name');
+    table.json('settings');
+  });
+  await db('payment_methods_config').insert({
+    id: 'bank1',
+    type: 'bank',
+    active: 1,
+    name: 'Bank',
+  });
+
+  await db.schema.createTable('payments', (table) => {
+    table.uuid('id').primary();
+    table.uuid('user_id');
+    table.uuid('method_id');
+    table.string('item_type');
+    table.integer('item_id');
+    table.decimal('amount', 10, 2);
+    table.string('currency');
+    table.string('status');
+    table.decimal('platform_fee', 10, 2).defaultTo(0);
+    table.decimal('instructor_amount', 10, 2).defaultTo(0);
+    table.timestamp('paid_at');
   });
 
   const books = [
@@ -131,6 +161,7 @@ describe('checkout', () => {
   beforeEach(async () => {
     await db('book_cart').del();
     await db('book_purchases').del();
+    await db('payments').del();
   });
 
   test('throws error when book already purchased', async () => {
@@ -145,19 +176,36 @@ describe('checkout', () => {
 
     const purchases = await db('book_purchases').where({ student_id: studentId });
     expect(purchases).toHaveLength(1);
+    const payments = await db('payments');
+    expect(payments).toHaveLength(0);
   });
 
   test('completes checkout when no duplicates', async () => {
     await db('book_cart').insert({ student_id: studentId, book_id: 2 });
-    const purchases = await checkout(studentId);
-    expect(purchases).toHaveLength(1);
-    const inDb = await db('book_purchases').where({
+    const payments = await checkout(studentId);
+    expect(payments).toHaveLength(1);
+    const payInDb = await db('payments').where({
+      user_id: studentId,
+      item_id: 2,
+      item_type: 'book',
+    });
+    expect(payInDb).toHaveLength(1);
+    const cart = await db('book_cart').where({ student_id: studentId });
+    expect(cart).toHaveLength(0);
+    const purchases = await db('book_purchases').where({ student_id: studentId });
+    expect(purchases).toHaveLength(0);
+
+    const approved = await paymentsService.approveBankPayment(payments[0].id, {
+      amount: 15,
+      item_id: 2,
+      item_type: 'book',
+    });
+    await grantAccess(approved);
+    const after = await db('book_purchases').where({
       student_id: studentId,
       book_id: 2,
     });
-    expect(inDb).toHaveLength(1);
-    const cart = await db('book_cart').where({ student_id: studentId });
-    expect(cart).toHaveLength(0);
+    expect(after).toHaveLength(1);
   });
 
   test('throws error when book is inactive', async () => {
@@ -178,6 +226,8 @@ describe('checkout', () => {
     expect(cart).toHaveLength(1);
     const purchases = await db('book_purchases').where({ student_id: studentId });
     expect(purchases).toHaveLength(0);
+    const payments = await db('payments');
+    expect(payments).toHaveLength(0);
   });
 
   test('throws error when book ID is missing', async () => {
@@ -187,6 +237,8 @@ describe('checkout', () => {
     expect(cart).toHaveLength(1);
     const purchases = await db('book_purchases').where({ student_id: studentId });
     expect(purchases).toHaveLength(0);
+    const payments = await db('payments');
+    expect(payments).toHaveLength(0);
   });
 });
 
