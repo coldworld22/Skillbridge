@@ -85,6 +85,10 @@ exports.createPayment = catchAsync(async (req, res) => {
     throw new AppError("Missing required fields", 400);
   }
 
+  if (Number(amount) <= 0 && method.type !== "free") {
+    throw new AppError("Invalid amount", 400);
+  }
+
   let verifiedAmount = amount;
   let verifiedCurrency = currency || "USD";
   let finalStatus = status || (Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT);
