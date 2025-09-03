@@ -359,6 +359,11 @@
   - `max_courses` – sets how many courses an instructor may publish before needing to upgrade
   - `ad_credits` – promotional credits instructors can spend to boost class visibility
 
+**Instructor Feature Validation Map**
+
+- `max_courses` → validated when instructors create or publish classes
+- `ad_credits` → validated when instructors create ads
+
 ### `plan_features`
 - **Purpose**: Matrix of toggles/limits
 - **Primary Key**: `id`

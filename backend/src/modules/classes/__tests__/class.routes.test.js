@@ -15,9 +15,11 @@ jest.mock('../class.service', () => ({
   getAllClasses: jest.fn(),
   getClassesByInstructor: jest.fn(),
   getPublishedClasses: jest.fn(),
+  getClassById: jest.fn(),
   updateClass: jest.fn(),
   togglePublishStatus: jest.fn(),
-  updateModeration: jest.fn()
+  updateModeration: jest.fn(),
+  countPublishedClasses: jest.fn(),
 }));
 const service = require('../class.service');
 jest.mock('../../notifications/notifications.service', () => ({
@@ -48,7 +50,7 @@ jest.mock('../../../middleware/validate', () => () => (req, _res, next) => next(
 // Mock auth middleware to bypass authentication
 jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
-    req.user = { id: 'test-user' };
+    req.user = { id: 'test-user', role: 'instructor' };
     next();
   },
   isStudent: (_req, _res, next) => next(),
@@ -58,14 +60,24 @@ jest.mock('../../../middleware/auth/authMiddleware', () => ({
 }));
 
 const routes = require('../class.routes');
+jest.mock('../../plans/instructor.helper', () => ({
+  getActiveInstructorPlan: jest.fn(),
+}));
+const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
 
 const app = express();
 app.use(express.json());
 app.use('/classes', routes);
+app.use((err, _req, res, _next) => {
+  res.status(err.statusCode || 500).json({ message: err.message });
+});
 
 describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
+    service.countPublishedClasses.mockResolvedValue(0);
+    service.getClassById.mockResolvedValue({ id: '1', status: 'draft', instructor_id: 'test-user', title: 'Old' });
   });
 
   test.skip('create class', async () => {
@@ -167,7 +179,7 @@ describe('Class routes', () => {
     expect(res.body.data).toEqual(approved);
   });
 
-  test('instructor can create class without plan', async () => {
+  test('instructor can create class within plan limit', async () => {
     const data = { id: '1', instructor_id: 'test-user', title: 'Test Class' };
     service.createClass.mockResolvedValue(data);
     const res = await request(app).post('/classes/instructor').send(data);
@@ -184,11 +196,20 @@ describe('Class routes', () => {
     expect(service.updateClass).toHaveBeenCalledWith('1', expect.any(Object));
   });
 
-  test('instructor can publish class without plan', async () => {
+  test('instructor can publish class within plan limit', async () => {
     const updated = { id: '1', status: 'published', moderation_status: 'Pending' };
     service.togglePublishStatus.mockResolvedValue(updated);
     const res = await request(app).patch('/classes/instructor/1/status');
     expect(res.statusCode).toBe(200);
     expect(service.togglePublishStatus).toHaveBeenCalledWith('1');
+  });
+
+  test('blocks class creation when over plan limit', async () => {
+    getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 1 });
+    service.countPublishedClasses.mockResolvedValue(1);
+    const data = { id: '1', instructor_id: 'test-user', title: 'Test Class', status: 'published' };
+    const res = await request(app).post('/classes/instructor').send(data);
+    expect(res.statusCode).toBe(403);
+    expect(service.createClass).not.toHaveBeenCalled();
   });
 });
