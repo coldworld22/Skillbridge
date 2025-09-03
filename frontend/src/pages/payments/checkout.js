@@ -425,9 +425,12 @@ export default function CheckoutPage() {
           };
     if (typeof window !== 'undefined') {
       try {
+        enrolled.push(newItem);
+        localStorage.setItem(storageKey, JSON.stringify(enrolled));
         await Promise.resolve(removeItem(itemInfo.id));
       } catch (err) {
-        console.error('Failed to remove from cart', err);
+        console.error('Failed to persist enrollment', err);
+        toast.error(t('payment_generic_failure'));
       }
     }
     setPaymentStatus('success');
