@@ -6,6 +6,14 @@ exports.createClass = async (data) => {
   return ClassModel.create(data);
 };
 
+exports.countPublishedClasses = async (instructorId) => {
+  const row = await db("online_classes")
+    .where({ instructor_id: instructorId, status: "published" })
+    .count("id as count")
+    .first();
+  return parseInt(row.count, 10) || 0;
+};
+
 exports.getAllClasses = async ({ page = 1, limit = 10 } = {}) => {
   const { page: pg, limit: lim, offset } = parsePagination({ page, limit });
   const totalRow = await db("online_classes").count("id as count").first();

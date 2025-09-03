@@ -7,6 +7,8 @@ const tagService = require("./classTag.service");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
+const { getActiveInstructorPlan } = require("../plans/instructor.helper");
+const AppError = require("../../utils/AppError");
 
 const slugify = require("slugify");
 const db = require("../../config/database");
@@ -46,6 +48,16 @@ exports.createClass = catchAsync(async (req, res) => {
   }
   if (req.user?.role === "instructor") {
     data.instructor_id = req.user.id;
+    const plan = await getActiveInstructorPlan(req.user.id);
+    if (!plan) {
+      throw new AppError("Active plan required", 403);
+    }
+    if (data.status === "published" && plan.max_courses) {
+      const count = await service.countPublishedClasses(req.user.id);
+      if (count >= plan.max_courses) {
+        throw new AppError("Course limit reached for your plan", 403);
+      }
+    }
   }
   if (req.files?.cover_image?.[0]) {
     data.cover_image = `/uploads/classes/${req.files.cover_image[0].filename}`;
@@ -324,6 +336,20 @@ exports.getClassAnalytics = catchAsync(async (req, res) => {
 });
 
 exports.toggleClassStatus = catchAsync(async (req, res) => {
+  const existing = await service.getClassById(req.params.id);
+  if (!existing) throw new AppError("Class not found", 404);
+  if (existing.status !== "published") {
+    const plan = await getActiveInstructorPlan(existing.instructor_id);
+    if (!plan) {
+      throw new AppError("Active plan required", 403);
+    }
+    if (plan.max_courses) {
+      const count = await service.countPublishedClasses(existing.instructor_id);
+      if (count >= plan.max_courses) {
+        throw new AppError("Course limit reached for your plan", 403);
+      }
+    }
+  }
   const cls = await service.togglePublishStatus(req.params.id);
   if (
     req.user.role !== "instructor" &&
