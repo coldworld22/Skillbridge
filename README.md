@@ -8,7 +8,7 @@ SkillBridge is a full-stack learning platform powered by an Express.js backend a
 curl -s https://example.com/install.sh | bash
 ```
 
-The script checks prerequisites, copies example env files, builds containers and seeds the database for development setups.
+The script checks prerequisites, copies example env files, builds containers and can seed the database for development setups when `SEED_DB=true`.
 
 
 Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values.
