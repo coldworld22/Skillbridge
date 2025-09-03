@@ -4,7 +4,6 @@ const catchAsync = require("../../../utils/catchAsync");
 const { sendSuccess } = require("../../../utils/response");
 const AppError = require("../../../utils/AppError");
 const service = require("./classEnrollment.service");
-const classService = require("../class.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
@@ -12,55 +11,75 @@ const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
   const user_id = req.user.id;
-  const cls = await classService.getClassById(classId);
-  if (!cls) throw new AppError("Class not found", 404);
-  if (cls.status !== "published" || cls.moderation_status !== "Approved") {
-    throw new AppError("Class is not available for enrollment", 400);
-  }
-  if (typeof cls.max_students === "number" && cls.max_students !== null) {
-    const count = await service.countEnrollments(classId);
-    if (count >= cls.max_students) {
-      throw new AppError("Class is full", 400);
-    }
-  }
-  const exists = await service.findEnrollment(user_id, classId);
-  if (exists && exists.status !== "cancelled")
-    return sendSuccess(res, exists, "Already enrolled");
+  let result;
 
-  const activePlanId = await getActiveStudentPlanId(user_id);
-  const includedPlans = Array.isArray(cls.included_plans) ? cls.included_plans : [];
-  const coveredBySubscription =
-    activePlanId && includedPlans.includes(activePlanId);
-
-  if (Number(cls.price) > 0 && !coveredBySubscription) {
-    const payment = await db("payments")
-      .where({
-        user_id,
-        item_id: classId,
-        item_type: "class",
-        status: paymentsService.STATUS.PAID,
-      })
+  await db.transaction(async (trx) => {
+    const cls = await trx("online_classes")
+      .where({ id: classId })
+      .forUpdate()
       .first();
-    if (!payment) {
-      throw new AppError("Payment required", 400);
+    if (!cls) throw new AppError("Class not found", 404);
+    if (cls.status !== "published" || cls.moderation_status !== "Approved") {
+      throw new AppError("Class is not available for enrollment", 400);
     }
-  }
-  if (exists && exists.status === "cancelled") {
-    const enrolled_at = new Date();
-    await service.updateEnrollment(user_id, classId, {
-      status: "enrolled",
-      enrolled_at,
-    });
-    return sendSuccess(
-      res,
-      { ...exists, status: "enrolled", enrolled_at },
-      "Enrolled successfully"
-    );
-  }
+    if (typeof cls.max_students === "number" && cls.max_students !== null) {
+      const count = await service.countEnrollments(classId, trx);
+      if (count >= cls.max_students) {
+        throw new AppError("Class is full", 400);
+      }
+    }
 
-  const data = { id: uuidv4(), user_id, class_id: classId, status: "enrolled" };
-  await service.createEnrollment(data);
-  sendSuccess(res, data, "Enrolled successfully");
+    const exists = await service.findEnrollment(user_id, classId, trx);
+    if (exists && exists.status !== "cancelled") {
+      result = { data: exists, message: "Already enrolled" };
+      return;
+    }
+
+    const activePlanId = await getActiveStudentPlanId(user_id);
+    const includedPlans = Array.isArray(cls.included_plans) ? cls.included_plans : [];
+    const coveredBySubscription =
+      activePlanId && includedPlans.includes(activePlanId);
+
+    if (Number(cls.price) > 0 && !coveredBySubscription) {
+      const payment = await trx("payments")
+        .where({
+          user_id,
+          item_id: classId,
+          item_type: "class",
+          status: paymentsService.STATUS.PAID,
+        })
+        .first();
+      if (!payment) {
+        throw new AppError("Payment required", 400);
+      }
+    }
+
+    if (exists && exists.status === "cancelled") {
+      const enrolled_at = new Date();
+      await service.updateEnrollment(
+        user_id,
+        classId,
+        { status: "enrolled", enrolled_at },
+        trx,
+      );
+      result = {
+        data: { ...exists, status: "enrolled", enrolled_at },
+        message: "Enrolled successfully",
+      };
+      return;
+    }
+
+    const data = {
+      id: uuidv4(),
+      user_id,
+      class_id: classId,
+      status: "enrolled",
+    };
+    await service.createEnrollment(data, trx);
+    result = { data, message: "Enrolled successfully" };
+  });
+
+  sendSuccess(res, result.data, result.message);
 });
 
 exports.complete = catchAsync(async (req, res) => {
@@ -84,3 +103,4 @@ exports.getStudent = catchAsync(async (req, res) => {
   const data = await service.getStudent(classId, studentId);
   sendSuccess(res, data);
 });
+
