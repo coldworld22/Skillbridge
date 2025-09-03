@@ -2,6 +2,8 @@ const classService = require("../../classes/class.service");
 const wishlistService = require("../../classes/wishlist/classWishlist.service");
 const cartService = require("../../cart/cart.service");
 const enrollmentService = require("../../classes/enrollments/classEnrollment.service");
+const paymentsService = require("../../payments/payments.service");
+const paymentMethodsService = require("../../paymentMethods/paymentMethods.service");
 const db = require("../../../config/database");
 const { v4: uuidv4 } = require("uuid");
 
@@ -54,47 +56,55 @@ class Student {
 
   async checkout(paymentMethodId) {
     const cartItems = await cartService.list(this.userId);
-    return db.transaction(async (trx) => {
-      const results = [];
-      const processedIds = [];
-      for (const item of cartItems) {
-        if (item.item_type !== "class") {
-          throw new Error("Invalid cart item type");
-        }
-        const cls = await trx("online_classes").where({ id: item.id }).first();
-        if (!cls) {
-          throw new Error("Class not found");
-        }
-        const [enrollment] = await trx("class_enrollments")
-          .insert({
-            id: uuidv4(),
-            user_id: this.userId,
-            class_id: item.id,
-            status: "enrolled",
-          })
-          .returning("*");
-        const [payment] = await trx("payments")
-          .insert({
-            user_id: this.userId,
-            method_id: paymentMethodId,
-            item_type: item.item_type,
-            item_id: item.id,
-            amount: item.price || 0,
-            status: "paid",
-            paid_at: new Date(),
-          })
-          .returning("*");
-        processedIds.push(item.id);
-        results.push({ enrollment, payment });
+    const method = await paymentMethodsService.getById(paymentMethodId);
+    const status =
+      method && method.type === "bank"
+        ? paymentsService.STATUS.AWAITING_APPROVAL
+        : paymentsService.STATUS.PENDING_PAYMENT;
+
+    const results = [];
+    const processedIds = [];
+
+    for (const item of cartItems) {
+      if (item.item_type !== "class") {
+        throw new Error("Invalid cart item type");
       }
-      if (processedIds.length) {
-        await trx("cart_items")
-          .where({ user_id: this.userId })
-          .whereIn("item_id", processedIds)
-          .del();
+
+      const cls = await db("online_classes").where({ id: item.id }).first();
+      if (!cls) {
+        throw new Error("Class not found");
       }
-      return results;
-    });
+
+      const [enrollment] = await db("class_enrollments")
+        .insert({
+          id: uuidv4(),
+          user_id: this.userId,
+          class_id: item.id,
+          status: "enrolled",
+        })
+        .returning("*");
+
+      const payment = await paymentsService.create({
+        user_id: this.userId,
+        method_id: paymentMethodId,
+        item_type: item.item_type,
+        item_id: item.id,
+        amount: item.price || 0,
+        status: item.price > 0 ? status : paymentsService.STATUS.PAID,
+      });
+
+      processedIds.push(item.id);
+      results.push({ enrollment, payment });
+    }
+
+    if (processedIds.length) {
+      await db("cart_items")
+        .where({ user_id: this.userId })
+        .whereIn("item_id", processedIds)
+        .del();
+    }
+
+    return results;
   }
 }
 
