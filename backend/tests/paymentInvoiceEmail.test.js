@@ -72,6 +72,7 @@ describe('invoice email dispatch', () => {
 
   it('sends invoice email for zero-amount payments', async () => {
     paymentMethodsService.getById.mockResolvedValue({ id: 'm2', type: 'free', active: true });
+    bookService.getBookById.mockResolvedValue({ price: 0, instructor_id: 'i1' });
     paymentsService.create.mockResolvedValue({ id: 'p2', user_id: 'u1', method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, currency: 'USD', status: 'paid' });
 
     const req = { body: { method_id: 'm2', item_type: 'book', item_id: 'b1', amount: 0, status: 'paid' }, user: { id: 'u1' } };

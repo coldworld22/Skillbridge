@@ -8,28 +8,16 @@ const { v4: uuidv4 } = require("uuid");
 const smsService = require("../../services/smsService");
 const userModel = require("../users/user.model");
 const libraryService = require("../library/library.service");
-const enrollmentService = require("../classes/enrollments/classEnrollment.service");
-const tutorialEnrollmentService = require("../users/tutorials/enrollments/tutorialEnrollment.service");
-const paymentConfigService = require("../paymentConfig/paymentConfig.service");
-const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
-const paypalService = require("../../services/paypalService");
 const notificationService = require("../notifications/notifications.service");
 const mailService = require("../../services/mailService");
 const couponService = require("../coupons/coupons.service");
 const plansService = require("../plans/plans.service");
 const subscriptionService = require("../subscriptions/subscription.service");
-const walletService = require("../payouts/wallet.service");
-const classService = require("../classes/class.service");
-const bookService = require("../books/book.service");
-const tutorialService = require("../users/tutorials/tutorial.service");
-
 const invoiceService = require("../invoices/invoices.service");
-
-const DEFAULT_PLATFORM_CUT = {
-  class: 15,
-  book: 10,
-  tutorial: 20,
-};
+const { validatePaymentData } = require("./helpers/validation");
+const { calculatePlatformFee } = require("./helpers/platformFee");
+const { creditInstructorWallet } = require("./helpers/wallet");
+const { handleEnrollment } = require("./helpers/enrollment");
 
 exports.createPayment = catchAsync(async (req, res) => {
   const {
@@ -48,149 +36,34 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   const user_id = req.user.id;
 
-  if (amount === undefined || amount === null || !item_type || !item_id) {
-    throw new AppError("Missing required fields", 400);
-  }
+  const {
+    method,
+    verifiedAmount,
+    verifiedCurrency,
+    finalStatus,
+    verifiedReference,
+    coupon,
+    planInterval,
+    schedules,
+    next_due_date,
+    totalInstallments,
+  } = await validatePaymentData({
+    method_id,
+    item_type,
+    item_id,
+    amount,
+    currency,
+    status,
+    reference_id,
+    allow_installments,
+    installments,
+    coupon_id,
+  });
 
-  let schedules = [];
-  let next_due_date = null;
-  let totalInstallments = allow_installments ? installments || 1 : 1;
-  if (allow_installments && totalInstallments > 1) {
-    for (let i = 2; i <= totalInstallments; i++) {
-      const due = new Date();
-      due.setMonth(due.getMonth() + (i - 1));
-      schedules.push({
-        installment_number: i,
-        amount,
-        due_date: due,
-      });
-    }
-    next_due_date = schedules[0]?.due_date || null;
-  }
-
-  let method;
-  if (method_id) {
-    method = await paymentMethodsService.getById(method_id);
-    if (!method || !method.active) {
-      throw new AppError("Invalid payment method", 400);
-    }
-  } else if (Number(amount) === 0) {
-    method = await paymentMethodsService.getByType("free");
-    if (!method) {
-      method = { id: null, type: "free", active: true };
-    } else if (!method.active) {
-      throw new AppError("Invalid payment method", 400);
-    }
-  } else {
-    throw new AppError("Missing required fields", 400);
-  }
-
-  let verifiedAmount = amount;
-  let verifiedCurrency = currency || "USD";
-  let finalStatus = status || (Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT);
-  let verifiedReference = reference_id;
-
-  if (method.type === "paypal") {
-    if (!reference_id) throw new AppError("Missing PayPal order ID", 400);
-    const capture = await paypalService.captureOrder(reference_id);
-    if (capture.status !== "COMPLETED") {
-      throw new AppError("PayPal transaction not completed", 400);
-    }
-    const info =
-      capture.purchase_units?.[0]?.payments?.captures?.[0] || {};
-    verifiedAmount = parseFloat(info.amount?.value || amount);
-    verifiedCurrency = info.amount?.currency_code || verifiedCurrency;
-    verifiedReference = info.id || reference_id;
-    finalStatus = STATUS.PAID;
-  }
-
-  let coupon = null;
-  if (coupon_id) {
-    coupon = await couponService.getCouponById(coupon_id);
-    if (!coupon) throw new AppError("Invalid coupon", 400);
-    if (coupon.applies_to && coupon.applies_to !== item_type) {
-      throw new AppError("Coupon not valid for this item type", 400);
-    }
-    if (coupon.applies_to_id && coupon.applies_to_id !== item_id) {
-      throw new AppError("Coupon not valid for this item", 400);
-    }
-    if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
-      throw new AppError("Coupon not active", 400);
-    }
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-      throw new AppError("Coupon expired", 400);
-    }
-    if (
-      coupon.usage_limit !== null &&
-      coupon.times_used >= coupon.usage_limit
-    ) {
-      throw new AppError("Coupon usage limit reached", 400);
-    }
-  }
-
-  // Validate amount against item price (after coupon discount if any)
-  const EPS = 0.01;
-  let planInterval = null;
-  let basePrice;
-  if (item_type === "class") {
-    const cls = await classService.getClassById(item_id);
-    if (!cls) throw new AppError("Class not found", 404);
-    basePrice = Number(cls.price);
-  } else if (item_type === "book") {
-    const book = await bookService.getBookById(item_id);
-    if (!book) throw new AppError("Book not found", 404);
-    basePrice = Number(book.price);
-  } else if (item_type === "tutorial") {
-    const tut = await tutorialService.getTutorialById(item_id);
-    if (!tut) throw new AppError("Tutorial not found", 404);
-    basePrice = Number(tut.price);
-  } else if (item_type === "plan") {
-    const plan = await plansService.getPlanById(item_id);
-    if (!plan) throw new AppError("Plan not found", 404);
-    let monthly = Number(plan.price_monthly);
-    let yearly = Number(plan.price_yearly);
-    if (coupon) {
-      monthly = +(monthly * (1 - coupon.discount_percent / 100)).toFixed(2);
-      yearly = +(yearly * (1 - coupon.discount_percent / 100)).toFixed(2);
-    }
-    const perMonthly =
-      totalInstallments > 1 ? monthly / totalInstallments : monthly;
-    const perYearly =
-      totalInstallments > 1 ? yearly / totalInstallments : yearly;
-    if (Math.abs(verifiedAmount - perYearly) < EPS) {
-      planInterval = "yearly";
-    } else if (Math.abs(verifiedAmount - perMonthly) < EPS) {
-      planInterval = "monthly";
-    } else {
-      throw new AppError("Payment amount does not match plan price", 400);
-    }
-    basePrice = null; // already validated
-  }
-
-  if (basePrice !== null && basePrice !== undefined) {
-    if (coupon) {
-      basePrice = +(basePrice * (1 - coupon.discount_percent / 100)).toFixed(2);
-    }
-    const expected =
-      totalInstallments > 1 ? basePrice / totalInstallments : basePrice;
-    if (Math.abs(verifiedAmount - expected) >= EPS) {
-      throw new AppError("Payment amount does not match item price", 400);
-    }
-  }
-
-  let platform_fee = 0;
-  let instructor_amount = verifiedAmount;
-  try {
-    const settings = await paymentConfigService.getSettings();
-    const cut =
-      settings?.platformCut?.[item_type] ??
-      DEFAULT_PLATFORM_CUT[item_type] ??
-      0;
-    platform_fee = (verifiedAmount * cut) / 100;
-    instructor_amount = verifiedAmount - platform_fee;
-  } catch (err) {
-    logger.error("Failed to load payment settings:", err);
-  }
+  const { platform_fee, instructor_amount } = await calculatePlatformFee(
+    item_type,
+    verifiedAmount
+  );
 
   const createData = {
     id: uuidv4(),
@@ -262,71 +135,11 @@ exports.createPayment = catchAsync(async (req, res) => {
     } catch (err) {
       logger.error("Failed to record book purchase:", err);
     }
-
-    try {
-      const book = await bookService.getBookById(item_id);
-      if (book?.instructor_id) {
-        await walletService.increment(book.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
   }
 
-  if (item_type === "class" && payment.status === STATUS.PAID) {
-    try {
-      const cls = await classService.getClassById(item_id);
-      if (cls?.instructor_id) {
-        await walletService.increment(cls.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-
-    try {
-      const existingEnrollment = await enrollmentService.findEnrollment(
-        user_id,
-        item_id
-      );
-      if (existingEnrollment) {
-        if (existingEnrollment.status !== "enrolled") {
-          await enrollmentService.updateEnrollment(user_id, item_id, {
-            status: "enrolled",
-          });
-        }
-      } else {
-        await enrollmentService.createEnrollment({
-          id: uuidv4(),
-          user_id,
-          class_id: item_id,
-          status: "enrolled",
-        });
-      }
-    } catch (err) {
-      logger.error("Failed to enroll after payment:", err);
-    }
-  }
-
-  if (item_type === "tutorial" && payment.status === STATUS.PAID) {
-    try {
-      const tut = await tutorialService.getTutorialById(item_id);
-      if (tut?.instructor_id) {
-        await walletService.increment(tut.instructor_id, instructor_amount);
-      }
-    } catch (err) {
-      logger.error("Failed to credit instructor wallet:", err);
-    }
-
-    try {
-      await tutorialEnrollmentService.createEnrollment({
-        id: uuidv4(),
-        user_id,
-        tutorial_id: item_id,
-        status: "enrolled",
-      });
-    } catch (err) {
-      logger.error("Failed to enroll in tutorial after payment:", err);
-    }
+  if (payment.status === STATUS.PAID) {
+    await creditInstructorWallet(item_type, item_id, instructor_amount);
+    await handleEnrollment(item_type, user_id, item_id);
   }
 
   if (item_type === "plan" && payment.status === STATUS.PAID) {
