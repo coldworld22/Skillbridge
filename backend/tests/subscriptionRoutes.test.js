@@ -28,10 +28,10 @@ describe('GET /api/user-subscriptions/me', () => {
     const mock = [{ id: 's1', plan_id: 'p1' }];
     service.getActiveByUser.mockResolvedValue(mock);
 
-    const res = await request(app).get('/api/user-subscriptions/me');
+    const res = await request(app).get('/api/user-subscriptions/me?role=instructor');
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(mock);
-    expect(service.getActiveByUser).toHaveBeenCalledWith('user1');
+    expect(service.getActiveByUser).toHaveBeenCalledWith('user1', 'instructor');
   });
 });
 

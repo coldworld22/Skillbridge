@@ -5,7 +5,8 @@ const service = require("./subscription.service");
 const paymentsService = require("../payments/payments.service");
 
 exports.getMySubscriptions = catchAsync(async (req, res) => {
-  const subs = await service.getActiveByUser(req.user.id);
+  const role = req.query.role || req.user.role;
+  const subs = await service.getActiveByUser(req.user.id, role);
   sendSuccess(res, subs);
 });
 
