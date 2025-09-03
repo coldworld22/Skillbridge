@@ -1,10 +1,11 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
 import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '../../services/paymentService';
 import { createPayment } from '../../services/student/paymentService';
 import { fetchPlanDetails } from '../../services/public/planService';
+import { validateCode } from '../../services/couponService';
 import PaymentSuccessPage from '../../pages/payments/success';
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({
@@ -50,6 +51,7 @@ jest.mock('../../components/website/sections/Footer', () => {
 jest.mock('../../services/classService', () => ({ fetchClassDetails: jest.fn() }));
 jest.mock('../../services/tutorialService', () => ({ fetchTutorialDetails: jest.fn() }));
 jest.mock('../../services/public/planService', () => ({ fetchPlanDetails: jest.fn() }));
+jest.mock('../../services/couponService', () => ({ validateCode: jest.fn() }));
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
 }));
@@ -142,7 +144,12 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
-    { id: 3, name: 'Bank', type: 'bank', config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' } },
+    {
+      id: 3,
+      name: 'Bank',
+      type: 'bank',
+      config: { bank_name: 'Test Bank', account_holder_name: 'John', account_number: '123', swift_code: 'ABCDEF' },
+    },
   ]);
   initiateBankPayment.mockResolvedValue({ id: 42 });
   render(<CheckoutPage />);
@@ -234,16 +241,32 @@ test('processes plan card payments and redirects to billing for students', async
   fetchPlanDetails.mockResolvedValue(planDetails);
   fetchPaymentMethods.mockResolvedValue([{ id: 1, name: 'Stripe', type: 'stripe' }]);
   createPayment.mockResolvedValue({ status: 'paid' });
+  validateCode.mockResolvedValue({ id: 7, discount_percent: 10 });
 
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
 
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
+    target: { value: 'SAVE' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText('apply'));
+  });
+  await waitFor(() =>
+    expect(validateCode).toHaveBeenCalledWith('SAVE', 'plan', '1')
+  );
+
+  const payButton = await screen.findByRole('button', { name: /Pay \$45 with Stripe/i });
   fireEvent.change(screen.getByPlaceholderText('Full Name'), { target: { value: 'Jane Doe' } });
   fireEvent.change(screen.getByPlaceholderText('Email Address'), { target: { value: 'jane@example.com' } });
-  fireEvent.click(screen.getByRole('button', { name: /Pay \$50 with Stripe/i }));
+  fireEvent.click(payButton);
 
   await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
-  await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
+  await waitFor(() =>
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ token: 'tok_123', coupon_id: 7 })
+    )
+  );
   jest.runAllTimers();
   await waitFor(() =>
     expect(push).toHaveBeenCalledWith('/payments/success?itemType=plan&itemId=1')
