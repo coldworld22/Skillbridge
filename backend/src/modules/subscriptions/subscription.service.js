@@ -37,12 +37,16 @@ exports.createOrRenewSubscription = async ({ user_id, plan_id, interval }) => {
   });
 };
 
-exports.getActiveByUser = (user_id) => {
+exports.getActiveByUser = (user_id, role) => {
   const now = new Date();
-  return db("user_subscriptions as us")
+  const query = db("user_subscriptions as us")
     .join("plans as p", "us.plan_id", "p.id")
     .select("us.*", "p.name", "p.slug")
     .where("us.user_id", user_id)
     .andWhere("us.status", "active")
     .andWhere("us.end_date", ">", now);
+
+  if (role) query.where("p.target_role", role);
+
+  return query;
 };
