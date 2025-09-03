@@ -465,11 +465,15 @@ export default function CheckoutPage() {
         };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiatePayPalPayment(payload);
-        if (data?.approval_url) window.location.href = data.approval_url;
+        if (data?.approval_url) {
+          window.location.href = data.approval_url;
+        } else {
+          toast.error(t('payment_paypal_failure'));
+          setPaymentStatus('idle');
+        }
       } catch (err) {
         console.error('Failed to initiate PayPal payment', err);
         toast.error(t('payment_paypal_failure'));
-      } finally {
         setPaymentStatus('idle');
       }
       return;
@@ -485,11 +489,15 @@ export default function CheckoutPage() {
         };
         if (couponId) payload.coupon_id = couponId;
         const data = await initiateCryptoPayment(payload);
-        if (data?.invoice_url) window.location.href = data.invoice_url;
+        if (data?.invoice_url) {
+          window.location.href = data.invoice_url;
+        } else {
+          toast.error(t('payment_crypto_failure'));
+          setPaymentStatus('idle');
+        }
       } catch (err) {
         console.error('Failed to initiate crypto payment', err);
         toast.error(t('payment_crypto_failure'));
-      } finally {
         setPaymentStatus('idle');
       }
       return;

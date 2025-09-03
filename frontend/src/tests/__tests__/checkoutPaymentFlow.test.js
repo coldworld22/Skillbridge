@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckoutPage from '../../pages/payments/checkout';
 import { fetchClassDetails } from '../../services/classService';
 import { fetchPaymentMethods } from '../../services/paymentMethodService';
-import { initiateBankPayment } from '../../services/paymentService';
+import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '../../services/paymentService';
 import { createPayment } from '../../services/student/paymentService';
 import { fetchPlanDetails } from '../../services/public/planService';
 import PaymentSuccessPage from '../../pages/payments/success';
@@ -133,6 +133,12 @@ test('renders payment logos using library icons with url fallback', async () => 
 });
 
 test('adjusts inputs based on payment selection and submits bank reference', async () => {
+  const push = jest.fn();
+  mockUseRouter.mockReturnValue({
+    query: { itemId: '1', itemType: 'class' },
+    isReady: true,
+    push,
+  });
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
     { id: 2, name: 'PayPal', type: null },
@@ -186,6 +192,34 @@ test('shows error when unhandled payment fails', async () => {
   await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
   await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
   expect(require('react-toastify').toast.error).toHaveBeenCalled();
+});
+
+test('shows error when PayPal payment lacks approval_url', async () => {
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'PayPal', type: null },
+  ]);
+  initiatePayPalPayment.mockResolvedValue({});
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  const button = screen.getByRole('button', { name: /Pay \$100 with PayPal/i });
+  fireEvent.click(button);
+  await waitFor(() => expect(initiatePayPalPayment).toHaveBeenCalled());
+  await waitFor(() => expect(require('react-toastify').toast.error).toHaveBeenCalled());
+  expect(button).not.toBeDisabled();
+});
+
+test('shows error when crypto payment lacks invoice_url', async () => {
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'USDT', type: 'usdt' },
+  ]);
+  initiateCryptoPayment.mockResolvedValue({});
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  const button = screen.getByRole('button', { name: /Pay \$100 with Crypto/i });
+  fireEvent.click(button);
+  await waitFor(() => expect(initiateCryptoPayment).toHaveBeenCalled());
+  await waitFor(() => expect(require('react-toastify').toast.error).toHaveBeenCalled());
+  expect(button).not.toBeDisabled();
 });
 
 test('processes plan card payments and redirects to billing for students', async () => {
