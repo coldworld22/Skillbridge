@@ -350,6 +350,7 @@ export default function CheckoutPage() {
           interval,
         };
         if (defaultMethod?.id) payload.method_id = defaultMethod.id;
+        if (couponId) payload.coupon_id = couponId;
         payment = await createPayment(payload);
       } catch (err) {
         console.error('Failed to create payment', err);
