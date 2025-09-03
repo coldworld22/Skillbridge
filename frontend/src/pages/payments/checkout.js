@@ -431,13 +431,12 @@ export default function CheckoutPage() {
       }
     }
     setPaymentStatus('success');
-    setTimeout(
-      () =>
-        router.push(
-          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
-        ),
-      1500
-    );
+    setTimeout(() => {
+      const paymentIdParam = payment?.id ? `&payment_id=${payment.id}` : '';
+      router.push(
+        `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}${paymentIdParam}`
+      );
+    }, 1500);
   };
 
   const handlePayment = async (_formData = {}) => {
