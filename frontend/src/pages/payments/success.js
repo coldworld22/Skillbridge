@@ -40,18 +40,23 @@ export default function PaymentSuccessPage() {
   const confirmPlanSubscription = async () => {
     if (payment_id && paymentInfo?.status !== 'paid') return;
     try {
-      let sub = await fetchMySubscription();
+      const sub = await fetchMySubscription();
       let current = Array.isArray(sub) ? sub[0] : sub;
-      if (!current || current.plan_id !== itemId) {
-        const { message } = await subscribeToPlan(
+      const isActiveSamePlan =
+        current &&
+        String(current.plan_id) === String(itemId) &&
+        current.status === 'active';
+
+      if (!isActiveSamePlan) {
+        const { subscription, message } = await subscribeToPlan(
           itemId,
           undefined,
           payment_id
         );
         if (message) setBannerMessage(message);
-        sub = await fetchMySubscription();
-        current = Array.isArray(sub) ? sub[0] : sub;
+        current = subscription;
       }
+
       setSubscriptionInfo(current);
       setSubscriptionError(null);
       await fetchSubscription();
