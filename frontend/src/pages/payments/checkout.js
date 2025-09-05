@@ -170,6 +170,138 @@ export function resolveCheckoutItem(query, cartItems) {
   return null;
 }
 
+export async function handleBankPayment({
+  itemInfo,
+  itemType,
+  finalPrice,
+  couponId,
+  formData = {},
+  router,
+  t,
+  setPaymentStatus,
+}) {
+  try {
+    setPaymentStatus('processing');
+    const payload = new FormData();
+    payload.append('item_id', itemInfo.id);
+    payload.append('item_type', itemType);
+    payload.append('amount', finalPrice);
+    if (couponId) payload.append('coupon_id', couponId);
+    if (formData.reference) payload.append('reference', formData.reference);
+    if (formData.receipt) payload.append('receipt', formData.receipt);
+    const payment = await initiateBankPayment(payload);
+    router.push(
+      `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
+    );
+  } catch (err) {
+    console.error('Failed to initiate bank transfer', err);
+    toast.error(t('payment_bank_failure'));
+    setPaymentStatus('idle');
+  }
+}
+
+export async function handlePayPalPayment({
+  itemInfo,
+  itemType,
+  finalPrice,
+  couponId,
+  t,
+  setPaymentStatus,
+}) {
+  try {
+    setPaymentStatus('processing');
+    const payload = {
+      item_id: itemInfo.id,
+      item_type: itemType,
+      amount: finalPrice,
+    };
+    if (couponId) payload.coupon_id = couponId;
+    const data = await initiatePayPalPayment(payload);
+    if (data?.approval_url) {
+      window.location.href = data.approval_url;
+    } else {
+      toast.error(t('payment_paypal_failure'));
+      setPaymentStatus('idle');
+    }
+  } catch (err) {
+    console.error('Failed to initiate PayPal payment', err);
+    toast.error(t('payment_paypal_failure'));
+    setPaymentStatus('idle');
+  }
+}
+
+export async function handleCryptoPayment({
+  itemInfo,
+  itemType,
+  finalPrice,
+  couponId,
+  method,
+  t,
+  setPaymentStatus,
+}) {
+  try {
+    setPaymentStatus('processing');
+    const payload = {
+      item_id: itemInfo.id,
+      item_type: itemType,
+      amount: finalPrice,
+      method_type: method?.type || getMethodIdentifier(method),
+    };
+    if (couponId) payload.coupon_id = couponId;
+    const data = await initiateCryptoPayment(payload);
+    if (data?.invoice_url) {
+      window.location.href = data.invoice_url;
+    } else {
+      toast.error(t('payment_crypto_failure'));
+      setPaymentStatus('idle');
+    }
+  } catch (err) {
+    console.error('Failed to initiate crypto payment', err);
+    toast.error(t('payment_crypto_failure'));
+    setPaymentStatus('idle');
+  }
+}
+
+export async function handleDefaultPayment({
+  method,
+  itemInfo,
+  itemType,
+  finalPrice,
+  allowInstallments,
+  installments,
+  interval,
+  couponId,
+  formData = {},
+  t,
+  setPaymentStatus,
+  completePayment,
+}) {
+  try {
+    setPaymentStatus('processing');
+    const payload = {
+      method_id: method?.id,
+      item_type: itemType,
+      item_id: itemInfo.id,
+      amount: finalPrice,
+      allow_installments: allowInstallments,
+      installments,
+    };
+    if (formData.token) payload.token = formData.token;
+    if (itemType === 'plan') payload.interval = interval;
+    if (couponId) payload.coupon_id = couponId;
+    const response = await createPayment(payload);
+    if (response?.status === 'paid') {
+      await completePayment(response);
+    } else {
+      throw new Error('Payment not confirmed');
+    }
+  } catch (err) {
+    console.error('Failed to process payment', err);
+    toast.error(t('payment_generic_failure'));
+    setPaymentStatus('idle');
+  }
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { t } = useTranslation('common');
@@ -505,98 +637,37 @@ export default function CheckoutPage() {
     const identifier = getMethodIdentifier(method).toLowerCase();
     const isCrypto = isCryptoMethod(method || identifier);
 
-    if (identifier === 'bank') {
-      try {
-        setPaymentStatus('processing');
-        const formData = new FormData();
-        formData.append('item_id', itemInfo.id);
-        formData.append('item_type', itemType);
-        formData.append('amount', finalPrice);
-        if (couponId) formData.append('coupon_id', couponId);
-        if (_formData.reference) formData.append('reference', _formData.reference);
-        if (_formData.receipt) formData.append('receipt', _formData.receipt);
-        const payment = await initiateBankPayment(formData);
-        router.push(
-          `/payments/success?itemType=${itemType}&itemId=${itemInfo.id}&payment_id=${payment?.id}`
-        );
-      } catch (err) {
-        console.error('Failed to initiate bank transfer', err);
-        toast.error(t('payment_bank_failure'));
-        setPaymentStatus('idle');
-      }
-      return;
-    }
-    if (identifier === 'paypal') {
-      try {
-        setPaymentStatus('processing');
-        const payload = {
-          item_id: itemInfo.id,
-          item_type: itemType,
-          amount: finalPrice,
-        };
-        if (couponId) payload.coupon_id = couponId;
-        const data = await initiatePayPalPayment(payload);
-        if (data?.approval_url) {
-          window.location.href = data.approval_url;
-        } else {
-          toast.error(t('payment_paypal_failure'));
-          setPaymentStatus('idle');
-        }
-      } catch (err) {
-        console.error('Failed to initiate PayPal payment', err);
-        toast.error(t('payment_paypal_failure'));
-        setPaymentStatus('idle');
-      }
-      return;
-    }
-    if (isCrypto) {
-      try {
-        setPaymentStatus('processing');
-        const payload = {
-          item_id: itemInfo.id,
-          item_type: itemType,
-          amount: finalPrice,
-          method_type: method?.type || getMethodIdentifier(method),
-        };
-        if (couponId) payload.coupon_id = couponId;
-        const data = await initiateCryptoPayment(payload);
-        if (data?.invoice_url) {
-          window.location.href = data.invoice_url;
-        } else {
-          toast.error(t('payment_crypto_failure'));
-          setPaymentStatus('idle');
-        }
-      } catch (err) {
-        console.error('Failed to initiate crypto payment', err);
-        toast.error(t('payment_crypto_failure'));
-        setPaymentStatus('idle');
-      }
-      return;
-    }
-    try {
-      setPaymentStatus('processing');
-      const payload = {
-        method_id: method?.id,
-        item_type: itemType,
-        item_id: itemInfo.id,
-        amount: finalPrice,
-        allow_installments: allowInstallments,
-        installments,
-      };
-      if (_formData.token) payload.token = _formData.token;
-      if (itemType === 'plan') payload.interval = interval;
-      if (couponId) payload.coupon_id = couponId;
-      const response = await createPayment(payload);
-      if (response?.status === 'paid') {
-        await completePayment(response);
-      } else {
-        throw new Error('Payment not confirmed');
-      }
-    } catch (err) {
-      console.error('Failed to process payment', err);
-      toast.error(t('payment_generic_failure'));
-      setPaymentStatus('idle');
-    }
+    const handlers = {
+      bank: handleBankPayment,
+      paypal: handlePayPalPayment,
+      crypto: handleCryptoPayment,
+      default: handleDefaultPayment,
+    };
+
+    const key =
+      identifier === 'bank'
+        ? 'bank'
+        : identifier === 'paypal'
+        ? 'paypal'
+        : isCrypto
+        ? 'crypto'
+        : 'default';
+
+    await handlers[key]({
+      method,
+      itemInfo,
+      itemType,
+      finalPrice,
+      couponId,
+      formData: _formData,
+      router,
+      t,
+      setPaymentStatus,
+      allowInstallments,
+      installments,
+      interval,
+      completePayment,
+    });
   };
 
   const [installments, setInstallments] = useState(1);

@@ -23,11 +23,13 @@ export default function StudentSettingsPage() {
 
   const loadInvoices = async () => {
     setLoadingInvoices(true);
+    setInvoiceError(null);
     try {
       const { data } = await api.get("/invoices/student");
       setInvoices(data?.data || []);
     } catch (err) {
       console.error("Failed to fetch invoices", err);
+      setInvoiceError(err);
       setInvoices([]);
     } finally {
       setLoadingInvoices(false);
@@ -193,6 +195,16 @@ export default function StudentSettingsPage() {
               <h3 className="font-medium">Invoices</h3>
               {loadingInvoices ? (
                 <p>Loading invoices...</p>
+              ) : invoiceError ? (
+                <div>
+                  <p className="text-red-600">Failed to load invoices.</p>
+                  <button
+                    onClick={loadInvoices}
+                    className="text-blue-600 underline"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : invoices.length ? (
                 <ul className="list-disc list-inside space-y-1">
                   {invoices.map((inv) => (
