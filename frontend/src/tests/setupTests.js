@@ -7,7 +7,8 @@ jest.mock('@stripe/react-stripe-js', () => {
     CardElement: (props) => React.createElement('div', { 'data-testid': 'card-element', ...props }),
     useStripe: () => ({ createToken: mockCreateToken }),
     useElements: () => ({ getElement: () => ({}) }),
-    Elements: ({ children }) => React.createElement('div', null, children),
+    Elements: ({ children }) =>
+      React.createElement('div', { 'data-testid': 'elements-wrapper' }, children),
     __esModule: true,
   };
 });
