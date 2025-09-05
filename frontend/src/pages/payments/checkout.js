@@ -96,8 +96,16 @@ export function resolveIconElement(method) {
 }
 
 function getMethodIdentifier(method) {
-  if (method?.type && method.type.trim()) return method.type.trim();
-  if (method?.name && method.name.trim()) return method.name.trim();
+  const type = method?.type;
+  if (type !== undefined && type !== null) {
+    const typeStr = String(type).trim();
+    if (typeStr) return typeStr;
+  }
+  const name = method?.name;
+  if (name !== undefined && name !== null) {
+    const nameStr = String(name).trim();
+    if (nameStr) return nameStr;
+  }
   return '';
 }
 
