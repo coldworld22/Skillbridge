@@ -73,7 +73,7 @@ export function TrustedIcon({ src, alt }) {
 }
 
 export function resolveIconElement(method) {
-  if (method.icon) {
+  if (typeof method.icon === 'string' && method.icon) {
     const lower = method.icon.toLowerCase();
     const base = lower.split('/').pop().split('.')[0];
     if (iconMap[lower]) return iconMap[lower];
