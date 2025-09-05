@@ -23,4 +23,14 @@ describe('filterEligibleMethods', () => {
     const result = filterEligibleMethods(methods, 'plan');
     expect(result.map((m) => m.name)).toEqual(['Stripe', 'Bank']);
   });
+
+  it('handles methods with non-string identifiers', () => {
+    const weirdMethods = [
+      { id: 6, name: 123, type: undefined, active: true },
+      { id: 7, name: 'Some', type: 456, active: true },
+    ];
+    expect(() => filterEligibleMethods(weirdMethods, 'class')).not.toThrow();
+    const result = filterEligibleMethods(weirdMethods, 'plan');
+    expect(result.map((m) => m.id)).toEqual([6, 7]);
+  });
 });
