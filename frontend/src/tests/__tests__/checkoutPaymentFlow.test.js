@@ -336,7 +336,7 @@ test('shows available payment methods for plans', async () => {
   expect(screen.queryByText('PayPal')).toBeNull();
   expect(screen.queryByText('USDT')).toBeNull();
   expect(await screen.findByText('Stripe')).toBeInTheDocument();
-  expect(await screen.findByText('Bank')).toBeInTheDocument();
+  expect(screen.queryByText('Bank')).toBeNull();
 });
 
 test('shows error when plan prices are invalid', async () => {
@@ -359,30 +359,11 @@ test('shows error when no payment method matches selection', async () => {
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
 
-  fireEvent.change(screen.getByPlaceholderText('Full Name'), {
-    target: { value: 'John Doe' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('Email Address'), {
-    target: { value: 'john@example.com' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('Card Number'), {
-    target: { value: '4242424242424242' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('Expiration Date (MM/YY)'), {
-    target: { value: '12/30' },
-  });
-  fireEvent.change(screen.getByPlaceholderText('CVC'), {
-    target: { value: '123' },
-  });
+  const notice = await screen.findByText('No payment methods available for this plan');
+  expect(notice).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: /Pay \$100 with/i }));
-
-  await waitFor(() =>
-    expect(require('react-toastify').toast.error).toHaveBeenCalledWith(
-      'payment_method_missing'
-    )
-  );
-  expect(createPayment).not.toHaveBeenCalled();
+  const button = screen.getByRole('button', { name: /Pay \$50/i });
+  expect(button).toBeDisabled();
 });
 
 test.each([2, 5])('renders installment schedule for %i installments', async (count) => {

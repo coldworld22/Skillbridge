@@ -231,6 +231,8 @@ export default function CheckoutPage() {
     [methods, itemType]
   );
 
+  const noPaymentMethods = filteredMethods.length === 0 && finalPrice > 0;
+
   const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
   );
@@ -716,6 +718,16 @@ export default function CheckoutPage() {
           ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> {t('payment_successful_redirecting')}
+            </div>
+          ) : noPaymentMethods ? (
+            <div className="text-center">
+              <p className="text-red-400 mb-4">No payment methods available for this plan</p>
+              <button
+                disabled
+                className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded opacity-50 cursor-not-allowed"
+              >
+                {`Pay $${finalPrice}`}
+              </button>
             </div>
           ) : selectedMethodIdentifier === 'paypal' ? (
             <PayPalForm
