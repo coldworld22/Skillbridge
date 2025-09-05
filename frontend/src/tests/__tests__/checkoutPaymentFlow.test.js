@@ -23,6 +23,12 @@ jest.mock('next-i18next', () => ({
       };
       if (key === 'pay_with_paypal') return `Pay $${params?.price} with PayPal`;
         if (key === 'pay_with_bank') return `Pay $${params?.price} with Bank`;
+      if (key === 'pay_in_monthly_installments') {
+        return `Pay in ${params?.count} monthly installments`;
+      }
+      if (key === 'installment_item') {
+        return `Installment ${params?.number}: ${params?.amount} on ${params?.date}`;
+      }
       if (typeof params === 'string') return params;
       return translations[key] || key;
     },
@@ -326,6 +332,7 @@ test('shows available payment methods for plans', async () => {
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.queryByText('PayPal')).toBeNull();
+  expect(screen.queryByText('USDT')).toBeNull();
   expect(await screen.findByText('Stripe')).toBeInTheDocument();
   expect(await screen.findByText('Bank')).toBeInTheDocument();
 });
@@ -360,4 +367,18 @@ test('shows error when no payment method matches selection', async () => {
     )
   );
   expect(createPayment).not.toHaveBeenCalled();
+});
+
+test.each([2, 5])('renders installment schedule for %i installments', async (count) => {
+  fetchClassDetails.mockResolvedValue({
+    data: { id: 1, title: 'Test Class', instructor: 'Inst', price: 100, cover_image: '', installments: count },
+  });
+  fetchPaymentMethods.mockResolvedValue([{ id: 1, name: 'Stripe', type: 'stripe' }]);
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  const checkbox = screen.getByLabelText(`Pay in ${count} monthly installments`);
+  fireEvent.click(checkbox);
+  const items = await screen.findAllByRole('listitem');
+  expect(items).toHaveLength(count);
+  expect(items[0].textContent).toContain((100 / count).toFixed(2));
 });

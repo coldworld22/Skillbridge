@@ -566,7 +566,14 @@ export default function CheckoutPage() {
     }
   };
 
-  const installments = 3;
+  const [installments, setInstallments] = useState(1);
+  useEffect(() => {
+    const count = Number(
+      existingPayment?.installments || itemInfo?.installments || 1
+    );
+    setInstallments(count);
+  }, [existingPayment, itemInfo]);
+
   const perInstallment = useMemo(
     () => finalPrice / installments,
     [finalPrice, installments]
@@ -577,7 +584,11 @@ export default function CheckoutPage() {
     return Array.from({ length: installments }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() + i);
-      return { number: i + 1, date: d.toLocaleDateString(), amount: amount.toFixed(2) };
+      return {
+        number: i + 1,
+        date: d.toLocaleDateString(),
+        amount: amount.toFixed(2),
+      };
     });
   }, [finalPrice, allowInstallments, installments]);
 
