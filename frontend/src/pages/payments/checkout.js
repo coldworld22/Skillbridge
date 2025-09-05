@@ -208,6 +208,7 @@ export default function CheckoutPage() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [couponId, setCouponId] = useState(null);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const finalPrice = useMemo(
@@ -345,6 +346,7 @@ export default function CheckoutPage() {
       return;
     }
     setPromoCode(formattedCode);
+    setPromoLoading(true);
     try {
       const data = await validateCode(formattedCode, itemType, itemId);
       const percent = data.discount_percent || 0;
@@ -362,6 +364,8 @@ export default function CheckoutPage() {
       } else {
         toast.error(t('promo_code_apply_failed'));
       }
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -654,8 +658,9 @@ export default function CheckoutPage() {
             />
             <button
               onClick={handleApplyPromo}
-              className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-            >{t('apply')}</button>
+              disabled={promoLoading}
+              className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >{promoLoading ? t('applying') : t('apply')}</button>
           </div>
         </div>
 
