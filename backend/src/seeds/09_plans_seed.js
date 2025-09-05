@@ -124,41 +124,6 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.basic,
-      feature_key: 'ads_max_ads',
-      value: '1',
-      description: 'Up to 1 active ad'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'ads_max_ad_duration',
-      value: '3',
-      description: 'Each ad runs for 3 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'ads_placements',
-      value: JSON.stringify(['dashboard']),
-      description: 'Dashboard placement only'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'ads_allow_branding',
-      value: 'false',
-      description: 'No custom branding'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
-      feature_key: 'ads_show_analytics',
-      value: 'false',
-      description: 'No analytics access'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.basic,
       feature_key: 'groups_create',
       value: 'false',
       description: 'Cannot create groups'
@@ -173,41 +138,6 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
-      feature_key: 'ads_max_ads',
-      value: '3',
-      description: 'Up to 3 active ads'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'ads_max_ad_duration',
-      value: '7',
-      description: 'Each ad runs for 7 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'ads_placements',
-      value: JSON.stringify(['dashboard','homepage']),
-      description: 'Dashboard & homepage placements'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'ads_allow_branding',
-      value: 'false',
-      description: 'No custom branding'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
-      feature_key: 'ads_show_analytics',
-      value: 'true',
-      description: 'Analytics access'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.regular,
       feature_key: 'groups_create',
       value: 'true',
       description: 'Can create groups'
@@ -218,41 +148,6 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: '5',
       description: 'Join up to 5 groups'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_max_ads',
-      value: '10',
-      description: 'Up to 10 active ads'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_max_ad_duration',
-      value: '30',
-      description: 'Each ad runs for 30 days'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_placements',
-      value: JSON.stringify(['dashboard','homepage','sidebar']),
-      description: 'All ad placements'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_allow_branding',
-      value: 'true',
-      description: 'Custom branding'
-    },
-    {
-      id: knex.raw('uuid_generate_v4()'),
-      plan_id: ids.prime,
-      feature_key: 'ads_show_analytics',
-      value: 'true',
-      description: 'Analytics access'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
