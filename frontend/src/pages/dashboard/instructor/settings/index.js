@@ -1,5 +1,6 @@
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import api from "@/services/api/api";
 import useSubscriptionStore from "@/store/subscriptionStore";
 
@@ -7,26 +8,38 @@ export default function InstructorSettingsPage() {
   const subscription = useSubscriptionStore((state) => state.plan);
   const loadingSub = useSubscriptionStore((state) => state.loading);
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
+  const [upgrading, setUpgrading] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
 
   const handleUpgrade = async () => {
+    setUpgrading(true);
     try {
       await api.post("/user-subscriptions/upgrade");
       await fetchSubscription();
+      toast.success("Subscription upgraded");
     } catch (err) {
+      toast.error("Failed to upgrade subscription");
       console.error("Upgrade failed", err);
+    } finally {
+      setUpgrading(false);
     }
   };
 
   const handleCancel = async () => {
+    setCanceling(true);
     try {
       await api.post("/user-subscriptions/cancel");
       await fetchSubscription();
+      toast.success("Subscription cancelled");
     } catch (err) {
+      toast.error("Failed to cancel subscription");
       console.error("Cancel failed", err);
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -54,13 +67,19 @@ export default function InstructorSettingsPage() {
               <div className="flex gap-4 pt-2">
                 <button
                   onClick={handleUpgrade}
-                  className="bg-yellow-500 px-4 py-2 rounded text-black font-medium hover:bg-yellow-600"
+                  disabled={upgrading}
+                  className={`bg-yellow-500 px-4 py-2 rounded text-black font-medium hover:bg-yellow-600 ${
+                    upgrading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   Upgrade
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="bg-red-500 px-4 py-2 rounded text-white font-medium hover:bg-red-600"
+                  disabled={canceling}
+                  className={`bg-red-500 px-4 py-2 rounded text-white font-medium hover:bg-red-600 ${
+                    canceling ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   Cancel
                 </button>
