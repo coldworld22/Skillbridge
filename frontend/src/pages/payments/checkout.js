@@ -18,6 +18,8 @@ import PayPalForm from '@/components/payments/forms/PayPalForm';
 import BankTransferForm from '@/components/payments/forms/BankTransferForm';
 import CryptoPaymentForm from '@/components/payments/forms/CryptoPaymentForm';
 import CardPaymentForm from '@/components/payments/forms/CardPaymentForm';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   FaCcStripe, FaPaypal, FaMoneyCheckAlt, FaUniversity,
   FaEthereum, FaFileInvoice, FaDownload, FaCheckCircle
@@ -25,8 +27,10 @@ import {
 import { useTranslation } from 'next-i18next';
 import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
+
 const iconMap = {
-  stripe: <FaCcStripe />,
+  stripe: <FaCcStripe />, 
   paypal: <FaPaypal />,
   moyasar: <FaMoneyCheckAlt />,
   paystack: <FaMoneyCheckAlt />,
@@ -695,15 +699,17 @@ export default function CheckoutPage() {
               finalPrice={finalPrice}
             />
           ) : (
-            <CardPaymentForm
-              onSubmit={handlePayment}
-              processing={paymentStatus === 'processing'}
-              allowInstallments={allowInstallments}
-              installments={installments}
-              perInstallment={perInstallment}
-              finalPrice={finalPrice}
-              selectedMethodLabel={selectedMethodLabel}
-            />
+            <Elements stripe={stripePromise}>
+              <CardPaymentForm
+                onSubmit={handlePayment}
+                processing={paymentStatus === 'processing'}
+                allowInstallments={allowInstallments}
+                installments={installments}
+                perInstallment={perInstallment}
+                finalPrice={finalPrice}
+                selectedMethodLabel={selectedMethodLabel}
+              />
+            </Elements>
           )}
         </div>
       </main>
