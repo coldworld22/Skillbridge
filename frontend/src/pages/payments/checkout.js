@@ -196,9 +196,13 @@ export default function CheckoutPage() {
     if (!router.isReady) return 'monthly';
     return router.query.interval === 'yearly' ? 'yearly' : 'monthly';
   }, [router.isReady, router.query.interval]);
-  const checkoutError = router.isReady && !resolvedItem
-    ? t('checkout_single_item_warning')
-    : '';
+  const [checkoutError, setCheckoutError] = useState('');
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (!resolvedItem) setCheckoutError(t('checkout_single_item_warning'));
+    else setCheckoutError('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, resolvedItem]);
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
   // Use the payment method "type" as identifier. Default to the method marked
@@ -226,6 +230,8 @@ export default function CheckoutPage() {
     () => filterEligibleMethods(methods, itemType),
     [methods, itemType]
   );
+
+  const noPaymentMethods = filteredMethods.length === 0 && finalPrice > 0;
 
   const selectedMethodObj = filteredMethods.find(
     (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
@@ -286,10 +292,13 @@ export default function CheckoutPage() {
         } else if (itemType === 'plan') {
           details = await fetchPlanDetails(itemId);
           const data = details?.data ?? details;
-          const price =
-            interval === 'yearly'
-              ? Number(data.price_yearly)
-              : Number(data.price_monthly);
+          const priceMonthly = parseFloat(data.price_monthly);
+          const priceYearly = parseFloat(data.price_yearly);
+          if (Number.isNaN(priceMonthly) || Number.isNaN(priceYearly)) {
+            if (active) setCheckoutError('Plan unavailable');
+            return;
+          }
+          const price = interval === 'yearly' ? priceYearly : priceMonthly;
           details = { ...data, title: data.name, price };
         } else {
           details = await fetchClassDetails(itemId);
@@ -303,6 +312,10 @@ export default function CheckoutPage() {
         }
       } catch (err) {
         console.error('Failed to load item', err);
+        if (itemType === 'plan' && active) {
+          setCheckoutError('Plan unavailable');
+        }
+        return;
       }
       const price =
         existingPayment?.amount ?? (Number((details?.data ?? details)?.price) || 0);
@@ -725,6 +738,16 @@ export default function CheckoutPage() {
           ) : paymentStatus === 'success' ? (
             <div className="text-green-400 text-center text-lg py-6">
               <FaCheckCircle className="inline mr-2 text-2xl" /> {t('payment_successful_redirecting')}
+            </div>
+          ) : noPaymentMethods ? (
+            <div className="text-center">
+              <p className="text-red-400 mb-4">No payment methods available for this plan</p>
+              <button
+                disabled
+                className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded opacity-50 cursor-not-allowed"
+              >
+                {`Pay $${finalPrice}`}
+              </button>
             </div>
           ) : selectedMethodIdentifier === 'paypal' ? (
             <PayPalForm
