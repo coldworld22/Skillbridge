@@ -122,6 +122,7 @@ export function filterEligibleMethods(methods, itemType) {
       const identifier = getMethodIdentifier(m).toLowerCase();
       return (
         identifier !== 'paypal' &&
+        identifier !== 'bank' &&
         !isCryptoMethod(identifier)
       );
     });
@@ -697,7 +698,7 @@ export default function CheckoutPage() {
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
-          ) : (
+          ) : selectedMethodIdentifier === 'stripe' ? (
             <Elements stripe={stripePromise}>
               <CardPaymentForm
                 onSubmit={handlePayment}
@@ -709,6 +710,16 @@ export default function CheckoutPage() {
                 selectedMethodLabel={selectedMethodLabel}
               />
             </Elements>
+          ) : (
+            <CardPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              allowInstallments={allowInstallments}
+              installments={installments}
+              perInstallment={perInstallment}
+              finalPrice={finalPrice}
+              selectedMethodLabel={selectedMethodLabel}
+            />
           )}
         </div>
       </main>
