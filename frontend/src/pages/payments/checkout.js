@@ -536,6 +536,11 @@ export default function CheckoutPage() {
     if (itemType === 'plan' && !payment) {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
+      if (eligible.length === 0) {
+        toast.error('No payment methods available for this plan');
+        setPaymentStatus('idle');
+        return;
+      }
       const defaultMethod = eligible[0];
       try {
         const payload = {
