@@ -24,6 +24,16 @@ describe('filterEligibleMethods', () => {
     expect(result.map((m) => m.name)).toEqual(['Stripe']);
   });
 
+  it('returns empty array when no eligible methods for plan', () => {
+    const onlyIneligible = [
+      { id: 1, name: 'PayPal', type: null, active: true },
+      { id: 2, name: 'Bank', type: 'bank', active: true },
+      { id: 3, name: 'USDT', type: 'usdt', active: true },
+    ];
+    const result = filterEligibleMethods(onlyIneligible, 'plan');
+    expect(result).toEqual([]);
+  });
+
   it('handles methods with non-string identifiers', () => {
     const weirdMethods = [
       { id: 6, name: 123, type: undefined, active: true },
