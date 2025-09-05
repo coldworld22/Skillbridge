@@ -27,7 +27,11 @@ import {
 import { useTranslation } from 'next-i18next';
 import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
+const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+const stripePromise =
+  typeof stripePublicKey === 'string' && stripePublicKey.trim()
+    ? loadStripe(stripePublicKey)
+    : null;
 
 const iconMap = {
   stripe: <FaCcStripe />,
@@ -358,10 +362,13 @@ export default function CheckoutPage() {
     .trim()
     .toLowerCase();
 
-  const filteredMethods = useMemo(
-    () => filterEligibleMethods(methods, itemType),
-    [methods, itemType]
-  );
+  const filteredMethods = useMemo(() => {
+    const eligible = filterEligibleMethods(methods, itemType);
+    if (stripePromise) return eligible;
+    return eligible.filter(
+      (m) => getMethodIdentifier(m).toLowerCase() !== 'stripe'
+    );
+  }, [methods, itemType, stripePromise]);
 
   const noPaymentMethods = filteredMethods.length === 0 && finalPrice > 0;
 
@@ -839,7 +846,7 @@ export default function CheckoutPage() {
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
-          ) : selectedMethodIdentifier === 'stripe' ? (
+          ) : selectedMethodIdentifier === 'stripe' && stripePromise ? (
             <Elements stripe={stripePromise}>
               <CardPaymentForm
                 onSubmit={handlePayment}
