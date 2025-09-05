@@ -121,7 +121,6 @@ export function filterEligibleMethods(methods, itemType) {
     return active.filter((m) => {
       const identifier = getMethodIdentifier(m).toLowerCase();
       return (
-        identifier !== 'bank' &&
         identifier !== 'paypal' &&
         !isCryptoMethod(identifier)
       );

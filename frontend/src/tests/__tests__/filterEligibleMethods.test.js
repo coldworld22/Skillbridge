@@ -19,8 +19,8 @@ describe('filterEligibleMethods', () => {
     ]);
   });
 
-  it('excludes bank, PayPal, and crypto for plan items', () => {
+  it('excludes PayPal and crypto for plan items but keeps bank', () => {
     const result = filterEligibleMethods(methods, 'plan');
-    expect(result.map((m) => m.name)).toEqual(['Stripe']);
+    expect(result.map((m) => m.name)).toEqual(['Stripe', 'Bank']);
   });
 });
