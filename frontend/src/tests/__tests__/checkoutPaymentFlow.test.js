@@ -268,7 +268,9 @@ test('processes plan card payments and redirects to billing for students', async
     isReady: true,
     push,
   });
-  const planDetails = { data: { id: 1, name: 'Starter Plan', price_monthly: 50 } };
+  const planDetails = {
+    data: { id: 1, name: 'Starter Plan', price_monthly: 50, price_yearly: 500 },
+  };
   fetchPlanDetails.mockResolvedValue(planDetails);
   fetchPaymentMethods.mockResolvedValue([{ id: 1, name: 'Stripe', type: 'stripe' }]);
   createPayment.mockResolvedValue({ status: 'paid' });
@@ -320,7 +322,7 @@ test('shows available payment methods for plans', async () => {
     push: jest.fn(),
   });
   fetchPlanDetails.mockResolvedValue({
-    data: { id: 1, name: 'Starter Plan', price_monthly: 50 },
+    data: { id: 1, name: 'Starter Plan', price_monthly: 50, price_yearly: 500 },
   });
   fetchPaymentMethods.mockResolvedValue([
     { id: 1, name: 'Stripe', type: 'stripe' },
@@ -335,6 +337,20 @@ test('shows available payment methods for plans', async () => {
   expect(screen.queryByText('USDT')).toBeNull();
   expect(await screen.findByText('Stripe')).toBeInTheDocument();
   expect(await screen.findByText('Bank')).toBeInTheDocument();
+});
+
+test('shows error when plan prices are invalid', async () => {
+  mockUseRouter.mockReturnValue({
+    query: { itemId: '1', itemType: 'plan' },
+    isReady: true,
+    push: jest.fn(),
+  });
+  fetchPlanDetails.mockResolvedValue({
+    data: { id: 1, name: 'Starter Plan', price_monthly: 'abc', price_yearly: null },
+  });
+  render(<CheckoutPage />);
+  expect(await screen.findByText('Plan unavailable')).toBeInTheDocument();
+  expect(fetchPaymentMethods).not.toHaveBeenCalled();
 });
 
 test('shows error when no payment method matches selection', async () => {
