@@ -7,6 +7,7 @@ import { createPayment } from '../../services/student/paymentService';
 import { fetchPlanDetails } from '../../services/public/planService';
 import { validateCode } from '../../services/couponService';
 import PaymentSuccessPage from '../../pages/payments/success';
+import { subscribeToPlan } from '../../services/instructor/subscriptionService';
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({
     t: (key, params) => {
@@ -333,8 +334,36 @@ test('shows available payment methods for plans', async () => {
   await screen.findByText('Checkout');
   expect(screen.queryByText('PayPal')).toBeNull();
   expect(screen.queryByText('USDT')).toBeNull();
+  expect(screen.queryByText('Bank')).toBeNull();
   expect(await screen.findByText('Stripe')).toBeInTheDocument();
-  expect(await screen.findByText('Bank')).toBeInTheDocument();
+});
+
+test('enrolls in free plan without payment', async () => {
+  jest.useFakeTimers();
+  const push = jest.fn();
+  mockUseRouter.mockReturnValue({
+    query: { itemId: '1', itemType: 'plan' },
+    isReady: true,
+    push,
+  });
+  fetchPlanDetails.mockResolvedValue({
+    data: { id: 1, name: 'Free Plan', price_monthly: 0 },
+  });
+  fetchPaymentMethods.mockResolvedValue([]);
+
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  const button = await screen.findByRole('button', { name: /enroll_for_free/i });
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(subscribeToPlan).toHaveBeenCalledWith(1, 'monthly')
+  );
+  jest.runAllTimers();
+  await waitFor(() =>
+    expect(push).toHaveBeenCalledWith('/payments/success?itemType=plan&itemId=1')
+  );
+  expect(createPayment).not.toHaveBeenCalled();
+  jest.useRealTimers();
 });
 
 test('shows error when no payment method matches selection', async () => {

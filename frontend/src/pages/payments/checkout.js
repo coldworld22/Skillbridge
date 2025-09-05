@@ -372,6 +372,22 @@ export default function CheckoutPage() {
 
   const completePayment = async (existingPayment) => {
     let payment = existingPayment;
+    if (itemType === 'plan' && finalPrice <= Number.EPSILON) {
+      setPaymentStatus('processing');
+      try {
+        await subscribeToPlan(itemInfo.id, interval);
+      } catch (err) {
+        console.error('Failed to subscribe to plan', err);
+        toast.error(t('payment_generic_failure'));
+        setPaymentStatus('idle');
+        return;
+      }
+      setPaymentStatus('success');
+      setTimeout(() => {
+        router.push(`/payments/success?itemType=${itemType}&itemId=${itemInfo.id}`);
+      }, 1500);
+      return;
+    }
     if (itemType === 'plan' && !payment) {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
@@ -462,6 +478,10 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async (_formData = {}) => {
+    if (finalPrice <= Number.EPSILON) {
+      await completePayment();
+      return;
+    }
     const method = filteredMethods.find(
       (m) => getMethodIdentifier(m).toLowerCase() === normalizedMethod
     );
