@@ -37,6 +37,12 @@ describe('resolveIconElement', () => {
     expect(el.type.name).toBe(FaMoneyCheckAlt.name);
   });
 
+  it('falls back to default icon when icon is not a string', async () => {
+    const { resolveIconElement, FaMoneyCheckAlt } = await loadModule();
+    const el = resolveIconElement({ icon: { url: 'icon.png' }, name: 'Custom' });
+    expect(el.type.name).toBe(FaMoneyCheckAlt.name);
+  });
+
   it('honors NEXT_PUBLIC_TRUSTED_ICON_HOSTS', async () => {
     process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS = 'example.com,assets.example.org';
     const { resolveIconElement, TrustedIcon, FaMoneyCheckAlt } = await loadModule();
