@@ -38,11 +38,16 @@ export default function PaymentSuccessPage() {
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
 
   const confirmPlanSubscription = async () => {
+    if (payment_id && paymentInfo?.status !== 'paid') return;
     try {
       let sub = await fetchMySubscription();
       let current = Array.isArray(sub) ? sub[0] : sub;
       if (!current || current.plan_id !== itemId) {
-        const { message } = await subscribeToPlan(itemId);
+        const { message } = await subscribeToPlan(
+          itemId,
+          undefined,
+          payment_id
+        );
         if (message) setBannerMessage(message);
         sub = await fetchMySubscription();
         current = Array.isArray(sub) ? sub[0] : sub;
@@ -64,6 +69,7 @@ export default function PaymentSuccessPage() {
 
     setFetchError(null);
 
+    let payment = null;
     try {
       if (itemType === 'class') {
         if (!payment_id) {
@@ -109,7 +115,6 @@ export default function PaymentSuccessPage() {
         } catch (_) {
           setItemInfo(null);
         }
-        await confirmPlanSubscription();
       }
 
       if (payment_id) {
@@ -118,7 +123,7 @@ export default function PaymentSuccessPage() {
             fetchMyPayments(),
             fetchInvoiceByPaymentId(payment_id),
           ]);
-          const payment = payments.find(
+          payment = payments.find(
             (p) => String(p.id) === String(payment_id)
           );
           setPaymentInfo(payment || null);
@@ -126,6 +131,10 @@ export default function PaymentSuccessPage() {
         } catch (_) {
           setFetchError('Failed to load payment details');
         }
+      }
+
+      if (itemType === 'plan' && (!payment_id || payment?.status === 'paid')) {
+        await confirmPlanSubscription();
       }
     } finally {
       await fetchLibrary();
