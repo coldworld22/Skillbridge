@@ -326,8 +326,8 @@ test('shows available payment methods for plans', async () => {
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
   expect(screen.queryByText('PayPal')).toBeNull();
-  expect(screen.queryByText('Bank')).toBeNull();
   expect(await screen.findByText('Stripe')).toBeInTheDocument();
+  expect(await screen.findByText('Bank')).toBeInTheDocument();
 });
 
 test('shows error when no payment method matches selection', async () => {

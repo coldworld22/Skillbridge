@@ -30,7 +30,7 @@ import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
 const iconMap = {
-  stripe: <FaCcStripe />, 
+  stripe: <FaCcStripe />,
   paypal: <FaPaypal />,
   moyasar: <FaMoneyCheckAlt />,
   paystack: <FaMoneyCheckAlt />,
@@ -42,7 +42,10 @@ const iconMap = {
   nowpayments: <FaEthereum />,
 };
 
-export const TRUSTED_ICON_HOSTS = ['skillbridge.com', 'cdn.skillbridge.com'];
+const envHosts = process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS;
+export const TRUSTED_ICON_HOSTS = envHosts
+  ? envHosts.split(',').map((h) => h.trim()).filter(Boolean)
+  : ['skillbridge.com', 'cdn.skillbridge.com'];
 
 function isTrustedIcon(url) {
   try {
