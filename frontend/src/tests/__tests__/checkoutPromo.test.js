@@ -117,6 +117,27 @@ test('handles network failure when applying promo code', async () => {
   });
 });
 
+test('disables apply button while processing promo code', async () => {
+  let resolve;
+  validateCode.mockImplementation(
+    () =>
+      new Promise((res) => {
+        resolve = res;
+      })
+  );
+  render(<CheckoutPage />);
+  await screen.findByText('checkout');
+  fireEvent.change(screen.getByPlaceholderText('enter_promo_code'), {
+    target: { value: 'SAVE10' },
+  });
+  const applyButton = screen.getByText('apply');
+  fireEvent.click(applyButton);
+  await waitFor(() => expect(applyButton).toBeDisabled());
+  expect(screen.getByText('applying')).toBeInTheDocument();
+  resolve({ discount_percent: 10 });
+  await waitFor(() => expect(applyButton).not.toBeDisabled());
+});
+
 test('skips fetching payment methods for free items', async () => {
   fetchClassDetails.mockResolvedValueOnce({
     data: {

@@ -160,6 +160,7 @@ test('adjusts inputs based on payment selection and submits bank reference', asy
   initiateBankPayment.mockResolvedValue({ id: 42 });
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
+  expect(screen.getByTestId('elements-wrapper')).toBeInTheDocument();
   expect(screen.getByTestId('card-element')).toBeInTheDocument();
   fireEvent.click(screen.getByText('PayPal'));
   expect(screen.queryByTestId('card-element')).toBeNull();
@@ -190,6 +191,30 @@ test('completes payment for unhandled methods on success', async () => {
   await waitFor(() => expect(global.mockStripeCreateToken).toHaveBeenCalled());
   await waitFor(() => expect(createPayment).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_123' })));
   expect(await screen.findByText(/payment_successful_redirecting/i)).toBeInTheDocument();
+});
+
+test('renders card form without Elements for non-stripe processors', async () => {
+  fetchPaymentMethods.mockResolvedValue([
+    { id: 1, name: 'Paystack', type: 'paystack' },
+  ]);
+  createPayment.mockResolvedValue({ status: 'paid' });
+  render(<CheckoutPage />);
+  await screen.findByText('Checkout');
+  expect(screen.queryByTestId('elements-wrapper')).toBeNull();
+  fireEvent.change(screen.getByPlaceholderText('Full Name'), {
+    target: { value: 'John Doe' },
+  });
+  fireEvent.change(screen.getByPlaceholderText('Email Address'), {
+    target: { value: 'john@example.com' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: /Pay \$100 with Paystack/i })
+  );
+  await waitFor(() =>
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ token: 'tok_123' })
+    )
+  );
 });
 
 test('shows error when unhandled payment fails', async () => {

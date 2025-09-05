@@ -67,7 +67,12 @@ set:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
+NEXT_PUBLIC_TRUSTED_ICON_HOSTS=skillbridge.com,cdn.skillbridge.com
 ```
+
+`NEXT_PUBLIC_TRUSTED_ICON_HOSTS` defines a comma-separated list of allowed
+hosts for payment method icons. URLs outside this list will fall back to a
+default icon.
 
 ## 3. Install dependencies (optional)
 

@@ -30,7 +30,7 @@ import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
 const iconMap = {
-  stripe: <FaCcStripe />, 
+  stripe: <FaCcStripe />,
   paypal: <FaPaypal />,
   moyasar: <FaMoneyCheckAlt />,
   paystack: <FaMoneyCheckAlt />,
@@ -42,7 +42,10 @@ const iconMap = {
   nowpayments: <FaEthereum />,
 };
 
-export const TRUSTED_ICON_HOSTS = ['skillbridge.com', 'cdn.skillbridge.com'];
+const envHosts = process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS;
+export const TRUSTED_ICON_HOSTS = envHosts
+  ? envHosts.split(',').map((h) => h.trim()).filter(Boolean)
+  : ['skillbridge.com', 'cdn.skillbridge.com'];
 
 function isTrustedIcon(url) {
   try {
@@ -93,8 +96,16 @@ export function resolveIconElement(method) {
 }
 
 function getMethodIdentifier(method) {
-  if (method?.type && method.type.trim()) return method.type.trim();
-  if (method?.name && method.name.trim()) return method.name.trim();
+  const type = method?.type;
+  if (type !== undefined && type !== null) {
+    const typeStr = String(type).trim();
+    if (typeStr) return typeStr;
+  }
+  const name = method?.name;
+  if (name !== undefined && name !== null) {
+    const nameStr = String(name).trim();
+    if (nameStr) return nameStr;
+  }
   return '';
 }
 
@@ -122,6 +133,7 @@ export function filterEligibleMethods(methods, itemType) {
       const identifier = getMethodIdentifier(m).toLowerCase();
       return (
         identifier !== 'paypal' &&
+        identifier !== 'bank' &&
         !isCryptoMethod(identifier)
       );
     });
@@ -196,6 +208,7 @@ export default function CheckoutPage() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [couponId, setCouponId] = useState(null);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle');
   const [allowInstallments, setAllowInstallments] = useState(false);
   const finalPrice = useMemo(
@@ -333,6 +346,7 @@ export default function CheckoutPage() {
       return;
     }
     setPromoCode(formattedCode);
+    setPromoLoading(true);
     try {
       const data = await validateCode(formattedCode, itemType, itemId);
       const percent = data.discount_percent || 0;
@@ -350,6 +364,8 @@ export default function CheckoutPage() {
       } else {
         toast.error(t('promo_code_apply_failed'));
       }
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -653,8 +669,9 @@ export default function CheckoutPage() {
             />
             <button
               onClick={handleApplyPromo}
-              className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600"
-            >{t('apply')}</button>
+              disabled={promoLoading}
+              className="px-4 bg-yellow-500 text-gray-900 font-bold rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >{promoLoading ? t('applying') : t('apply')}</button>
           </div>
         </div>
 
@@ -708,7 +725,7 @@ export default function CheckoutPage() {
               processing={paymentStatus === 'processing'}
               finalPrice={finalPrice}
             />
-          ) : (
+          ) : selectedMethodIdentifier === 'stripe' ? (
             <Elements stripe={stripePromise}>
               <CardPaymentForm
                 onSubmit={handlePayment}
@@ -720,6 +737,16 @@ export default function CheckoutPage() {
                 selectedMethodLabel={selectedMethodLabel}
               />
             </Elements>
+          ) : (
+            <CardPaymentForm
+              onSubmit={handlePayment}
+              processing={paymentStatus === 'processing'}
+              allowInstallments={allowInstallments}
+              installments={installments}
+              perInstallment={perInstallment}
+              finalPrice={finalPrice}
+              selectedMethodLabel={selectedMethodLabel}
+            />
           )}
         </div>
       </main>
