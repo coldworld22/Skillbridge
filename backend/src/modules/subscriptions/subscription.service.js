@@ -50,3 +50,27 @@ exports.getActiveByUser = (user_id, role) => {
 
   return query;
 };
+
+exports.upgradeSubscription = async (user_id) => {
+  return db.transaction(async (trx) => {
+    const existing = await trx("user_subscriptions")
+      .where({ user_id, status: "active" })
+      .orderBy("end_date", "desc")
+      .first();
+    if (!existing) return null;
+    const end = addInterval(existing.end_date || new Date(), "yearly");
+    const [row] = await trx("user_subscriptions")
+      .where({ id: existing.id })
+      .update({ end_date: end })
+      .returning("*");
+    return row;
+  });
+};
+
+exports.cancelSubscription = async (user_id) => {
+  const [row] = await db("user_subscriptions")
+    .where({ user_id, status: "active" })
+    .update({ status: "cancelled", end_date: new Date() })
+    .returning("*");
+  return row;
+};

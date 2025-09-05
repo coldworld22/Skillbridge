@@ -4,6 +4,8 @@ const express = require('express');
 jest.mock('../src/modules/subscriptions/subscription.service', () => ({
   getActiveByUser: jest.fn(),
   createOrRenewSubscription: jest.fn(),
+  upgradeSubscription: jest.fn(),
+  cancelSubscription: jest.fn(),
 }));
 
 jest.mock('../src/modules/payments/payments.service', () => ({
@@ -67,6 +69,48 @@ describe('POST /api/user-subscriptions', () => {
     const res = await request(app)
       .post('/api/user-subscriptions')
       .send({ plan_id: 'p1', payment_id: 'bad' });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/user-subscriptions/upgrade', () => {
+  it('upgrades an active subscription', async () => {
+    const mock = { id: 's1', plan_id: 'p1' };
+    service.upgradeSubscription.mockResolvedValue(mock);
+
+    const res = await request(app).post('/api/user-subscriptions/upgrade');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(service.upgradeSubscription).toHaveBeenCalledWith('user1');
+  });
+
+  it('returns 400 if no active subscription to upgrade', async () => {
+    service.upgradeSubscription.mockResolvedValue(null);
+
+    const res = await request(app).post('/api/user-subscriptions/upgrade');
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/user-subscriptions/cancel', () => {
+  it('cancels an active subscription', async () => {
+    const mock = { id: 's1', status: 'cancelled' };
+    service.cancelSubscription.mockResolvedValue(mock);
+
+    const res = await request(app).post('/api/user-subscriptions/cancel');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(mock);
+    expect(service.cancelSubscription).toHaveBeenCalledWith('user1');
+  });
+
+  it('returns 400 if no active subscription to cancel', async () => {
+    service.cancelSubscription.mockResolvedValue(null);
+
+    const res = await request(app).post('/api/user-subscriptions/cancel');
 
     expect(res.status).toBe(400);
   });

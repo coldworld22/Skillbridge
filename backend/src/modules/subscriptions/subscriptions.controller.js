@@ -36,3 +36,19 @@ exports.createOrRenewSubscription = catchAsync(async (req, res) => {
   });
   sendSuccess(res, subscription);
 });
+
+exports.upgradeSubscription = catchAsync(async (req, res) => {
+  const subscription = await service.upgradeSubscription(req.user.id);
+  if (!subscription) {
+    throw new AppError("No active subscription to upgrade", 400);
+  }
+  sendSuccess(res, subscription);
+});
+
+exports.cancelSubscription = catchAsync(async (req, res) => {
+  const subscription = await service.cancelSubscription(req.user.id);
+  if (!subscription) {
+    throw new AppError("No active subscription to cancel", 400);
+  }
+  sendSuccess(res, subscription);
+});
