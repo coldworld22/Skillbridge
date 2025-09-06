@@ -1,4 +1,12 @@
+import { render, screen } from '@testing-library/react';
+import { TrustedIcon } from '@/pages/payments/checkout';
+
 describe('resolveIconElement', () => {
+  it('passes alt text to fallback icon', () => {
+    render(<TrustedIcon alt="Custom" />);
+    expect(screen.getByLabelText('Custom')).toBeInTheDocument();
+  });
+
   const loadModule = async () => {
     jest.resetModules();
     const mod = await import('@/pages/payments/checkout');
