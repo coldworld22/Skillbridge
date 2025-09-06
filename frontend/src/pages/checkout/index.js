@@ -5,7 +5,7 @@ export default function CheckoutRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/payments/checkout' + window.location.search);
+    router.replace({ pathname: '/payments/checkout', query: router.query });
   }, [router]);
 
   return <p>Redirecting…</p>;

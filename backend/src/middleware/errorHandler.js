@@ -1,5 +1,6 @@
 // 📁 src/middleware/errorHandler.js
 const multer = require('multer');
+const logger = require("../utils/logger");
 
 module.exports = (err, req, res, next) => {
   // The CORS middleware defined in `src/server.js` already sets
@@ -26,7 +27,6 @@ module.exports = (err, req, res, next) => {
     message = 'Payload too large';
   }
 
-  const logger = require("../utils/logger");
   logger.error(`❌ ${status} - ${message}`);
   res.status(status).json({ message });
 };
