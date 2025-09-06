@@ -29,7 +29,7 @@ describe('library routes', () => {
     jest.clearAllMocks();
     planService.getPlanById.mockResolvedValue({
       id: 'plan1',
-      features: [{ feature_key: 'tutorials_download', value: 'true' }],
+      features: [{ feature_key: 'books_download', value: 'true' }],
     });
     service.getBookForDownload.mockResolvedValue({ pdf_url: '/file.pdf', title: 'Book' });
   });
@@ -37,7 +37,7 @@ describe('library routes', () => {
   test('blocks download when feature disabled', async () => {
     planService.getPlanById.mockResolvedValueOnce({
       id: 'plan1',
-      features: [{ feature_key: 'tutorials_download', value: 'false' }],
+      features: [{ feature_key: 'books_download', value: 'false' }],
     });
     const res = await request(app).get('/library/download/1');
     expect(res.statusCode).toBe(403);

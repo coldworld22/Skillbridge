@@ -29,7 +29,7 @@ jest.mock('../../services/student/invoiceService', () => ({
 
 jest.mock('../../services/bookService', () => ({ fetchBook: jest.fn() }));
 jest.mock('../../services/public/planService', () => ({ fetchPlanDetails: jest.fn() }));
-jest.mock('../../services/instructor/subscriptionService', () => ({
+jest.mock('../../services/subscriptionService', () => ({
   subscribeToPlan: jest.fn(),
   fetchMySubscription: jest.fn(),
 }));

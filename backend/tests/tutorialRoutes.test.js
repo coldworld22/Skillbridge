@@ -20,6 +20,7 @@ jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   getAssignmentCount: jest.fn(),
   recordTutorialView: jest.fn(),
   getTutorialViewCount: jest.fn(),
+  countPublishedTutorials: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/tutorials/certificate/certificate.service', () => ({
