@@ -5,6 +5,7 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
+const planRevenue = require("../../../payments/helpers/planRevenue");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -53,6 +54,21 @@ exports.enroll = catchAsync(async (req, res) => {
           usage_count: 1,
         });
       }
+
+      await planRevenue.calculateInstructorAmount(
+        activePlanId,
+        tutorialId,
+        trx,
+        "tutorial"
+      );
+
+      await trx("payments").insert({
+        user_id,
+        item_id: tutorialId,
+        item_type: "tutorial",
+        source: "subscription",
+        amount: 0,
+      });
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })
