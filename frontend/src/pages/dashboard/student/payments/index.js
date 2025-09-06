@@ -4,8 +4,14 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { FaCreditCard, FaClock, FaCheckCircle, FaFileInvoice } from "react-icons/fa";
 import { fetchMyPayments, confirmPayment, uploadReceipt } from "@/services/student/paymentService";
+import { useTranslation, Trans } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function StudentPaymentsPage() {
+  const { t } = useTranslation("dashboard", {
+    keyPrefix: "studentPaymentsPage",
+  });
   const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [reference, setReference] = useState("");
@@ -56,13 +62,13 @@ export default function StudentPaymentsPage() {
       setReceipt(null);
     } catch (err) {
       console.error("Failed to confirm payment", err);
-      alert("Failed to confirm payment");
+      alert(t("confirm_payment_failed"));
     }
   };
 
   const downloadInvoicePDF = async (id) => {
     const element = document.getElementById(`invoice-${id}`);
-    if (!element) return alert("Invoice not found");
+    if (!element) return alert(t("invoice_not_found"));
   
     try {
       const canvas = await html2canvas(element, {
@@ -81,7 +87,7 @@ export default function StudentPaymentsPage() {
       pdf.save(`invoice-${id}.pdf`);
     } catch (err) {
       console.error("Failed to generate PDF:", err);
-      alert("❌ Failed to generate invoice. Please try again.");
+      alert(t("invoice_failed"));
     }
   };
   
@@ -89,27 +95,27 @@ export default function StudentPaymentsPage() {
   return (
     <StudentLayout>
       <div className="p-6 max-w-6xl mx-auto space-y-6 text-gray-800">
-        <h1 className="text-3xl font-bold text-yellow-500">💳 Payment History</h1>
+        <h1 className="text-3xl font-bold text-yellow-500">{t("title")}</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow flex items-center gap-4">
             <FaCheckCircle className="text-2xl text-green-500" />
             <div>
-              <p className="text-sm text-gray-500">Total Paid</p>
+              <p className="text-sm text-gray-500">{t("total_paid")}</p>
               <h2 className="text-xl font-semibold">${totalPaid}</h2>
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow flex items-center gap-4">
             <FaClock className="text-2xl text-yellow-500" />
             <div>
-              <p className="text-sm text-gray-500">Pending Payments</p>
+              <p className="text-sm text-gray-500">{t("pending_payments")}</p>
               <h2 className="text-xl font-semibold">{pending}</h2>
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow flex items-center gap-4">
             <FaCreditCard className="text-2xl text-blue-500" />
             <div>
-              <p className="text-sm text-gray-500">Total Classes</p>
+              <p className="text-sm text-gray-500">{t("total_classes")}</p>
               <h2 className="text-xl font-semibold">{payments.length}</h2>
             </div>
           </div>
@@ -119,13 +125,13 @@ export default function StudentPaymentsPage() {
           <table className="w-full table-auto text-sm">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3">Class</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Action</th>
-                <th className="p-3">Invoice</th>
+                <th className="p-3">{t("class")}</th>
+                <th className="p-3">{t("amount")}</th>
+                <th className="p-3">{t("method")}</th>
+                <th className="p-3">{t("date")}</th>
+                <th className="p-3">{t("status")}</th>
+                <th className="p-3">{t("action")}</th>
+                <th className="p-3">{t("invoice")}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +140,9 @@ export default function StudentPaymentsPage() {
                   <td className="p-3 font-medium">{p.class_title || p.item_id}</td>
                   <td className="p-3">${p.amount}</td>
                   <td className="p-3">{p.method_name || "-"}</td>
-                  <td className="p-3">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}</td>
+                  <td className="p-3">
+                    {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "-"}
+                  </td>
                   <td
                     className={`p-3 font-medium ${
                       p.status === "awaiting_approval"
@@ -144,12 +152,7 @@ export default function StudentPaymentsPage() {
                         : "text-yellow-600"
                     }`}
                   >
-                    {p.status
-                      ? p.status
-                          .split("_")
-                          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-                          .join(" ")
-                      : ""}
+                    {t(`status_labels.${p.status}`)}
                   </td>
                   <td className="p-3">
                     {p.status === "pending_payment" ? (
@@ -157,10 +160,12 @@ export default function StudentPaymentsPage() {
                         onClick={() => setSelectedPayment(p)}
                         className="text-blue-600 hover:underline"
                       >
-                        I Paid
+                        {t("i_paid")}
                       </button>
                     ) : (
-                      <span className="text-gray-500">Awaiting Approval</span>
+                      <span className="text-gray-500">
+                        {t("awaiting_approval")}
+                      </span>
                     )}
                   </td>
                   <td className="p-3">
@@ -168,7 +173,7 @@ export default function StudentPaymentsPage() {
                       onClick={() => downloadInvoicePDF(p.id)}
                       className="text-blue-600 hover:underline flex items-center gap-1 text-xs"
                     >
-                      <FaFileInvoice /> Download
+                      <FaFileInvoice /> {t("download")}
                     </button>
                     <div id={`invoice-${p.id}`} className="hidden">
                       <div className="p-4 w-[600px] bg-white text-black">
@@ -189,19 +194,32 @@ export default function StudentPaymentsPage() {
         </div>
 
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md text-sm text-yellow-800">
-          For any payment issues, contact <a href="mailto:support@skillbridge.com" className="underline font-medium">support@skillbridge.com</a>
+          <Trans
+            t={t}
+            i18nKey="payment_issues"
+            components={{
+              a: (
+                <a
+                  href="mailto:support@skillbridge.com"
+                  className="underline font-medium"
+                />
+              ),
+            }}
+          />
         </div>
 
         {selectedPayment && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
             <div className="bg-white p-6 rounded shadow max-w-sm w-full">
-              <h2 className="text-lg font-semibold mb-4">Confirm Bank Payment</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {t("confirm_bank_payment")}
+              </h2>
               <form onSubmit={handleConfirm} className="space-y-3">
                 <input
                   type="text"
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
-                  placeholder="Transaction reference"
+                  placeholder={t("reference_placeholder")}
                   className="w-full border rounded p-2"
                   required
                 />
@@ -216,13 +234,13 @@ export default function StudentPaymentsPage() {
                     onClick={() => setSelectedPayment(null)}
                     className="px-3 py-1 rounded bg-gray-200"
                   >
-                    Cancel
+                    {t("cancel")}
                   </button>
                   <button
                     type="submit"
                     className="px-3 py-1 rounded bg-yellow-500 text-white"
                   >
-                    Submit
+                    {t("submit")}
                   </button>
                 </div>
               </form>
@@ -232,4 +250,12 @@ export default function StudentPaymentsPage() {
       </div>
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
