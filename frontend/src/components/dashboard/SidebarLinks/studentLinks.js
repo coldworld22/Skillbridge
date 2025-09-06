@@ -24,54 +24,54 @@ import {
 
 export const studentNavLinks = [
   {
-    title: 'Overview',
+    title: 'overview',
     items: [
-      { label: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
-      { label: 'Go to Website', href: '/website', icon: Home },
+      { label: 'dashboard', href: '/dashboard/student', icon: LayoutDashboard },
+      { label: 'go_to_website', href: '/website', icon: Home },
     ]
   },
   {
-    title: 'Learning',
+    title: 'learning',
     items: [
-      { label: 'My Classes', href: '/dashboard/student/online-classes', icon: BookOpen },
-      { label: 'My Tutorials', href: '/dashboard/student/tutorials', icon: Brain },
-      { label: 'My Books', href: '/dashboard/student/books', icon: Book },
-      { label: 'Wishlist', href: '/dashboard/student/wishlist', icon: Heart },
-      { label: 'Favorite Tutorials', href: '/dashboard/student/tutorials/favorites', icon: Star },
-      { label: 'Assignments', href: '/dashboard/student/assignments', icon: FileText },
-      { label: 'Certificates', href: '/dashboard/student/certificates', icon: GraduationCap },
+      { label: 'my_classes', href: '/dashboard/student/online-classes', icon: BookOpen },
+      { label: 'my_tutorials', href: '/dashboard/student/tutorials', icon: Brain },
+      { label: 'my_books', href: '/dashboard/student/books', icon: Book },
+      { label: 'wishlist', href: '/dashboard/student/wishlist', icon: Heart },
+      { label: 'favorite_tutorials', href: '/dashboard/student/tutorials/favorites', icon: Star },
+      { label: 'assignments', href: '/dashboard/student/assignments', icon: FileText },
+      { label: 'certificates', href: '/dashboard/student/certificates', icon: GraduationCap },
     ]
   },
   {
-    title: 'Instructors & Bookings',
+    title: 'instructors_bookings',
     items: [
-      { label: 'Instructors', href: '/dashboard/student/instructors', icon: User },
-      { label: 'My Bookings', href: '/dashboard/student/bookings', icon: CalendarCheck2 },
-      { label: 'Messages', href: '/messages', icon: MessageSquareMore },
+      { label: 'instructors', href: '/dashboard/student/instructors', icon: User },
+      { label: 'my_bookings', href: '/dashboard/student/bookings', icon: CalendarCheck2 },
+      { label: 'messages', href: '/messages', icon: MessageSquareMore },
     ]
   },
   {
-    title: 'Offers & Groups',
+    title: 'offers_groups',
     items: [
-      { label: 'Offers', href: '/dashboard/student/offers', icon: ClipboardList },
-      { label: 'Explore Groups', href: '/dashboard/student/groups/explore', icon: Users },
-      { label: 'My Groups', href: '/dashboard/student/groups/my-groups', icon: Users2 },
+      { label: 'offers', href: '/dashboard/student/offers', icon: ClipboardList },
+      { label: 'explore_groups', href: '/dashboard/student/groups/explore', icon: Users },
+      { label: 'my_groups', href: '/dashboard/student/groups/my-groups', icon: Users2 },
     ]
   },
   {
-    title: 'Payments & Social',
+    title: 'payments_social',
     items: [
-      { label: 'Payments', href: '/dashboard/student/payments', icon: CreditCard },
-      { label: 'Community', href: '/dashboard/student/community', icon: UsersRound },
-      { label: 'My Reviews', href: '/dashboard/student/reviews', icon: FileSignature },
+      { label: 'payments', href: '/dashboard/student/payments', icon: CreditCard },
+      { label: 'community', href: '/dashboard/student/community', icon: UsersRound },
+      { label: 'my_reviews', href: '/dashboard/student/reviews', icon: FileSignature },
     ]
   },
   {
-    title: 'Account',
+    title: 'account',
     items: [
-      { label: 'Profile', href: '/dashboard/student/profile', icon: User },
-      { label: 'Support', href: '/dashboard/student/support', icon: LifeBuoy },
-      { label: 'Settings', href: '/dashboard/student/settings', icon: Settings },
+      { label: 'profile', href: '/dashboard/student/profile', icon: User },
+      { label: 'support', href: '/dashboard/student/support', icon: LifeBuoy },
+      { label: 'settings', href: '/dashboard/student/settings', icon: Settings },
     ]
   }
 ];
