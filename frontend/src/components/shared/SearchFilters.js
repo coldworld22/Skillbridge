@@ -1,5 +1,14 @@
 const SearchFilters = ({ selected, onChange }) => {
-    const categories = ["all", "course", "instructor", "community", "nft"];
+    const categories = [
+      "all",
+      "classes",
+      "tutorials",
+      "books",
+      "instructors",
+      "offers",
+      "community",
+      "blog",
+    ];
   
     return (
       <div className="flex gap-3 my-4">
