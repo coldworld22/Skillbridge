@@ -550,7 +550,7 @@ export default function CheckoutPage() {
       setPaymentStatus('processing');
       const eligible = filterEligibleMethods(methods, itemType);
       if (eligible.length === 0) {
-        toast.error('No payment methods available for this plan');
+        toast.error(t('no_payment_methods_plan'));
         setPaymentStatus('idle');
         return;
       }
@@ -830,7 +830,7 @@ export default function CheckoutPage() {
             </div>
           ) : noPaymentMethods ? (
             <div className="text-center">
-              <p className="text-red-400 mb-4">No payment methods available for this plan</p>
+              <p className="text-red-400 mb-4">{t('no_payment_methods_plan')}</p>
               <button
                 disabled
                 className="px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded opacity-50 cursor-not-allowed"

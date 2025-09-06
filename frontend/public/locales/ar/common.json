@@ -104,5 +104,6 @@
   "swift_code": "SWIFT Code",
   "branch_address": "Branch Address",
   "payment_reference_optional": "Reference / Notes (optional)",
-  "payment_receipt_optional": "Payment Receipt (optional)"
+  "payment_receipt_optional": "Payment Receipt (optional)",
+  "no_payment_methods_plan": "لا توجد طرق دفع متاحة لهذه الخطة"
 }
