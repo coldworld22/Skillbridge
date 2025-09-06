@@ -76,7 +76,7 @@ function isTrustedIcon(url) {
 
 export function TrustedIcon({ src, alt }) {
   const [error, setError] = useState(false);
-  if (!src || error) return <FaMoneyCheckAlt />;
+  if (!src || error) return <FaMoneyCheckAlt aria-label={alt} role="img" />;
   return (
     <img
       src={src}
