@@ -14,7 +14,7 @@ import { studentNavLinks } from './SidebarLinks/studentLinks';
 
 export default function Sidebar({ role = 'admin' }) {
   const router = useRouter();
-  const { t } = useTranslation('dashboard', { keyPrefix: 'sidebar' });
+  const { t } = useTranslation('dashboard');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const settings = useAppConfigStore((state) => state.settings);
@@ -59,7 +59,7 @@ export default function Sidebar({ role = 'admin' }) {
           {navLinks.map(({ title, items }) => (
             <div key={title} className="mb-4">
               <h3 className="text-xs font-semibold text-yellow-500 dark:text-yellow-400 uppercase tracking-wide px-4 mb-1 flex items-center gap-1">
-                {t(title)} <Plus size={14} />
+                {t(`sidebar.${title}`)} <Plus size={14} />
               </h3>
               <div className="space-y-1">
                 {items.map(({ label, href, icon: Icon, isDropdown, dropdown }) => {
@@ -74,7 +74,7 @@ export default function Sidebar({ role = 'admin' }) {
                         >
                           <div className="flex items-center gap-3">
                             <Icon className="w-4 h-4" />
-                            {t(label)}
+                            {t(`sidebar.${label}`)}
                           </div>
                           <ChevronDown className={`w-4 h-4 transform transition-transform ${activeDropdown === label ? 'rotate-180' : ''}`} />
                         </div>
@@ -90,7 +90,7 @@ export default function Sidebar({ role = 'admin' }) {
                                     }`}
                                 >
                                   <SubIcon className="w-4 h-4" />
-                                  {t(label)}
+                                  {t(`sidebar.${label}`)}
                                 </a>
                               </Link>
                             ))}
@@ -106,7 +106,7 @@ export default function Sidebar({ role = 'admin' }) {
                         className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'bg-yellow-400 text-white shadow-md' : 'text-gray-700 dark:text-gray-300'}`}
                       >
                         <Icon className="w-4 h-4" />
-                        {t(label)}
+                        {t(`sidebar.${label}`)}
                       </a>
                     </Link>
                   );

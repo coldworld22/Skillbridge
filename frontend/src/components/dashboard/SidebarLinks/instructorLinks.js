@@ -26,75 +26,75 @@ import {
 
 export const instructorNavLinks = [
   {
-    title: 'Overview',
+    title: 'overview',
     items: [
-      { label: 'Dashboard', href: '/dashboard/instructor', icon: LayoutDashboard },
-      { label: 'Go to Website', href: '/website', icon: Home },
+      { label: 'dashboard', href: '/dashboard/instructor', icon: LayoutDashboard },
+      { label: 'go_to_website', href: '/website', icon: Home },
     ]
   },
   {
-    title: 'Online Classes',
+    title: 'online_classes',
     items: [
-      { label: 'Create Class', href: '/dashboard/instructor/online-classes/create', icon: PlusCircle },
-      { label: 'My Classes', href: '/dashboard/instructor/online-classes', icon: BookOpen },
+      { label: 'create_class', href: '/dashboard/instructor/online-classes/create', icon: PlusCircle },
+      { label: 'my_classes', href: '/dashboard/instructor/online-classes', icon: BookOpen },
     ]
   },
   {
-    title: 'Tutorials',
+    title: 'tutorials',
     items: [
-      { label: 'My Tutorials', href: '/dashboard/instructor/tutorials', icon: Brain },
-      { label: 'Create Tutorial', href: '/dashboard/instructor/tutorials/create', icon: PlusCircle },
+      { label: 'my_tutorials', href: '/dashboard/instructor/tutorials', icon: Brain },
+      { label: 'create_tutorial', href: '/dashboard/instructor/tutorials/create', icon: PlusCircle },
     ]
   },
   {
-    title: 'Books',
+    title: 'books',
     items: [
-      { label: 'Create Book', href: '/dashboard/instructor/books/create', icon: PlusCircle },
-      { label: 'My Books', href: '/dashboard/instructor/books', icon: Book },
+      { label: 'create_book', href: '/dashboard/instructor/books/create', icon: PlusCircle },
+      { label: 'my_books', href: '/dashboard/instructor/books', icon: Book },
     ]
   },
   {
-    title: 'Bookings',
+    title: 'bookings',
     items: [
-      { label: 'Requests', href: '/dashboard/instructor/requests', icon: MailOpen },
-      { label: 'Schedule', href: '/dashboard/instructor/schedule', icon: CalendarCheck2 },
-      { label: 'Bookings', href: '/dashboard/instructor/bookings', icon: CalendarCheck2 },
-      { label: 'Availability', href: '/dashboard/instructor/availability', icon: CalendarRange },
-      { label: 'Messages', href: '/messages', icon: MessageCircle },
-      { label: 'Reviews', href: '/dashboard/instructor/reviews', icon: Star },
+      { label: 'requests', href: '/dashboard/instructor/requests', icon: MailOpen },
+      { label: 'schedule', href: '/dashboard/instructor/schedule', icon: CalendarCheck2 },
+      { label: 'bookings', href: '/dashboard/instructor/bookings', icon: CalendarCheck2 },
+      { label: 'availability', href: '/dashboard/instructor/availability', icon: CalendarRange },
+      { label: 'messages', href: '/messages', icon: MessageCircle },
+      { label: 'reviews', href: '/dashboard/instructor/reviews', icon: Star },
     ]
   },
   {
-    title: 'Teaching & Students',
+    title: 'teaching_students',
     items: [
-      { label: 'Assignments', href: '/dashboard/instructor/assignments', icon: FileText },
-      { label: 'Certificates', href: '/dashboard/instructor/certificates', icon: GraduationCap },
-      { label: 'Students', href: '/dashboard/instructor/students', icon: Users },
+      { label: 'assignments', href: '/dashboard/instructor/assignments', icon: FileText },
+      { label: 'certificates', href: '/dashboard/instructor/certificates', icon: GraduationCap },
+      { label: 'students', href: '/dashboard/instructor/students', icon: Users },
     ]
   },
   {
-    title: 'Community',
+    title: 'community',
     items: [
-      { label: 'Community', href: '/dashboard/instructor/community', icon: UsersRound },
-      { label: 'Explore Groups', href: '/dashboard/instructor/groups/explore', icon: Users },
-      { label: 'My Groups', href: '/dashboard/instructor/groups/my-groups', icon: Users2 },
-      { label: 'Support', href: '/dashboard/instructor/support', icon: LifeBuoy },
+      { label: 'community', href: '/dashboard/instructor/community', icon: UsersRound },
+      { label: 'explore_groups', href: '/dashboard/instructor/groups/explore', icon: Users },
+      { label: 'my_groups', href: '/dashboard/instructor/groups/my-groups', icon: Users2 },
+      { label: 'support', href: '/dashboard/instructor/support', icon: LifeBuoy },
     ]
   },
   {
-    title: 'Monetization',
+    title: 'monetization',
     items: [
-      { label: 'Earnings', href: '/dashboard/instructor/payments', icon: CreditCard },
-      { label: 'Ads Manager', href: '/dashboard/instructor/ads', icon: Megaphone },
-      { label: 'Offers', href: '/dashboard/instructor/offers', icon: ClipboardList },
-      { label: 'Coupons', href: '/dashboard/instructor/coupons', icon: BadgePercent },
+      { label: 'earnings', href: '/dashboard/instructor/payments', icon: CreditCard },
+      { label: 'ads_manager', href: '/dashboard/instructor/ads', icon: Megaphone },
+      { label: 'offers', href: '/dashboard/instructor/offers', icon: ClipboardList },
+      { label: 'coupons', href: '/dashboard/instructor/coupons', icon: BadgePercent },
     ]
   },
   {
-    title: 'Account',
+    title: 'account',
     items: [
-      { label: 'Profile', href: '/dashboard/instructor/profile', icon: GraduationCap },
-      { label: 'Settings', href: '/dashboard/instructor/settings', icon: Settings },
+      { label: 'profile', href: '/dashboard/instructor/profile', icon: GraduationCap },
+      { label: 'settings', href: '/dashboard/instructor/settings', icon: Settings },
     ]
   }
 ];
