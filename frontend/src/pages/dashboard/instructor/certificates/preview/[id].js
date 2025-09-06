@@ -3,30 +3,37 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import QRCode from "react-qr-code";
-import { NotebookTabs } from "lucide-react";
+import { getCertificate } from "@/services/instructor/certificateService";
 
 export default function CertificatePreviewPage() {
   const router = useRouter();
   const { id } = router.query;
 
   const [certificate, setCertificate] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id) {
-      // Mock data fetch
-      setCertificate({
-        id,
-        studentName: "Ahmed Mohamed",
-        courseTitle: "React & Next.js Bootcamp",
-        issueDate: "2025-05-01",
-        instructorName: "Ayman Khalid",
-        platformName: "SkillBridge Academy",
-        grade: "95%", // Optional grade
-      });
-    }
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getCertificate(id);
+        setCertificate(data);
+      } catch (err) {
+        console.error('Failed to load certificate', err);
+        setError('Failed to load certificate');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  if (!certificate) return <div className="text-gray-700 p-10">Loading certificate...</div>;
+  if (loading) return <div className="text-gray-700 p-10">Loading certificate...</div>;
+  if (error) return <div className="text-red-500 p-10">{error}</div>;
+  if (!certificate) return null;
 
   return (
     <InstructorLayout>

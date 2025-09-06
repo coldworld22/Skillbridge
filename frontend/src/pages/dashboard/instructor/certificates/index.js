@@ -3,34 +3,40 @@ import { useEffect, useState } from "react";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import Link from "next/link";
 import { FaEye, FaTrashAlt } from "react-icons/fa";
+import {
+  fetchCertificates,
+  deleteCertificate,
+} from "@/services/instructor/certificateService";
 
 export default function InstructorCertificatesPage() {
   const [certificates, setCertificates] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Mock certificates
-    setCertificates([
-      {
-        id: "c1",
-        studentName: "Ahmed Mohamed",
-        courseTitle: "React & Next.js Bootcamp",
-        issueDate: "2025-05-01",
-        status: "Issued",
-      },
-      {
-        id: "c2",
-        studentName: "Sara Ali",
-        courseTitle: "UI/UX Design Basics",
-        issueDate: "2025-05-03",
-        status: "Issued",
-      },
-    ]);
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await fetchCertificates();
+        setCertificates(data);
+      } catch (err) {
+        console.error('Failed to load certificates', err);
+        setError('Failed to load certificates');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
-  const handleDelete = (id) => {
-    if (confirm("Are you sure you want to delete this certificate?")) {
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this certificate?")) return;
+    try {
+      await deleteCertificate(id);
       setCertificates((prev) => prev.filter((c) => c.id !== id));
-      alert("🗑️ Certificate deleted (mock)!");
+    } catch (err) {
+      alert('Delete failed');
     }
   };
 
@@ -39,7 +45,9 @@ export default function InstructorCertificatesPage() {
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
         <h1 className="text-2xl font-bold text-yellow-500 mb-8">🎓 My Issued Certificates</h1>
 
-        {certificates.length === 0 ? (
+        {loading && <p className="text-center">Loading...</p>}
+        {error && <p className="text-center text-red-500">{error}</p>}
+        {!loading && certificates.length === 0 ? (
           <p className="text-center text-gray-500">No certificates issued yet.</p>
         ) : (
           <div className="overflow-x-auto">

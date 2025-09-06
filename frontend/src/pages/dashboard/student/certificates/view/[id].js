@@ -3,6 +3,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import { FaCheckCircle, FaTimesCircle, FaDownload } from "react-icons/fa";
+import {
+  getCertificate,
+  issueCertificate,
+  revokeCertificate,
+  downloadCertificate,
+} from "@/services/student/certificateService";
 
 export default function AdminCertificateViewPage() {
   const router = useRouter();
@@ -10,36 +16,65 @@ export default function AdminCertificateViewPage() {
 
   const [certificate, setCertificate] = useState(null);
   const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id) {
-      // Mock loading certificate
-      setCertificate({
-        id,
-        studentName: "Sara Ali",
-        className: "React & Next.js Bootcamp",
-        issueDate: "2025-05-30T10:00:00Z",
-        status: "Pending", // or 'Issued'
-      });
-      setStatus("Pending");
-    }
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getCertificate(id);
+        setCertificate(data);
+        setStatus(data?.status || 'Pending');
+      } catch (err) {
+        console.error('Failed to load certificate', err);
+        setError('Failed to load certificate');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleIssueCertificate = () => {
-    setStatus("Issued");
-    alert("✅ Certificate Issued Successfully!");
-    // TODO: Save update to backend
-  };
-
-  const handleRevokeCertificate = () => {
-    if (confirm("⚠️ Are you sure you want to revoke this certificate?")) {
-      setStatus("Revoked");
-      alert("❌ Certificate Revoked.");
-      // TODO: Save update to backend
+  const handleIssueCertificate = async () => {
+    try {
+      await issueCertificate(id);
+      setStatus('Issued');
+    } catch (err) {
+      alert('Issue failed');
     }
   };
 
-  if (!certificate) return <div className="text-center mt-32 text-gray-700">Loading Certificate...</div>;
+  const handleRevokeCertificate = async () => {
+    if (!confirm("⚠️ Are you sure you want to revoke this certificate?")) return;
+    try {
+      await revokeCertificate(id);
+      setStatus('Revoked');
+    } catch (err) {
+      alert('Revoke failed');
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const blob = await downloadCertificate(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificate-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert('Download failed');
+    }
+  };
+
+  if (loading) return <div className="text-center mt-32 text-gray-700">Loading Certificate...</div>;
+  if (error) return <div className="text-center mt-32 text-red-500">{error}</div>;
+  if (!certificate) return null;
 
   return (
     <StudentLayout>
@@ -89,7 +124,7 @@ export default function AdminCertificateViewPage() {
             {status === "Issued" && (
               <div className="pt-4 flex gap-4">
                 <button
-                  onClick={() => alert('🚀 Download will start soon (mock)!')}
+                  onClick={handleDownload}
                   className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
                 >
                   <FaDownload /> Download Certificate

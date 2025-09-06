@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
+import { getCertificate, updateCertificate } from "@/services/admin/certificateService";
 
 export default function AdminEditCertificatePage() {
   const router = useRouter();
@@ -10,36 +11,49 @@ export default function AdminEditCertificatePage() {
 
   const [certificate, setCertificate] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id) {
-      // TODO: Replace with real fetch from backend
-      setCertificate({
-        id,
-        studentName: "Sara Ali",
-        className: "React & Next.js Bootcamp",
-        issueDate: "2025-05-30T10:00:00Z",
-        status: "Pending",
-      });
-    }
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getCertificate(id);
+        setCertificate(data);
+      } catch (err) {
+        console.error('Failed to load certificate', err);
+        setError('Failed to load certificate');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!certificate.studentName.trim() || !certificate.className.trim()) {
       alert("⚠️ Please fill in all fields.");
       return;
     }
 
     setSaving(true);
-
-    setTimeout(() => {
-      setSaving(false);
-      alert("✅ Certificate updated successfully (mock)!");
+    setError('');
+    try {
+      await updateCertificate(id, certificate);
       router.push(`/dashboard/admin/certificates/view/${id}`);
-    }, 1000);
+    } catch (err) {
+      console.error('Update failed', err);
+      setError('Failed to save certificate');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!certificate) return <div className="text-center p-10 text-gray-500">Loading certificate...</div>;
+  if (loading) return <div className="text-center p-10 text-gray-500">Loading certificate...</div>;
+  if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
+  if (!certificate) return null;
 
   return (
     <AdminLayout>
