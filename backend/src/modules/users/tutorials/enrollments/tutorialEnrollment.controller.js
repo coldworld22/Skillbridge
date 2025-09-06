@@ -5,8 +5,6 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
-const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
-const planRevenue = require("../../../payments/helpers/planRevenue");
 
 // Enroll in tutorial
 exports.enroll = catchAsync(async (req, res) => {
@@ -20,13 +18,16 @@ exports.enroll = catchAsync(async (req, res) => {
   if (tutorial.status !== "published")
     throw new AppError("Tutorial not published", 400);
 
+  const activePlanId = await getActiveStudentPlanId(user_id);
+  const includedPlans = Array.isArray(tutorial.included_plans)
+    ? tutorial.included_plans
+    : [];
+  const coveredBySubscription =
+    activePlanId && includedPlans.includes(activePlanId);
+
   const id = uuidv4();
 
   const enroll = async (trx) => {
-    const activePlanId = await getActiveStudentPlanId(user_id);
-    const coveredBySubscription =
-      activePlanId && Number(tutorial.price) > 0;
-
     if (coveredBySubscription) {
       const usage = await trx("plan_usage_metrics")
         .where({
@@ -52,15 +53,6 @@ exports.enroll = catchAsync(async (req, res) => {
           usage_count: 1,
         });
       }
-
-      await planRevenue.calculateInstructorAmount(
-        activePlanId,
-        tutorialId,
-        trx,
-        "tutorial"
-      );
-
-      await creditTutorialSubscription(tutorialId, activePlanId, trx);
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })

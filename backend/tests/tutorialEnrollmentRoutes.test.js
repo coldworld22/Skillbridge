@@ -2,17 +2,11 @@ const request = require('supertest');
 const express = require('express');
 const errorHandler = require('../src/middleware/errorHandler');
 
-jest.mock('../src/config/database');
+jest.mock('../src/config/database', () => jest.fn());
 const db = require('../src/config/database');
 
 jest.mock('../src/modules/plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
-}));
-jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
-  calculateInstructorAmount: jest.fn(),
-}));
-jest.mock('../src/modules/payments/helpers/wallet', () => ({
-  creditTutorialSubscription: jest.fn(),
 }));
 const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
@@ -58,7 +52,9 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
         };
     });
 
-    const res = await request(app).post('/api/users/tutorials/enrollments/t1');
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174000',
+    );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
   });
@@ -88,7 +84,9 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
         };
     });
 
-    const res = await request(app).post('/api/users/tutorials/enrollments/t2');
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174001',
+    );
     expect(res.status).toBe(402);
     expect(res.body.message).toBe('Payment required');
   });
@@ -119,9 +117,50 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
         };
     });
 
-    const res = await request(app).post('/api/users/tutorials/enrollments/t3');
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174002',
+    );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
+  });
+
+  it('enrolls in paid tutorial covered by subscription', async () => {
+    const planInsert = jest.fn(() => Promise.resolve());
+
+    db.mockImplementation((table) => {
+      if (table === 'tutorials')
+        return {
+          where: () => ({
+            first: () =>
+              Promise.resolve({
+                id: 't4',
+                price: 100,
+                moderation_status: 'Approved',
+                status: 'published',
+                included_plans: ['plan1'],
+              }),
+          }),
+        };
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({ first: () => Promise.resolve(null) }),
+          insert: jest.fn(() => Promise.resolve()),
+        };
+      if (table === 'plan_usage_metrics')
+        return {
+          where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
+          insert: planInsert,
+        };
+    });
+
+    getActiveStudentPlanId.mockResolvedValue('plan1');
+
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174003',
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Enrolled successfully');
+    expect(planInsert).toHaveBeenCalled();
   });
 });
 
@@ -164,7 +203,9 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
         };
     });
 
-    const res = await request(app).post('/api/users/tutorials/enrollments/t1/complete');
+    const res = await request(app).post(
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174000/complete',
+    );
     expect(res.status).toBe(200);
     expect(update).toHaveBeenCalledWith({ status: 'completed', progress: 100 });
   });
@@ -200,7 +241,7 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
     });
 
     const res = await request(app).post(
-      '/api/users/tutorials/enrollments/t1/complete'
+      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174000/complete',
     );
     expect(res.status).toBe(400);
   });
