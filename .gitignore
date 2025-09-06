@@ -1,6 +1,8 @@
 node_modules/
-.env
-.env.production
+
+# Local environment variables
+/.env
+/.env.production
 dist/
 coverage/
 .vscode/
