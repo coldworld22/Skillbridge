@@ -23,15 +23,18 @@ require("dotenv").config();
 const requiredSecrets = [
   "JWT_SECRET",
   "REFRESH_TOKEN_SECRET",
-  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL",
   "PORT",
   "SESSION_SECRET",
-].filter(Boolean);
+];
+const dbKey =
+  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
+requiredSecrets.push(dbKey);
 const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
 if (missingSecrets.length) {
-  throw new Error(
-    `Missing required environment variables: ${missingSecrets.join(", ")}`
+  console.error(
+    `❌ Missing required environment variables: ${missingSecrets.join(", ")}`
   );
+  process.exit(1);
 }
 
 
