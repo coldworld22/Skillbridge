@@ -13,6 +13,14 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.countPublishedTutorials = async (instructorId) => {
+  const row = await db("tutorials")
+    .where({ instructor_id: instructorId, status: "published" })
+    .count("id as count")
+    .first();
+  return parseInt(row.count, 10) || 0;
+};
+
 const { parsePagination } = require("../../../utils/pagination");
 
 exports.getAllTutorials = async (filters = {}) => {
