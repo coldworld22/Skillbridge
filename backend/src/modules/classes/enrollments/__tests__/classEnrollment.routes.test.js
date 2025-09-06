@@ -43,7 +43,12 @@ jest.mock('../../../plans/subscription.helper', () => ({
   getActiveStudentPlanId: jest.fn(),
 }));
 
+jest.mock('../../../payments/helpers/wallet', () => ({
+  creditInstructorSubscription: jest.fn(),
+}));
+
 const { getActiveStudentPlanId } = require('../../../plans/subscription.helper');
+const { creditInstructorSubscription } = require('../../../payments/helpers/wallet');
 const db = require('../../../../config/database');
 
 const routes = require('../../class.routes');
@@ -128,6 +133,11 @@ describe('Class enrollment routes', () => {
     const res = await request(app).post('/classes/enroll/abc');
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
+    expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'abc',
+      'plan1',
+      expect.anything(),
+    );
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {

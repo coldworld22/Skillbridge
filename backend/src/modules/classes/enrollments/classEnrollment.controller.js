@@ -7,6 +7,7 @@ const service = require("./classEnrollment.service");
 const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
+const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -40,7 +41,9 @@ exports.enroll = catchAsync(async (req, res) => {
     const coveredBySubscription =
       activePlanId && includedPlans.includes(activePlanId);
 
-    if (Number(cls.price) > 0 && !coveredBySubscription) {
+    if (coveredBySubscription) {
+      await creditInstructorSubscription(classId, activePlanId, trx);
+    } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({
           user_id,
