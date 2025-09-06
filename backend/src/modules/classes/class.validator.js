@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const db = require("../../config/database");
 
 const toNumber = (val) => {
   if (typeof val === 'number') return val;
@@ -18,6 +19,27 @@ const toStringArray = (val) => {
   }
   return undefined;
 };
+
+const validateStudentPlans = async (plans) => {
+  if (!plans) return true;
+  for (const p of plans) {
+    let plan = await db("plans").where({ id: p }).first();
+    if (!plan) {
+      plan = await db("plans").where({ slug: p }).first();
+    }
+    if (!plan || plan.target_role !== "student") {
+      return false;
+    }
+  }
+  return true;
+};
+
+const includedPlans = z.preprocess(
+  toStringArray,
+  z.array(z.string()).optional()
+).refine(validateStudentPlans, {
+  message: "Included plans must exist and target students",
+});
 
 exports.create = z.object({
   body: z.object({
@@ -51,10 +73,7 @@ exports.create = z.object({
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
     access_type: z.enum(["paid", "free"]).optional(),
-    included_plans: z.preprocess(
-      toStringArray,
-      z.array(z.string()).optional()
-    ),
+    included_plans: includedPlans,
   })
     .refine(
       (data) =>
@@ -100,10 +119,7 @@ exports.update = z.object({
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       access_type: z.enum(["paid", "free"]).optional(),
-      included_plans: z.preprocess(
-        toStringArray,
-        z.array(z.string()).optional()
-      ),
+      included_plans: includedPlans,
     })
     .refine(
       (data) =>
@@ -150,10 +166,7 @@ exports.adminUpdate = z.object({
       slug: z.string().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       access_type: z.enum(["paid", "free"]).optional(),
-      included_plans: z.preprocess(
-        toStringArray,
-        z.array(z.string()).optional()
-      ),
+      included_plans: includedPlans,
     })
     .refine(
       (data) =>

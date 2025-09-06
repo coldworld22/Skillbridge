@@ -2,8 +2,8 @@ const db = require("../../../config/database");
 const { calculatePlatformFee } = require("./platformFee");
 
 // Calculate instructor share for a class enrollment covered by a subscription plan
-// Uses plan usage metrics to determine how much revenue should be credited
-// to the instructor for the given plan and class.
+// Uses plan usage metrics and the plan's commission rate to determine the
+// instructor's payout for the given plan and class.
 exports.calculateInstructorAmount = async (planId, classId, trx) => {
   const query = trx || db;
   try {

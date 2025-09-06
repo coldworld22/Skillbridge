@@ -61,6 +61,7 @@ exports.enroll = catchAsync(async (req, res) => {
       }
 
       await planRevenue.calculateInstructorAmount(activePlanId, classId, trx);
+
       await creditInstructorSubscription(classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")

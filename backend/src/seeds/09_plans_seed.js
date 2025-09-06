@@ -124,6 +124,13 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.basic,
+      feature_key: 'commission_rate',
+      value: '0.3',
+      description: '30% platform fee'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
       feature_key: 'groups_create',
       value: 'false',
       description: 'Cannot create groups'
@@ -138,6 +145,13 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
+      feature_key: 'commission_rate',
+      value: '0.2',
+      description: '20% platform fee'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
       feature_key: 'groups_create',
       value: 'true',
       description: 'Can create groups'
@@ -148,6 +162,13 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: '5',
       description: 'Join up to 5 groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'commission_rate',
+      value: '0.1',
+      description: '10% platform fee'
     },
     {
       id: knex.raw('uuid_generate_v4()'),

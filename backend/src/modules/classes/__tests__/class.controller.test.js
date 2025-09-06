@@ -1,8 +1,23 @@
 jest.mock('../../../config/database', () => {
-  const db = jest.fn(() => db);
-  db.where = jest.fn(() => db);
-  db.first = jest.fn(() => Promise.resolve(null));
-  return db;
+  const plans = {
+    'plan-student': { id: 'plan-student', slug: 'student-slug', target_role: 'student' },
+    'student-slug': { id: 'plan-student', slug: 'student-slug', target_role: 'student' },
+    'plan-inst': { id: 'plan-inst', slug: 'inst-slug', target_role: 'instructor' },
+    'inst-slug': { id: 'plan-inst', slug: 'inst-slug', target_role: 'instructor' }
+  };
+  return jest.fn((table) => ({
+    where(cond) {
+      this.cond = cond;
+      return this;
+    },
+    first() {
+      if (table === 'plans') {
+        const key = this.cond.id || this.cond.slug;
+        return Promise.resolve(plans[key] || null);
+      }
+      return Promise.resolve(null);
+    }
+  }));
 });
 
 jest.mock('../class.service', () => ({
@@ -29,6 +44,10 @@ jest.mock('../../messages/messages.service', () => ({
 jest.mock('../../users/user.model', () => ({
   findAdmins: jest.fn(() => []),
   findById: jest.fn(() => ({ id: 'instructor1', full_name: 'Test Instructor' })),
+}));
+
+jest.mock('../../plans/instructor.helper', () => ({
+  getActiveInstructorPlan: jest.fn(() => Promise.resolve({}))
 }));
 
 const controller = require('../class.controller');
@@ -58,9 +77,14 @@ describe('class.controller createClass', () => {
         resolve();
         return data;
       });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
       controller.createClass(req, res, next);
     });
 
+    expect(next).not.toHaveBeenCalled();
     expect(service.createClass).toHaveBeenCalledWith(
       expect.objectContaining({ instructor_id: 'instructor1' })
     );
@@ -69,6 +93,66 @@ describe('class.controller createClass', () => {
         data: expect.objectContaining({ instructor_id: 'instructor1' }),
       })
     );
+  });
+
+  test('resolves plan slugs to ids', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: { title: 'Test', included_plans: ['student-slug'] },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      res.json.mockImplementation((data) => {
+        resolve();
+        return data;
+      });
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ included_plans: ['plan-student'] })
+      })
+    );
+  });
+
+  test('rejects non-student plan', async () => {
+    service.createClass.mockImplementation(async (data) => data);
+
+    const req = {
+      body: { title: 'Test', included_plans: ['inst-slug'] },
+      user: { id: 'admin1', role: 'admin' },
+      files: {},
+    };
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const next = jest.fn();
+
+    await new Promise((resolve) => {
+      next.mockImplementation((err) => {
+        resolve();
+        return err;
+      });
+      controller.createClass(req, res, next);
+    });
+
+    expect(next).toHaveBeenCalled();
+    expect(next.mock.calls[0][0].message).toBe('Invalid included plan');
   });
 });
 
