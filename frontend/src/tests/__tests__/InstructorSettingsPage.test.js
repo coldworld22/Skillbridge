@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import InstructorSettingsPage from '../../pages/dashboard/instructor/settings';
 import useSubscriptionStore from '../../store/subscriptionStore';
-import { fetchMySubscription } from '../../services/instructor/subscriptionService';
+import { fetchMySubscription } from '../../services/subscriptionService';
 
 jest.mock('../../components/layouts/InstructorLayout', () => ({
   __esModule: true,
   default: ({ children }) => <div>{children}</div>,
 }));
 
-jest.mock('../../services/instructor/subscriptionService', () => ({
+jest.mock('../../services/subscriptionService', () => ({
   fetchMySubscription: jest.fn(),
 }));
 
