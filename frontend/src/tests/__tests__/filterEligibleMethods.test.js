@@ -9,8 +9,8 @@ describe('filterEligibleMethods', () => {
     { id: 5, name: 'Inactive', type: 'stripe', active: false },
   ];
 
-  it('returns active methods for non-plan items', () => {
-    const result = filterEligibleMethods(methods, 'class');
+  it('returns only active methods', () => {
+    const result = filterEligibleMethods(methods);
     expect(result.map((m) => m.name)).toEqual([
       'Stripe',
       'PayPal',
@@ -19,29 +19,13 @@ describe('filterEligibleMethods', () => {
     ]);
   });
 
-
-  it('excludes PayPal and crypto for plan items', () => {
-
-    const result = filterEligibleMethods(methods, 'plan');
-    expect(result.map((m) => m.name)).toEqual(['Stripe', 'Bank']);
-  });
-
-  it('returns empty array when only PayPal and crypto methods for plan', () => {
-    const onlyIneligible = [
-      { id: 1, name: 'PayPal', type: null, active: true },
-      { id: 2, name: 'USDT', type: 'usdt', active: true },
-    ];
-    const result = filterEligibleMethods(onlyIneligible, 'plan');
-    expect(result.map((m) => m.name)).toEqual(['PayPal', 'Bank', 'USDT']);
-  });
-
-  it('handles methods with non-string identifiers', () => {
+  it('handles methods with non-string identifiers without throwing', () => {
     const weirdMethods = [
       { id: 6, name: 123, type: undefined, active: true },
       { id: 7, name: 'Some', type: 456, active: true },
     ];
-    expect(() => filterEligibleMethods(weirdMethods, 'class')).not.toThrow();
-    const result = filterEligibleMethods(weirdMethods, 'plan');
+    expect(() => filterEligibleMethods(weirdMethods)).not.toThrow();
+    const result = filterEligibleMethods(weirdMethods);
     expect(result.map((m) => m.id)).toEqual([6, 7]);
   });
 });
