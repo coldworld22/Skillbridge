@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logger from "@/utils/logger";
 
 export default function CategoryForm({ categories }) {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ export default function CategoryForm({ categories }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting category:", formData);
+    logger.log("Submitting category:", formData);
     alert("Category submitted (mock)");
   };
 

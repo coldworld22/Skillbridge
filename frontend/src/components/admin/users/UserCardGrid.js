@@ -1,5 +1,6 @@
 import React from "react";
 import UserCard from "./UserCard";
+import logger from "@/utils/logger";
 
 /**
  * UserCardGrid
@@ -18,7 +19,7 @@ export default function UserCardGrid({
   onSelectUser,
 }) {
   if (!Array.isArray(users)) {
-    console.warn("⚠️ `users` is not an array:", users);
+    logger.warn("⚠️ `users` is not an array:", users);
     return <div className="text-red-500">Invalid users data</div>;
   }
 
@@ -34,7 +35,7 @@ export default function UserCardGrid({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {users.map((user, idx) => {
         if (!user?.id) {
-          console.warn(`⚠️ User at index ${idx} has no ID`, user);
+          logger.warn(`⚠️ User at index ${idx} has no ID`, user);
           return null;
         }
 

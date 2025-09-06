@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import logger from "@/utils/logger";
 
 const defaultLanguage =
   typeof window !== "undefined"
@@ -27,7 +28,7 @@ const LiveTranscription = ({ isEnabled = true, language = defaultLanguage, onTra
   // ✅ Initialize Speech Recognition
   useEffect(() => {
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      console.warn("Speech Recognition API is not supported in this browser.");
+      logger.warn("Speech Recognition API is not supported in this browser.");
       return;
     }
 

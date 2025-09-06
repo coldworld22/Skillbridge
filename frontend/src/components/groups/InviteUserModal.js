@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logger from '@/utils/logger';
 
 export default function InviteUserModal({ groupId, onClose }) {
   const [email, setEmail] = useState('');
@@ -6,7 +7,7 @@ export default function InviteUserModal({ groupId, onClose }) {
 
   const handleSend = () => {
     // Mock invite send (replace with real logic later)
-    console.log(`📨 Invite sent to ${email} for group ${groupId}`);
+    logger.log(`📨 Invite sent to ${email} for group ${groupId}`);
     setSent(true);
     setTimeout(onClose, 1000); // auto close after 1s
   };
