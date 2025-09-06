@@ -3,29 +3,51 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaCheckCircle } from 'react-icons/fa';
+import {
+  fetchAssignmentById,
+  approveAssignment,
+} from '@/services/admin/assignmentService';
 
 export default function ApproveAssignmentPage() {
   const router = useRouter();
   const { id } = router.query;
   const [assignment, setAssignment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    // Mock fetch assignment by ID
-    setAssignment({
-      id,
-      title: 'React State Management',
-      instructor: 'Ayman Khalid',
-      className: 'React & Next.js Bootcamp',
-      dueDate: '2025-05-30T23:59:00Z',
-    });
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchAssignmentById(id);
+        setAssignment(data);
+      } catch (err) {
+        setError('Failed to load assignment.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleApprove = () => {
-    alert('✅ Assignment approved successfully!');
-    router.push('/dashboard/admin/assignments/success');
+  const handleApprove = async () => {
+    setActionLoading(true);
+    try {
+      await approveAssignment(id);
+      alert('✅ Assignment approved successfully!');
+      router.push('/dashboard/admin/assignments/success');
+    } catch (err) {
+      alert('Failed to approve assignment.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  if (!assignment) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (loading) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (error) return <div className="text-center mt-32 text-red-500">{error}</div>;
 
   return (
     <AdminLayout>
@@ -37,13 +59,14 @@ export default function ApproveAssignmentPage() {
             <div>
               <h2 className="text-2xl font-semibold mb-2">{assignment.title}</h2>
               <p><strong>Instructor:</strong> {assignment.instructor}</p>
-              <p><strong>Class:</strong> {assignment.class}</p>
+              <p><strong>Class:</strong> {assignment.className}</p>
               <p><strong>Due Date:</strong> {new Date(assignment.dueDate).toLocaleString()}</p>
             </div>
 
             <button
               onClick={handleApprove}
-              className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+              disabled={actionLoading}
+              className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <FaCheckCircle /> Confirm Approve
             </button>

@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import {
+  fetchAssignmentById,
+  approveAssignment,
+  rejectAssignment,
+} from '@/services/admin/assignmentService';
 
 export default function AdminAssignmentReviewPage() {
   const router = useRouter();
@@ -11,46 +16,60 @@ export default function AdminAssignmentReviewPage() {
   const [assignment, setAssignment] = useState(null);
   const [actionNote, setActionNote] = useState('');
   const [status, setStatus] = useState('Pending');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    // Mock fetch assignment
-    setAssignment({
-      id,
-      title: 'React State Management',
-      instructor: 'Ayman Khalid',
-      className: 'React & Next.js Bootcamp',
-      type: 'mcq',
-      allowLate: true,
-      dueDate: '2025-05-30T23:59:00Z',
-      gradingRubric: 'Focus on correct hook usage, clear logic, and no unnecessary re-renders.',
-      questions: [
-        {
-          question: 'Which hook is used to manage component state?',
-          options: ['useEffect', 'useState', 'useContext', 'useMemo'],
-          correct: 1,
-          points: 2
-        }
-      ]
-    });
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchAssignmentById(id);
+        setAssignment(data);
+        setStatus(data?.status || 'Pending');
+      } catch (err) {
+        setError('Failed to load assignment.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleApprove = () => {
-    setStatus('Approved');
-    alert('✅ Assignment Approved Successfully!');
-    // TODO: Save the action in backend later
+  const handleApprove = async () => {
+    setActionLoading(true);
+    try {
+      await approveAssignment(id, actionNote);
+      setStatus('Approved');
+      alert('✅ Assignment Approved Successfully!');
+    } catch (err) {
+      alert('Failed to approve assignment.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!actionNote.trim()) {
       alert('⚠️ Please provide a reason for rejection.');
       return;
     }
-    setStatus('Rejected');
-    alert('❌ Assignment Rejected and Instructor Notified.');
-    // TODO: Save the action in backend later
+    setActionLoading(true);
+    try {
+      await rejectAssignment(id, actionNote);
+      setStatus('Rejected');
+      alert('❌ Assignment Rejected and Instructor Notified.');
+    } catch (err) {
+      alert('Failed to reject assignment.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  if (!assignment) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (loading) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (error) return <div className="text-center mt-32 text-red-500">{error}</div>;
 
   return (
     <AdminLayout>
@@ -126,14 +145,16 @@ export default function AdminAssignmentReviewPage() {
                 <div className="flex gap-4">
                   <button
                     onClick={handleApprove}
-                    className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                    disabled={actionLoading}
+                    className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <FaCheckCircle /> Approve
                   </button>
 
                   <button
                     onClick={handleReject}
-                    className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                    disabled={actionLoading}
+                    className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <FaTimesCircle /> Reject
                   </button>
