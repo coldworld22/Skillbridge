@@ -134,6 +134,7 @@ describe('Class enrollment routes', () => {
     expect(res.statusCode).toBe(200);
     expect(service.createEnrollment).toHaveBeenCalled();
     expect(creditInstructorSubscription).toHaveBeenCalledWith(
+      'class',
       'abc',
       'plan1',
       expect.anything(),
