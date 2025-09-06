@@ -7,7 +7,7 @@ import { createPayment } from '../../services/student/paymentService';
 import { fetchPlanDetails } from '../../services/public/planService';
 import { validateCode } from '../../services/couponService';
 import PaymentSuccessPage from '../../pages/payments/success';
-import { subscribeToPlan, fetchMySubscription } from '../../services/instructor/subscriptionService';
+import { subscribeToPlan, fetchMySubscription } from '../../services/subscriptionService';
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({
     t: (key, params) => {
@@ -62,7 +62,7 @@ jest.mock('../../services/couponService', () => ({ validateCode: jest.fn() }));
 jest.mock('../../services/paymentMethodService', () => ({
   fetchPaymentMethods: jest.fn(),
 }));
-jest.mock('../../services/instructor/subscriptionService', () => ({
+jest.mock('../../services/subscriptionService', () => ({
   subscribeToPlan: jest.fn(),
   fetchMySubscription: jest.fn(),
 }));
