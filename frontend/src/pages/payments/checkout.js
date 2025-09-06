@@ -140,7 +140,6 @@ export function filterEligibleMethods(methods, itemType) {
       const identifier = getMethodIdentifier(m).toLowerCase();
       return (
         identifier !== 'paypal' &&
-        identifier !== 'bank' &&
         !isCryptoMethod(identifier)
       );
     });
