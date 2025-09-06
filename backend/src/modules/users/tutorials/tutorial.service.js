@@ -7,7 +7,9 @@ const { v4: uuidv4 } = require("uuid");
 const slugify = require("slugify");
 
 exports.createTutorial = async (data, trx = db) => {
-  const [tutorial] = await trx("tutorials").insert(data).returning("*");
+  const insertData = { included_plans: [], ...data };
+  if (!insertData.included_plans) insertData.included_plans = [];
+  const [tutorial] = await trx("tutorials").insert(insertData).returning("*");
   return tutorial;
 };
 
@@ -198,7 +200,14 @@ exports.getTutorialsByInstructor = async (instructorId) => {
 };
 
 exports.updateTutorial = async (id, data) => {
-  const [updated] = await db("tutorials").where({ id }).update(data).returning("*");
+  const updateData = { ...data };
+  if (updateData.included_plans === undefined) {
+    delete updateData.included_plans;
+  }
+  const [updated] = await db("tutorials")
+    .where({ id })
+    .update(updateData)
+    .returning("*");
   return updated;
 };
 

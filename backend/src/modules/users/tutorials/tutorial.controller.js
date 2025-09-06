@@ -46,6 +46,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     status = "draft",
     tags: rawTags,
     chapters: rawChapters,
+    included_plans = [],
     instructor_id: bodyInstructorId,
   } = req.body;
 
@@ -91,6 +92,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id,
     status,
     moderation_status: status === "published" ? "Pending" : null,
+    included_plans,
     cover_image: thumbnailFile
       ? `/uploads/tutorials/${roleDir}/${thumbnailFile.filename}`
       : null,

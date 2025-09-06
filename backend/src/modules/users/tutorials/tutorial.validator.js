@@ -39,6 +39,7 @@ exports.create = z.object({
       z.number().int().nonnegative()
     ).optional(),
     is_paid: z.preprocess(toBoolean, z.boolean().optional()),
+    included_plans: z.preprocess(parseJson, z.array(z.string()).optional()),
     tags: z.preprocess(parseJson, z.array(z.string()).optional()),
     chapters: z
       .preprocess(
