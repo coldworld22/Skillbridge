@@ -3,6 +3,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
+import logger from "@/utils/logger";
 
 export default function CreateLanguagePage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function CreateLanguagePage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Language submitted:", form);
+    logger.log("Language submitted:", form);
     router.push("/dashboard/admin/settings/languages");
   };
 

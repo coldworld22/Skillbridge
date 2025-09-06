@@ -9,6 +9,7 @@ import { fetchAllUsers } from "@/services/admin/userService";
 import useAuthStore from "@/store/auth/authStore";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { toast } from "react-toastify";
+import logger from "@/utils/logger";
 
 function UsersPage() {
   const { t } = useTranslation("dashboard");
@@ -36,7 +37,7 @@ function UsersPage() {
     const loadUsers = async () => {
       try {
         const data = await fetchAllUsers(); // ✅ No token needed (cookie session)
-        console.log("✅ API returned users:", data);
+        logger.log("✅ API returned users:", data);
 
         const formatted = (data ?? []).map((u) => ({
           ...u,
@@ -52,7 +53,7 @@ function UsersPage() {
         setUsers(formatted);
       } catch (err) {
         toast.error("Error fetching users");
-        console.error("❌ Error loading users:", err);
+        logger.error("❌ Error loading users:", err);
       } finally {
         setLoading(false);
       }

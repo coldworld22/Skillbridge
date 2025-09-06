@@ -14,6 +14,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
+import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -223,7 +224,7 @@ export default function StudentProfileEdit() {
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
-      console.log("[StudentProfileEdit] Submitting form", formData);
+      logger.log("[StudentProfileEdit] Submitting form", formData);
 
       const social_links = Object.entries(formData.socialLinks || {})
         .filter(([, url]) => url.trim() !== "")
@@ -239,7 +240,7 @@ export default function StudentProfileEdit() {
         learning_goals: formData.learning_goals,
         social_links,
       };
-      console.log("[StudentProfileEdit] Payload", payload);
+      logger.log("[StudentProfileEdit] Payload", payload);
 
       await toast.promise(updateStudentProfile(payload), {
         pending: "Saving profile...",
@@ -256,7 +257,7 @@ export default function StudentProfileEdit() {
       });
 
       const fresh = await getStudentProfile();
-      console.log("[StudentProfileEdit] Updated profile", fresh);
+      logger.log("[StudentProfileEdit] Updated profile", fresh);
 
       setUser({
         ...user,
@@ -281,7 +282,7 @@ export default function StudentProfileEdit() {
         refreshNotifications?.();
         refreshMessages?.();
       } catch (err) {
-        console.error("[StudentProfileEdit] notification error", err);
+        logger.error("[StudentProfileEdit] notification error", err);
       }
 
 
@@ -289,7 +290,7 @@ export default function StudentProfileEdit() {
 
 
     } catch (err) {
-      console.error("[StudentProfileEdit] update error", err);
+      logger.error("[StudentProfileEdit] update error", err);
       const msg = err.response?.data?.message || err.message || "Failed to update profile";
       toast.error(msg);
       if (err.response?.status === 401) {

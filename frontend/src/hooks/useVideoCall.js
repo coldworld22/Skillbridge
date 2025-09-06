@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
+import logger from "@/utils/logger";
 
 export default function useVideoCall(roomId, userName = "User", role = "participant") {
   const [peers, setPeers] = useState([]);
@@ -70,7 +71,7 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
           setPeers((prev) => prev.filter((p) => p.peerID !== id));
         });
       } catch (err) {
-        console.error("Failed to get media", err);
+        logger.error("Failed to get media", err);
         setError(err);
       }
     };
@@ -118,8 +119,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
         signal,
       });
     });
-    peer.on("error", (err) => console.error("Peer error", err));
-    peer.on("close", () => console.warn("Peer connection closed"));
+    peer.on("error", (err) => logger.error("Peer error", err));
+    peer.on("close", () => logger.warn("Peer connection closed"));
     return peer;
   };
 
@@ -133,8 +134,8 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     peer.on("signal", (signal) => {
       socketRef.current.emit("returning-signal", { signal, callerID });
     });
-    peer.on("error", (err) => console.error("Peer error", err));
-    peer.on("close", () => console.warn("Peer connection closed"));
+    peer.on("error", (err) => logger.error("Peer error", err));
+    peer.on("close", () => logger.warn("Peer connection closed"));
     peer.signal(incomingSignal);
     return peer;
   };
@@ -173,7 +174,7 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
       oldTrack.stop();
       setSelectedAudioInput(deviceId);
     } catch (err) {
-      console.error("Failed to switch microphone", err);
+      logger.error("Failed to switch microphone", err);
     }
   };
 
@@ -182,7 +183,7 @@ export default function useVideoCall(roomId, userName = "User", role = "particip
     document.querySelectorAll("video").forEach((video) => {
       if (typeof video.sinkId !== "undefined") {
         video.setSinkId(deviceId).catch((e) => {
-          console.warn("Failed to set output device", e);
+          logger.warn("Failed to set output device", e);
           setError(e);
         });
       }

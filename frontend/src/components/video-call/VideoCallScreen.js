@@ -7,6 +7,7 @@ import {
   FaChalkboardTeacher,
   FaUserShield,
 } from "react-icons/fa";
+import logger from "@/utils/logger";
 
 import VideoGrid from "./VideoGrid";
 import ParticipantList from "./ParticipantList";
@@ -79,7 +80,7 @@ const VideoCallScreen = ({ chatId, userRole = roles.PARTICIPANT }) => {
     if (!document.fullscreenElement) {
       document.documentElement
         .requestFullscreen()
-        .catch(() => console.warn("Fullscreen not supported"));
+        .catch(() => logger.warn("Fullscreen not supported"));
     }
   }, []);
 
