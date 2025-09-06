@@ -29,6 +29,13 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 ## Quick start
 
+Install the project dependencies:
+
+```bash
+npm --prefix backend install
+npm --prefix frontend install
+```
+
 1. Configure environment variables:
 
    - Copy `.env.example` to `.env` in the project root and fill in your secrets.
