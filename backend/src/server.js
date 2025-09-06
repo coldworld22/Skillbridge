@@ -7,6 +7,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const { createClient } = require("redis");
@@ -63,6 +64,7 @@ const ALLOWED_ORIGINS = Array.from(
 );
 
 app.disable("etag");
+app.use(helmet());
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
