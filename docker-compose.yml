@@ -39,6 +39,7 @@ services:
     restart: always
     env_file:
       - ./.env
+      - ./backend/.env.production
     ports:
       - "5002:5002"
     environment:
@@ -46,7 +47,6 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
       - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
       - NODE_ENV=${NODE_ENV}
