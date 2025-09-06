@@ -90,8 +90,11 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(csrf);
 
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required");
+}
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "skillbridge",
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { ...refreshCookieOptions },
