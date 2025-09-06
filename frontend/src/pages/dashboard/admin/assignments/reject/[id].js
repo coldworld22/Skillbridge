@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { FaTimesCircle } from 'react-icons/fa';
+import {
+  fetchAssignmentById,
+  rejectAssignment,
+} from '@/services/admin/assignmentService';
 
 export default function RejectAssignmentPage() {
   const router = useRouter();
@@ -10,29 +14,46 @@ export default function RejectAssignmentPage() {
 
   const [assignment, setAssignment] = useState(null);
   const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    // Mock assignment fetch
-    setAssignment({
-      id,
-      title: 'React Basics',
-      instructor: 'Ayman Khalid',
-      className: 'React Bootcamp',
-    });
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchAssignmentById(id);
+        setAssignment(data);
+      } catch (err) {
+        setError('Failed to load assignment.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!reason.trim()) {
       alert('⚠️ Please provide a reason for rejection.');
       return;
     }
-
-    // TODO: Save rejection reason and update status
-    alert(`❌ Assignment "${assignment.title}" rejected successfully with reason: ${reason}`);
-    router.push('/dashboard/admin/assignments');
+    setActionLoading(true);
+    try {
+      await rejectAssignment(id, reason);
+      alert(`❌ Assignment "${assignment.title}" rejected successfully with reason: ${reason}`);
+      router.push('/dashboard/admin/assignments');
+    } catch (err) {
+      alert('Failed to reject assignment.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  if (!assignment) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (loading) return <div className="text-center mt-32 text-gray-700">Loading...</div>;
+  if (error) return <div className="text-center mt-32 text-red-500">{error}</div>;
 
   return (
     <AdminLayout>
@@ -55,7 +76,8 @@ export default function RejectAssignmentPage() {
             <div className="flex gap-4">
               <button
                 onClick={handleReject}
-                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded flex items-center justify-center gap-2"
+                disabled={actionLoading}
+                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <FaTimesCircle /> Reject Assignment
               </button>
