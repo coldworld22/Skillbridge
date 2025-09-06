@@ -1,5 +1,6 @@
 // src/components/forms/CreateClassForm.js
 import { useState } from 'react';
+import logger from '@/utils/logger';
 
 export default function CreateClassForm() {
   const [step, setStep] = useState(1);
@@ -50,7 +51,7 @@ export default function CreateClassForm() {
 
   const handleSubmit = () => {
     setSubmitted(true);
-    console.log('Submitting:', formData);
+    logger.log('Submitting:', formData);
     setTimeout(() => {
       window.location.href = '/dashboard/admin/online-classes';
     }, 2500);

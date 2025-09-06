@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logger from '@/utils/logger';
 
 export default function CreateClassForm({ onSubmit }) {
   const [step, setStep] = useState(1);
@@ -44,7 +45,7 @@ export default function CreateClassForm({ onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSubmit) onSubmit(formData);
-    console.log('Create class data', formData);
+    logger.log('Create class data', formData);
   };
 
   return (

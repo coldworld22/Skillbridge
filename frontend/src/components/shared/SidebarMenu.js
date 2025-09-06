@@ -9,6 +9,7 @@ import {
   FaBullhorn, FaTachometerAlt
 } from "react-icons/fa";
 import useAuthStore from "@/store/auth/authStore";
+import logger from "@/utils/logger";
 
 const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const sidebarRef = useRef(null);
@@ -16,10 +17,7 @@ const SidebarMenu = ({ isOpen, onClose, showAds }) => {
   const { user } = useAuthStore();
   const { t } = useTranslation("common");
   const userRole = user?.role?.toLowerCase();
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user);
-  }
+  logger.log("🔍 SidebarMenu Loaded | Role:", userRole, "| User:", user);
 
   const [hydrated, setHydrated] = useState(false);
 

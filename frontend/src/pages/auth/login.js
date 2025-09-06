@@ -20,6 +20,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
+import logger from "@/utils/logger";
 
 // ─────────────────────
 // 🔐 Validation schema
@@ -81,9 +82,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   // ─────────────────────────────
   const onSubmit = async (data) => {
   try {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("➡️ login onSubmit invoked");
-    }
+    logger.log("➡️ login onSubmit invoked");
     let cfg = recaptchaCfg;
     if (!cfg && cfgLoading) {
       cfg = await fetchSocialLoginConfig().catch(() => null);
@@ -115,9 +114,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       router.push(targetPath);
     }, 500);
   } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ login onSubmit error", { message: err?.message });
-    }
+    logger.error("❌ login onSubmit error", { message: err?.message });
     let msg =
       err?.response?.data?.message ||
       err?.response?.data?.error ||
