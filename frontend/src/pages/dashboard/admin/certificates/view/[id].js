@@ -3,49 +3,75 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaDownload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import {
+  getCertificate,
+  approveCertificate,
+  rejectCertificate,
+  downloadCertificate,
+} from "@/services/admin/certificateService";
 
 export default function ViewCertificatePage() {
   const router = useRouter();
   const { id } = router.query;
 
   const [certificate, setCertificate] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id) {
-      // TODO: Replace with real fetch from API later
-      setCertificate({
-        id,
-        studentName: "Sara Ali",
-        className: "React & Next.js Bootcamp",
-        issueDate: "2025-05-30T10:00:00Z",
-        status: "Pending",
-        certificateUrl: "https://via.placeholder.com/600x400.png?text=Certificate+Preview",
-      });
-    }
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getCertificate(id);
+        setCertificate(data);
+      } catch (err) {
+        console.error('Failed to load certificate', err);
+        setError('Failed to load certificate');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
-  if (!certificate) {
-    return <div className="text-center text-gray-600 p-10">Loading certificate...</div>;
-  }
+  if (loading) return <div className="text-center text-gray-600 p-10">Loading certificate...</div>;
+  if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
+  if (!certificate) return null;
 
-  const handleApprove = () => {
-    alert("✅ Certificate Approved Successfully (mock)!");
-    // TODO: Send approve request to backend
-    router.push("/dashboard/admin/certificates");
-  };
-
-  const handleReject = () => {
-    if (confirm("❌ Are you sure you want to reject this certificate?")) {
-      alert("Certificate Rejected (mock).");
-      // TODO: Send reject request to backend
+  const handleApprove = async () => {
+    try {
+      await approveCertificate(id);
       router.push("/dashboard/admin/certificates");
+    } catch {
+      alert('Failed to approve');
     }
   };
 
-  const handleDownload = () => {
-    alert("🚀 Downloading certificate (mock)!");
-    // TODO: Open/download certificate PDF from backend
-    window.open(certificate.certificateUrl, "_blank");
+  const handleReject = async () => {
+    if (!confirm("❌ Are you sure you want to reject this certificate?")) return;
+    try {
+      await rejectCertificate(id);
+      router.push("/dashboard/admin/certificates");
+    } catch {
+      alert('Failed to reject');
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const blob = await downloadCertificate(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificate-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      alert('Download failed');
+    }
   };
 
   return (

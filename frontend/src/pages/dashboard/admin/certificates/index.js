@@ -8,7 +8,12 @@ import { FaSearch, FaSync, FaEye, FaDownload, FaCheckCircle, FaTimesCircle } fro
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import { fetchAllCertificates } from "@/services/admin/certificateService";
+import {
+  fetchAllCertificates,
+  approveCertificate,
+  rejectCertificate,
+  downloadCertificate,
+} from "@/services/admin/certificateService";
 
 export default function AdminCertificatesPage() {
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminCertificatesPage' });
@@ -19,15 +24,22 @@ export default function AdminCertificatesPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
   const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError('');
       try {
         const data = await fetchAllCertificates(page, limit);
         setCertificates(data);
         setHasMore(data.length === limit);
       } catch (err) {
         console.error('Failed to load certificates', err);
+        setError('Failed to load certificates');
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -42,10 +54,50 @@ export default function AdminCertificatesPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleDownload = async (cert) => {
+    try {
+      const blob = await downloadCertificate(cert.id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificate-${cert.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert('Download failed');
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await approveCertificate(id);
+      setCertificates((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: 'Issued' } : c))
+      );
+    } catch (err) {
+      alert('Approve failed');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await rejectCertificate(id);
+      setCertificates((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: 'Revoked' } : c))
+      );
+    } catch (err) {
+      alert('Reject failed');
+    }
+  };
+
   return (
     <AdminLayout>
-      <div className="min-h-screen px-6 py-10 bg-white text-gray-900" dir={i18n.dir()}> 
+      <div className="min-h-screen px-6 py-10 bg-white text-gray-900" dir={i18n.dir()}>
         <h1 className="text-2xl font-bold text-yellow-500 mb-6">🎓 {t('title')}</h1>
+
+        {loading && <p className="text-center">Loading...</p>}
+        {error && <p className="text-center text-red-500">{error}</p>}
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-6">
@@ -111,7 +163,7 @@ export default function AdminCertificatesPage() {
                     </Link>
                     {c.status && c.status === 'Issued' && (
                       <button
-                        onClick={() => alert('🚀 Downloading certificate (mock)!')}
+                        onClick={() => handleDownload(c)}
                         className="text-green-600 hover:text-green-800"
                       >
                         <FaDownload />
@@ -120,13 +172,13 @@ export default function AdminCertificatesPage() {
                     {c.status && c.status === 'Pending' && (
                       <>
                         <button
-                          onClick={() => alert('✅ Approving certificate (mock)!')}
+                          onClick={() => handleApprove(c.id)}
                           className="text-green-600 hover:text-green-800"
                         >
                           <FaCheckCircle />
                         </button>
                         <button
-                          onClick={() => alert('❌ Rejecting certificate (mock)!')}
+                          onClick={() => handleReject(c.id)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <FaTimesCircle />

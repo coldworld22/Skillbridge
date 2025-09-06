@@ -3,6 +3,7 @@ import { useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/router";
+import { issueCertificate } from "@/services/admin/certificateService";
 
 export default function ManualCertificateIssuePage() {
   const router = useRouter();
@@ -12,20 +13,25 @@ export default function ManualCertificateIssuePage() {
   const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 16)); // default to now
   const [status, setStatus] = useState("Issued");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!studentName.trim() || !className.trim()) {
       alert("⚠️ Please fill in all required fields.");
       return;
     }
 
     setSaving(true);
-
-    setTimeout(() => {
-      setSaving(false);
-      alert("✅ Certificate issued successfully (mock)!");
+    setError('');
+    try {
+      await issueCertificate({ studentName, className, issueDate, status });
       router.push("/dashboard/admin/certificates");
-    }, 1000);
+    } catch (err) {
+      console.error('Issue certificate failed', err);
+      setError('Failed to issue certificate');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -35,6 +41,7 @@ export default function ManualCertificateIssuePage() {
           <h1 className="text-3xl font-bold text-yellow-500 mb-8">🎓 Issue Certificate Manually</h1>
 
           <div className="space-y-6 bg-gray-100 p-6 rounded-xl shadow-md">
+            {error && <p className="text-red-500 text-center">{error}</p>}
             {/* Student Name */}
             <div>
               <label className="block mb-2 font-semibold">Student Name</label>

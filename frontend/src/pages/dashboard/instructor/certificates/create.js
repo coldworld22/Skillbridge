@@ -2,6 +2,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
+import {
+  fetchClassStudents,
+  issueCertificate,
+} from "@/services/instructor/certificateService";
 
 export default function IssueCertificatePage() {
   const router = useRouter();
@@ -12,43 +16,55 @@ export default function IssueCertificatePage() {
   const [studentName, setStudentName] = useState("");
   const [courseTitle, setCourseTitle] = useState("");
   const [issueDate, setIssueDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (classId) {
-      // Mock: Fetch enrolled students + class details
-      setStudents([
-        { id: "s1", name: "Ahmed Mohamed" },
-        { id: "s2", name: "Sara Ali" },
-      ]);
-      setCourseTitle("React & Next.js Bootcamp");
-      setIssueDate(new Date().toISOString().slice(0, 10));
-    }
+    const load = async () => {
+      if (!classId) return;
+      setLoading(true);
+      setError('');
+      try {
+        const data = await fetchClassStudents(classId);
+        setStudents(data?.students || []);
+        setCourseTitle(data?.classTitle || "");
+        setIssueDate(new Date().toISOString().slice(0, 10));
+      } catch (err) {
+        console.error('Failed to load class info', err);
+        setError('Failed to load class info');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [classId]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedStudent || !studentName) {
       alert("⚠️ Please select a student and ensure the name is filled.");
       return;
     }
 
-    const newCertificate = {
-      studentId: selectedStudent,
-      studentName,
-      courseTitle,
-      instructorName: "Ayman Khalid", // Ideally from auth context
-      issueDate,
-      status: "Issued",
-    };
-
-    console.log("🎓 Issued Certificate:", newCertificate);
-
-    alert("✅ Certificate issued successfully!");
-
-    // Redirect to certificate list
-    router.push(`/dashboard/instructor/certificates`);
+    setSaving(true);
+    setError('');
+    try {
+      await issueCertificate({
+        classId,
+        studentId: selectedStudent,
+        studentName,
+        issueDate,
+      });
+      router.push(`/dashboard/instructor/certificates`);
+    } catch (err) {
+      console.error('Issue failed', err);
+      setError('Failed to issue certificate');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!classId) return <div className="text-white p-10">Loading class info...</div>;
+  if (!classId || loading) return <div className="text-white p-10">Loading class info...</div>;
 
   return (
     <InstructorLayout>
@@ -56,6 +72,7 @@ export default function IssueCertificatePage() {
         <h1 className="text-2xl font-bold text-yellow-500 mb-8">🎓 Issue Certificate</h1>
 
         <div className="space-y-6 max-w-xl">
+          {error && <p className="text-red-500">{error}</p>}
           <select
             value={selectedStudent}
             onChange={(e) => {
@@ -98,9 +115,10 @@ export default function IssueCertificatePage() {
 
           <button
             onClick={handleSubmit}
-            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full mt-6"
+            disabled={saving}
+            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full mt-6 disabled:opacity-50"
           >
-            📤 Issue Certificate
+            {saving ? 'Issuing...' : '📤 Issue Certificate'}
           </button>
         </div>
       </div>
