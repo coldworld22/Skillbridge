@@ -39,6 +39,8 @@
   "subscription_heading": "Scegli il piano giusto per il tuo percorso di apprendimento",
   "subscription_description": "Sblocca funzionalità potenti come lezioni live, accesso 1-a-1 agli istruttori, tutoraggio IA e certificazioni, tutto su misura per il tuo piano.",
   "subscription_select_plan": "Seleziona piano",
+  "monthly": "Mensile",
+  "yearly": "Annuale",
   "ai_feature_adaptive_title": "Percorsi di apprendimento adattivi",
   "ai_feature_adaptive_description": "L'IA analizza i tuoi punti di forza e debolezza per creare una roadmap di apprendimento personalizzata.",
   "ai_feature_quizzes_title": "Quiz generati dall'IA",

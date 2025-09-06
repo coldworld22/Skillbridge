@@ -39,6 +39,8 @@
   "subscription_heading": "Wählen Sie den richtigen Plan für Ihre Lernreise",
   "subscription_description": "Schalte leistungsstarke Funktionen wie Live-Klassen, 1-zu-1-Ausbilderzugang, KI-Tutoring und Zertifizierung-alles auf deinen Plan zugeschnitten.",
   "subscription_select_plan": "Planen Sie den Plan",
+  "monthly": "Monatlich",
+  "yearly": "Jährlich",
   "ai_feature_adaptive_title": "Adaptive Lernwege",
   "ai_feature_adaptive_description": "AI analysiert Ihre Stärken und Schwächen, um eine maßgeschneiderte Lern -Roadmap zu erstellen.",
   "ai_feature_quizzes_title": "Ai-generierte Quiz",

@@ -9,7 +9,7 @@ jest.mock('../../components/layouts/InstructorLayout', () => ({
   default: ({ children }) => <div>{children}</div>,
 }));
 
-jest.mock('../../services/instructor/subscriptionService', () => ({
+jest.mock('../../services/subscriptionService', () => ({
   fetchMySubscription: jest.fn(),
 }));
 
