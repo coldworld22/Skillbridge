@@ -11,6 +11,9 @@ async function runSchema(schema, data) {
   if (!schema) return data;
 
   // Zod schema
+  if (typeof schema.parseAsync === "function") {
+    return await schema.parseAsync(data);
+  }
   if (typeof schema.parse === "function") {
     return schema.parse(data);
   }

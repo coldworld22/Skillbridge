@@ -1,3 +1,21 @@
+jest.mock('../../../config/database', () => {
+  const plans = {
+    'student-id': { id: 'student-id', slug: 'student-slug', target_role: 'student' },
+    'student-slug': { id: 'student-id', slug: 'student-slug', target_role: 'student' },
+    'inst-id': { id: 'inst-id', slug: 'inst-slug', target_role: 'instructor' },
+    'inst-slug': { id: 'inst-id', slug: 'inst-slug', target_role: 'instructor' }
+  };
+  return jest.fn(() => ({
+    where(cond) {
+      this.key = cond.id || cond.slug;
+      return this;
+    },
+    first() {
+      return Promise.resolve(plans[this.key] || null);
+    }
+  }));
+});
+
 const validator = require('../class.validator');
 
 const base = {
@@ -6,22 +24,22 @@ const base = {
 };
 
 describe('class validator date handling', () => {
-  test('rejects invalid start_date', () => {
-    const result = validator.create.safeParse({
+  test('rejects invalid start_date', async () => {
+    const result = await validator.create.safeParseAsync({
       body: { ...base, start_date: 'not-a-date' }
     });
     expect(result.success).toBe(false);
   });
 
-  test('rejects invalid end_date', () => {
-    const result = validator.create.safeParse({
+  test('rejects invalid end_date', async () => {
+    const result = await validator.create.safeParseAsync({
       body: { ...base, end_date: '32/13/2024' }
     });
     expect(result.success).toBe(false);
   });
 
-  test('rejects end_date earlier than start_date', () => {
-    const result = validator.create.safeParse({
+  test('rejects end_date earlier than start_date', async () => {
+    const result = await validator.create.safeParseAsync({
       body: {
         ...base,
         start_date: '2024-05-10',
@@ -31,8 +49,8 @@ describe('class validator date handling', () => {
     expect(result.success).toBe(false);
   });
 
-  test('accepts valid dates in order', () => {
-    const result = validator.create.safeParse({
+  test('accepts valid dates in order', async () => {
+    const result = await validator.create.safeParseAsync({
       body: {
         ...base,
         start_date: '2024-05-01',
@@ -40,5 +58,21 @@ describe('class validator date handling', () => {
       }
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('included_plans validation', () => {
+  test('accepts existing student plan', async () => {
+    const result = await validator.create.safeParseAsync({
+      body: { ...base, included_plans: ['student-id'] }
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('rejects non-student plan', async () => {
+    const result = await validator.create.safeParseAsync({
+      body: { ...base, included_plans: ['inst-id'] }
+    });
+    expect(result.success).toBe(false);
   });
 });
