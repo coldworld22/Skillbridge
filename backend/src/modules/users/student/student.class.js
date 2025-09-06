@@ -62,49 +62,55 @@ class Student {
         ? paymentsService.STATUS.AWAITING_APPROVAL
         : paymentsService.STATUS.PENDING_PAYMENT;
 
-    const results = [];
-    const processedIds = [];
+    return db.transaction(async (trx) => {
+      const results = [];
+      const processedIds = [];
 
-    for (const item of cartItems) {
-      if (item.item_type !== "class") {
-        throw new Error("Invalid cart item type");
+      for (const item of cartItems) {
+        if (item.item_type !== "class") {
+          throw new Error("Invalid cart item type");
+        }
+
+        const cls = await trx("online_classes").where({ id: item.id }).first();
+        if (!cls) {
+          throw new Error("Class not found");
+        }
+
+        const [enrollment] = await trx("class_enrollments")
+          .insert({
+            id: uuidv4(),
+            user_id: this.userId,
+            class_id: item.id,
+            status: "enrolled",
+          })
+          .returning("*");
+
+        const payment = await paymentsService.create(
+          {
+            user_id: this.userId,
+            method_id: paymentMethodId,
+            item_type: item.item_type,
+            item_id: item.id,
+            amount: item.price || 0,
+            status: item.price > 0 ? status : paymentsService.STATUS.PAID,
+          },
+          [],
+          trx
+        );
+
+        processedIds.push(item.id);
+        results.push({ enrollment, payment });
       }
 
-      const cls = await db("online_classes").where({ id: item.id }).first();
-      if (!cls) {
-        throw new Error("Class not found");
+      if (processedIds.length) {
+        await trx("cart_items")
+          .where({ user_id: this.userId })
+          .whereIn("item_id", processedIds)
+          .del();
       }
 
-      const [enrollment] = await db("class_enrollments")
-        .insert({
-          id: uuidv4(),
-          user_id: this.userId,
-          class_id: item.id,
-          status: "enrolled",
-        })
-        .returning("*");
-
-      const payment = await paymentsService.create({
-        user_id: this.userId,
-        method_id: paymentMethodId,
-        item_type: item.item_type,
-        item_id: item.id,
-        amount: item.price || 0,
-        status: item.price > 0 ? status : paymentsService.STATUS.PAID,
-      });
-
-      processedIds.push(item.id);
-      results.push({ enrollment, payment });
-    }
-
-    if (processedIds.length) {
-      await db("cart_items")
-        .where({ user_id: this.userId })
-        .whereIn("item_id", processedIds)
-        .del();
-    }
-
-    return results;
+      return results;
+    });
   }
 }
 
