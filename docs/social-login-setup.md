@@ -34,7 +34,7 @@ If the redirect URI does not exactly match what is configured on Google, the log
 
 If clicking **Sign in with Google** takes you to `/auth/google` and shows a 404 error, verify the frontend's `NEXT_PUBLIC_API_BASE_URL` points to your backend URL including the `/api` prefix. Without this variable the login and register buttons default to `/api/auth/*` which only works when the frontend and backend share the same host. Both buttons now append `?origin=` with the current site origin so the API can redirect back correctly even when `FRONTEND_URL` is not configured.
 
-If requests to `/api/*` still return a Next.js 404 page, confirm your reverse proxy forwards the `/api` path to the backend container. The provided `nginx/conf.d` configs use `location ^~ /api/` to proxy to `backend:5002` without rewriting the prefix. Restart nginx after updating the configuration.
+If requests to `/api/*` still return a Next.js 404 page, confirm your reverse proxy forwards the `/api` path to the backend server. The provided `nginx/conf.d` configs use `location ^~ /api/` to proxy to `127.0.0.1:5002` without rewriting the prefix. Restart nginx after updating the configuration.
 
 After editing the files you can verify that nginx picked up the change by running:
 
