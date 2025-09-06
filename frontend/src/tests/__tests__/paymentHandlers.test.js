@@ -86,6 +86,36 @@ test('crypto payment redirects to invoice and handles errors', async () => {
   expect(args.setPaymentStatus).toHaveBeenCalledWith('idle');
 });
 
+test('includes interval for plan payments', async () => {
+  // Bank
+  initiateBankPayment.mockResolvedValue({ id: 55 });
+  const bankArgs = { ...baseArgs(), itemType: 'plan', interval: 'yearly' };
+  await handleBankPayment(bankArgs);
+  const formData = initiateBankPayment.mock.calls[0][0];
+  expect(formData.get('interval')).toBe('yearly');
+
+  // PayPal
+  initiatePayPalPayment.mockResolvedValue({ approval_url: 'http://paypal' });
+  const paypalArgs = { ...baseArgs(), itemType: 'plan', interval: 'monthly' };
+  await handlePayPalPayment(paypalArgs);
+  expect(initiatePayPalPayment).toHaveBeenLastCalledWith(
+    expect.objectContaining({ interval: 'monthly' })
+  );
+
+  // Crypto
+  initiateCryptoPayment.mockResolvedValue({ invoice_url: 'http://invoice' });
+  const cryptoArgs = {
+    ...baseArgs(),
+    itemType: 'plan',
+    interval: 'monthly',
+    method: { type: 'usdt' },
+  };
+  await handleCryptoPayment(cryptoArgs);
+  expect(initiateCryptoPayment).toHaveBeenLastCalledWith(
+    expect.objectContaining({ interval: 'monthly' })
+  );
+});
+
 test('default payment completes on success and handles errors', async () => {
   createPayment.mockResolvedValue({ status: 'paid' });
   const args = baseArgs();
