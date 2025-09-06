@@ -10,6 +10,18 @@ Install the backend dependencies:
 npm install
 ```
 
+### Required environment variables
+
+The server will fail to start unless the following variables are defined:
+
+- `JWT_SECRET` – signing key for access tokens
+- `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
+- `DATABASE_URL` – PostgreSQL connection string (use `TEST_DATABASE_URL` when running tests)
+- `PORT` – port for the HTTP server
+- `SESSION_SECRET` – session cookie signing secret
+
+Provide these variables via a `.env` file or the hosting environment.
+
 The `/api/system-errors` route reads the latest lines from `logs/error.log` and is used by the admin alerts page. Only authenticated admins can access it.
 
 ### Bank transfer receipts
