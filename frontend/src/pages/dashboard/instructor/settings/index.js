@@ -10,9 +10,28 @@ export default function InstructorSettingsPage() {
   const fetchSubscription = useSubscriptionStore((state) => state.fetch);
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [invoices, setInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [invoiceError, setInvoiceError] = useState(null);
+
+  const loadInvoices = async () => {
+    setLoadingInvoices(true);
+    setInvoiceError(null);
+    try {
+      const { data } = await api.get("/invoices/instructor");
+      setInvoices(data?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch invoices", err);
+      setInvoiceError(err);
+      setInvoices([]);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
 
   useEffect(() => {
     fetchSubscription();
+    loadInvoices();
   }, [fetchSubscription]);
 
   const handleUpgrade = async () => {
@@ -88,6 +107,56 @@ export default function InstructorSettingsPage() {
           ) : (
             <p>No active subscription.</p>
           )}
+          <div>
+            <h3 className="font-medium">Invoices</h3>
+            {loadingInvoices ? (
+              <p>Loading invoices...</p>
+            ) : invoiceError ? (
+              <div>
+                <p className="text-red-600">Failed to load invoices.</p>
+                <button
+                  onClick={loadInvoices}
+                  className="text-blue-600 underline"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : invoices.length ? (
+              <table className="w-full text-left border mt-2">
+                <thead>
+                  <tr>
+                    <th className="px-2 py-1 border">Date</th>
+                    <th className="px-2 py-1 border">Amount</th>
+                    <th className="px-2 py-1 border">Download</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => (
+                    <tr key={inv.id}>
+                      <td className="px-2 py-1 border">
+                        {new Date(inv.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-2 py-1 border">
+                        {inv.amount} {inv.currency}
+                      </td>
+                      <td className="px-2 py-1 border">
+                        <a
+                          href={inv.pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          Download
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No invoices found.</p>
+            )}
+          </div>
         </div>
       </div>
     </InstructorLayout>
