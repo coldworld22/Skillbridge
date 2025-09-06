@@ -12,7 +12,8 @@ npm install
 
 ### Required environment variables
 
-The server will fail to start unless the following variables are defined:
+The server validates these values at startup and exits with a clear error if
+any are missing:
 
 - `JWT_SECRET` – signing key for access tokens
 - `REFRESH_TOKEN_SECRET` – signing key for refresh tokens
