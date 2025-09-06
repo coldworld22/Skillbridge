@@ -131,18 +131,10 @@ function isCryptoMethod(methodOrIdentifier) {
   );
 }
 
-export function filterEligibleMethods(methods, itemType) {
-  const active = Array.isArray(methods)
+export function filterEligibleMethods(methods) {
+  return Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  // previously, plan subscriptions were restricted from using
-  // bank, PayPal and crypto payment methods. Plans now support
-  // all active payment methods, so no additional filtering is
-  // required when `itemType` is "plan".
-  if (itemType === 'plan') {
-    return active;
-  }
-  return active;
 }
 
 export function resolveCheckoutItem(query, cartItems) {
@@ -369,7 +361,7 @@ export default function CheckoutPage() {
     .toLowerCase();
 
   const filteredMethods = useMemo(() => {
-    const eligible = filterEligibleMethods(methods, itemType);
+    const eligible = filterEligibleMethods(methods);
     if (stripePromise) return eligible;
     return eligible.filter(
       (m) => getMethodIdentifier(m).toLowerCase() !== 'stripe'
@@ -470,7 +462,7 @@ export default function CheckoutPage() {
           if (!active) return;
           const methodsList = Array.isArray(data) ? data : [];
           setMethods(methodsList);
-          const eligibleMethods = filterEligibleMethods(methodsList, itemType);
+          const eligibleMethods = filterEligibleMethods(methodsList);
           if (eligibleMethods.length > 0) {
             const defaultMethod =
               eligibleMethods.find((m) => m.is_default) || eligibleMethods[0];
@@ -548,7 +540,7 @@ export default function CheckoutPage() {
     }
     if (itemType === 'plan' && !payment) {
       setPaymentStatus('processing');
-      const eligible = filterEligibleMethods(methods, itemType);
+      const eligible = filterEligibleMethods(methods);
       if (eligible.length === 0) {
         toast.error('No payment methods available for this plan');
         setPaymentStatus('idle');
