@@ -1,16 +1,13 @@
 import api from "@/services/api/api";
-import mockCart from "@/mocks/sampleCart.json"; // Import mock data
-
-const MOCK_MODE = false;
 
 export const getCartItems = async () => {
-  if (MOCK_MODE) {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockCart), 500);
-    });
+  try {
+    const res = await api.get("/cart");
+    return res.data?.data ?? res.data;
+  } catch (error) {
+    console.error("Error fetching cart items:", error);
+    return [];
   }
-  const res = await api.get('/cart');
-  return res.data?.data ?? res.data;
 };
 
 export const addToCart = async (item) => {

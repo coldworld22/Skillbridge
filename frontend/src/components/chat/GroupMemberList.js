@@ -1,26 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ChatImage from '../shared/ChatImage';
-
-const mockMembers = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    role: 'admin',
-  },
-  {
-    id: 2,
-    name: 'Ali Mansour',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    role: 'member',
-  },
-  {
-    id: 3,
-    name: 'Lina Farah',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    role: 'pending',
-  },
-];
+import groupService from '@/services/groupService';
 
 const roleStyles = {
   admin: 'bg-green-100 text-green-700',
@@ -28,7 +8,29 @@ const roleStyles = {
   pending: 'bg-yellow-100 text-yellow-700',
 };
 
-export default function GroupMembersList({ members = mockMembers }) {
+export default function GroupMembersList({ groupId }) {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!groupId) return;
+    let isMounted = true;
+    groupService
+      .getGroupMembers(groupId)
+      .then((data) => {
+        if (isMounted) setMembers(data);
+      })
+      .catch(() => isMounted && setError('Failed to load members'))
+      .finally(() => isMounted && setLoading(false));
+    return () => {
+      isMounted = false;
+    };
+  }, [groupId]);
+
+  if (loading) return <p className="text-sm text-gray-500">Loading...</p>;
+  if (error) return <p className="text-sm text-red-500">{error}</p>;
+
   return (
     <div className="space-y-3">
       {members.map((member) => (
@@ -54,7 +56,6 @@ export default function GroupMembersList({ members = mockMembers }) {
             </div>
           </div>
 
-          {/* Optional actions for admin */}
           {member.role === 'pending' && (
             <div className="flex gap-2">
               <button className="text-xs text-green-600 hover:underline">Approve</button>

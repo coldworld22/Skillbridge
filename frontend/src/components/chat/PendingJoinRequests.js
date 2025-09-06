@@ -1,23 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatImage from '../shared/ChatImage';
+import groupService from '@/services/groupService';
 
-const mockPendingRequests = [
-  {
-    id: 'u1',
-    name: 'Omar Saleh',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-    requestedAt: '2h ago',
-  },
-  {
-    id: 'u2',
-    name: 'Leila Hassan',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    requestedAt: '5h ago',
-  },
-];
+export default function PendingJoinRequests({ groupId, onApprove, onReject }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export default function PendingJoinRequests({ onApprove, onReject }) {
-  const [requests, setRequests] = useState(mockPendingRequests);
+  useEffect(() => {
+    if (!groupId) return;
+    let isMounted = true;
+    groupService
+      .getJoinRequestsForGroup(groupId)
+      .then((data) => {
+        if (isMounted) setRequests(data);
+      })
+      .catch(() => isMounted && setError('Failed to load requests'))
+      .finally(() => isMounted && setLoading(false));
+    return () => {
+      isMounted = false;
+    };
+  }, [groupId]);
 
   const handleApprove = (id) => {
     setRequests((prev) => prev.filter((r) => r.id !== id));
@@ -32,7 +35,11 @@ export default function PendingJoinRequests({ onApprove, onReject }) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">🕓 Pending Join Requests</h3>
-      {requests.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading...</p>
+      ) : error ? (
+        <p className="text-sm text-red-500">{error}</p>
+      ) : requests.length === 0 ? (
         <p className="text-sm text-gray-500">No pending requests.</p>
       ) : (
         requests.map((user) => (

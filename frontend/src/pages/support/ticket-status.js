@@ -1,34 +1,41 @@
+import { useEffect, useState } from "react";
 import PageHead from "@/components/common/PageHead";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer";
-
-// Mocked ticket data (to be replaced with actual API integration)
-const mockTickets = [
-  {
-    id: "TCK-1001",
-    subject: "Refund not processed",
-    status: "Open",
-    createdAt: "2025-05-01",
-    lastUpdated: "2025-05-03",
-  },
-  {
-    id: "TCK-1002",
-    subject: "Unable to join live class",
-    status: "Resolved",
-    createdAt: "2025-04-28",
-    lastUpdated: "2025-04-30",
-  },
-];
+import { fetchMyTickets } from "@/services/supportService";
 
 export default function TicketStatusPage() {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchMyTickets()
+      .then((data) => {
+        if (isMounted) setTickets(data);
+      })
+      .catch(() => isMounted && setError("Failed to load tickets"))
+      .finally(() => isMounted && setLoading(false));
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <PageHead title="My Support Tickets" />
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-20">
-        <h1 className="text-3xl font-bold text-yellow-500 mb-8 text-center">My Support Tickets</h1>
+        <h1 className="text-3xl font-bold text-yellow-500 mb-8 text-center">
+          My Support Tickets
+        </h1>
 
-        {mockTickets.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-gray-400">Loading...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : tickets.length === 0 ? (
           <p className="text-center text-gray-400">No support tickets found.</p>
         ) : (
           <div className="overflow-x-auto border border-gray-700 rounded shadow-lg">
@@ -44,17 +51,23 @@ export default function TicketStatusPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockTickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-t border-gray-700 hover:bg-gray-700 transition">
+                {tickets.map((ticket) => (
+                  <tr
+                    key={ticket.id}
+                    className="border-t border-gray-700 hover:bg-gray-700 transition"
+                  >
                     <td className="px-4 py-3 font-mono">{ticket.id}</td>
                     <td className="px-4 py-3">{ticket.subject}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-sm font-semibold ${ticket.status === "Resolved"
-                          ? "bg-green-600 text-white"
-                          : ticket.status === "Open"
+                      <span
+                        className={`px-2 py-1 rounded text-sm font-semibold ${
+                          ticket.status === "resolved"
+                            ? "bg-green-600 text-white"
+                            : ticket.status === "open"
                             ? "bg-yellow-500 text-black"
                             : "bg-gray-600 text-white"
-                        }`}>
+                        }`}
+                      >
                         {ticket.status}
                       </span>
                     </td>
@@ -69,7 +82,6 @@ export default function TicketStatusPage() {
                       </a>
                     </td>
                   </tr>
-
                 ))}
               </tbody>
             </table>
