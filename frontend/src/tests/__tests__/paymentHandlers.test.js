@@ -46,17 +46,17 @@ beforeEach(() => {
   window.location = { href: '' };
 });
 
-test('bank payment redirects on success and handles errors', async () => {
+test('bank payment redirects on success and handles errors for plan', async () => {
   initiateBankPayment.mockResolvedValue({ id: 55 });
-  const args = baseArgs();
+  const args = { ...baseArgs(), itemType: 'plan' };
   await handleBankPayment(args);
   expect(initiateBankPayment).toHaveBeenCalled();
   expect(args.router.push).toHaveBeenCalledWith(
-    '/payments/success?itemType=class&itemId=1&payment_id=55'
+    '/payments/success?itemType=plan&itemId=1&payment_id=55'
   );
 
   initiateBankPayment.mockRejectedValue(new Error('fail'));
-  const errArgs = baseArgs();
+  const errArgs = { ...baseArgs(), itemType: 'plan' };
   await handleBankPayment(errArgs);
   expect(toast.error).toHaveBeenCalled();
   expect(errArgs.setPaymentStatus).toHaveBeenCalledWith('idle');
