@@ -156,7 +156,7 @@ async function startServer() {
     });
     startJobs();
   } catch (err) {
-    logger.error("❌ Failed to start server:", err.message);
+    logger.error("❌ Failed to start server:", err);
     process.exit(1);
   }
 }
