@@ -42,6 +42,14 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
+      await trx("payments").insert({
+        user_id,
+        item_id: classId,
+        item_type: "class",
+        amount: 0,
+        status: paymentsService.STATUS.PAID,
+        source: "subscription",
+      });
       await creditInstructorSubscription(classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
