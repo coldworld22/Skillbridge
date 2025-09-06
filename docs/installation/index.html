@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge Installation</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="../../frontend/src/styles/globals.css" rel="stylesheet" />
+</head>
+<body class="flex min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <aside id="sidebar" class="hidden md:flex md:flex-col w-64 h-screen overflow-y-auto bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 space-y-4">
+    <nav class="space-y-2">
+      <a href="#prerequisites" class="block hover:text-yellow-500">Prerequisites</a>
+      <a href="#clone-repo" class="block hover:text-yellow-500">Clone the repository</a>
+      <a href="#configure-env" class="block hover:text-yellow-500">Configure environment variables</a>
+      <a href="#install-deps" class="block hover:text-yellow-500">Install dependencies</a>
+      <a href="#prepare-db" class="block hover:text-yellow-500">Prepare the database</a>
+      <a href="#launch-stack" class="block hover:text-yellow-500">Launch the stack</a>
+      <a href="#running-tests" class="block hover:text-yellow-500">Running tests</a>
+      <a href="#hosting" class="block hover:text-yellow-500">Hosting on a server</a>
+    </nav>
+  </aside>
+  <div class="flex-1 md:ml-64 flex flex-col">
+    <header class="md:hidden flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <button id="menuButton" class="text-gray-700 dark:text-gray-200">Menu</button>
+    </header>
+    <main class="flex-1 overflow-y-auto p-6 space-y-12">
+      <h1 class="text-3xl font-bold mb-6">Installation Guide</h1>
+      <section id="prerequisites" class="space-y-4">
+        <h2 class="text-2xl font-semibold">Prerequisites</h2>
+        <ul class="list-disc pl-6 space-y-2">
+          <li><a href="https://nodejs.org/" class="text-blue-600 dark:text-blue-400 underline">Node.js</a> 18 or later</li>
+          <li><a href="https://www.docker.com/" class="text-blue-600 dark:text-blue-400 underline">Docker</a> and Docker Compose</li>
+          <li>Git</li>
+        </ul>
+      </section>
+      <section id="clone-repo" class="space-y-4">
+        <h2 class="text-2xl font-semibold">1. Clone the repository</h2>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">git clone &lt;repo-url&gt;
+cd Skillbridge</code></pre>
+      </section>
+      <section id="configure-env" class="space-y-4">
+        <h2 class="text-2xl font-semibold">2. Configure environment variables</h2>
+        <h3 class="text-xl font-semibold">Backend</h3>
+        <p>Copy the example file and adjust values as needed:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">cp backend/.env.example backend/.env</code></pre>
+        <p>Edit <code>backend/.env</code> and provide your secrets. <code>FRONTEND_URL</code> should match the domain where the frontend will run (defaults to <code>http://localhost:3000</code>). Leave <code>NODE_ENV</code> unset so cookies work over HTTP. If you need cross-subdomain cookies without HTTPS, also set:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">COOKIE_SECURE=false
+COOKIE_SAMESITE=None</code></pre>
+        <p>The book filter's price range uses configurable defaults:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code>BOOK_PRICE_RANGE_DEFAULT=100
+BOOK_PRICE_RANGE_MAX=500</code></pre>
+        <p>These values are read in <code>backend/src/config/books.js</code> and mirrored on the frontend via <code>frontend/src/utils/constants.js</code>. When running the frontend outside Docker, add the <code>NEXT_PUBLIC_</code> variants to <code>frontend/.env.local</code>:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code>NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
+NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500</code></pre>
+        <h3 class="text-xl font-semibold">Initial admin passwords</h3>
+        <p>Set <code>ADMIN_INITIAL_PASSWORD</code> and <code>SUPERADMIN_INITIAL_PASSWORD</code> in <code>backend/.env</code> before running the seed scripts if you want to control the passwords for the seeded Admin and SuperAdmin accounts. When left unset, the seed process will generate secure random passwords and print them to the console.</p>
+        <h3 class="text-xl font-semibold">Frontend (optional)</h3>
+        <p>When using Docker Compose the frontend automatically points to the API on port <code>5002</code>. If you start the Next.js app separately, create <code>frontend/.env.local</code> and set:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
+NEXT_PUBLIC_TRUSTED_ICON_HOSTS=yourdomain.com,cdn.yourdomain.com</code></pre>
+        <p><code>NEXT_PUBLIC_TRUSTED_ICON_HOSTS</code> defines a comma-separated list of allowed hosts for payment method icons. URLs outside this list will fall back to a default icon.</p>
+      </section>
+      <section id="install-deps" class="space-y-4">
+        <h2 class="text-2xl font-semibold">3. Install dependencies (optional)</h2>
+        <p>For manual development outside of Docker:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">cd backend &amp;&amp; npm install
+cd ../frontend &amp;&amp; npm install
+cd ..</code></pre>
+      </section>
+      <section id="prepare-db" class="space-y-4">
+        <h2 class="text-2xl font-semibold">4. Prepare the database</h2>
+        <p>Run migrations and seed data:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">cd backend
+npm run migrate
+npm run seed
+cd ..</code></pre>
+      </section>
+      <section id="launch-stack" class="space-y-4">
+        <h2 class="text-2xl font-semibold">5. Launch the stack</h2>
+        <p>Start all services with Docker Compose:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">docker-compose up --build</code></pre>
+        <p>The containers expose the following URLs:</p>
+        <ul class="list-disc pl-6 space-y-2">
+          <li>Frontend: <code>http://localhost:3000</code></li>
+          <li>Backend API: <code>http://localhost:5002/api</code></li>
+          <li>PostgreSQL: <code>localhost:5432</code></li>
+          <li>pgAdmin: <code>http://localhost:5050</code></li>
+        </ul>
+        <p>Once running, open the frontend URL in your browser and create an account or log in.</p>
+      </section>
+      <section id="running-tests" class="space-y-4">
+        <h2 class="text-2xl font-semibold">6. Running tests</h2>
+        <p>The project includes Jest suites for both the API and the frontend.</p>
+        <h3 class="text-xl font-semibold">Backend</h3>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">cd backend
+npm test</code></pre>
+        <h3 class="text-xl font-semibold">Frontend</h3>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">cd frontend
+npm test</code></pre>
+      </section>
+      <section id="hosting" class="space-y-4">
+        <h2 class="text-2xl font-semibold">7. Hosting on a server</h2>
+        <p>To deploy SkillBridge for real users on a remote host:</p>
+        <ol class="list-decimal pl-6 space-y-4">
+          <li><p><strong>Provision a server</strong> running Linux and install <a href="https://docs.docker.com/engine/install/" class="text-blue-600 dark:text-blue-400 underline">Docker</a> and <a href="https://docs.docker.com/compose/install/" class="text-blue-600 dark:text-blue-400 underline">Docker Compose</a>.</p></li>
+          <li><p><strong>Clone the repository</strong> on the server and configure environment variables as described above.</p>
+            <ul class="list-disc pl-6 space-y-2">
+              <li>In <code>backend/.env</code>, set production values such as <code>NODE_ENV=production</code>, <code>FRONTEND_URL=https://&lt;your-domain&gt;</code>, <code>COOKIE_SECURE=true</code>, and <code>COOKIE_SAMESITE=None</code>.</li>
+              <li>Create <code>frontend/.env.local</code> with <code>NEXT_PUBLIC_API_BASE_URL=https://&lt;your-domain&gt;/api</code>.</li>
+            </ul>
+          </li>
+          <li><p><strong>Adjust Nginx for your domain.</strong></p>
+            <ul class="list-disc pl-6 space-y-2">
+              <li>Set the <code>APP_DOMAIN</code> environment variable so Nginx and the backend use your domain.</li>
+              <li>Obtain TLS certificates (e.g. via Let's Encrypt's certbot) and ensure the paths in <code>ssl.conf</code> match the certificate locations.</li>
+            </ul>
+          </li>
+          <li><p><strong>Run database migrations and seeds</strong> before starting the containers:</p>
+            <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">docker-compose run --rm backend npm run migrate
+docker-compose run --rm backend npm run seed</code></pre>
+          </li>
+          <li><p><strong>Build and start the containers</strong> in detached mode:</p>
+            <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">docker-compose up -d --build</code></pre>
+          </li>
+          <li><p><strong>Verify the deployment</strong> by visiting <code>https://&lt;your-domain&gt;</code> in a browser. The API will be available at <code>https://&lt;your-domain&gt;/api</code>.</p></li>
+        </ol>
+        <p>For updates, pull the latest changes and rebuild:</p>
+        <pre class="bg-gray-800 text-gray-100 p-4 rounded"><code class="language-bash">git pull
+docker-compose up -d --build</code></pre>
+      </section>
+    </main>
+  </div>
+  <script>
+    const btn = document.getElementById('menuButton');
+    const sidebar = document.getElementById('sidebar');
+    btn && btn.addEventListener('click', () => {
+      sidebar.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>
