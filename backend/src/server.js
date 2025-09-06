@@ -130,8 +130,16 @@ const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   try {
-    await db.migrate.latest({ directory: path.join(__dirname, "migrations") });
-    logger.log("✅ Database migrations up to date");
+    const [, pending] = await db.migrate.list({
+      directory: path.join(__dirname, "migrations"),
+    });
+    if (pending.length) {
+      logger.warn(
+        `⚠️ Pending migrations detected. Run \"npm run migrate\" before starting the server.`
+      );
+    } else {
+      logger.log("✅ Database migrations up to date");
+    }
     await initStrategies();
     server.listen(PORT, "0.0.0.0", () => {
       logger.log(`✅ Server running on port ${PORT}`);

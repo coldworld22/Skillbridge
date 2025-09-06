@@ -89,8 +89,10 @@ cd ..
 Run migrations and seed data:
 
 ```bash
-npx knex migrate:latest --knexfile backend/knexfile.js
-npx knex seed:run --knexfile backend/knexfile.js
+cd backend
+npm run migrate
+npm run seed
+cd ..
 ```
 
 ## 5. Launch the stack
@@ -140,17 +142,17 @@ To deploy SkillBridge for real users on a remote host:
 3. **Adjust Nginx for your domain.**
    - Set the `APP_DOMAIN` environment variable so Nginx and the backend use your domain.
    - Obtain TLS certificates (e.g. via Let's Encrypt's certbot) and ensure the paths in `ssl.conf` match the certificate locations.
-4. **Build and start the containers** in detached mode:
+4. **Run database migrations and seeds** before starting the containers:
+
+   ```bash
+   docker-compose run --rm backend npm run migrate
+   docker-compose run --rm backend npm run seed
+   ```
+
+5. **Build and start the containers** in detached mode:
 
    ```bash
    docker-compose up -d --build
-   ```
-
-5. **Run database migrations and seeds** inside the running backend container:
-
-   ```bash
-   docker-compose exec backend npx knex migrate:latest
-   docker-compose exec backend npx knex seed:run
    ```
 
 6. **Verify the deployment** by visiting `https://<your-domain>` in a browser. The API will be available at `https://<your-domain>/api`.
