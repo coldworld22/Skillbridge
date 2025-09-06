@@ -41,12 +41,15 @@ exports.initiateCryptoPayment = catchAsync(async (req, res) => {
     throw new AppError('Unsupported currency', 400);
   }
 
+  // Validate plan payments to ensure the amount aligns with one of the plan's
+  // published prices (monthly or yearly). This keeps plan validation consistent
+  // with other item types.
   if (item_type === 'plan') {
     const plan = await plansService.getPlanById(item_id);
     if (!plan) throw new AppError('Plan not found', 404);
     const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
-    const valid = prices.some((p) => Math.abs(numericAmount - p) < 0.01);
-    if (!valid) {
+    const matched = prices.find((p) => Math.abs(numericAmount - p) < 0.01);
+    if (!matched) {
       throw new AppError('Payment amount does not match plan price', 400);
     }
   }

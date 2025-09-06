@@ -23,6 +23,8 @@ jest.mock('../src/modules/payments/paymentAccess', () => ({
   grantAccess: jest.fn(),
 }));
 
+const paymentAccess = require('../src/modules/payments/paymentAccess');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -153,6 +155,10 @@ describe('bank payment approval flow', () => {
 
     const payment = await db('payments').where({ id: paymentId }).first();
     expect(payment.status).toBe('paid');
+    // grantAccess should be invoked to provision the plan subscription
+    expect(paymentAccess.grantAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ id: paymentId, item_type: 'plan' })
+    );
   });
 });
 

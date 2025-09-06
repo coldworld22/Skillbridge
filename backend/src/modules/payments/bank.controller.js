@@ -132,6 +132,8 @@ exports.initiateBankPayment = catchAsync(async (req, res) => {
     if (!tut) throw new AppError("Tutorial not found", 404);
     basePrice = Number(tut.price);
   } else if (item_type === "plan") {
+    // Plans can be purchased either monthly or yearly. Ensure the submitted
+    // amount matches one of the plan's published prices before proceeding.
     const plan = await plansService.getPlanById(item_id);
     if (!plan) throw new AppError("Plan not found", 404);
     const prices = [Number(plan.price_monthly), Number(plan.price_yearly)];
