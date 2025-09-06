@@ -37,11 +37,27 @@ exports.createClass = catchAsync(async (req, res) => {
     moderation_status: "Pending",
   };
   if (included_plans) {
-    try {
-      data.included_plans = JSON.parse(included_plans);
-    } catch {
-      data.included_plans = included_plans;
+    let plansList = included_plans;
+    if (typeof plansList === "string") {
+      try {
+        plansList = JSON.parse(plansList);
+      } catch {
+        plansList = [plansList];
+      }
     }
+    if (!Array.isArray(plansList)) plansList = [plansList];
+    const ids = [];
+    for (const ref of plansList) {
+      let plan = await db("plans").where({ id: ref }).first();
+      if (!plan) {
+        plan = await db("plans").where({ slug: ref }).first();
+      }
+      if (!plan || plan.target_role !== "student") {
+        throw new AppError("Invalid included plan", 400);
+      }
+      ids.push(plan.id);
+    }
+    data.included_plans = ids;
   }
   if (access_type) {
     data.access_type = access_type;
@@ -199,11 +215,27 @@ exports.updateClass = catchAsync(async (req, res) => {
   const { tags: rawTags, included_plans, access_type, ...body } = req.body;
   let data = { ...body };
   if (included_plans !== undefined) {
-    try {
-      data.included_plans = JSON.parse(included_plans);
-    } catch {
-      data.included_plans = included_plans;
+    let plansList = included_plans;
+    if (typeof plansList === "string") {
+      try {
+        plansList = JSON.parse(plansList);
+      } catch {
+        plansList = [plansList];
+      }
     }
+    if (!Array.isArray(plansList)) plansList = [plansList];
+    const ids = [];
+    for (const ref of plansList) {
+      let plan = await db("plans").where({ id: ref }).first();
+      if (!plan) {
+        plan = await db("plans").where({ slug: ref }).first();
+      }
+      if (!plan || plan.target_role !== "student") {
+        throw new AppError("Invalid included plan", 400);
+      }
+      ids.push(plan.id);
+    }
+    data.included_plans = ids;
   }
   if (access_type !== undefined) {
     data.access_type = access_type;
