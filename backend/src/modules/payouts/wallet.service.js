@@ -4,11 +4,12 @@ exports.getByInstructor = async (instructor_id) => {
   return db("instructor_wallets").where({ instructor_id }).first();
 };
 
-exports.increment = async (instructor_id, amount) => {
-  const [row] = await db("instructor_wallets")
+exports.increment = async (instructor_id, amount, trx) => {
+  const query = trx || db;
+  const [row] = await query("instructor_wallets")
     .insert({ instructor_id, balance: amount })
     .onConflict("instructor_id")
-    .merge({ balance: db.raw('?? + ?', ['balance', amount]), updated_at: db.fn.now() })
+    .merge({ balance: query.raw('?? + ?', ['balance', amount]), updated_at: query.fn.now() })
     .returning("*");
   return row;
 };

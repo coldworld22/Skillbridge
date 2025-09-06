@@ -3,6 +3,7 @@ const bookService = require("../../books/book.service");
 const classService = require("../../classes/class.service");
 const tutorialService = require("../../users/tutorials/tutorial.service");
 const logger = require("../../../utils/logger.js");
+const { calculateInstructorAmount } = require("./planRevenue");
 
 async function creditInstructorWallet(item_type, item_id, amount) {
   try {
@@ -27,4 +28,16 @@ async function creditInstructorWallet(item_type, item_id, amount) {
   }
 }
 
-module.exports = { creditInstructorWallet };
+async function creditInstructorSubscription(classId, planId, trx) {
+  try {
+    const amount = await calculateInstructorAmount(planId, classId, trx);
+    if (amount <= 0) return;
+    const cls = await classService.getClassById(classId);
+    if (cls?.instructor_id) {
+      await walletService.increment(cls.instructor_id, amount, trx);
+    }
+  } catch (err) {
+    logger.error("Failed to credit instructor wallet from subscription:", err);
+  }
+}
+module.exports = { creditInstructorWallet, creditInstructorSubscription };
