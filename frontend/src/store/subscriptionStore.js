@@ -1,24 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { fetchMySubscription as fetchInstructorSubscription } from "@/services/instructor/subscriptionService";
-import { fetchMySubscription as fetchStudentSubscription } from "@/services/student/subscriptionService";
-import useAuthStore from "@/store/auth/authStore";
+import { fetchMySubscription } from "@/services/subscriptionService";
 
 const useSubscriptionStore = create(
   persist(
     (set) => ({
       plan: null,
       loading: false,
-      async fetch(role) {
+      async fetch(_role) {
         set({ loading: true });
         try {
-          const userRole =
-            (role || useAuthStore.getState().user?.role || "")?.toLowerCase();
-          const service =
-            userRole === "student"
-              ? fetchStudentSubscription
-              : fetchInstructorSubscription;
-          const sub = await service();
+          const sub = await fetchMySubscription();
           set({ plan: sub || null, loading: false });
         } catch (err) {
           set({ plan: null, loading: false });

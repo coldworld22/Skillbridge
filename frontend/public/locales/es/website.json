@@ -39,6 +39,8 @@
   "subscription_heading": "Elija el plan adecuado para su viaje de aprendizaje",
   "subscription_description": "Desbloquee características potentes como clases en vivo, acceso al instructor 1-on-1, tutoría de IA y certificación, todo adaptado a su plan.",
   "subscription_select_plan": "Plan de selección",
+  "monthly": "Mensual",
+  "yearly": "Anual",
   "ai_feature_adaptive_title": "Caminos de aprendizaje adaptativo",
   "ai_feature_adaptive_description": "AI analiza sus fortalezas y debilidades para crear una hoja de ruta de aprendizaje personalizada.",
   "ai_feature_quizzes_title": "Cuestionarios generados por IA",
