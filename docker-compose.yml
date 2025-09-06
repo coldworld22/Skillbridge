@@ -45,6 +45,11 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
       - NODE_ENV=${NODE_ENV}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on:
       - db
     volumes:
@@ -59,8 +64,14 @@ services:
     environment:
       # IMPORTANT: browsers can't call localhost on your server
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:
