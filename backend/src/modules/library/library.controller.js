@@ -3,6 +3,8 @@ const catchAsync = require("../../utils/catchAsync");
 const { sendSuccess } = require("../../utils/response");
 const path = require("path");
 const fs = require("fs");
+const planService = require("../plans/plans.service");
+const { parsePlanFeatures } = require("../../utils/planFeatures");
 
 exports.listLibrary = catchAsync(async (req, res) => {
   const items = await service.listForStudent(req.user.id);
@@ -10,6 +12,13 @@ exports.listLibrary = catchAsync(async (req, res) => {
 });
 
 exports.downloadBook = catchAsync(async (req, res) => {
+  const planId =
+    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
+  const features = parsePlanFeatures(plan);
+  if (!features["tutorials_download"]) {
+    return res.status(403).json({ message: "Access denied" });
+  }
   const { bookId } = req.params;
   const book = await service.getBookForDownload(req.user.id, bookId);
   if (!book) {

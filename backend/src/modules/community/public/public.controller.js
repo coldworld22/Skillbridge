@@ -2,6 +2,8 @@ const catchAsync = require("../../../utils/catchAsync");
 const AppError = require("../../../utils/AppError");
 const { sendSuccess } = require("../../../utils/response");
 const service = require("./public.service");
+const planService = require("../../plans/plans.service");
+const { parsePlanFeatures } = require("../../../utils/planFeatures");
 
 exports.listDiscussions = catchAsync(async (_req, res) => {
   const list = await service.listDiscussions();
@@ -23,6 +25,14 @@ exports.createDiscussion = catchAsync(async (req, res) => {
   const { title, content } = req.body || {};
   let { tags } = req.body || {};
   if (!title || !content) throw new AppError("Missing fields", 400);
+
+  const planId =
+    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
+  const features = parsePlanFeatures(plan);
+  if (!features["community_post"]) {
+    throw new AppError("Community posting not allowed for your plan", 403);
+  }
 
   if (typeof tags === "string") {
     try { tags = JSON.parse(tags); } catch { tags = tags.split(',').map((t) => t.trim()).filter(Boolean); }
@@ -70,6 +80,14 @@ exports.listReplies = catchAsync(async (req, res) => {
 exports.createReply = catchAsync(async (req, res) => {
   const { content } = req.body || {};
   if (!content) throw new AppError('Missing fields', 400);
+
+  const planId =
+    req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
+  const features = parsePlanFeatures(plan);
+  if (!features["community_post"]) {
+    throw new AppError("Community posting not allowed for your plan", 403);
+  }
 
   const file = req.files?.file?.[0];
   const audio = req.files?.audio?.[0];
