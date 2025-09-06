@@ -476,23 +476,23 @@
     "no_alerts": "找不到警报。"
   },
   "blogManagerPage": {
-    "title": "Blog Manager",
-    "post_title_placeholder": "Enter post title",
-    "upload_image": "Upload Image",
-    "excerpt_placeholder": "Enter excerpt",
-    "save": "Save",
-    "cancel": "Cancel",
-    "add_post": "Add Post",
-    "edit": "Edit",
-    "delete": "Delete",
-    "load_failed": "Failed to load posts",
-    "create_success": "Post created",
-    "create_failed": "Failed to create post",
-    "confirm_delete": "Are you sure you want to delete this post?",
-    "delete_success": "Post deleted",
-    "delete_failed": "Failed to delete post",
-    "update_success": "Post updated",
-    "update_failed": "Failed to update post"
+    "title": "博客管理",
+    "post_title_placeholder": "输入文章标题",
+    "upload_image": "上传图片",
+    "excerpt_placeholder": "输入摘要",
+    "save": "保存",
+    "cancel": "取消",
+    "add_post": "添加文章",
+    "edit": "编辑",
+    "delete": "删除",
+    "load_failed": "加载文章失败",
+    "create_success": "文章已创建",
+    "create_failed": "创建文章失败",
+    "confirm_delete": "确定要删除这篇文章吗？",
+    "delete_success": "文章已删除",
+    "delete_failed": "删除文章失败",
+    "update_success": "文章已更新",
+    "update_failed": "更新文章失败"
   },
   "instructorProfilePage": {
     "title": "编辑讲师资料",
@@ -1841,17 +1841,17 @@
     "provider_settings_updated": "{{name}} settings updated"
   },
   "studentDashboardHome": {
-    "welcome_back": "👋 Welcome back, {{name}}!",
-    "enrolled_classes": "You're enrolled in {{count}} classes. Keep up the good work!",
-    "learning_progress": "📈 Learning Progress",
-    "upcoming_events": "📅 Upcoming Events",
-    "no_upcoming_events": "No upcoming events",
-    "current_classes": "📘 Current Classes",
-    "progress": "Progress",
-    "next_session": "Next session",
-    "view_class": "View Class",
-    "no_classes": "You are not enrolled in any classes.",
-    "class_number": "Class {{num}}"
+    "welcome_back": "👋 欢迎回来，{{name}}！",
+    "enrolled_classes": "你已报名 {{count}} 门课程。继续保持！",
+    "learning_progress": "📈 学习进度",
+    "upcoming_events": "📅 即将到来的活动",
+    "no_upcoming_events": "没有即将到来的活动",
+    "current_classes": "📘 当前课程",
+    "progress": "进度",
+    "next_session": "下一节课",
+    "view_class": "查看课程",
+    "no_classes": "你尚未报名任何课程。",
+    "class_number": "课程 {{num}}"
   },
   "studentPaymentsPage": {
     "title": "💳 Payment History",
@@ -1877,14 +1877,14 @@
     "invoice_failed": "❌ Failed to generate invoice. Please try again.",
     "confirm_payment_failed": "Failed to confirm payment",
     "status_labels": {
-      "awaiting_approval": "Awaiting Approval",
-      "paid": "Paid",
-      "pending_payment": "Pending Payment"
+      "awaiting_approval": "等待批准",
+      "paid": "已支付",
+      "pending_payment": "待付款"
     }
   },
   "studentSchedulePage": {
-    "title": "My Booked Lessons",
-    "failed_live_session": "Failed to join live session",
-    "event_alert": "📚 {{subject}}\\n👨‍🏫 Instructor: {{instructor}}"
+    "title": "我预订的课程",
+    "failed_live_session": "加入直播课程失败",
+    "event_alert": "📚 {{subject}}\\n👨‍🏫 授课教师：{{instructor}}"
   }
 }

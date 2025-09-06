@@ -2,10 +2,12 @@ export const markAsResolved = (discussion) => {
   return { ...discussion, status: "resolved" };
 };
 
+import logger from "@/utils/logger";
+
 export const warnUser = (userId, reason) => {
-  console.warn(`Warned user ${userId} for reason: ${reason}`);
+  logger.warn(`Warned user ${userId} for reason: ${reason}`);
 };
 
 export const lockDiscussion = (discussionId) => {
-  console.warn(`Discussion ${discussionId} locked`);
+  logger.warn(`Discussion ${discussionId} locked`);
 };

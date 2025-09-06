@@ -4,6 +4,7 @@ import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import logger from "@/utils/logger";
 
 const useAuthStore = create(
   persist(
@@ -19,9 +20,7 @@ const useAuthStore = create(
       isAuthenticated: () => !!get().accessToken && !!get().user,
 
       login: async (credentials) => {
-        if (process.env.NODE_ENV !== "production") {
-          console.log("🔑 authStore.login invoked");
-        }
+        logger.log("🔑 authStore.login invoked");
         const { accessToken, user } = await authService.loginUser(credentials);
         if (user.avatar_url?.startsWith("blob:") || user.avatar_url === "null") {
           user.avatar_url = null;
@@ -47,9 +46,7 @@ const useAuthStore = create(
           fetchNotifications?.();
           return user;
         } catch (err) {
-          if (process.env.NODE_ENV !== "production") {
-            console.error("❌ loginWithToken error", { message: err?.message });
-          }
+          logger.error("❌ loginWithToken error", { message: err?.message });
           set({ accessToken: null, user: null });
         }
       },
@@ -64,9 +61,7 @@ const useAuthStore = create(
           set({ user: fresh });
           return fresh;
         } catch (err) {
-          if (process.env.NODE_ENV !== "production") {
-            console.error("❌ refreshUser error", { message: err?.message });
-          }
+          logger.error("❌ refreshUser error", { message: err?.message });
         }
       },
 
@@ -94,9 +89,7 @@ const useAuthStore = create(
       name: "auth",
       onRehydrateStorage: () => {
         return (state) => {
-          if (process.env.NODE_ENV !== "production") {
-            console.log("🔥 Zustand hydrated");
-          }
+          logger.log("🔥 Zustand hydrated");
           set({ hasHydrated: true });
         };
       },

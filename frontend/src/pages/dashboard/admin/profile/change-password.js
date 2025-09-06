@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FaLock, FaEye, FaEyeSlash, FaCheckCircle, FaExclamationTriangle, FaArrowLeft } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
 import Footer from "@/components/website/sections/Footer"; // ✅ Import Footer
+import logger from "@/utils/logger";
 
 const ChangePasswordPage = ({ prevStep }) => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -35,7 +36,7 @@ const ChangePasswordPage = ({ prevStep }) => {
     }
 
     // 🔹 Success! (Mock: Send update request to backend)
-    console.log("🚀 Password updated successfully!");
+    logger.log("🚀 Password updated successfully!");
     setSuccess(true);
 
     // 🔹 Clear input fields

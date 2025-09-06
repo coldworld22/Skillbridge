@@ -1,5 +1,6 @@
 // components/video-call/TranscriptionManager.js
 import { useEffect, useRef, useState } from "react";
+import logger from "@/utils/logger";
 
 const defaultLanguage =
   typeof window !== "undefined"
@@ -18,7 +19,7 @@ const TranscriptionManager = ({ currentSpeaker = "Unknown" }) => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("Speech Recognition API not supported");
+      logger.warn("Speech Recognition API not supported");
       return;
     }
 
@@ -46,7 +47,7 @@ const TranscriptionManager = ({ currentSpeaker = "Unknown" }) => {
       }
     };
 
-    recognition.onerror = (e) => console.error("Transcription error:", e.error);
+    recognition.onerror = (e) => logger.error("Transcription error:", e.error);
 
     recognitionRef.current = recognition;
     recognition.start();

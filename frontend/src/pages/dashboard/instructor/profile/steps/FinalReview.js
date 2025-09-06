@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaCheckCircle, FaUpload, FaExclamationTriangle, FaPlayCircle, FaTrash } from "react-icons/fa";
+import logger from "@/utils/logger";
 
 const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
   const [isAgreed, setIsAgreed] = useState(false);
@@ -56,7 +57,7 @@ const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
     }
 
     // 🔹 Send to Admin for Approval
-    console.log("🚀 Submitting Profile for Review:", formData);
+    logger.log("🚀 Submitting Profile for Review:", formData);
 
     // ✅ Mark as Submitted
     setSubmitted(true);
