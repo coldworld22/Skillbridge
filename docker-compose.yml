@@ -73,6 +73,21 @@ services:
       backend:
         condition: service_healthy
 
+  nginx:
+    image: nginx:alpine
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - backend
+      - frontend
+
 volumes:
   postgres_data:
   pgadmin_data:
