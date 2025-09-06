@@ -20,26 +20,32 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 1. Configure environment variables:
 
-   - Edit the `.env` file in the project root. Docker Compose loads
-     sensitive values from here, including:
+    - Copy the example env files and update the values:
 
-       - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-       - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
-       - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
-       - `FRONTEND_URL`, `NEXT_PUBLIC_API_BASE_URL`
+      ```bash
+      cp .env.example .env
+      cp backend/.env.example backend/.env
+      cp frontend/.env.example frontend/.env.local    # or frontend/.env.production for production
+      # edit these files and set your secrets
+      # FRONTEND_URL defaults to http://localhost:3000
+      # set it to your frontend's domain if different and omit any trailing slash
+      # When using docker-compose make sure the value does
+      # not include an extra "FRONTEND_URL=" prefix.
+      # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
+      # in backend/.env to control the seeded admin credentials
+      ```
 
-   - Copy the backend example file and adjust values as needed:
+    - Required keys in the root `.env`:
 
-     ```bash
-     cp backend/.env.example backend/.env
-     # edit backend/.env and set your secrets
-     # FRONTEND_URL defaults to http://localhost:3000
-     # set it to your frontend's domain if different and omit any trailing slash
-     # When using docker-compose make sure the value does
-     # not include an extra "FRONTEND_URL=" prefix.
-     # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
-     # to control the seeded admin credentials
-     ```
+        - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+        - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
+        - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
+        - `FRONTEND_URL`, `NEXT_PUBLIC_API_BASE_URL`
+
+    - The frontend `.env` expects:
+
+        - `NEXT_PUBLIC_API_BASE_URL`
+        - `NEXT_PUBLIC_SOCKET_URL`
 
 2. Initialize the database (run migrations and seeds):
 
