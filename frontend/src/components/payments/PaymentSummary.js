@@ -5,7 +5,7 @@ export default function PaymentSummary() {
         <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span>Premium Plan</span>
+            <span>Prime Plan</span>
             <span>$49.99</span>
           </div>
           <div className="flex justify-between text-green-600">
@@ -21,4 +21,3 @@ export default function PaymentSummary() {
       </div>
     );
   }
-  
