@@ -18,6 +18,13 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 ## Quick start
 
+Install the project dependencies:
+
+```bash
+npm --prefix backend install
+npm --prefix frontend install
+```
+
 1. Configure environment variables:
 
    - Edit the `.env` file in the project root. Docker Compose loads
