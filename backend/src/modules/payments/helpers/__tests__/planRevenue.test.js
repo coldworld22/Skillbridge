@@ -44,4 +44,3 @@ describe('calculateInstructorAmount', () => {
     expect(amt).toBe(0);
   });
 });
-
