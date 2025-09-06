@@ -4,6 +4,7 @@ const logger = require('./utils/logger.js');
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
@@ -42,6 +43,8 @@ if (missingSecrets.length) {
 
 const app = express();
 const server = http.createServer(app);
+
+app.use(helmet());
 
 // 🌐 Fix CORS (must be very early)
 let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
