@@ -87,7 +87,9 @@ exports.getPlanFeatures = async (prefix) => {
 
   const transformKey = (key) => {
     if (prefix && key.startsWith(`${prefix}_`)) {
-      return toCamel(key.slice(prefix.length + 1));
+      const suffix = key.slice(prefix.length + 1);
+      if (prefix === "ads" && suffix === "max_duration") return "maxAdDuration";
+      return toCamel(suffix);
     }
     return toCamel(key);
   };
