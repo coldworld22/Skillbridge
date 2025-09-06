@@ -10,15 +10,21 @@ const STATUS = {
 
 exports.STATUS = STATUS;
 
-exports.create = async (data, schedules = []) => {
-  return db.transaction(async (trx) => {
-    const [row] = await trx("payments").insert(data).returning("*");
+exports.create = async (data, schedules = [], trx) => {
+  const run = async (transaction) => {
+    const [row] = await transaction("payments").insert(data).returning("*");
     if (schedules.length) {
       const records = schedules.map((s) => ({ ...s, payment_id: row.id }));
-      await trx("payment_schedules").insert(records);
+      await transaction("payment_schedules").insert(records);
     }
     return row;
-  });
+  };
+
+  if (trx) {
+    return run(trx);
+  }
+
+  return db.transaction(run);
 };
 
 exports.getAll = async (status, methodType) => {
