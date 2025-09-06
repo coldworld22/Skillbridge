@@ -1,9 +1,10 @@
-jest.mock('../../../config/database', () => {
+jest.mock('../../../../config/database', () => {
   const db = jest.fn(() => db);
   db.where = jest.fn(() => db);
   db.first = jest.fn();
   db.insert = jest.fn(() => db);
   db.update = jest.fn(() => db);
+  db.select = jest.fn();
   return db;
 });
 
@@ -11,7 +12,7 @@ jest.mock('../platformFee', () => ({
   calculatePlatformFee: jest.fn(() => ({ instructor_amount: 80 })),
 }));
 
-const db = require('../../../config/database');
+const db = require('../../../../config/database');
 const { calculateInstructorAmount } = require('../planRevenue');
 const { calculatePlatformFee } = require('../platformFee');
 
@@ -20,27 +21,36 @@ describe('calculateInstructorAmount', () => {
     jest.clearAllMocks();
   });
 
-  it('applies commission rate to usage amount', async () => {
+  it('uses plan commission rate when available', async () => {
     db.first
       .mockResolvedValueOnce({ usage_count: 2 })
       .mockResolvedValueOnce({ price_monthly: 100 });
+    db.select.mockResolvedValueOnce([
+      { feature_key: 'commission_rate', value: '0.3' },
+    ]);
 
-    const amt = await calculateInstructorAmount(
-      'plan1',
-      'item1',
-      null,
-      'tutorial'
-    );
-    expect(amt).toBeCloseTo(40);
-    expect(db).toHaveBeenCalledWith('plan_usage_metrics');
-    expect(calculatePlatformFee).toHaveBeenCalledWith('tutorial', 100);
+    const amt = await calculateInstructorAmount('plan1', 'item1');
+    expect(amt).toBeCloseTo(35);
+    expect(calculatePlatformFee).not.toHaveBeenCalled();
+  });
+
+  it('handles different commission rates', async () => {
+    db.first
+      .mockResolvedValueOnce({ usage_count: 4 })
+      .mockResolvedValueOnce({ price_monthly: 200 });
+    db.select.mockResolvedValueOnce([
+      { feature_key: 'commission_rate', value: '0.1' },
+    ]);
+
+    const amt = await calculateInstructorAmount('plan2', 'item2');
+    expect(amt).toBeCloseTo(45);
   });
 
   it('returns 0 when plan not found', async () => {
     db.first
       .mockResolvedValueOnce({ usage_count: 1 })
       .mockResolvedValueOnce(null);
-    const amt = await calculateInstructorAmount('plan1', 'item1');
+    const amt = await calculateInstructorAmount('planX', 'itemX');
     expect(amt).toBe(0);
   });
 });

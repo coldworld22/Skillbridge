@@ -39,6 +39,8 @@
   "subscription_heading": "Choose the Right Plan for Your Learning Journey",
   "subscription_description": "Unlock powerful features like live classes, 1-on-1 instructor access, AI tutoring, and certification – all tailored to your plan.",
   "subscription_select_plan": "Select Plan",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
   "ai_feature_adaptive_title": "Adaptive Learning Paths",
   "ai_feature_adaptive_description": "AI analyzes your strengths & weaknesses to create a customized learning roadmap.",
   "ai_feature_quizzes_title": "AI-Generated Quizzes",

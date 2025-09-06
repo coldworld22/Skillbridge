@@ -12,7 +12,6 @@ const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
 const planService = require("../plans/plans.service");
-
 const { parsePlanFeatures } = require("../../utils/planFeatures");
 
 exports.createGroup = catchAsync(async (req, res) => {

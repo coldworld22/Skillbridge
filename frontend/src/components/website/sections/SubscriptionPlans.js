@@ -49,7 +49,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
             }`}
             onClick={() => setInterval("monthly")}
           >
-            Monthly
+            {t("monthly")}
           </button>
           <button
             className={`px-4 py-2 rounded-r ${
@@ -59,7 +59,7 @@ const SubscriptionPlans = ({ role = "student" }) => {
             }`}
             onClick={() => setInterval("yearly")}
           >
-            Yearly
+            {t("yearly")}
           </button>
         </div>
 

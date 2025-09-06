@@ -576,10 +576,20 @@ exports.getAdAnalytics = catchAsync(async (req, res) => {
     throw new AppError("Forbidden", 403);
   }
 
-  const canShowAnalytics =
-    req.user.plan?.showAnalytics || req.user.subscription?.showAnalytics;
-  if (!isAdmin && !canShowAnalytics) {
-    throw new AppError("Analytics not available for your current plan", 403);
+  if (!isAdmin) {
+    const planId =
+      req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
+    const plan = planId ? await planService.getPlanById(planId) : null;
+    if (!plan) {
+      throw new AppError("Plan not found", 403);
+    }
+    const features = parsePlanFeatures(plan);
+    if (!features["ads_show_analytics"]) {
+      throw new AppError(
+        "Analytics not available for your current plan",
+        403
+      );
+    }
   }
 
   const data = await service.getAdAnalytics(req.params.id);
