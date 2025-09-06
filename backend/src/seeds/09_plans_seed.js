@@ -264,6 +264,13 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids['instructor-basic'],
+      feature_key: 'ads_max_duration',
+      value: '7',
+      description: 'Ads can run up to 7 days'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
       feature_key: 'ads_show_analytics',
       value: 'false',
       description: 'No analytics access'
@@ -316,6 +323,13 @@ exports.seed = async function (knex) {
       feature_key: 'ads_max_ads',
       value: '10',
       description: 'Up to 10 active ads'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'ads_max_duration',
+      value: '30',
+      description: 'Ads can run up to 30 days'
     },
     {
       id: knex.raw('uuid_generate_v4()'),

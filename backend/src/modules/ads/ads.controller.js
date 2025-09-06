@@ -134,7 +134,7 @@ exports.createAd = catchAsync(async (req, res) => {
 
     const features = parsePlanFeatures(plan);
 
-    const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+    const maxDuration = Number(features["ads_max_duration"] || 0);
     if (!end && maxDuration) {
       end = new Date(start.getTime() + maxDuration * 24 * 60 * 60 * 1000);
     } else if (end) {
@@ -425,7 +425,7 @@ exports.updateAd = catchAsync(async (req, res) => {
 
     const features = parsePlanFeatures(plan);
 
-    const maxDuration = Number(features["ads_max_ad_duration"] || 0);
+    const maxDuration = Number(features["ads_max_duration"] || 0);
     if (maxDuration && newStart && newEnd) {
       const diffDays = Math.ceil(
         (new Date(newEnd).getTime() - new Date(newStart).getTime()) /
