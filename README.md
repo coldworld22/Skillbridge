@@ -2,6 +2,17 @@
 
 SkillBridge is a full-stack learning platform powered by an Express.js backend and a Next.js frontend. Docker Compose is used to run the API, database and web application locally with minimal configuration.
 
+## Project Layout
+
+- `backend/` - Express.js API server
+- `frontend/` - Next.js web application
+- `database/` - database schema and seeds
+- `docs/` - documentation
+- `scripts/` - helper scripts
+- `nginx/` - Nginx configuration for deployment
+- `install.sh` - interactive installation script
+- `docker-compose.yml` - development stack
+
 ## Automated Installation
 
 Ensure `bash`, `curl`, `docker` and `docker compose` are installed on your system.
