@@ -11,8 +11,38 @@ const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
+const planService = require("../plans/plans.service");
+
+const parsePlanFeatures = (plan = {}) => {
+  const result = {};
+  if (!plan || !Array.isArray(plan.features)) return result;
+  plan.features.forEach((f) => {
+    let val = f.value;
+    if (typeof val === "string") {
+      try {
+        val = JSON.parse(val);
+      } catch {
+        if (val === "true") val = true;
+        else if (val === "false") val = false;
+        else if (!isNaN(val)) val = Number(val);
+      }
+    }
+    result[f.feature_key] = val;
+  });
+  return result;
+};
 
 exports.createGroup = catchAsync(async (req, res) => {
+  const planId =
+    req.user.plan_id ||
+    req.user.plan?.id ||
+    req.user.subscription?.plan_id;
+  const plan = planId ? await planService.getPlanById(planId) : null;
+  const features = parsePlanFeatures(plan);
+  if (!features["groups_create"]) {
+    throw new AppError("Upgrade plan to create more groups", 403);
+  }
+
   const {
     name,
     description,
@@ -224,6 +254,26 @@ exports.joinGroup = catchAsync(async (req, res) => {
   const groupId = req.params.id;
   const group = await service.getGroupById(groupId);
   if (!group) throw new AppError("Group not found", 404);
+
+  const existingRole = await service.getMemberRole(groupId, req.user.id);
+  if (!existingRole) {
+    const planId =
+      req.user.plan_id ||
+      req.user.plan?.id ||
+      req.user.subscription?.plan_id;
+    const plan = planId ? await planService.getPlanById(planId) : null;
+    const features = parsePlanFeatures(plan);
+    const joinLimit = features["groups_join_limit"];
+    if (joinLimit && joinLimit !== "unlimited") {
+      const limitNum = Number(joinLimit);
+      if (!isNaN(limitNum)) {
+        const count = await service.countUserGroups(req.user.id);
+        if (count >= limitNum) {
+          throw new AppError("Upgrade plan to join more groups", 403);
+        }
+      }
+    }
+  }
 
   if (group.requires_approval) {
     const reqRow = await service.requestJoin(groupId, req.user.id);

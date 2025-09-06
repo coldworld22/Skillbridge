@@ -132,6 +132,15 @@ exports.cancelJoinRequest = async (groupId, userId) => {
   return row;
 };
 
+// Count total groups a user is a member of
+exports.countUserGroups = async (userId) => {
+  const row = await db("group_members")
+    .where({ user_id: userId })
+    .count("id as count")
+    .first();
+  return Number(row?.count || 0);
+};
+
 exports.getUserGroups = async (userId) => {
   const lastMessageSub = db.raw(
     `(
