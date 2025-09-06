@@ -135,16 +135,9 @@ export function filterEligibleMethods(methods, itemType) {
   const active = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  if (itemType === 'plan') {
-    return active.filter((m) => {
-      const identifier = getMethodIdentifier(m).toLowerCase();
-      return (
-        identifier !== 'paypal' &&
-        identifier !== 'bank' &&
-        !isCryptoMethod(identifier)
-      );
-    });
-  }
+  // Previously, plan purchases excluded PayPal, bank, and crypto methods.
+  // Plans now support all active payment methods, so we no longer filter
+  // any of them out when the item type is a plan.
   return active;
 }
 
@@ -186,6 +179,7 @@ export async function handleBankPayment({
   router,
   t,
   setPaymentStatus,
+  interval,
 }) {
   try {
     setPaymentStatus('processing');
@@ -194,6 +188,7 @@ export async function handleBankPayment({
     payload.append('item_type', itemType);
     payload.append('amount', finalPrice);
     if (couponId) payload.append('coupon_id', couponId);
+    if (itemType === 'plan') payload.append('interval', interval);
     if (formData.reference) payload.append('reference', formData.reference);
     if (formData.receipt) payload.append('receipt', formData.receipt);
     const payment = await initiateBankPayment(payload);
@@ -214,6 +209,7 @@ export async function handlePayPalPayment({
   couponId,
   t,
   setPaymentStatus,
+  interval,
 }) {
   try {
     setPaymentStatus('processing');
@@ -222,6 +218,7 @@ export async function handlePayPalPayment({
       item_type: itemType,
       amount: finalPrice,
     };
+    if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const data = await initiatePayPalPayment(payload);
     if (data?.approval_url) {
@@ -245,6 +242,7 @@ export async function handleCryptoPayment({
   method,
   t,
   setPaymentStatus,
+  interval,
 }) {
   try {
     setPaymentStatus('processing');
@@ -254,6 +252,7 @@ export async function handleCryptoPayment({
       amount: finalPrice,
       method_type: method?.type || getMethodIdentifier(method),
     };
+    if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
     const data = await initiateCryptoPayment(payload);
     if (data?.invoice_url) {
