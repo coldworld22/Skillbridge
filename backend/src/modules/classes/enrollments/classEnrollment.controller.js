@@ -60,9 +60,27 @@ exports.enroll = catchAsync(async (req, res) => {
         });
       }
 
-      await planRevenue.calculateInstructorAmount(activePlanId, classId, trx);
+      await planRevenue.calculateInstructorAmount(
+        activePlanId,
+        classId,
+        "class",
+        trx,
+      );
 
-      await creditInstructorSubscription(classId, activePlanId, trx);
+      await creditInstructorSubscription(
+        "class",
+        classId,
+        activePlanId,
+        trx,
+      );
+
+      await trx("payments").insert({
+        user_id,
+        item_id: classId,
+        item_type: "class",
+        source: "subscription",
+        amount: 0,
+      });
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({
