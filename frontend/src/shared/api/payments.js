@@ -9,7 +9,7 @@ export const processCoinbasePayment = async (amount, currency) => {
             },
             body: JSON.stringify({
                 name: "Course Purchase",
-                description: "Access to Premium Content",
+                description: "Access to Prime Content",
                 pricing_type: "fixed_price",
                 local_price: { amount: amount, currency: currency }
             })

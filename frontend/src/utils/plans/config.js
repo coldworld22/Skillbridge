@@ -40,7 +40,7 @@ export const initialPlanConfig = {
       maxCourses: { instructor: 5 },
       adCredits: { instructor: 100 }
     },
-    Premium: {
+    Prime: {
       canJoin: { onlineClasses: true },
       canCreate: { onlineClasses: true },
       canViewPremium: { tutorials: true },
