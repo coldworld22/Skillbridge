@@ -98,6 +98,18 @@ referenced in `nginx/conf.d/ssl.conf`.
 After updating these files, rebuild the Docker images or restart the server so
 that the environment changes take effect.
 
+## Run database migrations
+
+Before starting the backend server or after pulling updates, apply any pending
+database migrations:
+
+```bash
+npm --prefix backend run migrate
+```
+
+Running migrations separately keeps `startServer()` lightweight and ensures the
+database schema matches the application's expectations.
+
 ## Preserve uploaded media
 
 The admin panel lets you upload a logo and favicon under

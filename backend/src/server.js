@@ -136,9 +136,10 @@ const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   try {
-    const [, pending] = await db.migrate.list({
-      directory: path.join(__dirname, "migrations"),
-    });
+    // Migrations are handled via the dedicated `npm run migrate` script.
+    // Only warn here if the database is behind so the server can still start.
+    const migrationDir = path.join(__dirname, "migrations");
+    const [, pending] = await db.migrate.list({ directory: migrationDir });
     if (pending.length) {
       logger.warn(
         `⚠️ Pending migrations detected. Run \"npm run migrate\" before starting the server.`
