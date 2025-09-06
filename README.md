@@ -15,18 +15,28 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 ## Quick start
 
-1. Copy the example environment file and adjust values as needed:
+1. Configure environment variables:
 
-   ```bash
-    cp backend/.env.example backend/.env
-    # edit backend/.env and set your secrets
-    # FRONTEND_URL defaults to http://localhost:3000
-    # set it to your frontend's domain if different and omit any trailing slash
-    # When using docker-compose make sure the value does
-    # not include an extra "FRONTEND_URL=" prefix.
-    # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
-    # to control the seeded admin credentials
-    ```
+   - Edit the `.env` file in the project root. Docker Compose loads
+     sensitive values from here, including:
+
+       - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+       - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
+       - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
+       - `FRONTEND_URL`, `NEXT_PUBLIC_API_BASE_URL`
+
+   - Copy the backend example file and adjust values as needed:
+
+     ```bash
+     cp backend/.env.example backend/.env
+     # edit backend/.env and set your secrets
+     # FRONTEND_URL defaults to http://localhost:3000
+     # set it to your frontend's domain if different and omit any trailing slash
+     # When using docker-compose make sure the value does
+     # not include an extra "FRONTEND_URL=" prefix.
+     # Optionally set ADMIN_INITIAL_PASSWORD and SUPERADMIN_INITIAL_PASSWORD
+     # to control the seeded admin credentials
+     ```
 
 2. Initialize the database (run migrations and seeds):
 
