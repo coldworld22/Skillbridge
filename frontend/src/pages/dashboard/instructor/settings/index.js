@@ -107,6 +107,7 @@ export default function InstructorSettingsPage() {
           ) : (
             <p>No active subscription.</p>
           )}
+
           <div>
             <h3 className="font-medium">Invoices</h3>
             {loadingInvoices ? (
@@ -114,45 +115,25 @@ export default function InstructorSettingsPage() {
             ) : invoiceError ? (
               <div>
                 <p className="text-red-600">Failed to load invoices.</p>
-                <button
-                  onClick={loadInvoices}
-                  className="text-blue-600 underline"
-                >
+                <button onClick={loadInvoices} className="text-blue-600 underline">
                   Retry
                 </button>
               </div>
             ) : invoices.length ? (
-              <table className="w-full text-left border mt-2">
-                <thead>
-                  <tr>
-                    <th className="px-2 py-1 border">Date</th>
-                    <th className="px-2 py-1 border">Amount</th>
-                    <th className="px-2 py-1 border">Download</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((inv) => (
-                    <tr key={inv.id}>
-                      <td className="px-2 py-1 border">
-                        {new Date(inv.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-2 py-1 border">
-                        {inv.amount} {inv.currency}
-                      </td>
-                      <td className="px-2 py-1 border">
-                        <a
-                          href={inv.pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline"
-                        >
-                          Download
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ul className="list-disc list-inside space-y-1">
+                {invoices.map((inv) => (
+                  <li key={inv.id}>
+                    <a
+                      href={inv.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      Invoice {inv.id}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             ) : (
               <p>No invoices found.</p>
             )}
