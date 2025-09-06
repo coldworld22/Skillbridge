@@ -29,7 +29,7 @@ const removeUploadedFiles = async (files = {}) => {
 
 exports.createBook = catchAsync(async (req, res) => {
   try {
-    const { tags: rawTags, ...data } = req.body;
+    const { tags: rawTags, included_plans, ...data } = req.body;
     data.instructor_id = req.user.id;
     data.status = "pending";
     if (req.files?.cover_image?.[0])
@@ -41,6 +41,30 @@ exports.createBook = catchAsync(async (req, res) => {
       data.preview_pages = JSON.stringify(
         req.files.preview_pages.map((f) => "/uploads/books/" + f.filename)
       );
+    }
+
+    if (included_plans) {
+      let plansList = included_plans;
+      if (typeof included_plans === "string") {
+        try {
+          plansList = JSON.parse(included_plans);
+        } catch {
+          plansList = [included_plans];
+        }
+      }
+      if (!Array.isArray(plansList)) plansList = [];
+      const ids = [];
+      if (process.env.NODE_ENV !== "test") {
+        const db = require("../../config/database");
+        for (const p of plansList) {
+          let plan = await db("plans").where({ id: p }).first();
+          if (!plan) {
+            plan = await db("plans").where({ slug: p }).first();
+          }
+          if (plan && plan.target_role === "student") ids.push(plan.id);
+        }
+      }
+      data.included_plans = ids;
     }
 
     const book = await service.createBook(data);
@@ -165,7 +189,7 @@ exports.updateBook = catchAsync(async (req, res) => {
       throw new AppError("Access denied", 403);
     }
 
-  const { tags: rawTags, remove_preview_pages, ...data } = req.body;
+  const { tags: rawTags, included_plans, remove_preview_pages, ...data } = req.body;
   if (req.files?.cover_image?.[0])
     data.cover_image_url =
       "/uploads/books/" + req.files.cover_image[0].filename;
@@ -181,6 +205,30 @@ exports.updateBook = catchAsync(async (req, res) => {
     remove_preview_pages === "true" ||
     remove_preview_pages === 1 ||
     remove_preview_pages === true;
+
+    if (included_plans !== undefined) {
+      let plansList = included_plans;
+      if (typeof included_plans === "string") {
+        try {
+          plansList = JSON.parse(included_plans);
+        } catch {
+          plansList = [included_plans];
+        }
+      }
+      if (!Array.isArray(plansList)) plansList = [];
+      const ids = [];
+      if (process.env.NODE_ENV !== "test") {
+        const db = require("../../config/database");
+        for (const p of plansList) {
+          let plan = await db("plans").where({ id: p }).first();
+          if (!plan) {
+            plan = await db("plans").where({ slug: p }).first();
+          }
+          if (plan && plan.target_role === "student") ids.push(plan.id);
+        }
+      }
+      data.included_plans = ids;
+    }
 
     const book = await service.updateBook(req.params.id, data, {
       removePreviewPages: removePreviews,

@@ -20,6 +20,12 @@ const mockDb = knex({
 
 // Mock the database module used in the service
 jest.mock('../../../config/database', () => mockDb);
+jest.mock('../../plans/subscription.helper', () => ({
+  getActiveStudentPlanId: jest.fn().mockResolvedValue(null),
+}));
+jest.mock('../../payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn().mockResolvedValue(0),
+}));
 
 const db = require('../../../config/database');
 const { listBooks, checkout, updateBook } = require('../book.service');
@@ -42,6 +48,7 @@ beforeAll(async () => {
     table.string('cover_image_url');
     table.string('pdf_url');
     table.text('preview_pages');
+    table.json('included_plans').notNullable().defaultTo('[]');
   });
 
   await db.schema.createTable('book_cart', (table) => {

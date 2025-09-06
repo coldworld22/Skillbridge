@@ -8,7 +8,7 @@ const bookService = require("../../books/book.service");
 const tutorialService = require("../../users/tutorials/tutorial.service");
 const plansService = require("../../plans/plans.service");
 
-async function validatePaymentData(body) {
+async function validatePaymentData(body, userId) {
   const {
     method_id,
     item_type,
@@ -105,6 +105,7 @@ async function validatePaymentData(body) {
   let planInterval = null;
   let basePrice;
 
+  let subscriptionPlanId = null;
   if (item_type === "class") {
     const cls = await classService.getClassById(item_id);
     if (!cls) throw new AppError("Class not found", 404);
@@ -113,6 +114,32 @@ async function validatePaymentData(body) {
     const book = await bookService.getBookById(item_id);
     if (!book) throw new AppError("Book not found", 404);
     basePrice = Number(book.price);
+    let activePlanId = null;
+    if (userId) {
+      try {
+        const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
+        activePlanId = await getActiveStudentPlanId(userId);
+      } catch (_) {
+        activePlanId = null;
+      }
+    }
+    const includedPlans = Array.isArray(book.included_plans)
+      ? book.included_plans
+      : [];
+    const coveredBySubscription =
+      activePlanId && includedPlans.includes(activePlanId);
+    if (coveredBySubscription) {
+      if (Number(amount) !== 0) {
+        throw new AppError(
+          "Amount must be 0 for plan-covered items",
+          400
+        );
+      }
+      subscriptionPlanId = activePlanId;
+      verifiedAmount = 0;
+      finalStatus = STATUS.PAID;
+      basePrice = null;
+    }
   } else if (item_type === "tutorial") {
     const tut = await tutorialService.getTutorialById(item_id);
     if (!tut) throw new AppError("Tutorial not found", 404);
@@ -162,6 +189,7 @@ async function validatePaymentData(body) {
     schedules,
     next_due_date,
     totalInstallments,
+    subscriptionPlanId,
   };
 }
 
