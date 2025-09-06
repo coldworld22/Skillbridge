@@ -52,6 +52,7 @@ router.use(
 router.use('/api/payments/admin', require('../modules/payments/payments.routes'));
 router.use('/api/invoices/admin', require('../modules/invoices/invoices.routes'));
 router.use('/api/invoices/student', require('../modules/invoices/student.routes'));
+router.use('/api/invoices/instructor', require('../modules/invoices/instructor.routes'));
 router.use(
   '/api/admin/payments/bank',
   require('../modules/payments/bank.admin.routes')
