@@ -3,6 +3,7 @@ FROM node:18
 
 # Set working directory
 WORKDIR /app
+RUN apt-get update && apt-get install -y curl
 
 # Copy package.json and lock file
 COPY package.json package-lock.json ./
