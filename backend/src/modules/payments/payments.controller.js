@@ -17,7 +17,6 @@ const invoiceService = require("../invoices/invoices.service");
 const paymentMethodsService = require("../paymentMethods/paymentMethods.service");
 const { validatePaymentData } = require("./helpers/validation");
 const { calculatePlatformFee } = require("./helpers/platformFee");
-const { creditInstructorWallet } = require("./helpers/wallet");
 const { handleEnrollment } = require("./helpers/enrollment");
 
 exports.createPayment = catchAsync(async (req, res) => {
@@ -25,7 +24,7 @@ exports.createPayment = catchAsync(async (req, res) => {
 
   const user_id = req.user.id;
 
-  const validation = await validatePaymentData(req.body);
+  const validation = await validatePaymentData(req.body, user_id);
   const {
     method,
     verifiedAmount,
@@ -36,6 +35,7 @@ exports.createPayment = catchAsync(async (req, res) => {
     schedules,
     next_due_date,
     totalInstallments,
+    subscriptionPlanId,
   } = validation;
 
   const { platform_fee, instructor_amount } = await calculatePlatformFee(
@@ -61,6 +61,9 @@ exports.createPayment = catchAsync(async (req, res) => {
     installment_number: 1,
     next_due_date,
   };
+  if (subscriptionPlanId) {
+    createData.source = 'subscription';
+  }
   const createArgs = [createData];
   if (schedules.length) createArgs.push(schedules);
   const payment = await service.create(...createArgs);
@@ -94,7 +97,38 @@ exports.createPayment = catchAsync(async (req, res) => {
     }
   }
 
+  if (subscriptionPlanId && item_type === "book") {
+    try {
+      const db = require("../../config/database");
+      const usage = await db("plan_usage_metrics")
+        .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+        .first();
+      if (usage) {
+        await db("plan_usage_metrics")
+          .where({ plan_id: subscriptionPlanId, item_type: "book", item_id })
+          .update({ usage_count: usage.usage_count + 1 });
+      } else {
+        await db("plan_usage_metrics").insert({
+          plan_id: subscriptionPlanId,
+          item_type: "book",
+          item_id,
+          usage_count: 1,
+        });
+      }
+      const planRevenue = require("./helpers/planRevenue");
+      await planRevenue.calculateInstructorAmount(
+        subscriptionPlanId,
+        item_id,
+        null,
+        "book"
+      );
+    } catch (err) {
+      logger.error("Failed to record subscription usage:", err);
+    }
+  }
+
   if (payment.status === STATUS.PAID) {
+    const { creditInstructorWallet } = require("./helpers/wallet");
     await creditInstructorWallet(item_type, item_id, instructor_amount);
     await handleEnrollment(item_type, user_id, item_id);
   }

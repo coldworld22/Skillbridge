@@ -10,6 +10,11 @@ jest.mock('../src/modules/plans/subscription.helper', () => ({
 }));
 const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
 
+jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
+}));
+const planRevenue = require('../src/modules/payments/helpers/planRevenue');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -126,6 +131,7 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
 
   it('enrolls in paid tutorial covered by subscription', async () => {
     const planInsert = jest.fn(() => Promise.resolve());
+    const paymentInsert = jest.fn(() => Promise.resolve());
 
     db.mockImplementation((table) => {
       if (table === 'tutorials')
@@ -151,16 +157,32 @@ describe('POST /api/users/tutorials/enrollments/:id', () => {
           where: () => ({ first: () => Promise.resolve(null), update: jest.fn() }),
           insert: planInsert,
         };
+      if (table === 'payments')
+        return { insert: paymentInsert };
     });
 
     getActiveStudentPlanId.mockResolvedValue('plan1');
 
+    const tutorialId = '123e4567-e89b-12d3-a456-426614174003';
     const res = await request(app).post(
-      '/api/users/tutorials/enrollments/123e4567-e89b-12d3-a456-426614174003',
+      `/api/users/tutorials/enrollments/${tutorialId}`,
     );
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Enrolled successfully');
     expect(planInsert).toHaveBeenCalled();
+    expect(paymentInsert).toHaveBeenCalledWith({
+      user_id: 'user1',
+      item_id: tutorialId,
+      item_type: 'tutorial',
+      source: 'subscription',
+      amount: 0,
+    });
+    expect(planRevenue.calculateInstructorAmount).toHaveBeenCalledWith(
+      'plan1',
+      tutorialId,
+      expect.anything(),
+      'tutorial'
+    );
   });
 });
 
