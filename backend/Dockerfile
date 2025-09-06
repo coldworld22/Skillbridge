@@ -2,6 +2,7 @@ FROM node:18-alpine
 
 # Set working directory inside the container
 WORKDIR /app
+RUN apk add --no-cache curl
 
 # Copy package.json and package-lock.json first (better build caching)
 COPY package*.json ./
