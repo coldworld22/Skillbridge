@@ -21,6 +21,10 @@ exports.createBook = Joi.object({
     .default(false),
   status: Joi.string().optional(),
   tags: Joi.alternatives(Joi.array().items(Joi.string()), Joi.string()).optional(),
+  included_plans: Joi.alternatives(
+    Joi.array().items(Joi.string()),
+    Joi.string()
+  ).optional(),
 });
 
 exports.updateBook = Joi.object({
@@ -39,6 +43,10 @@ exports.updateBook = Joi.object({
     .falsy(0)
     .falsy('false'),
   tags: Joi.alternatives(Joi.array().items(Joi.string()), Joi.string()),
+  included_plans: Joi.alternatives(
+    Joi.array().items(Joi.string()),
+    Joi.string()
+  ).optional(),
 });
 
 exports.updateBookStatus = Joi.object({

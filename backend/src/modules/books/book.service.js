@@ -10,13 +10,17 @@ const paymentMethodsService = require("../paymentMethods/paymentMethods.service"
 const paymentConfigService = require("../paymentConfig/paymentConfig.service");
 const libraryService = require("../library/library.service");
 const { v4: uuidv4 } = require("uuid");
+const { getActiveStudentPlanId } = require("../plans/subscription.helper");
+const planRevenue = require("../payments/helpers/planRevenue");
 
 const { STATUS: PAYMENT_STATUS } = paymentsService;
 
 const DEFAULT_PLATFORM_CUT = { book: 10 };
 
 exports.createBook = async (data) => {
-  const [row] = await db("books").insert(data).returning("*");
+  const insertData = { included_plans: [], ...data };
+  if (!insertData.included_plans) insertData.included_plans = [];
+  const [row] = await db("books").insert(insertData).returning("*");
   return row;
 };
 
@@ -206,7 +210,9 @@ exports.updateBook = async (id, data, { removePreviewPages = false } = {}) => {
     await removeFiles([existing.pdf_url]);
   }
 
-  const [row] = await db("books").where({ id }).update(data).returning("*");
+  const updateData = { ...data };
+  if (updateData.included_plans === undefined) delete updateData.included_plans;
+  const [row] = await db("books").where({ id }).update(updateData).returning("*");
   return row;
 };
 
@@ -266,6 +272,8 @@ exports.checkout = async (studentId) => {
   const bankMethod = await paymentMethodsService.getByType('bank');
   if (!bankMethod) throw new AppError('Bank payment method not configured', 400);
 
+  const activePlanId = await getActiveStudentPlanId(studentId);
+
   return db.transaction(async (trx) => {
     const items = await trx('book_cart')
       .where({ student_id: studentId })
@@ -286,7 +294,7 @@ exports.checkout = async (studentId) => {
     const books = await trx('books')
       .whereIn('id', bookIds)
       .where('status', 'active')
-      .select('id', 'price');
+      .select('id', 'price', 'included_plans');
 
     if (books.length !== bookIds.length) {
       const validIds = books.map((b) => b.id);
@@ -303,6 +311,50 @@ exports.checkout = async (studentId) => {
 
     const payments = [];
     for (const b of books) {
+      const includedPlans = Array.isArray(b.included_plans) ? b.included_plans : [];
+      const coveredBySubscription = activePlanId && includedPlans.includes(activePlanId);
+
+      if (coveredBySubscription) {
+        const usage = await trx('plan_usage_metrics')
+          .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+          .first();
+        if (usage) {
+          await trx('plan_usage_metrics')
+            .where({ plan_id: activePlanId, item_type: 'book', item_id: b.id })
+            .update({ usage_count: usage.usage_count + 1 });
+        } else {
+          await trx('plan_usage_metrics').insert({
+            plan_id: activePlanId,
+            item_type: 'book',
+            item_id: b.id,
+            usage_count: 1,
+          });
+        }
+
+        await planRevenue.calculateInstructorAmount(activePlanId, b.id, trx, 'book');
+
+        const [payment] = await trx('payments')
+          .insert({
+            id: uuidv4(),
+            user_id: studentId,
+            item_type: 'book',
+            item_id: b.id,
+            amount: 0,
+            status: PAYMENT_STATUS.PAID,
+            source: 'subscription',
+          })
+          .returning('*');
+
+        await trx('book_purchases').insert({
+          student_id: studentId,
+          book_id: b.id,
+          price_paid: 0,
+        });
+
+        payments.push(payment);
+        continue;
+      }
+
       let platform_fee = 0;
       let instructor_amount = Number(b.price);
       try {
