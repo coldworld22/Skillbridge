@@ -8,6 +8,7 @@ const db = require("../../../config/database");
 const paymentsService = require("../../payments/payments.service");
 const { getActiveStudentPlanId } = require("../../plans/subscription.helper");
 const { creditInstructorSubscription } = require("../../payments/helpers/wallet");
+const planRevenue = require("../../payments/helpers/planRevenue");
 
 exports.enroll = catchAsync(async (req, res) => {
   const { classId } = req.params;
@@ -42,14 +43,25 @@ exports.enroll = catchAsync(async (req, res) => {
       activePlanId && includedPlans.includes(activePlanId);
 
     if (coveredBySubscription) {
-      await trx("payments").insert({
-        user_id,
-        item_id: classId,
-        item_type: "class",
-        amount: 0,
-        status: paymentsService.STATUS.PAID,
-        source: "subscription",
-      });
+      const usage = await trx("plan_usage_metrics")
+        .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
+        .first();
+
+      if (usage) {
+        await trx("plan_usage_metrics")
+          .where({ plan_id: activePlanId, item_type: "class", item_id: classId })
+          .update({ usage_count: usage.usage_count + 1 });
+      } else {
+        await trx("plan_usage_metrics").insert({
+          plan_id: activePlanId,
+          item_type: "class",
+          item_id: classId,
+          usage_count: 1,
+        });
+      }
+
+      await planRevenue.calculateInstructorAmount(activePlanId, classId, trx);
+
       await creditInstructorSubscription(classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
