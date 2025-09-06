@@ -138,7 +138,10 @@ export function filterEligibleMethods(methods, itemType) {
   if (itemType === 'plan') {
     return active.filter((m) => {
       const identifier = getMethodIdentifier(m).toLowerCase();
-      return identifier !== 'paypal' && !isCryptoMethod(identifier);
+      return (
+        identifier !== 'paypal' &&
+        !isCryptoMethod(identifier)
+      );
     });
   }
   return active;
