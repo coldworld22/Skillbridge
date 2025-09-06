@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 import {
   LineChart,
   Line,
@@ -14,6 +17,9 @@ import { fetchMyEnrolledClasses } from "@/services/classService";
 import { getStudentProfile } from "@/services/student/studentService";
 
 function StudentDashboardHome() {
+  const { t, i18n } = useTranslation("dashboard", {
+    keyPrefix: "studentDashboardHome",
+  });
   const [hasMounted, setHasMounted] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [classes, setClasses] = useState([]);
@@ -41,11 +47,11 @@ function StudentDashboardHome() {
 
         const progressChart = formatted.map((cls, index) => ({
           date: cls.nextSession
-            ? new Date(cls.nextSession).toLocaleDateString("en-US", {
+            ? new Date(cls.nextSession).toLocaleDateString(i18n.language, {
                 month: "short",
                 day: "numeric",
               })
-            : `Class ${index + 1}`,
+            : t("class_number", { num: index + 1 }),
           progress: cls.progress,
         }));
         setProgressData(progressChart);
@@ -55,7 +61,7 @@ function StudentDashboardHome() {
     };
 
     load();
-  }, []);
+  }, [t, i18n.language]);
 
   if (!hasMounted) return null;
 
@@ -63,16 +69,20 @@ function StudentDashboardHome() {
     <StudentLayout>
       <div className="p-6 space-y-6 text-gray-800">
         <div className="bg-yellow-100 p-4 rounded-lg shadow">
-          <h1 className="text-2xl font-bold mb-1">👋 Welcome back, {studentName}!</h1>
+          <h1 className="text-2xl font-bold mb-1">
+            {t("welcome_back", { name: studentName })}
+          </h1>
           <p className="text-sm text-gray-700">
-            You&apos;re enrolled in {classes.length} classes. Keep up the good work!
+            {t("enrolled_classes", { count: classes.length })}
           </p>
         </div>
 
         {/* Progress Chart */}
         {progressData.length > 0 && (
           <section className="bg-white border border-gray-200 p-4 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-3">📈 Learning Progress</h2>
+            <h2 className="text-lg font-semibold mb-3">
+              {t("learning_progress")}
+            </h2>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart
                 data={progressData}
@@ -96,7 +106,9 @@ function StudentDashboardHome() {
 
         {/* Upcoming Events */}
         <section>
-          <h2 className="text-lg font-semibold mb-3">📅 Upcoming Events</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            {t("upcoming_events")}
+          </h2>
           <div className="bg-white p-4 rounded-lg shadow max-h-48 overflow-y-auto divide-y">
             {classes.length > 0 ? (
               classes.map((cls) => (
@@ -105,14 +117,18 @@ function StudentDashboardHome() {
                 </div>
               ))
             ) : (
-              <div className="py-2 text-sm text-gray-600">No upcoming events</div>
+              <div className="py-2 text-sm text-gray-600">
+                {t("no_upcoming_events")}
+              </div>
             )}
           </div>
         </section>
 
         {/* Classes Progress */}
         <section>
-          <h2 className="text-lg font-semibold mb-3">📘 Current Classes</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            {t("current_classes")}
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {classes.map((cls) => (
               <div
@@ -127,23 +143,21 @@ function StudentDashboardHome() {
                   ></div>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Progress: {cls.progress}%
+                  {t("progress")}: {cls.progress}%
                 </p>
                 <p className="text-sm text-gray-600">
-                  Next session: {cls.nextSession}
+                  {t("next_session")}: {cls.nextSession}
                 </p>
                 <a
                   href={`/dashboard/student/classes/${cls.id}`}
                   className="inline-block mt-2 text-sm text-blue-600 hover:underline"
                 >
-                  View Class
+                  {t("view_class")}
                 </a>
               </div>
             ))}
             {classes.length === 0 && (
-              <p className="text-sm text-gray-600">
-                You are not enrolled in any classes.
-              </p>
+              <p className="text-sm text-gray-600">{t("no_classes")}</p>
             )}
           </div>
         </section>
@@ -158,4 +172,12 @@ const ProtectedStudentDashboardHome = withAuthProtection(
 );
 
 export default ProtectedStudentDashboardHome;
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
+}
 

@@ -3,8 +3,14 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import CalendarView from "@/components/shared/CalendarView";
 import { fetchStudentBookings } from "@/services/student/bookingService";
 import { getLessonRoomLink } from "@/services/lessonService";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../next-i18next.config.js";
 
 export default function StudentSchedule() {
+  const { t } = useTranslation("dashboard", {
+    keyPrefix: "studentSchedulePage",
+  });
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
@@ -34,7 +40,7 @@ export default function StudentSchedule() {
   return (
     <StudentLayout>
       <CalendarView
-        title="My Booked Lessons"
+        title={t("title")}
         events={events}
         onEventClick={async (info) => {
           const id = info.event.id || "";
@@ -48,14 +54,27 @@ export default function StudentSchedule() {
                 const url = await getLessonRoomLink(lessonId);
                 window.open(url, "_blank");
               } catch (err) {
-                alert("Failed to join live session");
+                alert(t("failed_live_session"));
               }
               return;
             }
           }
-          alert(`📚 ${info.event.extendedProps.subject}\n👨‍🏫 Instructor: ${info.event.extendedProps.instructor}`);
+          alert(
+            t("event_alert", {
+              subject: info.event.extendedProps.subject,
+              instructor: info.event.extendedProps.instructor,
+            })
+          );
         }}
       />
     </StudentLayout>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ["dashboard"], nextI18NextConfig)),
+    },
+  };
 }
