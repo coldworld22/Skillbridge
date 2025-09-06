@@ -8,6 +8,7 @@ const db = require("../../config/database");
  * - Returns basic public user fields
  */
 exports.getAllUsers = async (filters) => {
+  const { limit, offset } = filters;
   let query = db("users").select(
     "id",
     "full_name",
@@ -33,7 +34,7 @@ exports.getAllUsers = async (filters) => {
     });
   }
 
-  return await query.orderBy("created_at", "desc");
+  return await query.orderBy("created_at", "desc").limit(limit).offset(offset);
 };
 
 
