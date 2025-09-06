@@ -64,6 +64,8 @@ jest.mock('../../plans/instructor.helper', () => ({
   getActiveInstructorPlan: jest.fn(),
 }));
 const { getActiveInstructorPlan } = require('../../plans/instructor.helper');
+jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
+const planService = require('../../plans/plans.service');
 
 const app = express();
 app.use(express.json());
@@ -76,6 +78,10 @@ describe('Class routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getActiveInstructorPlan.mockResolvedValue({ id: 'plan1', max_courses: 10 });
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      features: [{ feature_key: 'classes_create', value: 'true' }],
+    });
     service.countPublishedClasses.mockResolvedValue(0);
     service.getClassById.mockResolvedValue({ id: '1', status: 'draft', instructor_id: 'test-user', title: 'Old' });
   });
@@ -185,6 +191,18 @@ describe('Class routes', () => {
     const res = await request(app).post('/classes/instructor').send(data);
     expect(res.statusCode).toBe(200);
     expect(service.createClass).toHaveBeenCalled();
+  });
+
+  test('instructor cannot create class when feature disabled', async () => {
+    planService.getPlanById.mockResolvedValueOnce({
+      id: 'plan1',
+      features: [{ feature_key: 'classes_create', value: 'false' }],
+    });
+    const res = await request(app)
+      .post('/classes/instructor')
+      .send({ title: 'Nope' });
+    expect(res.statusCode).toBe(403);
+    expect(service.createClass).not.toHaveBeenCalled();
   });
 
   test('instructor can update class without plan', async () => {

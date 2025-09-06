@@ -49,6 +49,8 @@ jest.mock('../../users/user.model', () => ({
 jest.mock('../../plans/instructor.helper', () => ({
   getActiveInstructorPlan: jest.fn(() => Promise.resolve({}))
 }));
+jest.mock('../../plans/plans.service', () => ({ getPlanById: jest.fn() }));
+const planService = require('../../plans/plans.service');
 
 const controller = require('../class.controller');
 const service = require('../class.service');
@@ -56,6 +58,9 @@ const service = require('../class.service');
 describe('class.controller createClass', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    planService.getPlanById.mockResolvedValue({
+      features: [{ feature_key: 'classes_create', value: 'true' }],
+    });
   });
 
   test('instructor cannot create class for another instructor', async () => {

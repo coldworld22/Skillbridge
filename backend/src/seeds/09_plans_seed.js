@@ -144,6 +144,27 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'classes_create',
+      value: 'false',
+      description: 'Cannot create classes'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'tutorials_download',
+      value: 'false',
+      description: 'Cannot download tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.basic,
+      feature_key: 'community_post',
+      value: 'false',
+      description: 'Cannot post in community'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
       feature_key: 'commission_rate',
       value: '0.2',
@@ -165,6 +186,27 @@ exports.seed = async function (knex) {
     },
     {
       id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'classes_create',
+      value: 'false',
+      description: 'Cannot create classes'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'tutorials_download',
+      value: 'true',
+      description: 'Can download tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.regular,
+      feature_key: 'community_post',
+      value: 'true',
+      description: 'Can post in community'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.prime,
       feature_key: 'commission_rate',
       value: '0.1',
@@ -183,6 +225,27 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: 'unlimited',
       description: 'Join unlimited groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'classes_create',
+      value: 'false',
+      description: 'Cannot create classes'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'tutorials_download',
+      value: 'true',
+      description: 'Can download tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids.prime,
+      feature_key: 'community_post',
+      value: 'true',
+      description: 'Can post in community'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -218,6 +281,27 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: '3',
       description: 'Join up to 3 groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
+      feature_key: 'classes_create',
+      value: 'true',
+      description: 'Can create classes'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
+      feature_key: 'tutorials_download',
+      value: 'true',
+      description: 'Can download tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-basic'],
+      feature_key: 'community_post',
+      value: 'true',
+      description: 'Can post in community'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -260,6 +344,27 @@ exports.seed = async function (knex) {
       feature_key: 'groups_join_limit',
       value: 'unlimited',
       description: 'Join unlimited groups'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'classes_create',
+      value: 'true',
+      description: 'Can create classes'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'tutorials_download',
+      value: 'true',
+      description: 'Can download tutorials'
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      plan_id: ids['instructor-pro'],
+      feature_key: 'community_post',
+      value: 'true',
+      description: 'Can post in community'
     }
   ]);
 };

@@ -8,7 +8,9 @@ const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
 const userModel = require("../users/user.model");
 const { getActiveInstructorPlan } = require("../plans/instructor.helper");
+const planService = require("../plans/plans.service");
 const AppError = require("../../utils/AppError");
+const { parsePlanFeatures } = require("../../utils/planFeatures");
 
 const slugify = require("slugify");
 const db = require("../../config/database");
@@ -67,6 +69,11 @@ exports.createClass = catchAsync(async (req, res) => {
     const plan = await getActiveInstructorPlan(req.user.id);
     if (!plan) {
       throw new AppError("Active plan required", 403);
+    }
+    const fullPlan = await planService.getPlanById(plan.id);
+    const features = parsePlanFeatures(fullPlan);
+    if (!features["classes_create"]) {
+      throw new AppError("Class creation not allowed for your plan", 403);
     }
     if (data.status === "published" && plan.max_courses) {
       const count = await service.countPublishedClasses(req.user.id);
