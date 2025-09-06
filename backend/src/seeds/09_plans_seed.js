@@ -152,9 +152,9 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.basic,
-      feature_key: 'tutorials_download',
+      feature_key: 'books_download',
       value: 'false',
-      description: 'Cannot download tutorials'
+      description: 'Cannot download books'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -194,9 +194,9 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.regular,
-      feature_key: 'tutorials_download',
+      feature_key: 'books_download',
       value: 'true',
-      description: 'Can download tutorials'
+      description: 'Can download books'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -236,9 +236,9 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids.prime,
-      feature_key: 'tutorials_download',
+      feature_key: 'books_download',
       value: 'true',
-      description: 'Can download tutorials'
+      description: 'Can download books'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -299,9 +299,9 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids['instructor-basic'],
-      feature_key: 'tutorials_download',
+      feature_key: 'books_download',
       value: 'true',
-      description: 'Can download tutorials'
+      description: 'Can download books'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
@@ -369,9 +369,9 @@ exports.seed = async function (knex) {
     {
       id: knex.raw('uuid_generate_v4()'),
       plan_id: ids['instructor-pro'],
-      feature_key: 'tutorials_download',
+      feature_key: 'books_download',
       value: 'true',
-      description: 'Can download tutorials'
+      description: 'Can download books'
     },
     {
       id: knex.raw('uuid_generate_v4()'),
