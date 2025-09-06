@@ -1,4 +1,9 @@
 {
+  "titles": {
+    "student_dashboard": "Tableau Étudiant",
+    "instructor_dashboard": "Tableau Instructeur",
+    "admin_dashboard": "Tableau Admin"
+  },
   "welcome_admin": "Bienvenue, Administrateur",
   "users": "Utilisateurs",
   "settings": "Paramètres (JSON)",

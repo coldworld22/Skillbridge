@@ -1,4 +1,9 @@
 {
+  "titles": {
+    "student_dashboard": "छात्र डैशबोर्ड",
+    "instructor_dashboard": "प्रशिक्षक डैशबोर्ड",
+    "admin_dashboard": "व्यवस्थापक डैशबोर्ड"
+  },
   "welcome_admin": "स्वागत है, व्यवस्थापक",
   "users": "उपयोगकर्ता",
   "settings": "सेटिंग्स (JSON)",

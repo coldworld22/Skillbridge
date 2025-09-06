@@ -84,21 +84,22 @@ export default function Header() {
     localStorage.setItem("theme", newDark ? "dark" : "light");
   };
 
+  const routeTitleMap = {
+    "/dashboard/student": "titles.student_dashboard",
+    "/dashboard/instructor": "titles.instructor_dashboard",
+    "/dashboard/admin": "titles.admin_dashboard",
+    "/dashboard/admin/settings/languages": "languagesPage.title",
+    "/dashboard/admin/settings/languages/create": "languagesPage.create_title",
+    "/dashboard/admin/settings/languages/edit/[code]": "languagesPage.edit_title",
+  };
+
   const getPageTitle = () => {
     const { pathname, query } = router;
-    switch (pathname) {
-      case "/dashboard/admin/settings/languages":
-        return tDashboard("languagesPage.title");
-      case "/dashboard/admin/settings/languages/create":
-        return tDashboard("languagesPage.create_title");
-      case "/dashboard/admin/settings/languages/edit/[code]":
-        return tDashboard("languagesPage.edit_title", { code: query.code });
-      default: {
-        const slug = pathname.split("/").pop();
-        if (!slug || slug === "index") return t("dashboard");
-        return slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-      }
+    const key = routeTitleMap[pathname];
+    if (key) {
+      return tDashboard(key, { code: query.code });
     }
+    return t("dashboard");
   };
 
   useEffect(() => {
