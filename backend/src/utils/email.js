@@ -5,9 +5,12 @@ const emailConfigService = require("../modules/emailConfig/emailConfig.service")
 const appConfigService = require("../modules/appConfig/appConfig.service");
 const { frontendBase } = require("./frontend");
 
-// Common footer used in transactional emails
-const EMAIL_FOOTER =
-  '<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://eduskillbridge.net">https://eduskillbridge.net</a></p>';
+const APP_DOMAIN = process.env.APP_DOMAIN;
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL;
+const DEFAULT_LOGO = APP_DOMAIN ? `https://${APP_DOMAIN}/logo.png` : "";
+const EMAIL_FOOTER = APP_DOMAIN
+  ? `<p style="font-size:12px;color:#555;margin-top:20px">SkillBridge © 2025 • All rights reserved<br/>Visit us: <a href="https://${APP_DOMAIN}">https://${APP_DOMAIN}</a></p>`
+  : "";
 
 // Skip actual email sending when true
 const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
@@ -48,7 +51,7 @@ exports.sendOtpEmail = async (to, otp) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -59,8 +62,8 @@ exports.sendOtpEmail = async (to, otp) => {
   ).trim();
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
+    : DEFAULT_LOGO;
+  const support = app.contactEmail || SUPPORT_EMAIL;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -99,7 +102,7 @@ exports.sendPasswordChangeEmail = async (to) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -110,8 +113,8 @@ exports.sendPasswordChangeEmail = async (to) => {
   ).trim();
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
+    : DEFAULT_LOGO;
+  const support = app.contactEmail || SUPPORT_EMAIL;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -149,7 +152,7 @@ exports.sendWelcomeEmail = async (to, name) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -161,8 +164,8 @@ exports.sendWelcomeEmail = async (to, name) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
+    : DEFAULT_LOGO;
+  const support = app.contactEmail || SUPPORT_EMAIL;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -198,7 +201,7 @@ exports.sendNewUserAdminEmail = async (to, user) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -210,7 +213,7 @@ exports.sendNewUserAdminEmail = async (to, user) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -253,7 +256,7 @@ exports.sendLessonScheduledEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -265,7 +268,7 @@ exports.sendLessonScheduledEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const formatted = new Date(dateTime).toLocaleString("en-US", {
     dateStyle: "long",
@@ -312,7 +315,7 @@ exports.sendLessonReminderEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -324,7 +327,7 @@ exports.sendLessonReminderEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const formatted = new Date(dateTime).toLocaleString("en-US", {
     dateStyle: "long",
@@ -372,7 +375,7 @@ exports.sendAssignmentEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -384,8 +387,8 @@ exports.sendAssignmentEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
-  const support = app.contactEmail || "support@eduskillbridge.net";
+    : DEFAULT_LOGO;
+  const support = app.contactEmail || SUPPORT_EMAIL;
 
   const due = dueDate
     ? new Date(dueDate).toLocaleDateString("en-US", { dateStyle: "long" })
@@ -436,7 +439,7 @@ exports.sendSupportTicketAdminEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -448,7 +451,7 @@ exports.sendSupportTicketAdminEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -496,7 +499,7 @@ exports.sendSupportTicketUserEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -508,7 +511,7 @@ exports.sendSupportTicketUserEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -549,7 +552,7 @@ exports.sendSupportTicketUpdateEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -561,7 +564,7 @@ exports.sendSupportTicketUpdateEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -600,7 +603,7 @@ exports.sendTutorialCreatedAdminEmail = async (
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -612,7 +615,7 @@ exports.sendTutorialCreatedAdminEmail = async (
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -648,7 +651,7 @@ exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -660,7 +663,7 @@ exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -695,7 +698,7 @@ exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -707,7 +710,7 @@ exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -742,7 +745,7 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -754,7 +757,7 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const reasonLine = reason ? `<p>Reason: ${reason}</p>` : "";
 
@@ -792,7 +795,7 @@ exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -804,7 +807,7 @@ exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -840,7 +843,7 @@ exports.sendCartReminderEmail = async (to, itemName) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -852,7 +855,7 @@ exports.sendCartReminderEmail = async (to, itemName) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -887,7 +890,7 @@ exports.sendCartAddedEmail = async (to, itemName) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -899,7 +902,7 @@ exports.sendCartAddedEmail = async (to, itemName) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -934,7 +937,7 @@ exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -946,7 +949,7 @@ exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -981,7 +984,7 @@ exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -993,7 +996,7 @@ exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,
@@ -1028,7 +1031,7 @@ exports.sendAdApprovalEmail = async (to, adTitle) => {
   const fromEmail = (
     cfg.fromEmail ||
     process.env.SMTP_USER ||
-    "support@eduskillbridge.net"
+    SUPPORT_EMAIL
   ).trim();
 
   const fromName = (
@@ -1040,7 +1043,7 @@ exports.sendAdApprovalEmail = async (to, adTitle) => {
 
   const logo = app.logo_url
     ? `${frontendBase}${app.logo_url}`
-    : "https://eduskillbridge.net/logo.png";
+    : DEFAULT_LOGO;
 
   const mailOptions = {
     from: `${fromName} <${fromEmail}>`,

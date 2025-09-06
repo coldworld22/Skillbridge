@@ -47,7 +47,7 @@ describe('resolveIconElement', () => {
     process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS = 'example.com,assets.example.org';
     const { resolveIconElement, TrustedIcon, FaMoneyCheckAlt } = await loadModule();
     const allowedUrl = 'https://assets.example.org/icon.png';
-    const blockedUrl = 'https://skillbridge.com/icon.png';
+    const blockedUrl = 'https://not-trusted.com/icon.png';
     const allowedEl = resolveIconElement({ icon: allowedUrl, name: 'Allowed' });
     const blockedEl = resolveIconElement({ icon: blockedUrl, name: 'Blocked' });
     expect(allowedEl.type).toBe(TrustedIcon);

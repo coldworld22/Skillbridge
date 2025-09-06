@@ -1913,7 +1913,7 @@
     "i_paid": "I Paid",
     "awaiting_approval": "Awaiting Approval",
     "download": "Download",
-    "payment_issues": "For any payment issues, contact <a>support@skillbridge.com</a>",
+    "payment_issues": "For any payment issues, contact <a>{{supportEmail}}</a>",
     "confirm_bank_payment": "Confirm Bank Payment",
     "reference_placeholder": "Transaction reference",
     "cancel": "Cancel",

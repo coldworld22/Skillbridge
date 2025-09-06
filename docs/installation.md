@@ -67,7 +67,7 @@ set:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5002/api
-NEXT_PUBLIC_TRUSTED_ICON_HOSTS=skillbridge.com,cdn.skillbridge.com
+NEXT_PUBLIC_TRUSTED_ICON_HOSTS=yourdomain.com,cdn.yourdomain.com
 ```
 
 `NEXT_PUBLIC_TRUSTED_ICON_HOSTS` defines a comma-separated list of allowed
@@ -138,7 +138,7 @@ To deploy SkillBridge for real users on a remote host:
    - In `backend/.env`, set production values such as `NODE_ENV=production`, `FRONTEND_URL=https://<your-domain>`, `COOKIE_SECURE=true`, and `COOKIE_SAMESITE=None`.
    - Create `frontend/.env.local` with `NEXT_PUBLIC_API_BASE_URL=https://<your-domain>/api`.
 3. **Adjust Nginx for your domain.**
-   - Replace `eduskillbridge.net` in `nginx/conf.d/default.conf` and `nginx/conf.d/ssl.conf` with your domain name.
+   - Set the `APP_DOMAIN` environment variable so Nginx and the backend use your domain.
    - Obtain TLS certificates (e.g. via Let's Encrypt's certbot) and ensure the paths in `ssl.conf` match the certificate locations.
 4. **Build and start the containers** in detached mode:
 

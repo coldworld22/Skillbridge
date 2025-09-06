@@ -10,10 +10,10 @@ Only `http` and `https` schemes are supported for payment method icons. Icons us
 
 Payment method icons may be served from the following domains:
 
-- `skillbridge.com`
-- `cdn.skillbridge.com`
+- `yourdomain.com`
+- `cdn.yourdomain.com`
 
-These domains are defined in `TRUSTED_ICON_HOSTS` within `frontend/src/pages/payments/checkout.js`. Update that array when adding new trusted sources.
+These domains are defined in `TRUSTED_ICON_HOSTS` within `frontend/src/pages/payments/checkout.js` and can be overridden with the `NEXT_PUBLIC_TRUSTED_ICON_HOSTS` variable.
 
 Relative paths (e.g. `/images/payments/stripe.png`) are also permitted and should be placed under `frontend/public/images`.
 

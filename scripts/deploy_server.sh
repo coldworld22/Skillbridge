@@ -23,14 +23,8 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 DEFAULT_CONF="$REPO_ROOT/nginx/conf.d/default.conf"
 SSL_CONF="$REPO_ROOT/nginx/conf.d/ssl.conf"
 
-echo "Updating Nginx config for $DOMAIN"
-# Replace domain placeholders in nginx config
-for file in "$DEFAULT_CONF" "$SSL_CONF"; do
-  if [[ -f "$file" ]]; then
-    sed -i "s/www.eduskillbridge.net/www.${BARE_DOMAIN}/g" "$file"
-    sed -i "s/eduskillbridge.net/${BARE_DOMAIN}/g" "$file"
-  fi
-done
+echo "Setting APP_DOMAIN to $BARE_DOMAIN"
+export APP_DOMAIN="$BARE_DOMAIN"
 
 # Obtain certificates using certbot or acme.sh
 CERT_PATH="/etc/letsencrypt/live/${BARE_DOMAIN}"

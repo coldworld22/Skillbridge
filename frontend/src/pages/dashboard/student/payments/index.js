@@ -197,10 +197,11 @@ export default function StudentPaymentsPage() {
           <Trans
             t={t}
             i18nKey="payment_issues"
+            values={{ supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL }}
             components={{
               a: (
                 <a
-                  href="mailto:support@skillbridge.com"
+                  href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`}
                   className="underline font-medium"
                 />
               ),

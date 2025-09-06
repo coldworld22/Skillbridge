@@ -61,7 +61,7 @@ request's `Origin` header automatically.
    ```
    Replace `http://localhost:5002` with your backend URL when deployed. For example:
    ```
-   https://eduskillbridge.net/api/auth/github/callback
+   https://${APP_DOMAIN}/api/auth/github/callback
    ```
 3. Enter the generated **Client ID** and **Client Secret** in the admin panel under **Social Login Settings**. These values will be stored in `backend/.env` automatically.
 4. Save the settings and restart the backend so the GitHub strategy is initialized.

@@ -25,12 +25,15 @@ referenced in `nginx/conf.d/ssl.conf`.
 
 1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:
    - `PORT` – typically `5000` unless changed.
+   - `APP_DOMAIN` – your production domain (e.g. `yourdomain.com`).
+   - `SUPPORT_EMAIL` – address used for outbound messages.
    - `FRONTEND_URL` – set this to the full URL of your frontend. You can
      specify multiple domains separated by commas. For example:
-     
+
     ```bash
-  # Example using SkillBridge's VPS domain and IP
-  FRONTEND_URL=https://eduskillbridge.net,http://147.93.121.45
+  # Example using a custom domain and server IP
+  APP_DOMAIN=yourdomain.com
+  FRONTEND_URL=https://${APP_DOMAIN},http://147.93.121.45
   # Do not prefix with "FRONTEND_URL=" when using
   # docker-compose environment variables.
     ```
@@ -39,7 +42,7 @@ referenced in `nginx/conf.d/ssl.conf`.
     `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
 
     ```bash
-   COOKIE_DOMAIN=.eduskillbridge.net
+   COOKIE_DOMAIN=.${APP_DOMAIN}
    ```
 
    When running over plain HTTP but using different subdomains (e.g. staging
@@ -84,10 +87,10 @@ referenced in `nginx/conf.d/ssl.conf`.
    `NEXT_PUBLIC_API_BASE_URL` to your backend URL including the `/api` prefix.
    For example:
    
-   ```bash
-   # Point the frontend to your backend including the /api prefix
-   NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
-   ```
+  ```bash
+  # Point the frontend to your backend including the /api prefix
+  NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
+  ```
    
    Without this variable the frontend defaults to `/api` which may point to the
    wrong server when deployed.
@@ -147,7 +150,7 @@ domain of your deployed site without a trailing slash. Include both the
 `www` and non-`www` variants if you use them. For example:
 
 ```bash
-FRONTEND_URL=https://eduskillbridge.net,https://www.eduskillbridge.net
+FRONTEND_URL=https://${APP_DOMAIN},https://www.${APP_DOMAIN}
 ```
 
 Restart the backend so the updated CORS settings take effect.
@@ -172,7 +175,7 @@ matches the deployed domain exactly and restart the backend.  The
 `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` must also point to the
 backend including the `/api` prefix. When the frontend and API are on
 different subdomains, set `COOKIE_DOMAIN` in `backend/.env` to the shared
-base domain (e.g. `.eduskillbridge.net`) so the authentication cookie is
+base domain (e.g. `.${APP_DOMAIN}`) so the authentication cookie is
 available to both sites. If the site uses HTTP, also set:
 
 ```bash

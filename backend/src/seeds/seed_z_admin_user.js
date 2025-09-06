@@ -2,6 +2,7 @@ const logger = require('../utils/logger.js');
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
+const APP_DOMAIN = process.env.APP_DOMAIN || "example.com";
 exports.seed = async function(knex) {
   // Ensure the Admin role exists
   let roleRecord = await knex("roles").where({ name: "Admin" }).first();
@@ -26,7 +27,7 @@ exports.seed = async function(knex) {
   const [adminUserId] = await knex("users")
     .insert({
       full_name: "Admin User",
-      email: "admin@eduskillbridge.net",
+      email: `admin@${APP_DOMAIN}`,
       phone: "+10000000000",
       password_hash: hashedPassword,
       role: "Admin",
