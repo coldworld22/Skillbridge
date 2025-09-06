@@ -1,5 +1,6 @@
 // 📁 src/services/auth/authService.js
 import api from "@/services/api/api";
+import logger from "@/utils/logger";
 
 /**
  * 🔐 Log in a user and retrieve access token and user info.
@@ -12,21 +13,17 @@ import api from "@/services/api/api";
  */
 export const loginUser = async ({ email, password, recaptchaToken }) => {
   try {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(
-        "🔐 loginUser requesting",
-        `${api.defaults.baseURL}/auth/login`
-      );
-    }
+    logger.log(
+      "🔐 loginUser requesting",
+      `${api.defaults.baseURL}/auth/login`
+    );
     const res = await api.post("/auth/login", { email, password, recaptchaToken });
     return res.data;
   } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("❌ loginUser error", {
-        message: err?.message,
-        status: err?.response?.status,
-      });
-    }
+    logger.error("❌ loginUser error", {
+      message: err?.message,
+      status: err?.response?.status,
+    });
     throw err;
   }
 };

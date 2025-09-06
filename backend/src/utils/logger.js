@@ -23,18 +23,26 @@ function append(type, args) {
   });
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
 module.exports = {
   log: (...args) => {
     append("INFO", args);
-    console.log("[LOG]", ...args);
+    if (!isProd) {
+      console.log("[LOG]", ...args);
+    }
   },
   debug: (...args) => {
     append("DEBUG", args);
-    console.debug("[DEBUG]", ...args);
+    if (!isProd) {
+      console.debug("[DEBUG]", ...args);
+    }
   },
   warn: (...args) => {
     append("WARN", args);
-    console.warn("[WARN]", ...args);
+    if (!isProd) {
+      console.warn("[WARN]", ...args);
+    }
   },
   error: (...args) => {
     append("ERROR", args);

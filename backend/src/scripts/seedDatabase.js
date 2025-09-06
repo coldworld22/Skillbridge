@@ -1,5 +1,6 @@
 const knex = require('knex');
 const knexConfig = require('../../knexfile');
+const logger = require('../utils/logger');
 
 const environment = process.env.NODE_ENV || 'development';
 const seedEnabled = process.env.SEED_DB === 'true';
@@ -10,12 +11,12 @@ async function seedDatabase() {
     await db.migrate.latest();
     if (environment !== 'production' && seedEnabled) {
       await db.seed.run();
-      console.log('Database migrated and seeded successfully');
+      logger.log('Database migrated and seeded successfully');
     } else {
-      console.log('Database migrated successfully');
+      logger.log('Database migrated successfully');
     }
   } catch (error) {
-    console.error('Database seeding failed:', error);
+    logger.error('Database seeding failed:', error);
   } finally {
     await db.destroy();
   }
