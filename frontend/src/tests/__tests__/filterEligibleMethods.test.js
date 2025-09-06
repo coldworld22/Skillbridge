@@ -18,21 +18,14 @@ describe('filterEligibleMethods', () => {
       'USDT',
     ]);
   });
-
-  it('returns all active methods for plan items', () => {
+  it('excludes PayPal and crypto for plan items, allowing bank', () => {
     const result = filterEligibleMethods(methods, 'plan');
-    expect(result.map((m) => m.name)).toEqual([
-      'Stripe',
-      'PayPal',
-      'Bank',
-      'USDT',
-    ]);
+    expect(result.map((m) => m.name)).toEqual(['Stripe', 'Bank']);
   });
 
-  it('keeps PayPal, bank, and crypto methods for plans', () => {
+  it('returns empty array when only PayPal and crypto methods for plan', () => {
     const onlyIneligible = [
       { id: 1, name: 'PayPal', type: null, active: true },
-      { id: 2, name: 'Bank', type: 'bank', active: true },
       { id: 3, name: 'USDT', type: 'usdt', active: true },
     ];
     const result = filterEligibleMethods(onlyIneligible, 'plan');

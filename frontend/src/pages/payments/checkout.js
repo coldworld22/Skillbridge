@@ -135,9 +135,12 @@ export function filterEligibleMethods(methods, itemType) {
   const active = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  // Previously, plan purchases excluded PayPal, bank, and crypto methods.
-  // Plans now support all active payment methods, so we no longer filter
-  // any of them out when the item type is a plan.
+  if (itemType === 'plan') {
+    return active.filter((m) => {
+      const identifier = getMethodIdentifier(m).toLowerCase();
+      return identifier !== 'paypal' && !isCryptoMethod(identifier);
+    });
+  }
   return active;
 }
 
