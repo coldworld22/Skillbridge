@@ -20,8 +20,8 @@ Alternatively, launch the backend and open [`/install`](http://localhost:5002/in
 
 1. Configure environment variables:
 
-   - Edit the `.env` file in the project root. Docker Compose loads
-     sensitive values from here, including:
+   - Copy `.env.example` to `.env` in the project root and fill in your secrets.
+     Docker Compose loads sensitive values from here, including:
 
        - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
        - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
