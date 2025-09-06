@@ -39,6 +39,8 @@
   "subscription_heading": "为你的学习之旅选择合适的计划",
   "subscription_description": "解锁直播课程、一对一讲师、AI 辅导和证书等强大功能——全部包含在你的计划中。",
   "subscription_select_plan": "选择计划",
+  "monthly": "每月",
+  "yearly": "每年",
   "ai_feature_adaptive_title": "自适应学习路径",
   "ai_feature_adaptive_description": "AI 分析你的优势和弱点，创建个性化学习路线。",
   "ai_feature_quizzes_title": "AI 生成测验",

@@ -39,6 +39,8 @@
   "subscription_heading": "Choisissez le bon plan pour votre parcours d'apprentissage",
   "subscription_description": "Déverrouillez les fonctionnalités puissantes comme les cours en direct, l'accès à l'instructeur en 1 contre 1, le tutorat de l'IA et la certification - tous adaptés à votre plan.",
   "subscription_select_plan": "Sélectionner le plan",
+  "monthly": "Mensuel",
+  "yearly": "Annuel",
   "ai_feature_adaptive_title": "Chemins d'apprentissage adaptatifs",
   "ai_feature_adaptive_description": "L'IA analyse vos forces et vos faiblesses pour créer une feuille de route d'apprentissage personnalisée.",
   "ai_feature_quizzes_title": "Quiz généré par l'AI",

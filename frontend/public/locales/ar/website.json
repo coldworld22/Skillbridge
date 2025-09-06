@@ -39,6 +39,8 @@
   "subscription_heading": "اختر الخطة المناسبة لرحلة تعلمك",
   "subscription_description": "افتح مزايا قوية مثل الدروس المباشرة، والوصول إلى المدربين بشكل فردي، والتعليم بالذكاء الاصطناعي، والشهادات، وكلها مصممة حسب خطتك.",
   "subscription_select_plan": "اختر الخطة",
+  "monthly": "شهري",
+  "yearly": "سنوي",
   "ai_feature_adaptive_title": "مسارات تعلم متكيفة",
   "ai_feature_adaptive_description": "يحلل الذكاء الاصطناعي نقاط قوتك وضعفك لإنشاء خارطة تعلم مخصصة.",
   "ai_feature_quizzes_title": "اختبارات مولدة بالذكاء الاصطناعي",
