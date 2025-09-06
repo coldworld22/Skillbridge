@@ -5,6 +5,17 @@ const errorHandler = require('../src/middleware/errorHandler');
 jest.mock('../src/config/database');
 const db = require('../src/config/database');
 
+jest.mock('../src/modules/plans/subscription.helper', () => ({
+  getActiveStudentPlanId: jest.fn(),
+}));
+jest.mock('../src/modules/payments/helpers/planRevenue', () => ({
+  calculateInstructorAmount: jest.fn(),
+}));
+jest.mock('../src/modules/payments/helpers/wallet', () => ({
+  creditTutorialSubscription: jest.fn(),
+}));
+const { getActiveStudentPlanId } = require('../src/modules/plans/subscription.helper');
+
 jest.mock('../src/middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => {
     req.user = { id: 'user1' };
@@ -23,6 +34,7 @@ app.use(errorHandler);
 describe('POST /api/users/tutorials/enrollments/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveStudentPlanId.mockResolvedValue(null);
   });
 
   it('enrolls in a free tutorial', async () => {
