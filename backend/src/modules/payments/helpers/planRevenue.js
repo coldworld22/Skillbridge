@@ -1,14 +1,14 @@
 const db = require("../../../config/database");
 const { calculatePlatformFee } = require("./platformFee");
 
-// Calculate instructor share for an enrollment covered by a subscription plan.
+// Calculate instructor share for a subscription-covered enrollment
 // Uses plan usage metrics and the plan's commission rate to determine the
 // instructor's payout for the given plan and item.
 exports.calculateInstructorAmount = async (
   planId,
   itemId,
-  itemType = "class",
   trx,
+  itemType = "class"
 ) => {
   const query = trx || db;
   try {
@@ -30,10 +30,7 @@ exports.calculateInstructorAmount = async (
     const plan = await query("plans").where({ id: planId }).first();
     if (!plan) return 0;
     const price = Number(plan.price_monthly || 0);
-    const { instructor_amount: net } = await calculatePlatformFee(
-      itemType,
-      price,
-    );
+    const { instructor_amount: net } = await calculatePlatformFee(itemType, price);
     const amount = row.usage_count > 0 ? net / row.usage_count : 0;
 
     await query("plan_usage_metrics")

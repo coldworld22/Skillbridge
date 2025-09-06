@@ -5,7 +5,7 @@ const { sendSuccess } = require("../../../../utils/response");
 const { v4: uuidv4 } = require("uuid");
 const { requireUser, requireUserAndTutorial } = require("../utils");
 const { getActiveStudentPlanId } = require("../../../plans/subscription.helper");
-const { creditInstructorSubscription } = require("../../../payments/helpers/wallet");
+const { creditTutorialSubscription } = require("../../../payments/helpers/wallet");
 const planRevenue = require("../../../payments/helpers/planRevenue");
 
 // Enroll in tutorial
@@ -24,11 +24,8 @@ exports.enroll = catchAsync(async (req, res) => {
 
   const enroll = async (trx) => {
     const activePlanId = await getActiveStudentPlanId(user_id);
-    const includedPlans = Array.isArray(tutorial.included_plans)
-      ? tutorial.included_plans
-      : [];
     const coveredBySubscription =
-      activePlanId && includedPlans.includes(activePlanId);
+      activePlanId && Number(tutorial.price) > 0;
 
     if (coveredBySubscription) {
       const usage = await trx("plan_usage_metrics")
@@ -59,24 +56,11 @@ exports.enroll = catchAsync(async (req, res) => {
       await planRevenue.calculateInstructorAmount(
         activePlanId,
         tutorialId,
-        "tutorial",
         trx,
+        "tutorial"
       );
 
-      await creditInstructorSubscription(
-        "tutorial",
-        tutorialId,
-        activePlanId,
-        trx,
-      );
-
-      await trx("payments").insert({
-        user_id,
-        item_id: tutorialId,
-        item_type: "tutorial",
-        source: "subscription",
-        amount: 0,
-      });
+      await creditTutorialSubscription(tutorialId, activePlanId, trx);
     } else if (Number(tutorial.price) > 0) {
       const payment = await trx("payments")
         .where({ user_id, item_type: "tutorial", item_id: tutorialId })

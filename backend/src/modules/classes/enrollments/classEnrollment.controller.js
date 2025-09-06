@@ -63,15 +63,8 @@ exports.enroll = catchAsync(async (req, res) => {
       await planRevenue.calculateInstructorAmount(
         activePlanId,
         classId,
-        "class",
         trx,
-      );
-
-      await creditInstructorSubscription(
-        "class",
-        classId,
-        activePlanId,
-        trx,
+        "class"
       );
 
       await trx("payments").insert({

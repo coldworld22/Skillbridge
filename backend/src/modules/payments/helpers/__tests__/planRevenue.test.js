@@ -1,60 +1,46 @@
-jest.mock('../../../../config/database.js', () => jest.fn());
+jest.mock('../../../config/database', () => {
+  const db = jest.fn(() => db);
+  db.where = jest.fn(() => db);
+  db.first = jest.fn();
+  db.insert = jest.fn(() => db);
+  db.update = jest.fn(() => db);
+  return db;
+});
+
 jest.mock('../platformFee', () => ({
-  calculatePlatformFee: jest.fn(),
+  calculatePlatformFee: jest.fn(() => ({ instructor_amount: 80 })),
 }));
 
-const db = require('../../../../config/database.js');
-const { calculatePlatformFee } = require('../platformFee');
+const db = require('../../../config/database');
 const { calculateInstructorAmount } = require('../planRevenue');
+const { calculatePlatformFee } = require('../platformFee');
 
 describe('calculateInstructorAmount', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  function mockDb() {
-    const planUsageQuery = {
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue({ usage_count: 2 }),
-      insert: jest.fn().mockResolvedValue(),
-      update: jest.fn().mockResolvedValue(),
-    };
-    const plansQuery = {
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue({ price_monthly: 100 }),
-    };
-    db.mockImplementation((table) => {
-      if (table === 'plan_usage_metrics') return planUsageQuery;
-      if (table === 'plans') return plansQuery;
-    });
-    return { planUsageQuery, plansQuery };
-  }
+  it('applies commission rate to usage amount', async () => {
+    db.first
+      .mockResolvedValueOnce({ usage_count: 2 })
+      .mockResolvedValueOnce({ price_monthly: 100 });
 
-  it('divides net plan revenue by usage count', async () => {
-    mockDb();
-    calculatePlatformFee.mockResolvedValueOnce({ instructor_amount: 80 });
-
-    const amt = await calculateInstructorAmount('plan1', 'item1', 'class');
+    const amt = await calculateInstructorAmount(
+      'plan1',
+      'item1',
+      null,
+      'tutorial'
+    );
     expect(amt).toBeCloseTo(40);
+    expect(db).toHaveBeenCalledWith('plan_usage_metrics');
+    expect(calculatePlatformFee).toHaveBeenCalledWith('tutorial', 100);
   });
 
   it('returns 0 when plan not found', async () => {
-    const planUsageQuery = {
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue({ usage_count: 2 }),
-      insert: jest.fn().mockResolvedValue(),
-      update: jest.fn().mockResolvedValue(),
-    };
-    const plansQuery = {
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue(null),
-    };
-    db.mockImplementation((table) => {
-      if (table === 'plan_usage_metrics') return planUsageQuery;
-      if (table === 'plans') return plansQuery;
-    });
-
-    const amt = await calculateInstructorAmount('plan1', 'item1', 'class');
+    db.first
+      .mockResolvedValueOnce({ usage_count: 1 })
+      .mockResolvedValueOnce(null);
+    const amt = await calculateInstructorAmount('plan1', 'item1');
     expect(amt).toBe(0);
   });
 });
