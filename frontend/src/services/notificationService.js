@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { getCsrfToken } from "@/services/api/csrf";
+import logger from "@/utils/logger";
 
 export const getNotifications = async () => {
   const res = await api.get("/notifications");
@@ -34,7 +35,7 @@ const notificationService = {
   push: (type, message, data = {}) => {
     const id = Date.now().toString();
     notifications.push({ id, type, message, data, read: false, timestamp: new Date() });
-    console.log(`[NOTIFY] ${type}: ${message}`);
+    logger.log(`[NOTIFY] ${type}: ${message}`);
   },
 
   getAll: async () => {

@@ -6,6 +6,7 @@
 
 
 import axios from "axios";
+import logger from "@/utils/logger";
 
 // If NEXT_PUBLIC_API_BASE_URL isn't provided, default to a relative path so
 // the frontend works regardless of the domain it's served from. This prevents
@@ -19,7 +20,7 @@ if (
   !process.env.NEXT_PUBLIC_API_BASE_URL &&
   window.location.hostname !== "localhost"
 ) {
-  console.warn(
+  logger.warn(
     "NEXT_PUBLIC_API_BASE_URL is not set. Using '/api'. Set this variable in frontend/.env.local to avoid unexpected network errors."
   );
 }

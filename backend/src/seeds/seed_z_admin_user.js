@@ -19,7 +19,7 @@ exports.seed = async function(knex) {
   const rawPassword =
     process.env.ADMIN_INITIAL_PASSWORD || crypto.randomBytes(16).toString("hex");
   if (!process.env.ADMIN_INITIAL_PASSWORD) {
-    console.log(`🔐 Generated Admin password: ${rawPassword}`);
+    logger.log(`🔐 Generated Admin password: ${rawPassword}`);
   }
   const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
