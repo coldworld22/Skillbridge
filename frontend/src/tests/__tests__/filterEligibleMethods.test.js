@@ -19,7 +19,17 @@ describe('filterEligibleMethods', () => {
     ]);
   });
 
-  it('handles methods with non-string identifiers without throwing', () => {
+  it('returns active methods for plan items', () => {
+    const result = filterEligibleMethods(methods, 'plan');
+    expect(result.map((m) => m.name)).toEqual([
+      'Stripe',
+      'PayPal',
+      'Bank',
+      'USDT',
+    ]);
+  });
+
+  it('handles methods with non-string identifiers', () => {
     const weirdMethods = [
       { id: 6, name: 123, type: undefined, active: true },
       { id: 7, name: 'Some', type: 456, active: true },

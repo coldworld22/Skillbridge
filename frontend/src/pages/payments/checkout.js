@@ -135,6 +135,7 @@ export function filterEligibleMethods(methods) {
   return Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
+  return active;
 }
 
 export function resolveCheckoutItem(query, cartItems) {
