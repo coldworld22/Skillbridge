@@ -12,25 +12,7 @@ const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
 const planService = require("../plans/plans.service");
-
-const parsePlanFeatures = (plan = {}) => {
-  const result = {};
-  if (!plan || !Array.isArray(plan.features)) return result;
-  plan.features.forEach((f) => {
-    let val = f.value;
-    if (typeof val === "string") {
-      try {
-        val = JSON.parse(val);
-      } catch {
-        if (val === "true") val = true;
-        else if (val === "false") val = false;
-        else if (!isNaN(val)) val = Number(val);
-      }
-    }
-    result[f.feature_key] = val;
-  });
-  return result;
-};
+const { parsePlanFeatures } = require("../../utils/planFeatures");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const planId =

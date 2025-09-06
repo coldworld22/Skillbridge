@@ -46,17 +46,17 @@ beforeEach(() => {
   window.location = { href: '' };
 });
 
-test('bank payment redirects on success and handles errors', async () => {
+test('bank payment redirects on success and handles errors for plan', async () => {
   initiateBankPayment.mockResolvedValue({ id: 55 });
-  const args = baseArgs();
+  const args = { ...baseArgs(), itemType: 'plan' };
   await handleBankPayment(args);
   expect(initiateBankPayment).toHaveBeenCalled();
   expect(args.router.push).toHaveBeenCalledWith(
-    '/payments/success?itemType=class&itemId=1&payment_id=55'
+    '/payments/success?itemType=plan&itemId=1&payment_id=55'
   );
 
   initiateBankPayment.mockRejectedValue(new Error('fail'));
-  const errArgs = baseArgs();
+  const errArgs = { ...baseArgs(), itemType: 'plan' };
   await handleBankPayment(errArgs);
   expect(toast.error).toHaveBeenCalled();
   expect(errArgs.setPaymentStatus).toHaveBeenCalledWith('idle');
@@ -84,6 +84,36 @@ test('crypto payment redirects to invoice and handles errors', async () => {
   await handleCryptoPayment(args);
   expect(toast.error).toHaveBeenCalled();
   expect(args.setPaymentStatus).toHaveBeenCalledWith('idle');
+});
+
+test('includes interval for plan payments', async () => {
+  // Bank
+  initiateBankPayment.mockResolvedValue({ id: 55 });
+  const bankArgs = { ...baseArgs(), itemType: 'plan', interval: 'yearly' };
+  await handleBankPayment(bankArgs);
+  const formData = initiateBankPayment.mock.calls[0][0];
+  expect(formData.get('interval')).toBe('yearly');
+
+  // PayPal
+  initiatePayPalPayment.mockResolvedValue({ approval_url: 'http://paypal' });
+  const paypalArgs = { ...baseArgs(), itemType: 'plan', interval: 'monthly' };
+  await handlePayPalPayment(paypalArgs);
+  expect(initiatePayPalPayment).toHaveBeenLastCalledWith(
+    expect.objectContaining({ interval: 'monthly' })
+  );
+
+  // Crypto
+  initiateCryptoPayment.mockResolvedValue({ invoice_url: 'http://invoice' });
+  const cryptoArgs = {
+    ...baseArgs(),
+    itemType: 'plan',
+    interval: 'monthly',
+    method: { type: 'usdt' },
+  };
+  await handleCryptoPayment(cryptoArgs);
+  expect(initiateCryptoPayment).toHaveBeenLastCalledWith(
+    expect.objectContaining({ interval: 'monthly' })
+  );
 });
 
 test('default payment completes on success and handles errors', async () => {
