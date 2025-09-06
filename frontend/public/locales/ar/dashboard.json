@@ -1,4 +1,9 @@
 {
+  "titles": {
+    "student_dashboard": "لوحة تحكم الطالب",
+    "instructor_dashboard": "لوحة تحكم المدرس",
+    "admin_dashboard": "لوحة تحكم المدير"
+  },
   "welcome_admin": "مرحباً، أيها المشرف",
   "users": "المستخدمون",
   "settings": "الإعدادات (JSON)",
