@@ -17,7 +17,7 @@ const EMAILS_DISABLED = process.env.DISABLE_EMAILS === "true";
 
 async function createTransporter() {
   if (EMAILS_DISABLED) {
-    throw new Error("Email service is disabled");
+    return null;
   }
   const cfg = (await emailConfigService.getSettings()) || {};
 
@@ -47,6 +47,10 @@ exports.sendOtpEmail = async (to, otp) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -98,6 +102,10 @@ exports.sendPasswordChangeEmail = async (to) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -148,6 +156,10 @@ exports.sendWelcomeEmail = async (to, name) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -197,6 +209,10 @@ exports.sendNewUserAdminEmail = async (to, user) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -252,6 +268,10 @@ exports.sendLessonScheduledEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -311,6 +331,10 @@ exports.sendLessonReminderEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -371,6 +395,10 @@ exports.sendAssignmentEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -435,6 +463,10 @@ exports.sendSupportTicketAdminEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -495,6 +527,10 @@ exports.sendSupportTicketUserEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -548,6 +584,10 @@ exports.sendSupportTicketUpdateEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -599,6 +639,10 @@ exports.sendTutorialCreatedAdminEmail = async (
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -647,6 +691,10 @@ exports.sendTutorialCreatedInstructorEmail = async (to, tutorialTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -694,6 +742,10 @@ exports.sendTutorialApprovedEmail = async (to, tutorialTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -741,6 +793,10 @@ exports.sendTutorialRejectedEmail = async (to, tutorialTitle, reason) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -791,6 +847,10 @@ exports.sendNewDiscussionEmail = async (to, askerName, questionTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -839,6 +899,10 @@ exports.sendCartReminderEmail = async (to, itemName) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -886,6 +950,10 @@ exports.sendCartAddedEmail = async (to, itemName) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -933,6 +1001,10 @@ exports.sendAdSubmissionEmail = async (to, name, adTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -980,6 +1052,10 @@ exports.sendNewAdAdminEmail = async (to, instructorName, adTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
@@ -1027,6 +1103,10 @@ exports.sendAdApprovalEmail = async (to, adTitle) => {
   const cfg = (await emailConfigService.getSettings()) || {};
   const app = (await appConfigService.getSettings()) || {};
   const transporter = await createTransporter();
+  if (!transporter) {
+    logger.log(`Emails disabled. Email to ${to} not sent.`);
+    return;
+  }
 
   const fromEmail = (
     cfg.fromEmail ||
