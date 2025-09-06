@@ -54,9 +54,17 @@ export const TRUSTED_ICON_HOSTS = envHosts
   ? envHosts.split(',').map((h) => h.trim()).filter(Boolean)
   : defaultHosts;
 
+function getBaseOrigin() {
+  return (
+    (typeof window !== 'undefined' && window.location?.origin) ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'http://localhost'
+  );
+}
+
 function isTrustedIcon(url) {
   try {
-    const { protocol, hostname } = new URL(url, 'http://localhost');
+    const { protocol, hostname } = new URL(url, getBaseOrigin());
     if (protocol !== 'http:' && protocol !== 'https:') return false;
     return TRUSTED_ICON_HOSTS.some(
       (host) => hostname === host || hostname.endsWith(`.${host}`)
@@ -82,12 +90,13 @@ export function TrustedIcon({ src, alt }) {
 export function resolveIconElement(method) {
   if (typeof method.icon === 'string' && method.icon) {
     const lower = method.icon.toLowerCase();
-    const base = lower.split('/').pop().split('.')[0];
+    const baseName = lower.split('/').pop().split('.')[0];
     if (iconMap[lower]) return iconMap[lower];
-    if (iconMap[base]) return iconMap[base];
+    if (iconMap[baseName]) return iconMap[baseName];
     try {
-      const parsed = new URL(method.icon, 'http://localhost');
-      const isExternal = parsed.origin !== 'http://localhost';
+      const origin = getBaseOrigin();
+      const parsed = new URL(method.icon, origin);
+      const isExternal = parsed.origin !== origin;
       const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
       const trusted = isHttp && (!isExternal || isTrustedIcon(parsed.href));
       if (trusted) {
