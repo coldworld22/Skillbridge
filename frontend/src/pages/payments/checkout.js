@@ -135,13 +135,6 @@ export function filterEligibleMethods(methods, itemType) {
   const active = Array.isArray(methods)
     ? methods.filter((m) => m.active !== false)
     : [];
-  // previously, plan subscriptions were restricted from using
-  // bank, PayPal and crypto payment methods. Plans now support
-  // all active payment methods, so no additional filtering is
-  // required when `itemType` is "plan".
-  if (itemType === 'plan') {
-    return active;
-  }
   return active;
 }
 
