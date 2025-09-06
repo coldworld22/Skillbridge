@@ -450,6 +450,11 @@ describe('GET /api/ads/:id/analytics', () => {
   it('returns ad analytics when user has access', async () => {
     const analytics = { views: 5, ctr: 1, clicks: 2, unique_viewers: 3 };
     service.getAdAnalytics = jest.fn().mockResolvedValue(analytics);
+    planService.getPlanById.mockResolvedValue({
+      features: [
+        { feature_key: 'ads_show_analytics', value: true },
+      ],
+    });
     const res = await request(app).get('/api/ads/1/analytics');
     expect(res.status).toBe(200);
     expect(service.getAdAnalytics).toHaveBeenCalledWith('1');
@@ -471,9 +476,14 @@ describe('GET /api/ads/:id/analytics', () => {
         roles: ['instructor'],
         email: 'inst@example.com',
         full_name: 'Instructor One',
-        plan: { showAnalytics: false },
+        plan_id: 'plan1',
       };
       next();
+    });
+    planService.getPlanById.mockResolvedValue({
+      features: [
+        { feature_key: 'ads_show_analytics', value: false },
+      ],
     });
     const res = await request(app).get('/api/ads/1/analytics');
     expect(res.status).toBe(403);

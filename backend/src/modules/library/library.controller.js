@@ -16,7 +16,7 @@ exports.downloadBook = catchAsync(async (req, res) => {
     req.user.plan_id || req.user.plan?.id || req.user.subscription?.plan_id;
   const plan = planId ? await planService.getPlanById(planId) : null;
   const features = parsePlanFeatures(plan);
-  if (!features["tutorials_download"]) {
+  if (!features["books_download"]) {
     return res.status(403).json({ message: "Access denied" });
   }
   const { bookId } = req.params;

@@ -23,6 +23,7 @@ describe('resolveIconElement', () => {
   });
 
   it('returns TrustedIcon for URLs from trusted hosts', async () => {
+    process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS = 'example.com';
     const { resolveIconElement, TRUSTED_ICON_HOSTS, TrustedIcon } = await loadModule();
     const url = `https://${TRUSTED_ICON_HOSTS[0]}/custom.png`;
     const el = resolveIconElement({ icon: url, name: 'Custom' });
@@ -31,6 +32,7 @@ describe('resolveIconElement', () => {
   });
 
   it('falls back to default icon for untrusted URLs', async () => {
+    delete process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS;
     const { resolveIconElement, FaMoneyCheckAlt } = await loadModule();
     const url = 'https://cdn.example.com/custom.png';
     const el = resolveIconElement({ icon: url, name: 'Custom' });

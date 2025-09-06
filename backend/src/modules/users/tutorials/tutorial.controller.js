@@ -15,6 +15,9 @@ const { sendTutorialApprovedEmail, sendTutorialRejectedEmail } = require(
 
 const catchAsync = require("../../../utils/catchAsync");
 const { v4: uuidv4 } = require("uuid");
+const { getActiveInstructorPlan } = require("../../plans/instructor.helper");
+const planService = require("../../plans/plans.service");
+const { parsePlanFeatures } = require("../../../utils/planFeatures");
 
 
 const { sendSuccess } = require("../../../utils/response");
@@ -73,6 +76,25 @@ exports.createTutorial = catchAsync(async (req, res) => {
     instructor_id = bodyInstructorId;
   } else {
     instructor_id = req.user.id;
+  }
+
+  if (req.user.role === "instructor") {
+    const plan = await getActiveInstructorPlan(instructor_id);
+    if (!plan) {
+      throw new AppError("Active plan required", 403);
+    }
+    const fullPlan = await planService.getPlanById(plan.id);
+    const features = parsePlanFeatures(fullPlan);
+    if (!features["tutorials_create"]) {
+      throw new AppError("Tutorial creation not allowed for your plan", 403);
+    }
+    const max = features["tutorials_max_count"];
+    if (status === "published" && max) {
+      const count = await service.countPublishedTutorials(instructor_id);
+      if (count >= max) {
+        throw new AppError("Tutorial limit reached for your plan", 403);
+      }
+    }
   }
 
   const id = uuidv4();
@@ -205,11 +227,32 @@ exports.togglePublishStatus = catchAsync(async (req, res) => {
   if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, tutorialId);
   }
-  const updated = await service.togglePublishStatus(tutorialId);
-  if (!updated) {
-    throw new AppError("Tutorial not found", 404);
+  const existing = await service.getTutorialById(tutorialId);
+  if (!existing) throw new AppError("Tutorial not found", 404);
+  if (existing.status !== "published") {
+    const plan = await getActiveInstructorPlan(existing.instructor_id);
+    if (!plan) {
+      throw new AppError("Active plan required", 403);
+    }
+    const fullPlan = await planService.getPlanById(plan.id);
+    const features = parsePlanFeatures(fullPlan);
+    if (!features["tutorials_create"]) {
+      throw new AppError(
+        "Tutorial publishing not allowed for your plan",
+        403
+      );
+    }
+    const max = features["tutorials_max_count"];
+    if (max) {
+      const count = await service.countPublishedTutorials(
+        existing.instructor_id
+      );
+      if (count >= max) {
+        throw new AppError("Tutorial limit reached for your plan", 403);
+      }
+    }
   }
-
+  const updated = await service.togglePublishStatus(tutorialId);
   const tut = await service.getTutorialById(tutorialId);
   if (
     req.user.role !== "instructor" &&

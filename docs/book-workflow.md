@@ -93,7 +93,7 @@ Allow instructors to upload and sell PDF books, and allow students to browse, pu
 | Approve/reject | Admin only |
 | Purchase book | Student only |
 | View library | Student only |
-| Download book | Student only (if purchased) |
+| Download book | Student only (if purchased) and plan feature `books_download` enabled |
 | View earnings | Instructor |
 | Manage commission/settings | Admin |
 

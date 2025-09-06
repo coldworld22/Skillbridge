@@ -14,7 +14,7 @@ import {
   fetchInvoiceByPaymentId,
   downloadInvoice,
 } from '@/services/student/invoiceService';
-import { subscribeToPlan, fetchMySubscription } from '@/services/instructor/subscriptionService';
+import { subscribeToPlan, fetchMySubscription } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
 import { toast } from 'react-toastify';
 import useLibraryStore from '@/store/libraryStore';
