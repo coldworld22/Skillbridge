@@ -138,6 +138,15 @@ describe('Class enrollment routes', () => {
       'plan1',
       expect.anything(),
     );
+    expect(db.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'test-user',
+        item_id: 'abc',
+        item_type: 'class',
+        source: 'subscription',
+        amount: 0,
+      }),
+    );
   });
 
   test('reject enrollment when subscription active but class not covered', async () => {
