@@ -4,6 +4,7 @@ import nextI18NextConfig from './next-i18next.config.js';
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/api';
 const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
 const { protocol, hostname, port } = new URL(apiBase);
+const appDomain = process.env.APP_DOMAIN;
 const nextConfig = {
   images: {
     unoptimized: true,
@@ -36,17 +37,12 @@ const nextConfig = {
         port,
         pathname: '/uploads/**',
       },
-      // Legacy patterns kept for backward compatibility
-      {
-        protocol: 'https',
-        hostname: 'eduskillbridge.net',
-        pathname: '/api/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'eduskillbridge.net',
-        pathname: '/uploads/**',
-      },
+      ...(appDomain
+        ? [
+            { protocol: 'https', hostname: appDomain, pathname: '/api/uploads/**' },
+            { protocol: 'https', hostname: appDomain, pathname: '/uploads/**' },
+          ]
+        : []),
     ],
   },
   i18n: nextI18NextConfig.i18n,

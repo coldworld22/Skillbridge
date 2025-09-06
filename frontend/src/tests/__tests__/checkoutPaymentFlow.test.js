@@ -130,9 +130,7 @@ afterEach(() => {
 
 test('renders payment logos using library icons with url fallback', async () => {
   fetchPaymentMethods.mockResolvedValue([
-    { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://skillbridge.com/stripe.png' },
     { id: 2, name: 'PayPal', type: null },
-    { id: 3, name: 'Custom', type: 'custom', icon: 'https://skillbridge.com/custom.png' },
   ]);
   render(<CheckoutPage />);
   await screen.findByText('Checkout');
@@ -141,7 +139,7 @@ test('renders payment logos using library icons with url fallback', async () => 
   const paypalIcon = screen.getByTestId('payment-icon-paypal').querySelector('svg');
   expect(paypalIcon).not.toBeNull();
   const customIcon = screen.getByTestId('payment-icon-custom').querySelector('img');
-  expect(customIcon).toHaveAttribute('src', 'https://skillbridge.com/custom.png');
+    { id: 1, name: 'Stripe', type: 'stripe', icon: 'https://example.com/stripe.png' },
 });
 
 test('adjusts inputs based on payment selection and submits bank reference', async () => {
@@ -441,3 +439,5 @@ test.each([2, 5])('renders installment schedule for %i installments', async (cou
   expect(items).toHaveLength(count);
   expect(items[0].textContent).toContain((100 / count).toFixed(2));
 });
+  expect(customIcon).toHaveAttribute('src', 'https://example.com/custom.png');
+    { id: 3, name: 'Custom', type: 'custom', icon: 'https://example.com/custom.png' },

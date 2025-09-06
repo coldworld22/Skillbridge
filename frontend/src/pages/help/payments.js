@@ -72,7 +72,7 @@ export default function PayoutPolicyPage() {
             <h2 className="text-xl font-semibold">Support</h2>
           </div>
           <p className="text-gray-700">
-            Questions? Email us at <a href="mailto:support@skillbridge.com" className="text-yellow-600 underline">support@skillbridge.com</a>.
+            Questions? Email us at <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="text-yellow-600 underline">{process.env.NEXT_PUBLIC_SUPPORT_EMAIL}</a>.
           </p>
         </section>
       </div>

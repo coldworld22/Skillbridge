@@ -39,10 +39,10 @@ let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
   FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
 }
-const defaultOrigins = [
-  "https://eduskillbridge.net",
-  "https://www.eduskillbridge.net",
-];
+const APP_DOMAIN = process.env.APP_DOMAIN;
+const defaultOrigins = APP_DOMAIN
+  ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
+  : [];
 const ALLOWED_ORIGINS = Array.from(
   new Set([
     ...defaultOrigins,

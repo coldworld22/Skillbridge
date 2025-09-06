@@ -1,6 +1,7 @@
 const logger = require('../utils/logger.js');
 const bcrypt = require("bcrypt");
 
+const APP_DOMAIN = process.env.APP_DOMAIN || "example.com";
 exports.seed = async function (knex) {
   // Clear existing user accounts but keep role definitions
   await knex("user_roles").del();
@@ -25,7 +26,7 @@ exports.seed = async function (knex) {
   const [superAdminUserId] = await knex("users")
     .insert({
       full_name: "Platform Owner",
-      email: "support@eduskillbridge.net",
+      email: `support@${APP_DOMAIN}`,
       phone: "+966531505513",
       password_hash: hashedPassword,
       role: "SuperAdmin",

@@ -1,14 +1,16 @@
+const APP_DOMAIN = process.env.APP_DOMAIN || "example.com";
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || `support@${APP_DOMAIN}`;
 exports.seed = async function (knex) {
   await knex('settings').where({ key: 'email_settings' }).del();
   const now = new Date();
   const config = {
     fromName: 'SkillBridge Support',
-    fromEmail: 'support@eduskillbridge.net',
-    replyTo: 'support@eduskillbridge.net',
+    fromEmail: SUPPORT_EMAIL,
+    replyTo: SUPPORT_EMAIL,
     smtpHost: 'smtp.hostinger.com',
     smtpPort: 465,
     encryption: 'SSL',
-    username: 'support@eduskillbridge.net',
+    username: SUPPORT_EMAIL,
     password: 'Javaheat@18880',
     method: 'smtp',
     imapHost: 'imap.hostinger.com',

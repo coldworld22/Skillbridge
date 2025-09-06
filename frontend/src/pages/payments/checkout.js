@@ -47,9 +47,12 @@ const iconMap = {
 };
 
 const envHosts = process.env.NEXT_PUBLIC_TRUSTED_ICON_HOSTS;
+const defaultHosts = process.env.APP_DOMAIN
+  ? [process.env.APP_DOMAIN, `cdn.${process.env.APP_DOMAIN}`]
+  : [];
 export const TRUSTED_ICON_HOSTS = envHosts
   ? envHosts.split(',').map((h) => h.trim()).filter(Boolean)
-  : ['skillbridge.com', 'cdn.skillbridge.com'];
+  : defaultHosts;
 
 function isTrustedIcon(url) {
   try {

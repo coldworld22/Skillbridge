@@ -5,7 +5,7 @@ import Footer from "@/components/website/sections/Footer";
 
 import { fetchContactConfig, sendContactMessage } from "@/services/contactService";
 const defaultSettings = {
-  email: "support@skillbridge.com",
+  email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com",
   phone: "+1 555-1234",
   addressLine: "123 Remote Learning Ave",
   city: "EdTech City",

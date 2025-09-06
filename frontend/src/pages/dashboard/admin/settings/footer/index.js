@@ -17,7 +17,7 @@ const defaultFooter = {
   quickLinks: ["about", "contact", "FAQs", "Blog", "Support"],
   sitemap: ["Courses", "Instructors", "Community", "Careers"],
   contact: {
-    email: "support@skillbridge.com",
+    email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com",
     phone: "+1 (555) 123-4567",
     address: "123 Learning St, New York, USA",
   },

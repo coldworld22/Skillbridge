@@ -13,7 +13,7 @@ exports.submitForm = catchAsync(async (req, res) => {
     throw new AppError("Name, email and message are required", 400);
   }
   const app = (await appConfigService.getSettings()) || {};
-  const to = app.contactEmail || process.env.CONTACT_EMAIL || "support@eduskillbridge.net";
+  const to = app.contactEmail || process.env.SUPPORT_EMAIL;
   const html = `
     <p><strong>Name:</strong> ${name}</p>
     <p><strong>Email:</strong> ${email}</p>

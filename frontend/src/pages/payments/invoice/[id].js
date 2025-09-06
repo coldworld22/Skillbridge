@@ -97,7 +97,7 @@ export default function InvoicePage() {
               <p className="mb-1 text-yellow-400 font-bold">Bank Transfer Details</p>
               <p><strong>Bank:</strong> {invoiceData.bankName || invoiceData.bank_name}</p>
               <p><strong>IBAN:</strong> {invoiceData.iban || invoiceData.bank_iban}</p>
-              <p className="mt-2 text-sm text-gray-400">Send transfer proof to <strong>support@skillbridge.com</strong></p>
+              <p className="mt-2 text-sm text-gray-400">Send transfer proof to <strong>{process.env.NEXT_PUBLIC_SUPPORT_EMAIL}</strong></p>
 
               <div className="mt-4">
                 <QRCode value={`Invoice:${invoiceData.id}|Total:${total}`} size={100} fgColor="#facc15" bgColor="#1f2937" />

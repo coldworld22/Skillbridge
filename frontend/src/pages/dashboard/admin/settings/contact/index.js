@@ -9,12 +9,12 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const initialConfig = {
-  email: "support@skillbridge.com",
+  email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
   phone: "+1 555-1234",
   addressLine: "123 Remote Learning Ave",
   city: "EdTech City",
   country: "USA",
-  formRecipient: "support@skillbridge.com",
+  formRecipient: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
   mapEmbedUrl: "https://maps.google.com/embed?pb=...",
 };
 

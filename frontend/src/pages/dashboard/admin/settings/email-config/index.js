@@ -12,12 +12,12 @@ import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 
 const defaultConfig = {
   fromName: "SkillBridge Admin",
-  fromEmail: "admin@skillbridge.com",
-  replyTo: "support@skillbridge.com",
+  fromEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
+  replyTo: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
   smtpHost: "smtp.gmail.com",
   smtpPort: 587,
   encryption: "TLS",
-  username: "admin@skillbridge.com",
+  username: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "",
   password: "",
   method: "smtp",
 };
