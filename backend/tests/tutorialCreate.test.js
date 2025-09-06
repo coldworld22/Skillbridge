@@ -12,9 +12,10 @@ jest.mock('../src/config/database', () => {
 });
 
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
-  createTutorial: jest.fn(),
+  createTutorialWithRelations: jest.fn(),
   addTutorialTags: jest.fn(),
   getTutorialTags: jest.fn(),
+  countPublishedTutorials: jest.fn(),
 }));
 
 jest.mock('../src/modules/users/tutorials/chapters/tutorialChapter.service', () => ({
@@ -47,22 +48,40 @@ jest.mock('../src/utils/email', () => ({
   sendTutorialRejectedEmail: jest.fn(),
 }));
 
+jest.mock('../src/modules/plans/instructor.helper', () => ({
+  getActiveInstructorPlan: jest.fn(),
+}));
+
+jest.mock('../src/modules/plans/plans.service', () => ({
+  getPlanById: jest.fn(),
+}));
+
 const controller = require('../src/modules/users/tutorials/tutorial.controller');
 const service = require('../src/modules/users/tutorials/tutorial.service');
 const userModel = require('../src/modules/users/user.model');
 const db = require('../src/config/database');
+const { getActiveInstructorPlan } = require('../src/modules/plans/instructor.helper');
+const planService = require('../src/modules/plans/plans.service');
 
 
 describe('createTutorial', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     userModel.findAdmins.mockResolvedValue([]);
+    getActiveInstructorPlan.mockResolvedValue({ id: 'plan1' });
+    planService.getPlanById.mockResolvedValue({
+      id: 'plan1',
+      features: [
+        { feature_key: 'tutorials_create', value: 'true' },
+        { feature_key: 'tutorials_max_count', value: '10' },
+      ],
+    });
   });
 
   it('allows admin to create tutorial for another instructor', async () => {
     const instructorId = '11111111-1111-1111-1111-111111111111';
     userModel.findById.mockResolvedValue({ id: instructorId, full_name: 'Other Instructor', email: 'other@example.com' });
-    service.createTutorial.mockResolvedValue({ id: 'tut1' });
+    service.createTutorialWithRelations.mockResolvedValue({ id: 'tut1' });
 
     const req = {
       body: {
@@ -79,8 +98,8 @@ describe('createTutorial', () => {
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
     expect(userModel.findById).toHaveBeenCalledWith(instructorId);
-    expect(service.createTutorial).toHaveBeenCalled();
-    const data = service.createTutorial.mock.calls[0][0];
+    expect(service.createTutorialWithRelations).toHaveBeenCalled();
+    const data = service.createTutorialWithRelations.mock.calls[0][0];
     expect(data.instructor_id).toBe(instructorId);
   });
 
@@ -88,7 +107,7 @@ describe('createTutorial', () => {
     const otherId = '11111111-1111-1111-1111-111111111112';
     const myId = '22222222-2222-2222-2222-222222222222';
     userModel.findById.mockResolvedValue({ id: myId, full_name: 'Me', email: 'me@example.com' });
-    service.createTutorial.mockResolvedValue({ id: 'tut1' });
+    service.createTutorialWithRelations.mockResolvedValue({ id: 'tut1' });
 
     const req = {
       body: {
@@ -104,12 +123,12 @@ describe('createTutorial', () => {
 
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
-    const data = service.createTutorial.mock.calls[0][0];
+    const data = service.createTutorialWithRelations.mock.calls[0][0];
     expect(data.instructor_id).toBe(myId);
   });
 
   it('sets is_paid to false when price is 0', async () => {
-    service.createTutorial.mockResolvedValue({ id: 'tutFree' });
+    service.createTutorialWithRelations.mockResolvedValue({ id: 'tutFree' });
 
     const req = {
       body: {
@@ -125,12 +144,12 @@ describe('createTutorial', () => {
 
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
-    const data = service.createTutorial.mock.calls[0][0];
+    const data = service.createTutorialWithRelations.mock.calls[0][0];
     expect(data.is_paid).toBe(false);
   });
 
   it('sets is_paid to true when price is greater than 0', async () => {
-    service.createTutorial.mockResolvedValue({ id: 'tutPaid' });
+    service.createTutorialWithRelations.mockResolvedValue({ id: 'tutPaid' });
 
     const req = {
       body: {
@@ -146,7 +165,7 @@ describe('createTutorial', () => {
 
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
-    const data = service.createTutorial.mock.calls[0][0];
+    const data = service.createTutorialWithRelations.mock.calls[0][0];
     expect(data.is_paid).toBe(true);
   });
 
@@ -171,7 +190,7 @@ describe('createTutorial', () => {
 
     expect(whereRaw).toHaveBeenCalledWith('LOWER(title) = ?', 'my unique');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(service.createTutorial).not.toHaveBeenCalled();
+    expect(service.createTutorialWithRelations).not.toHaveBeenCalled();
   });
 });
 
