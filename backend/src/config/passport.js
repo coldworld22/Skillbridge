@@ -10,6 +10,15 @@ const GitHubStrategy = require('passport-github2').Strategy;
 const socialAuthService = require('../modules/auth/services/socialAuth.service');
 const socialLoginConfigService = require('../modules/socialLoginConfig/socialLoginConfig.service');
 
+// Basic session support for Passport
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
 let initialized = false;
 
 async function initStrategies() {

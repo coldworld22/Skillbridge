@@ -109,6 +109,7 @@ if (process.env.REDIS_URL) {
 app.use(session(sessionOptions));
 
 app.use(passport.initialize());
+app.use(passport.session());
 
 
 
