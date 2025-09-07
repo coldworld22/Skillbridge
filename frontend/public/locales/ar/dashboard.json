@@ -1168,6 +1168,9 @@
     "popups_alerts": "النوافذ المنبثقة / التنبيهات",
     "certificate_templates": "قوالب الشهادات",
     "third_parties_config": "إعدادات الجهات الخارجية",
+    "clear_cache": "مسح التخزين المؤقت",
+    "cache_cleared": "تم مسح التخزين المؤقت",
+    "cache_clear_failed": "فشل مسح التخزين المؤقت",
     "create_class": "إنشاء صف",
     "my_classes": "صفوفي",
     "tutorials": "الدروس",
@@ -1193,7 +1196,8 @@
     "offers_groups": "العروض والمجموعات",
     "payments_social": "المدفوعات والشبكات الاجتماعية",
     "payments": "المدفوعات",
-    "my_reviews": "تقييماتي"
+    "my_reviews": "تقييماتي",
+    "clear_cache": "مسح ذاكرة التخزين المؤقت"
   },
   "emailConfigPage": {
     "title": "تكوين البريد الإلكتروني",

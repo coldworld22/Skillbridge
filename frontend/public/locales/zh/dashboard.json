@@ -1168,6 +1168,9 @@
     "popups_alerts": "弹出 /警报",
     "certificate_templates": "证书模板",
     "third_parties_config": "第三方配置",
+    "clear_cache": "清除缓存",
+    "cache_cleared": "缓存已清除",
+    "cache_clear_failed": "清除缓存失败",
     "create_class": "创建类",
     "my_classes": "我的课",
     "tutorials": "教程",
@@ -1193,7 +1196,8 @@
     "offers_groups": "优惠和团体",
     "payments_social": "付款和社交",
     "payments": "付款",
-    "my_reviews": "我的评论"
+    "my_reviews": "我的评论",
+    "clear_cache": "清除缓存"
   },
   "emailConfigPage": {
     "title": "电子邮件配置",

@@ -1182,6 +1182,9 @@
     "popups_alerts": "Popup / avvisi",
     "certificate_templates": "Modelli di certificato",
     "third_parties_config": "Configurazione di terze parti",
+    "clear_cache": "Pulisci cache",
+    "cache_cleared": "Cache pulita",
+    "cache_clear_failed": "Impossibile pulire la cache",
     "create_class": "Crea classe",
     "my_classes": "Le mie lezioni",
     "tutorials": "Tutorial",
@@ -1207,7 +1210,8 @@
     "offers_groups": "Offerte e gruppi",
     "payments_social": "Pagamenti e social",
     "payments": "Pagamenti",
-    "my_reviews": "Le mie recensioni"
+    "my_reviews": "Le mie recensioni",
+    "clear_cache": "Cancella cache"
   },
   "emailConfigPage": {
     "title": "Configurazione e -mail",
