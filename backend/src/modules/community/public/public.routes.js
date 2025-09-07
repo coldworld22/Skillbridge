@@ -6,7 +6,7 @@ const replyUpload = require("./replyUpload.middleware");
 
 router.get("/discussions", ctrl.listDiscussions);
 router.get("/discussions/:id", ctrl.getDiscussion);
-router.post("/discussions", verifyToken, upload.array('files'), ctrl.createDiscussion);
+router.post("/discussions", verifyToken, upload.array('image'), ctrl.createDiscussion);
 router.get("/discussions/:id/replies", ctrl.listReplies);
 router.post("/discussions/:id/replies", verifyToken, replyUpload, ctrl.createReply);
 router.post("/discussions/:id/like", verifyToken, ctrl.likeDiscussion);
