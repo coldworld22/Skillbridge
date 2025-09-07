@@ -42,6 +42,7 @@ if (missingSecrets.length) {
 // ─── Express and HTTP Setup ───
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 app.use(helmet());
