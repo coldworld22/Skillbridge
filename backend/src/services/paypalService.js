@@ -1,4 +1,4 @@
-const paypal = require('@paypal/checkout-server-sdk');
+const { Client, Environment, OrdersController, CheckoutPaymentIntent } = require('@paypal/paypal-server-sdk');
 const paymentMethodsService = require('../modules/paymentMethods/paymentMethods.service');
 
 let client;
@@ -9,18 +9,15 @@ async function getClient() {
   if (!settings?.client_id || !settings?.client_secret) {
     throw new Error('PayPal credentials are not configured');
   }
-  const mode = settings.mode === 'live' ? 'live' : 'sandbox';
   const environment =
-    mode === 'live'
-      ? new paypal.core.LiveEnvironment(
-          settings.client_id,
-          settings.client_secret
-        )
-      : new paypal.core.SandboxEnvironment(
-          settings.client_id,
-          settings.client_secret
-        );
-  client = new paypal.core.PayPalHttpClient(environment);
+    settings.mode === 'live' ? Environment.Production : Environment.Sandbox;
+  client = new Client({
+    environment,
+    clientCredentialsAuthCredentials: {
+      oAuthClientId: settings.client_id,
+      oAuthClientSecret: settings.client_secret,
+    },
+  });
   return client;
 }
 
@@ -29,34 +26,34 @@ exports.invalidateClient = () => {
 };
 
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
-  const request = new paypal.orders.OrdersCreateRequest();
-  request.prefer('return=representation');
   const body = {
-    intent: 'CAPTURE',
-    purchase_units: [
+    intent: CheckoutPaymentIntent.Capture,
+    purchaseUnits: [
       {
         amount: {
-          currency_code: currency,
-          value: amount,
+          currencyCode: currency,
+          value: String(amount),
         },
       },
     ],
   };
   if (returnUrl || cancelUrl) {
-    body.application_context = {};
-    if (returnUrl) body.application_context.return_url = returnUrl;
-    if (cancelUrl) body.application_context.cancel_url = cancelUrl;
+    body.applicationContext = {};
+    if (returnUrl) body.applicationContext.returnUrl = returnUrl;
+    if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
   }
-  request.requestBody(body);
   const cli = await getClient();
-  const response = await cli.execute(request);
-  return response.result;
+  const orders = new OrdersController(cli);
+  const { result } = await orders.createOrder({
+    body,
+    prefer: 'return=representation',
+  });
+  return result;
 };
 
 exports.captureOrder = async (orderId) => {
-  const request = new paypal.orders.OrdersCaptureRequest(orderId);
-  request.requestBody({});
   const cli = await getClient();
-  const response = await cli.execute(request);
-  return response.result;
+  const orders = new OrdersController(cli);
+  const { result } = await orders.captureOrder({ id: orderId, body: {} });
+  return result;
 };
