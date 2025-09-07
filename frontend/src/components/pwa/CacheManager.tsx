@@ -53,8 +53,8 @@ export default function CacheManager({
       }
       try {
         await fetch("/api/admin/cache/clear", { method: "POST" });
-      } catch (err) {
-        console.error("Failed to clear server cache", err);
+      } catch (e) {
+        console.error(e);
       }
       setStatus("idle");
     } catch (err) {

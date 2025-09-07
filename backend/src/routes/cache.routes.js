@@ -1,10 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-// POST /api/admin/cache/clear
-router.post('/clear', (_req, res) => {
-  // Placeholder for server-side cache clearing logic
-  res.json({ message: 'Server cache cleared' });
+router.post('/clear', async (_req, res) => {
+  try {
+    if (global.clearServerCache) {
+      await global.clearServerCache();
+    }
+    res.status(200).json({ status: 'cleared' });
+  } catch (err) {
+    console.error('Failed to clear cache', err);
+    res.status(500).json({ status: 'error', message: 'Failed to clear cache' });
+  }
 });
 
 module.exports = router;

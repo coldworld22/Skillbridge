@@ -34,7 +34,7 @@ import {
   BookMarked, // For Blogs
   HelpCircle, // For FAQs
   LifeBuoy,
-  BadgePercent
+  BadgePercent,
   RefreshCcw
 } from 'lucide-react';
 
@@ -108,7 +108,7 @@ export const adminNavLinks = [
           { label: 'third_parties_config', href: '/dashboard/admin/settings/thirdParty', icon: Brain }
         ]
       },
-      { label: 'clear_cache', href: '#', icon: Broom, action: 'clearCache' }
+      { label: 'clear_cache', href: '/dashboard/admin/cache', icon: RefreshCcw }
     ]
   }
 ];
