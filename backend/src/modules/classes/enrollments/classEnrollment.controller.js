@@ -67,6 +67,8 @@ exports.enroll = catchAsync(async (req, res) => {
         "class"
       );
 
+      await creditInstructorSubscription("class", classId, activePlanId, trx);
+
       await trx("payments").insert({
         user_id,
         item_id: classId,
@@ -74,7 +76,6 @@ exports.enroll = catchAsync(async (req, res) => {
         source: "subscription",
         amount: 0,
       });
-
       // Credit the instructor for subscription-based enrollments so that
       // instructors are compensated when a class is taken via a plan.
       await creditInstructorSubscription("class", classId, activePlanId, trx);

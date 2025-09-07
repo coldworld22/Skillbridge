@@ -8,6 +8,39 @@ jest.mock('../book.service', () => ({
   getBookById: jest.fn(),
   clearBookTags: jest.fn(),
 }));
+jest.mock('../book.utils', () => ({ processTags: jest.fn() }));
+jest.mock('../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+jest.mock('../../messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+jest.mock('../../../services/mailService', () => ({ sendMail: jest.fn() }));
+jest.mock('../../../services/smsService', () => ({ sendSMS: jest.fn() }));
+jest.mock('../../users/user.model', () => ({ findAdmins: jest.fn(() => []) }));
+
+jest.mock('../book.utils', () => ({
+  processTags: jest.fn(() => []),
+}));
+
+jest.mock('../../notifications/notifications.service', () => ({
+  createNotification: jest.fn(),
+}));
+jest.mock('../../messages/messages.service', () => ({
+  createMessage: jest.fn(),
+}));
+jest.mock('../../services/mailService', () => ({
+  sendMail: jest.fn(),
+}));
+jest.mock('../../services/smsService', () => ({
+  sendSMS: jest.fn(),
+}));
+jest.mock('../../users/user.model', () => ({
+  findAdmins: jest.fn(),
+  findInstructors: jest.fn(),
+  findStudents: jest.fn(),
+  findContactInfo: jest.fn(),
+}));
 
 const controller = require('../book.controller');
 const service = require('../book.service');
