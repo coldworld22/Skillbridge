@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 router.use('/api/health', require('./health.routes'));
+router.use('/api/cache', require('./cache.routes'));
 router.use('/api/auth', require('../modules/auth/routes/auth.routes'));
 router.use('/api/users', require('../modules/users/user.routes'));
 router.use('/api/verify', require('../modules/verify/verify.routes'));

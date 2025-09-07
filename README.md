@@ -149,6 +149,10 @@ Administrators can monitor runtime warnings and errors from the dashboard. The a
 
 Admins can build a nested list of course categories. CRUD endpoints live under `/api/users/admin/categories`. See [docs/admin-category-management.md](docs/admin-category-management.md) for an overview of the routes and frontend pages.
 
+## Cache management
+
+Admins can flush cached data from the dashboard. The **Clear Cache** button in the admin sidebar triggers `POST /api/cache/clear`, which purges Redis and other configured caches. Use this after deployments or major configuration changes to ensure fresh data.
+
 ## Third-party integrations
 
 The admin dashboard page under `Settings → Third Party` lets you configure API keys for several external services such as ChatGPT, DeepSeek or Claude. For ChatGPT you can register multiple models that users may pick from. See [docs/admin-third-party-integrations.md](docs/admin-third-party-integrations.md) for details. Once keys are saved, users can choose a provider on the community Ask page and request AI-generated answers.
