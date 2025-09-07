@@ -64,26 +64,29 @@ services:
     networks:
       - app-network
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./.env
-    environment:
-      # IMPORTANT: browsers can't call localhost on your server
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - app-network
+    frontend:
+      build:
+        context: ./frontend
+        args:
+          NEXT_PUBLIC_API_BASE_URL: https://eduskillbridge.net/api
+      ports:
+        - "3000:3000"
+      env_file:
+        - ./.env
+      environment:
+        # IMPORTANT: browsers can't call localhost on your server
+        - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:3000"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 5s
+      depends_on:
+        backend:
+          condition: service_healthy
+      networks:
+        - app-network
 
   nginx:
     image: nginx:alpine
