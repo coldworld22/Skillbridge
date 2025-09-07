@@ -26,3 +26,44 @@ export const deleteMethod = async (id) => {
   await api.delete(`/payment-methods/admin/${id}`);
   return true;
 };
+
+export const fetchPayPalCredentials = async () => {
+  const { data } = await api.get("/payment-methods/admin/paypal/credentials");
+  return data?.data ?? {};
+};
+
+export const updatePayPalCredentials = async (payload) => {
+  const { data } = await api.put(
+    "/payment-methods/admin/paypal/credentials",
+    payload
+  );
+  return data?.data;
+};
+
+export const fetchStripeSettings = async () => {
+  const { data } = await api.get("/payment-methods/admin/stripe/credentials");
+  return data?.data ?? {};
+};
+
+export const updateStripeSettings = async (payload) => {
+  const { data } = await api.put(
+    "/payment-methods/admin/stripe/credentials",
+    payload
+  );
+  return data?.data;
+};
+
+export const fetchCoinbaseSettings = async () => {
+  const { data } = await api.get(
+    "/payment-methods/admin/coinbase/credentials"
+  );
+  return data?.data ?? {};
+};
+
+export const updateCoinbaseSettings = async (payload) => {
+  const { data } = await api.put(
+    "/payment-methods/admin/coinbase/credentials",
+    payload
+  );
+  return data?.data;
+};
