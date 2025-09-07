@@ -106,6 +106,7 @@ router.use('/api/search', require('../modules/search/search.routes'));
 router.use('/api/install', require('../modules/install/install.routes'));
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
+router.use('/api/admin/cache', require('./cache.routes'));
 
 router.get('/', (_req, res) => res.send('🚀 SkillBridge API is live.'));
 

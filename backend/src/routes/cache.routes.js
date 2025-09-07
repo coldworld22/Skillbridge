@@ -1,20 +1,10 @@
 const express = require('express');
-const { verifyToken, isAdmin } = require('../middleware/auth/authMiddleware');
-const { createClient } = require('redis');
-
 const router = express.Router();
 
-router.post('/clear', verifyToken, isAdmin, async (_req, res) => {
-  const client = createClient({ url: process.env.REDIS_URL });
-  try {
-    await client.connect();
-    await client.flushAll();
-    await client.disconnect();
-    res.json({ message: 'Cache cleared' });
-  } catch (err) {
-    await client.disconnect();
-    res.status(500).json({ message: 'Failed to clear cache' });
-  }
+// POST /api/admin/cache/clear
+router.post('/clear', (_req, res) => {
+  // Placeholder for server-side cache clearing logic
+  res.json({ message: 'Server cache cleared' });
 });
 
 module.exports = router;

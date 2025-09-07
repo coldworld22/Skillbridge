@@ -34,8 +34,8 @@ import {
   BookMarked, // For Blogs
   HelpCircle, // For FAQs
   LifeBuoy,
-  BadgePercent,
-  Broom
+  BadgePercent
+  RefreshCcw
 } from 'lucide-react';
 
 export const adminNavLinks = [
@@ -83,6 +83,7 @@ export const adminNavLinks = [
   {
     title: 'settings',
     items: [
+      { label: 'clear_cache', href: '/dashboard/admin/cache', icon: RefreshCcw },
       {
         label: 'settings',
         href: '#',
