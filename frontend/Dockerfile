@@ -1,24 +1,17 @@
-# Use Node.js LTS version
-FROM node:18
-
-# Set working directory
+# Build stage
+FROM node:18 AS builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y curl
-
-# Copy package.json and lock file
 COPY package.json package-lock.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy rest of the app
+RUN npm ci && npm cache clean --force
 COPY . .
-
-# Build the Next.js app
 RUN npm run build
 
-# Expose Next.js port
+# Production stage
+FROM node:18-alpine AS production
+WORKDIR /app
+COPY package.json package-lock.json next.config.mjs next-i18next.config.js ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 EXPOSE 3000
-
-# Start the production server
 CMD ["npm", "start"]
