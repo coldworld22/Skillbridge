@@ -40,7 +40,7 @@ describe("generate certificate route", () => {
     service.isUserCompletedTutorial.mockResolvedValue(false);
 
     const res = await request(app).post(
-      "/api/users/tutorials/certificate/t1/certificate/generate",
+      "/api/users/tutorials/certificate/123e4567-e89b-12d3-a456-426614174000/certificate/generate",
     );
 
     expect(res.statusCode).toBe(403);
@@ -52,7 +52,7 @@ describe("generate certificate route", () => {
     service.issueCertificate.mockResolvedValue({ id: "cert1" });
 
     const res = await request(app).post(
-      "/api/users/tutorials/certificate/t1/certificate/generate",
+      "/api/users/tutorials/certificate/123e4567-e89b-12d3-a456-426614174000/certificate/generate",
     );
 
     expect(res.statusCode).toBe(200);

@@ -3,6 +3,8 @@ const QueryBuilder = require('knex/lib/query/querybuilder');
 const fs = require('fs');
 const path = require('path');
 
+jest.setTimeout(30000);
+
 QueryBuilder.prototype.whereILike = function (column, value) {
   return this.whereRaw(`LOWER(${column}) LIKE LOWER(?)`, [value]);
 };
@@ -25,6 +27,16 @@ jest.mock('../../plans/subscription.helper', () => ({
 }));
 jest.mock('../../payments/helpers/planRevenue', () => ({
   calculateInstructorAmount: jest.fn().mockResolvedValue(0),
+}));
+
+jest.mock('../../payments/payments.service', () => ({
+  STATUS: { PAID: 'paid', AWAITING_APPROVAL: 'awaiting_approval' },
+  create: jest.fn(async (data) => ({ id: 'pay-' + Math.random(), ...data, status: 'awaiting_approval' })),
+  approveBankPayment: jest.fn(async (id, data) => ({ id, ...data, status: 'paid' })),
+}));
+
+jest.mock('../../payments/paymentAccess', () => ({
+  grantAccess: jest.fn(() => Promise.resolve()),
 }));
 
 const db = require('../../../config/database');

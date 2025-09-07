@@ -55,7 +55,7 @@ describe('community public routes', () => {
       .field('title', 't')
       .field('content', 'c')
       .field('tags', JSON.stringify(['tag1']))
-      .attach('image', Buffer.from('img'), 'a.png');
+      .attach('files', Buffer.from('img'), 'a.png');
     expect(res.statusCode).toBe(200);
     expect(service.createDiscussion).toHaveBeenCalled();
     expect(res.body.data).toEqual(disc);
