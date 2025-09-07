@@ -7,7 +7,9 @@
     "start": "node src/server.js",
     "test": "NODE_ENV=test jest",
     "migrate": "node src/migrate.js",
-    "seed": "knex seed:run --knexfile knexfile.js"
+    "knex:migrate": "knex migrate:latest --knexfile knexfile.js",
+    "seed": "knex seed:run --knexfile knexfile.js",
+    "knex:seed": "knex seed:run --knexfile knexfile.js"
   },
   "keywords": [],
   "author": "",
