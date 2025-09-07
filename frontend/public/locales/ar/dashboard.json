@@ -1195,7 +1195,8 @@
     "offers_groups": "العروض والمجموعات",
     "payments_social": "المدفوعات والشبكات الاجتماعية",
     "payments": "المدفوعات",
-    "my_reviews": "تقييماتي"
+    "my_reviews": "تقييماتي",
+    "clear_cache": "مسح ذاكرة التخزين المؤقت"
   },
   "emailConfigPage": {
     "title": "تكوين البريد الإلكتروني",

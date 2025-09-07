@@ -8,7 +8,6 @@ import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
 import { clearCache as clearCacheService } from '@/services/admin/cacheService';
-
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -48,6 +47,15 @@ export default function Sidebar({ role = 'admin' }) {
 
   const toggleDropdown = (label) => {
     setActiveDropdown((prev) => (prev === label ? null : label));
+  };
+
+  const handleClearCache = async () => {
+    const success = await clearCache();
+    if (success) {
+      toast.success(t("sidebar.clear_cache"));
+    } else {
+      toast.error("Failed to clear cache");
+    }
   };
 
   return (
@@ -141,6 +149,15 @@ export default function Sidebar({ role = 'admin' }) {
           ))}
         </nav>
       </div>
+
+      {['admin','superadmin'].includes(role) && (
+        <button
+          onClick={handleClearCache}
+          className="flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+        >
+          {t('sidebar.clear_cache')}
+        </button>
+      )}
 
       <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-8">
         &copy; {new Date().getFullYear()} {settings.appName || 'SkillBridge'}
