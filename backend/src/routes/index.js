@@ -100,8 +100,6 @@ router.use('/api/book-reviews', require('../modules/bookReviews/bookReview.route
 router.use('/api/library', require('../modules/library/library.routes'));
 router.use('/api/search', require('../modules/search/search.routes'));
 router.use('/api/install', require('../modules/install/install.routes'));
-
-router.use('/api/health', require('./health.routes'));
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
 
