@@ -145,6 +145,7 @@ const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   try {
+    await db.connectWithRetry();
     // Migrations are handled via the dedicated `npm run migrate` script.
     // Only warn here if the database is behind so the server can still start.
     const migrationDir = path.join(__dirname, "migrations");
