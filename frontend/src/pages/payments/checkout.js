@@ -6,7 +6,7 @@ import { fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchBook } from '@/services/bookService';
 import { fetchPlanDetails } from '@/services/public/planService';
 import { validateCode } from '@/services/couponService';
-import { initiateBankPayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
+import { initiateBankPayment, initiateCoinbasePayment, initiateCryptoPayment, initiatePayPalPayment } from '@/services/paymentService';
 import { createPayment, fetchPayment } from '@/services/student/paymentService';
 import { subscribeToPlan } from '@/services/subscriptionService';
 import useCartStore from '@/store/cart/cartStore';
@@ -260,7 +260,11 @@ export async function handleCryptoPayment({
     };
     if (itemType === 'plan') payload.interval = interval;
     if (couponId) payload.coupon_id = couponId;
-    const data = await initiateCryptoPayment(payload);
+    const initFn =
+      getMethodIdentifier(method).toLowerCase() === 'coinbase'
+        ? initiateCoinbasePayment
+        : initiateCryptoPayment;
+    const data = await initFn(payload);
     if (data?.invoice_url) {
       window.location.href = data.invoice_url;
     } else {
