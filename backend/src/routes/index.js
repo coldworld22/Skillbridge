@@ -51,6 +51,7 @@ router.use(
   '/api/payments/paypal',
   require('../modules/payments/paypal.routes')
 );
+router.use('/api/payments/stripe', require('../modules/payments/stripe.routes'));
 router.use('/api/payments/admin', require('../modules/payments/payments.routes'));
 router.use('/api/invoices/admin', require('../modules/invoices/invoices.routes'));
 router.use('/api/invoices/student', require('../modules/invoices/student.routes'));
