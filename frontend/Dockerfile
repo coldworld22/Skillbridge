@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y curl
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --only=production
 
 # Copy rest of the app
 COPY . .
