@@ -60,6 +60,7 @@ router.use(
   '/api/admin/payments/bank',
   require('../modules/payments/bank.admin.routes')
 );
+router.use('/api/admin/cache', require('./cache.routes'));
 router.use('/api/payments/config', require('../modules/paymentConfig/paymentConfig.routes'));
 router.use('/api/messages/config', require('../modules/messagesConfig/messagesConfig.routes'));
 router.use('/api/social-login/config', require('../modules/socialLoginConfig/socialLoginConfig.routes'));

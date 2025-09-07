@@ -1192,7 +1192,8 @@
     "offers_groups": "Offres & Groupes",
     "payments_social": "Paiements & Réseaux",
     "payments": "Paiements",
-    "my_reviews": "Mes avis"
+    "my_reviews": "Mes avis",
+    "clear_cache": "Vider le cache"
   },
   "emailConfigPage": {
     "title": "Configuration des e-mails",

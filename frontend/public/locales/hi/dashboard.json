@@ -1192,7 +1192,8 @@
     "offers_groups": "प्रस्ताव और समूह",
     "payments_social": "भुगतान और सोशल",
     "payments": "भुगतान",
-    "my_reviews": "मेरी समीक्षाएँ"
+    "my_reviews": "मेरी समीक्षाएँ",
+    "clear_cache": "कैश साफ़ करें"
   },
   "emailConfigPage": {
     "title": "ईमेल विन्यास",

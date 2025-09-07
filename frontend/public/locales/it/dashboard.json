@@ -1206,7 +1206,8 @@
     "offers_groups": "Offerte e gruppi",
     "payments_social": "Pagamenti e social",
     "payments": "Pagamenti",
-    "my_reviews": "Le mie recensioni"
+    "my_reviews": "Le mie recensioni",
+    "clear_cache": "Cancella cache"
   },
   "emailConfigPage": {
     "title": "Configurazione e -mail",
