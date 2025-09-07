@@ -51,6 +51,11 @@ export default function CacheManager({
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
+      try {
+        await fetch("/api/admin/cache/clear", { method: "POST" });
+      } catch (e) {
+        console.error(e);
+      }
       setStatus("idle");
     } catch (err) {
       console.error(err);
