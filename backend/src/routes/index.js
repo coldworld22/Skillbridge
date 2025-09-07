@@ -40,6 +40,7 @@ router.use(
 router.use('/api/payments/student', require('../modules/payments/student.routes'));
 router.use('/api/payments/bank', require('../modules/payments/bank.routes'));
 router.use('/api/payments/crypto', require('../modules/payments/crypto.routes'));
+router.use('/api/payments/coinbase', require('../modules/payments/coinbase.routes'));
 // Alias for NOWPayments crypto gateway
 router.use(
   '/api/payments/nowpayments',

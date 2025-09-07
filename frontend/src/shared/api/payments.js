@@ -19,12 +19,7 @@ export const processCoinbasePayment = async (amount, currency) => {
                 'X-CC-Api-Key': apiKey || '',
                 'X-CC-Version': '2018-03-22'
             },
-            body: JSON.stringify({
-                name: "Course Purchase",
-                description: "Access to Prime Content",
-                pricing_type: "fixed_price",
-                local_price: { amount: amount, currency: currency }
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
