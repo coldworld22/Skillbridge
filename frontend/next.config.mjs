@@ -1,9 +1,26 @@
 import nextI18NextConfig from './next-i18next.config.js';
 
 /** @type {import('next').NextConfig} */
-const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5002/api';
+const defaultApiBase = 'http://localhost:5002/api';
+const apiBaseEnv = process.env.NEXT_PUBLIC_API_BASE_URL;
+let apiBase = apiBaseEnv || defaultApiBase;
 const pgAdminBase = process.env.NEXT_PUBLIC_PGADMIN_URL || 'http://localhost:5050';
-const { protocol, hostname, port } = new URL(apiBase);
+
+let protocol, hostname, port;
+try {
+  if (!/^https?:\/\//i.test(apiBase)) {
+    throw new Error(
+      `NEXT_PUBLIC_API_BASE_URL must be an absolute URL. Received: ${apiBase}`,
+    );
+  }
+  ({ protocol, hostname, port } = new URL(apiBase));
+} catch (error) {
+  console.warn(
+    `Invalid NEXT_PUBLIC_API_BASE_URL ("${apiBase}"): ${error.message}. Falling back to ${defaultApiBase}.`,
+  );
+  apiBase = defaultApiBase;
+  ({ protocol, hostname, port } = new URL(defaultApiBase));
+}
 const appDomain = process.env.APP_DOMAIN;
 const nextConfig = {
   images: {
