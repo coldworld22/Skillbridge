@@ -79,7 +79,7 @@ describe('Tutorial assignment routes', () => {
   test('get assignments by tutorial', async () => {
     const list = [{ id: '1' }];
     service.getByTutorial.mockResolvedValue(list);
-    const res = await request(app).get('/api/users/tutorials/assignments/tut1');
+    const res = await request(app).get('/api/users/tutorials/assignments/123e4567-e89b-12d3-a456-426614174000');
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toEqual(list);
   });
@@ -99,7 +99,7 @@ describe('Tutorial assignment routes', () => {
       due_date: '2024-01-01',
     });
     const res = await request(app)
-      .post('/api/users/tutorials/assignments/t1')
+      .post('/api/users/tutorials/assignments/123e4567-e89b-12d3-a456-426614174000')
       .send({ title: 'New', due_date: '2024-01-01' });
     expect(res.statusCode).toBe(200);
     expect(service.createAssignment).toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe('Tutorial assignment routes', () => {
 
   test('create assignment fails with invalid date', async () => {
     const res = await request(app)
-      .post('/api/users/tutorials/assignments/t1')
+      .post('/api/users/tutorials/assignments/123e4567-e89b-12d3-a456-426614174000')
       .send({ title: 'New', due_date: 'not-a-date' });
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('Validation error');
@@ -119,7 +119,7 @@ describe('Tutorial assignment routes', () => {
 
   test('create assignment fails with missing title', async () => {
     const res = await request(app)
-      .post('/api/users/tutorials/assignments/t1')
+      .post('/api/users/tutorials/assignments/123e4567-e89b-12d3-a456-426614174000')
       .send({ due_date: '2024-01-01' });
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('Validation error');
@@ -150,7 +150,7 @@ describe('Tutorial assignment routes', () => {
       .mockResolvedValueOnce({ instructor_id: 'other-user' })
       .mockResolvedValueOnce(null);
     const res = await request(app)
-      .post('/api/users/tutorials/assignments/t1')
+      .post('/api/users/tutorials/assignments/123e4567-e89b-12d3-a456-426614174000')
       .send({ title: 'New', due_date: '2024-01-01T00:00:00.000Z' });
     expect([403, 404]).toContain(res.statusCode);
     expect(service.createAssignment).not.toHaveBeenCalled();

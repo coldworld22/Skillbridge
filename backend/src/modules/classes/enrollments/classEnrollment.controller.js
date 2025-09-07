@@ -74,6 +74,8 @@ exports.enroll = catchAsync(async (req, res) => {
         source: "subscription",
         amount: 0,
       });
+
+      await creditInstructorSubscription("class", classId, activePlanId, trx);
     } else if (Number(cls.price) > 0) {
       const payment = await trx("payments")
         .where({
