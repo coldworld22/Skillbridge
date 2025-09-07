@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+router.use('/api/health', require('./health.routes'));
 router.use('/api/auth', require('../modules/auth/routes/auth.routes'));
 router.use('/api/users', require('../modules/users/user.routes'));
 router.use('/api/verify', require('../modules/verify/verify.routes'));
@@ -100,6 +101,7 @@ router.use('/api/library', require('../modules/library/library.routes'));
 router.use('/api/search', require('../modules/search/search.routes'));
 router.use('/api/install', require('../modules/install/install.routes'));
 
+router.use('/api/health', require('./health.routes'));
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
 

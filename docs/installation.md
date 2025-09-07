@@ -74,6 +74,12 @@ NEXT_PUBLIC_TRUSTED_ICON_HOSTS=yourdomain.com,cdn.yourdomain.com
 hosts for payment method icons. URLs outside this list will fall back to a
 default icon.
 
+The root `.env` file defaults `NEXT_PUBLIC_API_BASE_URL` to
+`http://backend:5002/api` so Docker services can reach the backend container
+internally. Update this value to your public domain (for example,
+`https://yourdomain.com/api`) when exposing the frontend outside of the Docker
+network.
+
 ## 3. Install dependencies (optional)
 
 For manual development outside of Docker:

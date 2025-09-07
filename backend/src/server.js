@@ -42,6 +42,7 @@ if (missingSecrets.length) {
 // ─── Express and HTTP Setup ───
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 app.use(helmet());
@@ -109,6 +110,7 @@ if (process.env.REDIS_URL) {
 app.use(session(sessionOptions));
 
 app.use(passport.initialize());
+app.use(passport.session());
 
 
 
@@ -145,6 +147,7 @@ const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   try {
+    await db.connectWithRetry();
     // Migrations are handled via the dedicated `npm run migrate` script.
     // Only warn here if the database is behind so the server can still start.
     const migrationDir = path.join(__dirname, "migrations");
