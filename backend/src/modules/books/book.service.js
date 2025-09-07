@@ -376,7 +376,9 @@ exports.checkout = async (studentId) => {
         instructor_amount,
       };
 
-      const payment = await paymentsService.create(paymentData);
+      // Use the existing transaction to avoid nesting and potential
+      // database locks during tests.
+      const payment = await paymentsService.create(paymentData, [], trx);
       if (payment.status === PAYMENT_STATUS.PAID) {
         await libraryService.recordPurchase(studentId, b.id, b.price);
       }
