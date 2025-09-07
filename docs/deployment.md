@@ -96,8 +96,25 @@ referenced in `nginx/conf.d/ssl.conf`.
   over the internal network. Update this to the public URL, as shown above,
   when deploying.
 
-   Without this variable the frontend defaults to `/api` which may point to the
-   wrong server when deployed.
+  Without this variable the frontend defaults to `/api` which may point to the
+  wrong server when deployed.
+
+### Production example: eduskillbridge.net
+
+To deploy the official site, copy `.env.example` to `.env` and
+`backend/.env.production.example` to `backend/.env.production`. Fill in the
+database credentials, JWT and refresh token secrets, and SMTP settings with
+values managed outside of version control. Configure the public URLs:
+
+```bash
+APP_DOMAIN=eduskillbridge.net
+FRONTEND_URL=https://eduskillbridge.net
+NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
+NEXT_PUBLIC_SOCKET_URL=https://eduskillbridge.net
+```
+
+Keep these files out of git and store the secrets in your hosting
+environment or secrets manager.
 
 After updating these files, rebuild the Docker images or restart the server so
 that the environment changes take effect.
