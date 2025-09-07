@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
-import { clearCache as clearCacheService } from '@/services/admin/cacheService';
+import { clearCache } from '@/services/admin/cacheService';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -30,7 +30,7 @@ export default function Sidebar({ role = 'admin' }) {
 
   const handleClearCache = async () => {
     try {
-      await clearCacheService();
+      await clearCache();
     } catch (err) {
       console.error('Failed to clear cache', err);
     }
@@ -47,15 +47,6 @@ export default function Sidebar({ role = 'admin' }) {
 
   const toggleDropdown = (label) => {
     setActiveDropdown((prev) => (prev === label ? null : label));
-  };
-
-  const handleClearCache = async () => {
-    const success = await clearCache();
-    if (success) {
-      toast.success(t("sidebar.clear_cache"));
-    } else {
-      toast.error("Failed to clear cache");
-    }
   };
 
   return (
