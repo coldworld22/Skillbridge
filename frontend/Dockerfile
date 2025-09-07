@@ -1,9 +1,11 @@
 # Build stage
 FROM node:18 AS builder
+ARG NEXT_PUBLIC_API_BASE_URL
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci && npm cache clean --force
 COPY . .
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 RUN npm run build
 
 # Production stage
