@@ -128,8 +128,10 @@ app.use((req, res, next) => {
   next();
 });
 
-const installerPath = path.join(__dirname, "../../install");
-app.use("/install", express.static(installerPath));
+if (process.env.ENABLE_INSTALLER === "true") {
+  const installerPath = path.join(__dirname, "../../install");
+  app.use("/install", express.static(installerPath));
+}
 
 // ─── Routes ───
 app.use(routes);

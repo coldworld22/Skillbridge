@@ -25,7 +25,7 @@ The script validates prerequisites, copies example env files, builds and starts 
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
 
-Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values.
+Alternatively, set `ENABLE_INSTALLER=true`, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. **Disable the installer (`ENABLE_INSTALLER=false` or unset) once deployment is complete.**
 
 ## Quick start
 

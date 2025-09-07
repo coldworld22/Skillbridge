@@ -21,6 +21,11 @@ In either case the script updates the domain placeholders in `nginx/conf.d`
 and uses `certbot` (or `acme.sh`) to generate certificates at the paths
 referenced in `nginx/conf.d/ssl.conf`.
 
+The optional web installer at `/install` only runs when
+`ENABLE_INSTALLER=true` is present in the backend environment. For security,
+unset this variable or set it to `false` after deployment so the installer
+cannot be re-run.
+
 ## Configure environment variables
 
 1. **Backend** – copy `backend/.env.example` to `backend/.env` and set:

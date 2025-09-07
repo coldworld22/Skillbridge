@@ -27,8 +27,10 @@ cp backend/.env.example backend/.env
 
 Edit `backend/.env` and provide your secrets. `FRONTEND_URL` should match the
 domain where the frontend will run (defaults to `http://localhost:3000`). Leave
-`NODE_ENV` unset so cookies work over HTTP. If you need cross-subdomain cookies
-without HTTPS, also set:
+`NODE_ENV` unset so cookies work over HTTP. If you plan to use the web-based
+installer, set `ENABLE_INSTALLER=true` temporarily. Disable it (`false` or
+remove) once setup is finished. If you need cross-subdomain cookies without
+HTTPS, also set:
 
 ```bash
 COOKIE_SECURE=false
