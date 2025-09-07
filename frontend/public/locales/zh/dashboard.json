@@ -1192,7 +1192,8 @@
     "offers_groups": "优惠和团体",
     "payments_social": "付款和社交",
     "payments": "付款",
-    "my_reviews": "我的评论"
+    "my_reviews": "我的评论",
+    "clear_cache": "清除缓存"
   },
   "emailConfigPage": {
     "title": "电子邮件配置",
