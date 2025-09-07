@@ -1,20 +1,19 @@
-FROM node:18-alpine
-
-# Set working directory inside the container
+# Build stage
+FROM node:18-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache curl ffmpeg
-
-# Copy package.json and package-lock.json first (better build caching)
+RUN apk add --no-cache curl
 COPY package*.json ./
-
-# Install dependencies (use ci for clean install)
-RUN npm ci --only=production
-
-# Copy the rest of the application files
+RUN npm ci && npm cache clean --force
 COPY . .
+RUN npm test
 
-# Expose port - match docker-compose.yml (5002)
+# Production stage
+FROM node:18-alpine
+WORKDIR /app
+RUN apk add --no-cache curl
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/knexfile.js ./knexfile.js
 EXPOSE 5002
-
-# Start the backend server
 CMD ["node", "src/server.js"]
