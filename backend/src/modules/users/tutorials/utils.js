@@ -1,4 +1,3 @@
-const { validate: isUUID } = require('uuid');
 const AppError = require('../../../utils/AppError');
 
 exports.requireUser = (req) => {
@@ -11,7 +10,7 @@ exports.requireUser = (req) => {
 exports.requireUserAndTutorial = (req) => {
   const userId = exports.requireUser(req);
   const { tutorialId } = req.params;
-  if (!isUUID(tutorialId)) {
+  if (!tutorialId) {
     throw new AppError('Invalid tutorial ID', 400);
   }
   return { userId, tutorialId };
@@ -19,7 +18,7 @@ exports.requireUserAndTutorial = (req) => {
 
 exports.requireValidTutorialId = (req) => {
   const { tutorialId } = req.params;
-  if (!isUUID(tutorialId)) {
+  if (!tutorialId) {
     throw new AppError('Invalid tutorial ID', 400);
   }
   return tutorialId;
