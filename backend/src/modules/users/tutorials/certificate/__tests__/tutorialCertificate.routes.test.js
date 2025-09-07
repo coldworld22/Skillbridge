@@ -1,10 +1,12 @@
 const request = require("supertest");
 const express = require("express");
 
+const TUTORIAL_ID = '123e4567-e89b-12d3-a456-426614174001';
+
 jest.mock("../../../../../config/database", () => {
   const db = jest.fn(() => db);
   db.where = jest.fn(() => db);
-  db.first = jest.fn(() => Promise.resolve({ id: "t1", title: "Tut" }));
+  db.first = jest.fn(() => Promise.resolve({ id: TUTORIAL_ID, title: "Tut" }));
   return db;
 });
 
@@ -40,7 +42,7 @@ describe("generate certificate route", () => {
     service.isUserCompletedTutorial.mockResolvedValue(false);
 
     const res = await request(app).post(
-      "/api/users/tutorials/certificate/t1/certificate/generate",
+      `/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`,
     );
 
     expect(res.statusCode).toBe(403);
@@ -52,7 +54,7 @@ describe("generate certificate route", () => {
     service.issueCertificate.mockResolvedValue({ id: "cert1" });
 
     const res = await request(app).post(
-      "/api/users/tutorials/certificate/t1/certificate/generate",
+      `/api/users/tutorials/certificate/${TUTORIAL_ID}/certificate/generate`,
     );
 
     expect(res.statusCode).toBe(200);

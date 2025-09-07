@@ -7,7 +7,7 @@ jest.mock('../library.service', () => ({
 }));
 const service = require('../library.service');
 
-jest.mock('../../middleware/auth/authMiddleware', () => ({
+jest.mock('../../../middleware/auth/authMiddleware', () => ({
   verifyToken: (req, _res, next) => { req.user = { id: 's1', plan_id: 'plan1' }; next(); },
   isStudent: (_req, _res, next) => next(),
 }));
