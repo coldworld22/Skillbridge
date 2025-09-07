@@ -1,5 +1,0 @@
-2023-01-01T00:00:00Z [ERROR] Example system failure
-2023-01-02T00:00:00Z [WARN] Example warning
-2025-07-25T07:37:28.580Z [ERROR] ❌ 400 - Invalid or expired OTP
-2025-07-25T07:37:28.580Z [ERROR] ❌ 404 - Email not found
-2025-07-25T07:37:28.600Z [ERROR] ❌ 400 - Invalid or expired OTP
