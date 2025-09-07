@@ -31,8 +31,9 @@ async function createTransporter() {
     port,
     secure:
       cfg.encryption === "SSL" ||
-      cfg.encryption === "TLS" ||
-      process.env.SMTP_SECURE === "true",
+      process.env.SMTP_SECURE === "true" ||
+      port === 465,
+    requireTLS: cfg.encryption === "TLS",
     auth: {
       user,
       pass,
