@@ -38,6 +38,11 @@ exports.createPayment = catchAsync(async (req, res) => {
     subscriptionPlanId,
   } = validation;
 
+  let statusToUse = finalStatus;
+  if (method?.type === "stripe" && finalStatus !== STATUS.PAID) {
+    statusToUse = STATUS.PENDING_PAYMENT;
+  }
+
   const { platform_fee, instructor_amount } = await calculatePlatformFee(
     item_type,
     verifiedAmount
@@ -51,12 +56,12 @@ exports.createPayment = catchAsync(async (req, res) => {
     item_id,
     amount: verifiedAmount,
     currency: verifiedCurrency,
-    status: finalStatus,
+    status: statusToUse,
     reference_id: verifiedReference,
     receipt_url,
     platform_fee,
     instructor_amount,
-    paid_at: finalStatus === STATUS.PAID ? new Date() : null,
+    paid_at: statusToUse === STATUS.PAID ? new Date() : null,
     installments: totalInstallments,
     installment_number: 1,
     next_due_date,

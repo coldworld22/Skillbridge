@@ -19,3 +19,9 @@ export const initiatePayPalPayment = async (payload) => {
   return data?.data ?? data;
 };
 
+// Initiate Stripe payment
+export const initiateStripePayment = async (payload) => {
+  const { data } = await api.post("/payments/stripe/create", payload);
+  return data?.data ?? data;
+};
+

@@ -2,6 +2,7 @@ const AppError = require("../../../utils/AppError");
 const { STATUS } = require("../payments.service");
 const paymentMethodsService = require("../../paymentMethods/paymentMethods.service");
 const paypalService = require("../../../services/paypalService");
+const stripeService = require("../../../services/stripeService");
 const couponService = require("../../coupons/coupons.service");
 const classService = require("../../classes/class.service");
 const bookService = require("../../books/book.service");
@@ -61,7 +62,10 @@ async function validatePaymentData(body, userId) {
 
   let verifiedAmount = amount;
   let verifiedCurrency = currency || "USD";
-  let finalStatus = status || (Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT);
+  let finalStatus = Number(amount) === 0 ? STATUS.PAID : STATUS.PENDING_PAYMENT;
+  if (status && method.type !== "stripe") {
+    finalStatus = status;
+  }
   let verifiedReference = reference_id;
 
   if (method.type === "paypal") {
@@ -74,6 +78,27 @@ async function validatePaymentData(body, userId) {
     verifiedAmount = parseFloat(info.amount?.value || amount);
     verifiedCurrency = info.amount?.currency_code || verifiedCurrency;
     verifiedReference = info.id || reference_id;
+    finalStatus = STATUS.PAID;
+  } else if (method.type === "stripe") {
+    if (!body.token) throw new AppError("Missing Stripe token", 400);
+    let charge;
+    try {
+      charge = await stripeService.charge({
+        token: body.token,
+        amount,
+        currency: verifiedCurrency,
+      });
+    } catch (_) {
+      throw new AppError("Stripe charge failed", 400);
+    }
+    if (charge.status !== "succeeded") {
+      throw new AppError("Stripe charge failed", 400);
+    }
+    verifiedAmount = charge.amount ? charge.amount / 100 : verifiedAmount;
+    verifiedCurrency = charge.currency
+      ? charge.currency.toUpperCase()
+      : verifiedCurrency;
+    verifiedReference = charge.id;
     finalStatus = STATUS.PAID;
   }
 
