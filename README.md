@@ -65,12 +65,24 @@ npm --prefix frontend install
      # to control the seeded admin credentials
      ```
 
-2. Initialize the database (run migrations and seeds):
+2. Initialize the database:
 
-   ```bash
-   npm --prefix backend run migrate
-   npm --prefix backend run seed
-   ```
+   1. Apply the Knex migrations to create tables:
+
+      ```bash
+      npm --prefix backend run knex:migrate
+      ```
+
+   2. Seed development data:
+
+      ```bash
+      npm --prefix backend run knex:seed
+      ```
+
+      Migration files live in `backend/src/migrations` and seed scripts in
+      `backend/src/seeds`. A raw SQL snapshot of the schema is also available
+      at `database/schema.sql` for reference.
+
    Seeding is meant for development environments only and should not be executed in production.
 
    If `ADMIN_INITIAL_PASSWORD` or `SUPERADMIN_INITIAL_PASSWORD` are not set in
