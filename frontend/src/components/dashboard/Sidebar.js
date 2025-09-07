@@ -7,9 +7,7 @@ import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
-import { clearCache } from '@/utils/cache';
-import { toast } from 'react-toastify';
-
+import { clearCache as clearCacheService } from '@/services/admin/cacheService';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -29,6 +27,14 @@ export default function Sidebar({ role = 'admin' }) {
   useEffect(() => {
     fetchAppConfig();
   }, [fetchAppConfig]);
+
+  const handleClearCache = async () => {
+    try {
+      await clearCacheService();
+    } catch (err) {
+      console.error('Failed to clear cache', err);
+    }
+  };
 
   const navMap = {
     admin: adminNavLinks,
@@ -73,7 +79,7 @@ export default function Sidebar({ role = 'admin' }) {
                 {t(`sidebar.${title}`)} <Plus size={14} />
               </h3>
               <div className="space-y-1">
-                {items.map(({ label, href, icon: Icon, isDropdown, dropdown }) => {
+                {items.map(({ label, href, icon: Icon, isDropdown, dropdown, action }) => {
                   const isActive = isHydrated && router.pathname.startsWith(href);
 
                   if (isDropdown) {
@@ -108,6 +114,22 @@ export default function Sidebar({ role = 'admin' }) {
                           </div>
                         )}
                       </div>
+                    );
+                  }
+
+                  if (action) {
+                    const handlerMap = {
+                      clearCache: handleClearCache,
+                    };
+                    return (
+                      <button
+                        key={label}
+                        onClick={handlerMap[action]}
+                        className={`flex items-center gap-3 w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {t(`sidebar.${label}`)}
+                      </button>
                     );
                   }
 

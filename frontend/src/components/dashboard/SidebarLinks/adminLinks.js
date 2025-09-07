@@ -34,7 +34,8 @@ import {
   BookMarked, // For Blogs
   HelpCircle, // For FAQs
   LifeBuoy,
-  BadgePercent
+  BadgePercent,
+  Broom
 } from 'lucide-react';
 
 export const adminNavLinks = [
@@ -105,7 +106,8 @@ export const adminNavLinks = [
           { label: 'certificate_templates', href: '/dashboard/admin/settings/certificates', icon: LayoutTemplate },
           { label: 'third_parties_config', href: '/dashboard/admin/settings/thirdParty', icon: Brain }
         ]
-      }
+      },
+      { label: 'clear_cache', href: '#', icon: Broom, action: 'clearCache' }
     ]
   }
 ];
