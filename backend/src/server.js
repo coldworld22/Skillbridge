@@ -10,6 +10,7 @@ const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const { createClient } = require("redis");
+const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
 const csrf = require("./middleware/csrf");
@@ -42,6 +43,7 @@ if (missingSecrets.length) {
 // ─── Express and HTTP Setup ───
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 app.use(helmet());
@@ -108,7 +110,15 @@ if (process.env.REDIS_URL) {
 
 app.use(session(sessionOptions));
 
+// Apply rate limiting to all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
 app.use(passport.initialize());
+app.use(passport.session());
 
 
 
@@ -145,6 +155,7 @@ const PORT = process.env.PORT || 5002;
 
 async function startServer() {
   try {
+    await db.connectWithRetry();
     // Migrations are handled via the dedicated `npm run migrate` script.
     // Only warn here if the database is behind so the server can still start.
     const migrationDir = path.join(__dirname, "migrations");
