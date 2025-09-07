@@ -87,11 +87,15 @@ referenced in `nginx/conf.d/ssl.conf`.
    `NEXT_PUBLIC_API_BASE_URL` to your backend URL including the `/api` prefix.
    For example:
    
-  ```bash
-  # Point the frontend to your backend including the /api prefix
-  NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
-  ```
-   
+ ```bash
+ # Point the frontend to your backend including the /api prefix
+ NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
+ ```
+  In the Docker Compose setup the root `.env` uses
+  `NEXT_PUBLIC_API_BASE_URL=http://backend:5002/api` so containers can communicate
+  over the internal network. Update this to the public URL, as shown above,
+  when deploying.
+
    Without this variable the frontend defaults to `/api` which may point to the
    wrong server when deployed.
 

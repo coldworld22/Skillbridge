@@ -46,6 +46,12 @@ npm --prefix frontend install
        - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
        - `FRONTEND_URL`, `NEXT_PUBLIC_API_BASE_URL`
 
+         `NEXT_PUBLIC_API_BASE_URL` should point to the backend API. When running
+         with Docker Compose this should use the internal service URL
+         `http://backend:5002/api`. For public deployments update it to your
+         externally accessible domain, for example
+         `https://yourdomain.com/api`.
+
    - Copy the backend example file and adjust values as needed:
 
      ```bash
