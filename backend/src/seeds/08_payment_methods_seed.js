@@ -32,6 +32,28 @@ exports.seed = async function(knex) {
       is_default: false,
       created_at: now,
       updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'stripe',
+      type: 'stripe',
+      icon: 'stripe',
+      active: false,
+      settings: {},
+      is_default: false,
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: knex.raw('uuid_generate_v4()'),
+      name: 'coinbase',
+      type: 'coinbase',
+      icon: 'coinbase',
+      active: false,
+      settings: {},
+      is_default: false,
+      created_at: now,
+      updated_at: now
     }
   ]);
 };
