@@ -68,6 +68,7 @@
   "ads_manager": "Gerente de anuncios",
   "offers": "Oferta",
   "support": "Apoyo",
+  "clear_cache": "Limpiar caché",
   "legal": "Legal",
   "privacy_policy": "política de privacidad",
   "terms_of_service": "Términos de servicio",
@@ -1168,6 +1169,9 @@
     "popups_alerts": "Ventanas emergentes / alertas",
     "certificate_templates": "Plantillas de certificado",
     "third_parties_config": "Configuración de terceros",
+    "clear_cache": "Limpiar caché",
+    "cache_cleared": "Caché limpiada",
+    "cache_clear_failed": "No se pudo limpiar la caché",
     "create_class": "Crear clase",
     "my_classes": "Mis clases",
     "tutorials": "Tutoriales",
@@ -1193,7 +1197,8 @@
     "offers_groups": "Ofertas y grupos",
     "payments_social": "Pagos y sociales",
     "payments": "Pagos",
-    "my_reviews": "Mis reseñas"
+    "my_reviews": "Mis reseñas",
+    "clear_cache": "Borrar caché"
   },
   "emailConfigPage": {
     "title": "Configuración de correo electrónico",

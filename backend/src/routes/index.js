@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 router.use('/api/health', require('./health.routes'));
+router.use('/api/cache', require('./cache.routes'));
 router.use('/api/auth', require('../modules/auth/routes/auth.routes'));
 router.use('/api/users', require('../modules/users/user.routes'));
 router.use('/api/verify', require('../modules/verify/verify.routes'));
@@ -60,6 +61,7 @@ router.use(
   '/api/admin/payments/bank',
   require('../modules/payments/bank.admin.routes')
 );
+router.use('/api/admin/cache', require('./cache.routes'));
 router.use('/api/payments/config', require('../modules/paymentConfig/paymentConfig.routes'));
 router.use('/api/messages/config', require('../modules/messagesConfig/messagesConfig.routes'));
 router.use('/api/social-login/config', require('../modules/socialLoginConfig/socialLoginConfig.routes'));
@@ -105,6 +107,7 @@ router.use('/api/install', require('../modules/install/install.routes'));
 router.use('/api/admin/cache', require('./cache.routes'));
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
+router.use('/api/admin/cache', require('./cache.routes'));
 
 router.get('/', (_req, res) => res.send('🚀 SkillBridge API is live.'));
 

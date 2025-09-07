@@ -68,6 +68,7 @@
   "ads_manager": "Ads Manager",
   "offers": "Offers",
   "support": "Support",
+  "clear_cache": "Cache leeren",
   "legal": "Legal",
   "privacy_policy": "Privacy Policy",
   "terms_of_service": "Terms of Service",
@@ -1182,6 +1183,9 @@
     "popups_alerts": "Popups / Alerts",
     "certificate_templates": "Certificate Templates",
     "third_parties_config": "Third Parties Config",
+    "clear_cache": "Cache leeren",
+    "cache_cleared": "Cache geleert",
+    "cache_clear_failed": "Cache konnte nicht geleert werden",
     "create_class": "Create Class",
     "my_classes": "My Classes",
     "tutorials": "Tutorials",
@@ -1207,7 +1211,8 @@
     "offers_groups": "Offers & Groups",
     "payments_social": "Payments & Social",
     "payments": "Payments",
-    "my_reviews": "My Reviews"
+    "my_reviews": "My Reviews",
+    "clear_cache": "Cache löschen"
   },
   "emailConfigPage": {
     "title": "Email Configuration",

@@ -83,6 +83,7 @@ export const adminNavLinks = [
   {
     title: 'settings',
     items: [
+      { label: 'clear_cache', href: '/dashboard/admin/cache', icon: RefreshCcw },
       {
         label: 'settings',
         href: '#',
