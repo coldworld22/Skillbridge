@@ -73,3 +73,44 @@ exports.getPayPalClientId = async () => {
   const settings = await exports.getPayPalSettings();
   return settings.client_id || null;
 };
+
+exports.getStripeSettings = async () => {
+  const row = await exports.getByType("stripe");
+  const settings = row?.settings || {};
+  return {
+    publishable_key:
+      settings.publishable_key || process.env.STRIPE_PUBLISHABLE_KEY,
+    secret_key: settings.secret_key || process.env.STRIPE_SECRET_KEY,
+  };
+};
+
+exports.updateStripeSettings = async (settings) => {
+  const row = await exports.getByType("stripe");
+  if (!row) throw new Error("Stripe method not found");
+  const newSettings = { ...(row.settings || {}), ...settings };
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: newSettings })
+    .returning("settings");
+  return updated;
+};
+
+exports.getCoinbaseSettings = async () => {
+  const row = await exports.getByType("coinbase");
+  const settings = row?.settings || {};
+  return {
+    api_key: settings.api_key || process.env.COINBASE_API_KEY,
+    api_secret: settings.api_secret || process.env.COINBASE_API_SECRET,
+  };
+};
+
+exports.updateCoinbaseSettings = async (settings) => {
+  const row = await exports.getByType("coinbase");
+  if (!row) throw new Error("Coinbase method not found");
+  const newSettings = { ...(row.settings || {}), ...settings };
+  const [updated] = await db("payment_methods_config")
+    .where({ id: row.id })
+    .update({ settings: newSettings })
+    .returning("settings");
+  return updated;
+};

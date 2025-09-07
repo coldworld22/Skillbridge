@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useMemo } from 'react';
-import { fetchPaymentMethods } from '@/services/paymentMethodService';
+import { fetchPaymentMethods, fetchStripePublicKey } from '@/services/paymentMethodService';
 import { fetchClassDetails } from '@/services/classService';
 import { fetchTutorialDetails } from '@/services/tutorialService';
 import { fetchBook } from '@/services/bookService';
@@ -26,12 +26,6 @@ import {
 } from 'react-icons/fa';
 import { useTranslation } from 'next-i18next';
 import { parseCheckoutItems } from '@/utils/parseCheckoutItems';
-
-const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
-const stripePromise =
-  typeof stripePublicKey === 'string' && stripePublicKey.trim()
-    ? loadStripe(stripePublicKey)
-    : null;
 
 const iconMap = {
   stripe: <FaCcStripe />,
@@ -349,6 +343,24 @@ export default function CheckoutPage() {
   }, [router.isReady, resolvedItem]);
   const [itemInfo, setItemInfo] = useState(null);
   const [methods, setMethods] = useState([]);
+  const [stripePromise, setStripePromise] = useState(null);
+  useEffect(() => {
+    const loadStripeKey = async () => {
+      let key = null;
+      try {
+        key = await fetchStripePublicKey();
+      } catch (_err) {
+        // ignore
+      }
+      if (!key && process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
+        key = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+      }
+      if (key) {
+        setStripePromise(loadStripe(key));
+      }
+    };
+    loadStripeKey();
+  }, []);
   // Use the payment method "type" as identifier. Default to the method marked
   // as default, or the first active method if none is marked.
   const [selectedMethod, setSelectedMethod] = useState('');

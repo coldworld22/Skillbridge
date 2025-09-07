@@ -3,12 +3,20 @@ import { useTranslation } from "next-i18next";
 import {
   fetchMethodById,
   updateMethod,
+  fetchPayPalCredentials,
+  updatePayPalCredentials,
+  fetchStripeSettings,
+  updateStripeSettings,
+  fetchCoinbaseSettings,
+  updateCoinbaseSettings,
 } from "@/services/admin/paymentMethodService";
 import { toast } from "react-toastify";
 import useAdminNotice from "@/hooks/useAdminNotice";
 
 export default function PaymentProviderConfig({ providerId }) {
   const [settings, setSettings] = useState("{}");
+  const [form, setForm] = useState({});
+  const [mode, setMode] = useState("generic");
   const [loading, setLoading] = useState(true);
   const notify = useAdminNotice();
   const { t } = useTranslation('dashboard');
@@ -17,8 +25,33 @@ export default function PaymentProviderConfig({ providerId }) {
     if (!providerId) return;
     const load = async () => {
       try {
-        const method = await fetchMethodById(providerId);
-        setSettings(JSON.stringify(method?.settings || {}, null, 2));
+        if (providerId === 'paypal') {
+          const creds = await fetchPayPalCredentials();
+          setForm({
+            client_id: creds.client_id || '',
+            client_secret: '',
+            mode: creds.mode || 'sandbox',
+          });
+          setMode('paypal');
+        } else if (providerId === 'stripe') {
+          const creds = await fetchStripeSettings();
+          setForm({
+            publishable_key: creds.publishable_key || '',
+            secret_key: '',
+          });
+          setMode('stripe');
+        } else if (providerId === 'coinbase') {
+          const creds = await fetchCoinbaseSettings();
+          setForm({
+            api_key: creds.api_key || '',
+            api_secret: '',
+          });
+          setMode('coinbase');
+        } else {
+          const method = await fetchMethodById(providerId);
+          setSettings(JSON.stringify(method?.settings || {}, null, 2));
+          setMode('generic');
+        }
       } catch (err) {
         console.error("Failed to load method", err);
       } finally {
@@ -28,22 +61,34 @@ export default function PaymentProviderConfig({ providerId }) {
     load();
   }, [providerId]);
 
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
 
-    let parsed;
     try {
-      parsed = settings ? JSON.parse(settings) : {};
-    } catch (err) {
-      if (err instanceof SyntaxError) {
-        toast.error(t('paymentsPage.invalid_json'));
-        return;
+      if (mode === 'paypal') {
+        await updatePayPalCredentials(form);
+      } else if (mode === 'stripe') {
+        await updateStripeSettings(form);
+      } else if (mode === 'coinbase') {
+        await updateCoinbaseSettings(form);
+      } else {
+        let parsed;
+        try {
+          parsed = settings ? JSON.parse(settings) : {};
+        } catch (err) {
+          if (err instanceof SyntaxError) {
+            toast.error(t('paymentsPage.invalid_json'));
+            return;
+          }
+          throw err;
+        }
+        await updateMethod(providerId, { settings: parsed });
       }
-      throw err;
-    }
-
-    try {
-      await updateMethod(providerId, { settings: parsed });
       toast.success(t('paymentsPage.config_saved'));
       notify(
         "payment_method_updated",
@@ -56,6 +101,108 @@ export default function PaymentProviderConfig({ providerId }) {
   };
 
   if (loading) return <p>{t('common:loading')}</p>;
+
+  if (mode === 'paypal') {
+    return (
+      <form onSubmit={handleSave} className="space-y-4 bg-white p-6 rounded-xl shadow">
+        <div>
+          <label className="block text-sm font-medium">{t('client_id')}</label>
+          <input
+            type="text"
+            name="client_id"
+            value={form.client_id}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">{t('client_secret')}</label>
+          <input
+            type="text"
+            name="client_secret"
+            value={form.client_secret}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Mode</label>
+          <select
+            name="mode"
+            value={form.mode}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          >
+            <option value="sandbox">Sandbox</option>
+            <option value="live">Live</option>
+          </select>
+        </div>
+        <button type="submit" className="bg-yellow-400 px-6 py-2 rounded-full text-white">
+          {t('paymentsPage.save_configuration')}
+        </button>
+      </form>
+    );
+  }
+
+  if (mode === 'stripe') {
+    return (
+      <form onSubmit={handleSave} className="space-y-4 bg-white p-6 rounded-xl shadow">
+        <div>
+          <label className="block text-sm font-medium">Publishable Key</label>
+          <input
+            type="text"
+            name="publishable_key"
+            value={form.publishable_key}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Secret Key</label>
+          <input
+            type="text"
+            name="secret_key"
+            value={form.secret_key}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <button type="submit" className="bg-yellow-400 px-6 py-2 rounded-full text-white">
+          {t('paymentsPage.save_configuration')}
+        </button>
+      </form>
+    );
+  }
+
+  if (mode === 'coinbase') {
+    return (
+      <form onSubmit={handleSave} className="space-y-4 bg-white p-6 rounded-xl shadow">
+        <div>
+          <label className="block text-sm font-medium">API Key</label>
+          <input
+            type="text"
+            name="api_key"
+            value={form.api_key}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">API Secret</label>
+          <input
+            type="text"
+            name="api_secret"
+            value={form.api_secret}
+            onChange={handleFieldChange}
+            className="w-full border rounded p-2"
+          />
+        </div>
+        <button type="submit" className="bg-yellow-400 px-6 py-2 rounded-full text-white">
+          {t('paymentsPage.save_configuration')}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form

@@ -12,7 +12,11 @@ const paypalService = require("../../services/paypalService");
 const sanitizeMethod = (method) => {
   if (method?.settings) {
     method.settings.has_client_secret = Boolean(method.settings.client_secret);
+    method.settings.has_secret_key = Boolean(method.settings.secret_key);
+    method.settings.has_api_secret = Boolean(method.settings.api_secret);
     delete method.settings.client_secret;
+    delete method.settings.secret_key;
+    delete method.settings.api_secret;
   }
   return method;
 };
@@ -184,5 +188,57 @@ exports.updatePayPalCredentials = catchAsync(async (req, res) => {
     res,
     { client_id, has_client_secret: true, mode: mode || "sandbox" },
     "PayPal credentials updated"
+  );
+});
+
+exports.getStripePublicKey = catchAsync(async (_req, res) => {
+  const settings = await service.getStripeSettings();
+  sendSuccess(res, { publicKey: settings.publishable_key || null });
+});
+
+exports.getStripeCredentials = catchAsync(async (_req, res) => {
+  const settings = await service.getStripeSettings();
+  sendSuccess(res, {
+    publishable_key: settings.publishable_key || null,
+    has_secret_key: Boolean(settings.secret_key),
+  });
+});
+
+exports.updateStripeCredentials = catchAsync(async (req, res) => {
+  const { publishable_key, secret_key } = req.body;
+  if (!publishable_key || !secret_key) {
+    throw new AppError("Publishable and secret keys are required", 400);
+  }
+  await service.updateStripeSettings({ publishable_key, secret_key });
+  sendSuccess(
+    res,
+    { publishable_key, has_secret_key: true },
+    "Stripe credentials updated"
+  );
+});
+
+exports.getCoinbaseApiKey = catchAsync(async (_req, res) => {
+  const settings = await service.getCoinbaseSettings();
+  sendSuccess(res, { apiKey: settings.api_key || null });
+});
+
+exports.getCoinbaseCredentials = catchAsync(async (_req, res) => {
+  const settings = await service.getCoinbaseSettings();
+  sendSuccess(res, {
+    api_key: settings.api_key || null,
+    has_api_secret: Boolean(settings.api_secret),
+  });
+});
+
+exports.updateCoinbaseCredentials = catchAsync(async (req, res) => {
+  const { api_key, api_secret } = req.body;
+  if (!api_key || !api_secret) {
+    throw new AppError("API key and secret are required", 400);
+  }
+  await service.updateCoinbaseSettings({ api_key, api_secret });
+  sendSuccess(
+    res,
+    { api_key, has_api_secret: true },
+    "Coinbase credentials updated"
   );
 });
