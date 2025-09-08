@@ -76,9 +76,10 @@ default icon.
 
 The root `.env` file defaults `NEXT_PUBLIC_API_BASE_URL` to
 `http://backend:5002/api` so Docker services can reach the backend container
-internally. Update this value to your public domain (for example,
-`https://yourdomain.com/api`) when exposing the frontend outside of the Docker
-network.
+internally during development. For production builds use
+`frontend/.env.production` instead and remove or override the root `.env` so the
+frontend points to your public domain (for example,
+`https://yourdomain.com/api`).
 
 ## 3. Install dependencies (optional)
 
