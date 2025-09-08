@@ -25,7 +25,6 @@ require("dotenv").config();
 const requiredSecrets = [
   "JWT_SECRET",
   "REFRESH_TOKEN_SECRET",
-  "PORT",
   "SESSION_SECRET",
 ];
 const dbKey =
