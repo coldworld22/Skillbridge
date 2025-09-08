@@ -6,6 +6,7 @@ import { fetchInstructorClassById } from "@/services/instructor/classService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import DOMPurify from "isomorphic-dompurify";
 
 function InstructorClassDetailPage() {
   const { id } = useRouter().query;
@@ -84,7 +85,10 @@ function InstructorClassDetailPage() {
 
           <div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">📘 Description</h3>
-            <p className="text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: details?.description }} />
+            <p
+              className="text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(details?.description || "") }}
+            />
           </div>
 
           <div className="pt-4 flex flex-wrap gap-4">
