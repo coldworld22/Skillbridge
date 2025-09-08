@@ -32,6 +32,7 @@ Students can upload proof of manual transfers via `POST /api/payments/student/re
 ### PayPal and crypto payments
 
 - Students can initiate PayPal payments via `POST /api/payments/paypal/create`. The endpoint returns an approval URL and records the pending payment. PayPal redirects to `/api/payments/paypal/callback` after approval.
+- The integration uses the official `@paypal/paypal-server-sdk` library to create and capture orders against PayPal's REST APIs.
 - Crypto payments use NOWPayments through `POST /api/payments/nowpayments/create` with webhook notifications to `/api/payments/nowpayments/ipn`.
 
 ### Failed login attempt cleanup

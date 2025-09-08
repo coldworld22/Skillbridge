@@ -54,6 +54,25 @@ describe('paypalService', () => {
     );
   });
 
+  it('includes return and cancel URLs when provided', async () => {
+    await paypalService.createOrder({
+      amount: 5,
+      currency: 'USD',
+      returnUrl: 'https://example.com/return',
+      cancelUrl: 'https://example.com/cancel',
+    });
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          applicationContext: {
+            returnUrl: 'https://example.com/return',
+            cancelUrl: 'https://example.com/cancel',
+          },
+        }),
+      })
+    );
+  });
+
   it('captures an order', async () => {
     const capture = await paypalService.captureOrder('order123');
     expect(capture).toEqual({ id: 'capture123' });
