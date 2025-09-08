@@ -13,16 +13,17 @@ const isSafeScript = (key) => {
   return filePath && fs.existsSync(filePath);
 };
 
-exports.checkPrereqs = (req, res) => {
-  if (Object.keys(req.query || {}).length > 0) {
-    return res.status(400).json({ message: 'No query parameters allowed' });
-  }
+const allowedScripts = {
+  prereqs: path.join(__dirname, '../../../../scripts/check_prereqs.sh'),
+  install: path.join(__dirname, '../../../../install.sh'),
+};
 
-  if (!isSafeScript('prereqs')) {
-    return res.status(500).json({ ok: false, output: 'Script unavailable.' });
+const executeScript = (res, scriptKey) => {
+  const script = allowedScripts[scriptKey];
+  if (!script) {
+    return res.status(400).json({ ok: false, output: 'Invalid script' });
   }
-
-  execFile(SAFE_SCRIPTS.prereqs, { timeout: 5 * 60 * 1000 }, (error, stdout, stderr) => {
+  execFile(script, { shell: false }, (error, stdout, stderr) => {
     const output = stdout + stderr;
     if (error) {
       return res.status(500).json({ ok: false, output });
@@ -31,20 +32,5 @@ exports.checkPrereqs = (req, res) => {
   });
 };
 
-exports.runInstall = (req, res) => {
-  if (Object.keys(req.body || {}).length > 0) {
-    return res.status(400).json({ message: 'No request body allowed' });
-  }
-
-  if (!isSafeScript('install')) {
-    return res.status(500).json({ ok: false, output: 'Script unavailable.' });
-  }
-
-  execFile(SAFE_SCRIPTS.install, { timeout: 15 * 60 * 1000 }, (error, stdout, stderr) => {
-    const output = stdout + stderr;
-    if (error) {
-      return res.status(500).json({ ok: false, output });
-    }
-    res.json({ ok: true, output });
-  });
-};
+exports.checkPrereqs = (req, res) => executeScript(res, 'prereqs');
+exports.runInstall = (req, res) => executeScript(res, 'install');
