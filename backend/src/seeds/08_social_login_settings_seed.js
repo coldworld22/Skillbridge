@@ -7,8 +7,8 @@ exports.seed = async function (knex) {
     providers: {
       google: {
         active: true,
-        clientId: '707378564878-smi89kqne0snc1usv9s1l465hs6lb9a0.apps.googleusercontent.com',
-        clientSecret: 'YOUR_GOOGLE_CLIENT_SECRET',
+        clientId: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET',
         redirectUrl: `https://www.${APP_DOMAIN}/api/auth/google/callback`,
         label: 'Sign in with Google',
         icon: 'google'
