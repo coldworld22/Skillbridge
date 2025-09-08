@@ -76,7 +76,9 @@ app.use(
       if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, origin);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        // Deny the request without throwing so Express can return 403
+        logger.warn(`CORS blocked origin: ${origin}`);
+        callback(null, false);
       }
     },
     credentials: true,
