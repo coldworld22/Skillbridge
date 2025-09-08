@@ -1,5 +1,17 @@
 const { execFile } = require('child_process');
 const path = require('path');
+const fs = require('fs');
+
+// Whitelisted scripts that can be executed via the install API
+const SAFE_SCRIPTS = {
+  prereqs: path.resolve(__dirname, '../../../../scripts/check_prereqs.sh'),
+  install: path.resolve(__dirname, '../../../../install.sh'),
+};
+
+const isSafeScript = (key) => {
+  const filePath = SAFE_SCRIPTS[key];
+  return filePath && fs.existsSync(filePath);
+};
 
 const allowedScripts = {
   prereqs: path.join(__dirname, '../../../../scripts/check_prereqs.sh'),
