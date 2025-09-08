@@ -17,6 +17,8 @@ backend/uploads
 # Environment files
 .env
 *.env
+!frontend/.env.production
+!backend/.env.production
 
 # Docker compose and other local files
 docker-compose.yml
