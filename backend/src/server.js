@@ -106,6 +106,10 @@ let redisClient;
 if (process.env.REDIS_URL) {
   redisClient = createClient({ url: process.env.REDIS_URL });
   sessionOptions.store = new RedisStore({ client: redisClient });
+} else if (process.env.NODE_ENV === "production") {
+  const msg = "REDIS_URL is required in production for session persistence";
+  logger.error(`❌ ${msg}`);
+  throw new Error(msg);
 }
 
 app.use(session(sessionOptions));

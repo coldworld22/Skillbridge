@@ -17,6 +17,16 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -51,6 +61,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
       - NODE_ENV=${NODE_ENV}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5002/api/health"]
       interval: 30s
@@ -59,6 +70,7 @@ services:
       start_period: 30s
     depends_on:
       - db
+      - redis
     volumes:
       - ./backend/uploads:/app/uploads
     networks:
@@ -105,6 +117,7 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:
 
 networks:
   app-network:

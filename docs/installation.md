@@ -7,6 +7,7 @@ This document explains how to set up SkillBridge for local development and for h
 - [Node.js](https://nodejs.org/) 18 or later
 - [Docker](https://www.docker.com/) and Docker Compose
 - Git
+- Redis or another session store for production deployments
 
 ## 1. Clone the repository
 
@@ -34,6 +35,10 @@ without HTTPS, also set:
 COOKIE_SECURE=false
 COOKIE_SAMESITE=None
 ```
+
+A Redis instance (or compatible store) is required to persist sessions in
+production. Set `REDIS_URL` in `backend/.env` to point to your Redis server
+(for example `redis://localhost:6379`).
 
 The book filter's price range uses configurable defaults:
 
@@ -116,6 +121,7 @@ The containers expose the following URLs:
 - Backend API: `http://localhost:5002/api`
 - PostgreSQL: `localhost:5432`
 - pgAdmin: `http://localhost:5050`
+- Redis: `localhost:6379`
 
 Once running, open the frontend URL in your browser and create an account or log
 in.
