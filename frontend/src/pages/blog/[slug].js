@@ -4,6 +4,7 @@ import Footer from '@/components/website/sections/Footer';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { fetchBlogPost } from '@/services/blogService';
+import DOMPurify from 'isomorphic-dompurify';
 
 export default function BlogPostPage() {
   const router = useRouter();
@@ -38,9 +39,12 @@ export default function BlogPostPage() {
                 className="w-full h-auto rounded mb-6"
               />
             )}
+            {/* Sanitize HTML to prevent XSS. Ensure server-side sanitization when saving posts. */}
             <div
               className="prose prose-invert max-w-none text-white"
-              dangerouslySetInnerHTML={{ __html: post.content || "" }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(post.content || ''),
+              }}
             />
           </article>
         ) : (
