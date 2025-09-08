@@ -17,16 +17,6 @@ services:
     networks:
       - app-network
 
-  redis:
-    image: redis:7
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-network
-
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -68,7 +58,6 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
-      - REDIS_URL=${REDIS_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
       - NODE_ENV=${NODE_ENV}
