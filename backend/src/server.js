@@ -76,7 +76,8 @@ app.use(
       if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         callback(null, origin);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        logger.warn(`Blocked CORS origin: ${origin}`);
+        callback(null, false);
       }
     },
     credentials: true,
