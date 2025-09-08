@@ -38,19 +38,21 @@ npm --prefix frontend install
 
 1. Configure environment variables:
 
-   - Copy `.env.example` to `.env` in the project root and fill in your secrets.
-     Docker Compose loads sensitive values from here, including:
+   - Copy `.env.example` to `.env` in the project root and fill in your secrets
+     for local development. Docker Compose loads sensitive values from here,
+     including:
 
        - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
        - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
        - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
-       - `FRONTEND_URL`, `NEXT_PUBLIC_API_BASE_URL`
+       - `FRONTEND_URL`
 
-         `NEXT_PUBLIC_API_BASE_URL` should point to the backend API. When running
-         with Docker Compose this should use the internal service URL
-         `http://backend:5002/api`. For public deployments update it to your
-         externally accessible domain, for example
-         `https://yourdomain.com/api`.
+     The frontend now reads its production settings from
+     `frontend/.env.production`. When deploying, remove or override the root
+     `.env` and set `NEXT_PUBLIC_API_BASE_URL` in
+     `frontend/.env.production` so the build uses your public HTTPS domain (for
+     example `https://yourdomain.com/api`) instead of the internal
+     `http://backend:5002/api` value used for development.
 
    - Copy the backend example file and adjust values as needed:
 

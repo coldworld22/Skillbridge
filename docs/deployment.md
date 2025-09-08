@@ -83,18 +83,18 @@ referenced in `nginx/conf.d/ssl.conf`.
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
- 2. **Frontend** – create a `.env.local` file inside `frontend` and set
-   `NEXT_PUBLIC_API_BASE_URL` to your backend URL including the `/api` prefix.
-   For example:
-   
+ 2. **Frontend** – for Docker Compose production builds, set variables in
+   `frontend/.env.production`:
+
  ```bash
  # Point the frontend to your backend including the /api prefix
  NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
  ```
-  In the Docker Compose setup the root `.env` uses
-  `NEXT_PUBLIC_API_BASE_URL=http://backend:5002/api` so containers can communicate
-  over the internal network. Update this to the public URL, as shown above,
-  when deploying.
+
+   The root `.env` is intended for local development and defaults
+   `NEXT_PUBLIC_API_BASE_URL` to `http://backend:5002/api` for internal
+   container communication. Remove or override this file in production so the
+   frontend uses your public HTTPS domain.
 
   Without this variable the frontend defaults to `/api` which may point to the
   wrong server when deployed.
