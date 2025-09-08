@@ -3,9 +3,18 @@ FROM node:18 AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci && npm cache clean --force
-COPY .env.production .env.production
 COPY . .
-RUN set -a && . ./.env.production && npm run build
+
+# Default build-time environment variables.
+ARG NEXT_PUBLIC_API_BASE_URL="http://localhost:5002/api"
+ARG NEXT_PUBLIC_PGADMIN_URL="http://localhost:5050"
+ARG APP_DOMAIN=""
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+    NEXT_PUBLIC_PGADMIN_URL=$NEXT_PUBLIC_PGADMIN_URL \
+    APP_DOMAIN=$APP_DOMAIN
+
+# Source optional production env file if present before building.
+RUN if [ -f .env.production ]; then set -a && . .env.production; fi && npm run build
 
 # Production stage
 FROM node:18-alpine AS production
