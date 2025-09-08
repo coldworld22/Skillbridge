@@ -102,9 +102,9 @@ const sessionOptions = {
   cookie: { ...refreshCookieOptions },
 };
 
+let redisClient;
 if (process.env.REDIS_URL) {
-  const redisClient = createClient({ url: process.env.REDIS_URL });
-  redisClient.connect().catch(console.error);
+  redisClient = createClient({ url: process.env.REDIS_URL });
   sessionOptions.store = new RedisStore({ client: redisClient });
 }
 
@@ -140,8 +140,10 @@ app.use((req, res, next) => {
   next();
 });
 
-const installerPath = path.join(__dirname, "../../install");
-app.use("/install", express.static(installerPath));
+if (process.env.ENABLE_INSTALL === "true") {
+  const installerPath = path.join(__dirname, "../../install");
+  app.use("/install", express.static(installerPath));
+}
 
 // ─── Routes ───
 app.use(routes);
@@ -156,6 +158,15 @@ app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
 
 async function startServer() {
+  if (redisClient) {
+    try {
+      await redisClient.connect();
+    } catch (err) {
+      logger.error("❌ Failed to connect to Redis:", err);
+      process.exit(1);
+    }
+  }
+
   try {
     await db.connectWithRetry();
     // Migrations are handled via the dedicated `npm run migrate` script.
