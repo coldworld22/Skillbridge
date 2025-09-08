@@ -104,8 +104,9 @@ router.use('/api/book-reviews', require('../modules/bookReviews/bookReview.route
 router.use('/api/library', require('../modules/library/library.routes'));
 router.use('/api/search', require('../modules/search/search.routes'));
 // Installation routes are disabled by default for security reasons.
-// They can be enabled explicitly via the INSTALL_API_ENABLED environment variable.
-if (process.env.INSTALL_API_ENABLED === 'true') {
+// They can be enabled explicitly via the INSTALL_API_ENABLED environment variable
+// set to the string "true" (case-insensitive).
+if (process.env.INSTALL_API_ENABLED?.toLowerCase() === 'true') {
   router.use('/api/install', require('../modules/install/install.routes'));
 }
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
