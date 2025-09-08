@@ -10,6 +10,7 @@ import { safeEncodeURI } from "@/utils/url";
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../../next-i18next.config.js';
+import DOMPurify from 'isomorphic-dompurify';
 
 function AdminClassDetailPage() {
   const { id } = useRouter().query;
@@ -202,7 +203,10 @@ function AdminClassDetailPage() {
           {/* Description */}
           <div className="pt-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">{t('description_label')}</h3>
-            <div className="prose max-w-none text-gray-600" dangerouslySetInnerHTML={{__html: details?.description}} />
+            <div
+              className="prose max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(details?.description || "") }}
+            />
           </div>
 
           {/* Actions */}
