@@ -1,5 +1,8 @@
 const request = require('supertest');
 const express = require('express');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const csrf = require('../src/middleware/csrf');
 
 jest.mock('../src/config/passport', () => ({
   passport: { authenticate: jest.fn() },
@@ -14,6 +17,9 @@ const { passport } = require('../src/config/passport');
 const { googleCallback } = require('../src/modules/auth/controllers/socialAuth.controller');
 
 const app = express();
+app.use(cookieParser());
+app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+app.use(csrf);
 app.get('/api/auth/google/callback', googleCallback);
 
 describe('social auth redirect', () => {

@@ -1,27 +1,47 @@
-const csrf = (req, res, next) => {
-  if (process.env.NODE_ENV === 'test') return next();
+const csurf = require('csurf');
+const { csrfCookieOptions } = require('../utils/cookie');
 
-  const exempt = [
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/auth/request-reset',
-    '/api/auth/forgot-password',
-    '/api/auth/verify-otp',
-    '/api/auth/reset-password',
-  ];
+// Generate a CSRF token for every request but do not enforce validation yet.
+// This ensures req.csrfToken() is always available so we can expose the token
+// to clients via a cookie.
+const generateToken = csurf({
+  cookie: false,
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'],
+});
 
-  const unsafe = ['POST', 'PUT', 'PATCH', 'DELETE'];
-  const isAdTracking = /^\/api\/ads\/[^/]+\/(view|click)$/.test(req.path);
-  if (!unsafe.includes(req.method) || exempt.includes(req.path) || isAdTracking) {
-    return next();
-  }
+// Middleware that verifies the CSRF token for unsafe requests.
+const verifyToken = csurf({ cookie: false });
 
-  const tokenCookie = req.cookies?.csrfToken;
-  const tokenHeader = req.get('x-csrf-token');
-  if (!tokenCookie || !tokenHeader || tokenCookie !== tokenHeader) {
-    return res.status(403).json({ message: 'Invalid CSRF token' });
-  }
-  next();
-};
+const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+const exemptPaths = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/request-reset',
+  '/api/auth/forgot-password',
+  '/api/auth/verify-otp',
+  '/api/auth/reset-password',
+];
 
-module.exports = csrf;
+module.exports = [
+  generateToken,
+  (req, res, next) => {
+    if (
+      process.env.NODE_ENV === 'test' ||
+      !unsafeMethods.includes(req.method) ||
+      exemptPaths.includes(req.path) ||
+      /^\/api\/ads\/[^/]+\/(view|click)$/.test(req.path)
+    ) {
+      return next();
+    }
+    return verifyToken(req, res, next);
+  },
+  (req, res, next) => {
+    try {
+      const token = req.csrfToken();
+      res.cookie('csrfToken', token, csrfCookieOptions);
+    } catch (e) {
+      // ignore if token generation failed
+    }
+    next();
+  },
+];

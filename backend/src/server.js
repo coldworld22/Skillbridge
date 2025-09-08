@@ -90,7 +90,6 @@ app.use(express.json({ limit: defaultBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 app.use(cookieParser());
 app.use(morgan("dev"));
-app.use(csrf);
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required");
@@ -109,6 +108,8 @@ if (process.env.REDIS_URL) {
 }
 
 app.use(session(sessionOptions));
+
+app.use(csrf);
 
 // Apply rate limiting to all requests
 const limiter = rateLimit({
