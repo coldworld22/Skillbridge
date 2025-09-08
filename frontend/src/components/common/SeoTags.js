@@ -40,6 +40,26 @@ export default function SeoTags() {
     ? `${settings.globalSEO?.noindexSitewide || meta.noindex ? 'noindex' : 'index'},${meta.nofollow ? 'nofollow' : 'follow'}`
     : null;
 
+  const allowedSchemaFields = ['@context', '@type', 'name', 'url', 'logo', 'sameAs'];
+  let sanitizedJsonSchema;
+  if (settings.jsonSchema) {
+    try {
+      const parsed = JSON.parse(settings.jsonSchema);
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        Object.keys(parsed).every((key) => allowedSchemaFields.includes(key))
+      ) {
+        sanitizedJsonSchema = JSON.stringify(parsed)
+          .replace(/</g, '\\u003c')
+          .replace(/>/g, '\\u003e')
+          .replace(/&/g, '\\u0026');
+      }
+    } catch {
+      // ignore invalid JSON
+    }
+  }
+
   return (
     <Head>
       {meta.title && <title>{meta.title}</title>}
@@ -64,8 +84,8 @@ export default function SeoTags() {
       {twitterImage && <meta name="twitter:image" content={twitterImage} />}
       {twitter.handle && <meta name="twitter:site" content={twitter.handle} />}
       {twitter.handle && <meta name="twitter:creator" content={twitter.handle} />}
-      {settings.jsonSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: settings.jsonSchema }} />
+      {sanitizedJsonSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: sanitizedJsonSchema }} />
       )}
     </Head>
   );
