@@ -3,6 +3,7 @@ FROM node:18 AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci && npm cache clean --force
+COPY .env.production .env.production
 COPY . .
 RUN set -a && . .env.production && npm run build
 
