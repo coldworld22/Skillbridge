@@ -43,11 +43,16 @@ npm --prefix frontend install
      including:
 
        - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-       - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
-       - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
-       - `FRONTEND_URL`
+      - `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`
+      - `JWT_SECRET`, `REFRESH_TOKEN_SECRET`
+      - `FRONTEND_URL`
+      - `REDIS_URL`
 
-     The frontend now reads its production settings from
+    A Redis instance (or compatible session store) is required in production
+    to persist user sessions. Set `REDIS_URL` to your store's connection
+    string.
+
+    The frontend now reads its production settings from
      `frontend/.env.production`. When deploying, remove or override the root
      `.env` and set `NEXT_PUBLIC_API_BASE_URL` in
      `frontend/.env.production` so the build uses your public HTTPS domain (for
@@ -60,6 +65,7 @@ npm --prefix frontend install
      cp backend/.env.example backend/.env
      # edit backend/.env and set your secrets
      # FRONTEND_URL defaults to http://localhost:3000
+     # REDIS_URL should point to your Redis instance for session persistence
      # set it to your frontend's domain if different and omit any trailing slash
      # When using docker-compose make sure the value does
      # not include an extra "FRONTEND_URL=" prefix.

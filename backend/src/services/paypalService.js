@@ -2,6 +2,7 @@ const { Client, Environment, OrdersController, CheckoutPaymentIntent } = require
 const paymentMethodsService = require('../modules/paymentMethods/paymentMethods.service');
 
 let client;
+let ordersController;
 
 async function getClient() {
   if (client) return client;
@@ -21,8 +22,16 @@ async function getClient() {
   return client;
 }
 
+async function getOrdersController() {
+  if (ordersController) return ordersController;
+  const cli = await getClient();
+  ordersController = new OrdersController(cli);
+  return ordersController;
+}
+
 exports.invalidateClient = () => {
   client = null;
+  ordersController = null;
 };
 
 exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl }) => {
@@ -42,8 +51,7 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
     if (returnUrl) body.applicationContext.returnUrl = returnUrl;
     if (cancelUrl) body.applicationContext.cancelUrl = cancelUrl;
   }
-  const cli = await getClient();
-  const orders = new OrdersController(cli);
+  const orders = await getOrdersController();
   const { result } = await orders.createOrder({
     body,
     prefer: 'return=representation',
@@ -52,8 +60,7 @@ exports.createOrder = async ({ amount, currency = 'USD', returnUrl, cancelUrl })
 };
 
 exports.captureOrder = async (orderId) => {
-  const cli = await getClient();
-  const orders = new OrdersController(cli);
+  const orders = await getOrdersController();
   const { result } = await orders.captureOrder({ id: orderId, body: {} });
   return result;
 };
