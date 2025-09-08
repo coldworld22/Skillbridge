@@ -13,6 +13,18 @@ try {
       `NEXT_PUBLIC_API_BASE_URL must be an absolute URL. Received: ${apiBase}`,
     );
   }
+
+  // Prevent shipping a build that points at an internal HTTP host which would
+  // cause browsers to block requests with mixed-content errors.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    /^https?:\/\/(localhost|backend)(:\\d+)?/i.test(apiBase)
+  ) {
+    throw new Error(
+      `NEXT_PUBLIC_API_BASE_URL (${apiBase}) points to a non-public host. Set this to your public HTTPS domain in frontend/.env.production.`,
+    );
+  }
+
   ({ protocol, hostname, port } = new URL(apiBase));
 } catch (error) {
   console.warn(
