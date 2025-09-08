@@ -40,7 +40,7 @@ const fileFilter = (req, file, cb) => {
 
 // ───────────────────────────────────────────────
 // 🚀 Export Configured Multer Middleware
-// - Limits file size (e.g., 50MB)
+// - Limits file size to 100MB
 // ───────────────────────────────────────────────
 const uploadVideo = multer({
   storage,
