@@ -2,7 +2,6 @@ const logger = require('../../../utils/logger.js');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const crypto = require("crypto");
 const userModel = require("../../users/user.model");
 const db = require("../../../config/database");
 const {
@@ -211,7 +210,6 @@ exports.loginUser = async ({ email, password }) => {
   const tokenRoles = roles.length ? roles : [user.role];
   const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
-  const csrfToken = generateCsrfToken();
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -219,7 +217,7 @@ exports.loginUser = async ({ email, password }) => {
     message: "You have logged in successfully",
   });
   const safeUser = sanitizeUserUtil(user);
-  return { accessToken, refreshToken, csrfToken, user: { ...safeUser, roles, permissions } };
+  return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
 };
 
 /**
@@ -289,11 +287,6 @@ exports.revokeRefreshToken = async (jti) => {
   await db("refresh_tokens").where({ id: jti }).update({ revoked_at: new Date() });
 };
 
-function generateCsrfToken() {
-  return crypto.randomBytes(24).toString("hex");
-}
-
-exports.generateCsrfToken = generateCsrfToken;
 
 /**
  * Generate OTP for password reset and email it to the user.

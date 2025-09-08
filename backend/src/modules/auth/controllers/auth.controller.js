@@ -66,10 +66,9 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user, csrfToken } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .cookie("csrfToken", csrfToken, csrfCookieOptions)
     .json({ message: "Login successful", accessToken, user });
 });
 
@@ -93,13 +92,11 @@ exports.refreshToken = catchAsync(async (req, res) => {
       id: decoded.id,
       role: decoded.role,
     });
-    const csrfToken = authService.generateCsrfToken();
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
-      .cookie("csrfToken", csrfToken, csrfCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);
