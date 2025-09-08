@@ -90,7 +90,12 @@ const defaultBodyLimit = "10mb";
 app.use(express.json({ limit: defaultBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: defaultBodyLimit }));
 app.use(cookieParser());
-app.use(morgan("dev"));
+app.use(
+  morgan("dev", {
+    skip: (req) =>
+      process.env.NODE_ENV === "production" && req.url === "/api/health",
+  })
+);
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required");

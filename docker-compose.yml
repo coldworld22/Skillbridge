@@ -52,9 +52,9 @@ services:
       - MAX_BLOG_IMAGE_BYTES=${MAX_BLOG_IMAGE_BYTES}
       - NODE_ENV=${NODE_ENV}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/api/health"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5002/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 3
       start_period: 30s
     depends_on:
@@ -72,9 +72,9 @@ services:
     env_file:
       - ./frontend/.env.production
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:3000/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 3
       start_period: 30s
     depends_on:
