@@ -1,5 +1,4 @@
 const cache = require('../src/utils/cache');
-
 describe('cache utility', () => {
   afterEach(async () => {
     await cache.clear();

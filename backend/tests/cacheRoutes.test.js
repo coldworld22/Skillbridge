@@ -8,7 +8,7 @@ const cacheRoutes = require('../src/routes/cache.routes');
 
 function createApp() {
   const app = express();
-  app.use('/api/cache', cacheRoutes);
+  app.use('/api/cache', require('../src/routes/cache.routes'));
   return app;
 }
 
