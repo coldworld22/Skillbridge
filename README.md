@@ -112,6 +112,7 @@ npm --prefix frontend install
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.
+When deploying, define a `global.clearServerCache` function on the backend so the admin **Clear Cache** button can purge server-side caches; otherwise `/api/cache/clear` will return a 503 status.
 For automated production setup run the installation wizard from the project root:
 
 ```bash
@@ -176,7 +177,7 @@ Admins can build a nested list of course categories. CRUD endpoints live under `
 
 ## Cache management
 
-Admins can flush cached data from the dashboard. The **Clear Cache** button in the admin sidebar triggers `POST /api/cache/clear`, which purges Redis and other configured caches. Use this after deployments or major configuration changes to ensure fresh data.
+Admins can flush cached data from the dashboard. The **Clear Cache** button in the admin sidebar triggers `POST /api/admin/cache/clear`, which purges Redis and other configured caches. Use this after deployments or major configuration changes to ensure fresh data.
 
 ## Third-party integrations
 
