@@ -69,12 +69,6 @@ const ALLOWED_ORIGINS = Array.from(
     ...FRONTEND_ORIGINS,
   ])
 );
-
-app.disable("etag");
-app.use((req, res, next) => {
-  res.set("Cache-Control", "no-store");
-  next();
-});
 // 🌐 CORS must run before body parsing so even 4xx responses include the header
 const corsOptions = {
   origin(origin, callback) {
@@ -145,7 +139,12 @@ app.use(passport.session());
 
 // Restrict direct PDF access from the uploads folder
 const uploadsPath = path.join(__dirname, "../uploads");
-const serveUploads = express.static(uploadsPath);
+const serveUploads = express.static(uploadsPath, {
+  maxAge: "1h",
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+  },
+});
 const blockPdfMiddleware = (req, res, next) => {
   if (req.path.toLowerCase().endsWith(".pdf")) {
     return res.status(403).json({ message: "Direct PDF access is forbidden" });
@@ -161,7 +160,10 @@ app.use((req, res, next) => {
 
 if (config.ENABLE_INSTALL) {
   const installerPath = path.join(__dirname, "../../install");
-  app.use("/install", express.static(installerPath));
+  app.use(
+    "/install",
+    express.static(installerPath, { maxAge: "1h" })
+  );
 }
 
 // ─── Routes ───
