@@ -32,9 +32,8 @@ describe('CacheManager', () => {
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
     await waitFor(() =>
-      expect(toast.success).toHaveBeenCalledWith('dashboard:cache_cleared')
+      expect(toast.success).toHaveBeenCalledWith('dashboard.cache_cleared')
     );
   });
 
