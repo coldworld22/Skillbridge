@@ -13,6 +13,7 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
+const clearServerCache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -23,6 +24,8 @@ const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 const config = require("./config/env");
+
+global.clearServerCache = clearServerCache;
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
