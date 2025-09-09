@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
+import { clearCache as clearCacheApi } from "@/services/admin/cacheService";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
@@ -46,7 +47,7 @@ export default function CacheManager({
     }
   };
 
-  const clearCache = async () => {
+  const handleClearCache = async () => {
     try {
       await caches.delete(WARM_CACHE);
       if (strategy === "B") {
@@ -54,13 +55,15 @@ export default function CacheManager({
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
       try {
-        await fetch("/api/admin/cache/clear", { method: "POST" });
+        await clearCacheApi();
       } catch (e) {
         console.error(e);
       }
       setStatus("idle");
     } catch (err) {
       console.error(err);
+      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      setStatus("error");
     }
   };
 
@@ -74,7 +77,7 @@ export default function CacheManager({
         {status === "success" && "Cached"}
         {status === "error" && "Retry"}
       </Button>
-      <Button className="bg-gray-200 text-gray-800" onClick={clearCache} type="button">
+      <Button className="bg-gray-200 text-gray-800" onClick={handleClearCache} type="button">
         Clear Cache
       </Button>
     </div>
