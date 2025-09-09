@@ -1,10 +1,12 @@
-import { useEffect } from "react";
-import { useRouter } from "next/router";
-
 export default function Home() {
-  const router = useRouter();
+  return null;
+}
 
-  useEffect(() => { router.push("/auth/login"); }, [router]);
-
-  return null; // Empty page, as it redirects automatically
+export function getServerSideProps() {
+  return {
+    redirect: {
+      destination: "/auth/login",
+      permanent: false,
+    },
+  };
 }
