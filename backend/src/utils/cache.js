@@ -1,3 +1,6 @@
+const redisClient = require('./redisClient');
+const socketStore = require('./socketStore');
+
 const store = new Map();
 
 module.exports = {
@@ -12,6 +15,10 @@ module.exports = {
   },
   async clear() {
     store.clear();
+    if (redisClient) {
+      await redisClient.flushAll();
+    }
+    await socketStore.clearAll();
   },
 };
 
