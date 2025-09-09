@@ -1,5 +1,6 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
+const socketStore = require("../../utils/socketStore");
 const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");

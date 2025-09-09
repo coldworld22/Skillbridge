@@ -7,6 +7,7 @@ const AppError = require("../../utils/AppError");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const socketStore = require("../../utils/socketStore");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
