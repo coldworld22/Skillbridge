@@ -6,7 +6,11 @@ const router = express.Router();
 
 router.post('/clear', requireAdmin, async (_req, res) => {
   try {
-    await cache.clear();
+    const clearFn = global.clearServerCache;
+    if (typeof clearFn !== 'function') {
+      throw new Error('Cache clear function not available');
+    }
+    await clearFn();
     res
       .status(200)
       .json({ status: 'success', message: 'Cache cleared' });
