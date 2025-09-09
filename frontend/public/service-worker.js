@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
 
-const CACHE_VERSION = 'V1';
+import { CACHE_VERSION } from '../src/config/pwa.js';
 const WARM_CACHE = `SKILLBRIDGE-WARM-${CACHE_VERSION}`;
 const HTML_CACHE = `SKILLBRIDGE-HTML-${CACHE_VERSION}`;
 const ASSET_CACHE = `SKILLBRIDGE-ASSETS-${CACHE_VERSION}`;
