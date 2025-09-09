@@ -83,7 +83,7 @@ export const adminNavLinks = [
   {
     title: 'settings',
     items: [
-      { label: 'clear_cache', icon: RefreshCcw, action: 'clearCache' },
+      { label: 'clear_cache', action: 'clearCache', icon: RefreshCcw },
       {
         label: 'settings',
         href: '#',
