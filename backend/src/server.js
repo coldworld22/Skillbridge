@@ -156,13 +156,6 @@ if (process.env.ENABLE_INSTALL === "true") {
 
 // ─── Routes ───
 app.use(routes);
-
-// Initialize sockets
-initSockets(server, ALLOWED_ORIGINS);
-const { io, rooms, participants, userSockets } = socketState;
-global.io = io;
-global.userSockets = userSockets;
-
 app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
 
@@ -190,8 +183,19 @@ async function startServer() {
       logger.log("✅ Database migrations up to date");
     }
     await initStrategies();
-    server.listen(PORT, "0.0.0.0", () => {
-      logger.log(`✅ Server running on port ${PORT}`);
+    await new Promise((resolve, reject) => {
+      server.listen(PORT, "0.0.0.0", (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        logger.log(`✅ Server running on port ${PORT}`);
+        initSockets(server, ALLOWED_ORIGINS);
+        const { io, userSockets } = socketState;
+        global.io = io;
+        global.userSockets = userSockets;
+        resolve();
+      });
     });
     startJobs();
   } catch (err) {
@@ -204,4 +208,17 @@ if (process.env.NODE_ENV !== "test") {
   startServer();
 }
 
-module.exports = { app, server, io, rooms, participants, startServer };
+module.exports = {
+  app,
+  server,
+  startServer,
+  get io() {
+    return socketState.io;
+  },
+  get rooms() {
+    return socketState.rooms;
+  },
+  get participants() {
+    return socketState.participants;
+  },
+};
