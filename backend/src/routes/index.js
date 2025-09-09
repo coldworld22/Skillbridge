@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 router.use('/api/health', require('./health.routes'));
-router.use('/api/cache', require('./cache.routes'));
 // grouped routers
 router.use(require('./auth'));
 router.use(require('./payments'));

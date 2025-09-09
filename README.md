@@ -177,7 +177,7 @@ Admins can build a nested list of course categories. CRUD endpoints live under `
 
 ## Cache management
 
-Admins can flush cached data from the dashboard. The **Clear Cache** button in the admin sidebar triggers `POST /api/cache/clear`, which purges Redis and other configured caches. Use this after deployments or major configuration changes to ensure fresh data.
+Admins can flush cached data from the dashboard. The **Clear Cache** button in the admin sidebar triggers `POST /api/admin/cache/clear`, which purges Redis and other configured caches. Use this after deployments or major configuration changes to ensure fresh data.
 
 ## Third-party integrations
 
