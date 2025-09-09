@@ -58,6 +58,7 @@ export default function CacheManager({
       setStatus("idle");
     } catch (err) {
       console.error(err);
+      setStatus("error");
     }
   };
 
