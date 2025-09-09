@@ -4,6 +4,7 @@ node_modules/
 /.env
 /.env.production
 backend/.env.production
+backend/.env
 dist/
 coverage/
 .vscode/
