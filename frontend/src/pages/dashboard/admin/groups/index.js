@@ -12,7 +12,7 @@ import {
   FaRegSquare,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import ConfirmModal from '@/components/common/ConfirmModal';
 
 const imagePool = [

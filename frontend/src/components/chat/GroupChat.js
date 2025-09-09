@@ -4,7 +4,7 @@ import MessageList from "./MessageList";
 import TypingIndicator from "./TypingIndicator";
 import ChatHeader from "./ChatHeader";
 import groupService from "@/services/groupService";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 
 export default function GroupChat({ group, groupId: idProp, groupName: nameProp }) {

@@ -29,9 +29,8 @@ jest.mock('../../components/tutorials/detail/RelatedTutorials', () => createMock
 jest.mock('../../components/classes/CourseProgress', () => createMock('CourseProgress'));
 jest.mock('../../components/tutorials/detail/TutorialSkeleton', () => createMock('TutorialSkeleton'));
 
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-  error: jest.fn(),
+jest.mock('react-toastify', () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
 }));
 
 jest.mock('next/link', () => ({

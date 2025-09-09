@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import groupService from '@/services/groupService';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 export default function JoinRequestCard({ groupId, onCountChange }) {
   const [requests, setRequests] = useState([]);

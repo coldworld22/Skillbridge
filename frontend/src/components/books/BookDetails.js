@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import useCartStore from "@/store/cart/cartStore";
 import useAuthStore from "@/store/auth/authStore";
 import { useTranslation } from "next-i18next";

@@ -14,7 +14,7 @@ jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
 
-jest.mock('react-hot-toast', () => ({
+jest.mock('react-toastify', () => ({
   toast: { error: jest.fn() },
 }));
 
@@ -29,7 +29,7 @@ describe('BookForm', () => {
 
     render(<BookForm onSubmit={jest.fn()} categories={[]} />);
 
-    const { toast } = require('react-hot-toast');
+    const { toast } = require('react-toastify');
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Failed to load languages'));
   });
 
@@ -45,7 +45,7 @@ describe('BookForm', () => {
     fireEvent.change(input, { target: { value: 'test' } });
 
     await waitFor(() => expect(fetchBookTags).toHaveBeenCalled());
-    const { toast } = require('react-hot-toast');
+    const { toast } = require('react-toastify');
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Failed to fetch tags'));
   });
 });

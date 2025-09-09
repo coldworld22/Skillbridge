@@ -13,7 +13,7 @@ import {
   FiImage,
 } from "react-icons/fi";
 import Link from "next/link";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
