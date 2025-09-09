@@ -169,7 +169,9 @@ app.use(routes);
 
 // Initialize sockets
 initSockets(server, ALLOWED_ORIGINS);
-const { io, rooms, participants } = socketState;
+const { io, rooms, participants, userSockets } = socketState;
+app.locals.io = io;
+app.locals.userSockets = userSockets;
 
 app.use(require("./middleware/errorHandler"));
 const PORT = config.PORT;
@@ -212,5 +214,4 @@ async function startServer() {
 if (config.NODE_ENV !== "test") {
   startServer();
 }
-
-module.exports = { app, server, io, startServer };
+module.exports = { app, server, io, rooms, participants, userSockets, startServer };

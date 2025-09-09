@@ -14,7 +14,7 @@ const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
 const planService = require("../plans/plans.service");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
-const { getIO, getUserSockets } = require("../../sockets");
+const socketState = require("../../sockets").state;
 
 exports.createGroup = catchAsync(async (req, res) => {
   const planId =
@@ -436,9 +436,9 @@ exports.startVideoCall = catchAsync(async (req, res) => {
       });
 
       try {
-        if (io && userSockets?.[uid]) {
-          io
-            .to(userSockets[uid])
+        if (socketState.io && socketState.userSockets?.[uid]) {
+          socketState.io
+            .to(socketState.userSockets[uid])
             .emit("incoming-call", {
               chatId: id,
               roomId,
