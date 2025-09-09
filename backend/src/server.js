@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -19,7 +21,23 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
-const config = require("./config/env");
+
+// Ensure required environment secrets are present
+const requiredSecrets = [
+  "JWT_SECRET",
+  "REFRESH_TOKEN_SECRET",
+  "SESSION_SECRET",
+];
+const dbKey =
+  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
+requiredSecrets.push(dbKey);
+const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
+if (missingSecrets.length) {
+  console.error(
+    `❌ Missing required environment variables: ${missingSecrets.join(", ")}`
+  );
+  process.exit(1);
+}
 
 
 // ─── Express and HTTP Setup ───
