@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "next-i18next";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { FaPlus, FaTrash, FaPlay } from "react-icons/fa";
 import { uploadChapterVideo } from "@/services/admin/tutorialChapterService";
 

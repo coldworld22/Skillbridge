@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useAuthStore from '@/store/auth/authStore';
 import { X, Mail, Smartphone, Image as ImageIcon, Tag, Users } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import groupService from '@/services/groupService';
 import { fetchAllCategories } from '@/services/instructor/categoryService';
 import userService from '@/services/profile/userService';

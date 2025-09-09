@@ -4,7 +4,7 @@ import useAuthStore from "@/store/auth/authStore";
 import PermissionAssignment from "./PermissionAssignment";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   fetchAllRoles,
   fetchRoleById,

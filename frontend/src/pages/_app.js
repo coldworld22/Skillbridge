@@ -3,8 +3,7 @@ import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
 import { motion, AnimatePresence } from "framer-motion";
-import { Toaster, toast } from "react-hot-toast";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
@@ -245,17 +244,6 @@ function MyApp({ Component, pageProps, router }) {
               />
             )}
 
-            {/* Global Toast Message Containers */}
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: "#333",
-                  color: "#fff",
-                },
-              }}
-            />
             {/* Display React Toastify notifications centered at the top */}
             <ToastContainer position="top-center" autoClose={3000} />
           </motion.div>

@@ -3,7 +3,7 @@ import StudentLayout from "@/components/layouts/StudentLayout";
 import { FaPaperPlane } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { createDiscussion, searchTags } from "@/services/communityService";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
@@ -65,7 +65,6 @@ export default function AskQuestionPage() {
 
   return (
     <StudentLayout title="Ask a Question">
-      <Toaster position="top-center" />
       <div className="p-6 max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">📝 Ask a New Question</h1>
 

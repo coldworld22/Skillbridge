@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import Link from "next/link";
 import { FaSearch, FaPlus, FaTags } from "react-icons/fa";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { fetchDiscussions } from "@/services/communityService";
 import useAuthStore from "@/store/auth/authStore";
 
@@ -61,7 +61,6 @@ export default function StudentCommunityPage() {
 
   return (
     <StudentLayout title="Community">
-      <Toaster position="top-center" />
       <div className="p-6 max-w-5xl mx-auto">
         {/* Header + CTA */}
         <div className="flex justify-between items-center mb-6">

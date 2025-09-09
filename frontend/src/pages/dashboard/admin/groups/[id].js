@@ -20,7 +20,7 @@ import {
   FaFolderOpen,
 } from 'react-icons/fa';
 import groupService from '@/services/groupService';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 // ...imports (same as before)...
 

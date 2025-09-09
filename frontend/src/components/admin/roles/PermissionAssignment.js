@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CheckCircle, CheckSquare, PlusCircle } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import useAuthStore from "@/store/auth/authStore";
 import {
   fetchAllPermissions,

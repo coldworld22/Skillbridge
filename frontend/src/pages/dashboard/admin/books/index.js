@@ -10,7 +10,7 @@ import { fetchBookTags } from "@/services/bookTagService";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { FiPlus, FiSearch, FiTrash2, FiChevronLeft, FiChevronRight, FiFilter, FiX, FiEdit, FiEye } from "react-icons/fi";
 import { Switch } from '@headlessui/react';

@@ -1,5 +1,5 @@
 import { handleShare } from '@/pages/tutorials/[id]';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 describe('handleShare fallback', () => {
   it('copies link to clipboard when navigator.share is unavailable', async () => {
