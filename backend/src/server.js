@@ -48,7 +48,6 @@ if (missingSecrets.length) {
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
-global.clearServerCache = cache.clear;
 
 // Configure security headers
 app.use(
@@ -240,6 +239,7 @@ module.exports = {
   app,
   server,
   startServer,
+  clearServerCache,
   get io() {
     return socketState.io;
   },
