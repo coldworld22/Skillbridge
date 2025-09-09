@@ -8,7 +8,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-quill/dist/quill.snow.css";       // ✅ Rich text editor
 import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
-import "@/styles/globals.css";    
+import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
 import useAppConfigStore from "@/store/appConfigStore";
@@ -25,11 +25,12 @@ import useSEOConfigStore from "@/store/seoConfigStore";
 import * as authService from "@/services/auth/authService";
 import { getFullProfile } from "@/services/profile/profileService";
 import Head from "next/head";
+import Script from "next/script";
 import { getLanguages } from "@/services/languageService";
+import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
-import { API_BASE_URL } from "@/config/config";
 
 const langFetcher = () => getLanguages();
 
@@ -66,6 +67,10 @@ function MyApp({ Component, pageProps, router }) {
   
   const { i18n } = useTranslation();
   const { data: langs } = useSWR("/languages", langFetcher);
+  const { data: thirdPartyConfig } = useSWR(
+    "third-party-config",
+    fetchThirdPartyConfig
+  );
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
 
@@ -103,30 +108,7 @@ function MyApp({ Component, pageProps, router }) {
     if (!configLoaded) fetchConfig();
   }, [configLoaded, fetchConfig]);
 
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/google-analytics`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Request failed with ${res.status}`);
-        return res.json();
-      })
-      .then((cfg) => {
-        if (cfg.enabled && cfg.measurementId) {
-          if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
-            const s = document.createElement('script');
-            s.async = true;
-            s.src = `https://www.googletagmanager.com/gtag/js?id=${cfg.measurementId}`;
-            s.dataset.gaMeasurementId = cfg.measurementId;
-            document.head.appendChild(s);
-
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', cfg.measurementId);
-          }
-        }
-      })
-      .catch((err) => console.error('Failed to load Google Analytics', err));
-  }, []);
+  const gaConfig = thirdPartyConfig?.googleAnalytics;
 
   useEffect(() => {
     if (!seoLoaded) {
@@ -192,6 +174,22 @@ function MyApp({ Component, pageProps, router }) {
 
     return (
       <>
+        {gaConfig?.enabled && gaConfig?.measurementId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaConfig.measurementId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){window.dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${gaConfig.measurementId}');
+      `}
+            </Script>
+          </>
+        )}
         <PageLoader />
         <AnimatePresence mode="wait">
           {/* Motion wrapper for route transition */}
