@@ -8,7 +8,6 @@ import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
 import { clearCache } from '@/services/admin/cacheService';
-import { toast } from 'react-toastify';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -32,10 +31,8 @@ export default function Sidebar({ role = 'admin' }) {
   const handleClearCache = async () => {
     try {
       await clearCache();
-      toast.success(t('cache_cleared'));
     } catch (err) {
       console.error('Failed to clear cache', err);
-      toast.error(t('cache_clear_failed'));
     }
   };
 
