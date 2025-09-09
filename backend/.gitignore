@@ -1,2 +1,6 @@
 node_modules/
 logs/
+
+# Environment variables
+.env
+.env.production
