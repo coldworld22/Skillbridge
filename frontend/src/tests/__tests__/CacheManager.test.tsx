@@ -43,7 +43,9 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    expect(toast.success).toHaveBeenCalledWith('dashboard.cache_cleared');
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('dashboard:cache_cleared')
+    );
   });
 
   it('shows error toast when clearing cache fails', async () => {
@@ -51,6 +53,8 @@ describe('CacheManager', () => {
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('dashboard.cache_clear_failed'));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('dashboard:cache_clear_failed')
+    );
   });
 });
