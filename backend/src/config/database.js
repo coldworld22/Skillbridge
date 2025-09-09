@@ -3,10 +3,21 @@ const knex = require('knex');
 const knexfile = require('../../knexfile.js');
 
 const environment = process.env.NODE_ENV || 'development';
-const config = knexfile[environment];
+let config = knexfile[environment];
 
+// In test environments the database connection details may be omitted.
+// Fallback to an in-memory SQLite database so modules can require the DB
+// without throwing configuration errors.
 if (!config || !config.connection) {
-  throw new Error(`${environment} database configuration is missing`);
+  if (environment === 'test') {
+    config = {
+      client: 'sqlite3',
+      connection: { filename: ':memory:' },
+      useNullAsDefault: true,
+    };
+  } else {
+    throw new Error(`${environment} database configuration is missing`);
+  }
 }
 
 const db = knex({ ...config, pool: { min: 2, max: 10 } });
