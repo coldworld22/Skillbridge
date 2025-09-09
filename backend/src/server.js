@@ -48,7 +48,19 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-app.use(helmet());
+// Configure security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // 🌐 Fix CORS (must be very early)
 const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || "http://localhost:3000")
