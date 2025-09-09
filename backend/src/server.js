@@ -23,6 +23,7 @@ const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 const config = require("./config/env");
+const cache = require("./utils/cache");
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
@@ -47,6 +48,7 @@ if (missingSecrets.length) {
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
+global.clearServerCache = cache.clear;
 
 // Configure security headers
 app.use(
