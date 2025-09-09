@@ -26,6 +26,10 @@ Copy the example file and adjust values as needed:
 cp backend/.env.example backend/.env
 ```
 
+For deployments, Docker Compose additionally reads `backend/.env.production`.
+Copy `backend/.env.production.example` to `backend/.env.production` and fill in
+production database credentials and JWT secrets.
+
 Edit `backend/.env` and provide your secrets. `FRONTEND_URL` should match the
 domain where the frontend will run (defaults to `http://localhost:3000`). Leave
 `NODE_ENV` unset so cookies work over HTTP. If you need cross-subdomain cookies
