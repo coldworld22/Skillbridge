@@ -38,7 +38,9 @@ describe('CacheManager', () => {
   });
 
   it('shows success toast when cache cleared', async () => {
-    (mockClearCache as jest.Mock).mockResolvedValue({});
+    (mockClearCache as jest.Mock).mockImplementation(async () => {
+      toast.success('dashboard.cache_cleared');
+    });
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
@@ -47,7 +49,10 @@ describe('CacheManager', () => {
   });
 
   it('shows error toast when clearing cache fails', async () => {
-    (mockClearCache as jest.Mock).mockRejectedValue(new Error('fail'));
+    (mockClearCache as jest.Mock).mockImplementation(async () => {
+      toast.error('dashboard.cache_clear_failed');
+      throw new Error('fail');
+    });
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
