@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const AppError = require("../../utils/AppError");
+const socketState = require("../../sockets").state;
 
 const MESSAGE_RETENTION_MS =
   parseInt(process.env.MESSAGE_RETENTION_HOURS || "24", 10) *
@@ -21,8 +22,8 @@ exports.createMessage = async (
       .insert({ sender_id, receiver_id, message, booking_id, type })
       .returning("*");
     try {
-      if (emit && global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      if (emit && socketState.io && socketState.userSockets?.[receiver_id]) {
+        socketState.io.to(socketState.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
       logger.error("Failed to emit message-created event", err.message);
@@ -104,8 +105,8 @@ exports.sendEmail = async ({ sender_id, receiver_id, subject, message }) =>
     }
 
     try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      if (socketState.io && socketState.userSockets?.[receiver_id]) {
+        socketState.io.to(socketState.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
       logger.error("Failed to emit message-created event", err.message);
@@ -137,8 +138,8 @@ exports.sendWhatsApp = async ({ sender_id, receiver_id, message }) =>
     }
 
     try {
-      if (global.io && global.userSockets?.[receiver_id]) {
-        global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      if (socketState.io && socketState.userSockets?.[receiver_id]) {
+        socketState.io.to(socketState.userSockets[receiver_id]).emit("message-created");
       }
     } catch (err) {
       logger.error("Failed to emit message-created event", err.message);
@@ -185,22 +186,22 @@ exports.startVideoCall = async ({ sender_id, receiver_id }) => {
   });
 
   try {
-    if (global.io && global.userSockets?.[receiver_id]) {
+    if (socketState.io && socketState.userSockets?.[receiver_id]) {
       const caller = await db("users")
         .select("full_name")
         .where({ id: sender_id })
         .first();
 
-      global.io.to(global.userSockets[receiver_id]).emit("message-created");
+      socketState.io.to(socketState.userSockets[receiver_id]).emit("message-created");
 
       // Emit legacy event for compatibility
-      global.io
-        .to(global.userSockets[receiver_id])
+      socketState.io
+        .to(socketState.userSockets[receiver_id])
         .emit("video-call-invite", { callId: call.id, roomId });
 
       // Emit incoming-call event used by the frontend call overlay
-      global.io
-        .to(global.userSockets[receiver_id])
+      socketState.io
+        .to(socketState.userSockets[receiver_id])
         .emit("incoming-call", {
           chatId: sender_id,
           roomId,
@@ -224,9 +225,9 @@ exports.respondVideoCall = async ({ call_id, user_id, action }) => {
     .update({ status })
     .returning("*");
   try {
-    if (global.io && global.userSockets?.[call.caller_id]) {
-      global.io
-        .to(global.userSockets[call.caller_id])
+    if (socketState.io && socketState.userSockets?.[call.caller_id]) {
+      socketState.io
+        .to(socketState.userSockets[call.caller_id])
         .emit("video-call-response", { callId: call_id, status });
     }
   } catch (err) {
@@ -244,14 +245,14 @@ exports.endVideoCall = async ({ call_id, user_id }) => {
     .update({ status: "ended", ended_at: new Date() })
     .returning("*");
   try {
-    if (global.io) {
+    if (socketState.io) {
       const sockets = [];
-      if (global.userSockets?.[call.caller_id])
-        sockets.push(global.userSockets[call.caller_id]);
-      if (global.userSockets?.[call.receiver_id])
-        sockets.push(global.userSockets[call.receiver_id]);
+      if (socketState.userSockets?.[call.caller_id])
+        sockets.push(socketState.userSockets[call.caller_id]);
+      if (socketState.userSockets?.[call.receiver_id])
+        sockets.push(socketState.userSockets[call.receiver_id]);
       sockets.forEach((sid) =>
-        global.io.to(sid).emit("video-call-ended", { callId: call_id }),
+        socketState.io.to(sid).emit("video-call-ended", { callId: call_id }),
       );
     }
   } catch (err) {
