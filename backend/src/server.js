@@ -13,7 +13,6 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
-const clearServerCache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -27,14 +26,14 @@ const config = require("./config/env");
 const cache = require("./utils/cache");
 
 // Expose a global cache-clearing utility so other modules (like routes) can
-// programmatically flush any server-side caches. This clears both our
-// socket store (in-memory or Redis-backed) and any Redis data if a client is
-// configured.
-global.clearServerCache = async () => {
+// programmatically flush any server-side caches. This clears our socket store,
+// any Redis data, and the in-memory cache.
+async function clearServerCache() {
   if (redisClient) {
     await redisClient.flushAll();
   }
   await socketStore.clearAll();
+  await cache.clear();
 };
 
 // Ensure required environment secrets are present
@@ -60,7 +59,6 @@ if (missingSecrets.length) {
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
-global.clearServerCache = cache.clear;
 
 // Configure security headers
 app.use(
@@ -252,6 +250,7 @@ module.exports = {
   app,
   server,
   startServer,
+  clearServerCache,
   get io() {
     return socketState.io;
   },

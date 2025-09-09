@@ -51,16 +51,23 @@ export default function CacheManager({
 
   const handleClearCache = async () => {
     try {
-      await caches.delete(WARM_CACHE);
+      if ("caches" in window) {
+        await caches.delete(WARM_CACHE);
+      } else {
+        setStatus("error");
+        return;
+      }
       if (strategy === "B") {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
       await clearCache();
+      toast.success(i18n.t("dashboard.cache_cleared"));
       setStatus("idle");
       toast.success(i18n.t("dashboard:cache_cleared"));
     } catch (err) {
       console.error(err);
+      toast.error(i18n.t("dashboard.cache_clear_failed"));
       setStatus("error");
       toast.error(i18n.t("dashboard:cache_clear_failed"));
     }
