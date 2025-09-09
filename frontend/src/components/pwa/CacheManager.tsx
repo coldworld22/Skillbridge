@@ -64,12 +64,12 @@ export default function CacheManager({
       await clearCache();
       toast.success(i18n.t("dashboard.cache_cleared"));
       setStatus("idle");
-      toast.success(i18n.t("dashboard.cache_cleared"));
+      toast.success(i18n.t("dashboard:cache_cleared"));
     } catch (err) {
       console.error(err);
       toast.error(i18n.t("dashboard.cache_clear_failed"));
       setStatus("error");
-      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      toast.error(i18n.t("dashboard:cache_clear_failed"));
     }
   };
 

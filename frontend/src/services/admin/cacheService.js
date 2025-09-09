@@ -1,3 +1,9 @@
 import api from "@/services/api/api";
 
-export const clearCache = () => api.post("/admin/cache/clear");
+export const clearCache = async () => {
+  try {
+    await api.post("/admin/cache/clear");
+  } catch (err) {
+    throw err;
+  }
+};

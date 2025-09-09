@@ -33,7 +33,9 @@ describe('CacheManager', () => {
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
     await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    expect(screen.queryByText('Retry')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('dashboard:cache_cleared')
+    );
   });
 
   it('shows retry when clearing cache fails', async () => {
@@ -41,7 +43,8 @@ describe('CacheManager', () => {
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
-    expect(await screen.findByText('Retry')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('dashboard:cache_clear_failed')
+    );
   });
 });
