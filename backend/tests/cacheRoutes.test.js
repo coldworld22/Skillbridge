@@ -1,39 +1,36 @@
 const request = require('supertest');
 const express = require('express');
 
-const mockClearServerCache = jest.fn();
-jest.mock('../src/utils/cache', () => mockClearServerCache);
+// Mock admin auth middleware to allow requests through
+jest.mock('../src/middleware/requireAdmin', () => [(_req, _res, next) => next()]);
 
 const cacheRoutes = require('../src/routes/cache.routes');
 
 function createApp() {
   const app = express();
-  app.use('/api/cache', cacheRoutes);
+  app.use('/api/cache', require('../src/routes/cache.routes'));
   return app;
 }
 
 describe('Cache routes', () => {
-  beforeEach(() => {
-    mockClearServerCache.mockReset();
+  afterEach(() => {
+    delete global.clearServerCache;
   });
 
-  it('returns success when cache is cleared', async () => {
-    mockClearServerCache.mockResolvedValue();
+  it('returns cleared status when cache is cleared', async () => {
+    global.clearServerCache = jest.fn().mockResolvedValue();
     const app = createApp();
     const res = await request(app).post('/api/cache/clear');
-    expect(mockClearServerCache).toHaveBeenCalled();
+    expect(global.clearServerCache).toHaveBeenCalled();
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      status: 'success',
-      message: 'Cache cleared',
-    });
+    expect(res.body).toEqual({ status: 'cleared' });
   });
 
   it('returns error when cache clearing fails', async () => {
-    mockClearServerCache.mockRejectedValue(new Error('fail'));
+    global.clearServerCache = jest.fn().mockRejectedValue(new Error('fail'));
     const app = createApp();
     const res = await request(app).post('/api/cache/clear');
-    expect(mockClearServerCache).toHaveBeenCalled();
+    expect(global.clearServerCache).toHaveBeenCalled();
     expect(res.status).toBe(500);
     expect(res.body).toEqual({
       status: 'error',
