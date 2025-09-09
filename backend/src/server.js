@@ -22,6 +22,7 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
+const config = require("./config/env");
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
