@@ -21,8 +21,8 @@
   }
   
   body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background-color: var(--bg-color, white);
+    color: var(--text-color, black);
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
@@ -46,18 +46,6 @@
   .animate-float {
     animation: float infinite ease-in-out;
   }
-
-  /* Light Mode (Default) */
-body {
-  background-color: white;
-  color: black;
-}
-
-/* Dark Mode */
-.dark body {
-  background-color: #111827;
-  color: white;
-}
 
 /* Optional: Dark Mode for Components */
 .dark .bg-white {
