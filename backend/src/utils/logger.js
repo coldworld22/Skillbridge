@@ -6,7 +6,7 @@ const LOG_DIR = path.join(__dirname, "../../logs");
 const LOG_FILE = path.join(LOG_DIR, "error.log");
 
 if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR);
+  fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
 
