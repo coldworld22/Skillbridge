@@ -23,13 +23,10 @@ const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 const config = require("./config/env");
-const cache = require("./utils/cache");
-
 // Expose a global cache-clearing utility so other modules (like routes) can
-// programmatically flush any server-side caches. This clears both our
-// socket store (in-memory or Redis-backed) and any Redis data if a client is
-// configured.
-global.clearServerCache = async () => {
+// programmatically flush any server-side caches. This clears Redis, the socket
+// store, and the in-memory cache.
+async function clearServerCache() {
   if (redisClient) {
     await redisClient.flushAll();
   }
@@ -37,6 +34,7 @@ global.clearServerCache = async () => {
   await cache.clear();
 };
 
+global.clearServerCache = clearServerCache;
 // Ensure required environment secrets are present
 const requiredSecrets = [
   "JWT_SECRET",
@@ -251,6 +249,7 @@ module.exports = {
   app,
   server,
   startServer,
+  clearServerCache,
   get io() {
     return socketState.io;
   },
