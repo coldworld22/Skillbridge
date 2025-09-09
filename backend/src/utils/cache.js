@@ -14,6 +14,12 @@ module.exports = {
     store.delete(key);
   },
   async clear() {
+    if (redisClient && typeof redisClient.flushAll === 'function') {
+      await redisClient.flushAll();
+    }
+    if (socketStore && typeof socketStore.clearAll === 'function') {
+      await socketStore.clearAll();
+    }
     store.clear();
     if (redisClient) {
       await redisClient.flushAll();

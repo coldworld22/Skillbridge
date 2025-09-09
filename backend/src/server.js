@@ -244,6 +244,7 @@ module.exports = {
   app,
   server,
   startServer,
+  clearServerCache,
   get io() {
     return socketState.io;
   },
