@@ -13,7 +13,6 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
-const clearServerCache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -35,6 +34,7 @@ global.clearServerCache = async () => {
     await redisClient.flushAll();
   }
   await socketStore.clearAll();
+  await cache.clear();
 };
 
 // Ensure required environment secrets are present
@@ -60,7 +60,6 @@ if (missingSecrets.length) {
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
-global.clearServerCache = cache.clear;
 
 // Configure security headers
 app.use(
