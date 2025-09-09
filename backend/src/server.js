@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -19,7 +21,6 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
-require("dotenv").config();
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
