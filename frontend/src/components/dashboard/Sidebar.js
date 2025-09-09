@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
-import { clearCache } from '@/services/admin/cacheService';
-import { toast } from 'react-toastify';
+import { clearCache } from '@/utils/cache';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
 import { studentNavLinks } from './SidebarLinks/studentLinks';
@@ -30,13 +29,7 @@ export default function Sidebar({ role = 'admin' }) {
   }, [fetchAppConfig]);
 
   const handleClearCache = async () => {
-    try {
-      await clearCache();
-      toast.success(t('cache_cleared'));
-    } catch (err) {
-      console.error('Failed to clear cache', err);
-      toast.error(t('cache_clear_failed'));
-    }
+    await clearCache();
   };
 
   const navMap = {
