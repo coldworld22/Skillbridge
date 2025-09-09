@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
-import { clearCache as clearCacheApi } from "@/services/admin/cacheService";
+import { clearCache } from "@/services/admin/cacheService";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
@@ -54,7 +54,7 @@ export default function CacheManager({
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
-      await clearCacheApi();
+      await clearCache();
       setStatus("idle");
     } catch (err) {
       console.error(err);
