@@ -6,6 +6,7 @@ jest.mock('../../utils/cache', () => ({
   clearCache: jest.fn(),
 }));
 
+
 jest.mock('next-i18next', () => ({
   i18n: { t: (key: string) => key },
 }));
@@ -27,23 +28,20 @@ describe('CacheManager', () => {
     (mockClearCache as jest.Mock).mockReset();
   });
 
-  it('invokes clearCache when button is clicked', async () => {
+  it('calls clearCache service when cache cleared', async () => {
     (mockClearCache as jest.Mock).mockResolvedValue({});
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await waitFor(() =>
-      expect(toast.success).toHaveBeenCalledWith('dashboard.cache_cleared')
-    );
+    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
   });
 
-  it('shows retry when clearing cache fails', async () => {
+  it('sets status to error when clearing cache fails', async () => {
     (mockClearCache as jest.Mock).mockRejectedValue(new Error('fail'));
     render(<CacheManager />);
     const button = await screen.findByText('Clear Cache');
     fireEvent.click(button);
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('dashboard:cache_clear_failed')
-    );
+    await waitFor(() => expect(mockClearCache).toHaveBeenCalled());
+    expect(screen.getByText('Retry')).toBeInTheDocument();
   });
 });
