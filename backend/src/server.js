@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const logger = require('./utils/logger.js');
 // ─── SkillBridge Backend – Main Server Entry Point ───
 
@@ -9,7 +11,8 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
-const { createClient } = require("redis");
+const redisClient = require("./utils/redisClient");
+const socketStore = require("./utils/socketStore");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -19,7 +22,6 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
-require("dotenv").config();
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
@@ -98,25 +100,19 @@ app.use(cookieParser());
 app.use(
   morgan("dev", {
     skip: (req) =>
-      process.env.NODE_ENV === "production" && req.url === "/api/health",
+      config.NODE_ENV === "production" && req.url === "/api/health",
   })
 );
-
-if (!process.env.SESSION_SECRET) {
-  throw new Error("SESSION_SECRET is required");
-}
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET,
+  secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { ...refreshCookieOptions },
 };
 
-let redisClient;
-if (process.env.REDIS_URL) {
-  redisClient = createClient({ url: process.env.REDIS_URL });
+if (redisClient) {
   sessionOptions.store = new RedisStore({ client: redisClient });
-} else if (process.env.NODE_ENV === "production") {
+} else if (config.NODE_ENV === "production") {
   const msg = "REDIS_URL is required in production for session persistence";
   logger.error(`❌ ${msg}`);
   throw new Error(msg);
@@ -154,7 +150,7 @@ app.use((req, res, next) => {
   next();
 });
 
-if (process.env.ENABLE_INSTALL === "true") {
+if (config.ENABLE_INSTALL) {
   const installerPath = path.join(__dirname, "../../install");
   app.use("/install", express.static(installerPath));
 }
@@ -164,17 +160,16 @@ app.use(routes);
 
 // Initialize sockets
 initSockets(server, ALLOWED_ORIGINS);
-const { io, rooms, participants, userSockets } = socketState;
-global.io = io;
-global.userSockets = userSockets;
+const { io, rooms, participants } = socketState;
 
 app.use(require("./middleware/errorHandler"));
-const PORT = process.env.PORT || 5002;
+const PORT = config.PORT;
 
 async function startServer() {
   if (redisClient) {
     try {
       await redisClient.connect();
+      await socketStore.clearAll();
     } catch (err) {
       logger.error("❌ Failed to connect to Redis:", err);
       process.exit(1);
@@ -205,8 +200,8 @@ async function startServer() {
   }
 }
 
-if (process.env.NODE_ENV !== "test") {
+if (config.NODE_ENV !== "test") {
   startServer();
 }
 
-module.exports = { app, server, io, rooms, participants, startServer };
+module.exports = { app, server, io, startServer };
