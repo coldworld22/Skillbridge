@@ -3,7 +3,7 @@ const express = require('express');
 
 const mockClearServerCache = jest.fn();
 jest.mock('../src/utils/cache', () => mockClearServerCache);
-jest.mock('../src/middleware/requireAdmin', () => (_req, _res, next) => next());
+jest.mock('../src/middleware/requireAdmin', () => (req, _res, next) => next());
 
 const cacheRoutes = require('../src/routes/cache.routes');
 
@@ -26,8 +26,7 @@ describe('Cache routes', () => {
     expect(mockClearServerCache).toHaveBeenCalled();
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      status: 'success',
-      message: 'Cache cleared',
+      status: 'cleared',
     });
   });
 
