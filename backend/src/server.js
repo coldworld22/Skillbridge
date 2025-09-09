@@ -48,10 +48,15 @@ const server = http.createServer(app);
 app.use(helmet());
 
 // 🌐 Fix CORS (must be very early)
-let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
-  FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
-}
+const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || "http://localhost:3000")
+  .split(",")
+  .map((url) => {
+    try {
+      return new URL(url.trim()).origin;
+    } catch {
+      throw new Error(`Invalid FRONTEND_URL: ${url}`);
+    }
+  });
 const APP_DOMAIN = process.env.APP_DOMAIN;
 const defaultOrigins = APP_DOMAIN
   ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
@@ -59,7 +64,7 @@ const defaultOrigins = APP_DOMAIN
 const ALLOWED_ORIGINS = Array.from(
   new Set([
     ...defaultOrigins,
-    ...FRONTEND_URL.split(",").map((o) => o.trim().replace(/\/$/, "")),
+    ...FRONTEND_ORIGINS,
   ])
 );
 
