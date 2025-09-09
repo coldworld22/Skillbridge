@@ -112,6 +112,7 @@ npm --prefix frontend install
 
 For detailed instructions see [docs/installation.md](docs/installation.md).
 See [docs/deployment.md](docs/deployment.md) for tips on configuring environment variables when hosting the app.
+When deploying, define a `global.clearServerCache` function on the backend so the admin **Clear Cache** button can purge server-side caches; otherwise `/api/cache/clear` will return a 503 status.
 For automated production setup run the installation wizard from the project root:
 
 ```bash

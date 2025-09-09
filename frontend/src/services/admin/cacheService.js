@@ -7,7 +7,9 @@ export const clearCache = async () => {
     await api.post("/cache/clear");
     toast.success(i18n.t("dashboard.cache_cleared"));
   } catch (err) {
-    toast.error(i18n.t("dashboard.cache_clear_failed"));
+    const message =
+      err?.response?.data?.message || i18n.t("dashboard.cache_clear_failed");
+    toast.error(message);
     throw err;
   }
 };

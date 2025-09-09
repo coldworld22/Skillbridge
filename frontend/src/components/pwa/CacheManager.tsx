@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
+import { toast } from "react-toastify";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
@@ -54,9 +55,17 @@ export default function CacheManager({
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
       try {
-        await fetch("/api/admin/cache/clear", { method: "POST" });
+        const res = await fetch("/api/admin/cache/clear", { method: "POST" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const message = data.message || "Failed to clear server cache";
+          toast.error(message);
+        } else {
+          toast.success("Server cache cleared");
+        }
       } catch (e) {
         console.error(e);
+        toast.error("Failed to clear server cache");
       }
       setStatus("idle");
     } catch (err) {
