@@ -48,22 +48,17 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
+// Configure security headers
 app.use(
   helmet({
     contentSecurityPolicy: {
-      useDefaults: true,
       directives: {
-        "script-src": [
-          "'self'",
-          "'unsafe-inline'",
-          "https://www.googletagmanager.com",
-        ],
-        "connect-src": [
-          "'self'",
-          "https://www.google-analytics.com",
-        ],
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
       },
     },
+    crossOriginEmbedderPolicy: false,
   })
 );
 
