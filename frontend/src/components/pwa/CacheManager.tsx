@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
-import { clearCache } from "@/services/admin/cacheService";
-import { toast } from "react-toastify";
-import { i18n } from "next-i18next";
+import { clearCache } from "@/utils/cache";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
