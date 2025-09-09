@@ -1,8 +1,9 @@
 const express = require('express');
+const requireAdmin = require('../middleware/requireAdmin');
 const router = express.Router();
 const clearServerCache = require('../utils/cache');
 
-router.post('/clear', async (_req, res) => {
+router.post('/clear', requireAdmin, async (_req, res) => {
   try {
     await clearServerCache();
     res
