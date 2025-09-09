@@ -2,10 +2,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import CacheManager from '@/components/pwa/CacheManager';
 import { clearCache as mockClearCache } from '../../services/admin/cacheService';
 
-jest.mock('../../services/admin/cacheService', () => ({
+jest.mock('../../utils/cache', () => ({
   clearCache: jest.fn(),
 }));
-
 jest.mock('next-i18next', () => ({
   i18n: { t: (key: string) => key },
 }));

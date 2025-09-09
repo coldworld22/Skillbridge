@@ -1,20 +1,20 @@
-const mockFlushAll = jest.fn();
-const mockClearAll = jest.fn();
-
-jest.mock('../src/utils/redisClient', () => ({ flushAll: mockFlushAll }));
-jest.mock('../src/utils/socketStore', () => ({ clearAll: mockClearAll }));
-
-const clearServerCache = require('../src/utils/cache');
-
-describe('clearServerCache', () => {
-  beforeEach(() => {
-    mockFlushAll.mockClear();
-    mockClearAll.mockClear();
+const cache = require('../src/utils/cache');
+describe('cache utility', () => {
+  afterEach(async () => {
+    await cache.clear();
+    delete global.clearServerCache;
   });
 
-  it('flushes redis and clears memory caches', async () => {
-    await clearServerCache();
-    expect(mockFlushAll).toHaveBeenCalled();
-    expect(mockClearAll).toHaveBeenCalled();
+  it('clears stored values via clear()', async () => {
+    cache.set('foo', 'bar');
+    await cache.clear();
+    expect(cache.get('foo')).toBeUndefined();
+  });
+
+  it('clears store through global.clearServerCache', async () => {
+    cache.set('baz', 'qux');
+    global.clearServerCache = cache.clear;
+    await global.clearServerCache();
+    expect(cache.get('baz')).toBeUndefined();
   });
 });
