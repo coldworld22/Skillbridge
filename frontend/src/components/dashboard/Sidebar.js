@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
-import { useTranslation } from 'next-i18next';
+import { useTranslation, i18n } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
 import { API_BASE_URL } from '@/config/config';
@@ -32,10 +32,10 @@ export default function Sidebar({ role = 'admin' }) {
   const handleClearCache = async () => {
     try {
       await clearCache();
-      toast.success(t('cache_cleared'));
+      toast.success(i18n.t('dashboard.cache_cleared'));
     } catch (err) {
       console.error('Failed to clear cache', err);
-      toast.error(t('cache_clear_failed'));
+      toast.error(i18n.t('dashboard.cache_clear_failed'));
     }
   };
 
