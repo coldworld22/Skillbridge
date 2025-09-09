@@ -19,12 +19,19 @@ jest.mock('../../src/config/database', () => {
 });
 
 const verifyHostRole = require('../../src/middleware/auth/verifyHostRole');
+const store = require('../../src/utils/socketStore');
 
 const app = express();
 app.use(express.json());
 const attachUser = (req, _res, next) => { req.user = { id: 'user1' }; next(); };
 
-global.userSockets = { user1: 'socket1' };
+beforeAll(async () => {
+  await store.addUserSocket('user1', 'socket1');
+});
+
+afterAll(async () => {
+  await store.clearAll();
+});
 
 app.patch('/api/video-calls/:roomId/participants/:id', attachUser, verifyHostRole, (_req, res) => res.json({}));
 app.delete('/api/video-calls/:roomId/participants/:id', attachUser, verifyHostRole, (_req, res) => res.status(204).end());

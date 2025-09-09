@@ -7,6 +7,7 @@ const AppError = require("../../utils/AppError");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const socketStore = require("../../utils/socketStore");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
@@ -431,9 +432,10 @@ exports.startVideoCall = catchAsync(async (req, res) => {
       });
 
       try {
-        if (global.io && global.userSockets?.[uid]) {
+        const socketId = await socketStore.getUserSocket(uid);
+        if (global.io && socketId) {
           global.io
-            .to(global.userSockets[uid])
+            .to(socketId)
             .emit("incoming-call", {
               chatId: id,
               roomId,

@@ -1,10 +1,11 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
+const socketStore = require("../../utils/socketStore");
 
 module.exports = async function verifyHostRole(req, res, next) {
   const { roomId } = req.params;
   try {
-    const socketId = global.userSockets?.[req.user.id];
+    const socketId = await socketStore.getUserSocket(req.user.id);
     if (!socketId)
       return res.status(403).json({ message: "Not allowed" });
     const participant = await db("video_call_participants")

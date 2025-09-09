@@ -9,7 +9,8 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
-const { createClient } = require("redis");
+const redisClient = require("./utils/redisClient");
+const socketStore = require("./utils/socketStore");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -107,9 +108,7 @@ const sessionOptions = {
   cookie: { ...refreshCookieOptions },
 };
 
-let redisClient;
-if (process.env.REDIS_URL) {
-  redisClient = createClient({ url: process.env.REDIS_URL });
+if (redisClient) {
   sessionOptions.store = new RedisStore({ client: redisClient });
 } else if (process.env.NODE_ENV === "production") {
   const msg = "REDIS_URL is required in production for session persistence";
@@ -159,9 +158,8 @@ app.use(routes);
 
 // Initialize sockets
 initSockets(server, ALLOWED_ORIGINS);
-const { io, rooms, participants, userSockets } = socketState;
+const { io } = socketState;
 global.io = io;
-global.userSockets = userSockets;
 
 app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
@@ -170,6 +168,7 @@ async function startServer() {
   if (redisClient) {
     try {
       await redisClient.connect();
+      await socketStore.clearAll();
     } catch (err) {
       logger.error("❌ Failed to connect to Redis:", err);
       process.exit(1);
@@ -204,4 +203,4 @@ if (process.env.NODE_ENV !== "test") {
   startServer();
 }
 
-module.exports = { app, server, io, rooms, participants, startServer };
+module.exports = { app, server, io, startServer };
