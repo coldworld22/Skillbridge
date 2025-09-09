@@ -69,21 +69,30 @@ app.use((req, res, next) => {
   next();
 });
 // 🌐 CORS must run before body parsing so even 4xx responses include the header
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, origin);
-      } else {
-        // Deny the request without throwing so Express can return 403
-        logger.warn(`CORS blocked origin: ${origin}`);
-        callback(null, false);
-      }
-    },
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    const err = new Error("Origin not allowed");
+    err.status = 403;
+    logger.warn(`CORS blocked origin: ${origin}`);
+    return callback(err);
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
+// Ensure preflight requests get CORS headers
+app.options("*", cors(corsOptions));
+
+// Translate CORS errors into JSON responses
+app.use((err, req, res, next) => {
+  if (err && err.message === "Origin not allowed") {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+  return next(err);
+});
 
 // Set reasonable body parser limits; routes needing more can override per-route
 const defaultBodyLimit = "10mb";
