@@ -9,6 +9,14 @@ const state = {
   userSockets: {},
 };
 
+function getIO() {
+  return state.io;
+}
+
+function getUserSockets() {
+  return state.userSockets;
+}
+
 function initSockets(server, allowedOrigins) {
   state.io = new Server(server, {
     cors: { origin: allowedOrigins, credentials: true },
@@ -125,4 +133,4 @@ function initSockets(server, allowedOrigins) {
   return state;
 }
 
-module.exports = { initSockets, state };
+module.exports = { initSockets, state, getIO, getUserSockets };

@@ -159,9 +159,7 @@ app.use(routes);
 
 // Initialize sockets
 initSockets(server, ALLOWED_ORIGINS);
-const { io, rooms, participants, userSockets } = socketState;
-global.io = io;
-global.userSockets = userSockets;
+const { io, rooms, participants } = socketState;
 
 app.use(require("./middleware/errorHandler"));
 const PORT = process.env.PORT || 5002;
