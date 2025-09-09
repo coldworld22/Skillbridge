@@ -54,15 +54,10 @@ export default function CacheManager({
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
-      try {
-        await clearCacheApi();
-      } catch (e) {
-        console.error(e);
-      }
+      await clearCacheApi();
       setStatus("idle");
     } catch (err) {
       console.error(err);
-      toast.error(i18n.t("dashboard.cache_clear_failed"));
       setStatus("error");
     }
   };
