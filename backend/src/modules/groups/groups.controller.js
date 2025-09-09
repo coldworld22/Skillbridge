@@ -14,6 +14,7 @@ const { frontendBase } = require("../../utils/frontend");
 const db = require("../../config/database");
 const planService = require("../plans/plans.service");
 const { parsePlanFeatures } = require("../../utils/planFeatures");
+const { getIO, getUserSockets } = require("../../sockets");
 
 exports.createGroup = catchAsync(async (req, res) => {
   const planId =
@@ -410,6 +411,9 @@ exports.startVideoCall = catchAsync(async (req, res) => {
 
   const note = `${req.user.full_name} started a video call in group "${group.name}"`;
 
+  const io = getIO();
+  const userSockets = getUserSockets();
+
   await Promise.all(
     recipients.map(async (uid) => {
       await db("video_calls").insert({
@@ -432,10 +436,9 @@ exports.startVideoCall = catchAsync(async (req, res) => {
       });
 
       try {
-        const socketId = await socketStore.getUserSocket(uid);
-        if (global.io && socketId) {
-          global.io
-            .to(socketId)
+        if (io && userSockets?.[uid]) {
+          io
+            .to(userSockets[uid])
             .emit("incoming-call", {
               chatId: id,
               roomId,
