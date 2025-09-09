@@ -14,6 +14,15 @@ logStream.on("error", (err) => {
   console.error("Failed to write to log file:", err);
 });
 
+process.on("exit", () => logStream.end());
+
+const gracefulShutdown = () => {
+  logStream.end(() => process.exit(0));
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+
 function append(type, args) {
   const line = `${new Date().toISOString()} [${type}] ${args.join(" ")}\n`;
   logStream.write(line, (err) => {

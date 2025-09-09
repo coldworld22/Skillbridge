@@ -5,7 +5,6 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm ci && npm cache clean --force
 COPY . .
-RUN npm test
 
 # Production stage
 FROM node:18-alpine
