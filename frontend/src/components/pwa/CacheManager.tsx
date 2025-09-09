@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { CACHE_VERSION } from "@/config/pwa";
-import { clearCache as clearServerCache } from "@/services/admin/cacheService";
-import { toast } from "react-toastify";
-import { i18n } from "next-i18next";
+import { clearCache as clearCacheApi } from "@/services/admin/cacheService";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
@@ -49,15 +47,18 @@ export default function CacheManager({
     }
   };
 
-  const clearCache = async () => {
+  const handleClearCache = async () => {
     try {
       await caches.delete(WARM_CACHE);
       if (strategy === "B") {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });
       }
-      await clearServerCache();
-      toast.success(i18n.t("dashboard.cache_cleared"));
+      try {
+        await clearCacheApi();
+      } catch (e) {
+        console.error(e);
+      }
       setStatus("idle");
     } catch (err) {
       console.error(err);
@@ -76,7 +77,7 @@ export default function CacheManager({
         {status === "success" && "Cached"}
         {status === "error" && "Retry"}
       </Button>
-      <Button className="bg-gray-200 text-gray-800" onClick={clearCache} type="button">
+      <Button className="bg-gray-200 text-gray-800" onClick={handleClearCache} type="button">
         Clear Cache
       </Button>
     </div>
