@@ -2,83 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
-    :root {
-      --bg-color: #ffffff;
-      --text-color: #1f2937;
-    }
-    
-    .dark {
-      --bg-color: #1f2937;
-      --text-color: #f3f4f6;
-    }
-
-    html[dir='rtl'] {
-      direction: rtl;
-      text-align: right;
-    }
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #1f2937;
   }
-  
+
+  .dark {
+    --bg-color: #1f2937;
+    --text-color: #f3f4f6;
+  }
+
+  html[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+
   body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
-  
-  
-  /* Floating Particle Animation */
-  @keyframes float {
-    0% {
-      transform: translateY(0) scale(1);
-      opacity: 0.6;
-    }
-    50% {
-      transform: translateY(-20px) scale(1.1);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(0) scale(1);
-      opacity: 0.6;
-    }
+}
+
+/* Floating Particle Animation */
+@keyframes float {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
   }
-  
-  .animate-float {
-    animation: float infinite ease-in-out;
+  50% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 1;
   }
-
-  /* Light Mode (Default) */
-body {
-  background-color: white;
-  color: black;
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
 }
 
-/* Dark Mode */
-.dark body {
-  background-color: #111827;
-  color: white;
-}
-
-/* Optional: Dark Mode for Components */
-.dark .bg-white {
-  background-color: #1f2937 !important;
-}
-
-.dark .text-gray-900 {
-  color: white !important;
-}
-
-.dark .text-gray-300 {
-  color: #d1d5db !important;
-}
-
-.dark .bg-gray-900 {
-  background-color: #1f2937 !important;
+.animate-float {
+  animation: float infinite ease-in-out;
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .animate-fade-in {
@@ -210,5 +187,7 @@ input:-webkit-autofill:focus {
 }
 
 #nprogress .peg {
-  box-shadow: 0 0 10px #fbbf24, 0 0 5px #fbbf24;
+  box-shadow:
+    0 0 10px #fbbf24,
+    0 0 5px #fbbf24;
 }

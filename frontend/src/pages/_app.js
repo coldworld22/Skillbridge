@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -31,6 +31,7 @@ import { fetchThirdPartyConfig } from "@/services/thirdPartyService";
 import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
+
 
 const langFetcher = () => getLanguages();
 
@@ -73,6 +74,7 @@ function MyApp({ Component, pageProps, router }) {
   );
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
+  const [gaId, setGaId] = useState(null);
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -191,6 +193,22 @@ function MyApp({ Component, pageProps, router }) {
           </>
         )}
         <PageLoader />
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-inline" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
         <AnimatePresence mode="wait">
           {/* Motion wrapper for route transition */}
           <motion.div
