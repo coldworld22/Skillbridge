@@ -1169,7 +1169,6 @@
     "ads_manager": "Ads Manager",
     "offers": "Offers",
     "support": "Support",
-    "clear_cache": "Clear Cache",
     "settings": "Settings",
     "language_manager": "Language Manager",
     "language_config": "Language Config",
@@ -1215,8 +1214,7 @@
     "offers_groups": "Offers & Groups",
     "payments_social": "Payments & Social",
     "payments": "Payments",
-    "my_reviews": "My Reviews",
-    "clear_cache": "Clear Cache"
+    "my_reviews": "My Reviews"
   },
   "emailConfigPage": {
     "title": "Email Configuration",

@@ -26,10 +26,9 @@ const config = require("./config/env");
 const cache = require("./utils/cache");
 
 // Expose a global cache-clearing utility so other modules (like routes) can
-// programmatically flush any server-side caches. This clears both our
-// socket store (in-memory or Redis-backed) and any Redis data if a client is
-// configured.
-global.clearServerCache = async () => {
+// programmatically flush any server-side caches. This clears our socket store,
+// any Redis data, and the in-memory cache.
+async function clearServerCache() {
   if (redisClient) {
     await redisClient.flushAll();
   }
@@ -251,6 +250,7 @@ module.exports = {
   app,
   server,
   startServer,
+  clearServerCache,
   get io() {
     return socketState.io;
   },
