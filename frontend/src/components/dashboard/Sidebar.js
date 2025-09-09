@@ -28,8 +28,8 @@ export default function Sidebar({ role = 'admin' }) {
     fetchAppConfig();
   }, [fetchAppConfig]);
 
-  const handleClearCache = async () => {
-    await clearCache();
+  const handleClearCache = () => {
+    clearCache();
   };
 
   const navMap = {
