@@ -62,6 +62,8 @@ export default function CacheManager({
       setStatus("idle");
     } catch (err) {
       console.error(err);
+      toast.error(i18n.t("dashboard.cache_clear_failed"));
+      setStatus("error");
     }
   };
 
