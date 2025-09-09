@@ -21,6 +21,10 @@ module.exports = {
       await socketStore.clearAll();
     }
     store.clear();
+    if (redisClient) {
+      await redisClient.flushAll();
+    }
+    await socketStore.clearAll();
   },
 };
 
