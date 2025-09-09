@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { appWithTranslation, useTranslation } from "next-i18next";
 import useSWR from "swr";
 import nextI18NextConfig from "../../next-i18next.config.js";
@@ -30,6 +30,7 @@ import SeoTags from "@/components/common/SeoTags";
 import PageLoader from "@/components/PageLoader";
 import PopupAnnouncement from "@/components/common/PopupAnnouncement";
 import { API_BASE_URL } from "@/config/config";
+import Script from "next/script";
 
 const langFetcher = () => getLanguages();
 
@@ -68,6 +69,7 @@ function MyApp({ Component, pageProps, router }) {
   const { data: langs } = useSWR("/languages", langFetcher);
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
+  const [gaId, setGaId] = useState(null);
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
@@ -111,18 +113,7 @@ function MyApp({ Component, pageProps, router }) {
       })
       .then((cfg) => {
         if (cfg.enabled && cfg.measurementId) {
-          if (!document.querySelector(`script[data-ga-measurement-id="${cfg.measurementId}"]`)) {
-            const s = document.createElement('script');
-            s.async = true;
-            s.src = `https://www.googletagmanager.com/gtag/js?id=${cfg.measurementId}`;
-            s.dataset.gaMeasurementId = cfg.measurementId;
-            document.head.appendChild(s);
-
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', cfg.measurementId);
-          }
+          setGaId(cfg.measurementId);
         }
       })
       .catch((err) => console.error('Failed to load Google Analytics', err));
@@ -193,6 +184,22 @@ function MyApp({ Component, pageProps, router }) {
     return (
       <>
         <PageLoader />
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-inline" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
         <AnimatePresence mode="wait">
           {/* Motion wrapper for route transition */}
           <motion.div

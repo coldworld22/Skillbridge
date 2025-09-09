@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
+import { CACHE_VERSION } from "@/config/pwa";
 
 // List of URLs to warm up in cache. Replace with actual routes as needed.
 const pwaWarmList: string[] = [];
+const WARM_CACHE = `SKILLBRIDGE-WARM-${CACHE_VERSION}`;
 
 type Status = "idle" | "caching" | "success" | "error";
 
@@ -46,7 +48,7 @@ export default function CacheManager({
 
   const clearCache = async () => {
     try {
-      await caches.delete("SKILLBRIDGE-WARM-V1");
+      await caches.delete(WARM_CACHE);
       if (strategy === "B") {
         const registration = await navigator.serviceWorker.ready;
         registration.active?.postMessage({ type: "CLEAR_WARM_CACHE" });

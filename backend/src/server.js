@@ -48,7 +48,24 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://www.googletagmanager.com",
+        ],
+        "connect-src": [
+          "'self'",
+          "https://www.google-analytics.com",
+        ],
+      },
+    },
+  })
+);
 
 // 🌐 Fix CORS (must be very early)
 const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || "http://localhost:3000")
