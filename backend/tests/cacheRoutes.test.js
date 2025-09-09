@@ -1,8 +1,7 @@
 const request = require('supertest');
 const express = require('express');
 
-// Mock admin auth middleware to allow requests through
-jest.mock('../src/middleware/requireAdmin', () => [(_req, _res, next) => next()]);
+jest.mock('../src/middleware/requireAdmin', () => (_req, _res, next) => next());
 
 const cacheRoutes = require('../src/routes/cache.routes');
 
@@ -16,8 +15,7 @@ describe('Cache routes', () => {
   afterEach(() => {
     delete global.clearServerCache;
   });
-
-  it('returns cleared status when cache is cleared', async () => {
+  it('returns success when cache is cleared', async () => {
     global.clearServerCache = jest.fn().mockResolvedValue();
     const app = createApp();
     const res = await request(app).post('/api/cache/clear');
