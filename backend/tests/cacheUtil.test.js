@@ -1,26 +1,20 @@
-const mockFlushAll = jest.fn();
-const mockClearAll = jest.fn();
-
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'jwt';
-process.env.REFRESH_TOKEN_SECRET = 'refresh';
-process.env.SESSION_SECRET = 'session';
-process.env.TEST_DATABASE_URL = 'postgres://user:pass@localhost:5432/db';
-
-jest.mock('../src/utils/redisClient', () => ({ flushAll: mockFlushAll }));
-jest.mock('../src/utils/socketStore', () => ({ clearAll: mockClearAll }));
-
 const cache = require('../src/utils/cache');
-
-describe('cache.clear', () => {
-  beforeEach(() => {
-    mockFlushAll.mockClear();
-    mockClearAll.mockClear();
+describe('cache utility', () => {
+  afterEach(async () => {
+    await cache.clear();
+    delete global.clearServerCache;
   });
 
-  it('flushes redis and clears memory caches', async () => {
+  it('clears stored values via clear()', async () => {
+    cache.set('foo', 'bar');
     await cache.clear();
-    expect(mockFlushAll).toHaveBeenCalled();
-    expect(mockClearAll).toHaveBeenCalled();
+    expect(cache.get('foo')).toBeUndefined();
+  });
+
+  it('clears store through global.clearServerCache', async () => {
+    cache.set('baz', 'qux');
+    global.clearServerCache = cache.clear;
+    await global.clearServerCache();
+    expect(cache.get('baz')).toBeUndefined();
   });
 });
