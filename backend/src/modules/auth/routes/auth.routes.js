@@ -8,6 +8,12 @@ const validate = require("../../../middleware/validate");
 const authValidation = require("../validators/auth.validator");
 const { limitAuthRequests } = require("../../../middleware/rateLimiter");
 
+// Prevent caching of sensitive auth responses
+router.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 /**
  * @route   POST /auth/register
  * @desc    Register a new user
