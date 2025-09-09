@@ -1,20 +1,24 @@
 const request = require('supertest');
 const express = require('express');
 
-const mockClearServerCache = jest.fn();
-jest.mock('../src/utils/cache', () => mockClearServerCache);
-
-const cacheRoutes = require('../src/routes/cache.routes');
+jest.mock('../src/middleware/requireAdmin', () => (req, res, next) => next());
 
 function createApp() {
   const app = express();
-  app.use('/api/cache', cacheRoutes);
+  app.use('/api/cache', require('../src/routes/cache.routes'));
   return app;
 }
 
 describe('Cache routes', () => {
+  let mockClearServerCache;
+
   beforeEach(() => {
-    mockClearServerCache.mockReset();
+    mockClearServerCache = jest.fn();
+    global.clearServerCache = mockClearServerCache;
+  });
+
+  afterEach(() => {
+    delete global.clearServerCache;
   });
 
   it('returns success when cache is cleared', async () => {
