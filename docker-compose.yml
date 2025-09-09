@@ -109,8 +109,10 @@ services:
       - ./nginx/snippets/common_locations.inc:/etc/nginx/snippets/common_locations.inc:ro
       - ./nginx/conf.d/ssl.conf:/etc/nginx/conf.d/ssl.conf:ro
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks:
       - app-network
 
