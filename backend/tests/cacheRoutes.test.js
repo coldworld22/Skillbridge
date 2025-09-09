@@ -24,19 +24,18 @@ describe('Cache routes', () => {
   it('returns success when cache is cleared', async () => {
     mockClearServerCache.mockResolvedValue();
     const app = createApp();
-    const res = await request(app).post('/api/cache/clear');
+    const res = await request(app).post('/api/admin/cache/clear');
     expect(mockClearServerCache).toHaveBeenCalled();
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      status: 'success',
-      message: 'Cache cleared',
+      status: 'cleared',
     });
   });
 
   it('returns error when cache clearing fails', async () => {
     mockClearServerCache.mockRejectedValue(new Error('fail'));
     const app = createApp();
-    const res = await request(app).post('/api/cache/clear');
+    const res = await request(app).post('/api/admin/cache/clear');
     expect(mockClearServerCache).toHaveBeenCalled();
     expect(res.status).toBe(500);
     expect(res.body).toEqual({
