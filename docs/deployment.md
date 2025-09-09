@@ -38,6 +38,11 @@ referenced in `nginx/conf.d/ssl.conf`.
   # docker-compose environment variables.
     ```
 
+   For production deployments, Docker Compose also loads variables from
+   `backend/.env.production`. Copy `backend/.env.production.example` to
+   `backend/.env.production` and fill in production secrets such as database
+   credentials and JWT keys.
+
    If the frontend and backend are on different subdomains, also set
     `COOKIE_DOMAIN` so the authentication cookie can be shared. Example:
 

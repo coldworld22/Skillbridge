@@ -59,6 +59,11 @@ npm --prefix frontend install
      example `https://yourdomain.com/api`) instead of the internal
      `http://backend:5002/api` value used for development.
 
+   The backend's production configuration is loaded from
+   `backend/.env.production`. Copy `backend/.env.production.example` to
+   `backend/.env.production` and provide your database credentials and secrets
+   before deploying.
+
    - Copy the backend example file and adjust values as needed:
 
      ```bash
