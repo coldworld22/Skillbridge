@@ -20,6 +20,8 @@ export default function CacheManager({
 }: CacheManagerProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [ready, setReady] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -30,6 +32,7 @@ export default function CacheManager({
 
   const warmCache = async () => {
     setStatus("caching");
+    setMessage(null);
     try {
       if (strategy === "A") {
         await Promise.all(warmList.map((url) => fetch(url)));
@@ -41,13 +44,17 @@ export default function CacheManager({
         });
       }
       setStatus("success");
+      setMessage("Cache warmed");
     } catch (err) {
       console.error(err);
       setStatus("error");
+      setMessage("Failed to warm cache");
     }
   };
 
   const handleClearCache = async () => {
+    setClearing(true);
+    setMessage(null);
     try {
       await caches.delete(WARM_CACHE);
       if (strategy === "B") {
@@ -56,25 +63,37 @@ export default function CacheManager({
       }
       await clearCache();
       setStatus("idle");
+      setMessage("Cache cleared");
     } catch (err) {
       console.error(err);
       setStatus("error");
+      setMessage("Failed to clear cache");
+    } finally {
+      setClearing(false);
     }
   };
 
   if (!ready) return null;
 
   return (
-    <div className="space-x-2">
-      <Button onClick={warmCache} disabled={status === "caching"}>
-        {status === "caching" && "Caching…"}
-        {status === "idle" && "Warm Cache"}
-        {status === "success" && "Cached"}
-        {status === "error" && "Retry"}
-      </Button>
-      <Button className="bg-gray-200 text-gray-800" onClick={handleClearCache} type="button">
-        Clear Cache
-      </Button>
+    <div>
+      <div className="space-x-2">
+        <Button onClick={warmCache} disabled={status === "caching"}>
+          {status === "caching" && "Caching…"}
+          {status === "idle" && "Warm Cache"}
+          {status === "success" && "Cached"}
+          {status === "error" && "Retry"}
+        </Button>
+        <Button
+          className="bg-gray-200 text-gray-800"
+          onClick={handleClearCache}
+          type="button"
+          disabled={clearing}
+        >
+          {clearing ? "Clearing…" : "Clear Cache"}
+        </Button>
+      </div>
+      {message && <p className="text-sm text-gray-600 mt-2">{message}</p>}
     </div>
   );
 }
