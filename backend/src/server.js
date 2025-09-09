@@ -34,8 +34,7 @@ async function clearServerCache() {
   }
   await socketStore.clearAll();
   await cache.clear();
-}
-global.clearServerCache = clearServerCache;
+};
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
