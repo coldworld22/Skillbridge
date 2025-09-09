@@ -7,6 +7,7 @@ const AppError = require("../../utils/AppError");
 const userModel = require("../users/user.model");
 const notificationService = require("../notifications/notifications.service");
 const messageService = require("../messages/messages.service");
+const socketStore = require("../../utils/socketStore");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
 const { frontendBase } = require("../../utils/frontend");
@@ -409,6 +410,9 @@ exports.startVideoCall = catchAsync(async (req, res) => {
   const roomId = uuidv4();
 
   const note = `${req.user.full_name} started a video call in group "${group.name}"`;
+
+  const io = getIO();
+  const userSockets = getUserSockets();
 
   await Promise.all(
     recipients.map(async (uid) => {

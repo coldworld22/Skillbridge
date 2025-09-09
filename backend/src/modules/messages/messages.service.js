@@ -1,5 +1,6 @@
 const logger = require('../../utils/logger.js');
 const db = require("../../config/database");
+const socketStore = require("../../utils/socketStore");
 const { v4: uuidv4 } = require("uuid");
 const mailService = require("../../services/mailService");
 const whatsappService = require("../../services/whatsappService");
@@ -11,6 +12,14 @@ const MESSAGE_RETENTION_MS =
   60 *
   60 *
   1000;
+
+function emitToUser(userId, event, payload) {
+  const io = getIO();
+  const sockets = getUserSockets();
+  if (io && sockets?.[userId]) {
+    io.to(sockets[userId]).emit(event, payload);
+  }
+}
 
 exports.createMessage = async (
   { sender_id, receiver_id, message, booking_id, type },
