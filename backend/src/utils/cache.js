@@ -1,14 +1,17 @@
-const redisClient = require('./redisClient');
-const socketStore = require('./socketStore');
+const store = new Map();
 
-async function clearServerCache() {
-  if (redisClient) {
-    await redisClient.flushAll();
-  }
+module.exports = {
+  get(key) {
+    return store.get(key);
+  },
+  set(key, value) {
+    store.set(key, value);
+  },
+  del(key) {
+    store.delete(key);
+  },
+  async clear() {
+    store.clear();
+  },
+};
 
-  if (socketStore && typeof socketStore.clearAll === 'function') {
-    await socketStore.clearAll();
-  }
-}
-
-module.exports = clearServerCache;

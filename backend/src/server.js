@@ -24,6 +24,7 @@ const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 const config = require("./config/env");
+const cache = require("./utils/cache");
 
 // Expose a global cache-clearing utility so other modules (like routes) can
 // programmatically flush any server-side caches. This clears both our
@@ -59,6 +60,7 @@ if (missingSecrets.length) {
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
+global.clearServerCache = cache.clear;
 
 // Configure security headers
 app.use(

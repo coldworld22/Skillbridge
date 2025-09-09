@@ -5,10 +5,8 @@ const clearServerCache = require('../utils/cache');
 
 router.post('/clear', requireAdmin, async (_req, res) => {
   try {
-    if (typeof global.clearServerCache !== 'function') {
-      return res
-        .status(500)
-        .json({ status: 'error', message: 'Cache clearing function not defined' });
+    if (!global.clearServerCache) {
+      throw new Error('Cache clear function not available');
     }
     await global.clearServerCache();
     res.status(200).json({ status: 'cleared' });
