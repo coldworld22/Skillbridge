@@ -10,6 +10,16 @@ From the `frontend` directory install dependencies:
 npm install
 ```
 
+## Environment Variables
+
+The production build reads configuration from `.env.production`. Define the following keys before building:
+
+- `APP_DOMAIN` – domain where the app is hosted (e.g. `eduskillbridge.net`).
+- `NEXT_PUBLIC_API_BASE_URL` – base URL for backend API requests.
+- `NEXT_PUBLIC_SOCKET_URL` – WebSocket endpoint, typically `https://${APP_DOMAIN}`.
+
+Ensure these values are set so `npm run build` can generate a production bundle that connects to the correct services.
+
 ## Development Server
 
 ```bash
