@@ -13,6 +13,7 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
+const cache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -23,12 +24,6 @@ const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
 const config = require("./config/env");
-const cache = require("./utils/cache");
-
-// Expose a global cache-clearing utility so other modules (like routes) can
-// programmatically flush server-side caches, including Redis and socket
-// data stores.
-global.clearServerCache = cache.clear;
 
 // Ensure required environment secrets are present
 const requiredSecrets = [
