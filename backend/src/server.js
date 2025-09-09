@@ -19,24 +19,7 @@ const { refreshCookieOptions } = require("./utils/cookie");
 const startJobs = require("./jobs");
 const { initSockets, state: socketState } = require("./sockets");
 const routes = require("./routes");
-require("dotenv").config();
-
-// Ensure required environment secrets are present
-const requiredSecrets = [
-  "JWT_SECRET",
-  "REFRESH_TOKEN_SECRET",
-  "SESSION_SECRET",
-];
-const dbKey =
-  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
-requiredSecrets.push(dbKey);
-const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
-if (missingSecrets.length) {
-  console.error(
-    `❌ Missing required environment variables: ${missingSecrets.join(", ")}`
-  );
-  process.exit(1);
-}
+const config = require("./config/env");
 
 
 // ─── Express and HTTP Setup ───
@@ -48,11 +31,8 @@ const server = http.createServer(app);
 app.use(helmet());
 
 // 🌐 Fix CORS (must be very early)
-let FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-if (FRONTEND_URL.startsWith("FRONTEND_URL=")) {
-  FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, "");
-}
-const APP_DOMAIN = process.env.APP_DOMAIN;
+let FRONTEND_URL = config.FRONTEND_URL;
+const APP_DOMAIN = config.APP_DOMAIN;
 const defaultOrigins = APP_DOMAIN
   ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
   : [];
@@ -93,25 +73,21 @@ app.use(cookieParser());
 app.use(
   morgan("dev", {
     skip: (req) =>
-      process.env.NODE_ENV === "production" && req.url === "/api/health",
+      config.NODE_ENV === "production" && req.url === "/api/health",
   })
 );
-
-if (!process.env.SESSION_SECRET) {
-  throw new Error("SESSION_SECRET is required");
-}
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET,
+  secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { ...refreshCookieOptions },
 };
 
 let redisClient;
-if (process.env.REDIS_URL) {
-  redisClient = createClient({ url: process.env.REDIS_URL });
+if (config.REDIS_URL) {
+  redisClient = createClient({ url: config.REDIS_URL });
   sessionOptions.store = new RedisStore({ client: redisClient });
-} else if (process.env.NODE_ENV === "production") {
+} else if (config.NODE_ENV === "production") {
   const msg = "REDIS_URL is required in production for session persistence";
   logger.error(`❌ ${msg}`);
   throw new Error(msg);
@@ -149,7 +125,7 @@ app.use((req, res, next) => {
   next();
 });
 
-if (process.env.ENABLE_INSTALL === "true") {
+if (config.ENABLE_INSTALL) {
   const installerPath = path.join(__dirname, "../../install");
   app.use("/install", express.static(installerPath));
 }
@@ -164,7 +140,7 @@ global.io = io;
 global.userSockets = userSockets;
 
 app.use(require("./middleware/errorHandler"));
-const PORT = process.env.PORT || 5002;
+const PORT = config.PORT;
 
 async function startServer() {
   if (redisClient) {
@@ -200,7 +176,7 @@ async function startServer() {
   }
 }
 
-if (process.env.NODE_ENV !== "test") {
+if (config.NODE_ENV !== "test") {
   startServer();
 }
 
