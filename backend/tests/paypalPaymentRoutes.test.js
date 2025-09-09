@@ -3,6 +3,7 @@ const express = require('express');
 
 jest.mock('../src/modules/payments/payments.service', () => ({
   create: jest.fn(),
+  STATUS: { PENDING_PAYMENT: 'PENDING_PAYMENT', PAID: 'PAID', REJECTED: 'REJECTED' },
 }));
 
 jest.mock('../src/modules/paymentMethods/paymentMethods.service', () => ({
@@ -26,16 +27,32 @@ jest.mock('../src/middleware/auth/authMiddleware', () => ({
   isStudent: (_req, _res, next) => next(),
 }));
 
+// Mock unrelated routes used by grouped payments router
+jest.mock('../src/modules/paymentMethods/paymentMethods.routes', () => require('express').Router());
+jest.mock('../src/modules/paymentMethods/paymentMethods.public.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/student.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/bank.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/crypto.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/coinbase.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/stripe.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/payments.routes', () => require('express').Router());
+jest.mock('../src/modules/invoices/invoices.routes', () => require('express').Router());
+jest.mock('../src/modules/invoices/student.routes', () => require('express').Router());
+jest.mock('../src/modules/invoices/instructor.routes', () => require('express').Router());
+jest.mock('../src/modules/payments/bank.admin.routes', () => require('express').Router());
+jest.mock('../src/modules/paymentConfig/paymentConfig.routes', () => require('express').Router());
+jest.mock('../src/modules/payouts/payouts.routes', () => require('express').Router());
+
 const paymentsService = require('../src/modules/payments/payments.service');
 const methodsService = require('../src/modules/paymentMethods/paymentMethods.service');
 const configService = require('../src/modules/paymentConfig/paymentConfig.service');
 const paypalService = require('../src/services/paypalService');
 const plansService = require('../src/modules/plans/plans.service');
-const routes = require('../src/modules/payments/paypal.routes');
+const routes = require('../src/routes/payments');
 
 const app = express();
 app.use(express.json());
-app.use('/api/payments/paypal', routes);
+app.use(routes);
 const errorHandler = require('../src/middleware/errorHandler');
 app.use(errorHandler);
 
