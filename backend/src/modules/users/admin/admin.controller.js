@@ -73,9 +73,10 @@ exports.updateProfile = async (req, res) => {
     social_links = [],
   } = req.body;
 
+  const trx = await db.transaction();
   try {
     // 1. Update core user fields
-    await db("users").where({ id: userId }).update({
+    await trx("users").where({ id: userId }).update({
       email,
       full_name,
       phone,
@@ -93,12 +94,12 @@ exports.updateProfile = async (req, res) => {
       updated_at: new Date(),
     };
 
-    const existing = await db("admin_profiles").where({ user_id: userId }).first();
+    const existing = await trx("admin_profiles").where({ user_id: userId }).first();
 
     if (existing) {
-      await db("admin_profiles").where({ user_id: userId }).update(profileData);
+      await trx("admin_profiles").where({ user_id: userId }).update(profileData);
     } else {
-      await db("admin_profiles").insert({
+      await trx("admin_profiles").insert({
         user_id: userId,
         ...profileData,
         created_at: new Date(),
@@ -106,11 +107,11 @@ exports.updateProfile = async (req, res) => {
     }
 
     // 3. Replace social links
-    await db("user_social_links").where({ user_id: userId }).del();
+    await trx("user_social_links").where({ user_id: userId }).del();
 
     for (const link of social_links) {
       if (link.url?.trim()) {
-        await db("user_social_links").insert({
+        await trx("user_social_links").insert({
           user_id: userId,
           platform: link.platform,
           url: link.url.trim(),
@@ -119,8 +120,10 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
+    await trx.commit();
     res.json({ message: "Admin profile updated and marked as complete." });
   } catch (error) {
+    await trx.rollback();
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
@@ -176,6 +179,7 @@ exports.updateAvatar = async (req, res) => {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
@@ -184,13 +188,11 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
-
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
-
   }
 };
 
