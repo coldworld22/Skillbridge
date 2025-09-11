@@ -25,7 +25,10 @@ export const updateAdminProfile = async (profileData) => {
 
 /**
  * 🖼 Upload admin avatar image.
- * 
+ *
+ * Ensure a CSRF cookie has been set via a prior safe GET request before
+ * calling this function so the Axios instance can attach the token.
+ *
  * @param {string} adminId - Admin UUID
  * @param {File} avatarFile - Avatar file
  * @returns {Promise<Object>} Upload result
@@ -34,6 +37,11 @@ export const updateAdminProfile = async (profileData) => {
 export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const formData = new FormData();
   formData.append("avatar", avatarFile);
+  const token = getCsrfToken();
+
+  const headers = { "Content-Type": "multipart/form-data" };
+  const token = getCsrfToken();
+  if (token) headers["x-csrf-token"] = token;
 
   const csrfToken = getCsrfToken();
 
