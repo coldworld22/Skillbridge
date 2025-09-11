@@ -74,52 +74,76 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Update core user fields
-    await db("users").where({ id: userId }).update({
-      email,
-      full_name,
-      phone,
-      gender,
-      date_of_birth,
-      avatar_url,
-      profile_complete: true,
-      updated_at: new Date(),
-    });
+    const requiredFieldsFilled =
+      full_name &&
+      email &&
+      phone &&
+      gender &&
+      date_of_birth &&
+      avatar_url &&
+      job_title &&
+      department;
 
-    // 2. Upsert admin profile
-    const profileData = {
-      job_title,
-      department,
-      updated_at: new Date(),
-    };
+    const hasSocialLinks =
+      Array.isArray(social_links) &&
+      social_links.some((link) => link.url?.trim());
 
-    const existing = await db("admin_profiles").where({ user_id: userId }).first();
+    const profileComplete = requiredFieldsFilled && hasSocialLinks;
 
-    if (existing) {
-      await db("admin_profiles").where({ user_id: userId }).update(profileData);
-    } else {
-      await db("admin_profiles").insert({
-        user_id: userId,
-        ...profileData,
-        created_at: new Date(),
+    await db.transaction(async (trx) => {
+      // 1. Update core user fields
+      await trx("users").where({ id: userId }).update({
+        email,
+        full_name,
+        phone,
+        gender,
+        date_of_birth,
+        avatar_url,
+        profile_complete: profileComplete,
+        updated_at: new Date(),
       });
-    }
 
-    // 3. Replace social links
-    await db("user_social_links").where({ user_id: userId }).del();
+      // 2. Upsert admin profile
+      const profileData = {
+        job_title,
+        department,
+        updated_at: new Date(),
+      };
 
-    for (const link of social_links) {
-      if (link.url?.trim()) {
-        await db("user_social_links").insert({
+      const existing = await trx("admin_profiles")
+        .where({ user_id: userId })
+        .first();
+
+      if (existing) {
+        await trx("admin_profiles").where({ user_id: userId }).update(profileData);
+      } else {
+        await trx("admin_profiles").insert({
           user_id: userId,
-          platform: link.platform,
-          url: link.url.trim(),
+          ...profileData,
           created_at: new Date(),
         });
       }
-    }
 
-    res.json({ message: "Admin profile updated and marked as complete." });
+      // 3. Replace social links
+      await trx("user_social_links").where({ user_id: userId }).del();
+
+      for (const link of social_links) {
+        if (link.url?.trim()) {
+          await trx("user_social_links").insert({
+            user_id: userId,
+            platform: link.platform,
+            url: link.url.trim(),
+            created_at: new Date(),
+          });
+        }
+      }
+    });
+
+    res.json({
+      message: profileComplete
+        ? "Admin profile updated and marked as complete."
+        : "Admin profile updated.",
+    });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
