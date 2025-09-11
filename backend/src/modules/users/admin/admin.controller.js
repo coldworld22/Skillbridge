@@ -86,6 +86,21 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
+    const requiredFieldsFilled =
+      full_name &&
+      email &&
+      phone &&
+      gender &&
+      date_of_birth &&
+      avatar_url &&
+      job_title &&
+      department;
+
+    const hasSocialLinks =
+      Array.isArray(social_links) &&
+      social_links.some((link) => link.url?.trim());
+
+    const profileComplete = requiredFieldsFilled && hasSocialLinks;
     await db.transaction(async (trx) => {
       // 1. Update core user fields
       await trx("users").where({ id: userId }).update({
@@ -95,7 +110,7 @@ exports.updateProfile = async (req, res) => {
         gender,
         date_of_birth,
         avatar_url,
-        profile_complete: true,
+        profile_complete: profileComplete,
         updated_at: new Date(),
       });
 
@@ -139,7 +154,6 @@ exports.updateProfile = async (req, res) => {
       message: profileComplete
         ? "Admin profile updated and marked as complete."
         : "Admin profile updated.",
-      profile_complete: profileComplete,
     });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
