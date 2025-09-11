@@ -23,8 +23,8 @@ import AdMediaModal from "@/components/website/AdMediaModal";
 import SidebarMenu from "@/components/shared/SidebarMenu";
 import Chatbot from "@/components/shared/Chatbot";
 import useAppConfigStore from "@/store/appConfigStore";
-import { API_BASE_URL } from "@/config/config";
 import { fetchAds, recordAdView, recordAdClick } from "@/services/adsService";
+import { buildUrl } from "@/utils/url";
 import { searchAll } from "@/services/searchService";
 import { useTranslation } from "next-i18next";
 import useAuthStore from "@/store/auth/authStore";
@@ -61,14 +61,8 @@ const Hero = () => {
       setHeroBg("");
       return;
     }
-    let base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-    if (!base.startsWith("http") && typeof window !== "undefined") {
-      base = window.location.origin + base;
-    }
-    const normalizedBg = bg.startsWith("http")
-      ? bg
-      : `${base.replace(/\/$/, "")}${bg.startsWith("/") ? bg : `/${bg}`}`;
-    setHeroBg(normalizedBg);
+    const normalizedBg = buildUrl(bg);
+    setHeroBg(normalizedBg || "");
   }, [settings.home_bg_url]);
 
   // Always fetch latest configuration so hero background stays in sync

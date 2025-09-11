@@ -17,9 +17,7 @@ import {
 } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
-
-// Use a relative API base URL by default so deployments work on any domain
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+import { buildUrl } from "@/utils/url";
 
 const defaultCategories = ["All"];
 const sortOptions = ["Highest Rated", "Most Experienced"];
@@ -49,7 +47,7 @@ export default function InstructorBooking() {
           ...ins,
           name: ins.full_name,
           avatar: ins.avatar_url
-            ? `${API_BASE_URL}${ins.avatar_url}`
+            ? buildUrl(ins.avatar_url) || "/images/profile/user.png"
             : "/images/profile/user.png",
           rating: ins.rating || 5,
           tags: Array.isArray(ins.expertise) ? ins.expertise : [],

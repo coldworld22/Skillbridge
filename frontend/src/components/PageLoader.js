@@ -3,7 +3,7 @@ import Router from "next/router";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import useAppConfigStore from "@/store/appConfigStore";
-import { API_BASE_URL } from "@/config/config";
+import { buildUrl } from "@/utils/url";
 
 // Configure NProgress to remove the spinner icon
 NProgress.configure({ showSpinner: false });
@@ -12,9 +12,7 @@ const PageLoader = () => {
   const [visible, setVisible] = useState(true);
   const settings = useAppConfigStore((s) => s.settings);
   const loaded = useAppConfigStore((s) => s.loaded);
-  const logoSrc = settings.logoUrl || settings.logo_url
-    ? `${API_BASE_URL}${settings.logoUrl || settings.logo_url}`
-    : null;
+  const logoSrc = buildUrl(settings.logoUrl || settings.logo_url);
 
   useEffect(() => {
     const handleStart = () => NProgress.start();

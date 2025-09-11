@@ -3,6 +3,7 @@ import { useTranslation } from "next-i18next";
 import { toast } from "react-toastify";
 import { FaPlus, FaTrash, FaPlay } from "react-icons/fa";
 import { uploadChapterVideo } from "@/services/admin/tutorialChapterService";
+import { buildUrl } from "@/utils/url";
 
 export default function CurriculumStep({ tutorialData, setTutorialData, onNext, onBack }) {
   const { t } = useTranslation("tutorials");
@@ -52,7 +53,7 @@ export default function CurriculumStep({ tutorialData, setTutorialData, onNext, 
         setUploadProgress(progress);
       });
       const serverPath = res.video_url;
-      const previewUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}${serverPath}`;
+      const previewUrl = buildUrl(serverPath);
       handleChange(index, "video", previewUrl);
       handleChange(index, "videoUrl", serverPath);
       toast.success(t("create.curriculum.video_upload_success"));

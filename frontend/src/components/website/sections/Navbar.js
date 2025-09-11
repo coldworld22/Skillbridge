@@ -25,7 +25,6 @@ import { toast } from "react-toastify";
 
 import useAuthStore from "@/store/auth/authStore";
 import useAdminStore from "@/store/admin/adminStore";
-import { API_BASE_URL } from "@/config/config";
 import useCartStore from "@/store/cart/cartStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -33,6 +32,7 @@ import LinkText from "@/components/shared/LinkText";
 import useAppConfigStore from "@/store/appConfigStore";
 import api from "@/services/api/api";
 import { getCurrencies } from "@/services/currencyService";
+import { buildUrl } from "@/utils/url";
 
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 const currencyFetcher = () => getCurrencies();
@@ -198,8 +198,8 @@ const Navbar = () => {
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "";
-    if (avatar.startsWith("http") || avatar.startsWith("blob:")) return avatar;
-    return `${API_BASE_URL}${avatar}`; // avatar starts with "/uploads/..."
+    if (avatar.startsWith("blob:")) return avatar;
+    return buildUrl(avatar) || "";
   };
 
   return (
@@ -217,7 +217,7 @@ const Navbar = () => {
         <Link href="/">
           <div className="w-14 h-14 rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg bg-gray-800 cursor-pointer overflow-hidden">
             <img
-              src={appSettings.logo_url ? `${API_BASE_URL}${appSettings.logo_url}` : logo.src || logo}
+              src={appSettings.logo_url ? buildUrl(appSettings.logo_url) : logo.src || logo}
               alt={`${appSettings.appName || 'SkillBridge'} Logo`}
               width={45}
               height={45}
@@ -386,7 +386,7 @@ const Navbar = () => {
           <img
             src={
               currentLang?.icon_url
-                ? `${API_BASE_URL}${currentLang.icon_url}`
+                ? buildUrl(currentLang.icon_url)
                 : "/flags/default.png"
             }
             alt={currentLang ? currentLang.name : 'language'}
