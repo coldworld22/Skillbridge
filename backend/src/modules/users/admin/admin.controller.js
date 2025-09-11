@@ -7,6 +7,7 @@ const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 
 
@@ -87,23 +88,7 @@ exports.updateProfile = async (req, res) => {
     });
 
     // 2. Upsert admin profile
-    const profileData = {
-      job_title,
-      department,
-      updated_at: new Date(),
-    };
-
-    const existing = await db("admin_profiles").where({ user_id: userId }).first();
-
-    if (existing) {
-      await db("admin_profiles").where({ user_id: userId }).update(profileData);
-    } else {
-      await db("admin_profiles").insert({
-        user_id: userId,
-        ...profileData,
-        created_at: new Date(),
-      });
-    }
+    await adminService.upsertAdminProfile(db, userId, { job_title, department });
 
     // 3. Replace social links
     await db("user_social_links").where({ user_id: userId }).del();
@@ -176,6 +161,7 @@ exports.updateAvatar = async (req, res) => {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
