@@ -201,7 +201,9 @@ useEffect(() => {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      toast.error(t('avatar_upload_failed'));
+      console.error('Avatar upload error:', error.response);
+      const msg = error.response?.data?.message || t('avatar_upload_failed');
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
