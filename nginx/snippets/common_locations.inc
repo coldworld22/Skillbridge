@@ -79,21 +79,10 @@
   }
 
   location ^~ /uploads/ {
-    # forward upload requests without rewriting the path
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    # Ensure a single Access-Control-Allow-Origin header
-    proxy_hide_header Access-Control-Allow-Origin;
-    if ($allowed_origin != "") {
-      if ($http_origin = $allowed_origin) {
-        add_header Access-Control-Allow-Origin $allowed_origin always;
-      }
-    }
-    add_header Access-Control-Allow-Credentials true always;
-    expires 1h;
-    add_header Cache-Control "public, max-age=3600";
   }
