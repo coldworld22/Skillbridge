@@ -74,6 +74,11 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
+    // Determine if all required fields are present
+    const profileComplete = [full_name, email, phone, job_title, department].every(
+      (field) => typeof field === "string" && field.trim()
+    );
+
     // 1. Update core user fields
     await db("users").where({ id: userId }).update({
       email,
@@ -82,7 +87,7 @@ exports.updateProfile = async (req, res) => {
       gender,
       date_of_birth,
       avatar_url,
-      profile_complete: true,
+      profile_complete: profileComplete,
       updated_at: new Date(),
     });
 
@@ -119,7 +124,12 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    res.json({ message: "Admin profile updated and marked as complete." });
+    res.json({
+      message: profileComplete
+        ? "Admin profile updated and marked as complete."
+        : "Admin profile updated.",
+      profile_complete: profileComplete,
+    });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
@@ -175,7 +185,7 @@ exports.updateAvatar = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No image uploaded" });
   }
-
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
