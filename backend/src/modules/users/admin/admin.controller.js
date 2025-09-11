@@ -207,12 +207,25 @@ exports.uploadIdentityDoc = async (req, res) => {
 
     const filePath = `/uploads/admin/identity/${req.file.filename}`;
 
-    await db("admin_profiles")
+    const existingProfile = await db("admin_profiles")
       .where({ user_id: req.user.id })
-      .update({
+      .first();
+
+    if (existingProfile) {
+      await db("admin_profiles")
+        .where({ user_id: req.user.id })
+        .update({
+          identity_doc_url: filePath,
+          updated_at: new Date(),
+        });
+    } else {
+      await db("admin_profiles").insert({
+        user_id: req.user.id,
         identity_doc_url: filePath,
+        created_at: new Date(),
         updated_at: new Date(),
       });
+    }
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
