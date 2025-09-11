@@ -21,6 +21,7 @@ import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
 import useAppConfigStore from "@/store/appConfigStore";
 import LinkText from "@/components/shared/LinkText";
+import { buildUrl } from "@/utils/url";
 
 export default function Header() {
   const user = useAuthStore((state) => state.user);
@@ -343,10 +344,9 @@ export default function Header() {
             {user?.avatar_url && (
               <img
                 src={
-                  user.avatar_url.startsWith("http") ||
                   user.avatar_url.startsWith("blob:")
                     ? user.avatar_url
-                    : `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+                    : buildUrl(user.avatar_url)
                 }
                 alt="User Avatar"
                 className="w-9 h-9 rounded-full border border-gray-300 shadow object-cover"

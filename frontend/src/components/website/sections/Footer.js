@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import GoogleAd from "@/components/shared/GoogleAd";
-import { API_BASE_URL } from "@/config/config";
 import useAppConfigStore from "@/store/appConfigStore";
 import {
   FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube,
