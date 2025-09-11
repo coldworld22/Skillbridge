@@ -1,5 +1,6 @@
 const logger = require('../../../utils/logger.js');
 const fs = require("fs");
+const path = require("path");
 /**
  * @file admin.controller.js
  */
@@ -7,8 +8,19 @@ const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 
+// Allowed social platforms for links
+const allowedPlatforms = [
+  "linkedin",
+  "github",
+  "twitter",
+  "youtube",
+  "facebook",
+  "instagram",
+  "website",
+];
 
 /**
  * @desc Get full admin profile (user data + admin-specific + social links)
@@ -89,7 +101,6 @@ exports.updateProfile = async (req, res) => {
       social_links.some((link) => link.url?.trim());
 
     const profileComplete = requiredFieldsFilled && hasSocialLinks;
-
     await db.transaction(async (trx) => {
       // 1. Update core user fields
       await trx("users").where({ id: userId }).update({
@@ -158,32 +169,41 @@ exports.resetPasswordAsAdmin = async (req, res) => {
   const { userId } = req.params;
   const { newPassword } = req.body;
 
-  if (!newPassword || newPassword.length < 8) {
-    return res.status(400).json({ message: "New password must be at least 8 characters." });
+  try {
+    if (!newPassword || newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 8 characters." });
+    }
+
+    const user = await db("users").where({ id: userId }).first("id");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+
+    await db("users").where({ id: userId }).update({
+      password_hash: newHash,
+      updated_at: new Date(),
+    });
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "security",
+      message: "Your password was changed by an administrator",
+    });
+
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: userId,
+      message: "Your password was changed by an administrator",
+    });
+
+    res.json({ message: "Password reset by SuperAdmin successfully." });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to reset password", { userId });
   }
-
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
-
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed by an administrator",
-  });
-
-
-  await messageService.createMessage({
-    sender_id: req.user.id,
-    receiver_id: userId,
-    message: "Your password was changed by an administrator",
-  });
-
-
-  res.json({ message: "Password reset by SuperAdmin successfully." });
 };
 
 /**
@@ -192,14 +212,16 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (String(req.params.id) !== String(req.user.id)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
 
   if (!req.file) {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
@@ -208,13 +230,11 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
-
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
-
   }
 };
 
@@ -231,12 +251,25 @@ exports.uploadIdentityDoc = async (req, res) => {
 
     const filePath = `/uploads/admin/identity/${req.file.filename}`;
 
-    await db("admin_profiles")
+    const existingProfile = await db("admin_profiles")
       .where({ user_id: req.user.id })
-      .update({
+      .first();
+
+    if (existingProfile) {
+      await db("admin_profiles")
+        .where({ user_id: req.user.id })
+        .update({
+          identity_doc_url: filePath,
+          updated_at: new Date(),
+        });
+    } else {
+      await db("admin_profiles").insert({
+        user_id: req.user.id,
         identity_doc_url: filePath,
+        created_at: new Date(),
         updated_at: new Date(),
       });
+    }
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
