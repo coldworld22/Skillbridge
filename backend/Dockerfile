@@ -18,4 +18,4 @@ COPY --from=builder /app/knexfile.js ./knexfile.js
 RUN chown -R node:node /app
 EXPOSE 5002
 USER node
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "npx knex migrate:latest && node src/server.js"]

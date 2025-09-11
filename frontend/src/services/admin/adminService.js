@@ -1,5 +1,6 @@
 // 📁 src/services/admin/adminService.js
 import api from "@/services/api/api";
+import { getCsrfToken } from "@/services/api/csrf";
 
 /**
  * 👤 Get current admin profile.
@@ -36,6 +37,8 @@ export const updateAdminProfile = async (profileData) => {
 export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const formData = new FormData();
   formData.append("avatar", avatarFile);
+  const token = getCsrfToken();
+
 
   const res = await api.patch(`/users/admin/${adminId}/avatar`, formData);
   return res.data;
