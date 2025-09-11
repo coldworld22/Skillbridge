@@ -1,4 +1,5 @@
 const logger = require('../../../utils/logger.js');
+const fs = require("fs");
 /**
  * Student controller
  */
@@ -127,8 +128,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
     res.json({ avatar_url: avatarUrl });
   } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
     logger.error(error);
-    res.status(500).json({ message: "Failed to update avatar" });
+    res.status(500).json({ message: "Failed to upload avatar" });
   }
 };
 

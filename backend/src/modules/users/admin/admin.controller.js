@@ -1,4 +1,5 @@
 const logger = require('../../../utils/logger.js');
+const fs = require("fs");
 /**
  * @file admin.controller.js
  */
@@ -167,17 +168,25 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
+
+    const filePath = `/uploads/admin/avatars/${req.file.filename}`;
+
+    await db("users")
+      .where({ id: req.params.id })
+      .update({ avatar_url: filePath, updated_at: new Date() });
+
+    res.json({ message: "Avatar updated", avatar_url: filePath });
+  } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
+    logger.error(error);
+    res.status(500).json({ message: "Failed to upload avatar" });
   }
-
-  const filePath = `/uploads/admin/avatars/${req.file.filename}`;
-
-  await db("users")
-    .where({ id: req.params.id })
-    .update({ avatar_url: filePath, updated_at: new Date() });
-
-  res.json({ message: "Avatar updated", avatar_url: filePath });
 };
 
 /**
