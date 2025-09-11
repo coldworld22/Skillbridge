@@ -9,6 +9,16 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 
+// Allowed social platforms for links
+const allowedPlatforms = [
+  "linkedin",
+  "github",
+  "twitter",
+  "youtube",
+  "facebook",
+  "instagram",
+  "website",
+];
 
 /**
  * @desc Get full admin profile (user data + admin-specific + social links)
@@ -74,50 +84,79 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Update core user fields
-    await db("users").where({ id: userId }).update({
-      email,
-      full_name,
-      phone,
-      gender,
-      date_of_birth,
-      avatar_url,
-      profile_complete: true,
-      updated_at: new Date(),
-    });
-
-    // 2. Upsert admin profile
-    const profileData = {
-      job_title,
-      department,
-      updated_at: new Date(),
-    };
-
-    const existing = await db("admin_profiles").where({ user_id: userId }).first();
-
-    if (existing) {
-      await db("admin_profiles").where({ user_id: userId }).update(profileData);
-    } else {
-      await db("admin_profiles").insert({
-        user_id: userId,
-        ...profileData,
-        created_at: new Date(),
-      });
+    const existingEmail = await db("users")
+      .where({ email })
+      .andWhereNot({ id: userId })
+      .first();
+    if (existingEmail) {
+      return res.status(409).json({ message: "Email already exists" });
     }
 
-    // 3. Replace social links
-    await db("user_social_links").where({ user_id: userId }).del();
+    const sanitizedLinks = Array.isArray(social_links)
+      ? social_links
+          .filter(
+            (link) =>
+              link &&
+              typeof link.url === "string" &&
+              typeof link.platform === "string" &&
+              link.url.trim() &&
+              allowedPlatforms.includes(link.platform.trim().toLowerCase())
+          )
+          .map((link) => {
+            const platform = link.platform.trim().toLowerCase();
+            let url = link.url.trim();
+            if (!/^https?:\/\//i.test(url)) {
+              url = `https://${url}`;
+            }
+            return { platform, url };
+          })
+      : [];
 
-    for (const link of social_links) {
-      if (link.url?.trim()) {
-        await db("user_social_links").insert({
+    await db.transaction(async (trx) => {
+      // 1. Update core user fields
+      await trx("users").where({ id: userId }).update({
+        email,
+        full_name,
+        phone,
+        gender,
+        date_of_birth,
+        avatar_url,
+        profile_complete: true,
+        updated_at: new Date(),
+      });
+
+      // 2. Upsert admin profile
+      const profileData = {
+        job_title,
+        department,
+        updated_at: new Date(),
+      };
+
+      const existing = await trx("admin_profiles")
+        .where({ user_id: userId })
+        .first();
+
+      if (existing) {
+        await trx("admin_profiles").where({ user_id: userId }).update(profileData);
+      } else {
+        await trx("admin_profiles").insert({
           user_id: userId,
-          platform: link.platform,
-          url: link.url.trim(),
+          ...profileData,
           created_at: new Date(),
         });
       }
-    }
+
+      // 3. Replace social links
+      await trx("user_social_links").where({ user_id: userId }).del();
+      for (const link of sanitizedLinks) {
+        await trx("user_social_links").insert({
+          user_id: userId,
+          platform: link.platform,
+          url: link.url,
+          created_at: new Date(),
+        });
+      }
+    });
 
     res.json({ message: "Admin profile updated and marked as complete." });
   } catch (error) {
@@ -168,13 +207,14 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (String(req.params.id) !== String(req.user.id)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
 
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
-  }
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
 
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
@@ -184,13 +224,11 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
-
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
-
   }
 };
 
