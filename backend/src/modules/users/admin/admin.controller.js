@@ -138,28 +138,36 @@ exports.resetPasswordAsAdmin = async (req, res) => {
     return res.status(400).json({ message: "New password must be at least 8 characters." });
   }
 
-  const newHash = await bcrypt.hash(newPassword, 12);
+  try {
+    const user = await db("users").where({ id: userId }).first();
 
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed by an administrator",
-  });
+    const newHash = await bcrypt.hash(newPassword, 12);
 
+    await db("users").where({ id: userId }).update({
+      password_hash: newHash,
+      updated_at: new Date(),
+    });
 
-  await messageService.createMessage({
-    sender_id: req.user.id,
-    receiver_id: userId,
-    message: "Your password was changed by an administrator",
-  });
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "security",
+      message: "Your password was changed by an administrator",
+    });
 
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: userId,
+      message: "Your password was changed by an administrator",
+    });
 
-  res.json({ message: "Password reset by SuperAdmin successfully." });
+    res.json({ message: "Password reset by SuperAdmin successfully." });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to reset password", { userId });
+  }
 };
 
 /**
@@ -176,6 +184,7 @@ exports.updateAvatar = async (req, res) => {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
@@ -184,13 +193,11 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
-
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
-
   }
 };
 
