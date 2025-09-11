@@ -8,6 +8,7 @@ const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const handleControllerError = require("../../../utils/handleControllerError");
+const adminService = require("./admin.service");
 
 
 /**
@@ -168,13 +169,14 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (String(req.params.id) !== String(req.user.id)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
 
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
-  }
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
 
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
@@ -205,18 +207,13 @@ exports.uploadIdentityDoc = async (req, res) => {
       return res.status(400).json({ message: "No identity file uploaded" });
     }
 
-    const filePath = `/uploads/admin/identity/${req.file.filename}`;
+    const identity_doc_url = `/uploads/admin/identity/${req.file.filename}`;
 
-    await db("admin_profiles")
-      .where({ user_id: req.user.id })
-      .update({
-        identity_doc_url: filePath,
-        updated_at: new Date(),
-      });
+    await adminService.updateAdminProfile(req.user.id, { identity_doc_url });
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
-      filePath,
+      identity_doc_url,
     });
   } catch (err) {
     logger.error("Upload error:", err.message);
