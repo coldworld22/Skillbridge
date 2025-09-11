@@ -14,16 +14,26 @@ const fs = require("fs");
  * @access Admin
  */
 
-const baseUploadDir = path.join(__dirname, "../../../../uploads/admin");
-const avatarDir = path.join(__dirname, "../../../../uploads/admin/avatars");
-
+const baseUploadDir = path.resolve(
+  process.env.ADMIN_UPLOAD_DIR || path.join(__dirname, "../../../../uploads/admin")
+);
+const avatarDir = path.join(baseUploadDir, "avatars");
 const identityDir = path.join(baseUploadDir, "identity");
 
 
-// Ensure folders exist
-[avatarDir, identityDir].forEach((dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+// Ensure folders exist and are writable
+try {
+  fs.mkdirSync(baseUploadDir, { recursive: true });
+  fs.accessSync(baseUploadDir, fs.constants.W_OK);
+  [avatarDir, identityDir].forEach((dir) => {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.accessSync(dir, fs.constants.W_OK);
+  });
+} catch (err) {
+  throw new Error(
+    `Failed to initialize admin upload directories at ${baseUploadDir}: ${err.message}`
+  );
+}
 
 // Storage engine
 const storage = multer.diskStorage({
