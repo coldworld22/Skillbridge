@@ -10,7 +10,6 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
-const adminService = require("./admin.service");
 
 // Allowed social platforms for links
 const allowedPlatforms = [
