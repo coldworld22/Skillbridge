@@ -43,8 +43,13 @@ export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const token = getCsrfToken();
   if (token) headers["x-csrf-token"] = token;
 
+  const csrfToken = getCsrfToken();
+
   const res = await api.patch(`/users/admin/${adminId}/avatar`, formData, {
-    headers,
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "x-csrf-token": csrfToken,
+    },
     withCredentials: true, // if using cookies
   });
   return res.data;
