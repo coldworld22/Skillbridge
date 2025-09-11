@@ -10,6 +10,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
+const adminService = require("./admin.service");
 
 // Allowed social platforms for links
 const allowedPlatforms = [
@@ -217,9 +218,9 @@ exports.updateAvatar = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
-  }
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
 
   try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
@@ -249,31 +250,13 @@ exports.uploadIdentityDoc = async (req, res) => {
       return res.status(400).json({ message: "No identity file uploaded" });
     }
 
-    const filePath = `/uploads/admin/identity/${req.file.filename}`;
+    const identity_doc_url = `/uploads/admin/identity/${req.file.filename}`;
 
-    const existingProfile = await db("admin_profiles")
-      .where({ user_id: req.user.id })
-      .first();
-
-    if (existingProfile) {
-      await db("admin_profiles")
-        .where({ user_id: req.user.id })
-        .update({
-          identity_doc_url: filePath,
-          updated_at: new Date(),
-        });
-    } else {
-      await db("admin_profiles").insert({
-        user_id: req.user.id,
-        identity_doc_url: filePath,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
-    }
+    await adminService.updateAdminProfile(req.user.id, { identity_doc_url });
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
-      filePath,
+      identity_doc_url,
     });
   } catch (err) {
     logger.error("Upload error:", err.message);
