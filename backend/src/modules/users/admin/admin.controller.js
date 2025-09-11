@@ -1,5 +1,6 @@
 const logger = require('../../../utils/logger.js');
 const fs = require("fs");
+const path = require("path");
 /**
  * @file admin.controller.js
  */
@@ -7,8 +8,19 @@ const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
 
+// Allowed social platforms for links
+const allowedPlatforms = [
+  "linkedin",
+  "github",
+  "twitter",
+  "youtube",
+  "facebook",
+  "instagram",
+  "website",
+];
 
 /**
  * @desc Get full admin profile (user data + admin-specific + social links)
@@ -74,52 +86,75 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Update core user fields
-    await db("users").where({ id: userId }).update({
-      email,
-      full_name,
-      phone,
-      gender,
-      date_of_birth,
-      avatar_url,
-      profile_complete: true,
-      updated_at: new Date(),
-    });
+    const requiredFieldsFilled =
+      full_name &&
+      email &&
+      phone &&
+      gender &&
+      date_of_birth &&
+      avatar_url &&
+      job_title &&
+      department;
 
-    // 2. Upsert admin profile
-    const profileData = {
-      job_title,
-      department,
-      updated_at: new Date(),
-    };
+    const hasSocialLinks =
+      Array.isArray(social_links) &&
+      social_links.some((link) => link.url?.trim());
 
-    const existing = await db("admin_profiles").where({ user_id: userId }).first();
-
-    if (existing) {
-      await db("admin_profiles").where({ user_id: userId }).update(profileData);
-    } else {
-      await db("admin_profiles").insert({
-        user_id: userId,
-        ...profileData,
-        created_at: new Date(),
+    const profileComplete = requiredFieldsFilled && hasSocialLinks;
+    await db.transaction(async (trx) => {
+      // 1. Update core user fields
+      await trx("users").where({ id: userId }).update({
+        email,
+        full_name,
+        phone,
+        gender,
+        date_of_birth,
+        avatar_url,
+        profile_complete: profileComplete,
+        updated_at: new Date(),
       });
-    }
 
-    // 3. Replace social links
-    await db("user_social_links").where({ user_id: userId }).del();
+      // 2. Upsert admin profile
+      const profileData = {
+        job_title,
+        department,
+        updated_at: new Date(),
+      };
 
-    for (const link of social_links) {
-      if (link.url?.trim()) {
-        await db("user_social_links").insert({
+      const existing = await trx("admin_profiles")
+        .where({ user_id: userId })
+        .first();
+
+      if (existing) {
+        await trx("admin_profiles").where({ user_id: userId }).update(profileData);
+      } else {
+        await trx("admin_profiles").insert({
           user_id: userId,
-          platform: link.platform,
-          url: link.url.trim(),
+          ...profileData,
           created_at: new Date(),
         });
       }
-    }
 
-    res.json({ message: "Admin profile updated and marked as complete." });
+      // 3. Replace social links
+      await trx("user_social_links").where({ user_id: userId }).del();
+
+      for (const link of social_links) {
+        if (link.url?.trim()) {
+          await trx("user_social_links").insert({
+            user_id: userId,
+            platform: link.platform,
+            url: link.url.trim(),
+            created_at: new Date(),
+          });
+        }
+      }
+    });
+
+    res.json({
+      message: profileComplete
+        ? "Admin profile updated and marked as complete."
+        : "Admin profile updated.",
+    });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
@@ -140,6 +175,7 @@ exports.resetPasswordAsAdmin = async (req, res) => {
 
   try {
     const user = await db("users").where({ id: userId }).first();
+
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -176,9 +212,10 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (String(req.params.id) !== String(req.user.id)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
 
   if (!req.file) {
     return res.status(400).json({ message: "No image uploaded" });
@@ -214,12 +251,25 @@ exports.uploadIdentityDoc = async (req, res) => {
 
     const filePath = `/uploads/admin/identity/${req.file.filename}`;
 
-    await db("admin_profiles")
+    const existingProfile = await db("admin_profiles")
       .where({ user_id: req.user.id })
-      .update({
+      .first();
+
+    if (existingProfile) {
+      await db("admin_profiles")
+        .where({ user_id: req.user.id })
+        .update({
+          identity_doc_url: filePath,
+          updated_at: new Date(),
+        });
+    } else {
+      await db("admin_profiles").insert({
+        user_id: req.user.id,
         identity_doc_url: filePath,
+        created_at: new Date(),
         updated_at: new Date(),
       });
+    }
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
