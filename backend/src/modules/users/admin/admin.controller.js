@@ -169,14 +169,14 @@ exports.resetPasswordAsAdmin = async (req, res) => {
   const { userId } = req.params;
   const { newPassword } = req.body;
 
-  try {
-    if (!newPassword || newPassword.length < 8) {
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 8 characters." });
-    }
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ message: "New password must be at least 8 characters." });
+  }
 
-    const user = await db("users").where({ id: userId }).first("id");
+  try {
+    const user = await db("users").where({ id: userId }).first();
+
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
