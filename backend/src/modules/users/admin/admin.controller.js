@@ -86,13 +86,22 @@ exports.updateProfile = async (req, res) => {
   } = req.body;
 
   try {
-    const existingEmail = await db("users")
-      .where({ email })
-      .andWhereNot({ id: userId })
-      .first();
-    if (existingEmail) {
-      return res.status(409).json({ message: "Email already exists" });
-    }
+    // Determine if all required fields are present
+    const profileComplete = [full_name, email, phone, job_title, department].every(
+      (field) => typeof field === "string" && field.trim()
+    );
+
+    // 1. Update core user fields
+    await db("users").where({ id: userId }).update({
+      email,
+      full_name,
+      phone,
+      gender,
+      date_of_birth,
+      avatar_url,
+      profile_complete: profileComplete,
+      updated_at: new Date(),
+    });
 
     const sanitizedLinks = Array.isArray(social_links)
       ? social_links
@@ -160,7 +169,12 @@ exports.updateProfile = async (req, res) => {
       }
     });
 
-    res.json({ message: "Admin profile updated and marked as complete." });
+    res.json({
+      message: profileComplete
+        ? "Admin profile updated and marked as complete."
+        : "Admin profile updated.",
+      profile_complete: profileComplete,
+    });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
@@ -223,12 +237,11 @@ exports.updateAvatar = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "No image uploaded" });
-    }
-
+  if (!req.file) {
+    return res.status(400).json({ message: "No image uploaded" });
+  }
   try {
-    const filePath = path.join('/uploads/admin/avatars', req.file.filename);
+    const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
       .where({ id: req.params.id })
