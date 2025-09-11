@@ -10,6 +10,7 @@ const EnvSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string(),
   SESSION_SECRET: z.string(),
   DATABASE_URL: z.string().url().optional(),
+  PRODUCTION_DATABASE_URL: z.string().url().optional(),
   TEST_DATABASE_URL: z.string().url().optional(),
   REDIS_URL: z.string().url().optional(),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
@@ -24,9 +25,15 @@ if (FRONTEND_URL.startsWith('FRONTEND_URL=')) {
   FRONTEND_URL = FRONTEND_URL.replace(/^FRONTEND_URL=/, '');
 }
 
-const DATABASE_URL = env.NODE_ENV === 'test' ? env.TEST_DATABASE_URL : env.DATABASE_URL;
+const DATABASE_URL =
+  env.NODE_ENV === 'test'
+    ? env.TEST_DATABASE_URL
+    : env.DATABASE_URL || env.PRODUCTION_DATABASE_URL;
 if (!DATABASE_URL) {
-  const key = env.NODE_ENV === 'test' ? 'TEST_DATABASE_URL' : 'DATABASE_URL';
+  const key =
+    env.NODE_ENV === 'test'
+      ? 'TEST_DATABASE_URL'
+      : 'DATABASE_URL or PRODUCTION_DATABASE_URL';
   throw new Error(`${key} is required`);
 }
 
