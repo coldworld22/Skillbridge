@@ -14,9 +14,10 @@ export const getAdminProfile = async () => {
 
 /**
  * ✏️ Update admin profile.
- * 
+ *
  * @param {Object} profileData - Admin profile fields to update
- * @returns {Promise<Object>} Updated profile object
+ * @returns {Promise<Object>} Updated profile including user info,
+ * admin-specific details, and social links
  */
 export const updateAdminProfile = async (profileData) => {
   const res = await api.put("/users/admin/profile", profileData);

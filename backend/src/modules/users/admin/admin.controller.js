@@ -118,8 +118,37 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+    // 4. Return the freshly updated profile details
+    const [user] = await db("users")
+      .where({ id: userId })
+      .select(
+        "id",
+        "full_name",
+        "email",
+        "phone",
+        "gender",
+        "date_of_birth",
+        "avatar_url",
+        "is_email_verified",
+        "is_phone_verified",
+        "profile_complete",
+        "created_at",
+        "updated_at"
+      );
 
-    res.json({ message: "Admin profile updated and marked as complete." });
+    const [adminProfile] = await db("admin_profiles")
+      .where({ user_id: userId })
+      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
+
+    const socialLinks = await db("user_social_links")
+      .where({ user_id: userId })
+      .select("platform", "url");
+
+    res.json({
+      ...user,
+      ...adminProfile,
+      social_links: socialLinks,
+    });
   } catch (error) {
     handleControllerError(res, error, "Unable to update profile", { userId });
   }

@@ -32,10 +32,10 @@ const useAdminStore = create(
         try {
           const data = await updateAdminProfile(profileData);
           set({ profile: data, isLoading: false });
-          return true;
+          return data;
         } catch (err) {
           set({ error: err.message, isLoading: false });
-          return false;
+          return null;
         }
       },
 
