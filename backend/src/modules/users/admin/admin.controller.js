@@ -115,20 +115,22 @@ exports.updateProfile = async (req, res) => {
         user_id: userId,
         ...profileData,
         created_at: new Date(),
-
       });
+    }
 
     // 3. Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
 
     for (const link of social_links) {
-      if (link.url?.trim()) {
+      if (link.url?.trim() && allowedPlatforms.includes(link.platform)) {
         await trx("user_social_links").insert({
           user_id: userId,
-          ...profileData,
+          platform: link.platform,
+          url: link.url,
           created_at: new Date(),
         });
       }
+    }
     await trx.commit();
     res.json({ message: "Admin profile updated and marked as complete." });
   } catch (error) {
@@ -198,7 +200,6 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
-  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
