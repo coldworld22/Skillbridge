@@ -168,10 +168,13 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No image uploaded" });
-    }
+  if (String(req.params.id) !== String(req.user.id)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ message: "No image uploaded" });
+  }
 
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
