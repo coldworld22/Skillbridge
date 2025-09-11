@@ -156,8 +156,10 @@ export default function StudentProfileEdit() {
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
       toast.success("Avatar uploaded successfully!");
-    } catch (err) {
-      toast.error("Failed to upload avatar");
+    } catch (error) {
+      console.error('Avatar upload error:', error.response);
+      const msg = error.response?.data?.message || 'Failed to upload avatar';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
