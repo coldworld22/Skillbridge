@@ -1,5 +1,6 @@
 const logger = require('../../../utils/logger.js');
 const fs = require("fs");
+const path = require("path");
 /**
  * @file admin.controller.js
  */
@@ -7,8 +8,20 @@ const db = require("../../../config/database");
 const bcrypt = require("bcrypt");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
+const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
+const adminService = require("./admin.service");
 
+// Allowed social platforms for links
+const allowedPlatforms = [
+  "linkedin",
+  "github",
+  "twitter",
+  "youtube",
+  "facebook",
+  "instagram",
+  "website",
+];
 
 /**
  * @desc Get full admin profile (user data + admin-specific + social links)
@@ -103,8 +116,8 @@ exports.updateProfile = async (req, res) => {
         user_id: userId,
         ...profileData,
         created_at: new Date(),
+
       });
-    }
 
     // 3. Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
@@ -113,13 +126,10 @@ exports.updateProfile = async (req, res) => {
       if (link.url?.trim()) {
         await trx("user_social_links").insert({
           user_id: userId,
-          platform: link.platform,
-          url: link.url.trim(),
+          ...profileData,
           created_at: new Date(),
         });
       }
-    }
-
     await trx.commit();
     res.json({ message: "Admin profile updated and marked as complete." });
   } catch (error) {
@@ -141,28 +151,37 @@ exports.resetPasswordAsAdmin = async (req, res) => {
     return res.status(400).json({ message: "New password must be at least 8 characters." });
   }
 
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
-
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed by an administrator",
-  });
+  try {
+    const user = await db("users").where({ id: userId }).first();
 
 
-  await messageService.createMessage({
-    sender_id: req.user.id,
-    receiver_id: userId,
-    message: "Your password was changed by an administrator",
-  });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
+    const newHash = await bcrypt.hash(newPassword, 12);
 
-  res.json({ message: "Password reset by SuperAdmin successfully." });
+    await db("users").where({ id: userId }).update({
+      password_hash: newHash,
+      updated_at: new Date(),
+    });
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "security",
+      message: "Your password was changed by an administrator",
+    });
+
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: userId,
+      message: "Your password was changed by an administrator",
+    });
+
+    res.json({ message: "Password reset by SuperAdmin successfully." });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to reset password", { userId });
+  }
 };
 
 /**
@@ -171,13 +190,14 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (String(req.params.id) !== String(req.user.id)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
 
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
-  }
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
 
   try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
@@ -207,18 +227,13 @@ exports.uploadIdentityDoc = async (req, res) => {
       return res.status(400).json({ message: "No identity file uploaded" });
     }
 
-    const filePath = `/uploads/admin/identity/${req.file.filename}`;
+    const identity_doc_url = `/uploads/admin/identity/${req.file.filename}`;
 
-    await db("admin_profiles")
-      .where({ user_id: req.user.id })
-      .update({
-        identity_doc_url: filePath,
-        updated_at: new Date(),
-      });
+    await adminService.updateAdminProfile(req.user.id, { identity_doc_url });
 
     res.status(200).json({
       message: "Identity document uploaded successfully",
-      filePath,
+      identity_doc_url,
     });
   } catch (err) {
     logger.error("Upload error:", err.message);
