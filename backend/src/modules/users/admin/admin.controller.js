@@ -167,17 +167,22 @@ exports.resetPasswordAsAdmin = async (req, res) => {
  * @access Admin
  */
 exports.updateAvatar = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No image uploaded" });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
+
+    const filePath = `/uploads/admin/avatars/${req.file.filename}`;
+
+    await db("users")
+      .where({ id: req.params.id })
+      .update({ avatar_url: filePath, updated_at: new Date() });
+
+    res.json({ message: "Avatar updated", avatar_url: filePath });
+  } catch (error) {
+    logger.error("Error updating avatar:", error);
+    res.status(500).json({ message: "Failed to update avatar" });
   }
-
-  const filePath = `/uploads/admin/avatars/${req.file.filename}`;
-
-  await db("users")
-    .where({ id: req.params.id })
-    .update({ avatar_url: filePath, updated_at: new Date() });
-
-  res.json({ message: "Avatar updated", avatar_url: filePath });
 };
 
 /**
