@@ -1,5 +1,6 @@
 const logger = require('../../../utils/logger.js');
 const fs = require("fs");
+const path = require("path");
 /**
  * @file admin.controller.js
  */
@@ -176,7 +177,8 @@ exports.updateAvatar = async (req, res) => {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
-    const filePath = `/uploads/admin/avatars/${req.file.filename}`;
+  try {
+    const filePath = path.join('/uploads/admin/avatars', req.file.filename);
 
     await db("users")
       .where({ id: req.params.id })
@@ -184,13 +186,11 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
-
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
-
   }
 };
 
