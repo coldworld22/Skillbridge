@@ -181,11 +181,13 @@ exports.updateAvatar = async (req, res) => {
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
   } catch (error) {
+
     if (req.file) {
       fs.unlink(req.file.path, (err) => err && logger.error(err));
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
+
   }
 };
 
