@@ -176,6 +176,7 @@ exports.updateAvatar = async (req, res) => {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
+  try {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
