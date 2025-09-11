@@ -20,6 +20,7 @@ const exemptPaths = [
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
   '/api/auth/reset-password',
+  '/api/auth/refresh',
 ];
 
 module.exports = [
