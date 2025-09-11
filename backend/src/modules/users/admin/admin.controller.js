@@ -134,32 +134,41 @@ exports.resetPasswordAsAdmin = async (req, res) => {
   const { userId } = req.params;
   const { newPassword } = req.body;
 
-  if (!newPassword || newPassword.length < 8) {
-    return res.status(400).json({ message: "New password must be at least 8 characters." });
+  try {
+    if (!newPassword || newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 8 characters." });
+    }
+
+    const user = await db("users").where({ id: userId }).first("id");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+
+    await db("users").where({ id: userId }).update({
+      password_hash: newHash,
+      updated_at: new Date(),
+    });
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "security",
+      message: "Your password was changed by an administrator",
+    });
+
+    await messageService.createMessage({
+      sender_id: req.user.id,
+      receiver_id: userId,
+      message: "Your password was changed by an administrator",
+    });
+
+    res.json({ message: "Password reset by SuperAdmin successfully." });
+  } catch (error) {
+    handleControllerError(res, error, "Unable to reset password", { userId });
   }
-
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
-
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed by an administrator",
-  });
-
-
-  await messageService.createMessage({
-    sender_id: req.user.id,
-    receiver_id: userId,
-    message: "Your password was changed by an administrator",
-  });
-
-
-  res.json({ message: "Password reset by SuperAdmin successfully." });
 };
 
 /**
