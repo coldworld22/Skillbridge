@@ -1,6 +1,6 @@
 // 📁 src/services/admin/adminService.js
 import api from "@/services/api/api";
-import { getCsrfToken } from "@/services/api/csrf";
+import { ensureCsrfToken } from "@/services/api/csrf";
 
 /**
  * 👤 Get current admin profile.
@@ -37,7 +37,12 @@ export const updateAdminProfile = async (profileData) => {
 export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const formData = new FormData();
   formData.append("avatar", avatarFile);
-  const csrfToken = getCsrfToken();
+  const headers = { "Content-Type": "multipart/form-data" };
+
+  // Ensure a CSRF token is present. If the cookie hasn't been set yet,
+  // trigger a lightweight GET request to acquire one before proceeding.
+  const csrfToken = await ensureCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
 
   const res = await api.patch(`/users/admin/${adminId}/avatar`, formData, {
     headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
