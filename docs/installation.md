@@ -60,6 +60,17 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
 NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 ```
 
+### Installation API
+
+The backend exposes protected setup endpoints at `/api/install` for automated deployments. They are disabled by default and can be enabled by adding `INSTALL_API_ENABLED=true` to `backend/.env`:
+
+```
+# backend/.env
+INSTALL_API_ENABLED=true
+```
+
+All `/api/install` requests must be authenticated with an administrator token.
+
 ### Initial admin passwords
 
 Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in
@@ -129,6 +140,34 @@ The containers expose the following URLs:
 
 Once running, open the frontend URL in your browser and create an account or log
 in.
+
+### Web-based installer (optional)
+
+The backend ships with a small web-based installer. To use it:
+
+1. In `backend/.env`, set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true`.
+2. Configure Nginx to proxy the installer route to the backend:
+
+```nginx
+location ^~ /install/ {
+  proxy_pass http://backend:5002;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+3. Rebuild and start the containers if they are running.
+4. Log in with an administrator account.
+5. Visit `http://localhost:5002/install` (or your domain's `/install`) and verify the page lists the prerequisite checks.
+
+Common problems:
+
+- **404 Not Found** – the Nginx block is missing or `ENABLE_INSTALL` is false.
+- **Installation via API is disabled** – `INSTALL_API_ENABLED` is not set to `true`.
+- **Unauthorized** – you must be logged in as an admin before visiting `/install`.
 
 ## 6. Running tests
 

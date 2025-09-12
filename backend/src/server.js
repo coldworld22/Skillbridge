@@ -187,6 +187,17 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use("/install", (req, res, next) => {
+  if (!config.ENABLE_INSTALL) {
+    return res
+      .status(410)
+      .send(
+        'The web installer has been disabled. See the <a href="https://github.com/eduskillbridge/SkillBridge/blob/main/docs/installation.md">installation guide</a>.'
+      );
+  }
+  return next();
+});
+
 if (config.ENABLE_INSTALL) {
   const installerPath = path.join(__dirname, "../../install");
   app.use(
@@ -197,6 +208,11 @@ if (config.ENABLE_INSTALL) {
 
 // ─── Routes ───
 app.use(routes);
+if (!config.ENABLE_INSTALL) {
+  app.get('/install', (req, res) => {
+    res.status(403).send('Installer disabled – set ENABLE_INSTALL=true to enable');
+  });
+}
 app.use(require("./middleware/errorHandler"));
 const PORT = config.PORT;
 

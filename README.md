@@ -24,8 +24,25 @@ curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/inst
 The script validates prerequisites, copies example env files, builds and starts the Docker containers, and can seed the database for development setups when `SEED_DB=true`. After it completes, the app is available at `http://localhost:3000`.
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
+## Installer
+Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. The installer is disabled by default; enable it by setting `ENABLE_INSTALL=true` **and** `INSTALL_API_ENABLED=true` in the backend environment and adding an Nginx proxy block that forwards `/install` to the backend:
 
-Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. This route is disabled by default; set `ENABLE_INSTALL=true` in the backend environment to expose it.
+```nginx
+location ^~ /install/ {
+  proxy_pass http://backend:5002;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Because the API requires authentication, an administrator must be logged in before visiting `/install`. After logging in, open `/install` and verify the page loads and displays the prerequisite checks. Common issues include:
+
+- **404 Not Found** – verify the Nginx block is present and `ENABLE_INSTALL` is true.
+- **Installation via API is disabled** – ensure `INSTALL_API_ENABLED=true`.
+- **Unauthorized** – log in with an admin account before accessing `/install`.
 
 ## Quick start
 

@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const {
+  requireInstallApiEnabled,
+  router: installRouter,
+} = require('../modules/install/install.routes');
 
 router.use('/api/health', require('./health.routes'));
 // grouped routers
@@ -54,9 +58,7 @@ router.use('/api/search', require('../modules/search/search.routes'));
 // Installation routes are disabled by default for security reasons.
 // They can be enabled explicitly via the INSTALL_API_ENABLED environment variable
 // set to the string "true" (case-insensitive).
-if (process.env.INSTALL_API_ENABLED?.toLowerCase() === 'true') {
-  router.use('/api/install', require('../modules/install/install.routes'));
-}
+router.use('/api/install', requireInstallApiEnabled, installRouter);
 router.use('/api/users/classes/lessons', require('./lesson.routes'));
 router.use('/api/video-calls', require('./videoCalls.routes'));
 
