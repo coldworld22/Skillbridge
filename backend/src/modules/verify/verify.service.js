@@ -62,7 +62,7 @@ exports.verifyOtp = async (userId, type, code) => {
     .andWhere("expires_at", ">", new Date())
     .first();
 
-  if (!record) throw new Error("Invalid or expired OTP");
+  if (!record) throw new AppError("Invalid or expired OTP", 400);
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
