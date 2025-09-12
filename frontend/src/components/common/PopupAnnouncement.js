@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import DOMPurify from "isomorphic-dompurify";
 import api from "@/services/api/api";
 import useAuthStore from "@/store/auth/authStore";
 
@@ -59,7 +60,9 @@ export default function PopupAnnouncement() {
     <div className={`fixed z-50 ${positionClass} transform`}> 
       <div className={`p-4 rounded shadow ${themeClass}`}> 
         {popup.title && <h3 className="font-bold mb-2">{popup.title}</h3>}
-        <div dangerouslySetInnerHTML={{ __html: popup.message }} />
+        <div
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(popup.message) }}
+        />
       </div>
     </div>
   );
