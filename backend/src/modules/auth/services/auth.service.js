@@ -19,13 +19,16 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
+const {
+  REFRESH_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_MAX_AGE,
+} = require("../../../config/tokens");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
 // ─────────────────────────────────────────────────────────────
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "60m";
-const REFRESH_EXPIRES_IN = "30d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
@@ -237,7 +240,7 @@ function generateRefreshToken(payload, jti) {
     throw new AppError("REFRESH_TOKEN_SECRET not configured", 500);
   }
   return jwt.sign({ ...payload, jti }, REFRESH_TOKEN_SECRET, {
-    expiresIn: REFRESH_EXPIRES_IN,
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   });
 }
 
@@ -245,7 +248,7 @@ async function issueRefreshToken(userId, role) {
   const jti = uuidv4();
   const token = generateRefreshToken({ id: userId, role }, jti);
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await db("refresh_tokens").insert({
     id: jti,
     user_id: userId,
