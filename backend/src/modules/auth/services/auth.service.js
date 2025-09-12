@@ -289,10 +289,14 @@ exports.loginUser = async ({ email, password, ip }) => {
   }
 
   // Mark user as online on successful login
-  await userModel.updateUser(user.id, {
-    is_online: true,
-    updated_at: new Date(),
-  });
+  try {
+    await userModel.updateUser(user.id, {
+      is_online: true,
+      updated_at: new Date(),
+    });
+  } catch (err) {
+    logger.error("Failed to update user online status", err);
+  }
   user.is_online = true;
 
   const roles = await userModel.getUserRoles(user.id);
@@ -305,11 +309,15 @@ exports.loginUser = async ({ email, password, ip }) => {
   });
   const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
-  await notificationService.createNotification({
-    user_id: user.id,
-    type: "login",
-    message: "You have logged in successfully",
-  });
+  try {
+    await notificationService.createNotification({
+      user_id: user.id,
+      type: "login",
+      message: "You have logged in successfully",
+    });
+  } catch (err) {
+    logger.error("Failed to create login notification", err);
+  }
   const safeUser = sanitizeUserUtil(user);
   return { accessToken, refreshToken, user: { ...safeUser, roles, permissions } };
 };
@@ -575,4 +583,15 @@ exports.sendVerificationOtp = async ({ user_id, type }) => {
  */
 exports.confirmVerificationOtp = async ({ user_id, type, code }) => {
   await verificationService.verifyOtp(user_id, type, code);
+
+  // After verification, check if both email and phone are verified
+  // and activate the user if not already active.
+  const user = await userModel.findById(user_id);
+  if (
+    user.is_email_verified &&
+    user.is_phone_verified &&
+    user.status !== "active"
+  ) {
+    await userModel.updateUser(user_id, { status: "active" });
+  }
 };

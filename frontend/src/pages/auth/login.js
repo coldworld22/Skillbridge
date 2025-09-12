@@ -130,6 +130,15 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
 
     if (msg === "Invalid credentials") {
       msg = t("invalid_credentials");
+    } else if (msg === "Account is not active") {
+      msg = t("account_not_active");
+    }
+
+    if (
+      msg ===
+      "Account pending activation. Please verify your email or contact support."
+    ) {
+      msg = t("account_pending_activation");
     }
 
     if (err.code === "ERR_NETWORK") {
