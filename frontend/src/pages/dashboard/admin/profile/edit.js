@@ -23,6 +23,7 @@ import {
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useAuthStore from "@/store/auth/authStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useHydratedUser from "@/hooks/useHydratedUser";
 import {
   getAdminProfile,
   updateAdminProfile,
@@ -52,7 +53,8 @@ const profileSchema = z.object({
 function ProfileEditTemplate() {
   const router = useRouter();
   const { t, i18n } = useTranslation('dashboard', { keyPrefix: 'adminProfilePage' });
-  const { user, hasHydrated, setUser } = useAuthStore();
+  const { user, hasHydrated } = useHydratedUser();
+  const setUser = useAuthStore((s) => s.setUser);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -77,21 +79,6 @@ function ProfileEditTemplate() {
   const [tempFileName, setTempFileName] = useState("");
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const fetchMessages = useMessageStore((state) => state.fetch);
-
-useEffect(() => {
-  const local = localStorage.getItem("auth");
-  let parsed;
-  if (local) {
-    try {
-      parsed = JSON.parse(local)?.state;
-    } catch (error) {
-      console.error("Failed to parse auth from localStorage", error);
-    }
-  }
-  if (hasHydrated && !user && parsed?.user) {
-    setUser(parsed.user);
-  }
-}, [hasHydrated]);
 
   useEffect(() => {
     if (!hasHydrated) return;

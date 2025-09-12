@@ -16,6 +16,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
+import useHydratedUser from "@/hooks/useHydratedUser";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -42,9 +43,11 @@ const studentProfileSchema = z.object({
 
 export default function StudentProfileEdit() {
   const router = useRouter();
-  const { user, logout, hasHydrated, setUser } = useAuthStore();
+  const logout = useAuthStore((s) => s.logout);
+  const setUser = useAuthStore((s) => s.setUser);
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
+  const { user, hasHydrated } = useHydratedUser();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expanded, setExpanded] = useState({
@@ -70,14 +73,6 @@ export default function StudentProfileEdit() {
   });
   const [errors, setErrors] = useState({});
 
-
-  useEffect(() => {
-    const local = localStorage.getItem("auth");
-    const parsed = JSON.parse(local)?.state;
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
 
   useEffect(() => {
     if (!user) {

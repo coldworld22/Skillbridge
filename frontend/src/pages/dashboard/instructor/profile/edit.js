@@ -25,6 +25,7 @@ import {
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import useHydratedUser from "@/hooks/useHydratedUser";
 import {
   FaUpload,
   FaTrash,
@@ -95,7 +96,7 @@ const socialPlatforms = [
 export default function InstructorProfileEdit() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorProfilePage' });
-  const { user, hasHydrated } = useAuthStore();
+  const { user, hasHydrated } = useHydratedUser();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const [formData, setFormData] = useState({

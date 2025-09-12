@@ -10,6 +10,7 @@ import "react-phone-input-2/lib/style.css";     // ✅ Phone input styles
 import "@/styles/globals.css";
 import "@/services/api/tokenInterceptor";
 import useAuthStore from "@/store/auth/authStore";
+import useHydratedUser from "@/hooks/useHydratedUser";
 import useAppConfigStore from "@/store/appConfigStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -74,20 +75,7 @@ function MyApp({ Component, pageProps, router }) {
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
   const [gaId, setGaId] = useState(null);
-
-  useEffect(() => {
-    const local = localStorage.getItem("auth");
-    if (local) {
-      const parsed = JSON.parse(local)?.state;
-      if (parsed?.user) {
-        useAuthStore.setState({
-          user: parsed.user,
-          accessToken: parsed.accessToken,
-          hasHydrated: true, // ✅ manually set hydration flag
-        });
-      }
-    }
-  }, []);
+  useHydratedUser();
 
   useEffect(() => {
     if (router.pathname.startsWith('/auth')) return;
