@@ -20,7 +20,8 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const { 
+const { addToken: addTokenToBlacklist } = require("../../../services/tokenBlacklistService");
+const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
