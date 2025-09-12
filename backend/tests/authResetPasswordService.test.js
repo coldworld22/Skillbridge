@@ -13,11 +13,23 @@ jest.mock('../src/config/database', () => {
     }),
   };
 
+  const refreshTokensWhere = { del: jest.fn().mockResolvedValue() };
+  const refreshTokensTable = {
+    where: jest.fn().mockReturnValue(refreshTokensWhere),
+  };
+
   const db = jest.fn((table) => {
     if (table === 'password_resets') return passwordResetsTable;
     if (table === 'users') return usersTable;
+    if (table === 'refresh_tokens') return refreshTokensTable;
     return {};
   });
+  db.__tables = {
+    passwordResetsTable,
+    usersTable,
+    refreshTokensTable,
+    refreshTokensWhere,
+  };
 
   return db;
 });
@@ -51,6 +63,7 @@ const { sendPasswordChangeEmail } = require('../src/utils/email');
 const notificationService = require('../src/modules/notifications/notifications.service');
 const messageService = require('../src/modules/messages/messages.service');
 const bcrypt = require('bcrypt');
+const db = require('../src/config/database');
 
 describe('resetPassword service', () => {
   beforeEach(() => {
@@ -80,5 +93,9 @@ describe('resetPassword service', () => {
       message: 'Your password was changed successfully',
     });
     expect(messageService.createMessage).not.toHaveBeenCalled();
+    const { refreshTokensTable, refreshTokensWhere } = db.__tables;
+    // Ensure refresh tokens were revoked
+    expect(refreshTokensTable.where).toHaveBeenCalledWith({ user_id: 1 });
+    expect(refreshTokensWhere.del).toHaveBeenCalled();
   });
 });

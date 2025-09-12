@@ -20,11 +20,11 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const redisClient = require("../../../utils/redisClient");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -37,6 +37,7 @@ const OTP_EXPIRY_MINUTES = 15;
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
+const OTP_ATTEMPT_PREFIX = "failedOtp:";
 
 function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
@@ -56,6 +57,27 @@ async function recordFailedAttempt(email, ip) {
     await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
   } catch (err) {
     logger.error("Failed to record login attempt", err);
+  }
+}
+
+function getOtpAttemptKey(email) {
+  return `${OTP_ATTEMPT_PREFIX}${email}`;
+}
+
+async function recordFailedOtpAttempt(email) {
+  if (!redisClient) return;
+  const key = getOtpAttemptKey(email);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + LOCK_TIME;
+    }
+    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record OTP attempt", err);
   }
 }
 
@@ -192,7 +214,7 @@ exports.loginUser = async ({ email, password, ip }) => {
   if (!user) {
     // Perform a dummy hash to mitigate timing attacks when the user is missing
     await bcrypt.hash(password, SALT_ROUNDS);
-    recordFailedAttempt(email);
+    recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
@@ -371,6 +393,22 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(email));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError(
+      "Too many invalid OTP attempts. Try again later.",
+      429
+    );
+  }
+
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
@@ -380,20 +418,34 @@ exports.verifyOtp = async ({ email, code }) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new AppError("Invalid or expired OTP", 400);
+  if (!record) {
+    await recordFailedOtpAttempt(email);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, record.code_hash);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(email);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
+
+  if (redisClient) {
+    try {
+      await redisClient.del(getOtpAttemptKey(email));
+    } catch (err) {
+      logger.error("Failed to clear OTP attempts", err);
+    }
+  }
 
   return true;
 };
 
 /**
  * Reset a user's password using a valid OTP code.
- * @param {{email:string, code:string, new_password:string}} data
+ * @param {{email:string, code:string, new_password:string, accessToken?:string}} data
  * @returns {Promise<void>}
  */
-exports.resetPassword = async ({ email, code, new_password }) => {
+exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
@@ -417,6 +469,18 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  // Revoke all refresh tokens for this user
+  await db("refresh_tokens").where({ user_id: user.id }).del();
+
+  // Optionally blacklist the provided access token
+  if (accessToken) {
+    try {
+      await addTokenToBlacklist(accessToken);
+    } catch (err) {
+      logger.error("Failed to blacklist access token", err);
+    }
+  }
 
   await sendPasswordChangeEmail(user.email);
 

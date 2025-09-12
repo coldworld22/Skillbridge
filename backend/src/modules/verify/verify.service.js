@@ -53,10 +53,26 @@ exports.sendOtp = async (userId, type) => {
     }
   }
 
-  return { code };
+  return { alreadyVerified: false };
 };
 
 exports.verifyOtp = async (userId, type, code) => {
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getAttemptKey(userId, type));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError(
+      "Too many invalid OTP attempts. Try again later.",
+      429
+    );
+  }
+
   const user = await db("users").where({ id: userId }).first();
   const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
 
@@ -70,7 +86,7 @@ exports.verifyOtp = async (userId, type, code) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new Error("Invalid or expired OTP");
+  if (!record) throw new AppError("Invalid or expired OTP", 400);
 
   const match = await bcrypt.compare(code, record.code);
   if (!match) throw new Error("Invalid or expired OTP");
@@ -78,6 +94,14 @@ exports.verifyOtp = async (userId, type, code) => {
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
   await db("users").where({ id: userId }).update({ [updateField]: true });
+
+  if (redisClient) {
+    try {
+      await redisClient.del(getAttemptKey(userId, type));
+    } catch (err) {
+      logger.error("Failed to clear OTP attempts", err);
+    }
+  }
 
   const userAfter = await db("users").where({ id: userId }).first();
   if (
