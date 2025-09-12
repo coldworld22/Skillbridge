@@ -265,6 +265,12 @@ exports.loginUser = async ({ email, password, ip }) => {
   }
 
   if (user.status !== "active") {
+    if (user.status === "pending") {
+      throw new AppError(
+        "Account pending verification. Please verify your email and phone.",
+        403
+      );
+    }
     throw new AppError("Account is not active", 403);
   }
 

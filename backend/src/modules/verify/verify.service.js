@@ -114,6 +114,9 @@ exports.verifyOtp = async (userId, type, code) => {
     userAfter.is_phone_verified &&
     userAfter.profile_complete
   ) {
+    if (userAfter.status !== "active") {
+      await db("users").where({ id: userId }).update({ status: "active" });
+    }
     await notificationService.createNotification({
       user_id: userId,
       type: "profile",
