@@ -182,6 +182,8 @@ exports.loginUser = async ({ email, password }) => {
 
   const user = await userModel.findByEmail(email);
   if (!user) {
+    // Perform a dummy hash to mitigate timing attacks when the user is missing
+    await bcrypt.hash(password, SALT_ROUNDS);
     recordFailedAttempt(email);
     throw new AppError("Invalid credentials", 401);
   }
