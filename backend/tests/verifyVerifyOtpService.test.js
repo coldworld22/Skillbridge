@@ -50,7 +50,8 @@ jest.mock('../src/config/database', () => {
   const verificationsQuery = {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
-    first: jest.fn().mockResolvedValue(null),
+    orderBy: jest.fn().mockReturnThis(),
+    first: jest.fn(),
     update: jest.fn().mockResolvedValue(1),
   };
   const mockDb = jest.fn((table) => {
@@ -62,19 +63,44 @@ jest.mock('../src/config/database', () => {
     };
   });
   mockDb.raw = jest.fn();
+  mockDb.__usersQuery = usersQuery;
+  mockDb.__verificationsQuery = verificationsQuery;
   return mockDb;
 });
 
 const service = require('../src/modules/verify/verify.service');
 const redisClient = require('../src/utils/redisClient');
+const db = require('../src/config/database');
+const bcrypt = require('bcrypt');
 
-describe('verify.service.verifyOtp lockout', () => {
+describe('verify.service.verifyOtp', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.keys(redisClient.__store).forEach((k) => delete redisClient.__store[k]);
+    db.__verificationsQuery.first.mockReset();
+  });
+
+  it('clears attempts on successful verification', async () => {
+    const hashed = await bcrypt.hash('123456', 12);
+    db.__verificationsQuery.first.mockResolvedValue({
+      id: 'v1',
+      user_id: 1,
+      type: 'email',
+      code: hashed,
+      expires_at: new Date(Date.now() + 60000),
+      verified: false,
+    });
+
+    const attemptKey = 'otpAttempt:1:email';
+    redisClient.__store[attemptKey] = JSON.stringify({ count: 1, lockUntil: null });
+
+    const result = await service.verifyOtp(1, 'email', '123456');
+    expect(result).toEqual({ alreadyVerified: false });
+    expect(redisClient.del).toHaveBeenCalledWith(attemptKey);
   });
 
   it('locks after too many invalid attempts', async () => {
+    db.__verificationsQuery.first.mockResolvedValue(null);
     for (let i = 0; i < 5; i++) {
       await expect(service.verifyOtp(1, 'email', '000000')).rejects.toThrow(
         'Invalid or expired OTP'
