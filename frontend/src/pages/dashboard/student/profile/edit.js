@@ -129,6 +129,14 @@ export default function StudentProfileEdit() {
     loadProfile();
   }, [user, router]);
 
+  useEffect(() => {
+    return () => {
+      if (formData.identityPreview) {
+        URL.revokeObjectURL(formData.identityPreview);
+      }
+    };
+  }, [formData.identityPreview]);
+
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
   const handleInputChange = (e) => {
@@ -186,11 +194,16 @@ export default function StudentProfileEdit() {
     try {
       setIsSubmitting(true);
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file)
+        };
+      });
       toast.success("Identity document uploaded successfully!");
     } catch (err) {
       toast.error("Failed to upload identity document");
@@ -200,7 +213,12 @@ export default function StudentProfileEdit() {
   };
 
   const removeIdentity = () => {
-    setFormData(prev => ({ ...prev, identityFile: null, identityPreview: null }));
+    setFormData(prev => {
+      if (prev.identityPreview) {
+        URL.revokeObjectURL(prev.identityPreview);
+      }
+      return { ...prev, identityFile: null, identityPreview: null };
+    });
   };
 
   const validateForm = () => {
