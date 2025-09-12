@@ -31,13 +31,6 @@ import {
   FaSpinner,
   FaUserCircle,
   FaVideo,
-  FaLinkedin,
-  FaGithub,
-  FaGlobe,
-  FaTwitter,
-  FaYoutube,
-  FaFacebook,
-  FaInstagram,
   FaDollarSign,
   FaCertificate,
   FaBriefcase,
@@ -50,6 +43,7 @@ import {
   FaFileImage,
   FaCheck,
 } from "react-icons/fa";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
@@ -79,16 +73,6 @@ const instructorProfileSchema = z.object({
     .record(z.string())
     .optional(),
 });
-
-const socialPlatforms = [
-  { name: "linkedin", icon: <FaLinkedin className="text-blue-600" /> },
-  { name: "github", icon: <FaGithub className="text-gray-800" /> },
-  { name: "twitter", icon: <FaTwitter className="text-blue-400" /> },
-  { name: "youtube", icon: <FaYoutube className="text-red-600" /> },
-  { name: "facebook", icon: <FaFacebook className="text-blue-700" /> },
-  { name: "instagram", icon: <FaInstagram className="text-pink-600" /> },
-  { name: "website", icon: <FaGlobe className="text-green-600" /> },
-];
 
 // Currency options will be loaded from the backend configuration
 
@@ -164,8 +148,10 @@ export default function InstructorProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, instructor, social_links, certificates } = res;
 
         const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        social_links?.forEach((link) => {
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         // Split pricing if it exists in format "100 USD"
@@ -348,7 +334,9 @@ export default function InstructorProfileEdit() {
           : "";
 
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
+        .filter(([platform, url]) =>
+          allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
         .map(([platform, url]) => ({ platform, url }));
 
       await updateInstructorProfile({
@@ -891,20 +879,26 @@ export default function InstructorProfileEdit() {
           <div>
             <label className="block text-sm font-medium mb-2">{t('social_links')}</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {socialPlatforms.map((platform) => (
-                <div key={platform.name} className="bg-gray-50 p-3 rounded-lg">
+              {allowedPlatforms.map(({ name, Icon, className }) => (
+                <div key={name} className="bg-gray-50 p-3 rounded-lg">
                   <label className="text-sm flex items-center gap-2 font-medium mb-1">
-                    {platform.icon} {platform.name.charAt(0).toUpperCase() + platform.name.slice(1)}
+                    <Icon className={className} /> {name.charAt(0).toUpperCase() + name.slice(1)}
                   </label>
                   <input
                     type="text"
-                    name={platform.name}
-                    value={formData.socialLinks[platform.name] || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, [platform.name]: e.target.value },
-                    }))}
-                    placeholder={`https://${platform.name}.com/yourprofile`}
+                    name={name}
+                    value={formData.socialLinks[name] || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, [name]: e.target.value },
+                      }))
+                    }
+                    placeholder={
+                      name === 'website'
+                        ? 'https://yourwebsite.com'
+                        : `https://${name}.com/yourprofile`
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   />
                 </div>

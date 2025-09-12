@@ -18,9 +18,10 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
+  FaUserCircle, FaIdCard, FaGlobe,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -98,8 +99,10 @@ export default function StudentProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, student, social_links } = res;
 
         const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        social_links?.forEach((link) => {
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         setFormData({
@@ -204,7 +207,10 @@ export default function StudentProfileEdit() {
   const validateForm = () => {
     try {
       const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
+        Object.entries(formData.socialLinks || {}).filter(
+          ([platform, url]) =>
+            allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
       );
 
       studentProfileSchema.parse({
@@ -234,7 +240,9 @@ export default function StudentProfileEdit() {
       logger.log("[StudentProfileEdit] Submitting form", formData);
 
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
+        .filter(([platform, url]) =>
+          allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
         .map(([platform, url]) => ({ platform, url }));
 
       const payload = {
@@ -585,7 +593,7 @@ export default function StudentProfileEdit() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
-                    <FaLinkedin className="w-5 h-5" />
+                    <FaGlobe className="w-5 h-5" />
                   </div>
                   <h2 className="text-lg font-semibold text-gray-800">Social Links</h2>
                 </div>
@@ -594,34 +602,27 @@ export default function StudentProfileEdit() {
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
-                      LinkedIn Profile URL
-                    </label>
-                    <input
-                      type="text"
-                      name="linkedin"
-                      value={formData.socialLinks.linkedin || ""}
-                      onChange={handleSocialChange}
-                      placeholder="https://linkedin.com/in/yourprofile"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
-                      GitHub Profile URL
-                    </label>
-                    <input
-                      type="text"
-                      name="github"
-                      value={formData.socialLinks.github || ""}
-                      onChange={handleSocialChange}
-                      placeholder="https://github.com/yourusername"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {allowedPlatforms.map(({ name, Icon, className }) => (
+                      <div key={name}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                          <Icon className={`w-4 h-4 mr-2 ${className}`} />
+                          {name.charAt(0).toUpperCase() + name.slice(1)} Profile URL
+                        </label>
+                        <input
+                          type="text"
+                          name={name}
+                          value={formData.socialLinks[name] || ""}
+                          onChange={handleSocialChange}
+                          placeholder={
+                            name === 'website'
+                              ? 'https://yourwebsite.com'
+                              : `https://${name}.com/yourprofile`
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
