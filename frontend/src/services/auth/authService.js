@@ -2,6 +2,7 @@
 import api from "@/services/api/api";
 import logger from "@/utils/logger";
 import { ensureCsrfToken } from "@/services/api/csrf";
+import { getCookie } from "@/utils/cookies";
 
 /**
  * 🔐 Log in a user and retrieve access token and user info.
@@ -91,7 +92,14 @@ export const resetPassword = async ({ email, code, new_password }) => {
  * @returns {Promise<{ accessToken: string }>}
  */
 export const refreshAccessToken = async () => {
-  const res = await api.post("/auth/refresh");
+  const csrfToken = getCookie("csrfToken");
+  const res = await api.post(
+    "/auth/refresh",
+    null,
+    {
+      headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+    }
+  );
   await ensureCsrfToken();
   return res.data;
 };
