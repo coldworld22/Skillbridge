@@ -128,7 +128,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       err?.message ||
       t("login_failed");
 
-    if (msg === "Invalid credentials") {
+    if (err?.response?.status === 403 || msg === "Account is not active") {
+      msg = t("account_inactive");
+    } else if (msg === "Invalid credentials") {
       msg = t("invalid_credentials");
     } else if (msg === "Account is not active") {
       msg = t("account_not_active");
