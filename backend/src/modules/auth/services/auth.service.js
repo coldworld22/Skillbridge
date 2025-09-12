@@ -19,6 +19,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -29,37 +30,34 @@ const REFRESH_EXPIRES_IN = "30d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
-// Track failed logins per email with timestamps to aid cleanup
-const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-const CLEANUP_INTERVAL = 60 * 1000; // Run cleanup every minute
+const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
 
-function recordFailedAttempt(email) {
-  const info =
-    failedLoginAttempts.get(email) || { timestamps: [], lockUntil: null };
-  info.timestamps.push(Date.now());
-
-  if (info.timestamps.length >= MAX_ATTEMPTS) {
-    info.lockUntil = Date.now() + LOCK_TIME;
-  }
-
-  failedLoginAttempts.set(email, info);
+function getAttemptKey(email, ip) {
+  return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-/**
- * Periodically purge expired lock entries to prevent memory leaks
- */
-function cleanupFailedAttempts() {
-  const now = Date.now();
-  for (const [email, info] of failedLoginAttempts.entries()) {
-    if (info.lockUntil && info.lockUntil <= now) {
-      failedLoginAttempts.delete(email);
+async function recordFailedAttempt(email, ip) {
+  if (!redisClient) return;
+  const key = getAttemptKey(email, ip);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + LOCK_TIME;
     }
+    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record login attempt", err);
   }
 }
 
-setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
+async function cleanupFailedAttempts() {
+  // Redis key TTL handles cleanup automatically
+}
 
 /**
  * Register a new user
@@ -162,7 +160,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password }) => {
+exports.loginUser = async ({ email, password, ip }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -173,16 +171,22 @@ exports.loginUser = async ({ email, password }) => {
     );
   }
 
-  // Clear out any expired lock entries before processing login
-  cleanupFailedAttempts();
-  const attempt = failedLoginAttempts.get(email);
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getAttemptKey(email, ip));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check login attempts", err);
+    }
+  }
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
   }
 
   const user = await userModel.findByEmail(email);
   if (!user) {
-    recordFailedAttempt(email);
+    await recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
@@ -192,11 +196,17 @@ exports.loginUser = async ({ email, password }) => {
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) {
-    recordFailedAttempt(email);
+    await recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
-  failedLoginAttempts.delete(email);
+  if (redisClient) {
+    try {
+      await redisClient.del(getAttemptKey(email, ip));
+    } catch (err) {
+      logger.error("Failed to clear login attempts", err);
+    }
+  }
 
   // Mark user as online on successful login
   await userModel.updateUser(user.id, {
