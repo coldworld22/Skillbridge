@@ -101,9 +101,15 @@ api.interceptors.response.use(
 
       try {
         logger.log("\uD83D\uDD04 Attempting token refresh...");
-        const { data } = await api.post("/auth/refresh", null, {
-          withCredentials: true,
-        });
+        const csrfToken = getCookie("csrfToken");
+        const { data } = await api.post(
+          "/auth/refresh",
+          null,
+          {
+            withCredentials: true,
+            headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+          }
+        );
         logger.log("\u2705 Token refresh successful");
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);

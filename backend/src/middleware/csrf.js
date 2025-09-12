@@ -16,12 +16,10 @@ const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const exemptPaths = [
   '/api/auth/login',
   '/api/auth/register',
-  '/api/auth/refresh',
   '/api/auth/request-reset',
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
   '/api/auth/reset-password',
-  '/api/auth/refresh',
 ];
 
 module.exports = [
