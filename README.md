@@ -27,6 +27,13 @@ The script validates prerequisites, copies example env files, builds and starts 
 
 Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. This route is disabled by default; set `ENABLE_INSTALL=true` in the backend environment to expose it.
 
+For scripted deployments, installation endpoints are also available under `/api/install`. They remain disabled unless `INSTALL_API_ENABLED=true` is set in your `.env`. These routes require an authenticated administrator. Example:
+
+```
+# backend/.env
+INSTALL_API_ENABLED=true
+```
+
 ## Quick start
 
 Install the project dependencies:
