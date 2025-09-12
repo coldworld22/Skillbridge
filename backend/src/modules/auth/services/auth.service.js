@@ -32,37 +32,34 @@ const ACCESS_EXPIRES_IN = "60m";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
-// Track failed logins per email with timestamps to aid cleanup
-const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-const CLEANUP_INTERVAL = 60 * 1000; // Run cleanup every minute
+const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
 
-function recordFailedAttempt(email) {
-  const info =
-    failedLoginAttempts.get(email) || { timestamps: [], lockUntil: null };
-  info.timestamps.push(Date.now());
-
-  if (info.timestamps.length >= MAX_ATTEMPTS) {
-    info.lockUntil = Date.now() + LOCK_TIME;
-  }
-
-  failedLoginAttempts.set(email, info);
+function getAttemptKey(email, ip) {
+  return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-/**
- * Periodically purge expired lock entries to prevent memory leaks
- */
-function cleanupFailedAttempts() {
-  const now = Date.now();
-  for (const [email, info] of failedLoginAttempts.entries()) {
-    if (info.lockUntil && info.lockUntil <= now) {
-      failedLoginAttempts.delete(email);
+async function recordFailedAttempt(email, ip) {
+  if (!redisClient) return;
+  const key = getAttemptKey(email, ip);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + LOCK_TIME;
     }
+    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record login attempt", err);
   }
 }
 
-setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
+async function cleanupFailedAttempts() {
+  // Redis key TTL handles cleanup automatically
+}
 
 /**
  * Register a new user
@@ -165,7 +162,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password }) => {
+exports.loginUser = async ({ email, password, ip }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -176,15 +173,23 @@ exports.loginUser = async ({ email, password }) => {
     );
   }
 
-  // Clear out any expired lock entries before processing login
-  cleanupFailedAttempts();
-  const attempt = failedLoginAttempts.get(email);
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getAttemptKey(email, ip));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check login attempts", err);
+    }
+  }
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
   }
 
   const user = await userModel.findByEmail(email);
   if (!user) {
+    // Perform a dummy hash to mitigate timing attacks when the user is missing
+    await bcrypt.hash(password, SALT_ROUNDS);
     recordFailedAttempt(email);
     throw new AppError("Invalid credentials", 401);
   }
@@ -195,11 +200,17 @@ exports.loginUser = async ({ email, password }) => {
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) {
-    recordFailedAttempt(email);
+    await recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
-  failedLoginAttempts.delete(email);
+  if (redisClient) {
+    try {
+      await redisClient.del(getAttemptKey(email, ip));
+    } catch (err) {
+      logger.error("Failed to clear login attempts", err);
+    }
+  }
 
   // Mark user as online on successful login
   await userModel.updateUser(user.id, {
@@ -211,8 +222,12 @@ exports.loginUser = async ({ email, password }) => {
   const roles = await userModel.getUserRoles(user.id);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: tokenRoles[0],
+    roles: tokenRoles,
+  });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -244,9 +259,13 @@ function generateRefreshToken(payload, jti) {
   });
 }
 
-async function issueRefreshToken(userId, role) {
+async function issueRefreshToken(userId, roles = []) {
+  const roleArr = Array.isArray(roles) ? roles : [roles];
   const jti = uuidv4();
-  const token = generateRefreshToken({ id: userId, role }, jti);
+  const token = generateRefreshToken(
+    { id: userId, role: roleArr[0], roles: roleArr },
+    jti
+  );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await db("refresh_tokens").insert({
@@ -274,7 +293,8 @@ exports.verifyRefreshToken = async (token) => {
   }
   const match = await bcrypt.compare(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
-  return decoded;
+  const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
+  return { ...decoded, roles, role: roles[0] };
 };
 
 exports.rotateRefreshToken = async (token) => {
@@ -282,7 +302,7 @@ exports.rotateRefreshToken = async (token) => {
   await db("refresh_tokens")
     .where({ id: decoded.jti })
     .update({ revoked_at: new Date() });
-  const refreshToken = await issueRefreshToken(decoded.id, decoded.role);
+  const refreshToken = await issueRefreshToken(decoded.id, decoded.roles);
   return { decoded, refreshToken };
 };
 

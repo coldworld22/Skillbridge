@@ -66,7 +66,7 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user } = await authService.loginUser({ ...req.body, ip: req.ip });
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
     .json({ message: "Login successful", accessToken, user });
@@ -87,10 +87,13 @@ exports.refreshToken = catchAsync(async (req, res) => {
   }
 
   try {
-    const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
+    const { decoded, refreshToken: newRefreshToken } =
+      await authService.rotateRefreshToken(token);
+    const roles = decoded.roles || [decoded.role];
     const accessToken = authService.generateAccessToken({
       id: decoded.id,
-      role: decoded.role,
+      role: roles[0],
+      roles,
     });
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);

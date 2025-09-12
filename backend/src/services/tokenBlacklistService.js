@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger.js');
 
 /**
  * Inserts a token into the blacklist store.
@@ -10,7 +11,8 @@ async function addToken(token) {
   try {
     await db('blacklisted_tokens').insert({ token }).onConflict('token').ignore();
   } catch (err) {
-    // log or ignore
+    logger.error('Failed to add token to blacklist:', err);
+    throw err;
   }
 }
 
