@@ -80,8 +80,10 @@ exports.updateProfile = async (req, res) => {
         }))
     : [];
 
-  const trx = await db.transaction();
+  let trx;
   try {
+    trx = await db.transaction();
+
     await trx("users")
       .where({ id: userId })
       .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
@@ -106,8 +108,21 @@ exports.updateProfile = async (req, res) => {
     await trx.commit();
     res.json({ message: "Profile updated successfully" });
   } catch (err) {
-    await trx.rollback();
-    logger.error("Failed to update student profile", err.message);
+    if (trx) {
+      await trx.rollback();
+    }
+
+    // Handle unique constraint violations for email and phone
+    if (err.code === "23505") {
+      if (err.constraint === "users_email_unique") {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (err.constraint === "users_phone_unique") {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+
+    logger.error("Failed to update student profile", err);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
