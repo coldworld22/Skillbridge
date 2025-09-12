@@ -550,6 +550,7 @@
     "demo_upload_failed": "Échec du téléversement de la vidéo de démonstration",
     "full_name_min": "Le nom complet doit comporter au moins 3 caractères",
     "phone_min": "Le numéro de téléphone doit comporter au moins 8 chiffres",
+    "invalid_phone_number": "Numéro de téléphone invalide",
     "invalid_date": "Format de date invalide",
     "experience_positive": "L'expérience doit être un nombre positif",
     "amount_positive": "Le montant doit être positif",
@@ -584,6 +585,7 @@
     "profile_update_failed": "Échec de la mise à jour du profil",
     "full_name_min": "Le nom complet doit comporter au moins 3 caractères",
     "phone_min": "Le numéro de téléphone doit comporter au moins 8 chiffres",
+    "invalid_phone_number": "Numéro de téléphone invalide",
     "invalid_email_address": "Adresse e-mail invalide",
     "invalid_date": "Format de date invalide",
     "url_invalid": "Doit être une URL valide"
