@@ -24,6 +24,7 @@ const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -36,6 +37,7 @@ const OTP_EXPIRY_MINUTES = 15;
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
+const OTP_ATTEMPT_PREFIX = "failedOtp:";
 
 // OTP attempt tracking
 const OTP_ATTEMPT_PREFIX = "otpAttempt:";
@@ -226,7 +228,7 @@ exports.loginUser = async ({ email, password, ip }) => {
   if (!user) {
     // Perform a dummy hash to mitigate timing attacks when the user is missing
     await bcrypt.hash(password, SALT_ROUNDS);
-    recordFailedAttempt(email);
+    recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
@@ -405,6 +407,22 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(email));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError(
+      "Too many invalid OTP attempts. Try again later.",
+      429
+    );
+  }
+
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
@@ -444,10 +462,10 @@ exports.verifyOtp = async ({ email, code }) => {
 
 /**
  * Reset a user's password using a valid OTP code.
- * @param {{email:string, code:string, new_password:string}} data
+ * @param {{email:string, code:string, new_password:string, accessToken?:string}} data
  * @returns {Promise<void>}
  */
-exports.resetPassword = async ({ email, code, new_password }) => {
+exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
@@ -490,6 +508,18 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  // Revoke all refresh tokens for this user
+  await db("refresh_tokens").where({ user_id: user.id }).del();
+
+  // Optionally blacklist the provided access token
+  if (accessToken) {
+    try {
+      await addTokenToBlacklist(accessToken);
+    } catch (err) {
+      logger.error("Failed to blacklist access token", err);
+    }
+  }
 
   await sendPasswordChangeEmail(user.email);
 

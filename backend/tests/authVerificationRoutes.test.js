@@ -41,6 +41,15 @@ describe('POST /api/auth/send-verification', () => {
     expect(service.sendVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'email' });
     expect(res.body.message).toMatch(/sent/i);
   });
+
+  it('supports phone verification', async () => {
+    service.sendVerificationOtp.mockResolvedValue();
+    const res = await request(app)
+      .post('/api/auth/send-verification')
+      .send({ user_id: 1, type: 'phone' });
+    expect(res.status).toBe(200);
+    expect(service.sendVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'phone' });
+  });
 });
 
 describe('POST /api/auth/confirm-verification', () => {
@@ -52,6 +61,15 @@ describe('POST /api/auth/confirm-verification', () => {
     expect(res.status).toBe(200);
     expect(service.confirmVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'email', code: '123456' });
     expect(res.body.message).toMatch(/successful/i);
+  });
+
+  it('confirms phone verification OTP', async () => {
+    service.confirmVerificationOtp.mockResolvedValue();
+    const res = await request(app)
+      .post('/api/auth/confirm-verification')
+      .send({ user_id: 1, type: 'phone', code: '654321' });
+    expect(res.status).toBe(200);
+    expect(service.confirmVerificationOtp).toHaveBeenCalledWith({ user_id: 1, type: 'phone', code: '654321' });
   });
 
   it('returns error for invalid OTP', async () => {

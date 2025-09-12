@@ -13,7 +13,7 @@ exports.registerSchema = z.object({
     .string()
     .regex(
       PASSWORD_REGEX,
-      "Password must be at least 8 characters, include an uppercase letter and a special character"
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
     ),
   role: z.enum(["Student", "Instructor", "Admin"]).optional(), // Optional for fallback logic
   recaptchaToken: z.string().optional(),
@@ -58,7 +58,7 @@ exports.resetPasswordSchema = z.object({
     .string()
     .regex(
       PASSWORD_REGEX,
-      "Password must be at least 8 characters, include an uppercase letter and a special character"
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
     ),
 });
 
