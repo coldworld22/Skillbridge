@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
@@ -22,7 +23,7 @@ import {
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
 
-const studentProfileSchema = z.object({
+export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z
     .string()
@@ -36,12 +37,13 @@ const studentProfileSchema = z.object({
   education_level: z.string().min(2, "Education level is required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links are optional strings without strict URL validation
-  socialLinks: z.record(z.string()).optional(),
+  // Social links validated as URLs
+  socialLinks: z.record(z.string().url("invalid_url")).optional(),
 });
 
 export default function StudentProfileEdit() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
@@ -211,13 +213,17 @@ export default function StudentProfileEdit() {
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
+      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
       err.errors.forEach((e) => {
-        errs[e.path[0]] = e.message;
+        errs[e.path[0]] = t(e.message);
       });
       setErrors(errs);
+      if (err.errors?.length) {
+        toast.error(t(err.errors[0].message));
+      }
       return false;
     }
   };
