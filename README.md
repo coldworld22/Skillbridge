@@ -25,34 +25,24 @@ The script validates prerequisites, copies example env files, builds and starts 
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
 ## Installer
+Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. The installer is disabled by default; enable it by setting `ENABLE_INSTALL=true` **and** `INSTALL_API_ENABLED=true` in the backend environment and adding an Nginx proxy block that forwards `/install` to the backend:
 
-The backend includes a browser-based installer at [`/install`](http://localhost:5002/install) that uses `/api/install/*` endpoints to check prerequisites and run setup scripts after entering configuration values. These routes are disabled by default; set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true` in the backend environment to expose them.
-
-Example using Docker Compose:
-
-```bash
-# .env
-ENABLE_INSTALL=true
-INSTALL_API_ENABLED=true
-
-docker-compose up --build
+```nginx
+location ^~ /install/ {
+  proxy_pass http://backend:5002;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
 ```
 
-Example using plain npm:
+Because the API requires authentication, an administrator must be logged in before visiting `/install`. After logging in, open `/install` and verify the page loads and displays the prerequisite checks. Common issues include:
 
-```bash
-cd backend
-ENABLE_INSTALL=true INSTALL_API_ENABLED=true npm start
-```
-
-Then visit `http://localhost:5002/install` and disable the variables once setup is complete.
-
-For scripted deployments, installation endpoints are also available under `/api/install`. They remain disabled unless `INSTALL_API_ENABLED=true` is set in your `.env`. These routes require an authenticated administrator. Example:
-
-```
-# backend/.env
-INSTALL_API_ENABLED=true
-```
+- **404 Not Found** – verify the Nginx block is present and `ENABLE_INSTALL` is true.
+- **Installation via API is disabled** – ensure `INSTALL_API_ENABLED=true`.
+- **Unauthorized** – log in with an admin account before accessing `/install`.
 
 ## Quick start
 
