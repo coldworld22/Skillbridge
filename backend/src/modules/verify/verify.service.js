@@ -89,7 +89,7 @@ exports.verifyOtp = async (userId, type, code) => {
   if (!record) throw new AppError("Invalid or expired OTP", 400);
 
   const match = await bcrypt.compare(code, record.code);
-  if (!match) throw new Error("Invalid or expired OTP");
+  if (!match) throw new AppError("Invalid or expired OTP", 400);
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
