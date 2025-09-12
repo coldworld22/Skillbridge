@@ -30,6 +30,7 @@ import {
 } from "@/services/admin/adminService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toSocialLinksArray } from "@/utils/socialLinks";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -256,9 +257,7 @@ useEffect(() => {
     if (!validateForm()) return;
     try {
       setIsSubmitting(true);
-      const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+      const social_links = toSocialLinksArray(formData.socialLinks);
 
       await updateAdminProfile({
         full_name: formData.full_name,

@@ -14,6 +14,7 @@ import { getCurrencies } from "@/services/currencyService";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
+import { toSocialLinksArray } from "@/utils/socialLinks";
 import {
   getInstructorProfile,
   updateInstructorProfile,
@@ -347,9 +348,7 @@ export default function InstructorProfileEdit() {
           ? `${formData.pricing_amount} ${formData.pricing_currency}`
           : "";
 
-      const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+      const social_links = toSocialLinksArray(formData.socialLinks);
 
       await updateInstructorProfile({
         full_name: formData.full_name,

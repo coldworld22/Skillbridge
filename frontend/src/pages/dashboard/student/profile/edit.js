@@ -16,6 +16,7 @@ import useMessageStore from "@/store/messages/messageStore";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
+import { toSocialLinksArray } from "@/utils/socialLinks";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -233,9 +234,7 @@ export default function StudentProfileEdit() {
       setIsSubmitting(true);
       logger.log("[StudentProfileEdit] Submitting form", formData);
 
-      const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+      const social_links = toSocialLinksArray(formData.socialLinks);
 
       const payload = {
         full_name: formData.full_name,
