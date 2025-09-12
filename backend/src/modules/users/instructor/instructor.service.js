@@ -4,6 +4,7 @@
  */
 
 const db = require("../../../config/database");
+const { allowedPlatforms } = require("../common/socialPlatforms");
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];
@@ -68,17 +69,55 @@ const getInstructorProfile = async (userId) => {
   };
 };
 
+const normalizeUrl = (url = "") => {
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
 // 🔹 Update instructor user data, profile data, and social links in a transaction
-const updateInstructorProfile = async (userId, userData, instructorData, socialLinks = []) => {
+const updateInstructorProfile = async (
+  userId,
+  userData,
+  instructorData,
+  socialLinks = []
+) => {
+  const sanitizedLinks = Array.isArray(socialLinks)
+    ? socialLinks
+        .filter(
+          (link) =>
+            link &&
+            typeof link.url === "string" &&
+            typeof link.platform === "string" &&
+            allowedPlatforms.includes(link.platform.trim().toLowerCase())
+        )
+        .map((link) => ({
+          platform: link.platform.trim().toLowerCase(),
+          url: normalizeUrl(link.url),
+        }))
+    : [];
+
+  const hasUserFields =
+    userData.full_name &&
+    userData.phone &&
+    userData.gender &&
+    userData.date_of_birth;
+  const hasInstructorFields =
+    instructorData.experience !== undefined &&
+    instructorData.experience !== null;
+  const isProfileComplete =
+    hasUserFields && hasInstructorFields && sanitizedLinks.length > 0;
+
   await db.transaction(async (trx) => {
     // ✅ Update users table
     await trx("users").where({ id: userId }).update({
       ...userData,
-      profile_complete: true,
+      profile_complete: isProfileComplete,
     });
 
     // ✅ Upsert instructor profile
-    const existing = await trx("instructor_profiles").where({ user_id: userId }).first();
+    const existing = await trx("instructor_profiles")
+      .where({ user_id: userId })
+      .first();
     const data = {
       ...instructorData,
       expertise: instructorData.expertise
@@ -93,14 +132,12 @@ const updateInstructorProfile = async (userId, userData, instructorData, socialL
 
     // ✅ Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of socialLinks) {
-      if (link.url) {
-        await trx("user_social_links").insert({
-          user_id: userId,
-          platform: link.platform,
-          url: link.url,
-        });
-      }
+    for (const link of sanitizedLinks) {
+      await trx("user_social_links").insert({
+        user_id: userId,
+        platform: link.platform,
+        url: link.url,
+      });
     }
   });
 };
