@@ -130,6 +130,8 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
 
     if (msg === "Invalid credentials") {
       msg = t("invalid_credentials");
+    } else if (msg === "Account is not active") {
+      msg = t("account_not_active");
     }
 
     if (
