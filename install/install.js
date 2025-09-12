@@ -24,15 +24,9 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const out = document.getElementById('installOutput');
   out.textContent = 'Running install...';
-  const payload = {
-    adminEmail: form.adminEmail.value,
-    adminPassword: form.adminPassword.value,
-  };
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
     });
     const data = await res.json();
     out.textContent = data.output || JSON.stringify(data, null, 2);
