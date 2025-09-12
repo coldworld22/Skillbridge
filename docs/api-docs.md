@@ -20,6 +20,9 @@ random CSRF token. Clients must mirror this value in the `x-csrf-token` header
 on subsequent state‑changing requests (POST/PUT/PATCH/DELETE) to satisfy server
 CSRF validation.
 
+Clients can also fetch a fresh token at any time via `GET /api/csrf-token`,
+which sets a new `csrfToken` cookie and returns no content.
+
 ## Users
 
 `/api/users`
