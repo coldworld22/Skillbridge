@@ -15,6 +15,8 @@ function hashToken(token) {
 async function addToken(token) {
   if (!token) return;
 
+  const tokenHash = hashToken(token);
+
   let expiresAt = null;
   try {
     const decoded = jwt.decode(token);
