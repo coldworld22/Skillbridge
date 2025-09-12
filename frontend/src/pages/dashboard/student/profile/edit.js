@@ -18,6 +18,7 @@ import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import { toSocialLinksArray } from "@/utils/socialLinks";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
@@ -27,26 +28,25 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
+export const studentProfileSchema = z.object({
+  full_name: z.string().min(3, "full_name_min"),
+  phone: z.string().refine((val) => isValidPhoneNumber(val), {
+    message: "invalid_phone_number",
+  }),
+  gender: z.enum(['male', 'female']),
+  date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
+    message: "invalid_date",
+  }),
+  education_level: z.string().min(2, "education_required"),
+  topics: z.array(z.string()).optional(),
+  learning_goals: z.string().optional(),
+  // Social links validated as URLs
+  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+});
+
 export default function StudentProfileEdit() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
-  const studentProfileSchema = useMemo(() => z.object({
-    full_name: z.string().min(3, t('validation.full_name_min')),
-    phone: z.string().refine((val) => isValidPhoneNumber(val), {
-      message: t('validation.invalid_phone'),
-    }),
-    gender: z.enum(['male', 'female']),
-    date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
-      message: t('validation.invalid_date'),
-    }),
-    education_level: z.string().min(2, t('validation.education_required')),
-    topics: z.array(z.string()).optional(),
-    learning_goals: z.string().optional(),
-    // Social links are optional strings without strict URL validation
-    socialLinks: z.record(z.string()).optional(),
-  }), [t]);
-
   const router = useRouter();
-  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
