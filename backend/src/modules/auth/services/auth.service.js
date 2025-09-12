@@ -19,6 +19,7 @@ const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
+const { addToken } = require("../../../services/tokenBlacklistService");
 const verificationService = require("../../verify/verify.service");
 const { addToken } = require("../../../services/tokenBlacklistService");
 const {
