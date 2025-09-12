@@ -25,7 +25,28 @@ The script validates prerequisites, copies example env files, builds and starts 
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
 
-Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. This route is disabled by default; set `ENABLE_INSTALL=true` in the backend environment to expose it.
+Alternatively, you can enable the web-based installer at [`/install`](http://localhost:5002/install); see the [Installer](#installer) section for details.
+
+## Installer
+
+Set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true` to expose the installation UI at `/install` and the API endpoints under `/api/install/*`. These variables must be set for the installer routes to work.
+
+### Example usage
+
+With docker-compose:
+
+```bash
+ENABLE_INSTALL=true INSTALL_API_ENABLED=true docker-compose up
+```
+
+Starting the backend directly:
+
+```bash
+cd backend
+ENABLE_INSTALL=true INSTALL_API_ENABLED=true npm start
+```
+
+Then visit `http://localhost:5002/install` and follow the prompts.
 
 ## Quick start
 
