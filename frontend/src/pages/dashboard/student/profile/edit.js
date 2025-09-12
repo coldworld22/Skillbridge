@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -21,26 +21,28 @@ import {
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
-
-const studentProfileSchema = z.object({
-  full_name: z.string().min(3, "Full name must be at least 3 characters"),
-  phone: z
-    .string()
-    .refine((val) => isValidPhoneNumber(val), {
-      message: "Invalid phone number",
-    }),
-  gender: z.enum(["male", "female"]),
-  date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: "Invalid date format",
-  }),
-  education_level: z.string().min(2, "Education level is required"),
-  topics: z.array(z.string()).optional(),
-  learning_goals: z.string().optional(),
-  // Social links are optional strings without strict URL validation
-  socialLinks: z.record(z.string()).optional(),
-});
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
 export default function StudentProfileEdit() {
+  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
+  const studentProfileSchema = useMemo(() => z.object({
+    full_name: z.string().min(3, t('validation.full_name_min')),
+    phone: z.string().refine((val) => isValidPhoneNumber(val), {
+      message: t('validation.invalid_phone'),
+    }),
+    gender: z.enum(['male', 'female']),
+    date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
+      message: t('validation.invalid_date'),
+    }),
+    education_level: z.string().min(2, t('validation.education_required')),
+    topics: z.array(z.string()).optional(),
+    learning_goals: z.string().optional(),
+    // Social links are optional strings without strict URL validation
+    socialLinks: z.record(z.string()).optional(),
+  }), [t]);
+
   const router = useRouter();
   const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
@@ -117,7 +119,7 @@ export default function StudentProfileEdit() {
           identityPreview: null,
         });
       } catch (err) {
-        toast.error("Failed to load profile data");
+        toast.error(t('load_failed'));
         console.error("Profile load error:", err);
       } finally {
         setIsLoading(false);
@@ -147,7 +149,7 @@ export default function StudentProfileEdit() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image size should be less than 10MB");
+      toast.error(t('image_size_error'));
       return;
     }
     try {
@@ -160,10 +162,10 @@ export default function StudentProfileEdit() {
         avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
-      toast.success("Avatar uploaded successfully!");
+      toast.success(t('avatar_upload_success'));
     } catch (error) {
       console.error('Avatar upload error:', error.response);
-      const msg = error.response?.data?.message || 'Failed to upload avatar';
+      const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -174,11 +176,11 @@ export default function StudentProfileEdit() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.type !== "application/pdf") {
-      toast.error("Only PDF files are allowed");
+      toast.error(t('pdf_only_error'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("PDF size should be less than 5MB");
+      toast.error(t('pdf_size_error'));
       return;
     }
     try {
@@ -189,9 +191,9 @@ export default function StudentProfileEdit() {
         identityFile: file,
         identityPreview: URL.createObjectURL(file)
       }));
-      toast.success("Identity document uploaded successfully!");
+      toast.success(t('id_upload_success'));
     } catch (err) {
-      toast.error("Failed to upload identity document");
+      toast.error(t('id_upload_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +227,7 @@ export default function StudentProfileEdit() {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!user) {
-      toast.error("User not loaded. Please login again.");
+      toast.error(t('user_not_loaded'));
       return;
     }
     if (!validateForm()) return;
@@ -250,14 +252,14 @@ export default function StudentProfileEdit() {
       logger.log("[StudentProfileEdit] Payload", payload);
 
       await toast.promise(updateStudentProfile(payload), {
-        pending: "Saving profile...",
-        success: "Profile updated successfully!",
+        pending: t('saving_profile'),
+        success: t('update_success'),
         error: {
           render({ data }) {
             return (
               data?.response?.data?.message ||
               data?.message ||
-              "Failed to update profile"
+              t('update_failed')
             );
           },
         },
@@ -281,7 +283,7 @@ export default function StudentProfileEdit() {
       }, 1500);
 
       try {
-        const message = "Your student profile was updated.";
+        const message = t('profile_update_notification');
         await Promise.all([
           createNotification({ user_id: user.id, type: "profile_update", message }),
           sendChatMessage(user.id, { text: message }),
@@ -298,10 +300,10 @@ export default function StudentProfileEdit() {
 
     } catch (err) {
       logger.error("[StudentProfileEdit] update error", err);
-      const msg = err.response?.data?.message || err.message || "Failed to update profile";
+      const msg = err.response?.data?.message || err.message || t('update_failed');
       toast.error(msg);
       if (err.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
+        toast.error(t('session_expired'));
         logout();
         router.push("/auth/login");
       }
@@ -323,7 +325,7 @@ export default function StudentProfileEdit() {
     <StudentLayout>
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Student Profile</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">{t('title')}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -339,7 +341,7 @@ export default function StudentProfileEdit() {
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
                     <FaUserCircle className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">Profile Picture</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{t('profile_picture')}</h2>
                 </div>
                 {expanded.avatar ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -370,7 +372,7 @@ export default function StudentProfileEdit() {
                     <label className="mt-4 cursor-pointer">
                       <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center justify-center space-x-2">
                         <FaUpload className="w-4 h-4" />
-                        <span>{formData.avatarPreview ? 'Change Photo' : 'Upload Photo'}</span>
+                        <span>{formData.avatarPreview ? t('change_photo') : t('upload_photo')}</span>
                       </div>
                       <input
                         type="file"
@@ -379,7 +381,7 @@ export default function StudentProfileEdit() {
                         className="hidden"
                       />
                     </label>
-                    <p className="mt-2 text-xs text-gray-500">JPG, PNG up to 10MB</p>
+                    <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
                   </div>
                 </div>
               )}
@@ -395,7 +397,7 @@ export default function StudentProfileEdit() {
                   <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
                     <FaIdCard className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">Student ID</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{t('student_id')}</h2>
                 </div>
                 {expanded.identity ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -408,7 +410,7 @@ export default function StudentProfileEdit() {
                         <div className="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full">
                           <FaFilePdf className="w-8 h-8 text-purple-600" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">ID Document Uploaded</p>
+                        <p className="text-sm font-medium text-gray-700">{t('id_uploaded')}</p>
                         <div className="flex justify-center space-x-3">
                           <a
                             href={formData.identityPreview}
@@ -417,14 +419,14 @@ export default function StudentProfileEdit() {
                             className="px-3 py-1 bg-yellow-50 text-yellow-600 rounded-md text-sm hover:bg-yellow-100 transition-colors flex items-center space-x-1"
                           >
                             <FaFilePdf className="w-3 h-3" />
-                            <span>View PDF</span>
+                            <span>{t('view_pdf')}</span>
                           </a>
                           <button
                             onClick={removeIdentity}
                             className="px-3 py-1 bg-red-50 text-red-600 rounded-md text-sm hover:bg-red-100 transition-colors flex items-center space-x-1"
                           >
                             <FaTrash className="w-3 h-3" />
-                            <span>Remove</span>
+                            <span>{t('remove')}</span>
                           </button>
                         </div>
                       </div>
@@ -433,12 +435,12 @@ export default function StudentProfileEdit() {
                         <div className="inline-flex items-center justify-center p-3 bg-gray-100 rounded-full">
                           <FaUpload className="w-6 h-6 text-gray-500" />
                         </div>
-                        <p className="text-sm font-medium text-gray-700">Upload your student ID</p>
-                        <p className="text-xs text-gray-500">PDF format only, max 5MB</p>
+                        <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
+                        <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
                         <label className="cursor-pointer inline-block mt-2">
                           <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
                             <FaUpload className="w-4 h-4" />
-                            <span>Select File</span>
+                            <span>{t('select_file')}</span>
                           </div>
                           <input
                             type="file"
@@ -451,7 +453,7 @@ export default function StudentProfileEdit() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    Upload your student ID or other verification document.
+                    {t('upload_id_note')}
                   </p>
                 </div>
               )}
@@ -470,7 +472,7 @@ export default function StudentProfileEdit() {
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
                     <FaUserCircle className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{t('personal_section')}</h2>
                 </div>
                 {expanded.personal ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -479,24 +481,24 @@ export default function StudentProfileEdit() {
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('full_name_label')}</label>
                       <input
                         name="full_name"
                         value={formData.full_name}
                         onChange={handleInputChange}
-                        placeholder="John Doe"
+                        placeholder={t('full_name_placeholder')}
                         className={`w-full px-3 py-2 border ${errors.full_name ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       />
                       {errors.full_name && <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone_label')}</label>
                       <input
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="+1 (555) 123-4567"
+                        placeholder={t('phone_placeholder')}
                         className={`w-full px-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       />
                       {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -505,20 +507,20 @@ export default function StudentProfileEdit() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('gender_label')}</label>
                       <select
                         name="gender"
                         value={formData.gender}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                       >
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
+                        <option value="male">{t('male')}</option>
+                        <option value="female">{t('female')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('dob_label')}</label>
                       <input
                         type="date"
                         name="date_of_birth"
@@ -543,7 +545,7 @@ export default function StudentProfileEdit() {
                   <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
                     <FaGraduationCap className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">Education Information</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{t('education_section')}</h2>
                 </div>
                 {expanded.education ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -551,24 +553,24 @@ export default function StudentProfileEdit() {
               {expanded.education && (
                 <div className="p-4 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Education Level *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('education_level_label')}</label>
                     <input
                       name="education_level"
                       value={formData.education_level}
                       onChange={handleInputChange}
-                      placeholder="e.g., High School, Bachelor's Degree"
+                      placeholder={t('education_level_placeholder')}
                       className={`w-full px-3 py-2 border ${errors.education_level ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                     />
                     {errors.education_level && <p className="mt-1 text-sm text-red-600">{errors.education_level}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Learning Goals</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('learning_goals_label')}</label>
                     <textarea
                       name="learning_goals"
                       value={formData.learning_goals}
                       onChange={handleInputChange}
-                      placeholder="Describe your learning objectives..."
+                      placeholder={t('learning_goals_placeholder')}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
@@ -587,7 +589,7 @@ export default function StudentProfileEdit() {
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
                     <FaLinkedin className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-800">Social Links</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{t('social_section')}</h2>
                 </div>
                 {expanded.social ? <FaChevronUp className="text-gray-500" /> : <FaChevronDown className="text-gray-500" />}
               </div>
@@ -597,14 +599,14 @@ export default function StudentProfileEdit() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                       <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
-                      LinkedIn Profile URL
+                      {t('linkedin_label')}
                     </label>
                     <input
                       type="text"
                       name="linkedin"
                       value={formData.socialLinks.linkedin || ""}
                       onChange={handleSocialChange}
-                      placeholder="https://linkedin.com/in/yourprofile"
+                      placeholder={t('linkedin_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
                   </div>
@@ -612,14 +614,14 @@ export default function StudentProfileEdit() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                       <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
-                      GitHub Profile URL
+                      {t('github_label')}
                     </label>
                     <input
                       type="text"
                       name="github"
                       value={formData.socialLinks.github || ""}
                       onChange={handleSocialChange}
-                      placeholder="https://github.com/yourusername"
+                      placeholder={t('github_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
                   </div>
@@ -634,7 +636,7 @@ export default function StudentProfileEdit() {
                 onClick={() => router.push("/dashboard/student")}
                 className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="submit"
@@ -644,10 +646,10 @@ export default function StudentProfileEdit() {
                 {isSubmitting ? (
                   <span className="flex items-center justify-center">
                     <FaSpinner className="animate-spin mr-2" />
-                    Saving...
+                    {t('saving')}
                   </span>
                 ) : (
-                  'Save Changes'
+                  t('save_changes')
                 )}
               </button>
             </div>
@@ -656,4 +658,12 @@ export default function StudentProfileEdit() {
       </form>
     </StudentLayout>
   );
+}
+
+export async function getServerSideProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['dashboard'], nextI18NextConfig)),
+    },
+  };
 }
