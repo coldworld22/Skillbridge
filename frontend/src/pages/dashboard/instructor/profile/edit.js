@@ -24,7 +24,7 @@ import {
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
-import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaSpinner,
   FaUserCircle,
@@ -36,7 +36,6 @@ import {
   FaUser,
   FaCheck,
 } from "react-icons/fa";
-import { allowedPlatforms } from "@/utils/socialPlatforms";
 import { MdOutlineWorkOutline } from "react-icons/md";
 
 import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
