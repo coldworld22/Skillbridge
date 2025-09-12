@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const { csrfCookieOptions } = require('../utils/cookie');
 
-// Endpoint to trigger CSRF cookie generation
-router.get('/', (_req, res) => res.status(204).end());
+router.get('/', (req, res) => {
+  const token = req.csrfToken();
+  res.cookie('csrfToken', token, csrfCookieOptions);
+  return res.status(204).json();
+});
 
 module.exports = router;

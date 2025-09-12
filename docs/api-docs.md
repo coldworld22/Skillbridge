@@ -19,9 +19,10 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 random CSRF token. Clients must mirror this value in the `x-csrf-token` header
 on subsequent state‑changing requests (POST/PUT/PATCH/DELETE) to satisfy server
 CSRF validation.
+## CSRF Token
 
-Clients can also fetch a fresh token at any time via `GET /api/csrf-token`,
-which sets a new `csrfToken` cookie and returns no content.
+`GET /api/csrf-token` – return a fresh CSRF token cookie. The endpoint responds
+with status `204` and no body.
 
 ## Users
 
