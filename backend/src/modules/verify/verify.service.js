@@ -6,12 +6,8 @@ const userModel = require("../users/user.model");
 const { sendOtpEmail } = require("../../utils/email");
 const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
-const redisClient = require("../../utils/redisClient");
-const logger = require("../../utils/logger.js");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-const redisClient = require("../../utils/redisClient");
-const logger = require("../../utils/logger.js");
 const { OTP_LENGTH } = require("../auth/constants");
 const {
   redisClient,
