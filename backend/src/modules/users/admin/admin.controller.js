@@ -131,7 +131,7 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
-    // 4. Return the freshly updated profile details
+    // 4. Fetch the freshly updated profile details within the transaction
     const [user] = await trx("users")
       .where({ id: userId })
       .select(
@@ -159,7 +159,7 @@ exports.updateProfile = async (req, res) => {
 
     await trx.commit();
 
-    res.json({
+    return res.json({
       ...user,
       ...adminProfile,
       social_links: socialLinks,
