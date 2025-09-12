@@ -1,6 +1,7 @@
 // 📁 src/modules/auth/validators/auth.validator.js
 const { z } = require("zod");
 const { PASSWORD_REGEX, OTP_LENGTH } = require("../constants");
+const { isValidPhoneNumber } = require("libphonenumber-js");
 
 /**
  * @desc Validation for user registration
@@ -8,7 +9,11 @@ const { PASSWORD_REGEX, OTP_LENGTH } = require("../constants");
 exports.registerSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters long"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(12, "Phone number must be at least 12 digits"),
+  phone: z
+    .string()
+    .refine((val) => isValidPhoneNumber(val), {
+      message: "Invalid phone number",
+    }),
   password: z
     .string()
     .regex(

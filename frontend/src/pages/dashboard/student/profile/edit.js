@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
@@ -23,7 +24,11 @@ import {
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
-  phone: z.string().min(8, "Phone number must be at least 8 digits"),
+  phone: z
+    .string()
+    .refine((val) => isValidPhoneNumber(val), {
+      message: "Invalid phone number",
+    }),
   gender: z.enum(["male", "female"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
