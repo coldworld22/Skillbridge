@@ -412,40 +412,29 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
+  const user = await userModel.findByEmail(email);
+  const identifier = user ? user.id : email;
+
   let attempt = null;
   if (redisClient) {
     try {
-      const data = await redisClient.get(getOtpAttemptKey(email));
+      const data = await redisClient.get(getOtpAttemptKey(identifier));
       attempt = data ? JSON.parse(data) : null;
     } catch (err) {
       logger.error("Failed to check OTP attempts", err);
     }
   }
+
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError(
-      "Too many invalid OTP attempts. Try again later.",
+      "Too many failed OTP attempts. Try again later.",
       429
     );
   }
 
-  const user = await userModel.findByEmail(email);
   if (!user) {
-    // Return a generic error to avoid exposing whether the email exists
     await recordFailedOtpAttempt(email);
-    throw new AppError("Invalid or expired OTP", 400);
-  }
-
-  attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(user.id));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+    throw new AppError("Invalid user", 400);
   }
 
   const record = await db("password_resets")
