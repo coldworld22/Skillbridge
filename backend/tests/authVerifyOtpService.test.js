@@ -1,56 +1,83 @@
+jest.mock('../src/config/database', () => {
+  const passwordResetsTable = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    first: jest.fn(),
+  };
+  const db = jest.fn((table) => {
+    if (table === 'password_resets') return passwordResetsTable;
+    return {};
+  });
+  db.passwordResetsTable = passwordResetsTable;
+  return db;
+});
+
 jest.mock('../src/modules/users/user.model', () => ({
   findByEmail: jest.fn(),
 }));
 
-jest.mock('../src/config/database', () => {
-  const query = {
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    first: jest.fn().mockResolvedValue(null),
-  };
-  return jest.fn(() => query);
-});
-
-jest.mock('../src/utils/logger.js', () => ({
-  error: jest.fn(),
+jest.mock('../src/utils/redisClient', () => ({
+  get: jest.fn(),
+  set: jest.fn(),
+  del: jest.fn(),
 }));
 
-const store = {};
-jest.mock('../src/utils/redisClient', () => ({
-  __store: store,
-  get: jest.fn((key) => Promise.resolve(store[key] || null)),
-  set: jest.fn((key, val) => {
-    store[key] = val;
-    return Promise.resolve('OK');
-  }),
-  del: jest.fn((key) => {
-    delete store[key];
-    return Promise.resolve(1);
-  }),
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
 }));
 
 const authService = require('../src/modules/auth/services/auth.service');
 const userModel = require('../src/modules/users/user.model');
 const redisClient = require('../src/utils/redisClient');
+const bcrypt = require('bcrypt');
+const db = require('../src/config/database');
+const passwordResetsTable = db.passwordResetsTable;
 
-describe('auth.service.verifyOtp lockout', () => {
+describe('verifyOtp retry counter', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    Object.keys(redisClient.__store).forEach((k) => delete redisClient.__store[k]);
-    userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
   });
 
-  it('locks after too many invalid attempts', async () => {
-    for (let i = 0; i < 5; i++) {
-      await expect(
-        authService.verifyOtp({ email: 'test@example.com', code: '000000' })
-      ).rejects.toThrow('Invalid or expired OTP');
-    }
+  it('locks out after too many failed attempts', async () => {
+    userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
+    redisClient.get.mockResolvedValue(
+      JSON.stringify({ count: 5, lockUntil: Date.now() + 10000 })
+    );
 
     await expect(
-      authService.verifyOtp({ email: 'test@example.com', code: '000000' })
-    ).rejects.toThrow('Too many invalid OTP attempts');
+      authService.verifyOtp({ email: 'test@example.com', code: '123456' })
+    ).rejects.toMatchObject({ statusCode: 429 });
+
+    expect(passwordResetsTable.first).not.toHaveBeenCalled();
+  });
+
+  it('increments counter on failed attempt', async () => {
+    userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
+    redisClient.get
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(JSON.stringify({ count: 1, lockUntil: null }));
+    passwordResetsTable.first.mockResolvedValue({ id: 2, code_hash: 'hash' });
+    bcrypt.compare.mockResolvedValue(false);
+
+    await expect(
+      authService.verifyOtp({ email: 'test@example.com', code: 'wrong' })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/invalid/i) });
+
+    expect(redisClient.set).toHaveBeenCalled();
+    const setArgs = redisClient.set.mock.calls[0];
+    const info = JSON.parse(setArgs[1]);
+    expect(info.count).toBe(2);
+  });
+
+  it('clears counter on success', async () => {
+    userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
+    redisClient.get.mockResolvedValue(null);
+    passwordResetsTable.first.mockResolvedValue({ id: 3, code_hash: 'hash' });
+    bcrypt.compare.mockResolvedValue(true);
+
+    await authService.verifyOtp({ email: 'test@example.com', code: '123456' });
+
+    expect(redisClient.del).toHaveBeenCalled();
   });
 });
-
