@@ -17,6 +17,7 @@ jest.mock('../src/config/database', () => {
     if (table === 'blacklisted_tokens') {
       return {
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         first: jest.fn().mockResolvedValue(null),
         insert: jest.fn().mockResolvedValue(),
       };
@@ -34,6 +35,7 @@ jest.mock('../src/modules/users/user.model', () => ({
   insertUser: jest.fn(),
   updateUser: jest.fn(),
   getUserRoles: jest.fn(),
+  getUserPermissions: jest.fn(),
   findAdmins: jest.fn(),
   findById: jest.fn(),
 }));
