@@ -5,8 +5,8 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { useTranslation, i18n } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import useAppConfigStore from '@/store/appConfigStore';
-import { API_BASE_URL } from '@/config/config';
 import logo from '@/shared/assets/images/login/logo.png';
+import { buildUrl } from '@/utils/url';
 import { clearCache } from '@/services/admin/cacheService';
 import { adminNavLinks } from './SidebarLinks/adminLinks';
 import { instructorNavLinks } from './SidebarLinks/instructorLinks';
@@ -54,7 +54,7 @@ export default function Sidebar({ role = 'admin' }) {
       <div>
         <div className="flex items-center gap-3 mb-8">
           <img
-            src={settings.logo_url ? `${API_BASE_URL}${settings.logo_url}` : logo.src || logo}
+            src={settings.logo_url ? buildUrl(settings.logo_url) : logo.src || logo}
             alt={`${settings.appName || 'SkillBridge'} Logo`}
             className="w-12 h-12 rounded-full object-contain shadow"
           />

@@ -1,5 +1,6 @@
 // 📁 src/services/admin/adminService.js
 import api from "@/services/api/api";
+import { ensureCsrfToken } from "@/services/api/csrf";
 
 /**
  * 👤 Get current admin profile.
@@ -13,9 +14,10 @@ export const getAdminProfile = async () => {
 
 /**
  * ✏️ Update admin profile.
- * 
+ *
  * @param {Object} profileData - Admin profile fields to update
- * @returns {Promise<Object>} Updated profile object
+ * @returns {Promise<Object>} Updated profile including user info,
+ * admin-specific details, and social links
  */
 export const updateAdminProfile = async (profileData) => {
   const res = await api.put("/users/admin/profile", profileData);
@@ -24,7 +26,10 @@ export const updateAdminProfile = async (profileData) => {
 
 /**
  * 🖼 Upload admin avatar image.
- * 
+ *
+ * Ensure a CSRF cookie has been set via a prior safe GET request before
+ * calling this function so the Axios instance can attach the token.
+ *
  * @param {string} adminId - Admin UUID
  * @param {File} avatarFile - Avatar file
  * @returns {Promise<Object>} Upload result
@@ -33,9 +38,15 @@ export const updateAdminProfile = async (profileData) => {
 export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const formData = new FormData();
   formData.append("avatar", avatarFile);
+  const headers = { "Content-Type": "multipart/form-data" };
+
+  // Ensure a CSRF token is present. If the cookie hasn't been set yet,
+  // trigger a lightweight GET request to acquire one before proceeding.
+  const csrfToken = await ensureCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
 
   const res = await api.patch(`/users/admin/${adminId}/avatar`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers,
     withCredentials: true, // if using cookies
   });
   return res.data;

@@ -1,6 +1,7 @@
 // 📁 src/services/auth/authService.js
 import api from "@/services/api/api";
 import logger from "@/utils/logger";
+import { ensureCsrfToken } from "@/services/api/csrf";
 
 /**
  * 🔐 Log in a user and retrieve access token and user info.
@@ -18,6 +19,8 @@ export const loginUser = async ({ email, password, recaptchaToken }) => {
       `${api.defaults.baseURL}/auth/login`
     );
     const res = await api.post("/auth/login", { email, password, recaptchaToken });
+    // Ensure the CSRF cookie from the backend is present for subsequent requests
+    await ensureCsrfToken();
     return res.data;
   } catch (err) {
     logger.error("❌ loginUser error", {
@@ -89,6 +92,7 @@ export const resetPassword = async ({ email, code, new_password }) => {
  */
 export const refreshAccessToken = async () => {
   const res = await api.post("/auth/refresh");
+  await ensureCsrfToken();
   return res.data;
 };
 

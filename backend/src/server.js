@@ -13,6 +13,7 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
+const cache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
@@ -41,8 +42,12 @@ const requiredSecrets = [
   "REFRESH_TOKEN_SECRET",
   "SESSION_SECRET",
 ];
-const dbKey =
-  process.env.NODE_ENV === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
+let dbKey;
+if (process.env.NODE_ENV === "test") {
+  dbKey = "TEST_DATABASE_URL";
+} else {
+  dbKey = process.env.DATABASE_URL ? "DATABASE_URL" : "PRODUCTION_DATABASE_URL";
+}
 requiredSecrets.push(dbKey);
 const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
 if (missingSecrets.length) {

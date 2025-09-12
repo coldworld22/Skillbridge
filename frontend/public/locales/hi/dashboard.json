@@ -550,6 +550,7 @@
     "demo_upload_failed": "डेमो वीडियो अपलोड करने में विफल",
     "full_name_min": "पूरा नाम कम से कम 3 अक्षर होना चाहिए",
     "phone_min": "फ़ोन नंबर कम से कम 8 अंक होना चाहिए",
+    "invalid_phone_number": "अमान्य फोन नंबर",
     "invalid_date": "अमान्य दिनांक प्रारूप",
     "experience_positive": "अनुभव एक सकारात्मक संख्या होनी चाहिए",
     "amount_positive": "राशि सकारात्मक होनी चाहिए",
@@ -584,6 +585,7 @@
     "profile_update_failed": "प्रोफ़ाइल अपडेट करने में विफल",
     "full_name_min": "पूरा नाम कम से कम 3 अक्षर होना चाहिए",
     "phone_min": "फ़ोन नंबर कम से कम 8 अंक होना चाहिए",
+    "invalid_phone_number": "अमान्य फोन नंबर",
     "invalid_email_address": "अमान्य ईमेल पता",
     "invalid_date": "अमान्य दिनांक प्रारूप",
     "url_invalid": "एक वैध URL होना चाहिए"

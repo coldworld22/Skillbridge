@@ -1,5 +1,6 @@
 // 📁 src/utils/validationSchemas.js
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 // These helpers generate validation schemas using i18n translations
 // 🔐 Login Schema
 export const loginSchema = (t) =>
@@ -19,8 +20,9 @@ export const registerSchema = (t) =>
       email: z.string().email(t("invalid_email_address")),
       phone: z
         .string()
-        .min(12, t("phone_min_12_digits"))
-        .max(20, t("phone_max_20_digits")),
+        .refine((val) => isValidPhoneNumber(val), {
+          message: t("invalid_phone_number"),
+        }),
 
       password: z
         .string()

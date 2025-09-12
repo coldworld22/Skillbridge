@@ -10,7 +10,7 @@ import { sendChatMessage } from '@/services/messageService';
 import { createNotification } from '@/services/notificationService';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
-import { API_BASE_URL } from '@/config/config';
+import { buildUrl } from '@/utils/url';
 
 export default function GroupForm() {
   const router = useRouter();
@@ -44,11 +44,8 @@ export default function GroupForm() {
       user.profile_image ||
       '';
     if (!url) return '/images/default-avatar.png';
-    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:'))
-      return url;
-    const clean = url.startsWith('/') ? url : `/${url}`;
-    return `${API_BASE_URL}${clean}`;
-
+    if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+    return buildUrl(url) || '/images/default-avatar.png';
   };
 
   useEffect(() => {

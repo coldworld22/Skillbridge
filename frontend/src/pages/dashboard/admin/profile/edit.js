@@ -8,6 +8,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import {
@@ -35,7 +36,11 @@ import getCroppedImg from "@/utils/cropImage";
 const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
-  phone: z.string().min(8, "phone_min"),
+  phone: z
+    .string()
+    .refine((val) => isValidPhoneNumber(val), {
+      message: "invalid_phone_number",
+    }),
   job_title: z.string().min(2),
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -75,7 +80,14 @@ function ProfileEditTemplate() {
 
 useEffect(() => {
   const local = localStorage.getItem("auth");
-  const parsed = JSON.parse(local)?.state;
+  let parsed;
+  if (local) {
+    try {
+      parsed = JSON.parse(local)?.state;
+    } catch (error) {
+      console.error("Failed to parse auth from localStorage", error);
+    }
+  }
   if (hasHydrated && !user && parsed?.user) {
     setUser(parsed.user);
   }
@@ -201,7 +213,9 @@ useEffect(() => {
       URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
-      toast.error(t('avatar_upload_failed'));
+      console.error('Avatar upload error:', error.response);
+      const msg = error.response?.data?.message || t('avatar_upload_failed');
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
