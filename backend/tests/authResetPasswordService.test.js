@@ -57,6 +57,10 @@ jest.mock('bcrypt', () => ({
   hash: jest.fn(),
 }));
 
+jest.mock('../src/services/tokenBlacklistService', () => ({
+  addToken: jest.fn(),
+}));
+
 const authService = require('../src/modules/auth/services/auth.service');
 const userModel = require('../src/modules/users/user.model');
 const { sendPasswordChangeEmail } = require('../src/utils/email');
@@ -64,6 +68,7 @@ const notificationService = require('../src/modules/notifications/notifications.
 const messageService = require('../src/modules/messages/messages.service');
 const bcrypt = require('bcrypt');
 const db = require('../src/config/database');
+const { addToken } = require('../src/services/tokenBlacklistService');
 
 describe('resetPassword service', () => {
   beforeEach(() => {
@@ -97,5 +102,27 @@ describe('resetPassword service', () => {
     // Ensure refresh tokens were revoked
     expect(refreshTokensTable.where).toHaveBeenCalledWith({ user_id: 1 });
     expect(refreshTokensWhere.del).toHaveBeenCalled();
+  });
+
+  it('blacklists provided access token', async () => {
+    userModel.findByEmail.mockResolvedValue({
+      id: 1,
+      email: 'test@example.com',
+      password_hash: 'old_hash',
+    });
+
+    bcrypt.compare.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    bcrypt.hash.mockResolvedValue('new_hash');
+
+    const accessToken = 'access123';
+
+    await authService.resetPassword({
+      email: 'test@example.com',
+      code: '123456',
+      new_password: 'NewPass1!',
+      accessToken,
+    });
+
+    expect(addToken).toHaveBeenCalledWith(accessToken);
   });
 });
