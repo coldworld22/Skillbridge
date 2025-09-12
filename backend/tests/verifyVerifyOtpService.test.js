@@ -23,6 +23,10 @@ jest.mock('../src/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+}));
+
 const store = {};
 jest.mock('../src/utils/redisClient', () => ({
   __store: store,
@@ -50,6 +54,7 @@ jest.mock('../src/config/database', () => {
   const verificationsQuery = {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
     first: jest.fn().mockResolvedValue(null),
     update: jest.fn().mockResolvedValue(1),
   };
@@ -67,23 +72,50 @@ jest.mock('../src/config/database', () => {
 
 const service = require('../src/modules/verify/verify.service');
 const redisClient = require('../src/utils/redisClient');
+const db = require('../src/config/database');
+const bcrypt = require('bcrypt');
+const verificationsQuery = db('verifications');
 
-describe('verify.service.verifyOtp lockout', () => {
+describe('verify.service.verifyOtp failures', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.keys(redisClient.__store).forEach((k) => delete redisClient.__store[k]);
+    verificationsQuery.first.mockResolvedValue(null);
+  });
+
+  it('returns 400 when verification record not found', async () => {
+    await expect(service.verifyOtp(1, 'email', '000000')).rejects.toMatchObject({
+      message: 'Invalid or expired OTP',
+      statusCode: 400,
+    });
+  });
+
+  it('returns 400 when code does not match', async () => {
+    verificationsQuery.first.mockResolvedValue({
+      id: 1,
+      code: 'hash',
+      verified: false,
+    });
+    bcrypt.compare.mockResolvedValue(false);
+    await expect(service.verifyOtp(1, 'email', '111111')).rejects.toMatchObject({
+      message: 'Invalid or expired OTP',
+      statusCode: 400,
+    });
+    expect(redisClient.set).toHaveBeenCalled();
   });
 
   it('locks after too many invalid attempts', async () => {
     for (let i = 0; i < 5; i++) {
-      await expect(service.verifyOtp(1, 'email', '000000')).rejects.toThrow(
-        'Invalid or expired OTP'
-      );
+      await expect(service.verifyOtp(1, 'email', '000000')).rejects.toMatchObject({
+        message: 'Invalid or expired OTP',
+        statusCode: 400,
+      });
     }
 
-    await expect(service.verifyOtp(1, 'email', '000000')).rejects.toThrow(
-      'Too many invalid OTP attempts'
-    );
+    await expect(service.verifyOtp(1, 'email', '000000')).rejects.toMatchObject({
+      message: 'Too many invalid OTP attempts. Try again later.',
+      statusCode: 429,
+    });
   });
 });
 

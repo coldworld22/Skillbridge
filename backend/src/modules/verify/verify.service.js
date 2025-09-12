@@ -8,7 +8,34 @@ const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const redisClient = require("../../utils/redisClient");
+const logger = require("../../utils/logger.js");
 const { OTP_LENGTH } = require("../auth/constants");
+
+const OTP_ATTEMPT_PREFIX = "verifyOtpAttempt:";
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+
+function getAttemptKey(userId, type) {
+  return `${OTP_ATTEMPT_PREFIX}${userId}:${type}`;
+}
+
+async function recordFailedAttempt(userId, type) {
+  if (!redisClient) return;
+  const key = getAttemptKey(userId, type);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= OTP_MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + OTP_LOCK_TIME;
+    }
+    await redisClient.set(key, JSON.stringify(info), { PX: OTP_LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record OTP attempt", err);
+  }
+}
 
 const SALT_ROUNDS = 12;
 const generateCode = () => {
@@ -86,10 +113,16 @@ exports.verifyOtp = async (userId, type, code) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new AppError("Invalid or expired OTP", 400);
+  if (!record) {
+    await recordFailedAttempt(userId, type);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, record.code);
-  if (!match) throw new Error("Invalid or expired OTP");
+  if (!match) {
+    await recordFailedAttempt(userId, type);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
