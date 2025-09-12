@@ -113,14 +113,18 @@ exports.verifyOtp = async (userId, type, code) => {
 
   const userAfter = await db("users").where({ id: userId }).first();
 
-  // Activate the user once both email and phone are verified
   if (
+    userAfter.status === "pending" &&
     userAfter.is_email_verified &&
-    userAfter.is_phone_verified &&
-    userAfter.status !== "active"
+    userAfter.is_phone_verified
   ) {
     await db("users").where({ id: userId }).update({ status: "active" });
-    userAfter.status = "active";
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "account",
+      message: "Your account has been activated.",
+    });
   }
 
   if (
