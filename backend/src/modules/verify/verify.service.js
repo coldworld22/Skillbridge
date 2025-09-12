@@ -6,12 +6,8 @@ const userModel = require("../users/user.model");
 const { sendOtpEmail } = require("../../utils/email");
 const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
-const redisClient = require("../../utils/redisClient");
-const logger = require("../../utils/logger.js");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-const redisClient = require("../../utils/redisClient");
-const logger = require("../../utils/logger.js");
 const { OTP_LENGTH } = require("../auth/constants");
 const {
   redisClient,
@@ -22,11 +18,6 @@ const {
 } = require("../../utils/otpAttempts");
 
 const SALT_ROUNDS = 12;
-const OTP_ATTEMPT_PREFIX = "otpAttempt:";
-
-function getAttemptKey(userId, type) {
-  return `${OTP_ATTEMPT_PREFIX}${userId}:${type}`;
-}
 const generateCode = () => {
   const max = Math.pow(10, OTP_LENGTH);
   return crypto.randomInt(0, max).toString().padStart(OTP_LENGTH, "0");
