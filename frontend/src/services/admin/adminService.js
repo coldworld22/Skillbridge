@@ -65,10 +65,15 @@ export const uploadAdminIdentity = async (file) => {
   const formData = new FormData();
   formData.append("identity", file); // this must match multer field name
 
+  const headers = { "Content-Type": "multipart/form-data" };
+
+  // Acquire a CSRF token (sets cookie if needed) and include it if present
+  const csrfToken = await ensureCsrfToken();
+  if (csrfToken) headers["x-csrf-token"] = csrfToken;
+
   const res = await api.post("/users/admin/profile/identity", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    headers,
+    withCredentials: true, // rely on default cookie-based auth
   });
 
   return res.data;
