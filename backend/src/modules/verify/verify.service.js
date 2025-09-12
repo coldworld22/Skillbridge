@@ -100,7 +100,10 @@ exports.verifyOtp = async (userId, type, code) => {
   }
 
   const match = await bcrypt.compare(code, record.code);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(identifier);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
@@ -109,6 +112,17 @@ exports.verifyOtp = async (userId, type, code) => {
   await clearOtpAttempts(identifier);
 
   const userAfter = await db("users").where({ id: userId }).first();
+
+  // Activate the user once both email and phone are verified
+  if (
+    userAfter.is_email_verified &&
+    userAfter.is_phone_verified &&
+    userAfter.status !== "active"
+  ) {
+    await db("users").where({ id: userId }).update({ status: "active" });
+    userAfter.status = "active";
+  }
+
   if (
     userAfter.is_email_verified &&
     userAfter.is_phone_verified &&

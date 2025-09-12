@@ -569,4 +569,15 @@ exports.sendVerificationOtp = async ({ user_id, type }) => {
  */
 exports.confirmVerificationOtp = async ({ user_id, type, code }) => {
   await verificationService.verifyOtp(user_id, type, code);
+
+  // After verification, check if both email and phone are verified
+  // and activate the user if not already active.
+  const user = await userModel.findById(user_id);
+  if (
+    user.is_email_verified &&
+    user.is_phone_verified &&
+    user.status !== "active"
+  ) {
+    await userModel.updateUser(user_id, { status: "active" });
+  }
 };
