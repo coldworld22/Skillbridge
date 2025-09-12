@@ -21,7 +21,6 @@ const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const { addToken } = require("../../../services/tokenBlacklistService");
 const verificationService = require("../../verify/verify.service");
-const { addToken: addTokenToBlacklist } = require("../../../services/tokenBlacklistService");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
