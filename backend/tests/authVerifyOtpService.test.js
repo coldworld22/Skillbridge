@@ -39,6 +39,20 @@ describe('verifyOtp retry counter', () => {
     jest.clearAllMocks();
   });
 
+  it('returns generic error when user is missing', async () => {
+    userModel.findByEmail.mockResolvedValue(null);
+    redisClient.get.mockResolvedValue(null);
+
+    await expect(
+      authService.verifyOtp({ email: 'missing@example.com', code: '123456' })
+    ).rejects.toMatchObject({
+      message: 'Invalid or expired OTP',
+      statusCode: 400,
+    });
+
+    expect(redisClient.set).toHaveBeenCalled();
+  });
+
   it('locks out after too many failed attempts', async () => {
     userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
     redisClient.get.mockResolvedValue(
@@ -55,6 +69,7 @@ describe('verifyOtp retry counter', () => {
   it('increments counter on failed attempt', async () => {
     userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
     redisClient.get
+      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(JSON.stringify({ count: 1, lockUntil: null }));
     passwordResetsTable.first.mockResolvedValue({ id: 2, code_hash: 'hash' });

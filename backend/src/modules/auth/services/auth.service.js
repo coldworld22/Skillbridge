@@ -428,7 +428,11 @@ exports.verifyOtp = async ({ email, code }) => {
   }
 
   const user = await userModel.findByEmail(email);
-  if (!user) throw new AppError("Invalid user", 400);
+  if (!user) {
+    // Return a generic error to avoid exposing whether the email exists
+    await recordFailedOtpAttempt(email);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   attempt = null;
   if (redisClient) {
