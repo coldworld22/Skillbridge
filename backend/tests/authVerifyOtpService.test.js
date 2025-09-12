@@ -67,9 +67,7 @@ describe('verifyOtp retry counter', () => {
 
   it('increments counter on failed attempt', async () => {
     userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
-    redisClient.get.mockResolvedValue(
-      JSON.stringify({ count: 1, lockUntil: null })
-    );
+    redisClient.get.mockResolvedValue(JSON.stringify({ count: 1, lockUntil: null }));
     passwordResetsTable.first.mockResolvedValue({ id: 2, code_hash: 'hash' });
     bcrypt.compare.mockResolvedValue(false);
 
@@ -77,6 +75,7 @@ describe('verifyOtp retry counter', () => {
       authService.verifyOtp({ email: 'test@example.com', code: 'wrong' })
     ).rejects.toMatchObject({ message: expect.stringMatching(/invalid/i) });
 
+    expect(redisClient.get).toHaveBeenCalledTimes(2);
     expect(redisClient.set).toHaveBeenCalled();
     const setArgs = redisClient.set.mock.calls[0];
     const info = JSON.parse(setArgs[1]);

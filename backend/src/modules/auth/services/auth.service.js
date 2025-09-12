@@ -48,8 +48,8 @@ function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-function getOtpAttemptKey(identifier) {
-  return `${OTP_ATTEMPT_PREFIX}${identifier}`;
+function getOtpAttemptKey(userId) {
+  return `${OTP_ATTEMPT_PREFIX}${userId}`;
 }
 
 async function recordFailedAttempt(email, ip) {
@@ -69,9 +69,9 @@ async function recordFailedAttempt(email, ip) {
   }
 }
 
-async function recordFailedOtpAttempt(identifier) {
+async function recordFailedOtpAttempt(userId) {
   if (!redisClient) return;
-  const key = getOtpAttemptKey(identifier);
+  const key = getOtpAttemptKey(userId);
   let info = { count: 0, lockUntil: null };
   try {
     const data = await redisClient.get(key);
@@ -86,10 +86,10 @@ async function recordFailedOtpAttempt(identifier) {
   }
 }
 
-async function clearOtpAttempts(identifier) {
+async function clearOtpAttempts(userId) {
   if (!redisClient) return;
   try {
-    await redisClient.del(getOtpAttemptKey(identifier));
+    await redisClient.del(getOtpAttemptKey(userId));
   } catch (err) {
     logger.error("Failed to clear OTP attempts", err);
   }
@@ -441,12 +441,12 @@ exports.generateOtp = async (email, via = "email") => {
  */
 exports.verifyOtp = async ({ email, code }) => {
   const user = await userModel.findByEmail(email);
-  const identifier = user ? user.id : email;
+  if (!user) throw new AppError("Invalid user", 400);
 
   let attempt = null;
   if (redisClient) {
     try {
-      const data = await redisClient.get(getOtpAttemptKey(identifier));
+      const data = await redisClient.get(getOtpAttemptKey(user.id));
       attempt = data ? JSON.parse(data) : null;
     } catch (err) {
       logger.error("Failed to check OTP attempts", err);
@@ -458,11 +458,6 @@ exports.verifyOtp = async ({ email, code }) => {
       "Too many failed OTP attempts. Try again later.",
       429
     );
-  }
-
-  if (!user) {
-    await recordFailedOtpAttempt(identifier);
-    throw new AppError("Invalid or expired OTP", 400);
   }
 
   const record = await db("password_resets")
