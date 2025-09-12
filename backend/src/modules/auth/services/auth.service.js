@@ -214,7 +214,7 @@ exports.loginUser = async ({ email, password, ip }) => {
   if (!user) {
     // Perform a dummy hash to mitigate timing attacks when the user is missing
     await bcrypt.hash(password, SALT_ROUNDS);
-    recordFailedAttempt(email);
+    recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
