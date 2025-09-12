@@ -109,6 +109,21 @@ exports.verifyOtp = async (userId, type, code) => {
   await clearOtpAttempts(identifier);
 
   const userAfter = await db("users").where({ id: userId }).first();
+
+  if (
+    userAfter.status === "pending" &&
+    userAfter.is_email_verified &&
+    userAfter.is_phone_verified
+  ) {
+    await db("users").where({ id: userId }).update({ status: "active" });
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: "account",
+      message: "Your account has been activated.",
+    });
+  }
+
   if (
     userAfter.is_email_verified &&
     userAfter.is_phone_verified &&
