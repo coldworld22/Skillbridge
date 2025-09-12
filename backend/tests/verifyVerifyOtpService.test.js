@@ -122,3 +122,44 @@ describe('verify.service.verifyOtp failures', () => {
   });
 });
 
+describe('verify.service.verifyOtp success', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.keys(redisClient.__store).forEach((k) => delete redisClient.__store[k]);
+  });
+
+  it('activates user when both email and phone are verified', async () => {
+    // First call returns user with email verified but phone unverified
+    db.__usersQuery.first
+      .mockResolvedValueOnce({
+        is_email_verified: true,
+        is_phone_verified: false,
+        status: 'pending',
+        profile_complete: false,
+      })
+      .mockResolvedValueOnce({
+        is_email_verified: true,
+        is_phone_verified: true,
+        status: 'pending',
+        profile_complete: false,
+      });
+
+    db.__verificationsQuery.first.mockResolvedValue({
+      id: 1,
+      code: 'hash',
+      verified: false,
+    });
+
+    bcrypt.compare.mockResolvedValue(true);
+
+    await service.verifyOtp(1, 'phone', '123456');
+
+    expect(db.__usersQuery.update).toHaveBeenNthCalledWith(1, {
+      is_phone_verified: true,
+    });
+    expect(db.__usersQuery.update).toHaveBeenNthCalledWith(2, {
+      status: 'active',
+    });
+  });
+});
+

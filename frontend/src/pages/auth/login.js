@@ -134,6 +134,13 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
       msg = t("account_not_active");
     }
 
+    if (
+      msg ===
+      "Account pending activation. Please verify your email or contact support."
+    ) {
+      msg = t("account_pending_activation");
+    }
+
     if (err.code === "ERR_NETWORK") {
       msg = t("network_error_check_config");
     }
