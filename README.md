@@ -47,6 +47,13 @@ ENABLE_INSTALL=true INSTALL_API_ENABLED=true npm start
 
 Then visit `http://localhost:5002/install` and disable the variables once setup is complete.
 
+For scripted deployments, installation endpoints are also available under `/api/install`. They remain disabled unless `INSTALL_API_ENABLED=true` is set in your `.env`. These routes require an authenticated administrator. Example:
+
+```
+# backend/.env
+INSTALL_API_ENABLED=true
+```
+
 ## Quick start
 
 Install the project dependencies:
