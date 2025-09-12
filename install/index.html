@@ -4,30 +4,33 @@
   <meta charset="UTF-8" />
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>SkillBridge Installation</h1>
-  <section id="step1">
-    <h2>Step 1: Prerequisite Check</h2>
-    <button id="checkBtn">Recheck</button>
-    <pre id="prereqOutput"></pre>
+<body class="p-4 font-sans">
+  <nav class="mb-4 space-x-4">
+    <a href="/" class="text-blue-600 underline">Main Site</a>
+    <a href="/docs" class="text-blue-600 underline">Documentation</a>
+  </nav>
+  <h1 class="text-2xl font-bold mb-4">SkillBridge Installation</h1>
+  <section id="step1" class="mb-8">
+    <h2 class="text-xl font-semibold mb-2">Step 1: Prerequisite Check</h2>
+    <button id="checkBtn" class="px-4 py-2 bg-blue-500 text-white rounded">Recheck</button>
+    <pre id="prereqOutput" class="mt-2"></pre>
   </section>
-  <section id="step2" style="display: none;">
-    <h2>Step 2: Configuration</h2>
-    <form id="configForm">
-      <label>
-        Admin Email
-        <input type="email" name="adminEmail" required />
+  <section id="step2" style="display: none;" class="mb-8">
+    <h2 class="text-xl font-semibold mb-2">Step 2: Configuration</h2>
+    <form id="configForm" class="space-y-4">
+      <label class="block">
+        <span class="block">Admin Email</span>
+        <input type="email" name="adminEmail" required class="border p-2 w-full" />
       </label>
-      <br />
-      <label>
-        Admin Password
-        <input type="password" name="adminPassword" required />
+      <label class="block">
+        <span class="block">Admin Password</span>
+        <input type="password" name="adminPassword" required class="border p-2 w-full" />
       </label>
-      <br />
-      <button type="submit">Run Install</button>
+      <button type="submit" id="installBtn" class="px-4 py-2 bg-green-600 text-white rounded">Run Install</button>
     </form>
-    <pre id="installOutput"></pre>
+    <pre id="installOutput" class="mt-2"></pre>
   </section>
   <script src="install.js" defer></script>
 </body>
