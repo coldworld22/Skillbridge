@@ -52,7 +52,6 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     defaultValues: {
       email: "",
       password: "",
-      remember: true,
     },
   });
 
@@ -197,11 +196,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
             </p>
           )}
 
-          <div className="mt-4 flex items-center justify-between w-full text-sm text-gray-400">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" {...register("remember")} />
-              {t('remember_me')}
-            </label>
+          <div className="mt-4 flex items-center justify-end w-full text-sm text-gray-400">
             <a href="/auth/forgot-password" className="text-yellow-400 hover:underline">
               {t('forgot_password')}
             </a>

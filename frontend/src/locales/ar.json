@@ -7,7 +7,6 @@
     "password": "كلمة المرور",
     "confirm_password": "تأكيد كلمة المرور",
     "forgot_password": "نسيت كلمة المرور؟",
-    "remember_me": "تذكرني",
     "login_success": "تم تسجيل الدخول بنجاح",
     "invalid_credentials": "بيانات الدخول غير صحيحة"
   },
