@@ -2,10 +2,14 @@ const mockIgnore = jest.fn();
 const mockOnConflict = jest.fn(() => ({ ignore: mockIgnore }));
 const mockInsert = jest.fn(() => ({ onConflict: mockOnConflict }));
 const mockFirst = jest.fn();
-const mockWhere = jest.fn(() => ({ first: mockFirst }));
+const mockDel = jest.fn();
+const mockAndWhere = jest.fn(() => ({ first: mockFirst, del: mockDel }));
+const mockWhere = jest.fn(() => ({ andWhere: mockAndWhere, first: mockFirst, del: mockDel }));
 const mockDb = jest.fn(() => ({ insert: mockInsert, where: mockWhere }));
 
 jest.mock('../src/config/database.js', () => mockDb);
+
+mockDb.fn = { now: jest.fn(() => new Date()) };
 
 const mockLogger = {
   log: jest.fn(),
@@ -16,7 +20,7 @@ const mockLogger = {
 
 jest.mock('../src/utils/logger.js', () => mockLogger);
 
-const { addToken, isTokenBlacklisted } = require('../src/services/tokenBlacklistService');
+const { addToken, isTokenBlacklisted, removeExpiredTokens } = require('../src/services/tokenBlacklistService');
 
 describe('tokenBlacklistService', () => {
   beforeEach(() => {
@@ -39,5 +43,11 @@ describe('tokenBlacklistService', () => {
     mockFirst.mockRejectedValueOnce(err);
 
     await expect(isTokenBlacklisted('tok')).rejects.toThrow('query fail');
+  });
+
+  test('removeExpiredTokens purges old entries', async () => {
+    await removeExpiredTokens();
+    expect(mockWhere).toHaveBeenCalledWith('expires_at', '<', expect.anything());
+    expect(mockDel).toHaveBeenCalled();
   });
 });
