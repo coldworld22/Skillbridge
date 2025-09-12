@@ -4,7 +4,7 @@ const { z } = require("zod");
 const updateStudentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name is required"),
   phone: z.string().min(8, "Phone number is required"),
-  gender: z.enum(["male", "female"]),
+  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date of birth",
   }),

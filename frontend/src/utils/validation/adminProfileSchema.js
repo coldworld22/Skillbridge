@@ -9,7 +9,7 @@ export const adminProfileSchema = z.object({
     .refine((val) => isValidPhoneNumber(val), {
       message: "Invalid phone number",
     }),
-  gender: z.enum(["male", "female"]),
+  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date",
   }),

@@ -29,7 +29,7 @@ const studentProfileSchema = z.object({
     .refine((val) => isValidPhoneNumber(val), {
       message: "Invalid phone number",
     }),
-  gender: z.enum(["male", "female"]),
+  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
@@ -514,6 +514,8 @@ export default function StudentProfileEdit() {
                       >
                         <option value="male">Male</option>
                         <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
                       </select>
                     </div>
 
