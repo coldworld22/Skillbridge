@@ -34,7 +34,7 @@ import { toSocialLinksArray } from "@/utils/socialLinks";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
-const profileSchema = z.object({
+export const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
   phone: z
@@ -46,8 +46,8 @@ const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links are optional strings without URL validation
-  socialLinks: z.record(z.string()).optional(),
+  // Social links validated as URLs
+  socialLinks: z.record(z.string().url("invalid_url")).optional(),
 });
 
 function ProfileEditTemplate() {
@@ -141,7 +141,9 @@ useEffect(() => {
 
         const socialMap = {};
         social_links?.forEach((link) => {
-          socialMap[link.platform] = link.url;
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         setFormData((prev) => ({
@@ -475,22 +477,32 @@ useEffect(() => {
               {expanded.social ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expanded.social && (
-              <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">LinkedIn</label>
-                  <input
-                    type="text"
-                    name="linkedin"
-                    value={formData.socialLinks.linkedin || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        socialLinks: { ...prev.socialLinks, linkedin: e.target.value.trim() },
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+              <div className="p-4 space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {allowedPlatforms.map(({ name, Icon, className }) => (
+                  <div key={name}>
+                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                      <Icon className={`${className} w-4 h-4`} />
+                      {name.charAt(0).toUpperCase() + name.slice(1)}
+                    </label>
+                    <input
+                      type="text"
+                      name={name}
+                      value={formData.socialLinks[name] || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
+                        }))
+                      }
+                      placeholder={
+                        name === 'website'
+                          ? 'https://yourwebsite.com'
+                          : `https://${name}.com/yourprofile`
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>

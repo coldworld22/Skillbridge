@@ -20,42 +20,33 @@ import {
   updateInstructorProfile,
   uploadInstructorAvatar,
   uploadInstructorDemo,
-  uploadCertificateFile,
-  deleteCertificateFile,
   toggleInstructorStatus,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 import {
-  FaUpload,
-  FaTrash,
   FaSpinner,
   FaUserCircle,
   FaVideo,
-  FaLinkedin,
-  FaGithub,
-  FaGlobe,
-  FaTwitter,
-  FaYoutube,
-  FaFacebook,
-  FaInstagram,
   FaDollarSign,
-  FaCertificate,
-  FaBriefcase,
   FaCalendarAlt,
   FaPhone,
   FaVenusMars,
   FaUser,
-  FaPlus,
-  FaFilePdf,
-  FaFileImage,
   FaCheck,
 } from "react-icons/fa";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 import { MdOutlineWorkOutline } from "react-icons/md";
-import { RiDeleteBin6Line } from "react-icons/ri";
+
+import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
+import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
+import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
+import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
+import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-const instructorProfileSchema = z.object({
+export const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
@@ -77,22 +68,10 @@ const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string())
+    .record(z.string().url("invalid_url"))
     .optional(),
 });
-
-const socialPlatforms = [
-  { name: "linkedin", icon: <FaLinkedin className="text-blue-600" /> },
-  { name: "github", icon: <FaGithub className="text-gray-800" /> },
-  { name: "twitter", icon: <FaTwitter className="text-blue-400" /> },
-  { name: "youtube", icon: <FaYoutube className="text-red-600" /> },
-  { name: "facebook", icon: <FaFacebook className="text-blue-700" /> },
-  { name: "instagram", icon: <FaInstagram className="text-pink-600" /> },
-  { name: "website", icon: <FaGlobe className="text-green-600" /> },
-];
-
 // Currency options will be loaded from the backend configuration
-
 export default function InstructorProfileEdit() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorProfilePage' });
@@ -116,13 +95,6 @@ export default function InstructorProfileEdit() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newExpertise, setNewExpertise] = useState("");
-  const [newCertificate, setNewCertificate] = useState({
-    title: "",
-    file: null,
-    preview: null,
-  });
-  const [certificateUploading, setCertificateUploading] = useState(false);
 
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -165,8 +137,10 @@ export default function InstructorProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, instructor, social_links, certificates } = res;
 
         const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        social_links?.forEach((link) => {
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         // Split pricing if it exists in format "100 USD"
@@ -248,53 +222,21 @@ export default function InstructorProfileEdit() {
     }
   };
 
-  const handleCertificateUpload = async () => {
-    if (!newCertificate.title || !newCertificate.file) {
-      toast.error(t('provide_title_and_file'));
-      return;
-    }
-
+  const handleDemoSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) return toast.error(t('demo_max_size'));
+    setIsSubmitting(true);
     try {
-      setCertificateUploading(true);
-      const formData = new FormData();
-      formData.append("title", newCertificate.title);
-      formData.append("file", newCertificate.file);
-
-      const response = await uploadCertificateFile(formData);
-
+      const res = await uploadInstructorDemo(user.id, file);
       setFormData(prev => ({
         ...prev,
-        certificates: [...prev.certificates, {
-          id: response.id,
-          title: newCertificate.title,
-          file_url: response.file_url
-        }]
+        demoPreview: `${BASE_URL}${res.demo_video_url}`,
       }));
-
-      if (newCertificate.preview) {
-        URL.revokeObjectURL(newCertificate.preview);
-      }
-      setNewCertificate({ title: "", file: null, preview: null });
-        toast.success(t('certificate_upload_success'));
     } catch (error) {
-        toast.error(t('certificate_upload_failed'));
-      console.error("Certificate upload error:", error);
+      toast.error(t('demo_upload_failed'));
     } finally {
-      setCertificateUploading(false);
-    }
-  };
-
-  const handleRemoveCertificate = async (certificateId) => {
-    try {
-      await deleteCertificateFile(certificateId);
-      setFormData(prev => ({
-        ...prev,
-        certificates: prev.certificates.filter(cert => cert.id !== certificateId)
-      }));
-        toast.success(t('certificate_removed'));
-    } catch (error) {
-        toast.error(t('certificate_remove_failed'));
-      console.error("Certificate removal error:", error);
+      setIsSubmitting(false);
     }
   };
 
@@ -347,7 +289,6 @@ export default function InstructorProfileEdit() {
         typeof formData.pricing_amount === "number"
           ? `${formData.pricing_amount} ${formData.pricing_currency}`
           : "";
-
       const social_links = toSocialLinksArray(formData.socialLinks);
 
       await updateInstructorProfile({
@@ -373,7 +314,7 @@ export default function InstructorProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       // Reflect updates locally
@@ -441,109 +382,20 @@ export default function InstructorProfileEdit() {
 
         {/* Avatar and Demo Upload Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaUserCircle className="text-yellow-600" /> {t('profile_picture')}
-            </h2>
-            <div className="flex flex-col items-center">
-              {formData.avatarPreview ? (
-                <div className="relative mb-4">
-                  <img
-                    src={formData.avatarPreview}
-                    alt="Avatar"
-                    className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
-                  />
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, avatarPreview: null }))}
-                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    <FaTrash size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
-                  <FaUserCircle size={48} className="text-gray-400" />
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarSelect}
-                  className="hidden"
-                />
-
-                <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
-                    <FaSpinner className="animate-spin" />
-                  ) : (
-                    <FaUpload />
-                  )}
-                  {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaVideo className="text-purple-600" /> {t('demo_video')}
-            </h2>
-            <div className="flex flex-col items-center">
-              {formData.demoPreview ? (
-                <div className="relative w-full">
-                  <video
-                    controls
-                    src={formData.demoPreview}
-                    className="rounded-md w-full max-h-64 border"
-                  />
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, demoPreview: null }))}
-                    className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    <FaTrash size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="w-full h-40 bg-gray-100 flex flex-col items-center justify-center rounded-lg mb-4 border-2 border-dashed border-gray-300">
-                  <FaVideo className="text-3xl text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">{t('upload_video')}</p>
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (file.size > 3 * 1024 * 1024) return toast.error(t('demo_max_size'));
-                    setIsSubmitting(true);
-                    try {
-                      const res = await uploadInstructorDemo(user.id, file);
-                      setFormData(prev => ({
-                        ...prev,
-                        demoPreview: `${BASE_URL}${res.demo_video_url}`
-                      }));
-                    } catch (error) {
-                      toast.error(t('demo_upload_failed'));
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
-                  className="hidden"
-                />
-                <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
-                    <FaSpinner className="animate-spin" />
-                  ) : (
-                    <FaUpload />
-                  )}
-                  {formData.demoPreview ? t('change_video') : t('upload_video')}
-                </div>
-              </label>
-            </div>
-          </div>
+          <AvatarUploader
+            avatarPreview={formData.avatarPreview}
+            isSubmitting={isSubmitting}
+            t={t}
+            onSelect={handleAvatarSelect}
+            onRemove={() => setFormData((prev) => ({ ...prev, avatarPreview: null }))}
+          />
+          <DemoVideoUploader
+            demoPreview={formData.demoPreview}
+            isSubmitting={isSubmitting}
+            t={t}
+            onSelect={handleDemoSelect}
+            onRemove={() => setFormData((prev) => ({ ...prev, demoPreview: null }))}
+          />
         </div>
 
         {/* Personal and Professional Info */}
@@ -890,20 +742,26 @@ export default function InstructorProfileEdit() {
           <div>
             <label className="block text-sm font-medium mb-2">{t('social_links')}</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {socialPlatforms.map((platform) => (
-                <div key={platform.name} className="bg-gray-50 p-3 rounded-lg">
+              {allowedPlatforms.map(({ name, Icon, className }) => (
+                <div key={name} className="bg-gray-50 p-3 rounded-lg">
                   <label className="text-sm flex items-center gap-2 font-medium mb-1">
-                    {platform.icon} {platform.name.charAt(0).toUpperCase() + platform.name.slice(1)}
+                    <Icon className={className} /> {name.charAt(0).toUpperCase() + name.slice(1)}
                   </label>
                   <input
                     type="text"
-                    name={platform.name}
-                    value={formData.socialLinks[platform.name] || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, [platform.name]: e.target.value },
-                    }))}
-                    placeholder={`https://${platform.name}.com/yourprofile`}
+                    name={name}
+                    value={formData.socialLinks[name] || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, [name]: e.target.value },
+                      }))
+                    }
+                    placeholder={
+                      name === 'website'
+                        ? 'https://yourwebsite.com'
+                        : `https://${name}.com/yourprofile`
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   />
                 </div>
