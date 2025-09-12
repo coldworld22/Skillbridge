@@ -111,70 +111,95 @@ exports.registerUser = async (data) => {
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  const [newUser] = await userModel.insertUser({
-    full_name: data.full_name,
-    email: data.email,
-    phone: data.phone,
-    password_hash: hashed,
-    role: data.role || "Student",
-    status: "pending",
-    is_email_verified: false,
-    is_phone_verified: false,
-    profile_complete: false,
-    created_at: new Date(),
-    updated_at: new Date(),
-  });
+  const admins = await userModel.findAdmins();
+  let newUser;
+  try {
+    await db.transaction(async (trx) => {
+      [newUser] = await userModel.insertUser(
+        {
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          password_hash: hashed,
+          role: data.role || "Student",
+          status: "pending",
+          is_email_verified: false,
+          is_phone_verified: false,
+          profile_complete: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        trx,
+      );
 
-  const roleName = data.role || "Student";
-  const roleRow = await db("roles").where({ name: roleName }).first();
-  if (roleRow) {
-    await db("user_roles").insert({ user_id: newUser.id, role_id: roleRow.id });
+      const roleName = data.role || "Student";
+      const roleRow = await trx("roles").where({ name: roleName }).first();
+      if (roleRow) {
+        await trx("user_roles").insert({
+          user_id: newUser.id,
+          role_id: roleRow.id,
+        });
+      }
+
+      const welcomeMessage =
+        newUser.role && newUser.role.toLowerCase() === "instructor"
+          ? "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
+          : "Welcome to SkillBridge!";
+
+      await notificationService.createNotification(
+        {
+          user_id: newUser.id,
+          type: "welcome",
+          message: welcomeMessage,
+        },
+        trx,
+      );
+
+      const firstAdmin = admins[0];
+      if (firstAdmin) {
+        await messageService.createMessage(
+          {
+            sender_id: firstAdmin.id,
+            receiver_id: newUser.id,
+            message: welcomeMessage,
+          },
+          trx,
+        );
+      }
+
+      await Promise.all(
+        admins.map((admin) =>
+          notificationService.createNotification(
+            {
+              user_id: admin.id,
+              type: "new_user",
+              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+            },
+            trx,
+          ),
+        ),
+      );
+
+      await Promise.all(
+        admins.map((admin) =>
+          messageService.createMessage(
+            {
+              sender_id: newUser.id,
+              receiver_id: admin.id,
+              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+            },
+            trx,
+          ),
+        ),
+      );
+    });
+  } catch (err) {
+    logger.error("Failed to register user", err);
+    throw err;
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
   const permissions = await userModel.getUserPermissions(newUser.id);
-
-  const welcomeMessage =
-    newUser.role && newUser.role.toLowerCase() === "instructor"
-      ?
-        "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
-      : "Welcome to SkillBridge!";
-
-  await notificationService.createNotification({
-    user_id: newUser.id,
-    type: "welcome",
-    message: welcomeMessage,
-  });
-
-  const admins = await userModel.findAdmins();
-  const firstAdmin = admins[0];
-  if (firstAdmin) {
-    await messageService.createMessage({
-      sender_id: firstAdmin.id,
-      receiver_id: newUser.id,
-      message: welcomeMessage,
-    });
-  }
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "new_user",
-        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-
-      })
-    )
-  );
-  await Promise.all(
-    admins.map((admin) =>
-      messageService.createMessage({
-        sender_id: newUser.id,
-        receiver_id: admin.id,
-        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-
-      })
-    )
-  );
 
   // Send emails
   try {
@@ -184,18 +209,20 @@ exports.registerUser = async (data) => {
         sendNewUserAdminEmail(admin.email, {
           full_name: newUser.full_name,
           email: newUser.email,
-        })
-      )
+        }),
+      ),
     );
   } catch (err) {
     logger.error("Error sending registration emails:", err.message);
   }
+
   // Queue verification email OTP sending without delaying response
   setImmediate(() => {
     verificationService
       .sendOtp(newUser.id, "email")
       .catch((err) => logger.error("Error sending verification OTP:", err));
   });
+
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };
 };
