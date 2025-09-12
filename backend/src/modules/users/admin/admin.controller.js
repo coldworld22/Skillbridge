@@ -131,6 +131,7 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+    await trx.commit();
     // 4. Return the freshly updated profile details
     const [user] = await db("users")
       .where({ id: userId })
@@ -164,6 +165,14 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     await trx.rollback();
+    if (error.code === "23505") {
+      if (error.constraint === "users_email_unique") {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      if (error.constraint === "users_phone_unique") {
+        return res.status(409).json({ message: "Phone number already in use" });
+      }
+    }
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
