@@ -24,6 +24,7 @@ const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -441,10 +442,10 @@ exports.verifyOtp = async ({ email, code }) => {
 
 /**
  * Reset a user's password using a valid OTP code.
- * @param {{email:string, code:string, new_password:string}} data
+ * @param {{email:string, code:string, new_password:string, accessToken?:string}} data
  * @returns {Promise<void>}
  */
-exports.resetPassword = async ({ email, code, new_password }) => {
+exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
@@ -468,6 +469,18 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   await db("users").where({ id: user.id }).update({ password_hash: hashed });
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
+
+  // Revoke all refresh tokens for this user
+  await db("refresh_tokens").where({ user_id: user.id }).del();
+
+  // Optionally blacklist the provided access token
+  if (accessToken) {
+    try {
+      await addTokenToBlacklist(accessToken);
+    } catch (err) {
+      logger.error("Failed to blacklist access token", err);
+    }
+  }
 
   await sendPasswordChangeEmail(user.email);
 
