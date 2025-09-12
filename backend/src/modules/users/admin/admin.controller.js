@@ -166,6 +166,17 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     await trx.rollback();
+
+    // Handle unique constraint violations for email and phone
+    if (error.code === "23505") {
+      if (error.constraint === "users_email_unique") {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (error.constraint === "users_phone_unique") {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
