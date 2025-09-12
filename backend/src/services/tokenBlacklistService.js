@@ -1,18 +1,21 @@
 const db = require('../config/database');
 const logger = require('../utils/logger.js');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 /**
  * Inserts a token into the blacklist store.
  * @param {string} token
  * @returns {Promise<void>}
  */
-function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
 async function addToken(token) {
   if (!token) return;
+
+  const tokenHash = hashToken(token);
 
   let expiresAt = null;
   try {
@@ -26,8 +29,8 @@ async function addToken(token) {
 
   try {
     await db('blacklisted_tokens')
-      .insert({ token, expires_at: expiresAt })
-      .onConflict('token')
+      .insert({ token_hash: tokenHash, expires_at: expiresAt })
+      .onConflict('token_hash')
       .ignore();
   } catch (err) {
     logger.error('Failed to add token to blacklist:', err);
@@ -42,8 +45,9 @@ async function addToken(token) {
  */
 async function isTokenBlacklisted(token) {
   if (!token) return false;
+  const tokenHash = hashToken(token);
   const record = await db('blacklisted_tokens')
-    .where({ token })
+    .where({ token_hash: tokenHash })
     .andWhere('expires_at', '>', db.fn.now())
     .first();
   return !!record;

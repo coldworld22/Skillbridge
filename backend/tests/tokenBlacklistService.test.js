@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const mockIgnore = jest.fn();
 const mockOnConflict = jest.fn(() => ({ ignore: mockIgnore }));
 const mockInsert = jest.fn(() => ({ onConflict: mockOnConflict }));
@@ -31,7 +33,7 @@ describe('tokenBlacklistService', () => {
     mockIgnore.mockResolvedValueOnce();
     await addToken('tok');
     const hash = crypto.createHash('sha256').update('tok').digest('hex');
-    expect(mockInsert).toHaveBeenCalledWith({ token_hash: hash });
+    expect(mockInsert).toHaveBeenCalledWith({ token_hash: hash, expires_at: null });
     expect(mockOnConflict).toHaveBeenCalledWith('token_hash');
   });
 
