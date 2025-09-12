@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const socialLoginConfigService = require("../../socialLoginConfig/socialLoginConfig.service");
 const recaptchaService = require("../../recaptcha/recaptcha.service");
 const authMiddleware = require("../../../middleware/auth/authMiddleware");
+const crypto = require("crypto");
 
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
@@ -67,8 +68,10 @@ exports.login = catchAsync(async (req, res) => {
     }
   }
   const { accessToken, refreshToken, user } = await authService.loginUser({ ...req.body, ip: req.ip });
+  const csrfToken = crypto.randomBytes(64).toString("hex");
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .cookie("csrfToken", csrfToken, csrfCookieOptions)
     .json({ message: "Login successful", accessToken, user });
 });
 
@@ -98,8 +101,10 @@ exports.refreshToken = catchAsync(async (req, res) => {
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
+    const csrfToken = crypto.randomBytes(64).toString("hex");
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+      .cookie("csrfToken", csrfToken, csrfCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);

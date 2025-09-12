@@ -15,6 +15,11 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 - `POST /verify-otp` – verify the reset code
 - `POST /reset-password` – update the password
 
+`POST /login` and `POST /refresh` also issue a `csrfToken` cookie containing a
+random CSRF token. Clients must mirror this value in the `x-csrf-token` header
+on subsequent state‑changing requests (POST/PUT/PATCH/DELETE) to satisfy server
+CSRF validation.
+
 ## Users
 
 `/api/users`

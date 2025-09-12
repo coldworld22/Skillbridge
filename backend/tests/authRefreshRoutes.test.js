@@ -63,6 +63,11 @@ describe('POST /api/auth/refresh', () => {
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.accessToken).toBe('newA');
     expect(authService.rotateRefreshToken).toHaveBeenCalledWith('r');
+    expect(refreshRes.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('csrfToken='),
+      ])
+    );
   });
 
   it('rejects invalid refresh token', async () => {
