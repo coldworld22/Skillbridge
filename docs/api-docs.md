@@ -8,7 +8,7 @@ The backend exposes a REST API under the `/api` prefix. Below is a brief outline
 
 - `POST /register` – create a new user
 - `POST /login` – authenticate and receive tokens
-- `POST /refresh` – refresh an access token
+- `POST /refresh` – refresh an access token (refresh token cookies expire after 30 days)
 - `POST /logout` – clear the refresh token
 - `POST /request-reset` – send a password reset OTP *(legacy)*
 - `POST /forgot-password` – send a password reset OTP via email

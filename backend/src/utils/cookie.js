@@ -8,11 +8,13 @@
 // flag and relax `SameSite` when not running in production.
 // ---------------------------------------------------------------------------
 
+const { REFRESH_TOKEN_MAX_AGE } = require("../config/tokens");
+
 const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  maxAge: REFRESH_TOKEN_MAX_AGE,
 };
 
 // CSRF token needs to be readable by the client so `httpOnly` is false, but we
