@@ -8,7 +8,16 @@ const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const redisClient = require("../../utils/redisClient");
+const logger = require("../../utils/logger.js");
 const { OTP_LENGTH } = require("../auth/constants");
+const {
+  redisClient,
+  logger,
+  getOtpAttemptKey,
+  recordFailedOtpAttempt,
+  clearOtpAttempts,
+} = require("../../utils/otpAttempts");
 
 const SALT_ROUNDS = 12;
 const generateCode = () => {
@@ -57,10 +66,11 @@ exports.sendOtp = async (userId, type) => {
 };
 
 exports.verifyOtp = async (userId, type, code) => {
+  const identifier = `${userId}:${type}`;
   let attempt = null;
   if (redisClient) {
     try {
-      const data = await redisClient.get(getAttemptKey(userId, type));
+      const data = await redisClient.get(getOtpAttemptKey(identifier));
       attempt = data ? JSON.parse(data) : null;
     } catch (err) {
       logger.error("Failed to check OTP attempts", err);
@@ -86,7 +96,10 @@ exports.verifyOtp = async (userId, type, code) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new AppError("Invalid or expired OTP", 400);
+  if (!record) {
+    await recordFailedOtpAttempt(identifier);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, record.code);
   if (!match) throw new AppError("Invalid or expired OTP", 400);
@@ -95,13 +108,7 @@ exports.verifyOtp = async (userId, type, code) => {
 
   await db("users").where({ id: userId }).update({ [updateField]: true });
 
-  if (redisClient) {
-    try {
-      await redisClient.del(getAttemptKey(userId, type));
-    } catch (err) {
-      logger.error("Failed to clear OTP attempts", err);
-    }
-  }
+  await clearOtpAttempts(identifier);
 
   const userAfter = await db("users").where({ id: userId }).first();
   if (

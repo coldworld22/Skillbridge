@@ -74,11 +74,10 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       logger.warn("\u26A0\uFE0F Received 401 for", originalRequest?.url);
-      const refreshCookie = getCookie("refreshToken");
       const hasAuthState = !!authStore.accessToken || !!authStore.user;
 
-      if (!refreshCookie && !hasAuthState) {
-        logger.warn("\u26A0\uFE0F No refresh cookie or auth state; redirecting to login");
+      if (!hasAuthState) {
+        logger.warn("\u26A0\uFE0F No auth state; redirecting to login");
         authStore.logout(true);
         if (typeof window !== "undefined") {
           Router.push("/auth/login");
@@ -101,9 +100,15 @@ api.interceptors.response.use(
 
       try {
         logger.log("\uD83D\uDD04 Attempting token refresh...");
-        const { data } = await api.post("/auth/refresh", null, {
-          withCredentials: true,
-        });
+        const csrfToken = getCookie("csrfToken");
+        const { data } = await api.post(
+          "/auth/refresh",
+          null,
+          {
+            withCredentials: true,
+            headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+          }
+        );
         logger.log("\u2705 Token refresh successful");
         authStore.setToken(data.accessToken);
         processQueue(null, data.accessToken);
