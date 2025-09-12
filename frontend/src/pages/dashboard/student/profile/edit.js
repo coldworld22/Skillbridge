@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -19,8 +19,11 @@ import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
-  FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
+  FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
+  FaCheck
 } from "react-icons/fa";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -69,6 +72,12 @@ export default function StudentProfileEdit() {
     identityPreview: null,
   });
   const [errors, setErrors] = useState({});
+  const [showCropper, setShowCropper] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [tempAvatar, setTempAvatar] = useState(null);
+  const [tempFileName, setTempFileName] = useState("");
 
 
   useEffect(() => {
@@ -143,15 +152,28 @@ export default function StudentProfileEdit() {
     }));
   };
 
-  const handleAvatarUpload = async (e) => {
+  const onCropComplete = useCallback((_, area) => {
+    setCroppedAreaPixels(area);
+  }, []);
+
+  const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       toast.error("Image size should be less than 10MB");
       return;
     }
+    setTempFileName(file.name);
+    setTempAvatar(URL.createObjectURL(file));
+    setShowCropper(true);
+  };
+
+  const handleCropUpload = async () => {
+    if (!tempAvatar || !croppedAreaPixels) return;
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
+      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadStudentAvatar(user.id, file);
       const avatar_url = res.avatar_url;
       useAuthStore.getState().setUser({ ...user, avatar_url });
@@ -161,6 +183,9 @@ export default function StudentProfileEdit() {
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
       toast.success("Avatar uploaded successfully!");
+      setShowCropper(false);
+      URL.revokeObjectURL(tempAvatar);
+      setTempAvatar(null);
     } catch (error) {
       console.error('Avatar upload error:', error.response);
       const msg = error.response?.data?.message || 'Failed to upload avatar';
@@ -168,6 +193,15 @@ export default function StudentProfileEdit() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    setTempAvatar(null);
+    setCroppedAreaPixels(null);
+    setZoom(1);
+    setCrop({ x: 0, y: 0 });
   };
 
   const handleIdentityUpload = async (e) => {
@@ -375,7 +409,7 @@ export default function StudentProfileEdit() {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleAvatarUpload}
+                        onChange={handleAvatarSelect}
                         className="hidden"
                       />
                     </label>
@@ -654,6 +688,38 @@ export default function StudentProfileEdit() {
           </div>
         </div>
       </form>
+      {showCropper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-white p-4 rounded-lg w-80 sm:w-96">
+            <div className="relative w-full h-64">
+              <Cropper
+                image={tempAvatar}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={handleCropCancel}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropUpload}
+                className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
+              >
+                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </StudentLayout>
   );
 }
