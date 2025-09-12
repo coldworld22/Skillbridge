@@ -24,7 +24,7 @@ curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/inst
 The script validates prerequisites, copies example env files, builds and starts the Docker containers, and can seed the database for development setups when `SEED_DB=true`. After it completes, the app is available at `http://localhost:3000`.
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
-
+## Installer
 Alternatively, launch the backend and open [`/install`](http://localhost:5002/install) to use a simple web-based installer that checks prerequisites and runs the setup scripts after entering configuration values. The installer is disabled by default; enable it by setting `ENABLE_INSTALL=true` **and** `INSTALL_API_ENABLED=true` in the backend environment and adding an Nginx proxy block that forwards `/install` to the backend:
 
 ```nginx

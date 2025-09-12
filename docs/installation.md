@@ -60,6 +60,17 @@ NEXT_PUBLIC_BOOK_PRICE_RANGE_DEFAULT=100
 NEXT_PUBLIC_BOOK_PRICE_RANGE_MAX=500
 ```
 
+### Installation API
+
+The backend exposes protected setup endpoints at `/api/install` for automated deployments. They are disabled by default and can be enabled by adding `INSTALL_API_ENABLED=true` to `backend/.env`:
+
+```
+# backend/.env
+INSTALL_API_ENABLED=true
+```
+
+All `/api/install` requests must be authenticated with an administrator token.
+
 ### Initial admin passwords
 
 Set `ADMIN_INITIAL_PASSWORD` and `SUPERADMIN_INITIAL_PASSWORD` in

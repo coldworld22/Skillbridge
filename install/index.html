@@ -4,30 +4,60 @@
   <meta charset="UTF-8" />
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css" />
+  <style>
+    :root {
+      --primary-color: #4A90E2;
+      --success-color: #2ecc71;
+      --error-color: #e74c3c;
+    }
+    body {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      text-align: center;
+    }
+    header {
+      margin-bottom: 2rem;
+    }
+    header .logo {
+      max-width: 200px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 1rem;
+      text-align: left;
+    }
+    .success {
+      color: var(--success-color);
+    }
+    .error {
+      color: var(--error-color);
+    }
+    .info {
+      color: #555;
+    }
+    button {
+      background-color: var(--primary-color);
+    }
+  </style>
 </head>
 <body>
-  <h1>SkillBridge Installation</h1>
+  <header>
+    <img src="logo.svg" alt="SkillBridge logo" class="logo" />
+    <h1>SkillBridge Installation</h1>
+  </header>
   <section id="step1">
     <h2>Step 1: Prerequisite Check</h2>
     <button id="checkBtn">Recheck</button>
-    <pre id="prereqOutput"></pre>
+    <pre id="prereqOutput" class="info"></pre>
   </section>
   <section id="step2" style="display: none;">
     <h2>Step 2: Configuration</h2>
     <form id="configForm">
-      <label>
-        Admin Email
-        <input type="email" name="adminEmail" required />
-      </label>
-      <br />
-      <label>
-        Admin Password
-        <input type="password" name="adminPassword" required />
-      </label>
-      <br />
       <button type="submit">Run Install</button>
     </form>
-    <pre id="installOutput"></pre>
+    <pre id="installOutput" class="info"></pre>
   </section>
   <script src="install.js" defer></script>
 </body>
