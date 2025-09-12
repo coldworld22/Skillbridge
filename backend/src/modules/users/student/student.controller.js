@@ -8,6 +8,7 @@ const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
 
 const messageService = require("../../messages/messages.service");
+const allowedPlatforms = require("../common/allowedPlatforms");
 
 
 /**
@@ -78,6 +79,7 @@ exports.updateProfile = async (req, res) => {
           platform: link.platform.trim(),
           url: link.url.trim(),
         }))
+        .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
   const trx = await db.transaction();

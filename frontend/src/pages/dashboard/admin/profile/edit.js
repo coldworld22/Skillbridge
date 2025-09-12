@@ -30,6 +30,7 @@ import {
 } from "@/services/admin/adminService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
@@ -140,7 +141,9 @@ useEffect(() => {
 
         const socialMap = {};
         social_links?.forEach((link) => {
-          socialMap[link.platform] = link.url;
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         setFormData((prev) => ({
@@ -257,7 +260,9 @@ useEffect(() => {
     try {
       setIsSubmitting(true);
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
+        .filter(([platform, url]) =>
+          allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
         .map(([platform, url]) => ({ platform, url }));
 
       await updateAdminProfile({
@@ -476,22 +481,32 @@ useEffect(() => {
               {expanded.social ? <FaChevronUp /> : <FaChevronDown />}
             </div>
             {expanded.social && (
-              <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">LinkedIn</label>
-                  <input
-                    type="text"
-                    name="linkedin"
-                    value={formData.socialLinks.linkedin || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        socialLinks: { ...prev.socialLinks, linkedin: e.target.value.trim() },
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+              <div className="p-4 space-y-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {allowedPlatforms.map(({ name, Icon, className }) => (
+                  <div key={name}>
+                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                      <Icon className={`${className} w-4 h-4`} />
+                      {name.charAt(0).toUpperCase() + name.slice(1)}
+                    </label>
+                    <input
+                      type="text"
+                      name={name}
+                      value={formData.socialLinks[name] || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
+                        }))
+                      }
+                      placeholder={
+                        name === 'website'
+                          ? 'https://yourwebsite.com'
+                          : `https://${name}.com/yourprofile`
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>

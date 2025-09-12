@@ -4,6 +4,7 @@
  */
 
 const db = require("../../../config/database");
+const allowedPlatforms = require("../common/allowedPlatforms");
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];
@@ -93,14 +94,28 @@ const updateInstructorProfile = async (userId, userData, instructorData, socialL
 
     // ✅ Replace social links
     await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of socialLinks) {
-      if (link.url) {
-        await trx("user_social_links").insert({
-          user_id: userId,
-          platform: link.platform,
-          url: link.url,
-        });
-      }
+    const sanitizedLinks = Array.isArray(socialLinks)
+      ? socialLinks
+          .filter(
+            (link) =>
+              link &&
+              typeof link.url === "string" &&
+              typeof link.platform === "string" &&
+              link.url.trim() &&
+              allowedPlatforms.includes(link.platform.trim())
+          )
+          .map((link) => ({
+            platform: link.platform.trim(),
+            url: link.url.trim(),
+          }))
+      : [];
+
+    for (const link of sanitizedLinks) {
+      await trx("user_social_links").insert({
+        user_id: userId,
+        platform: link.platform,
+        url: link.url,
+      });
     }
   });
 };
