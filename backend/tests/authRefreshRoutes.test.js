@@ -48,6 +48,19 @@ app.use(routes);
 app.use(errorHandler);
 
 describe('POST /api/auth/refresh', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const getCsrf = async () => {
+    const res = await request(app).get('/api/auth/refresh');
+    const cookies = res.headers['set-cookie'] || [];
+    const sessionCookie = cookies.find((c) => c.startsWith('connect.sid'));
+    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken='));
+    const csrfToken = csrfCookie?.split(';')[0].split('=')[1];
+    return { sessionCookie, csrfCookie, csrfToken };
+  };
+
   it('refreshes token with refresh cookie', async () => {
     authService.rotateRefreshToken.mockResolvedValue({
       decoded: { id: 1, role: 'User' },
@@ -60,9 +73,11 @@ describe('POST /api/auth/refresh', () => {
     const sessionCookie = cookies.find((c) => c.startsWith('connect.sid=')).split(';')[0];
     const csrfToken = csrfCookie.split('=')[1];
 
+    const { sessionCookie, csrfCookie, csrfToken } = await getCsrf();
+
     const refreshRes = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', [`refreshToken=r`, csrfCookie, sessionCookie])
+      .set('Cookie', [`refreshToken=r`, sessionCookie, csrfCookie])
       .set('x-csrf-token', csrfToken);
 
     expect(refreshRes.status).toBe(200);
@@ -78,27 +93,26 @@ describe('POST /api/auth/refresh', () => {
   it('rejects invalid refresh token', async () => {
     authService.rotateRefreshToken.mockRejectedValue(new Error('bad token'));
 
-    const tokenRes = await request(app).get('/api/auth/refresh');
-    const cookies = tokenRes.headers['set-cookie'];
-    const csrfCookie = cookies.find((c) => c.startsWith('csrfToken=')).split(';')[0];
-    const sessionCookie = cookies.find((c) => c.startsWith('connect.sid=')).split(';')[0];
-    const csrfToken = csrfCookie.split('=')[1];
+    const { sessionCookie, csrfCookie, csrfToken } = await getCsrf();
 
     const res = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', [`refreshToken=bad`, csrfCookie, sessionCookie])
+      .set('Cookie', [`refreshToken=bad`, sessionCookie, csrfCookie])
       .set('x-csrf-token', csrfToken);
 
     expect(res.status).toBe(401);
     expect(res.body.message).toMatch(/invalid or expired/i);
   });
 
-  it('rejects request without CSRF token', async () => {
+  it('rejects refresh without CSRF token', async () => {
+    const { sessionCookie } = await getCsrf();
+
     const res = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=r']);
+      .set('Cookie', [`refreshToken=r`, sessionCookie]);
 
     expect(res.status).toBe(403);
-    expect(res.body.message).toMatch(/csrf/i);
+    expect(res.body.message).toMatch(/invalid csrf token/i);
+    expect(authService.rotateRefreshToken).not.toHaveBeenCalled();
   });
 });
