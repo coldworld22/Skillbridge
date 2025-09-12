@@ -24,29 +24,28 @@ curl -sSL https://raw.githubusercontent.com/eduskillbridge/SkillBridge/main/inst
 The script validates prerequisites, copies example env files, builds and starts the Docker containers, and can seed the database for development setups when `SEED_DB=true`. After it completes, the app is available at `http://localhost:3000`.
 
 > **Note:** Always review the script before piping it into `bash` to verify it comes from a trusted source.
-
-Alternatively, you can enable the web-based installer at [`/install`](http://localhost:5002/install); see the [Installer](#installer) section for details.
-
 ## Installer
 
-Set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true` to expose the installation UI at `/install` and the API endpoints under `/api/install/*`. These variables must be set for the installer routes to work.
+The backend includes a browser-based installer at [`/install`](http://localhost:5002/install) that uses `/api/install/*` endpoints to check prerequisites and run setup scripts after entering configuration values. These routes are disabled by default; set `ENABLE_INSTALL=true` and `INSTALL_API_ENABLED=true` in the backend environment to expose them.
 
-### Example usage
-
-With docker-compose:
+Example using Docker Compose:
 
 ```bash
-ENABLE_INSTALL=true INSTALL_API_ENABLED=true docker-compose up
+# .env
+ENABLE_INSTALL=true
+INSTALL_API_ENABLED=true
+
+docker-compose up --build
 ```
 
-Starting the backend directly:
+Example using plain npm:
 
 ```bash
 cd backend
 ENABLE_INSTALL=true INSTALL_API_ENABLED=true npm start
 ```
 
-Then visit `http://localhost:5002/install` and follow the prompts.
+Then visit `http://localhost:5002/install` and disable the variables once setup is complete.
 
 ## Quick start
 
