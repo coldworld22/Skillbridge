@@ -16,21 +16,20 @@ function getServer(enableInstall) {
 }
 
 describe('/install route', () => {
-  it('returns 403 with message when ENABLE_INSTALL is not set to true', async () => {
-    const { app, io, server } = getServer();
+  it('returns 404 when ENABLE_INSTALL is not set to true', async () => {
+    const { app } = getServer();
     const res = await request(app).get('/install');
-    io?.close && io.close();
-    server.close();
-    expect(res.status).toBe(403);
-    expect(res.text).toBe('Installer disabled – set ENABLE_INSTALL=true to enable');
+    expect(res.status).toBe(404);
   });
 
   it('serves installer when ENABLE_INSTALL is true', async () => {
-    const { app, io, server } = getServer('true');
+    const { app } = getServer('true');
     const res = await request(app).get('/install/');
-    io?.close && io.close();
-    server.close();
+
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
+    expect(res.text).not.toContain('Admin Email');
+    expect(res.text).not.toContain('Admin Password');
+    expect(res.text).toContain('Run Install');
   });
 });
