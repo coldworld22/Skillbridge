@@ -17,10 +17,19 @@ const mockLogger = {
 jest.mock('../src/utils/logger.js', () => mockLogger);
 
 const { addToken, isTokenBlacklisted } = require('../src/services/tokenBlacklistService');
+const crypto = require('crypto');
 
 describe('tokenBlacklistService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('addToken hashes token before storing', async () => {
+    mockIgnore.mockResolvedValueOnce();
+    await addToken('tok');
+    const hash = crypto.createHash('sha256').update('tok').digest('hex');
+    expect(mockInsert).toHaveBeenCalledWith({ token_hash: hash });
+    expect(mockOnConflict).toHaveBeenCalledWith('token_hash');
   });
 
   test('addToken logs and rethrows on failure', async () => {
@@ -39,5 +48,13 @@ describe('tokenBlacklistService', () => {
     mockFirst.mockRejectedValueOnce(err);
 
     await expect(isTokenBlacklisted('tok')).rejects.toThrow('query fail');
+  });
+
+  test('isTokenBlacklisted hashes token for lookup', async () => {
+    const hash = crypto.createHash('sha256').update('tok').digest('hex');
+    mockFirst.mockResolvedValueOnce({ token_hash: hash });
+    const result = await isTokenBlacklisted('tok');
+    expect(mockWhere).toHaveBeenCalledWith({ token_hash: hash });
+    expect(result).toBe(true);
   });
 });

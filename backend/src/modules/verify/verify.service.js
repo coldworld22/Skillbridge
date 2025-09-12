@@ -8,6 +8,8 @@ const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const redisClient = require("../../utils/redisClient");
+const logger = require("../../utils/logger.js");
 const { OTP_LENGTH } = require("../auth/constants");
 const {
   redisClient,
