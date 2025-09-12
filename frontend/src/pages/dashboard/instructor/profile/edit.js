@@ -25,19 +25,13 @@ import {
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaUpload,
   FaTrash,
   FaSpinner,
   FaUserCircle,
   FaVideo,
-  FaLinkedin,
-  FaGithub,
-  FaGlobe,
-  FaTwitter,
-  FaYoutube,
-  FaFacebook,
-  FaInstagram,
   FaDollarSign,
   FaCertificate,
   FaBriefcase,
@@ -79,16 +73,6 @@ const instructorProfileSchema = z.object({
     .record(z.string())
     .optional(),
 });
-
-const socialPlatforms = [
-  { name: "linkedin", icon: <FaLinkedin className="text-blue-600" /> },
-  { name: "github", icon: <FaGithub className="text-gray-800" /> },
-  { name: "twitter", icon: <FaTwitter className="text-blue-400" /> },
-  { name: "youtube", icon: <FaYoutube className="text-red-600" /> },
-  { name: "facebook", icon: <FaFacebook className="text-blue-700" /> },
-  { name: "instagram", icon: <FaInstagram className="text-pink-600" /> },
-  { name: "website", icon: <FaGlobe className="text-green-600" /> },
-];
 
 // Currency options will be loaded from the backend configuration
 
@@ -348,8 +332,16 @@ export default function InstructorProfileEdit() {
           : "";
 
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+        .filter(([platform, url]) =>
+          url.trim() !== "" && allowedPlatforms.includes(platform)
+        )
+        .map(([platform, url]) => ({
+          platform,
+          url:
+            url.startsWith("http://") || url.startsWith("https://")
+              ? url
+              : `https://${url}`,
+        }));
 
       await updateInstructorProfile({
         full_name: formData.full_name,
@@ -374,7 +366,7 @@ export default function InstructorProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       // Reflect updates locally

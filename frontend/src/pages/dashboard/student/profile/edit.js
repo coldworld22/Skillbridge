@@ -18,9 +18,10 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
+  FaUserCircle, FaIdCard, FaLinkedin,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
+import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 
 const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -234,8 +235,16 @@ export default function StudentProfileEdit() {
       logger.log("[StudentProfileEdit] Submitting form", formData);
 
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+        .filter(([platform, url]) =>
+          url.trim() !== "" && allowedPlatforms.includes(platform)
+        )
+        .map(([platform, url]) => ({
+          platform,
+          url:
+            url.startsWith("http://") || url.startsWith("https://")
+              ? url
+              : `https://${url}`,
+        }));
 
       const payload = {
         full_name: formData.full_name,
@@ -273,7 +282,7 @@ export default function StudentProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       setTimeout(() => {
@@ -594,35 +603,22 @@ export default function StudentProfileEdit() {
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
-                      LinkedIn Profile URL
-                    </label>
-                    <input
-                      type="text"
-                      name="linkedin"
-                      value={formData.socialLinks.linkedin || ""}
-                      onChange={handleSocialChange}
-                      placeholder="https://linkedin.com/in/yourprofile"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
-                      GitHub Profile URL
-                    </label>
-                    <input
-                      type="text"
-                      name="github"
-                      value={formData.socialLinks.github || ""}
-                      onChange={handleSocialChange}
-                      placeholder="https://github.com/yourusername"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                  </div>
+                  {socialPlatforms.map((platform) => (
+                    <div key={platform.name}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        {platform.icon}
+                        <span className="ml-2 capitalize">{platform.name} Profile URL</span>
+                      </label>
+                      <input
+                        type="text"
+                        name={platform.name}
+                        value={formData.socialLinks[platform.name] || ""}
+                        onChange={handleSocialChange}
+                        placeholder={`https://${platform.name}.com/yourprofile`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
