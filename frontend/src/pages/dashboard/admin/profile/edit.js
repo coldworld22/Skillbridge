@@ -33,7 +33,7 @@ import getCroppedImg from "@/utils/cropImage";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
-const profileSchema = z.object({
+export const profileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   email: z.string().email("invalid_email_address"),
   phone: z
@@ -45,8 +45,8 @@ const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links are optional strings without URL validation
-  socialLinks: z.record(z.string()).optional(),
+  // Social links validated as URLs
+  socialLinks: z.record(z.string().url("invalid_url")).optional(),
 });
 
 function ProfileEditTemplate() {

@@ -54,7 +54,7 @@ import { MdOutlineWorkOutline } from "react-icons/md";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-const instructorProfileSchema = z.object({
+export const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
@@ -76,7 +76,7 @@ const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string())
+    .record(z.string().url("invalid_url"))
     .optional(),
 });
 
