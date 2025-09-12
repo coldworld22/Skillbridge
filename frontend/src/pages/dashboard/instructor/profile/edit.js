@@ -23,6 +23,7 @@ import {
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaSpinner,
   FaUserCircle,
@@ -290,9 +291,15 @@ export default function InstructorProfileEdit() {
 
       const social_links = Object.entries(formData.socialLinks || {})
         .filter(([platform, url]) =>
-          allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+          url.trim() !== "" && allowedPlatforms.includes(platform)
         )
-        .map(([platform, url]) => ({ platform, url }));
+        .map(([platform, url]) => ({
+          platform,
+          url:
+            url.startsWith("http://") || url.startsWith("https://")
+              ? url
+              : `https://${url}`,
+        }));
 
       await updateInstructorProfile({
         full_name: formData.full_name,
@@ -317,7 +324,7 @@ export default function InstructorProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       // Reflect updates locally

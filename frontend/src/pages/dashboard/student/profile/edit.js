@@ -19,10 +19,10 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaGlobe,
+  FaUserCircle, FaIdCard, FaLinkedin,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
-import { allowedPlatforms } from "@/utils/socialPlatforms";
+import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -265,9 +265,15 @@ export default function StudentProfileEdit() {
 
       const social_links = Object.entries(formData.socialLinks || {})
         .filter(([platform, url]) =>
-          allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+          url.trim() !== "" && allowedPlatforms.includes(platform)
         )
-        .map(([platform, url]) => ({ platform, url }));
+        .map(([platform, url]) => ({
+          platform,
+          url:
+            url.startsWith("http://") || url.startsWith("https://")
+              ? url
+              : `https://${url}`,
+        }));
 
       const payload = {
         full_name: formData.full_name,
@@ -305,7 +311,7 @@ export default function StudentProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       setTimeout(() => {
@@ -628,28 +634,22 @@ export default function StudentProfileEdit() {
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {allowedPlatforms.map(({ name, Icon, className }) => (
-                      <div key={name}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                          <Icon className={`w-4 h-4 mr-2 ${className}`} />
-                          {name.charAt(0).toUpperCase() + name.slice(1)} Profile URL
-                        </label>
-                        <input
-                          type="text"
-                          name={name}
-                          value={formData.socialLinks[name] || ""}
-                          onChange={handleSocialChange}
-                          placeholder={
-                            name === 'website'
-                              ? 'https://yourwebsite.com'
-                              : `https://${name}.com/yourprofile`
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {socialPlatforms.map((platform) => (
+                    <div key={platform.name}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        {platform.icon}
+                        <span className="ml-2 capitalize">{platform.name} Profile URL</span>
+                      </label>
+                      <input
+                        type="text"
+                        name={platform.name}
+                        value={formData.socialLinks[platform.name] || ""}
+                        onChange={handleSocialChange}
+                        placeholder={`https://${platform.name}.com/yourprofile`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

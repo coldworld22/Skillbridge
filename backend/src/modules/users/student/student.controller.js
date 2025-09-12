@@ -8,7 +8,7 @@ const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
 
 const messageService = require("../../messages/messages.service");
-const allowedPlatforms = require("../common/allowedPlatforms");
+const { allowedPlatforms } = require("../common/socialPlatforms");
 
 
 /**
@@ -65,6 +65,11 @@ exports.updateProfile = async (req, res) => {
     social_links,
   } = req.body;
 
+  const normalizeUrl = (url = "") => {
+    const trimmed = url.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
   // Sanitize social links before database operations
   const sanitizedLinks = Array.isArray(social_links)
     ? social_links
@@ -73,20 +78,31 @@ exports.updateProfile = async (req, res) => {
             link &&
             typeof link.url === "string" &&
             typeof link.platform === "string" &&
+            allowedPlatforms.includes(link.platform.trim().toLowerCase()) &&
             link.url.trim()
         )
         .map((link) => ({
-          platform: link.platform.trim(),
-          url: link.url.trim(),
+          platform: link.platform.trim().toLowerCase(),
+          url: normalizeUrl(link.url),
         }))
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
+
+  const hasUserFields =
+    full_name && phone && gender && date_of_birth && education_level;
+  const isProfileComplete = hasUserFields && sanitizedLinks.length > 0;
 
   const trx = await db.transaction();
   try {
     await trx("users")
       .where({ id: userId })
-      .update({ full_name, phone, gender, date_of_birth, profile_complete: true });
+      .update({
+        full_name,
+        phone,
+        gender,
+        date_of_birth,
+        profile_complete: isProfileComplete,
+      });
 
     const exists = await trx("student_profiles").where({ user_id: userId }).first();
     const studentData = { education_level, topics, learning_goals };
