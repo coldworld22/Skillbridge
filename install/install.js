@@ -1,17 +1,37 @@
+const progressBar = document.getElementById('progressBar');
+const errorBox = document.getElementById('errorBox');
+
+function setProgress(p) {
+  progressBar.style.width = `${p}%`;
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.remove('hidden');
+}
+
+function clearError() {
+  errorBox.textContent = '';
+  errorBox.classList.add('hidden');
+}
+
 async function checkPrereqs() {
   const output = document.getElementById('prereqOutput');
   output.textContent = 'Checking...';
+  clearError();
+  setProgress(10);
   try {
     const res = await fetch('/api/install/prereqs');
     const data = await res.json();
     output.textContent = data.output || JSON.stringify(data, null, 2);
     if (data.ok) {
-      document.getElementById('step2').style.display = 'block';
+      document.getElementById('step2').classList.remove('hidden');
+      setProgress(50);
     } else {
-      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step2').classList.add('hidden');
     }
   } catch (err) {
-    output.textContent = 'Error: ' + err.message;
+    showError(`Prerequisite check failed: ${err.message}`);
   }
 }
 
@@ -24,6 +44,8 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const out = document.getElementById('installOutput');
   out.textContent = 'Running install...';
+  clearError();
+  setProgress(75);
   const payload = {
     adminEmail: form.adminEmail.value,
     adminPassword: form.adminPassword.value,
@@ -36,7 +58,8 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     out.textContent = data.output || JSON.stringify(data, null, 2);
+    setProgress(100);
   } catch (err) {
-    out.textContent = 'Error: ' + err.message;
+    showError(`Install failed: ${err.message}`);
   }
 });
