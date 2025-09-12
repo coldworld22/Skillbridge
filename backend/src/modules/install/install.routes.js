@@ -6,12 +6,14 @@ const { z } = require('zod');
 
 // Guard installation endpoints behind an environment flag to prevent accidental
 // exposure in production deployments.
-router.use((req, res, next) => {
+const requireInstallApiEnabled = (req, res, next) => {
   if (process.env.INSTALL_API_ENABLED?.toLowerCase() === 'true') {
     return next();
   }
-  return res.status(403).json({ message: 'Installation via API is disabled.' });
-});
+  return res.status(403).json({ message: 'Installer API disabled' });
+};
+
+router.use(requireInstallApiEnabled);
 
 // Require an authenticated administrator for all install endpoints.
 router.use(verifyToken, isAdmin);
@@ -21,4 +23,4 @@ const emptySchema = z.object({}).strict();
 router.get('/prereqs', validate({ query: emptySchema }), controller.checkPrereqs);
 router.post('/run', validate({ body: emptySchema }), controller.runInstall);
 
-module.exports = router;
+module.exports = { requireInstallApiEnabled, router };

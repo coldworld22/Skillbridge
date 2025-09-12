@@ -1,3 +1,20 @@
+const progressBar = document.getElementById('progressBar');
+const errorBox = document.getElementById('errorBox');
+
+function setProgress(p) {
+  progressBar.style.width = `${p}%`;
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.remove('hidden');
+}
+
+function clearError() {
+  errorBox.textContent = '';
+  errorBox.classList.add('hidden');
+}
+
 async function checkPrereqs() {
   const output = document.getElementById('prereqOutput');
   output.textContent = 'Checking...';
@@ -29,9 +46,8 @@ document.getElementById('checkBtn').addEventListener('click', checkPrereqs);
 
 window.addEventListener('DOMContentLoaded', checkPrereqs);
 
-const form = document.getElementById('configForm');
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+const installBtn = document.getElementById('installBtn');
+installBtn.addEventListener('click', async () => {
   const out = document.getElementById('installOutput');
   out.textContent = 'Running install...';
   out.className = 'output';
@@ -42,8 +58,6 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
     });
     if (res.status === 401 || res.status === 403) {
       alert('Please log in to continue.');
