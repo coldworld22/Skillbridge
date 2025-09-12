@@ -26,6 +26,7 @@ import logger from "@/utils/logger";
 // 🔐 Validation schema
 // ─────────────────────
 import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
+import { isTokenExpired } from "@/utils/auth/tokenUtils";
 
 function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
@@ -33,6 +34,8 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   const user = useAuthStore((state) => state.user);
   const login = useAuthStore((state) => state.login);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const logout = useAuthStore((state) => state.logout);
   const fetchNotifications = useNotificationStore((state) => state.fetch);
   const settings = useAppConfigStore((state) => state.settings);
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
@@ -56,7 +59,12 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   });
 
   useEffect(() => {
-    if (!hasHydrated || !user) return;
+    if (!hasHydrated) return;
+
+    if (!user || !accessToken || isTokenExpired(accessToken)) {
+      logout(true);
+      return;
+    }
 
     if (user.profile_complete === false) {
       const profilePaths = {
@@ -70,7 +78,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     } else {
       router.replace("/website");
     }
-  }, [hasHydrated, user]);
+  }, [hasHydrated, user, accessToken, logout]);
 
   useEffect(() => {
     fetchAppConfig();
