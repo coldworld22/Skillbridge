@@ -78,7 +78,14 @@ export default function StudentProfileEdit() {
 
   useEffect(() => {
     const local = localStorage.getItem("auth");
-    const parsed = JSON.parse(local)?.state;
+    let parsed;
+    if (local) {
+      try {
+        parsed = JSON.parse(local)?.state;
+      } catch (error) {
+        console.error("Failed to parse auth from localStorage", error);
+      }
+    }
     if (hasHydrated && !user && parsed?.user) {
       setUser(parsed.user);
     }
