@@ -35,10 +35,10 @@
 - **Columns**: `user_id`, `code_hash`, `expires_at`, `used`, `created_at`
 
 ### `blacklisted_tokens`
-- **Purpose**: Stores revoked JWTs to prevent reuse
+- **Purpose**: Stores SHA-256 hashes of revoked JWTs to prevent reuse
 - **Primary Key**: `id`
 - **Foreign Keys**: `—`
-- **Columns**: `token`, `expires_at`, `created_at`
+- **Columns**: `token_hash`, `expires_at`, `created_at`
 
 ### `student_profiles`
 - **Purpose**: Extra details for student accounts

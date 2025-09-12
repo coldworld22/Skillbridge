@@ -8,12 +8,10 @@ const crypto = require('crypto');
  * @param {string} token
  * @returns {Promise<void>}
  */
-function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
 async function addToken(token) {
   if (!token) return;
+
+  const tokenHash = hashToken(token);
 
   let expiresAt = null;
   try {
@@ -27,6 +25,7 @@ async function addToken(token) {
 
   const tokenHash = hashToken(token);
   try {
+    const tokenHash = hashToken(token);
     await db('blacklisted_tokens')
       .insert({ token_hash: tokenHash, expires_at: expiresAt })
       .onConflict('token_hash')
