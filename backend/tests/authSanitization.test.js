@@ -24,6 +24,7 @@ jest.mock('../src/config/database', () => {
     }
     return {};
   });
+  mockDb.transaction = jest.fn(async (cb) => cb(mockDb));
   mockDb.fn = { now: jest.fn() };
   return mockDb;
 });
@@ -70,6 +71,7 @@ process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
 const authService = require('../src/modules/auth/services/auth.service');
 const authMiddleware = require('../src/middleware/auth/authMiddleware');
 const userModel = require('../src/modules/users/user.model');
+const db = require('../src/config/database');
 
 describe('Sensitive data sanitization', () => {
   beforeEach(() => {
@@ -94,6 +96,7 @@ describe('Sensitive data sanitization', () => {
     userModel.findByPhone.mockResolvedValue(null);
     userModel.insertUser.mockResolvedValue([mockUser]);
     userModel.getUserRoles.mockResolvedValue([]);
+    userModel.getUserPermissions.mockResolvedValue([]);
     userModel.findAdmins.mockResolvedValue([]);
 
     const result = await authService.registerUser({
@@ -104,6 +107,7 @@ describe('Sensitive data sanitization', () => {
     });
 
     expect(result.user.password_hash).toBeUndefined();
+    expect(db.transaction).toHaveBeenCalled();
   });
 
   it('loginUser does not return password_hash', async () => {
@@ -117,6 +121,7 @@ describe('Sensitive data sanitization', () => {
     userModel.findByEmail.mockResolvedValue({ ...mockUser });
     userModel.updateUser.mockResolvedValue([mockUser]);
     userModel.getUserRoles.mockResolvedValue([]);
+    userModel.getUserPermissions.mockResolvedValue([]);
 
     const issueSpy = jest
       .spyOn(authService, 'issueRefreshToken')
