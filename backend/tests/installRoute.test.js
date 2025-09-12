@@ -19,7 +19,7 @@ function getServer(enableInstall) {
 
 describe('/install route', () => {
   it('returns 404 when ENABLE_INSTALL is not set to true', async () => {
-    const { app, io, server } = getServer();
+    const { app } = getServer();
     const res = await request(app).get('/install');
     io?.close();
     server.close();
@@ -27,7 +27,7 @@ describe('/install route', () => {
   });
 
   it('serves installer when ENABLE_INSTALL is true', async () => {
-    const { app, io, server } = getServer('true');
+    const { app } = getServer('true');
     const res = await request(app).get('/install/');
     io?.close();
     server.close();
