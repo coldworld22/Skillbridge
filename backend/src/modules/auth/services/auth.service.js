@@ -46,8 +46,8 @@ function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-function getOtpAttemptKey(identifier) {
-  return `${OTP_ATTEMPT_PREFIX}${identifier}`;
+function getOtpAttemptKey(userId) {
+  return `${OTP_ATTEMPT_PREFIX}${userId}`;
 }
 
 async function recordFailedAttempt(email, ip) {
@@ -67,9 +67,9 @@ async function recordFailedAttempt(email, ip) {
   }
 }
 
-async function recordFailedOtpAttempt(identifier) {
+async function recordFailedOtpAttempt(userId) {
   if (!redisClient) return;
-  const key = getOtpAttemptKey(identifier);
+  const key = getOtpAttemptKey(userId);
   let info = { count: 0, lockUntil: null };
   try {
     const data = await redisClient.get(key);
@@ -84,10 +84,10 @@ async function recordFailedOtpAttempt(identifier) {
   }
 }
 
-async function clearOtpAttempts(identifier) {
+async function clearOtpAttempts(userId) {
   if (!redisClient) return;
   try {
-    await redisClient.del(getOtpAttemptKey(identifier));
+    await redisClient.del(getOtpAttemptKey(userId));
   } catch (err) {
     logger.error("Failed to clear OTP attempts", err);
   }
@@ -411,26 +411,10 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(email));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError(
-      "Too many invalid OTP attempts. Try again later.",
-      429
-    );
-  }
-
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
-  attempt = null;
+  let attempt = null;
   if (redisClient) {
     try {
       const data = await redisClient.get(getOtpAttemptKey(user.id));
@@ -440,7 +424,10 @@ exports.verifyOtp = async ({ email, code }) => {
     }
   }
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+    throw new AppError(
+      "Too many failed OTP attempts. Try again later.",
+      429
+    );
   }
 
   const record = await db("password_resets")
