@@ -39,7 +39,7 @@ describe('verifyOtp retry counter', () => {
     jest.clearAllMocks();
   });
 
-  it('locks out known email after too many failed attempts', async () => {
+  it('locks out after too many failed attempts for existing user', async () => {
     userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
     redisClient.get.mockResolvedValue(
       JSON.stringify({ count: 5, lockUntil: Date.now() + 10000 })
@@ -52,7 +52,20 @@ describe('verifyOtp retry counter', () => {
     expect(passwordResetsTable.first).not.toHaveBeenCalled();
   });
 
-  it('increments counter on failed attempt for known email', async () => {
+  it('locks out after too many failed attempts for unknown email', async () => {
+    userModel.findByEmail.mockResolvedValue(null);
+    redisClient.get.mockResolvedValue(
+      JSON.stringify({ count: 5, lockUntil: Date.now() + 10000 })
+    );
+
+    await expect(
+      authService.verifyOtp({ email: 'missing@example.com', code: '123456' })
+    ).rejects.toMatchObject({ statusCode: 429 });
+
+    expect(passwordResetsTable.first).not.toHaveBeenCalled();
+  });
+
+  it('increments counter on failed attempt', async () => {
     userModel.findByEmail.mockResolvedValue({ id: 1, email: 'test@example.com' });
     redisClient.get.mockResolvedValue(
       JSON.stringify({ count: 1, lockUntil: null })

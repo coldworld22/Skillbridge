@@ -433,8 +433,8 @@ exports.verifyOtp = async ({ email, code }) => {
   }
 
   if (!user) {
-    await recordFailedOtpAttempt(email);
-    throw new AppError("Invalid user", 400);
+    await recordFailedOtpAttempt(identifier);
+    throw new AppError("Invalid or expired OTP", 400);
   }
 
   const record = await db("password_resets")
@@ -444,17 +444,17 @@ exports.verifyOtp = async ({ email, code }) => {
     .first();
 
   if (!record) {
-    await recordFailedOtpAttempt(user.id);
+    await recordFailedOtpAttempt(identifier);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
   const match = await bcrypt.compare(code, record.code_hash);
   if (!match) {
-    await recordFailedOtpAttempt(user.id);
+    await recordFailedOtpAttempt(identifier);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
-  await clearOtpAttempts(user.id);
+  await clearOtpAttempts(identifier);
   return true;
 };
 
