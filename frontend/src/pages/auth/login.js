@@ -91,10 +91,19 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
   try {
     logger.log("➡️ login onSubmit invoked");
     let cfg = recaptchaCfg;
-    if (!cfg && cfgLoading) {
+    if (!cfg) {
+      setCfgLoading(true);
       cfg = await fetchSocialLoginConfig().catch(() => null);
       setRecaptchaCfg(cfg);
       setCfgLoading(false);
+    }
+    if (!cfg) {
+      toast.error(t("recaptcha_config_failed"));
+      return;
+    }
+    if (cfg?.recaptcha?.active && !executeRecaptcha) {
+      toast.error(t("recaptcha_config_failed"));
+      return;
     }
     let token;
     if (cfg?.recaptcha?.active && executeRecaptcha) {
