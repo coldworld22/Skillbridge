@@ -78,6 +78,7 @@
     add_header Access-Control-Allow-Credentials true always;
   }
 
+  # Proxy uploaded files to the backend
   location ^~ /uploads/ {
     proxy_pass http://backend:5002;
     proxy_http_version 1.1;
