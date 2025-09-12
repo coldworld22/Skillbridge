@@ -67,6 +67,8 @@ jest.mock('../src/config/database', () => {
     };
   });
   mockDb.raw = jest.fn();
+  mockDb.__usersQuery = usersQuery;
+  mockDb.__verificationsQuery = verificationsQuery;
   return mockDb;
 });
 
@@ -105,6 +107,7 @@ describe('verify.service.verifyOtp failures', () => {
   });
 
   it('locks after too many invalid attempts', async () => {
+    db.__verificationsQuery.first.mockResolvedValue(null);
     for (let i = 0; i < 5; i++) {
       await expect(service.verifyOtp(1, 'email', '000000')).rejects.toMatchObject({
         message: 'Invalid or expired OTP',
