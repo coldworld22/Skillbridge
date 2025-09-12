@@ -20,7 +20,8 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const { 
+const { addToken } = require("../../../services/tokenBlacklistService");
+const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
@@ -519,7 +520,7 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   // Optionally blacklist the provided access token
   if (accessToken) {
     try {
-      await addTokenToBlacklist(accessToken);
+      await addToken(accessToken);
     } catch (err) {
       logger.error("Failed to blacklist access token", err);
     }
