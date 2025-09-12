@@ -8,6 +8,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { API_BASE_URL } from "@/config/config";
 import { getCurrencies } from "@/services/currencyService";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
@@ -55,7 +56,11 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().min(8, "phone_min"),
+  phone: z
+    .string()
+    .refine((val) => isValidPhoneNumber(val), {
+      message: "invalid_phone_number",
+    }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "invalid_date",

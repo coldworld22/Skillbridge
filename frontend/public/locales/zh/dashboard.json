@@ -550,6 +550,7 @@
     "demo_upload_failed": "无法上传演示视频",
     "full_name_min": "全名必须至少为3个字符",
     "phone_min": "电话号码必须至少8位数字",
+    "invalid_phone_number": "无效的电话号码",
     "invalid_date": "无效的日期格式",
     "experience_positive": "经验必须是积极的数字",
     "amount_positive": "数量必须是积极的",
@@ -584,6 +585,7 @@
     "profile_update_failed": "无法更新个人资料",
     "full_name_min": "全名必须至少为3个字符",
     "phone_min": "电话号码必须至少8位数字",
+    "invalid_phone_number": "无效的电话号码",
     "invalid_email_address": "无效的电子邮件地址",
     "invalid_date": "无效的日期格式",
     "url_invalid": "必须是有效的URL"

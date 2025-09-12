@@ -564,6 +564,7 @@
     "demo_upload_failed": "Failed to upload demo video",
     "full_name_min": "Full name must be at least 3 characters",
     "phone_min": "Phone number must be at least 8 digits",
+    "invalid_phone_number": "Ungültige Telefonnummer",
     "invalid_date": "Invalid date format",
     "experience_positive": "Experience must be a positive number",
     "amount_positive": "Amount must be positive",
@@ -598,6 +599,7 @@
     "profile_update_failed": "Failed to update profile",
     "full_name_min": "Full name must be at least 3 characters",
     "phone_min": "Phone number must be at least 8 digits",
+    "invalid_phone_number": "Ungültige Telefonnummer",
     "invalid_email_address": "Invalid email address",
     "invalid_date": "Invalid date format",
     "url_invalid": "Must be a valid URL"

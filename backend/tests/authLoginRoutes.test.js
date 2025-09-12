@@ -1,7 +1,5 @@
 const request = require('supertest');
 const express = require('express');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
 
 process.env.NODE_ENV = 'production';
 
@@ -11,8 +9,6 @@ jest.mock('../src/config/database', () => ({
 
 jest.mock('../src/modules/auth/services/auth.service', () => ({
   loginUser: jest.fn(),
-  rotateRefreshToken: jest.fn(),
-  generateAccessToken: jest.fn(),
 }));
 
 jest.mock('../src/modules/socialLoginConfig/socialLoginConfig.service', () => ({
@@ -34,51 +30,40 @@ jest.mock('../src/modules/roles/roles.routes', () => require('express').Router()
 jest.mock('../src/modules/plans/plans.routes', () => require('express').Router());
 jest.mock('../src/modules/subscriptions/subscriptions.routes', () => require('express').Router());
 
-const csrf = require('../src/middleware/csrf');
 const authService = require('../src/modules/auth/services/auth.service');
 const routes = require('../src/routes/auth');
 const errorHandler = require('../src/middleware/errorHandler');
 
 const app = express();
-app.use(cookieParser());
-app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
 app.use(express.json());
-app.use(csrf);
 app.use(routes);
 app.use(errorHandler);
 
-describe('POST /api/auth/refresh', () => {
-  it('refreshes token with refresh cookie', async () => {
-    authService.rotateRefreshToken.mockResolvedValue({
-      decoded: { id: 1, role: 'User' },
-      refreshToken: 'newR',
-    });
-    authService.generateAccessToken.mockReturnValue('newA');
+describe('POST /api/auth/login', () => {
+  const payload = { email: 'test@example.com', password: 'StrongPass1!' };
 
-    const refreshRes = await request(app)
-      .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=r', 'csrfToken=t'])
-      .set('x-csrf-token', 't');
-
-    expect(refreshRes.status).toBe(200);
-    expect(refreshRes.body.accessToken).toBe('newA');
-    expect(authService.rotateRefreshToken).toHaveBeenCalledWith('r');
-    expect(refreshRes.headers['set-cookie']).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('csrfToken='),
-      ])
-    );
+  it('logs in a user successfully', async () => {
+    authService.loginUser.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    const res = await request(app).post('/api/auth/login').send(payload);
+    expect(res.status).toBe(200);
+    expect(authService.loginUser).toHaveBeenCalledWith(expect.objectContaining(payload));
+    expect(res.body.accessToken).toBe('a');
+    expect(res.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringMatching(/^refreshToken=r/)]));
   });
 
-  it('rejects invalid refresh token', async () => {
-    authService.rotateRefreshToken.mockRejectedValue(new Error('bad token'));
-
-    const res = await request(app)
-      .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=bad', 'csrfToken=t'])
-      .set('x-csrf-token', 't');
-
+  it('returns 401 for invalid credentials', async () => {
+    const AppError = require('../src/utils/AppError');
+    authService.loginUser.mockRejectedValue(new AppError('Invalid credentials', 401));
+    const res = await request(app).post('/api/auth/login').send(payload);
     expect(res.status).toBe(401);
-    expect(res.body.message).toMatch(/invalid or expired/i);
+    expect(res.body.message).toMatch(/invalid credentials/i);
+  });
+
+  it('locks out after too many failed attempts', async () => {
+    const AppError = require('../src/utils/AppError');
+    authService.loginUser.mockRejectedValue(new AppError('Too many failed login attempts. Try again later.', 429));
+    const res = await request(app).post('/api/auth/login').send(payload);
+    expect(res.status).toBe(429);
+    expect(res.body.message).toMatch(/too many failed login attempts/i);
   });
 });

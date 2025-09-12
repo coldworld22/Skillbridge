@@ -42,6 +42,7 @@
     "isomorphic-dompurify": "^2.26.0",
     "jspdf": "^3.0.1",
     "leo-profanity": "^1.7.0",
+    "libphonenumber-js": "^1.12.17",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "lottie-react": "^2.4.1",

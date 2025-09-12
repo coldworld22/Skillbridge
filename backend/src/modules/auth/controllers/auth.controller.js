@@ -6,6 +6,7 @@ const AppError = require("../../../utils/AppError");
 const socialLoginConfigService = require("../../socialLoginConfig/socialLoginConfig.service");
 const recaptchaService = require("../../recaptcha/recaptcha.service");
 const authMiddleware = require("../../../middleware/auth/authMiddleware");
+const crypto = require("crypto");
 
 // 🔧 Cookie options used in login and logout
 const { refreshCookieOptions, csrfCookieOptions } = require("../../../utils/cookie");
@@ -24,7 +25,7 @@ exports.register = catchAsync(async (req, res, next) => {
       }
     }
     const { user } = await authService.registerUser(req.body);
-    res.status(201).json({ message: "Registration successful", user });
+    res.status(201).json({ message: "Registration successful. A verification email has been sent.", user });
   } catch (err) {
     logger.error("🔥 Registration error caught:");
     logger.error("Name:", err.name);
@@ -66,9 +67,11 @@ exports.login = catchAsync(async (req, res) => {
       throw new AppError('Failed reCAPTCHA verification', 400);
     }
   }
-  const { accessToken, refreshToken, user } = await authService.loginUser(req.body);
+  const { accessToken, refreshToken, user } = await authService.loginUser({ ...req.body, ip: req.ip });
+  const csrfToken = crypto.randomBytes(64).toString("hex");
   res
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
+    .cookie("csrfToken", csrfToken, csrfCookieOptions)
     .json({ message: "Login successful", accessToken, user });
 });
 
@@ -87,16 +90,21 @@ exports.refreshToken = catchAsync(async (req, res) => {
   }
 
   try {
-    const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
+    const { decoded, refreshToken: newRefreshToken } =
+      await authService.rotateRefreshToken(token);
+    const roles = decoded.roles || [decoded.role];
     const accessToken = authService.generateAccessToken({
       id: decoded.id,
-      role: decoded.role,
+      role: roles[0],
+      roles,
     });
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
     }
+    const csrfToken = crypto.randomBytes(64).toString("hex");
     res
       .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+      .cookie("csrfToken", csrfToken, csrfCookieOptions)
       .json({ message: "Token refreshed", accessToken });
   } catch (err) {
     logger.error("❌ Refresh token error:", err.message);

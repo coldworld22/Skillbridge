@@ -1,4 +1,5 @@
 const logger = require('../../../utils/logger.js');
+const redisClient = require("../../../utils/redisClient");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
@@ -19,47 +20,84 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
+const {
+  REFRESH_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_MAX_AGE,
+} = require("../../../config/tokens");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
 // ─────────────────────────────────────────────────────────────
 const SALT_ROUNDS = 12;
 const ACCESS_EXPIRES_IN = "60m";
-const REFRESH_EXPIRES_IN = "30d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const OTP_EXPIRY_MINUTES = 15;
 
-// Track failed logins per email with timestamps to aid cleanup
-const failedLoginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-const CLEANUP_INTERVAL = 60 * 1000; // Run cleanup every minute
+const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
+const OTP_ATTEMPT_PREFIX = "failedOtp:";
 
-function recordFailedAttempt(email) {
-  const info =
-    failedLoginAttempts.get(email) || { timestamps: [], lockUntil: null };
-  info.timestamps.push(Date.now());
+// OTP attempt tracking
+const OTP_ATTEMPT_PREFIX = "otpAttempt:";
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 
-  if (info.timestamps.length >= MAX_ATTEMPTS) {
-    info.lockUntil = Date.now() + LOCK_TIME;
-  }
-
-  failedLoginAttempts.set(email, info);
+function getAttemptKey(email, ip) {
+  return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-/**
- * Periodically purge expired lock entries to prevent memory leaks
- */
-function cleanupFailedAttempts() {
-  const now = Date.now();
-  for (const [email, info] of failedLoginAttempts.entries()) {
-    if (info.lockUntil && info.lockUntil <= now) {
-      failedLoginAttempts.delete(email);
+function getOtpAttemptKey(identifier) {
+  return `${OTP_ATTEMPT_PREFIX}${identifier}`;
+}
+
+async function recordFailedAttempt(email, ip) {
+  if (!redisClient) return;
+  const key = getAttemptKey(email, ip);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + LOCK_TIME;
     }
+    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record login attempt", err);
   }
 }
 
-setInterval(cleanupFailedAttempts, CLEANUP_INTERVAL);
+async function recordFailedOtpAttempt(identifier) {
+  if (!redisClient) return;
+  const key = getOtpAttemptKey(identifier);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= OTP_MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + OTP_LOCK_TIME;
+    }
+    await redisClient.set(key, JSON.stringify(info), { PX: OTP_LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record OTP attempt", err);
+  }
+}
+
+async function clearOtpAttempts(identifier) {
+  if (!redisClient) return;
+  try {
+    await redisClient.del(getOtpAttemptKey(identifier));
+  } catch (err) {
+    logger.error("Failed to clear OTP attempts", err);
+  }
+}
+
+async function cleanupFailedAttempts() {
+  // Redis key TTL handles cleanup automatically
+}
 
 /**
  * Register a new user
@@ -154,6 +192,12 @@ exports.registerUser = async (data) => {
   } catch (err) {
     logger.error("Error sending registration emails:", err.message);
   }
+  // Queue verification email OTP sending without delaying response
+  setImmediate(() => {
+    verificationService
+      .sendOtp(newUser.id, "email")
+      .catch((err) => logger.error("Error sending verification OTP:", err));
+  });
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };
 };
@@ -162,7 +206,7 @@ exports.registerUser = async (data) => {
 /**
  * Login user and issue tokens
  */
-exports.loginUser = async ({ email, password }) => {
+exports.loginUser = async ({ email, password, ip }) => {
   if (!process.env.JWT_SECRET || !REFRESH_TOKEN_SECRET) {
     const missing = [];
     if (!process.env.JWT_SECRET) missing.push("JWT_SECRET");
@@ -173,16 +217,24 @@ exports.loginUser = async ({ email, password }) => {
     );
   }
 
-  // Clear out any expired lock entries before processing login
-  cleanupFailedAttempts();
-  const attempt = failedLoginAttempts.get(email);
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getAttemptKey(email, ip));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check login attempts", err);
+    }
+  }
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
     throw new AppError("Too many failed login attempts. Try again later.", 429);
   }
 
   const user = await userModel.findByEmail(email);
   if (!user) {
-    recordFailedAttempt(email);
+    // Perform a dummy hash to mitigate timing attacks when the user is missing
+    await bcrypt.hash(password, SALT_ROUNDS);
+    recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
@@ -192,11 +244,17 @@ exports.loginUser = async ({ email, password }) => {
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) {
-    recordFailedAttempt(email);
+    await recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
-  failedLoginAttempts.delete(email);
+  if (redisClient) {
+    try {
+      await redisClient.del(getAttemptKey(email, ip));
+    } catch (err) {
+      logger.error("Failed to clear login attempts", err);
+    }
+  }
 
   // Mark user as online on successful login
   await userModel.updateUser(user.id, {
@@ -208,8 +266,12 @@ exports.loginUser = async ({ email, password }) => {
   const roles = await userModel.getUserRoles(user.id);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: tokenRoles[0],
+    roles: tokenRoles,
+  });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -237,15 +299,19 @@ function generateRefreshToken(payload, jti) {
     throw new AppError("REFRESH_TOKEN_SECRET not configured", 500);
   }
   return jwt.sign({ ...payload, jti }, REFRESH_TOKEN_SECRET, {
-    expiresIn: REFRESH_EXPIRES_IN,
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   });
 }
 
-async function issueRefreshToken(userId, role) {
+async function issueRefreshToken(userId, roles = []) {
+  const roleArr = Array.isArray(roles) ? roles : [roles];
   const jti = uuidv4();
-  const token = generateRefreshToken({ id: userId, role }, jti);
+  const token = generateRefreshToken(
+    { id: userId, role: roleArr[0], roles: roleArr },
+    jti
+  );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await db("refresh_tokens").insert({
     id: jti,
     user_id: userId,
@@ -271,7 +337,8 @@ exports.verifyRefreshToken = async (token) => {
   }
   const match = await bcrypt.compare(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
-  return decoded;
+  const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
+  return { ...decoded, roles, role: roles[0] };
 };
 
 exports.rotateRefreshToken = async (token) => {
@@ -279,7 +346,7 @@ exports.rotateRefreshToken = async (token) => {
   await db("refresh_tokens")
     .where({ id: decoded.jti })
     .update({ revoked_at: new Date() });
-  const refreshToken = await issueRefreshToken(decoded.id, decoded.role);
+  const refreshToken = await issueRefreshToken(decoded.id, decoded.roles);
   return { decoded, refreshToken };
 };
 
@@ -346,8 +413,37 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(email));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError(
+      "Too many invalid OTP attempts. Try again later.",
+      429
+    );
+  }
+
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
+
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(user.id));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+  }
 
   const record = await db("password_resets")
     .where({ user_id: user.id, used: false })
@@ -355,22 +451,42 @@ exports.verifyOtp = async ({ email, code }) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new AppError("Invalid or expired OTP", 400);
+  if (!record) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, record.code_hash);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
+  await clearOtpAttempts(user.id);
   return true;
 };
 
 /**
  * Reset a user's password using a valid OTP code.
- * @param {{email:string, code:string, new_password:string}} data
+ * @param {{email:string, code:string, new_password:string, accessToken?:string}} data
  * @returns {Promise<void>}
  */
-exports.resetPassword = async ({ email, code, new_password }) => {
+exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
+
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(user.id));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+  }
 
   const resetRecord = await db("password_resets")
     .where({ user_id: user.id, used: false })
@@ -378,10 +494,16 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     .orderBy("created_at", "desc")
     .first();
 
-  if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
+  if (!resetRecord) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, resetRecord.code_hash);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const samePassword = await bcrypt.compare(new_password, user.password_hash);
   if (samePassword) {
@@ -393,6 +515,18 @@ exports.resetPassword = async ({ email, code, new_password }) => {
 
   await db("password_resets").where({ id: resetRecord.id }).update({ used: true });
 
+  // Revoke all refresh tokens for this user
+  await db("refresh_tokens").where({ user_id: user.id }).del();
+
+  // Optionally blacklist the provided access token
+  if (accessToken) {
+    try {
+      await addTokenToBlacklist(accessToken);
+    } catch (err) {
+      logger.error("Failed to blacklist access token", err);
+    }
+  }
+
   await sendPasswordChangeEmail(user.email);
 
   await notificationService.createNotification({
@@ -400,6 +534,7 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     type: "security",
     message: "Your password was changed successfully",
   });
+  await clearOtpAttempts(user.id);
   return sanitizeUserUtil(user);
 };
 
