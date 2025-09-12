@@ -208,8 +208,12 @@ exports.loginUser = async ({ email, password }) => {
   const roles = await userModel.getUserRoles(user.id);
   const permissions = await userModel.getUserPermissions(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: tokenRoles[0],
+    roles: tokenRoles,
+  });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
   await notificationService.createNotification({
     user_id: user.id,
@@ -241,9 +245,13 @@ function generateRefreshToken(payload, jti) {
   });
 }
 
-async function issueRefreshToken(userId, role) {
+async function issueRefreshToken(userId, roles = []) {
+  const roleArr = Array.isArray(roles) ? roles : [roles];
   const jti = uuidv4();
-  const token = generateRefreshToken({ id: userId, role }, jti);
+  const token = generateRefreshToken(
+    { id: userId, role: roleArr[0], roles: roleArr },
+    jti
+  );
   const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await db("refresh_tokens").insert({
@@ -271,7 +279,8 @@ exports.verifyRefreshToken = async (token) => {
   }
   const match = await bcrypt.compare(token, row.token_hash);
   if (!match) throw new Error("Invalid refresh token");
-  return decoded;
+  const roles = decoded.roles || (decoded.role ? [decoded.role] : []);
+  return { ...decoded, roles, role: roles[0] };
 };
 
 exports.rotateRefreshToken = async (token) => {
@@ -279,7 +288,7 @@ exports.rotateRefreshToken = async (token) => {
   await db("refresh_tokens")
     .where({ id: decoded.jti })
     .update({ revoked_at: new Date() });
-  const refreshToken = await issueRefreshToken(decoded.id, decoded.role);
+  const refreshToken = await issueRefreshToken(decoded.id, decoded.roles);
   return { decoded, refreshToken };
 };
 
