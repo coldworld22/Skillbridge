@@ -54,6 +54,13 @@ describe('tokenBlacklistService', () => {
     await expect(isTokenBlacklisted('tok')).rejects.toThrow('query fail');
   });
 
+  test('isTokenBlacklisted hashes token before querying', async () => {
+    mockFirst.mockResolvedValueOnce(null);
+    await isTokenBlacklisted('tok');
+    const hash = crypto.createHash('sha256').update('tok').digest('hex');
+    expect(mockWhere).toHaveBeenCalledWith({ token_hash: hash });
+  });
+
   test('removeExpiredTokens purges old entries', async () => {
     await removeExpiredTokens();
     expect(mockWhere).toHaveBeenCalledWith('expires_at', '<', expect.anything());

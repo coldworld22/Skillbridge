@@ -3,10 +3,6 @@ const logger = require('../utils/logger.js');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
 /**
  * Inserts a token into the blacklist store.
  * @param {string} token
@@ -27,6 +23,7 @@ async function addToken(token) {
     logger.warn('Failed to decode token for blacklist expiry:', err);
   }
 
+  const tokenHash = hashToken(token);
   try {
     const tokenHash = hashToken(token);
     await db('blacklisted_tokens')
