@@ -56,8 +56,12 @@ exports.loginOrRegister = async ({
 
   const roles = await userModel.getUserRoles(user.id);
   const tokenRoles = roles.length ? roles : [user.role];
-  const accessToken = generateAccessToken({ id: user.id, role: tokenRoles[0], roles: tokenRoles });
-  const refreshToken = await issueRefreshToken(user.id, tokenRoles[0]);
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: tokenRoles[0],
+    roles: tokenRoles,
+  });
+  const refreshToken = await issueRefreshToken(user.id, tokenRoles);
 
   const safeUser = sanitizeUser({ ...user, roles });
   return { accessToken, refreshToken, user: safeUser };

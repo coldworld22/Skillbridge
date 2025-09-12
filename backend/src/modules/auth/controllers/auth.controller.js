@@ -87,10 +87,13 @@ exports.refreshToken = catchAsync(async (req, res) => {
   }
 
   try {
-    const { decoded, refreshToken: newRefreshToken } = await authService.rotateRefreshToken(token);
+    const { decoded, refreshToken: newRefreshToken } =
+      await authService.rotateRefreshToken(token);
+    const roles = decoded.roles || [decoded.role];
     const accessToken = authService.generateAccessToken({
       id: decoded.id,
-      role: decoded.role,
+      role: roles[0],
+      roles,
     });
     if (process.env.NODE_ENV !== "production") {
       logger.debug("\u2705 Refresh token rotated for user", decoded.id);
