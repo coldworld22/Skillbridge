@@ -20,7 +20,6 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const redisClient = require("../../../utils/redisClient");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
@@ -192,7 +191,7 @@ exports.loginUser = async ({ email, password, ip }) => {
   if (!user) {
     // Perform a dummy hash to mitigate timing attacks when the user is missing
     await bcrypt.hash(password, SALT_ROUNDS);
-    recordFailedAttempt(email);
+    recordFailedAttempt(email, ip);
     throw new AppError("Invalid credentials", 401);
   }
 
