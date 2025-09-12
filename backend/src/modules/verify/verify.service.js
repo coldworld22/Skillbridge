@@ -46,7 +46,7 @@ exports.sendOtp = async (userId, type) => {
     }
   }
 
-  return { code };
+  return { alreadyVerified: false };
 };
 
 exports.verifyOtp = async (userId, type, code) => {
