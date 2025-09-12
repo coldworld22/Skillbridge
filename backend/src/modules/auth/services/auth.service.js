@@ -23,6 +23,7 @@ const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
+const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
