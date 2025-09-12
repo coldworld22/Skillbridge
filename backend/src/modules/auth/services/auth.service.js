@@ -265,7 +265,10 @@ exports.loginUser = async ({ email, password, ip }) => {
   }
 
   if (user.status !== "active") {
-    throw new AppError("Account is not active", 403);
+    throw new AppError(
+      "Account pending activation. Please verify your email or contact support.",
+      403,
+    );
   }
 
   const match = await bcrypt.compare(password, user.password_hash);
