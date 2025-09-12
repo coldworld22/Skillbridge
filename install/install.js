@@ -18,20 +18,22 @@ function clearError() {
 async function checkPrereqs() {
   const output = document.getElementById('prereqOutput');
   output.textContent = 'Checking...';
-  clearError();
-  setProgress(10);
+  output.className = 'info';
   try {
     const res = await fetch('/api/install/prereqs');
     const data = await res.json();
-    output.textContent = data.output || JSON.stringify(data, null, 2);
-    if (data.ok) {
-      document.getElementById('step2').classList.remove('hidden');
-      setProgress(50);
+    const ok = data.ok !== undefined ? data.ok : res.ok;
+    output.textContent = (ok ? '✅ ' : '❌ ') + (data.output || JSON.stringify(data, null, 2));
+    output.className = ok ? 'success' : 'error';
+    if (ok) {
+      document.getElementById('step2').style.display = 'block';
     } else {
       document.getElementById('step2').classList.add('hidden');
     }
   } catch (err) {
-    showError(`Prerequisite check failed: ${err.message}`);
+    output.textContent = '❌ Error: ' + err.message;
+    output.className = 'error';
+    document.getElementById('step2').style.display = 'none';
   }
 }
 
@@ -43,6 +45,11 @@ const installBtn = document.getElementById('installBtn');
 installBtn.addEventListener('click', async () => {
   const out = document.getElementById('installOutput');
   out.textContent = 'Running install...';
+  out.className = 'info';
+  const payload = {
+    adminEmail: form.adminEmail.value,
+    adminPassword: form.adminPassword.value,
+  };
   try {
     const res = await fetch('/api/install/run', {
       method: 'POST',
@@ -50,9 +57,11 @@ installBtn.addEventListener('click', async () => {
       body: JSON.stringify({}),
     });
     const data = await res.json();
-    out.textContent = data.output || JSON.stringify(data, null, 2);
-    setProgress(100);
+    const ok = data.ok !== undefined ? data.ok : res.ok;
+    out.textContent = (ok ? '✅ ' : '❌ ') + (data.output || JSON.stringify(data, null, 2));
+    out.className = ok ? 'success' : 'error';
   } catch (err) {
-    showError(`Install failed: ${err.message}`);
+    out.textContent = '❌ Error: ' + err.message;
+    out.className = 'error';
   }
 });
