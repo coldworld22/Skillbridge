@@ -20,7 +20,6 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const redisClient = require("../../../utils/redisClient");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
@@ -38,8 +37,17 @@ const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
 
+// OTP attempt tracking
+const OTP_ATTEMPT_PREFIX = "otpAttempt:";
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+
 function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
+}
+
+function getOtpAttemptKey(identifier) {
+  return `${OTP_ATTEMPT_PREFIX}${identifier}`;
 }
 
 async function recordFailedAttempt(email, ip) {
@@ -56,6 +64,32 @@ async function recordFailedAttempt(email, ip) {
     await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
   } catch (err) {
     logger.error("Failed to record login attempt", err);
+  }
+}
+
+async function recordFailedOtpAttempt(identifier) {
+  if (!redisClient) return;
+  const key = getOtpAttemptKey(identifier);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= OTP_MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + OTP_LOCK_TIME;
+    }
+    await redisClient.set(key, JSON.stringify(info), { PX: OTP_LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record OTP attempt", err);
+  }
+}
+
+async function clearOtpAttempts(identifier) {
+  if (!redisClient) return;
+  try {
+    await redisClient.del(getOtpAttemptKey(identifier));
+  } catch (err) {
+    logger.error("Failed to clear OTP attempts", err);
   }
 }
 
@@ -374,17 +408,37 @@ exports.verifyOtp = async ({ email, code }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(user.id));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+  }
+
   const record = await db("password_resets")
     .where({ user_id: user.id, used: false })
     .andWhere("expires_at", ">", new Date())
     .orderBy("created_at", "desc")
     .first();
 
-  if (!record) throw new AppError("Invalid or expired OTP", 400);
+  if (!record) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, record.code_hash);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
+  await clearOtpAttempts(user.id);
   return true;
 };
 
@@ -397,16 +451,35 @@ exports.resetPassword = async ({ email, code, new_password }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("User not found", 404);
 
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getOtpAttemptKey(user.id));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+  }
+
   const resetRecord = await db("password_resets")
     .where({ user_id: user.id, used: false })
     .andWhere("expires_at", ">", new Date())
     .orderBy("created_at", "desc")
     .first();
 
-  if (!resetRecord) throw new AppError("Invalid or expired OTP", 400);
+  if (!resetRecord) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const match = await bcrypt.compare(code, resetRecord.code_hash);
-  if (!match) throw new AppError("Invalid or expired OTP", 400);
+  if (!match) {
+    await recordFailedOtpAttempt(user.id);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   const samePassword = await bcrypt.compare(new_password, user.password_hash);
   if (samePassword) {
@@ -425,6 +498,7 @@ exports.resetPassword = async ({ email, code, new_password }) => {
     type: "security",
     message: "Your password was changed successfully",
   });
+  await clearOtpAttempts(user.id);
   return sanitizeUserUtil(user);
 };
 
