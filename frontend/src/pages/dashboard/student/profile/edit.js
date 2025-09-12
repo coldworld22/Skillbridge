@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
@@ -18,7 +19,7 @@ import { sendChatMessage } from "@/services/messageService";
 import logger from "@/utils/logger";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
+  FaUserCircle, FaIdCard, FaLinkedin,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap
 } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
@@ -44,6 +45,7 @@ export default function StudentProfileEdit() {
   }), [t]);
 
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
@@ -100,8 +102,10 @@ export default function StudentProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, student, social_links } = res;
 
         const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        social_links?.forEach((link) => {
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         setFormData({
@@ -128,6 +132,14 @@ export default function StudentProfileEdit() {
 
     loadProfile();
   }, [user, router]);
+
+  useEffect(() => {
+    return () => {
+      if (formData.identityPreview) {
+        URL.revokeObjectURL(formData.identityPreview);
+      }
+    };
+  }, [formData.identityPreview]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
@@ -200,26 +212,38 @@ export default function StudentProfileEdit() {
   };
 
   const removeIdentity = () => {
-    setFormData(prev => ({ ...prev, identityFile: null, identityPreview: null }));
+    setFormData(prev => {
+      if (prev.identityPreview) {
+        URL.revokeObjectURL(prev.identityPreview);
+      }
+      return { ...prev, identityFile: null, identityPreview: null };
+    });
   };
 
   const validateForm = () => {
     try {
       const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
+        Object.entries(formData.socialLinks || {}).filter(
+          ([platform, url]) =>
+            allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
       );
 
       studentProfileSchema.parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
+      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
       err.errors.forEach((e) => {
-        errs[e.path[0]] = e.message;
+        errs[e.path[0]] = t(e.message);
       });
       setErrors(errs);
+      if (err.errors?.length) {
+        toast.error(t(err.errors[0].message));
+      }
       return false;
     }
   };
@@ -236,8 +260,16 @@ export default function StudentProfileEdit() {
       logger.log("[StudentProfileEdit] Submitting form", formData);
 
       const social_links = Object.entries(formData.socialLinks || {})
-        .filter(([, url]) => url.trim() !== "")
-        .map(([platform, url]) => ({ platform, url }));
+        .filter(([platform, url]) =>
+          url.trim() !== "" && allowedPlatforms.includes(platform)
+        )
+        .map(([platform, url]) => ({
+          platform,
+          url:
+            url.startsWith("http://") || url.startsWith("https://")
+              ? url
+              : `https://${url}`,
+        }));
 
       const payload = {
         full_name: formData.full_name,
@@ -275,7 +307,7 @@ export default function StudentProfileEdit() {
         gender: fresh.gender,
         date_of_birth: fresh.date_of_birth,
         avatar_url: fresh.avatar_url,
-        profile_complete: true,
+        profile_complete: fresh.profile_complete,
       });
 
       setTimeout(() => {
@@ -587,7 +619,7 @@ export default function StudentProfileEdit() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
-                    <FaLinkedin className="w-5 h-5" />
+                    <FaGlobe className="w-5 h-5" />
                   </div>
                   <h2 className="text-lg font-semibold text-gray-800">{t('social_section')}</h2>
                 </div>
