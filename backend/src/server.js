@@ -13,6 +13,7 @@ const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const redisClient = require("./utils/redisClient");
 const socketStore = require("./utils/socketStore");
+const cache = require("./utils/cache");
 const rateLimit = require("express-rate-limit");
 const { passport, initStrategies } = require("./config/passport");
 const db = require("./config/database");
