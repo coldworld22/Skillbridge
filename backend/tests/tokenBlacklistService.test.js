@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-
 const mockIgnore = jest.fn();
 const mockOnConflict = jest.fn(() => ({ ignore: mockIgnore }));
 const mockInsert = jest.fn(() => ({ onConflict: mockOnConflict }));

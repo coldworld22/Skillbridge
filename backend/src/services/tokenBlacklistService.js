@@ -28,6 +28,7 @@ async function addToken(token) {
   }
 
   try {
+    const tokenHash = hashToken(token);
     await db('blacklisted_tokens')
       .insert({ token_hash: tokenHash, expires_at: expiresAt })
       .onConflict('token_hash')

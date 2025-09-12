@@ -6,6 +6,7 @@ const {
 } = require('../modules/install/install.routes');
 
 router.use('/api/health', require('./health.routes'));
+router.use('/api/csrf-token', require('./csrf.routes'));
 // grouped routers
 router.use(require('./auth'));
 router.use(require('./payments'));
