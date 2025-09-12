@@ -19,6 +19,7 @@ const AppError = require("../../../utils/AppError");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
+const { addToken } = require("../../../services/tokenBlacklistService");
 const verificationService = require("../../verify/verify.service");
 const { addToken: addTokenToBlacklist } = require("../../../services/tokenBlacklistService");
 const {
@@ -47,8 +48,8 @@ function getAttemptKey(email, ip) {
   return `${LOGIN_ATTEMPT_PREFIX}${email}${ip ? `:${ip}` : ""}`;
 }
 
-function getOtpAttemptKey(identifier) {
-  return `${OTP_ATTEMPT_PREFIX}${identifier}`;
+function getOtpAttemptKey(userId) {
+  return `${OTP_ATTEMPT_PREFIX}${userId}`;
 }
 
 async function recordFailedAttempt(email, ip) {
@@ -68,9 +69,9 @@ async function recordFailedAttempt(email, ip) {
   }
 }
 
-async function recordFailedOtpAttempt(identifier) {
+async function recordFailedOtpAttempt(userId) {
   if (!redisClient) return;
-  const key = getOtpAttemptKey(identifier);
+  const key = getOtpAttemptKey(userId);
   let info = { count: 0, lockUntil: null };
   try {
     const data = await redisClient.get(key);
@@ -85,10 +86,10 @@ async function recordFailedOtpAttempt(identifier) {
   }
 }
 
-async function clearOtpAttempts(identifier) {
+async function clearOtpAttempts(userId) {
   if (!redisClient) return;
   try {
-    await redisClient.del(getOtpAttemptKey(identifier));
+    await redisClient.del(getOtpAttemptKey(userId));
   } catch (err) {
     logger.error("Failed to clear OTP attempts", err);
   }
@@ -112,70 +113,95 @@ exports.registerUser = async (data) => {
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-  const [newUser] = await userModel.insertUser({
-    full_name: data.full_name,
-    email: data.email,
-    phone: data.phone,
-    password_hash: hashed,
-    role: data.role || "Student",
-    status: "pending",
-    is_email_verified: false,
-    is_phone_verified: false,
-    profile_complete: false,
-    created_at: new Date(),
-    updated_at: new Date(),
-  });
+  const admins = await userModel.findAdmins();
+  let newUser;
+  try {
+    await db.transaction(async (trx) => {
+      [newUser] = await userModel.insertUser(
+        {
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          password_hash: hashed,
+          role: data.role || "Student",
+          status: "pending",
+          is_email_verified: false,
+          is_phone_verified: false,
+          profile_complete: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        trx,
+      );
 
-  const roleName = data.role || "Student";
-  const roleRow = await db("roles").where({ name: roleName }).first();
-  if (roleRow) {
-    await db("user_roles").insert({ user_id: newUser.id, role_id: roleRow.id });
+      const roleName = data.role || "Student";
+      const roleRow = await trx("roles").where({ name: roleName }).first();
+      if (roleRow) {
+        await trx("user_roles").insert({
+          user_id: newUser.id,
+          role_id: roleRow.id,
+        });
+      }
+
+      const welcomeMessage =
+        newUser.role && newUser.role.toLowerCase() === "instructor"
+          ? "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
+          : "Welcome to SkillBridge!";
+
+      await notificationService.createNotification(
+        {
+          user_id: newUser.id,
+          type: "welcome",
+          message: welcomeMessage,
+        },
+        trx,
+      );
+
+      const firstAdmin = admins[0];
+      if (firstAdmin) {
+        await messageService.createMessage(
+          {
+            sender_id: firstAdmin.id,
+            receiver_id: newUser.id,
+            message: welcomeMessage,
+          },
+          trx,
+        );
+      }
+
+      await Promise.all(
+        admins.map((admin) =>
+          notificationService.createNotification(
+            {
+              user_id: admin.id,
+              type: "new_user",
+              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+            },
+            trx,
+          ),
+        ),
+      );
+
+      await Promise.all(
+        admins.map((admin) =>
+          messageService.createMessage(
+            {
+              sender_id: newUser.id,
+              receiver_id: admin.id,
+              message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
+            },
+            trx,
+          ),
+        ),
+      );
+    });
+  } catch (err) {
+    logger.error("Failed to register user", err);
+    throw err;
   }
 
   const roles = await userModel.getUserRoles(newUser.id);
   const permissions = await userModel.getUserPermissions(newUser.id);
-
-  const welcomeMessage =
-    newUser.role && newUser.role.toLowerCase() === "instructor"
-      ?
-        "Thank you for joining our platform! Your account is under review. Please complete your profile while we review your account."
-      : "Welcome to SkillBridge!";
-
-  await notificationService.createNotification({
-    user_id: newUser.id,
-    type: "welcome",
-    message: welcomeMessage,
-  });
-
-  const admins = await userModel.findAdmins();
-  const firstAdmin = admins[0];
-  if (firstAdmin) {
-    await messageService.createMessage({
-      sender_id: firstAdmin.id,
-      receiver_id: newUser.id,
-      message: welcomeMessage,
-    });
-  }
-  await Promise.all(
-    admins.map((admin) =>
-      notificationService.createNotification({
-        user_id: admin.id,
-        type: "new_user",
-        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-
-      })
-    )
-  );
-  await Promise.all(
-    admins.map((admin) =>
-      messageService.createMessage({
-        sender_id: newUser.id,
-        receiver_id: admin.id,
-        message: `New user ${newUser.full_name} (${newUser.role}) just registered`,
-
-      })
-    )
-  );
 
   // Send emails
   try {
@@ -185,18 +211,20 @@ exports.registerUser = async (data) => {
         sendNewUserAdminEmail(admin.email, {
           full_name: newUser.full_name,
           email: newUser.email,
-        })
-      )
+        }),
+      ),
     );
   } catch (err) {
     logger.error("Error sending registration emails:", err.message);
   }
+
   // Queue verification email OTP sending without delaying response
   setImmediate(() => {
     verificationService
       .sendOtp(newUser.id, "email")
       .catch((err) => logger.error("Error sending verification OTP:", err));
   });
+
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };
 };
@@ -412,26 +440,10 @@ exports.generateOtp = async (email, via = "email") => {
  * @returns {Promise<boolean>}
  */
 exports.verifyOtp = async ({ email, code }) => {
-  let attempt = null;
-  if (redisClient) {
-    try {
-      const data = await redisClient.get(getOtpAttemptKey(email));
-      attempt = data ? JSON.parse(data) : null;
-    } catch (err) {
-      logger.error("Failed to check OTP attempts", err);
-    }
-  }
-  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError(
-      "Too many invalid OTP attempts. Try again later.",
-      429
-    );
-  }
-
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
-  attempt = null;
+  let attempt = null;
   if (redisClient) {
     try {
       const data = await redisClient.get(getOtpAttemptKey(user.id));
@@ -440,8 +452,12 @@ exports.verifyOtp = async ({ email, code }) => {
       logger.error("Failed to check OTP attempts", err);
     }
   }
+
   if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
-    throw new AppError("Too many failed OTP attempts. Try again later.", 429);
+    throw new AppError(
+      "Too many failed OTP attempts. Try again later.",
+      429
+    );
   }
 
   const record = await db("password_resets")
@@ -451,17 +467,17 @@ exports.verifyOtp = async ({ email, code }) => {
     .first();
 
   if (!record) {
-    await recordFailedOtpAttempt(user.id);
+    await recordFailedOtpAttempt(identifier);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
   const match = await bcrypt.compare(code, record.code_hash);
   if (!match) {
-    await recordFailedOtpAttempt(user.id);
+    await recordFailedOtpAttempt(identifier);
     throw new AppError("Invalid or expired OTP", 400);
   }
 
-  await clearOtpAttempts(user.id);
+  await clearOtpAttempts(identifier);
   return true;
 };
 
@@ -520,7 +536,7 @@ exports.resetPassword = async ({ email, code, new_password, accessToken }) => {
   // Optionally blacklist the provided access token
   if (accessToken) {
     try {
-      await addTokenToBlacklist(accessToken);
+      await addToken(accessToken);
     } catch (err) {
       logger.error("Failed to blacklist access token", err);
     }

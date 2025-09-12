@@ -17,12 +17,14 @@ jest.mock('../src/config/database', () => {
     if (table === 'blacklisted_tokens') {
       return {
         where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
         first: jest.fn().mockResolvedValue(null),
         insert: jest.fn().mockResolvedValue(),
       };
     }
     return {};
   });
+  mockDb.transaction = jest.fn(async (cb) => cb(mockDb));
   mockDb.fn = { now: jest.fn() };
   return mockDb;
 });
@@ -34,6 +36,7 @@ jest.mock('../src/modules/users/user.model', () => ({
   insertUser: jest.fn(),
   updateUser: jest.fn(),
   getUserRoles: jest.fn(),
+  getUserPermissions: jest.fn(),
   findAdmins: jest.fn(),
   findById: jest.fn(),
 }));
@@ -68,6 +71,7 @@ process.env.REFRESH_TOKEN_SECRET = 'refreshsecret';
 const authService = require('../src/modules/auth/services/auth.service');
 const authMiddleware = require('../src/middleware/auth/authMiddleware');
 const userModel = require('../src/modules/users/user.model');
+const db = require('../src/config/database');
 
 describe('Sensitive data sanitization', () => {
   beforeEach(() => {
@@ -92,6 +96,7 @@ describe('Sensitive data sanitization', () => {
     userModel.findByPhone.mockResolvedValue(null);
     userModel.insertUser.mockResolvedValue([mockUser]);
     userModel.getUserRoles.mockResolvedValue([]);
+    userModel.getUserPermissions.mockResolvedValue([]);
     userModel.findAdmins.mockResolvedValue([]);
 
     const result = await authService.registerUser({
@@ -102,6 +107,7 @@ describe('Sensitive data sanitization', () => {
     });
 
     expect(result.user.password_hash).toBeUndefined();
+    expect(db.transaction).toHaveBeenCalled();
   });
 
   it('loginUser does not return password_hash', async () => {
@@ -115,6 +121,7 @@ describe('Sensitive data sanitization', () => {
     userModel.findByEmail.mockResolvedValue({ ...mockUser });
     userModel.updateUser.mockResolvedValue([mockUser]);
     userModel.getUserRoles.mockResolvedValue([]);
+    userModel.getUserPermissions.mockResolvedValue([]);
 
     const issueSpy = jest
       .spyOn(authService, 'issueRefreshToken')
