@@ -5,7 +5,6 @@
 
 const db = require("../../../config/database");
 const { allowedPlatforms } = require("../common/socialPlatforms");
-
 // Utility to safely parse JSON fields
 const parseArrayField = (val) => {
   if (!val) return [];

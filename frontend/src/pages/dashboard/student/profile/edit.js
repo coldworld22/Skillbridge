@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
@@ -23,26 +24,27 @@ import {
 } from "react-icons/fa";
 import { socialPlatforms, allowedPlatforms } from "@/utils/socialPlatforms";
 
-const studentProfileSchema = z.object({
+export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z
     .string()
     .refine((val) => isValidPhoneNumber(val), {
       message: "Invalid phone number",
     }),
-  gender: z.enum(["male", "female"]),
+  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
   education_level: z.string().min(2, "Education level is required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links are optional strings without strict URL validation
-  socialLinks: z.record(z.string()).optional(),
+  // Social links validated as URLs
+  socialLinks: z.record(z.string().url("invalid_url")).optional(),
 });
 
 export default function StudentProfileEdit() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard', { keyPrefix: 'studentProfilePage' });
   const { user, logout, hasHydrated, setUser } = useAuthStore();
   const refreshNotifications = useNotificationStore((s) => s.fetch);
   const refreshMessages = useMessageStore((s) => s.fetch);
@@ -99,8 +101,10 @@ export default function StudentProfileEdit() {
         const { full_name, phone, gender, date_of_birth, avatar_url, student, social_links } = res;
 
         const socialMap = {};
-        social_links?.forEach(link => {
-          socialMap[link.platform] = link.url;
+        social_links?.forEach((link) => {
+          if (allowedPlatforms.some((p) => p.name === link.platform)) {
+            socialMap[link.platform] = link.url;
+          }
         });
 
         setFormData({
@@ -127,6 +131,14 @@ export default function StudentProfileEdit() {
 
     loadProfile();
   }, [user, router]);
+
+  useEffect(() => {
+    return () => {
+      if (formData.identityPreview) {
+        URL.revokeObjectURL(formData.identityPreview);
+      }
+    };
+  }, [formData.identityPreview]);
 
   const toggleSection = (section) => setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
 
@@ -185,11 +197,16 @@ export default function StudentProfileEdit() {
     try {
       setIsSubmitting(true);
       await uploadStudentIdentity(user.id, file);
-      setFormData(prev => ({
-        ...prev,
-        identityFile: file,
-        identityPreview: URL.createObjectURL(file)
-      }));
+      setFormData(prev => {
+        if (prev.identityPreview) {
+          URL.revokeObjectURL(prev.identityPreview);
+        }
+        return {
+          ...prev,
+          identityFile: file,
+          identityPreview: URL.createObjectURL(file)
+        };
+      });
       toast.success("Identity document uploaded successfully!");
     } catch (err) {
       toast.error("Failed to upload identity document");
@@ -199,26 +216,38 @@ export default function StudentProfileEdit() {
   };
 
   const removeIdentity = () => {
-    setFormData(prev => ({ ...prev, identityFile: null, identityPreview: null }));
+    setFormData(prev => {
+      if (prev.identityPreview) {
+        URL.revokeObjectURL(prev.identityPreview);
+      }
+      return { ...prev, identityFile: null, identityPreview: null };
+    });
   };
 
   const validateForm = () => {
     try {
       const sanitizedLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
+        Object.entries(formData.socialLinks || {}).filter(
+          ([platform, url]) =>
+            allowedPlatforms.some((p) => p.name === platform) && url.trim() !== ""
+        )
       );
 
       studentProfileSchema.parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
+      setErrors({});
       return true;
     } catch (err) {
       const errs = {};
       err.errors.forEach((e) => {
-        errs[e.path[0]] = e.message;
+        errs[e.path[0]] = t(e.message);
       });
       setErrors(errs);
+      if (err.errors?.length) {
+        toast.error(t(err.errors[0].message));
+      }
       return false;
     }
   };
@@ -523,6 +552,8 @@ export default function StudentProfileEdit() {
                       >
                         <option value="male">Male</option>
                         <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
                       </select>
                     </div>
 
@@ -594,7 +625,7 @@ export default function StudentProfileEdit() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600">
-                    <FaLinkedin className="w-5 h-5" />
+                    <FaGlobe className="w-5 h-5" />
                   </div>
                   <h2 className="text-lg font-semibold text-gray-800">Social Links</h2>
                 </div>

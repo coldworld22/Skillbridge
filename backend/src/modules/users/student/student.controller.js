@@ -85,6 +85,7 @@ exports.updateProfile = async (req, res) => {
           platform: link.platform.trim().toLowerCase(),
           url: normalizeUrl(link.url),
         }))
+        .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
   const hasUserFields =
@@ -121,7 +122,33 @@ exports.updateProfile = async (req, res) => {
     }
 
     await trx.commit();
-    res.json({ message: "Profile updated successfully" });
+
+    const [user] = await db("users")
+      .where({ id: userId })
+      .select(
+        "id",
+        "full_name",
+        "email",
+        "phone",
+        "gender",
+        "date_of_birth",
+        "avatar_url",
+        "is_email_verified",
+        "is_phone_verified",
+        "profile_complete",
+        "created_at",
+        "updated_at"
+      );
+
+    const [student] = await db("student_profiles")
+      .where({ user_id: userId })
+      .select("education_level", "topics", "learning_goals", "identity_doc_url");
+
+    const socialLinks = await db("user_social_links")
+      .where({ user_id: userId })
+      .select("platform", "url");
+
+    res.json({ ...user, student, social_links: socialLinks });
   } catch (err) {
     await trx.rollback();
     logger.error("Failed to update student profile", err.message);
