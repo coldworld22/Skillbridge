@@ -25,6 +25,7 @@ describe('/install route', () => {
   it('serves installer when ENABLE_INSTALL is true', async () => {
     const { app } = getServer('true');
     const res = await request(app).get('/install/');
+
     expect(res.status).toBe(200);
     expect(res.text).toContain('<!DOCTYPE html>');
     expect(res.text).not.toContain('Admin Email');
