@@ -6,6 +6,33 @@ const userModel = require("../users/user.model");
 const { sendOtpEmail } = require("../../utils/email");
 const smsService = require("../../services/smsService");
 const AppError = require("../../utils/AppError");
+const logger = require("../../utils/logger.js");
+const redisClient = require("../../utils/redisClient");
+
+const MAX_ATTEMPTS = 5;
+const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+const VERIFY_OTP_ATTEMPT_PREFIX = "verifyOtpAttempt:";
+
+function getAttemptKey(userId, type) {
+  return `${VERIFY_OTP_ATTEMPT_PREFIX}${userId}:${type}`;
+}
+
+async function recordFailedAttempt(userId, type) {
+  if (!redisClient) return;
+  const key = getAttemptKey(userId, type);
+  let info = { count: 0, lockUntil: null };
+  try {
+    const data = await redisClient.get(key);
+    if (data) info = JSON.parse(data);
+    info.count += 1;
+    if (info.count >= MAX_ATTEMPTS) {
+      info.lockUntil = Date.now() + LOCK_TIME;
+    }
+    await redisClient.set(key, JSON.stringify(info), { PX: LOCK_TIME });
+  } catch (err) {
+    logger.error("Failed to record OTP attempt", err);
+  }
+}
 
 const generateCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -50,6 +77,22 @@ exports.sendOtp = async (userId, type) => {
 };
 
 exports.verifyOtp = async (userId, type, code) => {
+  let attempt = null;
+  if (redisClient) {
+    try {
+      const data = await redisClient.get(getAttemptKey(userId, type));
+      attempt = data ? JSON.parse(data) : null;
+    } catch (err) {
+      logger.error("Failed to check OTP attempts", err);
+    }
+  }
+  if (attempt && attempt.lockUntil && attempt.lockUntil > Date.now()) {
+    throw new AppError(
+      "Too many invalid OTP attempts. Try again later.",
+      429
+    );
+  }
+
   const user = await db("users").where({ id: userId }).first();
   const updateField = type === "email" ? "is_email_verified" : "is_phone_verified";
 
@@ -62,11 +105,22 @@ exports.verifyOtp = async (userId, type, code) => {
     .andWhere("expires_at", ">", new Date())
     .first();
 
-  if (!record) throw new Error("Invalid or expired OTP");
+  if (!record) {
+    await recordFailedAttempt(userId, type);
+    throw new AppError("Invalid or expired OTP", 400);
+  }
 
   await db("verifications").where({ id: record.id }).update({ verified: true });
 
   await db("users").where({ id: userId }).update({ [updateField]: true });
+
+  if (redisClient) {
+    try {
+      await redisClient.del(getAttemptKey(userId, type));
+    } catch (err) {
+      logger.error("Failed to clear OTP attempts", err);
+    }
+  }
 
   const userAfter = await db("users").where({ id: userId }).first();
   if (
