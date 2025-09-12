@@ -10,6 +10,12 @@
 
 const { REFRESH_TOKEN_MAX_AGE } = require("../config/tokens");
 
+// Use the provided cookie domain or fall back to the production domain so
+// browsers store the csrfToken cookie when deployed.
+const COOKIE_DOMAIN =
+  process.env.COOKIE_DOMAIN ||
+  (process.env.NODE_ENV === "production" ? ".eduskillbridge.net" : undefined);
+
 const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -26,9 +32,9 @@ const csrfCookieOptions = {
   sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
 };
 
-if (process.env.COOKIE_DOMAIN) {
-  refreshCookieOptions.domain = process.env.COOKIE_DOMAIN;
-  csrfCookieOptions.domain = process.env.COOKIE_DOMAIN;
+if (COOKIE_DOMAIN) {
+  refreshCookieOptions.domain = COOKIE_DOMAIN;
+  csrfCookieOptions.domain = COOKIE_DOMAIN;
 }
 
 module.exports = { refreshCookieOptions, csrfCookieOptions };
