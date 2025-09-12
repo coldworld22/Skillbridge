@@ -20,11 +20,10 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const {
+const { 
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
 } = require("../../../config/tokens");
-const redisClient = require("../../../utils/redisClient");
 
 // ─────────────────────────────────────────────────────────────
 // 🔧 Config Constants
@@ -37,7 +36,6 @@ const OTP_EXPIRY_MINUTES = 15;
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 const LOGIN_ATTEMPT_PREFIX = "failedLogin:";
-const OTP_ATTEMPT_PREFIX = "failedOtp:";
 
 // OTP attempt tracking
 const OTP_ATTEMPT_PREFIX = "otpAttempt:";
@@ -432,7 +430,7 @@ exports.verifyOtp = async ({ email, code }) => {
   const user = await userModel.findByEmail(email);
   if (!user) throw new AppError("Invalid user", 400);
 
-  let attempt = null;
+  attempt = null;
   if (redisClient) {
     try {
       const data = await redisClient.get(getOtpAttemptKey(user.id));
