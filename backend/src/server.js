@@ -208,6 +208,11 @@ if (config.ENABLE_INSTALL) {
 
 // ─── Routes ───
 app.use(routes);
+if (!config.ENABLE_INSTALL) {
+  app.get('/install', (req, res) => {
+    res.status(403).send('Installer disabled – set ENABLE_INSTALL=true to enable');
+  });
+}
 app.use(require("./middleware/errorHandler"));
 const PORT = config.PORT;
 
