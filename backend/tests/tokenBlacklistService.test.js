@@ -27,6 +27,14 @@ describe('tokenBlacklistService', () => {
     jest.clearAllMocks();
   });
 
+  test('addToken hashes token before storing', async () => {
+    mockIgnore.mockResolvedValueOnce();
+    await addToken('tok');
+    const hash = crypto.createHash('sha256').update('tok').digest('hex');
+    expect(mockInsert).toHaveBeenCalledWith({ token_hash: hash });
+    expect(mockOnConflict).toHaveBeenCalledWith('token_hash');
+  });
+
   test('addToken logs and rethrows on failure', async () => {
     const err = new Error('db fail');
     mockIgnore.mockRejectedValueOnce(err);

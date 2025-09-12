@@ -7,6 +7,10 @@ const jwt = require('jsonwebtoken');
  * @param {string} token
  * @returns {Promise<void>}
  */
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 async function addToken(token) {
   if (!token) return;
 

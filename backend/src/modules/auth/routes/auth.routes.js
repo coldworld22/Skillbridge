@@ -19,7 +19,12 @@ router.use((req, res, next) => {
  * @desc    Register a new user
  * @access  Public
  */
-router.post("/register", validate(authValidation.registerSchema), authController.register);
+router.post(
+  "/register",
+  limitAuthRequests,
+  validate(authValidation.registerSchema),
+  authController.register
+);
 
 /**
  * @route   POST /auth/login
