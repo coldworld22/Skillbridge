@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <title>SkillBridge Installer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>SkillBridge Installation</h1>
-  <section id="step1">
+  <section id="step1" class="section">
     <h2>Step 1: Prerequisite Check</h2>
-    <button id="checkBtn">Recheck</button>
-    <pre id="prereqOutput"></pre>
+    <button id="checkBtn" class="btn">Recheck</button>
+    <pre id="prereqOutput" class="output"></pre>
   </section>
-  <section id="step2" style="display: none;">
+  <section id="step2" class="section" style="display: none;">
     <h2>Step 2: Configuration</h2>
     <form id="configForm">
       <label>
@@ -25,9 +26,9 @@
         <input type="password" name="adminPassword" required />
       </label>
       <br />
-      <button type="submit">Run Install</button>
+      <button type="submit" class="btn">Run Install</button>
     </form>
-    <pre id="installOutput"></pre>
+    <pre id="installOutput" class="output"></pre>
   </section>
   <script src="install.js" defer></script>
 </body>
