@@ -20,7 +20,6 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const smsService = require("../../../services/smsService");
 const verificationService = require("../../verify/verify.service");
-const redisClient = require("../../../utils/redisClient");
 const {
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_MAX_AGE,
@@ -156,6 +155,12 @@ exports.registerUser = async (data) => {
   } catch (err) {
     logger.error("Error sending registration emails:", err.message);
   }
+  // Queue verification email OTP sending without delaying response
+  setImmediate(() => {
+    verificationService
+      .sendOtp(newUser.id, "email")
+      .catch((err) => logger.error("Error sending verification OTP:", err));
+  });
   const safeUser = sanitizeUserUtil(newUser);
   return { user: { ...safeUser, roles, permissions } };
 };

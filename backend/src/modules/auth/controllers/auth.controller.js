@@ -24,7 +24,7 @@ exports.register = catchAsync(async (req, res, next) => {
       }
     }
     const { user } = await authService.registerUser(req.body);
-    res.status(201).json({ message: "Registration successful", user });
+    res.status(201).json({ message: "Registration successful. A verification email has been sent.", user });
   } catch (err) {
     logger.error("🔥 Registration error caught:");
     logger.error("Name:", err.name);
