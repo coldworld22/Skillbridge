@@ -131,6 +131,7 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+    await trx.commit();
     // 4. Return the freshly updated profile details
     const [user] = await db("users")
       .where({ id: userId })
@@ -149,21 +150,31 @@ exports.updateProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [adminProfile] = await db("admin_profiles")
+    const [adminProfile] = await trx("admin_profiles")
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
-    const socialLinks = await db("user_social_links")
+    const socialLinks = await trx("user_social_links")
       .where({ user_id: userId })
       .select("platform", "url");
 
-    res.json({
+    await trx.commit();
+
+    return res.json({
       ...user,
       ...adminProfile,
       social_links: socialLinks,
     });
   } catch (error) {
     await trx.rollback();
+    if (error.code === "23505") {
+      if (error.constraint === "users_email_unique") {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      if (error.constraint === "users_phone_unique") {
+        return res.status(409).json({ message: "Phone number already in use" });
+      }
+    }
     handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };

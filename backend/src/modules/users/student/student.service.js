@@ -17,25 +17,44 @@ const getStudentProfile = async (userId) => {
     return { ...user, student, social_links: socialLinks };
 };
 
-// 🔹 Update student + profile + links
+// 🔹 Update student + profile + links in a transaction
 const updateStudentProfile = async (userId, userData, studentData, socialLinks = []) => {
-    await db("users").where({ id: userId }).update({
-        ...userData,
-        profile_complete: true,
-    });
+    try {
+        return await db.transaction(async (trx) => {
+            const requiredUserFields = ["full_name", "phone", "gender", "date_of_birth"];
+            const hasUserFields = requiredUserFields.every((f) => userData && userData[f]);
+            const hasStudentDetails = studentData && studentData.education_level;
+            const hasSocialLinks = Array.isArray(socialLinks) && socialLinks.length > 0;
 
-    const existing = await db("student_profiles").where({ user_id: userId }).first();
-    if (existing) {
-        await db("student_profiles").where({ user_id: userId }).update(studentData);
-    } else {
-        await db("student_profiles").insert({ user_id: userId, ...studentData });
-    }
+            const profileComplete = hasUserFields && hasStudentDetails && hasSocialLinks;
 
-    await db("user_social_links").where({ user_id: userId }).del();
-    for (const link of socialLinks) {
-        if (link.url) {
-            await db("user_social_links").insert({ user_id: userId, platform: link.platform, url: link.url });
-        }
+            const userUpdateData = { ...userData };
+            if (profileComplete) userUpdateData.profile_complete = true;
+
+            const updated = await trx("users").where({ id: userId }).update(userUpdateData);
+            if (updated === 0) throw new Error("Failed to update user record");
+
+            const existing = await trx("student_profiles").where({ user_id: userId }).first();
+            if (existing) {
+                const updatedProfile = await trx("student_profiles").where({ user_id: userId }).update(studentData);
+                if (updatedProfile === 0) throw new Error("Failed to update student profile");
+            } else {
+                const insertedProfile = await trx("student_profiles").insert({ user_id: userId, ...studentData });
+                if (!insertedProfile || insertedProfile.length === 0) throw new Error("Failed to create student profile");
+            }
+
+            await trx("user_social_links").where({ user_id: userId }).del();
+            for (const link of socialLinks) {
+                if (link.url) {
+                    const insertedLink = await trx("user_social_links").insert({ user_id: userId, platform: link.platform, url: link.url });
+                    if (!insertedLink || insertedLink.length === 0) throw new Error("Failed to add social link");
+                }
+            }
+
+            return { profile_complete: profileComplete };
+        });
+    } catch (err) {
+        throw err;
     }
 };
 
