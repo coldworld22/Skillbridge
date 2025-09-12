@@ -88,12 +88,10 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  const hasUserFields =
-    full_name && phone && gender && date_of_birth && education_level;
-  const isProfileComplete = hasUserFields && sanitizedLinks.length > 0;
-
-  const trx = await db.transaction();
+  let trx;
   try {
+    trx = await db.transaction();
+
     await trx("users")
       .where({ id: userId })
       .update({
@@ -150,8 +148,21 @@ exports.updateProfile = async (req, res) => {
 
     res.json({ ...user, student, social_links: socialLinks });
   } catch (err) {
-    await trx.rollback();
-    logger.error("Failed to update student profile", err.message);
+    if (trx) {
+      await trx.rollback();
+    }
+
+    // Handle unique constraint violations for email and phone
+    if (err.code === "23505") {
+      if (err.constraint === "users_email_unique") {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (err.constraint === "users_phone_unique") {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+
+    logger.error("Failed to update student profile", err);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
