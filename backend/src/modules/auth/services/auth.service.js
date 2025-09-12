@@ -1,4 +1,5 @@
 const logger = require('../../../utils/logger.js');
+const redisClient = require("../../../utils/redisClient");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
