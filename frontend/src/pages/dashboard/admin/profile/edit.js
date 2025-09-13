@@ -174,6 +174,12 @@ function ProfileEditTemplate() {
     setCroppedAreaPixels(area);
   }, []);
 
+  const isClientReady =
+    typeof window !== "undefined" && hasHydrated && i18n.isInitialized;
+  if (!isClientReady) {
+    return null;
+  }
+
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) {
