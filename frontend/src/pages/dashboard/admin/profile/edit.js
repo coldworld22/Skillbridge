@@ -278,7 +278,8 @@ function ProfileEditTemplate() {
       if (err instanceof z.ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
-          newErrors[error.path[0]] = t(error.message);
+          const key = error.path.join(".");
+          newErrors[key] = t(error.message);
         });
         setErrors(newErrors);
         if (err.errors?.length) {
@@ -532,12 +533,13 @@ function ProfileEditTemplate() {
                       type="text"
                       name={name}
                       value={formData.socialLinks[name] || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData((prev) => ({
                           ...prev,
                           socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
-                        }))
-                      }
+                        }));
+                        setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
+                      }}
                       placeholder={
                         name === 'website'
                           ? 'https://yourwebsite.com'
@@ -545,6 +547,11 @@ function ProfileEditTemplate() {
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     />
+                    {errors[`socialLinks.${name}`] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors[`socialLinks.${name}`]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

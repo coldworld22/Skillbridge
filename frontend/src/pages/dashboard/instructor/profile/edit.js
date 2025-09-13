@@ -214,7 +214,10 @@ export default function InstructorProfileEdit() {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach(e => { errs[e.path[0]] = t(e.message); });
+      err.errors.forEach(error => {
+        const key = error.path.join(".");
+        errs[key] = t(error.message);
+      });
       setErrors(errs);
       if (err.errors?.length) {
         toast.error(t(err.errors[0].message));
@@ -760,12 +763,13 @@ export default function InstructorProfileEdit() {
                     type="text"
                     name={name}
                     value={formData.socialLinks[name] || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, [name]: e.target.value },
-                      }))
-                    }
+                      }));
+                      setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
+                    }}
                     placeholder={
                       name === 'website'
                         ? 'https://yourwebsite.com'
@@ -773,6 +777,11 @@ export default function InstructorProfileEdit() {
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   />
+                  {errors[`socialLinks.${name}`] && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors[`socialLinks.${name}`]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
