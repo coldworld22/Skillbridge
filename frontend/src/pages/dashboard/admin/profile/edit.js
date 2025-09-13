@@ -618,14 +618,7 @@ const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
 
 ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 
-const ProtectedProfileEditPage = dynamic(
-  () => Promise.resolve(ProtectedProfileEdit),
-  { ssr: false }
-);
-
-ProtectedProfileEditPage.getLayout = ProfileEditTemplate.getLayout;
-
-export default ProtectedProfileEditPage;
+export default ProtectedProfileEdit;
 
 export async function getStaticProps({ locale }) {
   return {
