@@ -40,8 +40,10 @@ export const studentProfileSchema = z.object({
   education_level: z.string().min(2, "education_required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs but allow empty strings for optional entries
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 export default function StudentProfileEdit() {

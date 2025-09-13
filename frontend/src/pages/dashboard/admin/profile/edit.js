@@ -27,6 +27,7 @@ import {
   getAdminProfile,
   updateAdminProfile,
   uploadAdminAvatar,
+  deleteAdminAvatar,
 } from "@/services/admin/adminService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -47,8 +48,10 @@ export const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 function ProfileEditTemplate() {
@@ -187,14 +190,25 @@ useEffect(() => {
 
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      e.target.value = '';
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error(t('avatar_max_size'));
+      e.target.value = '';
       return;
+    }
+    if (tempAvatar) {
+      URL.revokeObjectURL(tempAvatar);
     }
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
     setShowCropper(true);
+    e.target.value = '';
   };
 
   const handleCropUpload = async () => {
@@ -204,8 +218,16 @@ useEffect(() => {
       return;
     }
     setIsSubmitting(true);
+    let blob;
     try {
-      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+    } catch (error) {
+      console.error('Avatar crop error:', error);
+      toast.error(t('avatar_crop_failed'));
+      setIsSubmitting(false);
+      return;
+    }
+    try {
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
@@ -215,6 +237,7 @@ useEffect(() => {
       setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
+        avatar_url: res.avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
@@ -237,6 +260,28 @@ useEffect(() => {
     setCroppedAreaPixels(null);
     setZoom(1);
     setCrop({ x: 0, y: 0 });
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user?.id) {
+      toast.error(t("user_not_loaded"));
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await deleteAdminAvatar(user.id);
+      const { setUser } = useAuthStore.getState();
+      const current = useAuthStore.getState().user;
+      setUser({ ...current, avatar_url: null });
+      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
+      toast.success(t("avatar_remove_success"));
+    } catch (error) {
+      console.error("Avatar delete error:", error.response);
+      const msg = error.response?.data?.message || t("avatar_remove_failed");
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -272,8 +317,10 @@ useEffect(() => {
         phone: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.date_of_birth,
+        avatar_url: formData.avatar_url,
         job_title: formData.job_title,
         department: formData.department,
+        avatar_url: formData.avatar_url,
         social_links,
       });
 
@@ -291,6 +338,7 @@ useEffect(() => {
 
       setFormData((prev) => ({
         ...prev,
+        avatar_url: fresh.avatar_url,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
@@ -344,9 +392,7 @@ useEffect(() => {
                     className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
                   />
                   <button
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, avatarPreview: null }))
-                    }
+                    onClick={handleAvatarRemove}
                     className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
                   >
                     <FaTrash size={14} />

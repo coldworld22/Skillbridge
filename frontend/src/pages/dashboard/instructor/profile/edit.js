@@ -67,7 +67,7 @@ export const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("invalid_url"))
+    .record(z.string().url("invalid_url").or(z.literal("")))
     .optional(),
 });
 // Currency options will be loaded from the backend configuration
