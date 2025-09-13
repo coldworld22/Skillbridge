@@ -52,6 +52,8 @@ export default function StudentProfileEdit() {
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [, setIsUploadingIdentity] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -189,7 +191,7 @@ export default function StudentProfileEdit() {
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
-    setIsSubmitting(true);
+    setIsUploadingAvatar(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
@@ -210,7 +212,7 @@ export default function StudentProfileEdit() {
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -235,7 +237,7 @@ export default function StudentProfileEdit() {
       return;
     }
     try {
-      setIsSubmitting(true);
+      setIsUploadingIdentity(true);
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => ({
         ...prev,
@@ -246,7 +248,7 @@ export default function StudentProfileEdit() {
     } catch (err) {
       toast.error(t('id_upload_failed'));
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingIdentity(false);
     }
   };
 
@@ -741,7 +743,7 @@ export default function StudentProfileEdit() {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 Upload
               </button>
             </div>

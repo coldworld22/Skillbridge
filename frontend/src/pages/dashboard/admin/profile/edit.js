@@ -70,6 +70,7 @@ function ProfileEditTemplate() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -203,7 +204,7 @@ useEffect(() => {
       toast.error(t("user_not_loaded"));
       return;
     }
-    setIsSubmitting(true);
+    setIsUploadingAvatar(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", {
@@ -225,7 +226,7 @@ useEffect(() => {
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -372,7 +373,7 @@ useEffect(() => {
                   disabled={!user?.id}
                 />
                 <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
+                  {isUploadingAvatar ? (
                     <FaSpinner className="animate-spin" />
                   ) : (
                     <FaUpload />
@@ -567,7 +568,7 @@ useEffect(() => {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 {t('upload')}
               </button>
             </div>
