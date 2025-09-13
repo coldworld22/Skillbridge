@@ -100,8 +100,14 @@ function ProfileEditTemplate() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
-    let isMounted = true;
+    return () => {
+      if (tempAvatar) {
+        URL.revokeObjectURL(tempAvatar);
+      }
+    };
+  }, [tempAvatar]);
 
+  useEffect(() => {
     if (!hasHydrated) return;
     if (!user) {
       if (isMounted) setLoadingProfile(false);
