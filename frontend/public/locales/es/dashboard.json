@@ -580,6 +580,7 @@
     "upload": "Subir",
     "load_profile_failed": "No se pudo cargar perfil",
     "avatar_max_size": "Tamaño máximo de 10 MB",
+    "avatar_invalid_type": "Tipo de archivo no válido. Por favor, sube una imagen.",
     "avatar_upload_failed": "No se pudo subir avatar",
     "avatar_crop_failed": "No se pudo recortar el avatar",
     "profile_update_success": "Perfil actualizado con éxito!",
@@ -589,6 +590,8 @@
     "invalid_phone_number": "Número de teléfono no válido",
     "invalid_email_address": "Dirección de correo electrónico no válida",
     "invalid_date": "Formato de fecha no válido",
+    "job_title_min": "El título del puesto debe tener al menos 2 caracteres",
+    "department_min": "El departamento debe tener al menos 2 caracteres",
     "url_invalid": "Debe ser una URL válida"
   },
   "adminCertificatesPage": {
