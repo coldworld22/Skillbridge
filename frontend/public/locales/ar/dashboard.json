@@ -580,6 +580,7 @@
     "upload": "رفع",
     "load_profile_failed": "فشل تحميل الملف الشخصي",
     "avatar_max_size": "الحجم الأقصى 10 MB",
+    "invalid_image_type": "يُسمح بملفات الصور فقط.",
     "avatar_upload_failed": "فشل رفع الصورة الشخصية",
     "avatar_crop_failed": "فشل قص الصورة الرمزية",
     "profile_update_success": "تم تحديث الملف الشخصي بنجاح!",
