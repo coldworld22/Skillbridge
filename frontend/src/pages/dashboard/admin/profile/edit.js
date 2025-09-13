@@ -30,7 +30,6 @@ import {
   uploadAdminAvatar,
   deleteAdminAvatar,
 } from "@/services/admin/adminService";
-import dynamic from "next/dynamic";
 const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
@@ -619,14 +618,7 @@ const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
 
 ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 
-const ProtectedProfileEditPage = dynamic(
-  () => Promise.resolve(ProtectedProfileEdit),
-  { ssr: false }
-);
-
-ProtectedProfileEditPage.getLayout = ProfileEditTemplate.getLayout;
-
-export default ProtectedProfileEditPage;
+export default ProtectedProfileEdit;
 
 export async function getStaticProps({ locale }) {
   return {
