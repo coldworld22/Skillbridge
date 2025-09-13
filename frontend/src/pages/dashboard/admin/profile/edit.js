@@ -224,8 +224,8 @@ function ProfileEditTemplate() {
       e.target.value = '';
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      toast.error(t('avatar_invalid_type'));
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('invalid_image_type'));
       e.target.value = '';
       return;
     }
