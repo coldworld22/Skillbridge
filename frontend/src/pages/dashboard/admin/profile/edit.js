@@ -297,6 +297,7 @@ useEffect(() => {
         avatar_url: formData.avatar_url,
         job_title: formData.job_title,
         department: formData.department,
+        avatar_url: formData.avatar_url,
         social_links,
       });
 
@@ -314,6 +315,7 @@ useEffect(() => {
 
       setFormData((prev) => ({
         ...prev,
+        avatar_url: fresh.avatar_url,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
