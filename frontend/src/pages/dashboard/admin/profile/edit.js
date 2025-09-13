@@ -335,8 +335,11 @@ function ProfileEditTemplate() {
       }));
 
       toast.success(t('profile_update_success'));
-      await fetchNotifications();
-      fetchMessages();
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (err) {
+        console.error("Failed to refresh notifications or messages:", err);
+      }
       router.push("/dashboard/admin/profile/steps/Verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
