@@ -131,8 +131,19 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+
+    // 4. Fetch related profile details within the transaction
+    const [adminProfile] = await trx("admin_profiles")
+      .where({ user_id: userId })
+      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
+
+    const socialLinks = await trx("user_social_links")
+      .where({ user_id: userId })
+      .select("platform", "url");
+
     await trx.commit();
-    // 4. Return the freshly updated profile details
+
+    // Post-commit: fetch core user details using standard connection
     const [user] = await db("users")
       .where({ id: userId })
       .select(
@@ -149,16 +160,6 @@ exports.updateProfile = async (req, res) => {
         "created_at",
         "updated_at"
       );
-
-    const [adminProfile] = await trx("admin_profiles")
-      .where({ user_id: userId })
-      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
-
-    const socialLinks = await trx("user_social_links")
-      .where({ user_id: userId })
-      .select("platform", "url");
-
-    await trx.commit();
 
     return res.json({
       ...user,
