@@ -162,6 +162,7 @@ export default function StudentProfileEdit() {
       ...prev,
       socialLinks: { ...prev.socialLinks, [name]: value.trim() }
     }));
+    setErrors(prev => ({ ...prev, [`socialLinks.${name}`]: null }));
   };
 
   const onCropComplete = useCallback((_, area) => {
@@ -274,8 +275,9 @@ const handleAvatarSelect = (e) => {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach((e) => {
-        errs[e.path[0]] = t(e.message);
+      err.errors.forEach((error) => {
+        const key = error.path.join(".");
+        errs[key] = t(error.message);
       });
       setErrors(errs);
       if (err.errors?.length) {
@@ -659,7 +661,7 @@ const handleAvatarSelect = (e) => {
                       <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
                       {t('linkedin_label')}
                     </label>
-                    <input
+                  <input
                       type="text"
                       name="linkedin"
                       value={formData.socialLinks.linkedin || ""}
@@ -667,6 +669,11 @@ const handleAvatarSelect = (e) => {
                       placeholder={t('linkedin_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
+                    {errors['socialLinks.linkedin'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['socialLinks.linkedin']}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -674,7 +681,7 @@ const handleAvatarSelect = (e) => {
                       <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
                       {t('github_label')}
                     </label>
-                    <input
+                  <input
                       type="text"
                       name="github"
                       value={formData.socialLinks.github || ""}
@@ -682,6 +689,11 @@ const handleAvatarSelect = (e) => {
                       placeholder={t('github_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
+                    {errors['socialLinks.github'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['socialLinks.github']}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
