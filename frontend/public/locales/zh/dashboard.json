@@ -580,6 +580,7 @@
     "upload": "上传",
     "load_profile_failed": "无法加载配置文件",
     "avatar_max_size": "最大尺寸10MB",
+    "avatar_invalid_type": "文件类型无效。请上传图片。",
     "avatar_upload_failed": "无法上传头像",
     "avatar_crop_failed": "头像裁剪失败",
     "profile_update_success": "个人资料成功更新了！",
@@ -589,6 +590,8 @@
     "invalid_phone_number": "无效的电话号码",
     "invalid_email_address": "无效的电子邮件地址",
     "invalid_date": "无效的日期格式",
+    "job_title_min": "职位名称至少需要2个字符",
+    "department_min": "部门名称至少需要2个字符",
     "url_invalid": "必须是有效的URL"
   },
   "adminCertificatesPage": {

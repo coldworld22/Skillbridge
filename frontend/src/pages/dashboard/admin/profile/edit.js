@@ -45,13 +45,23 @@ export const profileSchema = z.object({
     .refine((val) => isValidPhoneNumber(val), {
       message: "invalid_phone_number",
     }),
-  job_title: z.string().min(2),
-  department: z.string().min(2),
+  job_title: z.string().min(2, 'job_title_min'),
+  department: z.string().min(2, 'department_min'),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  // Additionally ensure provided keys correspond to allowed platforms
   socialLinks: z
     .record(z.string().url("invalid_url").or(z.literal("")))
+    .refine(
+      (links) =>
+        Object.keys(links).every((key) =>
+          allowedPlatforms.some((p) => p.name === key)
+        ),
+      {
+        message: "invalid_social_platform",
+      }
+    )
     .optional(),
 });
 
@@ -87,38 +97,44 @@ function ProfileEditTemplate() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!hasHydrated) return;
     if (!user) {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
 
     // Pre-fill with existing user info while fetching latest data
-    setFormData((prev) => ({
-      ...prev,
-      full_name: user.full_name || "",
-      email: user.email || "",
-      phone: user.phone || "",
-      gender: user.gender || "male",
-      date_of_birth: user.date_of_birth?.split("T")[0] || "",
-      avatar_url: user.avatar_url,
-      avatarPreview: user.avatar_url
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-        : null,
-      job_title: user.job_title || "",
-      department: user.department || "",
-    }));
+    if (isMounted) {
+      setFormData((prev) => ({
+        ...prev,
+        full_name: user.full_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        gender: user.gender || "male",
+        date_of_birth: user.date_of_birth?.split("T")[0] || "",
+        avatar_url: user.avatar_url,
+        avatarPreview: user.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+          : null,
+        job_title: user.job_title || "",
+        department: user.department || "",
+      }));
+    }
 
     const loadProfile = async () => {
       try {
+        if (!isMounted) return;
         setLoadingProfile(true);
 
         const res = await getAdminProfile();
+        if (!isMounted) return;
         const {
           full_name,
           email,
@@ -138,6 +154,7 @@ function ProfileEditTemplate() {
           }
         });
 
+        if (!isMounted) return;
         setFormData((prev) => ({
           ...prev,
           full_name,
@@ -154,22 +171,35 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        toast.error(t('load_profile_failed'));
+        if (isMounted) toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
-        setLoadingProfile(false);
-
+        if (isMounted) setLoadingProfile(false);
       }
     };
 
     loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [hasHydrated, user]);
 
 
+  const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: trimValue(value) }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const handleSocialLinkChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [name]: trimValue(value) },
+    }));
   };
 
   const onCropComplete = useCallback((_, area) => {
@@ -185,6 +215,11 @@ function ProfileEditTemplate() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) {
+      e.target.value = '';
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('avatar_invalid_type'));
       e.target.value = '';
       return;
     }
@@ -255,9 +290,7 @@ function ProfileEditTemplate() {
     setIsRemovingAvatar(true);
     try {
       await deleteAdminAvatar(user.id);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: null });
+      setUser({ ...user, avatar_url: null });
       setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
       toast.success(t("avatar_remove_success"));
     } catch (error) {
@@ -336,8 +369,11 @@ function ProfileEditTemplate() {
       }));
 
       toast.success(t('profile_update_success'));
-      await fetchNotifications();
-      fetchMessages();
+      try {
+        await Promise.all([fetchNotifications(), fetchMessages()]);
+      } catch (err) {
+        console.error("Failed to refresh notifications or messages:", err);
+      }
       router.push("/dashboard/admin/profile/steps/Verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
@@ -380,7 +416,11 @@ function ProfileEditTemplate() {
                     disabled={isRemovingAvatar}
                     className={`absolute -top-2 -right-2 p-1 rounded-full transition-colors ${isRemovingAvatar ? 'bg-red-400 cursor-not-allowed text-white' : 'bg-red-600 text-white hover:bg-red-700'}`}
                   >
-                    <FaTrash size={14} />
+                    {isRemovingAvatar ? (
+                      <FaSpinner size={14} className="animate-spin" />
+                    ) : (
+                      <FaTrash size={14} />
+                    )}
                   </button>
                 </div>
               ) : (
@@ -534,12 +574,7 @@ function ProfileEditTemplate() {
                       type="text"
                       name={name}
                       value={formData.socialLinks[name] || ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
-                        }))
-                      }
+                      onChange={handleSocialLinkChange}
                       placeholder={
                         name === 'website'
                           ? 'https://yourwebsite.com'
