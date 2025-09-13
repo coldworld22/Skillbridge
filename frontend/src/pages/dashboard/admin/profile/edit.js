@@ -204,8 +204,16 @@ useEffect(() => {
       return;
     }
     setIsSubmitting(true);
+    let blob;
     try {
-      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+    } catch (error) {
+      console.error('Avatar crop error:', error);
+      toast.error(t('avatar_crop_failed'));
+      setIsSubmitting(false);
+      return;
+    }
+    try {
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
