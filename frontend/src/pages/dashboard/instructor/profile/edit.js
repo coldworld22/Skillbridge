@@ -335,6 +335,10 @@ export default function InstructorProfileEdit() {
 
       setFormData((prev) => ({
         ...prev,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender || "male",
+        date_of_birth: fresh.date_of_birth?.split("T")[0] || "",
         expertise: freshExpertise,
         experience: fresh.instructor?.experience || 0,
         bio: fresh.instructor?.bio || "",
@@ -348,9 +352,14 @@ export default function InstructorProfileEdit() {
           ? fresh.instructor.pricing.split(" ")[1]
           : defCur?.code || "",
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
-          acc[cur.platform] = cur.url;
+          if (allowedPlatforms.some((p) => p.name === cur.platform)) {
+            acc[cur.platform] = cur.url;
+          }
           return acc;
         }, {}),
+        avatarPreview: fresh.avatar_url
+          ? `${BASE_URL}${fresh.avatar_url}`
+          : prev.avatarPreview,
       }));
 
         toast.success(t('profile_update_success'));
