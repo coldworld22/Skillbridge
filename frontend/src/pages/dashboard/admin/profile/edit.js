@@ -198,6 +198,10 @@ useEffect(() => {
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
+    if (!user?.id) {
+      toast.error(t("user_not_loaded"));
+      return;
+    }
     setIsSubmitting(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
@@ -352,12 +356,19 @@ useEffect(() => {
                   <FaUserCircle size={48} className="text-gray-400" />
                 </div>
               )}
-              <label className="cursor-pointer">
+              <label
+                className={
+                  user?.id
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-50"
+                }
+              >
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarSelect}
                   className="hidden"
+                  disabled={!user?.id}
                 />
                 <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
                   {isSubmitting ? (
@@ -368,6 +379,9 @@ useEffect(() => {
                   {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
+              {!user?.id && (
+                <p className="text-sm text-gray-500 mt-2">{t('user_not_loaded')}</p>
+              )}
             </div>
           </div>
 
