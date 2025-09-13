@@ -359,8 +359,7 @@ function ProfileEditTemplate() {
       }));
 
       toast.success(t('profile_update_success'));
-      await fetchNotifications();
-      fetchMessages();
+      await Promise.all([fetchNotifications(), fetchMessages()]);
       router.push("/dashboard/admin/profile/steps/Verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
