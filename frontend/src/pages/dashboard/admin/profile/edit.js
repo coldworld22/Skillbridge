@@ -30,7 +30,8 @@ import {
   uploadAdminAvatar,
   deleteAdminAvatar,
 } from "@/services/admin/adminService";
-import Cropper from "react-easy-crop";
+import dynamic from "next/dynamic";
+const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
