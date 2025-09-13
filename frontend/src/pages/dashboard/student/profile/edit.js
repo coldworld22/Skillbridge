@@ -185,7 +185,7 @@ export default function StudentProfileEdit() {
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadStudentAvatar(user.id, file);
       const avatar_url = res.avatar_url;
-      useAuthStore.getState().setUser({ ...user, avatar_url });
+      setUser({ ...user, avatar_url });
       setFormData(prev => ({
         ...prev,
         avatar_url,

@@ -74,7 +74,7 @@ export const instructorProfileSchema = z.object({
 export default function InstructorProfileEdit() {
   const router = useRouter();
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorProfilePage' });
-  const { user, hasHydrated } = useAuthStore();
+  const { user, hasHydrated, setUser } = useAuthStore();
   const fetchNotifications = useNotificationStore((state) => state.fetch);
 
   const [formData, setFormData] = useState({
@@ -89,6 +89,7 @@ export default function InstructorProfileEdit() {
     bio: "",
     socialLinks: {},
     certificates: [],
+    avatar_url: null,
     avatarPreview: null,
     demoPreview: null,
   });
@@ -183,6 +184,7 @@ export default function InstructorProfileEdit() {
           bio: instructor?.bio || "",
           socialLinks: socialMap,
           certificates: certificates || [],
+          avatar_url,
           avatarPreview: avatar_url
             ? `${BASE_URL}${avatar_url}`
             : null,
@@ -261,11 +263,10 @@ export default function InstructorProfileEdit() {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadInstructorAvatar(user.id, file);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: res.avatar_url });
+      setUser({ ...user, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
+        avatar_url: res.avatar_url,
         avatarPreview: `${BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
@@ -307,8 +308,7 @@ export default function InstructorProfileEdit() {
       const fresh = await getInstructorProfile();
 
       // Update the auth store with the returned user data
-      const update = useAuthStore.getState().setUser;
-      update({
+      setUser({
         ...user,
         full_name: fresh.full_name,
         phone: fresh.phone,
@@ -518,7 +518,6 @@ export default function InstructorProfileEdit() {
                     const res = await toggleInstructorStatus(newStatus);
                     const updated = res?.is_online ?? newStatus;
                     setAvailable(updated);
-                    const setUser = useAuthStore.getState().setUser;
                     setUser({ ...user, is_online: updated });
                   } catch (err) {
                     toast.error(t('availability_update_failed'));

@@ -26,6 +26,7 @@ import { buildUrl } from "@/utils/url";
 export default function Header() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const setUser = useAuthStore((state) => state.setUser);
   const userRole = user?.role?.toLowerCase();
   const { t } = useTranslation("common");
   const { t: tDashboard } = useTranslation("dashboard");
@@ -187,7 +188,6 @@ export default function Header() {
                 const res = await toggleInstructorStatus(newStatus);
                 const updated = res?.is_online ?? newStatus;
                 setAvailable(updated);
-                const setUser = useAuthStore.getState().setUser;
                 setUser({ ...user, is_online: updated });
                 toast.success(
                   updated
