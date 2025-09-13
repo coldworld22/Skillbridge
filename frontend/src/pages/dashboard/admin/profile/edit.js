@@ -302,7 +302,6 @@ function ProfileEditTemplate() {
         avatar_url: formData.avatar_url,
         job_title: formData.job_title,
         department: formData.department,
-        avatar_url: formData.avatar_url,
         social_links,
       });
 
