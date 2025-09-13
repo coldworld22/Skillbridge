@@ -162,7 +162,7 @@ function ProfileEditTemplate() {
     };
 
     loadProfile();
-  }, [hasHydrated, user]);
+  }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
 
   const handleChange = (e) => {
