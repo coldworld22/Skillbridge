@@ -47,8 +47,10 @@ export const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 function ProfileEditTemplate() {
