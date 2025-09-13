@@ -410,7 +410,7 @@ function ProfileEditTemplate() {
                   <button
                     onClick={handleAvatarRemove}
                     disabled={isRemovingAvatar}
-                    className={`absolute -top-2 -right-2 p-1 text-white rounded-full transition-colors ${
+                    className={`absolute -top-2 -right-2 p-1 rounded-full text-white transition-colors ${
                       isRemovingAvatar
                         ? 'bg-red-400 cursor-not-allowed'
                         : 'bg-red-600 hover:bg-red-700'
