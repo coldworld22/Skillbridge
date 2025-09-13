@@ -28,9 +28,12 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
+// Default country for phone validation
+const DEFAULT_COUNTRY = "US";
+
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val), {
+  phone: z.string().refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
     message: "invalid_phone_number",
   }),
   gender: z.enum(['male', 'female']),
@@ -166,17 +169,22 @@ export default function StudentProfileEdit() {
     setCroppedAreaPixels(area);
   }, []);
 
-  const handleAvatarSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(t('image_size_error'));
-      return;
-    }
-    setTempFileName(file.name);
-    setTempAvatar(URL.createObjectURL(file));
-    setShowCropper(true);
-  };
+const handleAvatarSelect = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    toast.error(t('avatar_invalid_type'));
+    e.target.value = "";
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    toast.error(t('image_size_error'));
+    return;
+  }
+  setTempFileName(file.name);
+  setTempAvatar(URL.createObjectURL(file));
+  setShowCropper(true);
+};
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;

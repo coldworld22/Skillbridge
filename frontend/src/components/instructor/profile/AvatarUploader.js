@@ -39,6 +39,7 @@ export default function AvatarUploader({
             {avatarPreview ? t('change_photo') : t('upload_photo')}
           </div>
         </label>
+        <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
       </div>
     </div>
   );
