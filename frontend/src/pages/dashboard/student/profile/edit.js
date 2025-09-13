@@ -40,8 +40,10 @@ export const studentProfileSchema = z.object({
   education_level: z.string().min(2, "education_required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs but allow empty strings for optional entries
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 export default function StudentProfileEdit() {
@@ -52,6 +54,8 @@ export default function StudentProfileEdit() {
   const refreshMessages = useMessageStore((s) => s.fetch);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [, setIsUploadingIdentity] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -81,23 +85,9 @@ export default function StudentProfileEdit() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
 
-
   useEffect(() => {
-    const local = localStorage.getItem("auth");
-    let parsed;
-    if (local) {
-      try {
-        parsed = JSON.parse(local)?.state;
-      } catch (error) {
-        console.error("Failed to parse auth from localStorage", error);
-      }
-    }
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
+    if (!hasHydrated) return;
 
-  useEffect(() => {
     if (!user) {
       // No logged in user – stop loading to avoid endless spinner
       setIsLoading(false);
@@ -145,7 +135,7 @@ export default function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user, router]);
+  }, [user, hasHydrated, router]);
 
   useEffect(() => {
     return () => {
@@ -189,7 +179,7 @@ export default function StudentProfileEdit() {
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
-    setIsSubmitting(true);
+    setIsUploadingAvatar(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
@@ -210,7 +200,7 @@ export default function StudentProfileEdit() {
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -235,7 +225,7 @@ export default function StudentProfileEdit() {
       return;
     }
     try {
-      setIsSubmitting(true);
+      setIsUploadingIdentity(true);
       await uploadStudentIdentity(user.id, file);
       setFormData(prev => ({
         ...prev,
@@ -246,7 +236,7 @@ export default function StudentProfileEdit() {
     } catch (err) {
       toast.error(t('id_upload_failed'));
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingIdentity(false);
     }
   };
 
@@ -741,7 +731,7 @@ export default function StudentProfileEdit() {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 Upload
               </button>
             </div>

@@ -581,6 +581,7 @@
     "load_profile_failed": "प्रोफ़ाइल लोड करने में विफल",
     "avatar_max_size": "अधिकतम आकार 10 एमबी",
     "avatar_upload_failed": "अवतार अपलोड करने में विफल",
+    "avatar_crop_failed": "अवतार क्रॉप विफल हुआ",
     "profile_update_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट किया गया!",
     "profile_update_failed": "प्रोफ़ाइल अपडेट करने में विफल",
     "full_name_min": "पूरा नाम कम से कम 3 अक्षर होना चाहिए",

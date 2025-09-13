@@ -1,6 +1,12 @@
 import { FaVideo, FaTrash, FaUpload, FaSpinner } from "react-icons/fa";
 
-export default function DemoVideoUploader({ demoPreview, isSubmitting, t, onSelect, onRemove }) {
+export default function DemoVideoUploader({
+  demoPreview,
+  isUploadingDemo,
+  t,
+  onSelect,
+  onRemove,
+}) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -26,7 +32,7 @@ export default function DemoVideoUploader({ demoPreview, isSubmitting, t, onSele
         <label className="cursor-pointer">
           <input type="file" accept="video/*" onChange={onSelect} className="hidden" />
           <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-            {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaUpload />}
+            {isUploadingDemo ? <FaSpinner className="animate-spin" /> : <FaUpload />}
             {demoPreview ? t('change_video') : t('upload_video')}
           </div>
         </label>

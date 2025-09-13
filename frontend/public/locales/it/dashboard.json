@@ -595,6 +595,7 @@
     "load_profile_failed": "Impossibile caricare il profilo",
     "avatar_max_size": "Dimensione massima 10 MB",
     "avatar_upload_failed": "Impossibile caricare Avatar",
+    "avatar_crop_failed": "Ritaglio avatar non riuscito",
     "profile_update_success": "Profilo aggiornato correttamente!",
     "profile_update_failed": "Impossibile aggiornare il profilo",
     "full_name_min": "Il nome completo deve essere almeno 3 caratteri",

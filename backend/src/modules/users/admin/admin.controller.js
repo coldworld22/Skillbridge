@@ -88,16 +88,19 @@ exports.updateProfile = async (req, res) => {
   const trx = await db.transaction();
   try {
     // 1. Update core user fields
-    await trx("users").where({ id: userId }).update({
+    const userUpdate = {
       email,
       full_name,
       phone,
       gender,
       date_of_birth,
-      avatar_url,
       profile_complete: true,
       updated_at: new Date(),
-    });
+    };
+    if (avatar_url !== undefined) {
+      userUpdate.avatar_url = avatar_url;
+    }
+    await trx("users").where({ id: userId }).update(userUpdate);
 
     // 2. Upsert admin profile
     const profileData = {
@@ -131,8 +134,18 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+    // 4. Fetch related profile details within the transaction
+    const [adminProfile] = await trx("admin_profiles")
+      .where({ user_id: userId })
+      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
+
+    const socialLinks = await trx("user_social_links")
+      .where({ user_id: userId })
+      .select("platform", "url");
+
     await trx.commit();
-    // 4. Return the freshly updated profile details
+
+    // Post-commit: fetch core user details using standard connection
     const [user] = await db("users")
       .where({ id: userId })
       .select(
@@ -150,32 +163,13 @@ exports.updateProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [adminProfile] = await trx("admin_profiles")
-      .where({ user_id: userId })
-      .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
-
-    const socialLinks = await trx("user_social_links")
-      .where({ user_id: userId })
-      .select("platform", "url");
-
-    await trx.commit();
-
     return res.json({
       ...user,
       ...adminProfile,
       social_links: socialLinks,
     });
   } catch (error) {
-    await trx.rollback();
-    if (error.code === "23505") {
-      if (error.constraint === "users_email_unique") {
-        return res.status(409).json({ message: "Email already in use" });
-      }
-      if (error.constraint === "users_phone_unique") {
-        return res.status(409).json({ message: "Phone number already in use" });
-      }
-    }
-    handleControllerError(res, error, "Unable to update profile", { userId });
+    return handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
 
@@ -247,7 +241,7 @@ exports.updateAvatar = async (req, res) => {
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
-      .where({ id: req.params.id })
+      .where({ id: userId })
       .update({ avatar_url: filePath, updated_at: new Date() });
 
     if (oldAvatar) {
@@ -262,6 +256,40 @@ exports.updateAvatar = async (req, res) => {
     }
     logger.error(error);
     res.status(500).json({ message: "Failed to upload avatar" });
+  }
+};
+
+// Remove avatar and clear avatar_url
+exports.deleteAvatar = async (req, res) => {
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const user = await db("users").where({ id: req.params.id }).first("avatar_url");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.avatar_url) {
+      const filePath = path.join(
+        __dirname,
+        "../../../../",
+        user.avatar_url.replace(/^\//, "")
+      );
+      fs.unlink(filePath, (err) => {
+        if (err) logger.error(err);
+      });
+    }
+
+    await db("users")
+      .where({ id: req.params.id })
+      .update({ avatar_url: null, updated_at: new Date() });
+
+    res.json({ message: "Avatar removed" });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ message: "Failed to remove avatar" });
   }
 };
 

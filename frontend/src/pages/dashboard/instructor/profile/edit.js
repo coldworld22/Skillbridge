@@ -67,7 +67,7 @@ export const instructorProfileSchema = z.object({
       message: "bio_max_words",
     }),
   socialLinks: z
-    .record(z.string().url("invalid_url"))
+    .record(z.string().url("invalid_url").or(z.literal("")))
     .optional(),
 });
 // Currency options will be loaded from the backend configuration
@@ -94,6 +94,8 @@ export default function InstructorProfileEdit() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingDemo, setIsUploadingDemo] = useState(false);
 
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -225,7 +227,7 @@ export default function InstructorProfileEdit() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) return toast.error(t('demo_max_size'));
-    setIsSubmitting(true);
+    setIsUploadingDemo(true);
     try {
       const res = await uploadInstructorDemo(user.id, file);
       setFormData(prev => ({
@@ -235,7 +237,7 @@ export default function InstructorProfileEdit() {
     } catch (error) {
       toast.error(t('demo_upload_failed'));
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingDemo(false);
     }
   };
 
@@ -254,7 +256,7 @@ export default function InstructorProfileEdit() {
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
-    setIsSubmitting(true);
+    setIsUploadingAvatar(true);
     try {
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
@@ -274,7 +276,7 @@ export default function InstructorProfileEdit() {
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -335,6 +337,10 @@ export default function InstructorProfileEdit() {
 
       setFormData((prev) => ({
         ...prev,
+        full_name: fresh.full_name,
+        phone: fresh.phone,
+        gender: fresh.gender || "male",
+        date_of_birth: fresh.date_of_birth?.split("T")[0] || "",
         expertise: freshExpertise,
         experience: fresh.instructor?.experience || 0,
         bio: fresh.instructor?.bio || "",
@@ -348,9 +354,14 @@ export default function InstructorProfileEdit() {
           ? fresh.instructor.pricing.split(" ")[1]
           : defCur?.code || "",
         socialLinks: (fresh.social_links || []).reduce((acc, cur) => {
-          acc[cur.platform] = cur.url;
+          if (allowedPlatforms.some((p) => p.name === cur.platform)) {
+            acc[cur.platform] = cur.url;
+          }
           return acc;
         }, {}),
+        avatarPreview: fresh.avatar_url
+          ? `${BASE_URL}${fresh.avatar_url}`
+          : prev.avatarPreview,
       }));
 
         toast.success(t('profile_update_success'));
@@ -383,14 +394,14 @@ export default function InstructorProfileEdit() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           <AvatarUploader
             avatarPreview={formData.avatarPreview}
-            isSubmitting={isSubmitting}
+            isUploadingAvatar={isUploadingAvatar}
             t={t}
             onSelect={handleAvatarSelect}
             onRemove={() => setFormData((prev) => ({ ...prev, avatarPreview: null }))}
           />
           <DemoVideoUploader
             demoPreview={formData.demoPreview}
-            isSubmitting={isSubmitting}
+            isUploadingDemo={isUploadingDemo}
             t={t}
             onSelect={handleDemoSelect}
             onRemove={() => setFormData((prev) => ({ ...prev, demoPreview: null }))}
@@ -815,7 +826,7 @@ export default function InstructorProfileEdit() {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 {t('upload')}
               </button>
             </div>
