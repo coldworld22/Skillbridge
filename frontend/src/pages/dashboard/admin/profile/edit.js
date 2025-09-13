@@ -187,6 +187,11 @@ function ProfileEditTemplate() {
       e.target.value = '';
       return;
     }
+    if (!file.type.startsWith("image/")) {
+      toast.error(t('avatar_invalid_type'));
+      e.target.value = '';
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error(t('avatar_max_size'));
       e.target.value = '';
@@ -409,6 +414,7 @@ function ProfileEditTemplate() {
                   {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
+              <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
               {!user?.id && (
                 <p className="text-sm text-gray-500 mt-2">{t('user_not_loaded')}</p>
               )}
