@@ -27,8 +27,7 @@ exports.down = async function (knex) {
   const hasColumn = await knex.schema.hasColumn('blacklisted_tokens', 'token_hash');
   if (hasColumn) {
     await knex.schema.alterTable('blacklisted_tokens', (table) => {
-      table.dropUnique('token_hash');
-      table.dropUnique('token_hash', 'blacklisted_tokens_token_unique');
+      table.dropUnique('token_hash', 'blacklisted_tokens_token_hash_unique');
       table.renameColumn('token_hash', 'token');
     });
     await knex.schema.alterTable('blacklisted_tokens', (table) => {
