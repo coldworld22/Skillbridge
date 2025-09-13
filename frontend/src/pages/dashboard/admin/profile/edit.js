@@ -211,6 +211,7 @@ function ProfileEditTemplate() {
     }
     setIsUploadingAvatar(true);
     try {
+      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
