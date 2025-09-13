@@ -11,6 +11,7 @@ import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
+import dynamic from "next/dynamic";
 import {
   FaSpinner,
   FaChevronDown,
@@ -217,10 +218,11 @@ function ProfileEditTemplate() {
       });
       const res = await uploadAdminAvatar(user.id, file);
       setUser({ ...user, avatar_url: res.avatar_url });
+      const cacheBust = Date.now();
       setFormData((prev) => ({
         ...prev,
         avatar_url: res.avatar_url,
-        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
+        avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${cacheBust}`,
       }));
       setShowCropper(false);
       URL.revokeObjectURL(tempAvatar);
@@ -616,7 +618,14 @@ const ProtectedProfileEdit = withAuthProtection(ProfileEditTemplate, [
 
 ProtectedProfileEdit.getLayout = ProfileEditTemplate.getLayout;
 
-export default ProtectedProfileEdit;
+const ProtectedProfileEditPage = dynamic(
+  () => Promise.resolve(ProtectedProfileEdit),
+  { ssr: false }
+);
+
+ProtectedProfileEditPage.getLayout = ProfileEditTemplate.getLayout;
+
+export default ProtectedProfileEditPage;
 
 export async function getStaticProps({ locale }) {
   return {
