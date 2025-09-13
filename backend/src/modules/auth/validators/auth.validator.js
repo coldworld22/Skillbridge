@@ -3,6 +3,9 @@ const { z } = require("zod");
 const { PASSWORD_REGEX, OTP_LENGTH } = require("../constants");
 const { isValidPhoneNumber } = require("libphonenumber-js");
 
+// Default country used for phone number validation
+const DEFAULT_COUNTRY = "US";
+
 /**
  * @desc Validation for user registration
  */
@@ -11,7 +14,7 @@ exports.registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val), {
+    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
       message: "Invalid phone number",
     }),
   password: z

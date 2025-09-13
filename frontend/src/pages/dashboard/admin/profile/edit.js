@@ -35,6 +35,9 @@ import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
+// Default country for phone validation
+const DEFAULT_COUNTRY = "US";
+
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 export const profileSchema = z.object({
@@ -42,7 +45,7 @@ export const profileSchema = z.object({
   email: z.string().email("invalid_email_address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val), {
+    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
       message: "invalid_phone_number",
     }),
   job_title: z.string().min(2, 'job_title_min'),
