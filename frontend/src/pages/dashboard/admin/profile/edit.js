@@ -165,6 +165,13 @@ function ProfileEditTemplate() {
   }, [hasHydrated, user]);
 
 
+  useEffect(() => {
+    return () => {
+      if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    };
+  }, [tempAvatar]);
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
