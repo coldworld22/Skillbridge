@@ -215,6 +215,7 @@ useEffect(() => {
       setUser({ ...current, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
+        avatar_url: res.avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
@@ -274,6 +275,7 @@ useEffect(() => {
         date_of_birth: formData.date_of_birth,
         job_title: formData.job_title,
         department: formData.department,
+        avatar_url: formData.avatar_url,
         social_links,
       });
 
@@ -291,6 +293,7 @@ useEffect(() => {
 
       setFormData((prev) => ({
         ...prev,
+        avatar_url: fresh.avatar_url,
         email: fresh.email || "",
         job_title: fresh.job_title || "",
         department: fresh.department || "",
