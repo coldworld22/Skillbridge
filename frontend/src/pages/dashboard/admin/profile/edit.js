@@ -187,6 +187,11 @@ function ProfileEditTemplate() {
       e.target.value = '';
       return;
     }
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('avatar_invalid_type'));
+      e.target.value = '';
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error(t('avatar_max_size'));
       e.target.value = '';

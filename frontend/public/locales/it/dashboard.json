@@ -594,6 +594,7 @@
     "upload": "Caricamento",
     "load_profile_failed": "Impossibile caricare il profilo",
     "avatar_max_size": "Dimensione massima 10 MB",
+    "avatar_invalid_type": "Tipo di file non valido. Carica un'immagine.",
     "avatar_upload_failed": "Impossibile caricare Avatar",
     "avatar_crop_failed": "Ritaglio avatar non riuscito",
     "profile_update_success": "Profilo aggiornato correttamente!",

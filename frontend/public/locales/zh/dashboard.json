@@ -580,6 +580,7 @@
     "upload": "上传",
     "load_profile_failed": "无法加载配置文件",
     "avatar_max_size": "最大尺寸10MB",
+    "avatar_invalid_type": "文件类型无效。请上传图片。",
     "avatar_upload_failed": "无法上传头像",
     "avatar_crop_failed": "头像裁剪失败",
     "profile_update_success": "个人资料成功更新了！",

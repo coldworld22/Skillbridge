@@ -580,6 +580,7 @@
     "upload": "अपलोड करना",
     "load_profile_failed": "प्रोफ़ाइल लोड करने में विफल",
     "avatar_max_size": "अधिकतम आकार 10 एमबी",
+    "avatar_invalid_type": "अमान्य फ़ाइल प्रकार। कृपया एक छवि अपलोड करें।",
     "avatar_upload_failed": "अवतार अपलोड करने में विफल",
     "avatar_crop_failed": "अवतार क्रॉप विफल हुआ",
     "profile_update_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट किया गया!",
