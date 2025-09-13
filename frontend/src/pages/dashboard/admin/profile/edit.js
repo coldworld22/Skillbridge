@@ -179,11 +179,7 @@ function ProfileEditTemplate() {
     };
 
     loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [hasHydrated, user]);
+  }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
 
   const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
