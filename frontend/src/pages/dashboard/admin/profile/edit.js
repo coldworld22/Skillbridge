@@ -210,11 +210,10 @@ useEffect(() => {
         type: blob.type,
       });
       const res = await uploadAdminAvatar(user.id, file);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: res.avatar_url });
+      setUser({ ...user, avatar_url: res.avatar_url });
       setFormData((prev) => ({
         ...prev,
+        avatar_url: res.avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${res.avatar_url}?v=${Date.now()}`,
       }));
       setShowCropper(false);
