@@ -598,6 +598,7 @@
     "upload": "Upload",
     "load_profile_failed": "Failed to load profile",
     "avatar_max_size": "Max size 10 MB",
+    "avatar_invalid_type": "Invalid file type. Please upload an image.",
     "avatar_upload_failed": "Failed to upload avatar",
     "avatar_crop_failed": "Failed to crop avatar",
     "profile_update_success": "Profile updated successfully!",
@@ -607,6 +608,8 @@
     "invalid_phone_number": "Invalid phone number",
     "invalid_email_address": "Invalid email address",
     "invalid_date": "Invalid date format",
+    "job_title_min": "Job title must be at least 2 characters",
+    "department_min": "Department must be at least 2 characters",
     "url_invalid": "Must be a valid URL"
   },
   "adminCertificatesPage": {
