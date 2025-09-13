@@ -31,6 +31,7 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
+import { allowedPlatforms } from "@/utils/socialPlatforms";
 
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
