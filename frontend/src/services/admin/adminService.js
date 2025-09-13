@@ -49,12 +49,21 @@ export const uploadAdminAvatar = async (adminId, avatarFile) => {
   });
   return res.data;
 };
-
-
+/**
+ * 🗑 Remove admin avatar image.
+ *
+ * @param {string} adminId - Admin UUID
+ * @returns {Promise<Object>} Result message
+ */
+export const deleteAdminAvatar = async (adminId) => {
+  await ensureCsrfToken();
+  const res = await api.delete(`/users/admin/${adminId}/avatar`);
+  return res.data;
+};
 
 /**
  * 🪪 Upload admin identity file (e.g., ID card).
- * 
+ *
  * @param {File} identityFile - ID image file
  * @returns {Promise<Object>} Upload result
  */
