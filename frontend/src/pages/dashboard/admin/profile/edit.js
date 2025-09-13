@@ -73,6 +73,7 @@ function ProfileEditTemplate() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -202,16 +203,7 @@ function ProfileEditTemplate() {
       toast.error(t("user_not_loaded"));
       return;
     }
-    setIsSubmitting(true);
-    let blob;
-    try {
-      blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
-    } catch (error) {
-      console.error('Avatar crop error:', error);
-      toast.error(t('avatar_crop_failed'));
-      setIsSubmitting(false);
-      return;
-    }
+    setIsUploadingAvatar(true);
     try {
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
@@ -233,7 +225,7 @@ function ProfileEditTemplate() {
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -403,7 +395,7 @@ function ProfileEditTemplate() {
                   disabled={!user?.id}
                 />
                 <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-                  {isSubmitting ? (
+                  {isUploadingAvatar ? (
                     <FaSpinner className="animate-spin" />
                   ) : (
                     <FaUpload />
@@ -598,7 +590,7 @@ function ProfileEditTemplate() {
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
-                {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                 {t('upload')}
               </button>
             </div>

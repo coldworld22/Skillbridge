@@ -1,6 +1,12 @@
 import { FaUserCircle, FaTrash, FaUpload, FaSpinner } from "react-icons/fa";
 
-export default function AvatarUploader({ avatarPreview, isSubmitting, t, onSelect, onRemove }) {
+export default function AvatarUploader({
+  avatarPreview,
+  isUploadingAvatar,
+  t,
+  onSelect,
+  onRemove,
+}) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -29,7 +35,7 @@ export default function AvatarUploader({ avatarPreview, isSubmitting, t, onSelec
         <label className="cursor-pointer">
           <input type="file" accept="image/*" onChange={onSelect} className="hidden" />
           <div className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2">
-            {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaUpload />}
+            {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaUpload />}
             {avatarPreview ? t('change_photo') : t('upload_photo')}
           </div>
         </label>
