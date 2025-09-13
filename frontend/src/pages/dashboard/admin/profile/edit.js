@@ -165,10 +165,20 @@ function ProfileEditTemplate() {
   }, [hasHydrated, user]);
 
 
+  const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: trimValue(value) }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const handleSocialLinkChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [name]: trimValue(value) },
+    }));
   };
 
   const onCropComplete = useCallback((_, area) => {
@@ -532,12 +542,7 @@ function ProfileEditTemplate() {
                       type="text"
                       name={name}
                       value={formData.socialLinks[name] || ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
-                        }))
-                      }
+                      onChange={handleSocialLinkChange}
                       placeholder={
                         name === 'website'
                           ? 'https://yourwebsite.com'
