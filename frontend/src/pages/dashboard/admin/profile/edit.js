@@ -86,38 +86,44 @@ function ProfileEditTemplate() {
   const fetchMessages = useMessageStore((state) => state.fetch);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!hasHydrated) return;
     if (!user) {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
 
     // Pre-fill with existing user info while fetching latest data
-    setFormData((prev) => ({
-      ...prev,
-      full_name: user.full_name || "",
-      email: user.email || "",
-      phone: user.phone || "",
-      gender: user.gender || "male",
-      date_of_birth: user.date_of_birth?.split("T")[0] || "",
-      avatar_url: user.avatar_url,
-      avatarPreview: user.avatar_url
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-        : null,
-      job_title: user.job_title || "",
-      department: user.department || "",
-    }));
+    if (isMounted) {
+      setFormData((prev) => ({
+        ...prev,
+        full_name: user.full_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        gender: user.gender || "male",
+        date_of_birth: user.date_of_birth?.split("T")[0] || "",
+        avatar_url: user.avatar_url,
+        avatarPreview: user.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+          : null,
+        job_title: user.job_title || "",
+        department: user.department || "",
+      }));
+    }
 
     const loadProfile = async () => {
       try {
+        if (!isMounted) return;
         setLoadingProfile(true);
 
         const res = await getAdminProfile();
+        if (!isMounted) return;
         const {
           full_name,
           email,
@@ -137,6 +143,7 @@ function ProfileEditTemplate() {
           }
         });
 
+        if (!isMounted) return;
         setFormData((prev) => ({
           ...prev,
           full_name,
@@ -153,15 +160,18 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        toast.error(t('load_profile_failed'));
+        if (isMounted) toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
-        setLoadingProfile(false);
-
+        if (isMounted) setLoadingProfile(false);
       }
     };
 
     loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [hasHydrated, user]);
 
 
