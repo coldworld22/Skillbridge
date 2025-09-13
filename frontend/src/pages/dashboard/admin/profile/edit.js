@@ -254,9 +254,7 @@ function ProfileEditTemplate() {
     setIsSubmitting(true);
     try {
       await deleteAdminAvatar(user.id);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: null });
+      setUser({ ...user, avatar_url: null });
       setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
       toast.success(t("avatar_remove_success"));
     } catch (error) {
