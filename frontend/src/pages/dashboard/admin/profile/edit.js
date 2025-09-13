@@ -75,6 +75,7 @@ function ProfileEditTemplate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -251,7 +252,7 @@ function ProfileEditTemplate() {
       toast.error(t("user_not_loaded"));
       return;
     }
-    setIsSubmitting(true);
+    setIsRemovingAvatar(true);
     try {
       await deleteAdminAvatar(user.id);
       const { setUser } = useAuthStore.getState();
@@ -264,7 +265,7 @@ function ProfileEditTemplate() {
       const msg = error.response?.data?.message || t("avatar_remove_failed");
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsRemovingAvatar(false);
     }
   };
 
@@ -376,7 +377,8 @@ function ProfileEditTemplate() {
                   />
                   <button
                     onClick={handleAvatarRemove}
-                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                    disabled={isRemovingAvatar}
+                    className={`absolute -top-2 -right-2 p-1 rounded-full transition-colors ${isRemovingAvatar ? 'bg-red-400 cursor-not-allowed text-white' : 'bg-red-600 text-white hover:bg-red-700'}`}
                   >
                     <FaTrash size={14} />
                   </button>
