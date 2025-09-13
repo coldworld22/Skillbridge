@@ -44,12 +44,14 @@ import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
 import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
+// Default country for phone validation
+const DEFAULT_COUNTRY = "US";
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
 export const instructorProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val), {
+    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
       message: "invalid_phone_number",
     }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -214,7 +216,10 @@ export default function InstructorProfileEdit() {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach(e => { errs[e.path[0]] = t(e.message); });
+      err.errors.forEach(error => {
+        const key = error.path.join(".");
+        errs[key] = t(error.message);
+      });
       setErrors(errs);
       if (err.errors?.length) {
         toast.error(t(err.errors[0].message));
@@ -250,6 +255,11 @@ export default function InstructorProfileEdit() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t('avatar_invalid_type'));
+      e.target.value = "";
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) return toast.error(t('avatar_max_size'));
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
@@ -760,12 +770,13 @@ export default function InstructorProfileEdit() {
                     type="text"
                     name={name}
                     value={formData.socialLinks[name] || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, [name]: e.target.value },
-                      }))
-                    }
+                      }));
+                      setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
+                    }}
                     placeholder={
                       name === 'website'
                         ? 'https://yourwebsite.com'
@@ -773,6 +784,11 @@ export default function InstructorProfileEdit() {
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
                   />
+                  {errors[`socialLinks.${name}`] && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors[`socialLinks.${name}`]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

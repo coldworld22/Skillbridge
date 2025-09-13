@@ -543,6 +543,8 @@
     "certificate_removed": "प्रमाणपत्र सफलतापूर्वक हटा दिया गया",
     "certificate_remove_failed": "प्रमाण पत्र निकालने में विफल",
     "avatar_max_size": "अधिकतम आकार 10 एमबी",
+    "avatar_invalid_type": "Only image files are allowed",
+    "avatar_hint": "JPG, PNG up to 10MB",
     "avatar_upload_failed": "अवतार अपलोड करने में विफल",
     "profile_update_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट किया गया!",
     "profile_update_failed": "प्रोफ़ाइल अपडेट करने में विफल",
@@ -590,6 +592,8 @@
     "invalid_phone_number": "अमान्य फोन नंबर",
     "invalid_email_address": "अमान्य ईमेल पता",
     "invalid_date": "अमान्य दिनांक प्रारूप",
+    "job_title_min": "पद का नाम कम से कम 2 अक्षरों का होना चाहिए",
+    "department_min": "विभाग का नाम कम से कम 2 अक्षरों का होना चाहिए",
     "url_invalid": "एक वैध URL होना चाहिए"
   },
   "adminCertificatesPage": {
@@ -1966,6 +1970,7 @@
     "save_changes": "Save Changes",
     "load_failed": "Failed to load profile data",
     "image_size_error": "Image size should be less than 10MB",
+    "avatar_invalid_type": "Only image files are allowed",
     "avatar_upload_success": "Avatar uploaded successfully!",
     "avatar_upload_failed": "Failed to upload avatar",
     "pdf_only_error": "Only PDF files are allowed",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import useAuthStore from "@/store/auth/authStore";
 import { useRouter } from "next/router";
+import profileRoutes from "@/constants/profileRoutes";
 
 export default function IncompleteAlertModal() {
   const { user } = useAuthStore();
@@ -31,12 +32,9 @@ export default function IncompleteAlertModal() {
         </p>
         <button
           onClick={() => {
-            const path = user.role === "Instructor"
-              ? "/dashboard/instructor/profile/edit"
-              : "/dashboard/student/profile/edit";
+            const path = profileRoutes[user.role?.toLowerCase()] || "/auth/login";
             router.push(path);
           }}
-
           className="bg-yellow-500 px-4 py-2 rounded text-gray-900 font-semibold"
         >
           Complete Now
