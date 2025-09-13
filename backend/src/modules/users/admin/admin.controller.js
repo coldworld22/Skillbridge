@@ -240,10 +240,26 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
+    const userId = req.params.id;
+
+    // Fetch existing avatar to remove old file if present
+    const [user] = await db("users")
+      .where({ id: userId })
+      .select("avatar_url");
+
+    if (user && user.avatar_url) {
+      const oldPath = path.join(__dirname, "../../../../", user.avatar_url);
+      try {
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch (err) {
+        logger.error(err);
+      }
+    }
+
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
-      .where({ id: req.params.id })
+      .where({ id: userId })
       .update({ avatar_url: filePath, updated_at: new Date() });
 
     res.json({ message: "Avatar updated", avatar_url: filePath });
