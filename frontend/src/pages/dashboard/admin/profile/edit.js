@@ -45,8 +45,8 @@ export const profileSchema = z.object({
     .refine((val) => isValidPhoneNumber(val), {
       message: "invalid_phone_number",
     }),
-  job_title: z.string().min(2),
-  department: z.string().min(2),
+  job_title: z.string().min(2, 'job_title_min'),
+  department: z.string().min(2, 'department_min'),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
