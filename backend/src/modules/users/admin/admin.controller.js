@@ -88,16 +88,24 @@ exports.updateProfile = async (req, res) => {
   const trx = await db.transaction();
   try {
     // 1. Update core user fields
-    await trx("users").where({ id: userId }).update({
+    const updateData = {
       email,
       full_name,
       phone,
       gender,
       date_of_birth,
-      avatar_url,
       profile_complete: true,
       updated_at: new Date(),
-    });
+    };
+
+    // Only include avatar_url if it's provided in the request body. This prevents
+    // unintentionally setting the column to NULL when the client does not send a
+    // value, preserving the existing database value instead.
+    if (avatar_url !== undefined && avatar_url !== null) {
+      updateData.avatar_url = avatar_url;
+    }
+
+    await trx("users").where({ id: userId }).update(updateData);
 
     // 2. Upsert admin profile
     const profileData = {
