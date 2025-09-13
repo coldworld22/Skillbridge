@@ -73,24 +73,11 @@ function MyApp({ Component, pageProps, router }) {
   );
   const currentLang = langs?.find((l) => l.code === i18n.language);
   const user = useAuthStore((s) => s.user);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const [gaId, setGaId] = useState(null);
 
   useEffect(() => {
-    const local = localStorage.getItem("auth");
-    if (local) {
-      const parsed = JSON.parse(local)?.state;
-      if (parsed?.user) {
-        useAuthStore.setState({
-          user: parsed.user,
-          accessToken: parsed.accessToken,
-          hasHydrated: true, // ✅ manually set hydration flag
-        });
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (router.pathname.startsWith('/auth')) return;
+    if (!hasHydrated || router.pathname.startsWith('/auth')) return;
 
     const init = async () => {
       try {
@@ -103,7 +90,7 @@ function MyApp({ Component, pageProps, router }) {
       }
     };
     init();
-  }, [router.pathname]);
+  }, [router.pathname, hasHydrated]);
 
   useEffect(() => {
     if (!configLoaded) fetchConfig();

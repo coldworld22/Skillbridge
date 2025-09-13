@@ -81,23 +81,9 @@ export default function StudentProfileEdit() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
 
-
   useEffect(() => {
-    const local = localStorage.getItem("auth");
-    let parsed;
-    if (local) {
-      try {
-        parsed = JSON.parse(local)?.state;
-      } catch (error) {
-        console.error("Failed to parse auth from localStorage", error);
-      }
-    }
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
+    if (!hasHydrated) return;
 
-  useEffect(() => {
     if (!user) {
       // No logged in user – stop loading to avoid endless spinner
       setIsLoading(false);
@@ -145,7 +131,7 @@ export default function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user, router]);
+  }, [user, hasHydrated, router]);
 
   useEffect(() => {
     return () => {
