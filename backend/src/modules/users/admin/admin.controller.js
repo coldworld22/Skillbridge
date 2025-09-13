@@ -134,8 +134,23 @@ exports.updateProfile = async (req, res) => {
         });
       }
     }
+
     await trx.commit();
-    // 4. Return the freshly updated profile details
+  } catch (error) {
+    await trx.rollback();
+    if (error.code === "23505") {
+      if (error.constraint === "users_email_unique") {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      if (error.constraint === "users_phone_unique") {
+        return res.status(409).json({ message: "Phone number already in use" });
+      }
+    }
+    return handleControllerError(res, error, "Unable to update profile", { userId });
+  }
+
+  try {
+    // 4. Return the freshly updated profile details using a new db connection
     const [user] = await db("users")
       .where({ id: userId })
       .select(
@@ -153,15 +168,13 @@ exports.updateProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [adminProfile] = await trx("admin_profiles")
+    const [adminProfile] = await db("admin_profiles")
       .where({ user_id: userId })
       .select("job_title", "department", "identity_doc_url", "created_at", "updated_at");
 
-    const socialLinks = await trx("user_social_links")
+    const socialLinks = await db("user_social_links")
       .where({ user_id: userId })
       .select("platform", "url");
-
-    await trx.commit();
 
     return res.json({
       ...user,
@@ -169,16 +182,7 @@ exports.updateProfile = async (req, res) => {
       social_links: socialLinks,
     });
   } catch (error) {
-    await trx.rollback();
-    if (error.code === "23505") {
-      if (error.constraint === "users_email_unique") {
-        return res.status(409).json({ message: "Email already in use" });
-      }
-      if (error.constraint === "users_phone_unique") {
-        return res.status(409).json({ message: "Phone number already in use" });
-      }
-    }
-    handleControllerError(res, error, "Unable to update profile", { userId });
+    return handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
 
@@ -243,10 +247,26 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
+    const userId = req.params.id;
+
+    // Fetch existing avatar to remove old file if present
+    const [user] = await db("users")
+      .where({ id: userId })
+      .select("avatar_url");
+
+    if (user && user.avatar_url) {
+      const oldPath = path.join(__dirname, "../../../../", user.avatar_url);
+      try {
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch (err) {
+        logger.error(err);
+      }
+    }
+
     const filePath = `/uploads/admin/avatars/${req.file.filename}`;
 
     await db("users")
-      .where({ id: req.params.id })
+      .where({ id: userId })
       .update({ avatar_url: filePath, updated_at: new Date() });
 
     res.json({ message: "Avatar updated", avatar_url: filePath });

@@ -558,6 +558,7 @@
     "certificate_remove_failed": "Failed to remove certificate",
     "avatar_max_size": "Max size 10 MB",
     "avatar_upload_failed": "Failed to upload avatar",
+    "avatar_crop_failed": "Avatar-Zuschnitt fehlgeschlagen",
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
     "demo_max_size": "Max size 10 MB",

@@ -47,8 +47,10 @@ export const profileSchema = z.object({
   department: z.string().min(2),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 function ProfileEditTemplate() {
@@ -187,14 +189,25 @@ useEffect(() => {
 
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      e.target.value = '';
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error(t('avatar_max_size'));
+      e.target.value = '';
       return;
+    }
+    if (tempAvatar) {
+      URL.revokeObjectURL(tempAvatar);
     }
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
     setShowCropper(true);
+    e.target.value = '';
   };
 
   const handleCropUpload = async () => {
@@ -204,8 +217,16 @@ useEffect(() => {
       return;
     }
     setIsSubmitting(true);
+    let blob;
     try {
-      const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+      blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
+    } catch (error) {
+      console.error('Avatar crop error:', error);
+      toast.error(t('avatar_crop_failed'));
+      setIsSubmitting(false);
+      return;
+    }
+    try {
       const file = new File([blob], tempFileName || "avatar.jpg", {
         type: blob.type,
       });
