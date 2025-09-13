@@ -414,9 +414,7 @@ function ProfileEditTemplate() {
                   <button
                     onClick={handleAvatarRemove}
                     disabled={isRemovingAvatar}
-                    className={`absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full transition-colors ${
-                      isRemovingAvatar ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                    }`}
+                    className={`absolute -top-2 -right-2 p-1 rounded-full transition-colors ${isRemovingAvatar ? 'bg-red-400 cursor-not-allowed text-white' : 'bg-red-600 text-white hover:bg-red-700'}`}
                   >
                     {isRemovingAvatar ? (
                       <FaSpinner size={14} className="animate-spin" />
