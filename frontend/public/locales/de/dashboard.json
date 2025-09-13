@@ -595,6 +595,7 @@
     "upload": "Upload",
     "load_profile_failed": "Failed to load profile",
     "avatar_max_size": "Max size 10 MB",
+    "avatar_invalid_type": "Ungültiger Dateityp. Bitte ein Bild hochladen.",
     "avatar_upload_failed": "Failed to upload avatar",
     "profile_update_success": "Profile updated successfully!",
     "profile_update_failed": "Failed to update profile",
