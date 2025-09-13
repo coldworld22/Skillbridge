@@ -198,8 +198,14 @@ useEffect(() => {
       e.target.value = '';
       return;
     }
+    if (tempAvatar) {
+      URL.revokeObjectURL(tempAvatar);
+    }
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
     setShowCropper(true);
     e.target.value = '';
   };
