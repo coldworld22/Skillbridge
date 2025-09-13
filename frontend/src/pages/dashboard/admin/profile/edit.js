@@ -192,8 +192,14 @@ useEffect(() => {
       toast.error(t('avatar_max_size'));
       return;
     }
+    if (tempAvatar) {
+      URL.revokeObjectURL(tempAvatar);
+    }
     setTempFileName(file.name);
     setTempAvatar(URL.createObjectURL(file));
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
     setShowCropper(true);
   };
 
