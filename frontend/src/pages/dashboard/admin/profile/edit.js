@@ -50,8 +50,18 @@ export const profileSchema = z.object({
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  // Additionally ensure provided keys correspond to allowed platforms
   socialLinks: z
     .record(z.string().url("invalid_url").or(z.literal("")))
+    .refine(
+      (links) =>
+        Object.keys(links).every((key) =>
+          allowedPlatforms.some((p) => p.name === key)
+        ),
+      {
+        message: "invalid_social_platform",
+      }
+    )
     .optional(),
 });
 
