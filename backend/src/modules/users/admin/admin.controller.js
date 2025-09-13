@@ -279,6 +279,40 @@ exports.updateAvatar = async (req, res) => {
   }
 };
 
+// Remove avatar and clear avatar_url
+exports.deleteAvatar = async (req, res) => {
+  try {
+    if (String(req.params.id) !== String(req.user.id)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const user = await db("users").where({ id: req.params.id }).first("avatar_url");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.avatar_url) {
+      const filePath = path.join(
+        __dirname,
+        "../../../../",
+        user.avatar_url.replace(/^\//, "")
+      );
+      fs.unlink(filePath, (err) => {
+        if (err) logger.error(err);
+      });
+    }
+
+    await db("users")
+      .where({ id: req.params.id })
+      .update({ avatar_url: null, updated_at: new Date() });
+
+    res.json({ message: "Avatar removed" });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ message: "Failed to remove avatar" });
+  }
+};
+
 /**
  * @desc Upload identity document (image/pdf)
  * @route POST /api/users/admin/profile/identity

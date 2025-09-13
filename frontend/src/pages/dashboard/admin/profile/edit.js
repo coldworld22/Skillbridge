@@ -27,6 +27,7 @@ import {
   getAdminProfile,
   updateAdminProfile,
   uploadAdminAvatar,
+  deleteAdminAvatar,
 } from "@/services/admin/adminService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -261,6 +262,28 @@ useEffect(() => {
     setCrop({ x: 0, y: 0 });
   };
 
+  const handleAvatarRemove = async () => {
+    if (!user?.id) {
+      toast.error(t("user_not_loaded"));
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await deleteAdminAvatar(user.id);
+      const { setUser } = useAuthStore.getState();
+      const current = useAuthStore.getState().user;
+      setUser({ ...current, avatar_url: null });
+      setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
+      toast.success(t("avatar_remove_success"));
+    } catch (error) {
+      console.error("Avatar delete error:", error.response);
+      const msg = error.response?.data?.message || t("avatar_remove_failed");
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
 
   const validateForm = () => {
     try {
@@ -369,9 +392,7 @@ useEffect(() => {
                     className="w-32 h-32 rounded-full object-cover border-2 border-yellow-200"
                   />
                   <button
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, avatarPreview: null }))
-                    }
+                    onClick={handleAvatarRemove}
                     className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
                   >
                     <FaTrash size={14} />
