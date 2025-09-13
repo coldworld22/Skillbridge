@@ -27,6 +27,7 @@ import logger from "@/utils/logger";
 // ─────────────────────
 import { loginSchema as createLoginSchema } from "@/utils/auth/validationSchemas";
 import { isTokenExpired } from "@/utils/auth/tokenUtils";
+import profileRoutes from "@/constants/profileRoutes";
 
 function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading }) {
   const router = useRouter();
@@ -67,13 +68,7 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     }
 
     if (user.profile_complete === false) {
-      const profilePaths = {
-        admin: "/dashboard/admin/profile/edit",
-        instructor: "/dashboard/instructor/profile/edit",
-        student: "/dashboard/student/profile/edit",
-        superadmin: "/dashboard/admin/profile/edit",
-      };
-      const rolePath = profilePaths[user.role?.toLowerCase()] || "/website";
+      const rolePath = profileRoutes[user.role?.toLowerCase()] || "/website";
       router.replace(rolePath);
     } else {
       router.replace("/website");
@@ -113,16 +108,9 @@ function LoginForm({ recaptchaCfg, cfgLoading, setRecaptchaCfg, setCfgLoading })
     toast.success(t("login_successful"));
     fetchNotifications();
 
-    const profilePaths = {
-      admin: "/dashboard/admin/profile/edit",
-      instructor: "/dashboard/instructor/profile/edit",
-      student: "/dashboard/student/profile/edit",
-      superadmin: "/dashboard/admin/profile/edit",
-    };
-
     const targetPath =
       loggedInUser.profile_complete === false
-        ? profilePaths[loggedInUser.role?.toLowerCase()] || "/website"
+        ? profileRoutes[loggedInUser.role?.toLowerCase()] || "/website"
         : "/website";
 
     // 🚀 Redirect after a short delay so the toast is visible

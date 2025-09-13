@@ -593,6 +593,8 @@
     "invalid_phone_number": "رقم هاتف غير صالح",
     "invalid_email_address": "عنوان البريد الإلكتروني غير صالح",
     "invalid_date": "تنسيق التاريخ غير صالح",
+    "job_title_min": "يجب أن يكون المسمى الوظيفي مكونًا من حرفين على الأقل",
+    "department_min": "يجب أن يكون القسم مكونًا من حرفين على الأقل",
     "url_invalid": "يجب أن يكون رابطاً صالحاً"
   },
   "adminCertificatesPage": {

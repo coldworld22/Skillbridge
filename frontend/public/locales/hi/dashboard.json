@@ -593,6 +593,8 @@
     "invalid_phone_number": "अमान्य फोन नंबर",
     "invalid_email_address": "अमान्य ईमेल पता",
     "invalid_date": "अमान्य दिनांक प्रारूप",
+    "job_title_min": "पद का नाम कम से कम 2 अक्षरों का होना चाहिए",
+    "department_min": "विभाग का नाम कम से कम 2 अक्षरों का होना चाहिए",
     "url_invalid": "एक वैध URL होना चाहिए"
   },
   "adminCertificatesPage": {

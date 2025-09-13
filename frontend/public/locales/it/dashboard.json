@@ -607,6 +607,8 @@
     "invalid_phone_number": "Numero di telefono non valido",
     "invalid_email_address": "Indirizzo e -mail non valido",
     "invalid_date": "Formato della data non valido",
+    "job_title_min": "Il titolo di lavoro deve contenere almeno 2 caratteri",
+    "department_min": "Il dipartimento deve contenere almeno 2 caratteri",
     "url_invalid": "Deve essere un URL valido"
   },
   "adminCertificatesPage": {

@@ -23,6 +23,8 @@ import useAppConfigStore from "@/store/appConfigStore";
 import LinkText from "@/components/shared/LinkText";
 import { buildUrl } from "@/utils/url";
 
+import profileRoutes from "@/constants/profileRoutes";
+
 export default function Header() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -58,10 +60,7 @@ export default function Header() {
   const fetchAppConfig = useAppConfigStore((state) => state.fetch);
   const router = useRouter();
 
-  const profileLink =
-    userRole === "superadmin" || userRole === "admin"
-      ? "/dashboard/admin/profile/edit"
-      : `/dashboard/${userRole}/profile/edit`;
+  const profileLink = profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
 
   const handleLogout = async () => {
     try {
