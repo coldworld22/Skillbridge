@@ -222,9 +222,18 @@ exports.updateAvatar = async (req, res) => {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
+        const { avatar_url: oldAvatar } = await db("users")
+            .where({ id: req.user.id })
+            .first("avatar_url");
+
         const avatarUrl = `/uploads/avatars/instructor/${req.file.filename}`;
 
         await db("users").where({ id: req.user.id }).update({ avatar_url: avatarUrl });
+
+        if (oldAvatar) {
+            const oldPath = path.join(__dirname, "../../../../", oldAvatar);
+            fs.unlink(oldPath, (error) => error && logger.error("Failed to remove old avatar:", error));
+        }
 
         res.json({ avatar_url: avatarUrl });
     } catch (err) {
