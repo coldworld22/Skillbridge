@@ -337,7 +337,7 @@ function ProfileEditTemplate() {
       toast.success(t('profile_update_success'));
       await fetchNotifications();
       fetchMessages();
-      router.push("/dashboard/admin/profile/steps/Verification");
+      router.push("/dashboard/admin/profile/steps/verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
