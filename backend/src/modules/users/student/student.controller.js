@@ -1,5 +1,6 @@
 const logger = require('../../../utils/logger.js');
 const fs = require("fs");
+const path = require("path");
 /**
  * Student controller
  */
@@ -177,10 +178,21 @@ exports.updateAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No avatar uploaded" });
     }
+
+    const { avatar_url: oldAvatar } = await db("users")
+      .where({ id: req.user.id })
+      .first("avatar_url");
+
     const avatarUrl = `/uploads/avatars/student/${req.file.filename}`;
     await db("users")
       .where({ id: req.user.id })
       .update({ avatar_url: avatarUrl });
+
+    if (oldAvatar) {
+      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
+      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+    }
+
     res.json({ avatar_url: avatarUrl });
   } catch (error) {
     if (req.file) {
