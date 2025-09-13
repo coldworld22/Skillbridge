@@ -88,16 +88,19 @@ exports.updateProfile = async (req, res) => {
   const trx = await db.transaction();
   try {
     // 1. Update core user fields
-    await trx("users").where({ id: userId }).update({
+    const userUpdate = {
       email,
       full_name,
       phone,
       gender,
       date_of_birth,
-      avatar_url,
       profile_complete: true,
       updated_at: new Date(),
-    });
+    };
+    if (avatar_url !== undefined) {
+      userUpdate.avatar_url = avatar_url;
+    }
+    await trx("users").where({ id: userId }).update(userUpdate);
 
     // 2. Upsert admin profile
     const profileData = {
