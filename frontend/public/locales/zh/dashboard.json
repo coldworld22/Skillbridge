@@ -543,6 +543,8 @@
     "certificate_removed": "证书成功删除",
     "certificate_remove_failed": "无法删除证书",
     "avatar_max_size": "最大尺寸10MB",
+    "avatar_invalid_type": "Only image files are allowed",
+    "avatar_hint": "JPG, PNG up to 10MB",
     "avatar_upload_failed": "无法上传头像",
     "profile_update_success": "个人资料成功更新了！",
     "profile_update_failed": "无法更新个人资料",
@@ -580,6 +582,7 @@
     "upload": "上传",
     "load_profile_failed": "无法加载配置文件",
     "avatar_max_size": "最大尺寸10MB",
+    "invalid_image_type": "只允许图片文件。",
     "avatar_upload_failed": "无法上传头像",
     "avatar_crop_failed": "头像裁剪失败",
     "profile_update_success": "个人资料成功更新了！",
@@ -589,6 +592,8 @@
     "invalid_phone_number": "无效的电话号码",
     "invalid_email_address": "无效的电子邮件地址",
     "invalid_date": "无效的日期格式",
+    "job_title_min": "职位名称至少需要2个字符",
+    "department_min": "部门名称至少需要2个字符",
     "url_invalid": "必须是有效的URL"
   },
   "adminCertificatesPage": {
@@ -1934,6 +1939,7 @@
     "save_changes": "Save Changes",
     "load_failed": "Failed to load profile data",
     "image_size_error": "Image size should be less than 10MB",
+    "avatar_invalid_type": "Only image files are allowed",
     "avatar_upload_success": "Avatar uploaded successfully!",
     "avatar_upload_failed": "Failed to upload avatar",
     "pdf_only_error": "Only PDF files are allowed",

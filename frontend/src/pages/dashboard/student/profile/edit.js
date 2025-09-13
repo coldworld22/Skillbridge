@@ -28,9 +28,12 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
+// Default country for phone validation
+const DEFAULT_COUNTRY = "US";
+
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val), {
+  phone: z.string().refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
     message: "invalid_phone_number",
   }),
   gender: z.enum(['male', 'female']),
@@ -159,23 +162,29 @@ export default function StudentProfileEdit() {
       ...prev,
       socialLinks: { ...prev.socialLinks, [name]: value.trim() }
     }));
+    setErrors(prev => ({ ...prev, [`socialLinks.${name}`]: null }));
   };
 
   const onCropComplete = useCallback((_, area) => {
     setCroppedAreaPixels(area);
   }, []);
 
-  const handleAvatarSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(t('image_size_error'));
-      return;
-    }
-    setTempFileName(file.name);
-    setTempAvatar(URL.createObjectURL(file));
-    setShowCropper(true);
-  };
+const handleAvatarSelect = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    toast.error(t('avatar_invalid_type'));
+    e.target.value = "";
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    toast.error(t('image_size_error'));
+    return;
+  }
+  setTempFileName(file.name);
+  setTempAvatar(URL.createObjectURL(file));
+  setShowCropper(true);
+};
 
   const handleCropUpload = async () => {
     if (!tempAvatar || !croppedAreaPixels) return;
@@ -266,8 +275,9 @@ export default function StudentProfileEdit() {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach((e) => {
-        errs[e.path[0]] = t(e.message);
+      err.errors.forEach((error) => {
+        const key = error.path.join(".");
+        errs[key] = t(error.message);
       });
       setErrors(errs);
       if (err.errors?.length) {
@@ -651,7 +661,7 @@ export default function StudentProfileEdit() {
                       <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
                       {t('linkedin_label')}
                     </label>
-                    <input
+                  <input
                       type="text"
                       name="linkedin"
                       value={formData.socialLinks.linkedin || ""}
@@ -659,6 +669,11 @@ export default function StudentProfileEdit() {
                       placeholder={t('linkedin_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
+                    {errors['socialLinks.linkedin'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['socialLinks.linkedin']}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -666,7 +681,7 @@ export default function StudentProfileEdit() {
                       <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
                       {t('github_label')}
                     </label>
-                    <input
+                  <input
                       type="text"
                       name="github"
                       value={formData.socialLinks.github || ""}
@@ -674,6 +689,11 @@ export default function StudentProfileEdit() {
                       placeholder={t('github_placeholder')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     />
+                    {errors['socialLinks.github'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['socialLinks.github']}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

@@ -35,6 +35,9 @@ import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
+// Default country for phone validation
+const DEFAULT_COUNTRY = "US";
+
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 export const profileSchema = z.object({
@@ -42,16 +45,26 @@ export const profileSchema = z.object({
   email: z.string().email("invalid_email_address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val), {
+    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
       message: "invalid_phone_number",
     }),
-  job_title: z.string().min(2),
-  department: z.string().min(2),
+  job_title: z.string().min(2, 'job_title_min'),
+  department: z.string().min(2, 'department_min'),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   date_of_birth: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "invalid_date" }),
   // Social links validated as URLs; allow empty strings so optional fields don't fail validation
+  // Additionally ensure provided keys correspond to allowed platforms
   socialLinks: z
     .record(z.string().url("invalid_url").or(z.literal("")))
+    .refine(
+      (links) =>
+        Object.keys(links).every((key) =>
+          allowedPlatforms.some((p) => p.name === key)
+        ),
+      {
+        message: "invalid_social_platform",
+      }
+    )
     .optional(),
 });
 
@@ -75,6 +88,7 @@ function ProfileEditTemplate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [expanded, setExpanded] = useState({ personal: true, social: true });
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -96,36 +110,40 @@ function ProfileEditTemplate() {
   useEffect(() => {
     if (!hasHydrated) return;
     if (!user) {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
-      setLoadingProfile(false);
+      if (isMounted) setLoadingProfile(false);
       return;
     }
 
     // Pre-fill with existing user info while fetching latest data
-    setFormData((prev) => ({
-      ...prev,
-      full_name: user.full_name || "",
-      email: user.email || "",
-      phone: user.phone || "",
-      gender: user.gender || "male",
-      date_of_birth: user.date_of_birth?.split("T")[0] || "",
-      avatar_url: user.avatar_url,
-      avatarPreview: user.avatar_url
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
-        : null,
-      job_title: user.job_title || "",
-      department: user.department || "",
-    }));
+    if (isMounted) {
+      setFormData((prev) => ({
+        ...prev,
+        full_name: user.full_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        gender: user.gender || "male",
+        date_of_birth: user.date_of_birth?.split("T")[0] || "",
+        avatar_url: user.avatar_url,
+        avatarPreview: user.avatar_url
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${user.avatar_url}`
+          : null,
+        job_title: user.job_title || "",
+        department: user.department || "",
+      }));
+    }
 
     const loadProfile = async () => {
       try {
+        if (!isMounted) return;
         setLoadingProfile(true);
 
         const res = await getAdminProfile();
+        if (!isMounted) return;
         const {
           full_name,
           email,
@@ -145,6 +163,7 @@ function ProfileEditTemplate() {
           }
         });
 
+        if (!isMounted) return;
         setFormData((prev) => ({
           ...prev,
           full_name,
@@ -161,22 +180,38 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        toast.error(t('load_profile_failed'));
+        if (isMounted) toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
-        setLoadingProfile(false);
-
+        if (isMounted) setLoadingProfile(false);
       }
     };
 
     loadProfile();
-  }, [hasHydrated, user]);
+  }, [hasHydrated, user, fetchNotifications, fetchMessages]);
+
+
+  const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
+
+  useEffect(() => {
+    return () => {
+      if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    };
+  }, [tempAvatar]);
 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: trimValue(value) }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const handleSocialLinkChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [name]: trimValue(value) },
+    }));
   };
 
   const onCropComplete = useCallback((_, area) => {
@@ -192,6 +227,11 @@ function ProfileEditTemplate() {
   const handleAvatarSelect = (e) => {
     const file = e.target.files[0];
     if (!file) {
+      e.target.value = '';
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('invalid_image_type'));
       e.target.value = '';
       return;
     }
@@ -259,12 +299,10 @@ function ProfileEditTemplate() {
       toast.error(t("user_not_loaded"));
       return;
     }
-    setIsSubmitting(true);
+    setIsRemovingAvatar(true);
     try {
       await deleteAdminAvatar(user.id);
-      const { setUser } = useAuthStore.getState();
-      const current = useAuthStore.getState().user;
-      setUser({ ...current, avatar_url: null });
+      setUser({ ...user, avatar_url: null });
       setFormData((prev) => ({ ...prev, avatarPreview: null, avatar_url: null }));
       toast.success(t("avatar_remove_success"));
     } catch (error) {
@@ -272,7 +310,7 @@ function ProfileEditTemplate() {
       const msg = error.response?.data?.message || t("avatar_remove_failed");
       toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setIsRemovingAvatar(false);
     }
   };
 
@@ -286,7 +324,8 @@ function ProfileEditTemplate() {
       if (err instanceof z.ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
-          newErrors[error.path[0]] = t(error.message);
+          const key = error.path.join(".");
+          newErrors[key] = t(error.message);
         });
         setErrors(newErrors);
         if (err.errors?.length) {
@@ -345,7 +384,7 @@ function ProfileEditTemplate() {
       toast.success(t('profile_update_success'));
       await fetchNotifications();
       fetchMessages();
-      router.push("/dashboard/admin/profile/steps/Verification");
+      router.push("/dashboard/admin/profile/steps/verification");
     } catch (err) {
       toast.error(err.message || t('profile_update_failed'));
       console.error("Profile update error:", err);
@@ -384,9 +423,18 @@ function ProfileEditTemplate() {
                   />
                   <button
                     onClick={handleAvatarRemove}
-                    className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                    disabled={isRemovingAvatar}
+                    className={`absolute -top-2 -right-2 p-1 rounded-full text-white transition-colors ${
+                      isRemovingAvatar
+                        ? 'bg-red-400 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700'
+                    }`}
                   >
-                    <FaTrash size={14} />
+                    {isRemovingAvatar ? (
+                      <FaSpinner className="animate-spin" size={14} />
+                    ) : (
+                      <FaTrash size={14} />
+                    )}
                   </button>
                 </div>
               ) : (
@@ -417,6 +465,7 @@ function ProfileEditTemplate() {
                   {formData.avatarPreview ? t('change_photo') : t('upload_photo')}
                 </div>
               </label>
+              <p className="mt-2 text-xs text-gray-500">{t('avatar_hint')}</p>
               {!user?.id && (
                 <p className="text-sm text-gray-500 mt-2">{t('user_not_loaded')}</p>
               )}
@@ -540,12 +589,13 @@ function ProfileEditTemplate() {
                       type="text"
                       name={name}
                       value={formData.socialLinks[name] || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData((prev) => ({
                           ...prev,
                           socialLinks: { ...prev.socialLinks, [name]: e.target.value.trim() },
-                        }))
-                      }
+                        }));
+                        setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
+                      }}
                       placeholder={
                         name === 'website'
                           ? 'https://yourwebsite.com'
@@ -553,6 +603,11 @@ function ProfileEditTemplate() {
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     />
+                    {errors[`socialLinks.${name}`] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors[`socialLinks.${name}`]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

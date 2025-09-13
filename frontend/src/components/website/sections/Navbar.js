@@ -34,6 +34,8 @@ import api from "@/services/api/api";
 import { getCurrencies } from "@/services/currencyService";
 import { buildUrl } from "@/utils/url";
 
+import profileRoutes from "@/constants/profileRoutes";
+
 const fetcher = (url) => api.get(url).then((res) => res.data.data);
 const currencyFetcher = () => getCurrencies();
 
@@ -118,13 +120,7 @@ const Navbar = () => {
 
   useEffect(() => {
     if (user && user.profile_complete === false) {
-      const profilePaths = {
-        admin: "/dashboard/admin/profile/edit",
-        instructor: "/dashboard/instructor/profile/edit",
-        student: "/dashboard/student/profile/edit",
-        superadmin: "/dashboard/admin/profile/edit",
-      };
-      const rolePath = profilePaths[userRole] || "/website";
+      const rolePath = profileRoutes[userRole] || "/website";
       if (router.pathname !== rolePath) {
         router.replace(rolePath);
         toast.info(t('please_complete_profile'));
@@ -191,10 +187,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const profileLink =
-    userRole === "superadmin" || userRole === "admin"
-      ? "/dashboard/admin/profile/edit"
-      : `/dashboard/${userRole}/profile/edit`;
+  const profileLink = profileRoutes[userRole] || `/dashboard/${userRole}/profile/edit`;
 
   const getAvatarUrl = (avatar) => {
     if (!avatar) return "";

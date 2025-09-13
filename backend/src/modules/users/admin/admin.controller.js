@@ -10,6 +10,7 @@ const notificationService = require("../../notifications/notifications.service")
 const messageService = require("../../messages/messages.service");
 const adminService = require("./admin.service");
 const handleControllerError = require("../../../utils/handleControllerError");
+const { adminProfileSchema } = require("./admin.validator");
 
 // Allowed social platforms for links
 const allowedPlatforms = [
@@ -73,6 +74,17 @@ exports.getProfile = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   const userId = req.user.id;
+
+  // Validate request body using Zod schema
+  const validation = adminProfileSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.errors.map((err) => ({
+      field: err.path.join("."),
+      message: err.message,
+    }));
+    return res.status(400).json({ message: "Validation failed", errors });
+  }
+
   const {
     full_name,
     email,
@@ -83,7 +95,17 @@ exports.updateProfile = async (req, res) => {
     job_title,
     department,
     social_links = [],
-  } = req.body;
+  } = validation.data;
+
+  const profileComplete = [
+    full_name,
+    email,
+    phone,
+    gender,
+    date_of_birth,
+    job_title,
+    department,
+  ].every(Boolean);
 
   const trx = await db.transaction();
   try {
@@ -94,7 +116,7 @@ exports.updateProfile = async (req, res) => {
       phone,
       gender,
       date_of_birth,
-      profile_complete: true,
+      profile_complete: profileComplete,
       updated_at: new Date(),
     };
     if (avatar_url !== undefined) {
@@ -169,6 +191,7 @@ exports.updateProfile = async (req, res) => {
       social_links: socialLinks,
     });
   } catch (error) {
+    await trx.rollback();
     return handleControllerError(res, error, "Unable to update profile", { userId });
   }
 };
