@@ -184,6 +184,13 @@ function ProfileEditTemplate() {
 
   const trimValue = (val) => (typeof val === "string" ? val.trim() : val);
 
+  useEffect(() => {
+    return () => {
+      if (tempAvatar) URL.revokeObjectURL(tempAvatar);
+    };
+  }, [tempAvatar]);
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: trimValue(value) }));
