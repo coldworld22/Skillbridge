@@ -51,6 +51,9 @@ router.patch(
   controller.updateAvatar
 );
 
+// 🗑 Remove avatar
+router.delete("/:id/avatar", controller.deleteAvatar);
+
 
 
 // ─────────────────────────────────────────────

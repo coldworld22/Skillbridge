@@ -40,8 +40,10 @@ export const studentProfileSchema = z.object({
   education_level: z.string().min(2, "education_required"),
   topics: z.array(z.string()).optional(),
   learning_goals: z.string().optional(),
-  // Social links validated as URLs
-  socialLinks: z.record(z.string().url("invalid_url")).optional(),
+  // Social links validated as URLs but allow empty strings for optional entries
+  socialLinks: z
+    .record(z.string().url("invalid_url").or(z.literal("")))
+    .optional(),
 });
 
 export default function StudentProfileEdit() {
@@ -83,23 +85,9 @@ export default function StudentProfileEdit() {
   const [tempAvatar, setTempAvatar] = useState(null);
   const [tempFileName, setTempFileName] = useState("");
 
-
   useEffect(() => {
-    const local = localStorage.getItem("auth");
-    let parsed;
-    if (local) {
-      try {
-        parsed = JSON.parse(local)?.state;
-      } catch (error) {
-        console.error("Failed to parse auth from localStorage", error);
-      }
-    }
-    if (hasHydrated && !user && parsed?.user) {
-      setUser(parsed.user);
-    }
-  }, [hasHydrated]);
+    if (!hasHydrated) return;
 
-  useEffect(() => {
     if (!user) {
       // No logged in user – stop loading to avoid endless spinner
       setIsLoading(false);
@@ -147,7 +135,7 @@ export default function StudentProfileEdit() {
     };
 
     loadProfile();
-  }, [user, router]);
+  }, [user, hasHydrated, router]);
 
   useEffect(() => {
     return () => {
