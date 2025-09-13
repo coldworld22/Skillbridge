@@ -590,6 +590,8 @@
     "invalid_phone_number": "无效的电话号码",
     "invalid_email_address": "无效的电子邮件地址",
     "invalid_date": "无效的日期格式",
+    "job_title_min": "职位名称至少需要2个字符",
+    "department_min": "部门名称至少需要2个字符",
     "url_invalid": "必须是有效的URL"
   },
   "adminCertificatesPage": {

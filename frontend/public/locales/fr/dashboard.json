@@ -590,6 +590,8 @@
     "invalid_phone_number": "Numéro de téléphone invalide",
     "invalid_email_address": "Adresse e-mail invalide",
     "invalid_date": "Format de date invalide",
+    "job_title_min": "L'intitulé du poste doit comporter au moins 2 caractères",
+    "department_min": "Le département doit comporter au moins 2 caractères",
     "url_invalid": "Doit être une URL valide"
   },
   "adminCertificatesPage": {
