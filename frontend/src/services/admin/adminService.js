@@ -36,8 +36,8 @@ export const updateAdminProfile = async (profileData) => {
  */
 
 export const uploadAdminAvatar = async (adminId, avatarFile) => {
-  // Obtain a CSRF token and include it in the upload request headers
-  const csrfToken = await ensureCsrfToken();
+  // Ensure a CSRF cookie exists so Axios can automatically attach the token
+  await ensureCsrfToken();
 
   const formData = new FormData();
   formData.append("avatar", avatarFile);
@@ -45,9 +45,7 @@ export const uploadAdminAvatar = async (adminId, avatarFile) => {
   const res = await api.patch(`/users/admin/${adminId}/avatar`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
-      "x-csrf-token": csrfToken,
     },
-    withCredentials: true, // if using cookies
   });
   return res.data;
 };
