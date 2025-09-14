@@ -66,6 +66,40 @@ exports.updateProfile = async (req, res) => {
     social_links,
   } = req.body;
 
+  const normalizeUrl = (url = "") => {
+    const trimmed = url.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
+  // Sanitize social links before database operations
+  const sanitizedLinks = Array.isArray(social_links)
+    ? social_links
+        .filter(
+          (link) =>
+            link &&
+            typeof link.url === "string" &&
+            typeof link.platform === "string" &&
+            allowedPlatforms.includes(link.platform.trim().toLowerCase()) &&
+            link.url.trim()
+        )
+        .map((link) => ({
+          platform: link.platform.trim().toLowerCase(),
+          url: normalizeUrl(link.url),
+        }))
+        .filter((link) => allowedPlatforms.includes(link.platform))
+    : [];
+
+  const hasUserFields =
+    full_name && phone && gender && date_of_birth;
+  const hasStudentFields =
+    education_level &&
+    Array.isArray(topics) &&
+    topics.length > 0 &&
+    learning_goals;
+  const isProfileComplete =
+    hasUserFields && hasStudentFields && sanitizedLinks.length > 0;
+
+  let trx;
   try {
     await studentService.updateStudentProfile(
       userId,
