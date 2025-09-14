@@ -20,6 +20,8 @@ import {
   updateInstructorProfile,
   uploadInstructorAvatar,
   uploadInstructorDemo,
+  deleteInstructorAvatar,
+  deleteInstructorDemo,
   toggleInstructorStatus,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
@@ -291,6 +293,44 @@ export default function InstructorProfileEdit() {
     }
   };
 
+  const handleAvatarRemove = async () => {
+    setIsUploadingAvatar(true);
+    try {
+      await deleteInstructorAvatar(user.id);
+      setUser({ ...user, avatar_url: null });
+      setFormData(prev => ({
+        ...prev,
+        avatar_url: null,
+        avatarPreview: null,
+      }));
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        t('avatar_delete_failed', { defaultValue: 'Failed to delete avatar' });
+      toast.error(msg);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleDemoRemove = async () => {
+    setIsUploadingDemo(true);
+    try {
+      await deleteInstructorDemo(user.id);
+      setFormData(prev => ({
+        ...prev,
+        demoPreview: null,
+      }));
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        t('demo_delete_failed', { defaultValue: 'Failed to delete demo video' });
+      toast.error(msg);
+    } finally {
+      setIsUploadingDemo(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     try {
@@ -407,14 +447,14 @@ export default function InstructorProfileEdit() {
             isUploadingAvatar={isUploadingAvatar}
             t={t}
             onSelect={handleAvatarSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, avatarPreview: null }))}
+            onRemove={handleAvatarRemove}
           />
           <DemoVideoUploader
             demoPreview={formData.demoPreview}
             isUploadingDemo={isUploadingDemo}
             t={t}
             onSelect={handleDemoSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, demoPreview: null }))}
+            onRemove={handleDemoRemove}
           />
         </div>
 
