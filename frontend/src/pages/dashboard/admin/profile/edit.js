@@ -109,14 +109,23 @@ function ProfileEditTemplate() {
 
   useEffect(() => {
     if (!hasHydrated) return;
+    const controller = new AbortController();
+    let isMounted = true;
+
     if (!user) {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     }
 
     // Pre-fill with existing user info while fetching latest data
@@ -142,7 +151,7 @@ function ProfileEditTemplate() {
         if (!isMounted) return;
         setLoadingProfile(true);
 
-        const res = await getAdminProfile();
+        const res = await getAdminProfile({ signal: controller.signal });
         if (!isMounted) return;
         const {
           full_name,
@@ -180,6 +189,7 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         if (isMounted) toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
@@ -188,6 +198,11 @@ function ProfileEditTemplate() {
     };
 
     loadProfile();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
 

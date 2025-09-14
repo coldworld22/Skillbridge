@@ -22,7 +22,12 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import { buildTutorialFormData } from "@/utils/tutorialForm";
+import {
+  loadDraft,
+  saveDraft,
+  loadCategories,
+  buildTutorialFormData,
+} from "@/utils/tutorialDraft";
 
 function EditTutorialPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'tutorialEditPage' });
@@ -40,13 +45,15 @@ function EditTutorialPage() {
   useEffect(() => {
     if (!id) return;
 
-    const draft = localStorage.getItem(`editTutorialDraft-${id}`);
+    const draft = loadDraft(`editTutorialDraft-${id}`);
     if (draft) {
-      const parsed = JSON.parse(draft);
-      setTutorialData({
-        ...parsed,
-        lessonCount: parsed.lessonCount || parsed.chapters?.length || 1,
-      });
+      setTutorialData(draft);
+      loadCategories(fetchAllCategories)
+        .then((cats) => setCategories(cats))
+        .catch((err) => {
+          console.error(err);
+          setError("Failed to load tutorial.");
+        });
       return;
     }
 
@@ -56,7 +63,7 @@ function EditTutorialPage() {
         const [tutorial, chapters, cats] = await Promise.all([
           fetchTutorialById(id),
           fetchChaptersByTutorial(id),
-          fetchAllCategories(),
+          loadCategories(fetchAllCategories),
         ]);
         const mappedChapters = chapters.map((ch) => ({
           title: ch.title,
@@ -82,7 +89,7 @@ function EditTutorialPage() {
           price: tutorial.price || "",
           isFree: tutorial.isFree,
         });
-        setCategories(cats?.data || cats);
+        setCategories(cats);
       } catch (err) {
         console.error(err);
         setError("Failed to load tutorial.");
@@ -94,7 +101,7 @@ function EditTutorialPage() {
 
   useEffect(() => {
     if (tutorialData && id) {
-      localStorage.setItem(`editTutorialDraft-${id}`, JSON.stringify(tutorialData));
+      saveDraft(`editTutorialDraft-${id}`, tutorialData);
     }
   }, [tutorialData, id]);
 

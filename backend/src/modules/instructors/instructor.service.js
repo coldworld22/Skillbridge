@@ -1,4 +1,6 @@
 const db = require("../../config/database");
+const classService = require("../classes/class.service");
+const tutorialService = require("../users/tutorials/tutorial.service");
 
 // Convert comma separated or JSON strings to arrays
 const parseArrayField = (val) => {
@@ -121,4 +123,12 @@ exports.getInstructorAvailability = async (id) => {
     }
   }
   return availability;
+};
+
+exports.getInstructorStats = async (id) => {
+  const [classes, tutorials] = await Promise.all([
+    classService.countPublishedClasses(id),
+    tutorialService.countPublishedTutorials(id),
+  ]);
+  return { classes, tutorials };
 };

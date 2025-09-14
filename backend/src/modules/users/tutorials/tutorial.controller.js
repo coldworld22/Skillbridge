@@ -23,6 +23,8 @@ const tutorialValidator = require("./tutorial.validator");
 const { sendSuccess } = require("../../../utils/response");
 const { parseTags, parseChapters } = require("./tutorial.helpers");
 const { sendCreationNotifications } = require("./tutorial.notifications");
+const tutorialValidator = require("./tutorial.validator");
+const { ZodError } = require("zod");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -171,7 +173,21 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
-  const { tags: rawTags, ...data } = req.body;
+
+  let body;
+  try {
+    ({ body } = await tutorialValidator.update.parseAsync({ body: req.body }));
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.errors,
+      });
+    }
+    throw err;
+  }
+
+  const { tags: rawTags, ...data } = body;
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
     data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
