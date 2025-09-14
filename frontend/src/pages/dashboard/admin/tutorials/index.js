@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import ConfirmModal from "@/components/common/ConfirmModal";
-import RejectionReasonModal from "@/components/common/RejectionReasonModal";
+import DeleteTutorialModal from "@/components/dashboard/admin/tutorials/DeleteTutorialModal";
+import RejectTutorialModal from "@/components/dashboard/admin/tutorials/RejectTutorialModal";
 import {
   permanentlyDeleteTutorial,
   toggleTutorialStatus,
@@ -26,78 +26,56 @@ import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
-import useAdminTutorials from "@/hooks/useAdminTutorials";
+import useTutorialsData from "@/hooks/admin/tutorials/useTutorialsData";
+import useTutorialFilters from "@/hooks/admin/tutorials/useTutorialFilters";
+import useBulkSelection from "@/hooks/admin/tutorials/useBulkSelection";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
+  const { tutorials, setTutorials, categories, loading } = useTutorialsData(t);
+
   const {
-    tutorials,
-    setTutorials,
-    categories,
-    loading,
+    searchQuery,
+    setSearchQuery,
+    filterCategory,
+    setFilterCategory,
+    filterStatus,
+    setFilterStatus,
+    filterApproval,
+    setFilterApproval,
+    currentPage,
+    setCurrentPage,
+    filteredTutorials,
+    paginatedTutorials,
+    totalPages,
+    startIndex,
+    endIndex,
+    goToPage,
+  } = useTutorialFilters(tutorials);
+
+  const {
     selectedTutorials,
     setSelectedTutorials,
+    toggleSelectOne,
+    toggleSelectAll,
     clearSelected,
-    handleBulkDelete,
-    handleBulkApprove,
-  } = useAdminTutorials(t);
+  } = useBulkSelection(paginatedTutorials, [
+    searchQuery,
+    filterCategory,
+    filterStatus,
+    filterApproval,
+  ]);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
   const refreshMessages = useMessageStore((state) => state.fetch);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterApproval, setFilterApproval] = useState("All");
-
-  // Modals and Selections
+  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [tutorialToDelete, setTutorialToDelete] = useState(null);
   const [tutorialToReject, setTutorialToReject] = useState(null);
-
-  useEffect(() => {
-    setSelectedTutorials([]);
-  }, [searchQuery, filterCategory, filterStatus, filterApproval, setSelectedTutorials]);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const tutorialsPerPage = 10;
-  const totalPages =
-    meta.totalPages ?? Math.ceil((meta.total || 0) / tutorialsPerPage);
-  const startIndex = (currentPage - 1) * tutorialsPerPage;
-  const endIndex = Math.min(startIndex + tutorials.length, meta.total || 0);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages || 1);
-    }
-  }, [currentPage, totalPages]);
-
-  // Functions
-  const toggleSelectOne = (id) => {
-    setSelectedTutorials((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
-  };
-
-  const toggleSelectAll = (isChecked) => {
-    if (isChecked) {
-      const pageIds = tutorials.map((tut) => tut.id);
-      setSelectedTutorials((prevSelected) => [
-        ...new Set([...prevSelected, ...pageIds]),
-      ]);
-    } else {
-      const pageIds = tutorials.map((tut) => tut.id);
-      setSelectedTutorials((prevSelected) =>
-        prevSelected.filter((id) => !pageIds.includes(id)),
-      );
-    }
-  };
-
 
   const togglePublishStatus = async (id) => {
     try {
@@ -296,11 +274,43 @@ function AdminTutorialsPage() {
     }
   };
 
-  // Pagination controls
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+  const handleBulkDelete = async () => {
+    if (selectedTutorials.length === 0) return;
+    try {
+      await bulkDeleteTutorials(selectedTutorials);
+      setTutorials((prev) =>
+        prev.filter((tut) => !selectedTutorials.includes(tut.id)),
+      );
+      toast.success(t("bulk_deleted"));
+    } catch (err) {
+      console.error(err);
+      toast.error(t("bulk_delete_failed"));
+    } finally {
+      setSelectedTutorials([]);
     }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedTutorials.length === 0) return;
+    try {
+      await bulkApproveTutorials(selectedTutorials);
+      setTutorials((prev) =>
+        prev.map((tut) =>
+          selectedTutorials.includes(tut.id)
+            ? {
+                ...tut,
+                approvalStatus: "Approved",
+                updatedAt: new Date().toISOString(),
+              }
+            : tut,
+        ),
+      );
+      toast.success(t("bulk_approved"));
+    } catch (err) {
+      console.error(err);
+      toast.error(t("bulk_approve_failed"));
+    }
+    setSelectedTutorials([]);
   };
 
   return (
@@ -379,19 +389,18 @@ function AdminTutorialsPage() {
         </div>
 
         {/* Modals */}
-        <ConfirmModal
+        <DeleteTutorialModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmDelete}
-          title={t("confirm_title")}
-          message={t("confirm_delete")}
+          t={t}
         />
 
-        <RejectionReasonModal
+        <RejectTutorialModal
           isOpen={isRejectionModalOpen}
           onClose={() => setIsRejectionModalOpen(false)}
           onConfirm={handleConfirmReject}
-          title={t("reject_title")}
+          t={t}
         />
       </div>
     </AdminLayout>
