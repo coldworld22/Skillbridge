@@ -39,7 +39,10 @@ export default function Home() {
     { component: Footer }, // ✅ Removed last section before the footer
   ];
 
-  const sectionRefs = useRef(sections.map(() => useRef(null)));
+  const sectionRefs = useRef([]);
+  useEffect(() => {
+    sectionRefs.current = sectionRefs.current.slice(0, sections.length);
+  }, [sections.length]);
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data
@@ -67,8 +70,9 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    if (sectionRefs.current[index]?.current) {
-      sectionRefs.current[index].current.scrollIntoView({ behavior: "smooth" });
+    const section = sectionRefs.current[index];
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
       setCurrentSection(index);
     }
   };
@@ -79,7 +83,12 @@ export default function Home() {
       <IncompleteAlertModal />
 
       {sections.map(({ component: Component, props }, index) => (
-        <section key={index} ref={sectionRefs.current[index]}>
+        <section
+          key={index}
+          ref={(el) => {
+            sectionRefs.current[index] = el;
+          }}
+        >
           <Component {...props} />
         </section>
       ))}
