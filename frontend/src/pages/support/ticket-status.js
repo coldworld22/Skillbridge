@@ -10,15 +10,22 @@ export default function TicketStatusPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     let isMounted = true;
-    fetchMyTickets()
+    fetchMyTickets({ signal: controller.signal })
       .then((data) => {
         if (isMounted) setTickets(data);
       })
-      .catch(() => isMounted && setError("Failed to load tickets"))
-      .finally(() => isMounted && setLoading(false));
+      .catch((err) => {
+        if (err.name === "AbortError" || err.name === "CanceledError") return;
+        if (isMounted) setError("Failed to load tickets");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 
