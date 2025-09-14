@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, createRef } from "react";
 import { motion } from "framer-motion";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -33,9 +33,10 @@ export default function Home() {
   ], [planRole]);
 
   const sectionRefs = useRef([]);
-  useEffect(() => {
-    sectionRefs.current = sectionRefs.current.slice(0, sections.length);
-  }, [sections.length]);
+  sectionRefs.current = useMemo(
+    () => sections.map(() => createRef()),
+    [sections.length]
+  );
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data
