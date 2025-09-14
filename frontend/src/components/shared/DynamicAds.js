@@ -8,13 +8,14 @@ const DynamicAds = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     let isMounted = true;
     const loadAds = async () => {
       try {
-        const { data } = await fetchAds();
+        const { data } = await fetchAds({}, { signal: controller.signal });
         if (isMounted) setAds(data);
       } catch (err) {
-        console.error("Failed to load ads", err);
+        if (err.name === "AbortError" || err.name === "CanceledError") return;
         if (isMounted) setError("Failed to load ads");
       } finally {
         if (isMounted) setLoading(false);
@@ -23,6 +24,7 @@ const DynamicAds = () => {
     loadAds();
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 
