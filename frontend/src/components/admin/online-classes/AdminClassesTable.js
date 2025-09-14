@@ -72,17 +72,30 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
   );
 
   const exportCSV = () => {
-    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
-    const rows = classList.map(cls => [
+    const headers = [
+      "Title",
+      "Instructor",
+      "Start Date",
+      "End Date",
+      "Category",
+      "Publish Status",
+    ];
+    const rows = classList.map((cls) => [
       cls.title,
       cls.instructor,
       cls.start_date,
       cls.end_date,
       cls.category,
-      cls.publishStatus
+      cls.publishStatus,
     ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const escapeCell = (cell) =>
+      `"${String(cell ?? "").replace(/"/g, '""')}"`;
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCell).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
