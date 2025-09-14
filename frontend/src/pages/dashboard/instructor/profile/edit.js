@@ -44,14 +44,12 @@ import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
 import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-export const instructorProfileSchema = z.object({
+export const instructorProfileSchema = (country) => z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, country), {
       message: "invalid_phone_number",
     }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -208,7 +206,7 @@ export default function InstructorProfileEdit() {
       const sanitizedLinks = Object.fromEntries(
         Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
       );
-      instructorProfileSchema.parse({
+      instructorProfileSchema(user?.country).parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
