@@ -26,6 +26,15 @@ import { toast } from "react-toastify";
 // Initial category options include the special "Trending" filter
 const initialCategories = ["All", "Trending"];
 
+const computeStatus = (start, end) => {
+  const now = new Date();
+  const s = start ? new Date(start) : null;
+  const e = end ? new Date(end) : null;
+  if (s && now < s) return "Upcoming";
+  if (s && (!e || now <= e) && now >= s) return "Ongoing";
+  if (e && now > e) return "Completed";
+  return "Upcoming";
+};
 const OnlineClasses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
