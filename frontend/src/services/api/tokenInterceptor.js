@@ -56,17 +56,18 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const authStore = useAuthStore.getState();
 
-    if (error.code === "ERR_NETWORK" || !error.response) {
-      logger.error("Network error:", error);
-      if (Date.now() - lastNetworkToast > 5000) {
-        const extraInfo = error.message || originalRequest?.url;
-        toast.error(
-          `Network error: check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.${
-            extraInfo ? ` (${extraInfo})` : ""
-          }`
-        );
-        lastNetworkToast = Date.now();
-      }
+    if (
+      (error.code === "ERR_NETWORK" || !error.response) &&
+      Date.now() - lastNetworkToast > 5000
+    ) {
+      const failedUrl = error.config?.url;
+      const errMsg = error.message;
+      const logMessage = `Network error on ${failedUrl || "unknown endpoint"}: ${errMsg}`;
+      logger.error(logMessage);
+      toast.error(
+        `${logMessage}. Check NEXT_PUBLIC_API_BASE_URL and backend CORS settings.`
+      );
+      lastNetworkToast = Date.now();
     }
 
     const isAuthRoute = [
