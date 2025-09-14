@@ -1,9 +1,9 @@
-let allowedPlatforms;
-try {
-  allowedPlatforms = require("../../../shared/socialPlatforms.json");
-} catch {
-  allowedPlatforms = require("../../../../../shared/socialPlatforms.json");
-}
+const path = require("path");
+
+const allowedPlatforms = require(path.join(
+  __dirname,
+  "../../../../shared/socialPlatforms.json"
+));
 
 module.exports = { allowedPlatforms };
 
