@@ -97,21 +97,25 @@ referenced in `nginx/conf.d/ssl.conf`.
     `http://localhost:3001` you may see `Network Error` or CORS errors when
     logging in from the deployed site.
 
- 3. **Frontend** – for Docker Compose production builds, set variables in
-   `frontend/.env.production`:
+3. **Frontend** – for Docker Compose production builds, set variables in
+  `frontend/.env.production`:
 
  ```bash
- # Point the frontend to your backend including the /api prefix
+ APP_DOMAIN=yourdomain.com
  NEXT_PUBLIC_API_BASE_URL=https://${APP_DOMAIN}/api
+ NEXT_PUBLIC_PGADMIN_URL=https://${APP_DOMAIN}/pgadmin
  ```
 
-   The root `.env` is intended for local development and defaults
-   `NEXT_PUBLIC_API_BASE_URL` to `http://localhost:5002/api` for internal
-   container communication. Remove or override this file in production so the
-   frontend uses your public HTTPS domain.
+  Commit only placeholder values. Provide real production settings via
+  environment variables or by mounting a `.env.production` file at deploy time
+  so secrets stay out of version control. The root `.env` is intended for local
+  development and defaults `NEXT_PUBLIC_API_BASE_URL` to
+  `http://localhost:5002/api` for internal container communication. Remove or
+  override this file in production so the frontend uses your public HTTPS
+  domain.
 
-  Without this variable the frontend defaults to `/api` which may point to the
-  wrong server when deployed.
+ Without these variables the frontend defaults to `/api` which may point to the
+ wrong server when deployed.
 
 ### Production example: eduskillbridge.net
 
@@ -124,6 +128,7 @@ values managed outside of version control. Configure the public URLs:
 APP_DOMAIN=eduskillbridge.net
 FRONTEND_URL=https://eduskillbridge.net
 NEXT_PUBLIC_API_BASE_URL=https://eduskillbridge.net/api
+NEXT_PUBLIC_PGADMIN_URL=https://eduskillbridge.net/pgadmin
 NEXT_PUBLIC_SOCKET_URL=https://eduskillbridge.net
 ```
 
