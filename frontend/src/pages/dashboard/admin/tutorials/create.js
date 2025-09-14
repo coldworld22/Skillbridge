@@ -14,6 +14,11 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
+import {
+  loadDraft,
+  loadCategories,
+  buildTutorialFormData,
+} from "@/utils/tutorialDraft";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -54,6 +59,42 @@ function CreateTutorialPage() {
       toast.error(msg);
     }
   };
+
+  const [step, setStep] = useState(1);
+  const router = useRouter();
+  const defaultTutorial = {
+    title: "",
+    shortDescription: "",
+    category: "",
+    categoryName: "",
+    level: "",
+    lessonCount: 1,
+    tags: [],
+    chapters: [],
+    thumbnail: null,
+    preview: null,
+    language: "",
+    price: "",
+    isFree: false,
+  };
+  const [tutorialData, setTutorialData] = useState(() =>
+    loadDraft("tutorialDraft", defaultTutorial)
+  );
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    loadCategories(fetchAllCategories)
+      .then((result) => setCategories(result || []))
+      .catch((err) => {
+        console.error("Failed to load categories", err);
+        toast.error(t("load_categories_failed"));
+      });
+  }, [t]);
+
+  const nextStep = () => setStep((prev) => prev + 1);
+  const prevStep = () => setStep((prev) => prev - 1);
+
 
   const submitTutorial = async (status) => {
     if (tutorialData.chapters.some((ch) => !ch.videoUrl)) {
