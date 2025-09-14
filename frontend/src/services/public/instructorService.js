@@ -15,6 +15,11 @@ export const fetchInstructorAvailability = async (id) => {
   return data?.data ?? [];
 };
 
+export const fetchInstructorStats = async (id) => {
+  const { data } = await api.get(`/instructors/${id}/stats`);
+  return data?.data || data;
+};
+
 export const sendEmailToInstructor = async (id, { subject, message }) => {
   const { data } = await api.post(`/instructors/${id}/email`, { subject, message });
   return data?.data || data;

@@ -36,8 +36,8 @@ const updateInstructorProfileSchema = z.object({
   social_links: z
     .array(
       z.object({
-        platform: z.string().min(2),
-        url: z.string(),
+        platform: z.string().trim().min(2),
+        url: z.string().trim().url("Invalid URL"),
       })
     )
     .optional()

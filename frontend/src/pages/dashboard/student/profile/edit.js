@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -275,13 +275,19 @@ const handleAvatarSelect = (e) => {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach((error) => {
-        const key = error.path.join(".");
-        errs[key] = t(error.message);
-      });
-      setErrors(errs);
-      if (err.errors?.length) {
-        toast.error(t(err.errors[0].message));
+      if (err instanceof ZodError) {
+        err.errors.forEach((error) => {
+          const key = error.path.join(".");
+          errs[key] = t(error.message);
+        });
+        setErrors(errs);
+        if (err.errors?.length) {
+          toast.error(t(err.errors[0].message));
+        } else {
+          toast.error(t('fix_errors'));
+        }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }

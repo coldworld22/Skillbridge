@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
 import { FaSpinner, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 
 function TutorialsTable({
@@ -121,12 +122,13 @@ function TutorialsTable({
                     <Button
                       onClick={() => togglePublishStatus(tutorial.id)}
                       className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                        tutorial.status === "Published"
+                        tutorial.status === TUTORIAL_STATUS.PUBLISHED
                           ? "bg-green-100 text-green-800 hover:bg-green-200"
                           : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                       }`}
                     >
-                      {tutorial.status}
+                      {tutorial.status.charAt(0).toUpperCase() +
+                        tutorial.status.slice(1)}
                     </Button>
                   </td>
                   <td className="py-3 px-4">
