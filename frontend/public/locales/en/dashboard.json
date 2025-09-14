@@ -2013,5 +2013,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "\uD83C\uDF93 My Enrolled Classes",
+    "search_placeholder": "Search classes...",
+    "sort_by_date": "Sort by Date",
+    "status_all": "All",
+    "status_live": "Live",
+    "status_upcoming": "Upcoming",
+    "status_completed": "Completed",
+    "no_classes": "No classes found under this filter.",
+    "instructor": "Instructor:",
+    "progress_completed": "{{progress}}% completed",
+    "notify_me": "Notify Me",
+    "view_certificate": "View Certificate",
+    "view_assignments": "View Assignments",
+    "join_class": "Join Class",
+    "starts_soon": "Starts Soon",
+    "completed": "Completed",
+    "class_ended": "Class Ended",
+    "load_more": "Load More"
   }
 }

@@ -1989,5 +1989,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 Mis clases inscritas",
+    "search_placeholder": "Buscar clases...",
+    "sort_by_date": "Ordenar por fecha",
+    "status_all": "Todas",
+    "status_live": "En vivo",
+    "status_upcoming": "Próximas",
+    "status_completed": "Completadas",
+    "no_classes": "No se encontraron clases con este filtro.",
+    "instructor": "Instructor:",
+    "progress_completed": "{{progress}}% completado",
+    "notify_me": "Notifícame",
+    "view_certificate": "Ver certificado",
+    "view_assignments": "Ver tareas",
+    "join_class": "Unirse a la clase",
+    "starts_soon": "Empieza pronto",
+    "completed": "Completado",
+    "class_ended": "Clase finalizada",
+    "load_more": "Cargar más"
   }
 }
