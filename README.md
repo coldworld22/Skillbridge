@@ -86,7 +86,9 @@ npm --prefix frontend install
      ```bash
      cp backend/.env.example backend/.env
      # edit backend/.env and set your secrets
-     # FRONTEND_URL defaults to http://localhost:3000
+     # FRONTEND_URL must match the exact origin (scheme + host + port) of your
+     # frontend to avoid CORS errors. Separate multiple origins with commas,
+     # e.g. http://localhost:3000,https://example.com. Defaults to http://localhost:3000
      # REDIS_URL should point to your Redis instance for session persistence
      # set it to your frontend's domain if different and omit any trailing slash
      # When using docker-compose make sure the value does

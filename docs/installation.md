@@ -30,10 +30,17 @@ For deployments, Docker Compose additionally reads `backend/.env.production`.
 Copy `backend/.env.production.example` to `backend/.env.production` and fill in
 production database credentials and JWT secrets.
 
-Edit `backend/.env` and provide your secrets. `FRONTEND_URL` should match the
-domain where the frontend will run (defaults to `http://localhost:3000`). Leave
-`NODE_ENV` unset so cookies work over HTTP. If you need cross-subdomain cookies
-without HTTPS, also set:
+Edit `backend/.env` and provide your secrets. `FRONTEND_URL` must match the
+exact origin (scheme, host, and port) where the frontend will run to avoid
+CORS errors. Separate multiple origins with commas, for example:
+
+```bash
+FRONTEND_URL=http://localhost:3000,https://example.com
+```
+
+The variable defaults to `http://localhost:3000`. Leave `NODE_ENV` unset so
+cookies work over HTTP. If you need cross-subdomain cookies without HTTPS,
+also set:
 
 ```bash
 COOKIE_SECURE=false
