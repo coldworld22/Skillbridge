@@ -7,6 +7,7 @@ import Filters from "@/components/dashboard/admin/tutorials/Filters";
 import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTable";
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
+import Stats from "@/components/dashboard/admin/tutorials/Stats";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -19,8 +20,6 @@ import {
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
-  bulkApproveTutorials,
-  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
@@ -356,35 +355,12 @@ function AdminTutorialsPage() {
         />
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
-            <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
-            <p className="text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
-            <p className="text-gray-600">Published</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Published").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
-            <p className="text-gray-600">Drafts</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Draft").length}
-            </p>
-          </div>
-        </div>
+        <Stats tutorials={tutorials} />
 
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={tutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -400,16 +376,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-
-
-          {filteredTutorials.length > 0 && !loading && (
+          {meta.total > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
-              endIndex={Math.min(endIndex, filteredTutorials.length)}
-              totalResults={filteredTutorials.length}
+              endIndex={endIndex}
+              totalResults={meta.total || 0}
             />
           )}
         </div>

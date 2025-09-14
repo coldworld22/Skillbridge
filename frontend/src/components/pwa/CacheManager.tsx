@@ -26,10 +26,16 @@ export default function CacheManager({
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return () => {};
+    let isMounted = true;
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.ready.then(() => setReady(true));
+      navigator.serviceWorker.ready.then(() => {
+        if (isMounted) setReady(true);
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const warmCache = async () => {
