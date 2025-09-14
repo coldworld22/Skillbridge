@@ -5,3 +5,4 @@ const allowedPlatforms = require(
 );
 
 module.exports = { allowedPlatforms };
+
