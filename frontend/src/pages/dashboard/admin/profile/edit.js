@@ -7,7 +7,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
@@ -336,7 +336,7 @@ function ProfileEditTemplate() {
       setErrors({});
       return true;
     } catch (err) {
-      if (err instanceof z.ZodError) {
+      if (err instanceof ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
           const key = error.path.join(".");
@@ -345,7 +345,11 @@ function ProfileEditTemplate() {
         setErrors(newErrors);
         if (err.errors?.length) {
           toast.error(t(err.errors[0].message));
+        } else {
+          toast.error(t('fix_errors'));
         }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }
