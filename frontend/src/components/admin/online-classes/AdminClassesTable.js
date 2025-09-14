@@ -30,6 +30,25 @@ import {
   FaList
 } from "react-icons/fa";
 
+export function compareValues(a, b, key) {
+  const valA = a[key];
+  const valB = b[key];
+
+  if (valA === valB) return 0;
+
+  const numA = typeof valA === 'number' ? valA : Date.parse(valA);
+  const numB = typeof valB === 'number' ? valB : Date.parse(valB);
+
+  if (!isNaN(numA) && !isNaN(numB)) {
+    return numA - numB;
+  }
+
+  if (typeof valA === 'string' && typeof valB === 'string') {
+    return valA.localeCompare(valB);
+  }
+
+  return 0;
+}
 
 export default function AdminClassesTable({ classes = [], loading = false }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,7 +82,7 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     .filter((cls) =>
       filterApproval === "All" ? true : cls.approvalStatus === filterApproval
     )
-    .sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
+    .sort((a, b) => compareValues(a, b, sortKey));
 
   const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
   const paginatedClasses = filteredClasses.slice(
@@ -71,17 +90,30 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     currentPage * itemsPerPage
   );
 
+  const formatCSVRow = (row) =>
+    row
+      .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+      .join(",");
+
   const exportCSV = () => {
-    const headers = ["Title", "Instructor", "Start Date", "End Date", "Category", "Publish Status"];
-    const rows = classList.map(cls => [
+    const headers = [
+      "Title",
+      "Instructor",
+      "Start Date",
+      "End Date",
+      "Category",
+      "Publish Status",
+    ];
+    const rows = classList.map((cls) => [
       cls.title,
       cls.instructor,
       cls.start_date,
       cls.end_date,
       cls.category,
-      cls.publishStatus
+      cls.publishStatus,
     ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const csvRows = [headers, ...rows].map(formatCSVRow);
+    const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
