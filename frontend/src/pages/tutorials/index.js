@@ -148,7 +148,11 @@ const TutorialsSection = () => {
   }, []);
 
   useEffect(() => {
-    fetchAdBanners({ limit: 10 }).then((res) => setAds(res.data)).catch(() => {});
+    fetchAdBanners({ limit: 10 })
+      .then((res) => setAds(res.data))
+      .catch((err) => {
+        console.error("Failed to load ads", err);
+      });
   }, []);
 
   const handleFilterChange = (f) => {

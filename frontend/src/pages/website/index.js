@@ -1,45 +1,42 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo, createRef } from "react";
 import { motion } from "framer-motion";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
-import Hero from "@/components/website/sections/Hero";
-import OnlineClasses from "@/components/website/sections/OnlineClasses";
-import StudyCategories from "@/components/website/sections/StudyCategories";
-import CommunityEngagement from "@/components/website/sections/CommunityEngagement";
-import LearningMarketplace from "@/components/website/sections/LearningMarketplace";
-import StudyGroups from "@/components/website/sections/StudyGroups";
-import InstructorBooking from "@/components/website/sections/InstructorBooking";
-import SubscriptionPlans from "@/components/website/sections/SubscriptionPlans";
-import TutorialsSection from "@/components/website/sections/TutorialsSection";
-import BooksSection from "@/components/website/sections/BooksSection";
-import Footer from "@/components/website/sections/Footer";
-import AITutoring from "@/components/website/sections/AITutoring";
+import dynamic from 'next/dynamic';
 import IncompleteAlertModal from "@/components/auth/IncompleteAlertModal";
 import useAuthStore from "@/store/auth/authStore";
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../next-i18next.config.js';
 
 
+const SectionLoader = () => (
+  <div className="py-10 text-center text-gray-500">Loading...</div>
+);
+
 export default function Home() {
   const { user } = useAuthStore();
   const planRole = user?.role === "instructor" ? "instructor" : "student";
 
-  const sections = [
-    { component: Hero },
-    { component: OnlineClasses },
-    { component: TutorialsSection },
-    { component: BooksSection },
-    { component: LearningMarketplace },
-    { component: StudyCategories },
-    { component: StudyGroups },
-    { component: InstructorBooking },
-    { component: SubscriptionPlans, props: { role: planRole } },
-    { component: AITutoring },
-    { component: CommunityEngagement },
-    { component: Footer }, // ✅ Removed last section before the footer
-  ];
+  const sections = useMemo(() => [
+    { component: dynamic(() => import('@/components/website/sections/Hero'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/OnlineClasses'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/TutorialsSection'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/BooksSection'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/LearningMarketplace'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/StudyCategories'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/StudyGroups'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/InstructorBooking'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/SubscriptionPlans'), { loading: SectionLoader }), props: { role: planRole } },
+    { component: dynamic(() => import('@/components/website/sections/AITutoring'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/CommunityEngagement'), { loading: SectionLoader }) },
+    { component: dynamic(() => import('@/components/website/sections/Footer'), { loading: SectionLoader }) },
+  ], [planRole]);
 
-  const sectionRefs = useRef(sections.map(() => useRef(null)));
+  const sectionRefs = useRef([]);
+  sectionRefs.current = useMemo(
+    () => sections.map(() => createRef()),
+    [sections.length]
+  );
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data
@@ -67,8 +64,9 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    if (sectionRefs.current[index]?.current) {
-      sectionRefs.current[index].current.scrollIntoView({ behavior: "smooth" });
+    const section = sectionRefs.current[index];
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
       setCurrentSection(index);
     }
   };
@@ -79,7 +77,12 @@ export default function Home() {
       <IncompleteAlertModal />
 
       {sections.map(({ component: Component, props }, index) => (
-        <section key={index} ref={sectionRefs.current[index]}>
+        <section
+          key={index}
+          ref={(el) => {
+            sectionRefs.current[index] = el;
+          }}
+        >
           <Component {...props} />
         </section>
       ))}

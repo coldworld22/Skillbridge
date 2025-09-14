@@ -76,7 +76,8 @@ function InstructorDashboard() {
     loadStats();
     async function loadEvents() {
       try {
-        const data = await fetchInstructorScheduleEvents();
+        if (!user?.id) return;
+        const data = await fetchInstructorScheduleEvents(user.id);
         const parsed = data.map((e) => ({
           ...e,
           start: new Date(e.start),

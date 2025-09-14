@@ -14,10 +14,7 @@ router.post(
   "/admin",
   verifyToken,
   isInstructorOrAdmin,
-  upload.fields([
-    { name: "thumbnail", maxCount: 1 },
-    { name: "preview", maxCount: 1 },
-  ]),
+  upload,
   validate(tutorialValidator.create),
   controller.createTutorial
 );
@@ -36,10 +33,7 @@ router.put(
   "/admin/:id",
   verifyToken,
   isInstructorOrAdmin,
-  upload.fields([
-    { name: "thumbnail", maxCount: 1 },
-    { name: "preview", maxCount: 1 },
-  ]),
+  upload,
   validate(tutorialValidator.update),
   controller.updateTutorial
 );
