@@ -205,3 +205,19 @@ export const fetchTutorialProgress = async (tutorialId) => {
     throw err;
   }
 };
+
+// Retrieve enrollment status and progress for multiple tutorials
+export const fetchTutorialProgressBatch = async (tutorialIds) => {
+  try {
+    const { data } = await api.post(
+      '/users/tutorials/enroll/status/batch',
+      { tutorialIds },
+    );
+    return data?.data ?? data ?? null;
+  } catch (err) {
+    if (err.response && [404, 500, 501].includes(err.response.status)) {
+      return null;
+    }
+    throw err;
+  }
+};
