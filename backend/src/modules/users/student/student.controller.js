@@ -88,29 +88,16 @@ exports.updateProfile = async (req, res) => {
     : [];
 
   const userData = { full_name, phone, gender, date_of_birth };
-  const studentData = { education_level, topics, learning_goals };
 
   try {
-    const result = await updateStudentProfile(
+    await updateStudentProfile(
       userId,
       userData,
-      studentData,
+      { education_level, topics, learning_goals },
       sanitizedLinks
     );
-
-    const profile = await getStudentProfile(userId);
-    res.json({ ...profile, ...result });
+    res.json(await getStudentProfile(userId));
   } catch (err) {
-    // Handle unique constraint violations for email and phone
-    if (err.code === "23505") {
-      if (err.constraint === "users_email_unique") {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      if (err.constraint === "users_phone_unique") {
-        return res.status(400).json({ message: "Phone number already exists" });
-      }
-    }
-
     logger.error("Failed to update student profile", err);
     res.status(500).json({ message: "Failed to update profile" });
   }
