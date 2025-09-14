@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import { fetchAllCategories } from "@/services/instructor/categoryService";
-import { createTutorial } from "@/services/admin/tutorialService";
+import { createTutorial } from "@/services/instructor/tutorialService";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import BasicInfoStep from "@/components/tutorials/create/BasicInfoStep";
 import CurriculumStep from "@/components/tutorials/create/CurriculumStep";

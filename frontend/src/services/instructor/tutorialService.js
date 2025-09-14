@@ -40,6 +40,12 @@ export const fetchInstructorTutorials = async (config = {}) => {
   }));
 };
 
+/**
+ * Create a new tutorial for the current instructor.
+ *
+ * @param {FormData} formData - Tutorial payload following backend validator
+ * @returns {Promise<object>} Newly created tutorial data
+ */
 export const createTutorial = async (formData) => {
   const { data } = await api.post("/users/tutorials/admin", formData, {
     headers: { "Content-Type": "multipart/form-data" },
