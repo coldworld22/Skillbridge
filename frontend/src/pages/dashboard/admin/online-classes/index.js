@@ -16,12 +16,14 @@ function AdminOnlineClassesPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
       try {
-        const list = await fetchAdminClasses();
+        const list = await fetchAdminClasses({ signal: controller.signal });
         setClasses(list);
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to load classes", err);
         setError(t('classes_load_failed'));
       } finally {
@@ -29,6 +31,7 @@ function AdminOnlineClassesPage() {
       }
     };
     load();
+    return () => controller.abort();
   }, []);
 
   return (

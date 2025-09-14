@@ -71,7 +71,9 @@ const DashboardPage = () => {
               <h3 className="text-xl font-semibold text-yellow-400">
                 {course.title}
               </h3>
-              <p className="text-gray-300">Progress: {course.progress}%</p>
+              <p className="text-gray-300">
+                {t('dashboardPage.progress')}: {course.progress}%
+              </p>
               <div className="w-full bg-gray-700 rounded-lg overflow-hidden mt-2">
                 <motion.div
                   className="bg-yellow-500 text-black text-center py-1"
@@ -83,7 +85,7 @@ const DashboardPage = () => {
                   whileHover={{ scale: 1.05 }}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
                 >
-                  Continue Learning
+                  {t('dashboardPage.continue_learning')}
                 </motion.button>
               </Link>
             </motion.div>
