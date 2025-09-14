@@ -82,14 +82,19 @@ export const formatTutorial = (tut) => {
   };
 };
 
-export const fetchFeaturedTutorials = async () => {
-  const res = await api.get("/users/tutorials/featured");
+export const fetchFeaturedTutorials = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+  const res = await api.get("/users/tutorials/featured", cfg);
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
 
-export const fetchPublishedTutorials = async (config = {}) => {
-  const res = await api.get("/users/tutorials", config);
+export const fetchPublishedTutorials = async ({ page, limit, ...config } = {}) => {
+  const params = { ...(config?.params || {}) };
+  if (page != null) params.page = page;
+  if (limit != null) params.limit = limit;
+
+  const res = await api.get("/users/tutorials", { ...config, params });
   const list = extractData(res);
   return Array.isArray(list) ? list.map(formatTutorial) : list;
 };
@@ -105,9 +110,10 @@ export const enrollInTutorial = async (tutorialId) => {
   return data;
 };
 
-export const getMyEnrolledTutorials = async () => {
+export const getMyEnrolledTutorials = async (config = {}) => {
   try {
-    const res = await api.get('/users/tutorials/enroll/my');
+    const cfg = Object.keys(config).length ? config : undefined;
+    const res = await api.get('/users/tutorials/enroll/my', cfg);
     const list = extractData(res);
     return list.map(formatTutorial);
   } catch (err) {
@@ -144,8 +150,9 @@ export const removeTutorialFromWishlist = async (id) => {
   return data;
 };
 
-export const getMyTutorialWishlist = async () => {
-  const res = await api.get('/users/tutorials/wishlist/my');
+export const getMyTutorialWishlist = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+  const res = await api.get('/users/tutorials/wishlist/my', cfg);
   return extractData(res);
 };
 
@@ -159,8 +166,9 @@ export const removeTutorialFromFavorites = async (id) => {
   return data;
 };
 
-export const getMyTutorialFavorites = async () => {
-  const res = await api.get('/users/tutorials/favorites/my');
+export const getMyTutorialFavorites = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+  const res = await api.get('/users/tutorials/favorites/my', cfg);
   return extractData(res);
 };
 
@@ -199,6 +207,22 @@ export const fetchTutorialProgress = async (tutorialId) => {
     return data?.data ?? data ?? null;
   } catch (err) {
     // Ignore if API not supported
+    if (err.response && [404, 500, 501].includes(err.response.status)) {
+      return null;
+    }
+    throw err;
+  }
+};
+
+// Retrieve enrollment status and progress for multiple tutorials
+export const fetchTutorialProgressBatch = async (tutorialIds) => {
+  try {
+    const { data } = await api.post(
+      '/users/tutorials/enroll/status/batch',
+      { tutorialIds },
+    );
+    return data?.data ?? data ?? null;
+  } catch (err) {
     if (err.response && [404, 500, 501].includes(err.response.status)) {
       return null;
     }

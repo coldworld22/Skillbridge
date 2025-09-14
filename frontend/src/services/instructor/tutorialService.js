@@ -1,5 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
+import { TUTORIAL_STATUS } from "../../../../shared/tutorialStatus";
 
 const formatBase = (tut) => ({
   ...tut,
@@ -16,8 +17,8 @@ const formatBase = (tut) => ({
 });
 
 const mapStatus = (tut) =>
-  tut.status === "draft"
-    ? "Draft"
+  tut.status === TUTORIAL_STATUS.DRAFT
+    ? TUTORIAL_STATUS.DRAFT
     : tut.moderation_status === "Approved"
     ? "Approved"
     : tut.moderation_status === "Rejected"
@@ -40,6 +41,12 @@ export const fetchInstructorTutorials = async (config = {}) => {
   }));
 };
 
+/**
+ * Create a new tutorial for the current instructor.
+ *
+ * @param {FormData} formData - Tutorial payload following backend validator
+ * @returns {Promise<object>} Newly created tutorial data
+ */
 export const createTutorial = async (formData) => {
   const { data } = await api.post("/users/tutorials/admin", formData, {
     headers: { "Content-Type": "multipart/form-data" },
