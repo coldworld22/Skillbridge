@@ -1,9 +1,10 @@
 # Build stage
 FROM node:18 AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci && npm cache clean --force
-COPY . .
+COPY frontend/ ./
+COPY shared /shared
 
 # Default build-time environment variables.
 ARG NEXT_PUBLIC_API_BASE_URL="http://localhost:5002/api"
@@ -20,9 +21,10 @@ RUN set -a && [ -f .env.production ] && . .env.production; npm run build
 FROM node:18-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache curl
-COPY package.json package-lock.json next.config.mjs next-i18next.config.js ./
+COPY frontend/package.json frontend/package-lock.json next.config.mjs next-i18next.config.js ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /shared /shared
 EXPOSE 3000
 CMD ["npm", "start"]
