@@ -1968,6 +1968,21 @@
       "pending_payment": "भुगतान लंबित"
     }
   },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
+  },
   "studentSchedulePage": {
     "title": "मेरी बुक की गई कक्षाएँ",
     "failed_live_session": "लाइव सत्र में शामिल होने में विफल",
