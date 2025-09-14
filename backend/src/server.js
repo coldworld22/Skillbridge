@@ -92,10 +92,20 @@ const APP_DOMAIN = process.env.APP_DOMAIN;
 const defaultOrigins = APP_DOMAIN
   ? [`https://${APP_DOMAIN}`, `https://www.${APP_DOMAIN}`]
   : [];
+const EXTRA_CORS_ORIGINS = process.env.EXTRA_CORS_ORIGINS
+  ? process.env.EXTRA_CORS_ORIGINS.split(",").filter(Boolean).map((url) => {
+      try {
+        return new URL(url.trim()).origin;
+      } catch {
+        throw new Error(`Invalid EXTRA_CORS_ORIGINS: ${url}`);
+      }
+    })
+  : [];
 const ALLOWED_ORIGINS = Array.from(
   new Set([
     ...defaultOrigins,
     ...FRONTEND_ORIGINS,
+    ...EXTRA_CORS_ORIGINS,
   ])
 );
 // 🌐 CORS must run before body parsing so even 4xx responses include the header
