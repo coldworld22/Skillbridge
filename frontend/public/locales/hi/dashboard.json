@@ -138,6 +138,13 @@
   "user_info_unavailable": "उपयोगकर्ता जानकारी अनुपलब्ध है",
   "step_of_total": "{{total}} का चरण {{current}}",
   "preview_alt": "पूर्व दर्शन",
+  "dashboardPage": {
+    "progress": "प्रगति",
+    "continue_learning": "सीखना जारी रखें",
+    "ai_recommendations_title": "🤖 एआई आधारित सिफारिशें",
+    "category": "श्रेणी",
+    "view_course": "कोर्स देखें"
+  },
   "categoriesPage": {
     "title": "श्रेणियां",
     "new_category": "नई श्रेणी",
@@ -1345,6 +1352,40 @@
     "purchased_on": "{{date}} पर खरीदा गया",
     "no_books": "आपकी लाइब्रेरी में कोई किताबें नहीं।"
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "व्यवस्थापक: सभी ऑफ़र प्रबंधित करें",
     "all_roles": "सभी भूमिकाएँ",
@@ -1927,6 +1968,21 @@
       "pending_payment": "भुगतान लंबित"
     }
   },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
+  },
   "studentSchedulePage": {
     "title": "मेरी बुक की गई कक्षाएँ",
     "failed_live_session": "लाइव सत्र में शामिल होने में विफल",
@@ -1989,5 +2045,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 मेरी नामांकित कक्षाएँ",
+    "search_placeholder": "कक्षाएँ खोजें...",
+    "sort_by_date": "तारीख के अनुसार क्रमबद्ध करें",
+    "status_all": "सभी",
+    "status_live": "लाइव",
+    "status_upcoming": "आगामी",
+    "status_completed": "पूर्ण",
+    "no_classes": "इस फ़िल्टर के अंतर्गत कोई कक्षा नहीं मिली।",
+    "instructor": "प्रशिक्षक:",
+    "progress_completed": "{{progress}}% पूरा हुआ",
+    "notify_me": "मुझे सूचित करें",
+    "view_certificate": "प्रमाणपत्र देखें",
+    "view_assignments": "असाइनमेंट देखें",
+    "join_class": "कक्षा में शामिल हों",
+    "starts_soon": "जल्द शुरू होगा",
+    "completed": "पूर्ण",
+    "class_ended": "कक्षा समाप्त",
+    "load_more": "और लोड करें"
   }
 }

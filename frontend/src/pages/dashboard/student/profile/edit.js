@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
@@ -23,17 +24,15 @@ import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
+  FaGlobe,
   FaCheck
 } from "react-icons/fa";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
-
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+  phone: z.string().refine((val) => isValidPhoneNumber(val, getUserCountry()), {
     message: "invalid_phone_number",
   }),
   gender: z.enum(['male', 'female']),
@@ -58,7 +57,7 @@ export default function StudentProfileEdit() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [, setIsUploadingIdentity] = useState(false);
+  const [isUploadingIdentity, setIsUploadingIdentity] = useState(false);
   const [expanded, setExpanded] = useState({
     avatar: true,
     identity: true,
@@ -187,9 +186,9 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
-    if (!tempAvatar || !croppedAreaPixels) return;
     setIsUploadingAvatar(true);
     try {
+      if (!tempAvatar || !croppedAreaPixels) return;
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadStudentAvatar(user.id, file);
@@ -202,13 +201,15 @@ const handleAvatarSelect = (e) => {
       }));
       toast.success("Avatar uploaded successfully!");
       setShowCropper(false);
-      URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
       console.error('Avatar upload error:', error.response);
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
+      if (tempAvatar) {
+        URL.revokeObjectURL(tempAvatar);
+      }
       setIsUploadingAvatar(false);
     }
   };
@@ -275,13 +276,19 @@ const handleAvatarSelect = (e) => {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach((error) => {
-        const key = error.path.join(".");
-        errs[key] = t(error.message);
-      });
-      setErrors(errs);
-      if (err.errors?.length) {
-        toast.error(t(err.errors[0].message));
+      if (err instanceof ZodError) {
+        err.errors.forEach((error) => {
+          const key = error.path.join(".");
+          errs[key] = t(error.message);
+        });
+        setErrors(errs);
+        if (err.errors?.length) {
+          toast.error(t(err.errors[0].message));
+        } else {
+          toast.error(t('fix_errors'));
+        }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }
@@ -498,15 +505,20 @@ const handleAvatarSelect = (e) => {
                         <p className="text-sm font-medium text-gray-700">{t('upload_id')}</p>
                         <p className="text-xs text-gray-500">{t('pdf_hint')}</p>
                         <label className="cursor-pointer inline-block mt-2">
-                          <div className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
-                            <FaUpload className="w-4 h-4" />
-                            <span>{t('select_file')}</span>
+                          <div className={`px-4 py-2 bg-purple-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2 ${isUploadingIdentity ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'}`}>
+                            {isUploadingIdentity ? (
+                              <FaSpinner className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <FaUpload className="w-4 h-4" />
+                            )}
+                            <span>{isUploadingIdentity ? t('uploading') : t('select_file')}</span>
                           </div>
                           <input
                             type="file"
                             accept="application/pdf"
                             onChange={handleIdentityUpload}
                             className="hidden"
+                            disabled={isUploadingIdentity}
                           />
                         </label>
                       </div>

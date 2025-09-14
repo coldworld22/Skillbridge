@@ -5,13 +5,11 @@ import useAuthStore from "@/store/auth/authStore";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InstructorLayout from "@/components/layouts/InstructorLayout";
-import { FaUserCheck, FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
+import { FaComments, FaStar, FaChalkboardTeacher, FaVideo, FaCalendarAlt } from "react-icons/fa";
 import { useTranslation } from "next-i18next";
 import { IoMdTime } from "react-icons/io";
 import BookingRequestModal from "@/components/student/instructors/BookingRequestModal";
-import { fetchPublicInstructorById } from "@/services/public/instructorService";
-import { fetchPublishedClasses } from "@/services/classService";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import { fetchPublicInstructorById, fetchInstructorStats } from "@/services/public/instructorService";
 import CustomVideoPlayer from "@/components/shared/CustomVideoPlayer";
 import { safeEncodeURI } from "@/utils/url";
 
@@ -218,19 +216,12 @@ export async function getServerSideProps({ params }) {
       avatar_url: data?.avatar_url ? `${API_BASE_URL}${data.avatar_url}` : "/images/profile/user.png",
       demo_video_url: data?.demo_video_url ? `${API_BASE_URL}${data.demo_video_url}` : null,
     };
-
-    const classRes = await fetchPublishedClasses();
-    const classList = classRes?.data ?? classRes ?? [];
-    const classCount = classList.filter((c) => String(c.instructor_id) === String(id)).length;
-
-    const tutRes = await fetchPublishedTutorials();
-    const tutList = tutRes?.data ?? tutRes ?? [];
-    const tutCount = tutList.filter((t) => String(t.creator_id) === String(id)).length;
+    const stats = await fetchInstructorStats(id);
 
     return {
       props: {
         initialInstructor: formatted,
-        initialStats: { classes: classCount, tutorials: tutCount },
+        initialStats: stats || { classes: 0, tutorials: 0 },
       },
     };
   } catch (err) {

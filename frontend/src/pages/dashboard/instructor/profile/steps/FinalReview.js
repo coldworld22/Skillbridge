@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaCheckCircle, FaUpload, FaExclamationTriangle, FaPlayCircle, FaTrash } from "react-icons/fa";
 import logger from "@/utils/logger";
@@ -8,6 +8,15 @@ const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
   const [demoVideo, setDemoVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const uploadIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (uploadIntervalRef.current) {
+        clearInterval(uploadIntervalRef.current);
+      }
+    };
+  }, []);
 
   // ✅ Handle Demo Video Upload with Progress Simulation
   const handleVideoUpload = (e) => {
@@ -29,12 +38,19 @@ const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
     setDemoVideo(file.name);
     setUploadProgress(0);
 
+    if (uploadIntervalRef.current) {
+      clearInterval(uploadIntervalRef.current);
+    }
+
     // 🔹 Simulating Upload Progress
     let progress = 0;
-    const interval = setInterval(() => {
+    uploadIntervalRef.current = setInterval(() => {
       progress += 10;
       setUploadProgress(progress);
-      if (progress >= 100) clearInterval(interval);
+      if (progress >= 100) {
+        clearInterval(uploadIntervalRef.current);
+        uploadIntervalRef.current = null;
+      }
     }, 300);
   };
 
@@ -42,6 +58,10 @@ const FinalReview = ({ formData = {}, prevStep = () => {} }) => {
   const removeVideo = () => {
     setDemoVideo(null);
     setUploadProgress(0);
+    if (uploadIntervalRef.current) {
+      clearInterval(uploadIntervalRef.current);
+      uploadIntervalRef.current = null;
+    }
   };
 
   // ✅ Handle Submission
