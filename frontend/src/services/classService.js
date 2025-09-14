@@ -49,8 +49,8 @@ export const fetchPublishedClasses = async () => {
   return { ...res.data, data: formatted };
 };
 
-export const fetchClassDetails = async (id) => {
-  const res = await api.get(`/users/classes/${id}`);
+export const fetchClassDetails = async (id, signal) => {
+  const res = await api.get(`/users/classes/${id}`, { signal });
   const cls = res.data?.data ?? res.data;
   return cls ? formatClass(cls) : cls;
 };
@@ -78,13 +78,13 @@ export const fetchMyEnrolledClasses = async () => {
   }
 };
 
-export const fetchClassLessons = async (classId) => {
-  const res = await api.get(`/users/classes/lessons/class/${classId}`);
+export const fetchClassLessons = async (classId, signal) => {
+  const res = await api.get(`/users/classes/lessons/class/${classId}`, { signal });
   return extractData(res);
 };
 
-export const fetchClassAssignments = async (classId) => {
-  const res = await api.get(`/users/classes/assignments/class/${classId}`);
+export const fetchClassAssignments = async (classId, signal) => {
+  const res = await api.get(`/users/classes/assignments/class/${classId}`, { signal });
   return extractData(res);
 };
 
