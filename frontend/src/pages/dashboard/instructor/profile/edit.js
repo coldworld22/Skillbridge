@@ -20,6 +20,8 @@ import {
   updateInstructorProfile,
   uploadInstructorAvatar,
   uploadInstructorDemo,
+  deleteInstructorAvatar,
+  deleteInstructorDemo,
   toggleInstructorStatus,
   uploadCertificateFile,
   deleteCertificateFile,
@@ -325,52 +327,41 @@ export default function InstructorProfileEdit() {
     }
   };
 
-  const handleCertificateUpload = async () => {
-    if (!newCertificate.title || !newCertificate.file) {
-      toast.error(t('provide_title_and_file'));
-      return;
-    }
+  const handleAvatarRemove = async () => {
+    setIsUploadingAvatar(true);
     try {
-      setCertificateUploading(true);
-      const formDataPayload = new FormData();
-      formDataPayload.append('title', newCertificate.title);
-      formDataPayload.append('file', newCertificate.file);
-      const response = await uploadCertificateFile(formDataPayload);
-      setFormData((prev) => ({
+      await deleteInstructorAvatar(user.id);
+      setUser({ ...user, avatar_url: null });
+      setFormData(prev => ({
         ...prev,
-        certificates: [
-          ...prev.certificates,
-          {
-            id: response.id,
-            title: newCertificate.title,
-            file_url: response.file_url,
-          },
-        ],
+        avatar_url: null,
+        avatarPreview: null,
       }));
-      if (newCertificate.preview) {
-        URL.revokeObjectURL(newCertificate.preview);
-      }
-      setNewCertificate({ title: '', file: null, preview: null });
-      toast.success(t('certificate_upload_success'));
     } catch (error) {
-      toast.error(t('certificate_upload_failed'));
-      console.error('Certificate upload error:', error);
+      const msg =
+        error.response?.data?.message ||
+        t('avatar_delete_failed', { defaultValue: 'Failed to delete avatar' });
+      toast.error(msg);
     } finally {
-      setCertificateUploading(false);
+      setIsUploadingAvatar(false);
     }
   };
 
-  const handleRemoveCertificate = async (id) => {
+  const handleDemoRemove = async () => {
+    setIsUploadingDemo(true);
     try {
-      await deleteCertificateFile(id);
-      setFormData((prev) => ({
+      await deleteInstructorDemo(user.id);
+      setFormData(prev => ({
         ...prev,
-        certificates: prev.certificates.filter((cert) => cert.id !== id),
+        demoPreview: null,
       }));
-      toast.success(t('certificate_removed'));
     } catch (error) {
-      toast.error(t('certificate_remove_failed'));
-      console.error('Certificate removal error:', error);
+      const msg =
+        error.response?.data?.message ||
+        t('demo_delete_failed', { defaultValue: 'Failed to delete demo video' });
+      toast.error(msg);
+    } finally {
+      setIsUploadingDemo(false);
     }
   };
 
