@@ -251,7 +251,10 @@ exports.updateAvatar = async (req, res) => {
  * @access Instructor
  */
 exports.deleteAvatar = async (req, res) => {
-    const userId = req.params.id;
+    const userId = parseInt(req.params.id, 10);
+    if (parseInt(req.user.id, 10) !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
 
     const [user] = await db("users").where({ id: userId }).select("avatar_url");
     if (!user || !user.avatar_url) {
@@ -271,12 +274,56 @@ exports.deleteAvatar = async (req, res) => {
 };
 
 /**
+ * @desc Upload instructor demo video
+ * @route PATCH /api/users/instructor/:id/demo
+ * @access Instructor
+ */
+exports.uploadDemoVideo = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate the provided id
+        if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+            if (req.file) {
+                fs.unlink(req.file.path, (error) => error && logger.error(error));
+            }
+            return res.status(400).json({ error: "Invalid user id" });
+        }
+
+        // Ensure instructors can only update their own demo video
+        if (id !== req.user.id) {
+            if (req.file) {
+                fs.unlink(req.file.path, (error) => error && logger.error(error));
+            }
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        const demoVideoUrl = `/uploads/demos/instructor/${req.file.filename}`;
+        await db("instructor_profiles")
+            .where({ user_id: id })
+            .update({ demo_video_url: demoVideoUrl });
+
+        res.json({ demo_video_url: demoVideoUrl });
+    } catch (err) {
+        logger.error("Demo video upload error:", err);
+        res.status(500).json({ error: "Failed to upload demo video" });
+    }
+};
+
+/**
  * @desc Delete instructor demo video
  * @route DELETE /api/users/instructor/:id/demo
  * @access Instructor
  */
 exports.deleteDemoVideo = async (req, res) => {
-    const userId = req.params.id;
+    const userId = parseInt(req.params.id, 10);
+    if (parseInt(req.user.id, 10) !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
 
     const [profile] = await db("instructor_profiles").where({ user_id: userId }).select("demo_video_url");
     if (!profile || !profile.demo_video_url) {

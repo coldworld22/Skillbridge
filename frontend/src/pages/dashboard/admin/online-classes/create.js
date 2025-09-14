@@ -8,7 +8,7 @@
 // Notifications and translations are also integrated.
 // ─────────────────────────────────────────────────────
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -30,12 +30,16 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
   loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded"></div>
 });
 import 'react-quill/dist/quill.snow.css';
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 function CreateOnlineClass() {
   const router = useRouter();
@@ -67,16 +71,12 @@ function CreateOnlineClass() {
     lessons: [],
     lessonCount: ''
   });
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const videoIntervalRef = useRef(null);
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -102,12 +102,6 @@ function CreateOnlineClass() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
     if (user?.full_name) {
       setFormData((prev) => ({ ...prev, instructor: user.full_name }));
     }
@@ -124,6 +118,11 @@ function CreateOnlineClass() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error(t('invalid_image_type', { defaultValue: 'Unsupported image type' }));
+      return;
+    }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(t('image_size_exceeded'));
@@ -159,32 +158,22 @@ function CreateOnlineClass() {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      toast.error(t('invalid_video_type', { defaultValue: 'Unsupported video type' }));
+      return;
+    }
+
     if (file.size > 100 * 1024 * 1024) {
       toast.error(t('video_size_exceeded'));
       return;
     }
 
-    setVideoUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress (replace with actual upload logic)
-    if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-    videoIntervalRef.current = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-          videoIntervalRef.current = null;
-          setVideoUploading(false);
-          setFormData((prev) => ({
-            ...prev,
-            demoVideo: file,
-            demoPreview: URL.createObjectURL(file),
-          }));
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+    setVideoUploading(false);
+    setFormData((prev) => ({
+      ...prev,
+      demoVideo: file,
+      demoPreview: URL.createObjectURL(file),
+    }));
   };
 
   const addTag = (tag) => {
@@ -237,6 +226,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
+        setVideoUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -302,9 +292,10 @@ function CreateOnlineClass() {
         router.push('/dashboard/admin/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || t('class_create_failed'));
+        toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
+        setVideoUploading(false);
       }
     }
   };
@@ -620,7 +611,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={ALLOWED_IMAGE_TYPES.join(',')}
                               onChange={handleImageUpload}
                               className="hidden"
                             />
@@ -667,7 +658,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="video/*"
+                              accept={ALLOWED_VIDEO_TYPES.join(',')}
                               onChange={handleVideoUpload}
                               className="hidden"
                             />
