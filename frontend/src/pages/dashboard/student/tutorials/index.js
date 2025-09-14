@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import StudentLayout from "@/components/layouts/StudentLayout";
-import { fetchPublishedTutorials } from "@/services/tutorialService";
+import {
+  fetchPublishedTutorials,
+  fetchTutorialProgress,
+  saveTutorialProgress,
+} from "@/services/tutorialService";
 import StudentTutorialCard from "@/components/tutorials/StudentTutorialCard";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 
@@ -24,23 +28,55 @@ export default function StudentTutorialsPage() {
     const load = async () => {
       try {
         const data = await fetchPublishedTutorials({ signal: controller.signal });
-        const enriched = data.map((tut) => {
-          const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-          let progress = { completedChapters: [], completedQuiz: false };
-          if (saved) {
-            try {
-              progress = JSON.parse(saved);
-            } catch {
-              progress = { completedChapters: [], completedQuiz: false };
+        const enriched = await Promise.all(
+          data.map(async (tut) => {
+            const totalLessons = tut.chapter_count || 0;
+            const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+            let local = { completedChapters: [], completedQuiz: false };
+            if (saved) {
+              try {
+                local = JSON.parse(saved);
+              } catch {
+                local = { completedChapters: [], completedQuiz: false };
+              }
             }
-          }
-          return {
-            ...tut,
-            completedLessons: progress.completedChapters.length,
-            totalLessons: tut.chapter_count || 0,
-            isCompleted: progress.completedQuiz,
-          };
-        });
+
+            const localPercent = totalLessons
+              ? (local.completedChapters.length / totalLessons) * 100
+              : 0;
+
+            let server = null;
+            try {
+              server = await fetchTutorialProgress(tut.id);
+            } catch {}
+
+            if (
+              localPercent > 0 &&
+              (!server || Number(server.progress || 0) < localPercent)
+            ) {
+              try {
+                await saveTutorialProgress(tut.id, localPercent);
+              } catch {}
+            }
+
+            const percent =
+              server && server.progress != null
+                ? Number(server.progress)
+                : localPercent;
+
+            return {
+              ...tut,
+              completedLessons: totalLessons
+                ? Math.round((percent / 100) * totalLessons)
+                : 0,
+              totalLessons,
+              isCompleted:
+                (server?.status && server.status === "completed") ||
+                percent >= 100 ||
+                local.completedQuiz,
+            };
+          })
+        );
         setTutorials(enriched);
       } catch (err) {
         if (err.name === 'AbortError' || err.name === 'CanceledError') return;
