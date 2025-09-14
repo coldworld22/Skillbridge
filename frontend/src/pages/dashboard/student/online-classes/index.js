@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
 import {
   FaChalkboardTeacher,
@@ -25,6 +25,7 @@ export default function MyEnrolledClassesPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [error, setError] = useState(null);
   const { t } = useTranslation('dashboard');
 
   const statusLabels = {

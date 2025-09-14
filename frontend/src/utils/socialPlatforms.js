@@ -1,4 +1,4 @@
-import platformNames from "@shared/socialPlatforms.json";
+import platformNames from "@/shared/socialPlatforms.json";
 import {
   FaLinkedin,
   FaGithub,
