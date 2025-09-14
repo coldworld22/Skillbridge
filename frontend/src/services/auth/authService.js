@@ -3,6 +3,7 @@ import api from "@/services/api/api";
 import logger from "@/utils/logger";
 import { ensureCsrfToken } from "@/services/api/csrf";
 import { getCookie } from "@/utils/cookies";
+import { normalizeError } from "@/utils/error";
 
 /**
  * 🔐 Log in a user and retrieve access token and user info.
@@ -28,7 +29,7 @@ export const loginUser = async ({ email, password, recaptchaToken }) => {
       message: err?.message,
       status: err?.response?.status,
     });
-    throw err;
+    throw normalizeError(err);
   }
 };
 
@@ -39,8 +40,12 @@ export const loginUser = async ({ email, password, recaptchaToken }) => {
  * @returns {Promise<{ message: string, user: object }>}
  */
 export const registerUser = async (payload) => {
-  const res = await api.post("/auth/register", payload);
-  return res.data;
+  try {
+    const res = await api.post("/auth/register", payload);
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
 
 /**
@@ -50,8 +55,12 @@ export const registerUser = async (payload) => {
  * @returns {Promise<{ message: string }>}
  */
 export const requestPasswordReset = async ({ email, via = "email" }) => {
-  const res = await api.post("/auth/forgot-password", { email, via });
-  return res.data;
+  try {
+    const res = await api.post("/auth/forgot-password", { email, via });
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
 
 /**
@@ -63,8 +72,12 @@ export const requestPasswordReset = async ({ email, via = "email" }) => {
  * @returns {Promise<{ valid: boolean }>}
  */
 export const verifyOtpCode = async ({ email, code }) => {
-  const res = await api.post("/auth/verify-otp", { email, code });
-  return res.data;
+  try {
+    const res = await api.post("/auth/verify-otp", { email, code });
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
 
 /**
@@ -77,12 +90,16 @@ export const verifyOtpCode = async ({ email, code }) => {
  * @returns {Promise<{ message: string }>}
  */
 export const resetPassword = async ({ email, code, new_password }) => {
-  const res = await api.post("/auth/reset-password", {
-    email,
-    code,
-    new_password,
-  });
-  return res.data;
+  try {
+    const res = await api.post("/auth/reset-password", {
+      email,
+      code,
+      new_password,
+    });
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
 
 /**
@@ -92,16 +109,20 @@ export const resetPassword = async ({ email, code, new_password }) => {
  * @returns {Promise<{ accessToken: string }>}
  */
 export const refreshAccessToken = async () => {
-  const csrfToken = getCookie("csrfToken");
-  const res = await api.post(
-    "/auth/refresh",
-    null,
-    {
-      headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-    }
-  );
-  await ensureCsrfToken();
-  return res.data;
+  try {
+    const csrfToken = getCookie("csrfToken");
+    const res = await api.post(
+      "/auth/refresh",
+      null,
+      {
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+      }
+    );
+    await ensureCsrfToken();
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
 
 /**
@@ -110,6 +131,10 @@ export const refreshAccessToken = async () => {
  * @returns {Promise<{ message: string }>}
  */
 export const logoutUser = async () => {
-  const res = await api.post("/auth/logout");
-  return res.data;
+  try {
+    const res = await api.post("/auth/logout");
+    return res.data;
+  } catch (err) {
+    throw normalizeError(err);
+  }
 };
