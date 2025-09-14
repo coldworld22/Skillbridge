@@ -1,5 +1,6 @@
 // pages/dashboard/instructor/assignments/index.js
 import { useEffect, useState } from 'react';
+import useAuthStore from '@/store/auth/authStore';
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import Link from 'next/link';
 import { FaPlus, FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
@@ -8,11 +9,13 @@ import { fetchClassAssignments } from '@/services/classService';
 
 export default function InstructorAssignmentsAll() {
   const [assignments, setAssignments] = useState([]);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const classes = await fetchInstructorClasses();
+        if (!user?.id) return;
+        const classes = await fetchInstructorClasses(user.id);
         const all = [];
         for (const cls of classes) {
           const list = await fetchClassAssignments(cls.id);
@@ -24,7 +27,7 @@ export default function InstructorAssignmentsAll() {
       }
     };
     load();
-  }, []);
+  }, [user?.id]);
 
   return (
     <InstructorLayout>

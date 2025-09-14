@@ -29,6 +29,7 @@ import {
   fetchInstructorTutorialViews,
 } from "@/services/instructor/instructorService";
 import { fetchInstructorScheduleEvents } from "@/services/instructor/classService";
+import useAuthStore from "@/store/auth/authStore";
 
 const localizer = momentLocalizer(moment);
 
@@ -69,6 +70,7 @@ function InstructorDashboard() {
   const [chartData, setChartData] = useState([]);
   const [counts, setCounts] = useState({});
   const [events, setEvents] = useState([]);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     async function loadStats() {
@@ -92,7 +94,8 @@ function InstructorDashboard() {
     loadStats();
     async function loadEvents() {
       try {
-        const data = await fetchInstructorScheduleEvents();
+        if (!user?.id) return;
+        const data = await fetchInstructorScheduleEvents(user.id);
         const parsed = data.map((e) => ({
           ...e,
           start: new Date(e.start),
@@ -104,7 +107,7 @@ function InstructorDashboard() {
       }
     }
     loadEvents();
-  }, []);
+  }, [user?.id]);
 
   const cardStyle = "bg-white shadow-sm border rounded-2xl p-5 hover:shadow-md transition duration-300";
   const tabButtonStyle = (tab) =>

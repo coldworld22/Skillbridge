@@ -18,7 +18,8 @@ export default function OnlineClassList() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await fetchInstructorClasses();
+        if (!user?.id) return;
+        const data = await fetchInstructorClasses(user.id);
         setClasses(data || []);
       } catch (err) {
         console.error(err);
@@ -28,18 +29,9 @@ export default function OnlineClassList() {
       }
     };
     load();
-  }, []);
+  }, [user?.id]);
 
-  const myClasses = classes.filter((cls) => {
-    if (cls.instructor_id && user?.id) return cls.instructor_id === user.id;
-    if (cls.instructor && (user?.full_name || user?.name)) {
-      const name = user.full_name || user.name;
-      return cls.instructor === name;
-    }
-    return true;
-  });
-
-  const filteredClasses = myClasses
+  const filteredClasses = classes
     .filter((cls) =>
       cls.title.toLowerCase().includes(searchTerm.toLowerCase())
     )

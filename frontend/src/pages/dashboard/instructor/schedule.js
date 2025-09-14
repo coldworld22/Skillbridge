@@ -7,18 +7,21 @@ import { getLessonRoomLink } from "@/services/lessonService";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
+import useAuthStore from "@/store/auth/authStore";
 
 export default function InstructorSchedule() {
   const { t } = useTranslation(["dashboard", "common"], { keyPrefix: "schedulePage" });
   const { events, clear, addEvents, prunePastEvents } = useScheduleStore();
 
   const [loading, setLoading] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     const load = async () => {
       try {
+        if (!user?.id) return;
         setLoading(true);
-        const data = await fetchInstructorScheduleEvents();
+        const data = await fetchInstructorScheduleEvents(user.id);
         clear();
         addEvents(data);
         prunePastEvents();
@@ -29,7 +32,7 @@ export default function InstructorSchedule() {
       }
     };
     load();
-  }, [clear, addEvents, prunePastEvents]);
+  }, [clear, addEvents, prunePastEvents, user?.id]);
 
 
 
