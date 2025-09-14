@@ -15,7 +15,11 @@ import { fetchAllCategories } from "@/services/admin/categoryService";
 import StepProgressBar from "@/components/tutorials/create/StepProgressBar";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
-import { buildTutorialFormData } from "@/utils/tutorialForm";
+import {
+  loadDraft,
+  loadCategories,
+  buildTutorialFormData,
+} from "@/utils/tutorialDraft";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
@@ -44,7 +48,7 @@ function CreateTutorialPage() {
   };
   const [step, setStep] = useState(1);
   const router = useRouter();
-  const [tutorialData, setTutorialData] = useState({
+  const defaultTutorial = {
     title: "",
     shortDescription: "",
     category: "",
@@ -58,43 +62,21 @@ function CreateTutorialPage() {
     language: "",
     price: "",
     isFree: false,
-  });
+  };
+  const [tutorialData, setTutorialData] = useState(() =>
+    loadDraft("tutorialDraft", defaultTutorial)
+  );
 
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    const savedDraft = localStorage.getItem("tutorialDraft");
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        setTutorialData({
-          ...draft,
-          thumbnail: null,
-          preview: null,
-          language: draft.language || "",
-          lessonCount: draft.lessonCount || draft.chapters?.length || 1,
-        });
-      } catch (err) {
-        console.error("Failed to parse tutorialDraft", err);
-        localStorage.removeItem("tutorialDraft");
-      }
-    }
-
-    const loadCategories = async () => {
-      try {
-        const result = await fetchAllCategories();
-
-        setCategories(result || []);
-
-      
-      } catch (err) {
+    loadCategories(fetchAllCategories)
+      .then((result) => setCategories(result || []))
+      .catch((err) => {
         console.error("Failed to load categories", err);
-        toast.error(t('load_categories_failed'));
-      }
-    };
-
-    loadCategories();
-  }, []);
+        toast.error(t("load_categories_failed"));
+      });
+  }, [t]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
