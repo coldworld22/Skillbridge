@@ -19,13 +19,18 @@ export const createTutorial = async (formData) => {
 };
 
 /**
- * Fetch all tutorials for admin dashboard view.
+ * Fetch tutorials for the admin dashboard with backend pagination.
  *
+ * @param {number} page - Page number to fetch
+ * @param {number} limit - Number of items per page
  * @param {object} config - Optional Axios config (e.g. abort signal)
- * @returns {Promise<Array>} Array of tutorial objects
+ * @returns {Promise<object>} tutorials array and pagination metadata
  */
-export const fetchAllTutorials = async (config = {}) => {
-  const { data } = await api.get("/users/tutorials/admin", config);
+export const fetchAllTutorials = async (page = 1, limit = 10, config = {}) => {
+  const { data } = await api.get("/users/tutorials/admin", {
+    params: { page, limit, ...(config.params || {}) },
+    ...config,
+  });
   const tutorials = data?.data ?? [];
   return tutorials.map((t) => ({
     id: t.id,

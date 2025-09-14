@@ -26,16 +26,22 @@ import {
 import ProgressChecklistModal from "@/components/tutorials/ProgressChecklistModal";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import { toast } from "react-toastify";
+import useInstructorTutorials from "@/hooks/useInstructorTutorials";
 
 export default function InstructorTutorialsPage() {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "tutorials"]);
-  const [tutorials, setTutorials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const {
+    tutorials,
+    setTutorials,
+    sortBy,
+    setSortBy,
+    handleSearch,
+    handleFilter,
+    filteredTutorials,
+  } = useInstructorTutorials();
   const [checklistTutorial, setChecklistTutorial] = useState(null);
   const [showChecklist, setShowChecklist] = useState(false);
 
@@ -77,14 +83,6 @@ export default function InstructorTutorialsPage() {
     };
   }, []);
 
-  const handleSearch = (query) => {
-    setSearchQuery(query.toLowerCase());
-  };
-
-  const handleFilter = (status) => {
-    setStatusFilter(status);
-  };
-
   const handleDelete = (id) => {
     openConfirmModal({
       title: t("dashboard:tutorialsPage.delete_confirm_title"),
@@ -103,20 +101,6 @@ export default function InstructorTutorialsPage() {
       },
     });
   };
-
-  const filteredTutorials = tutorials
-    .filter((tut) => {
-      const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
-      const matchesStatus = statusFilter ? tut.status === statusFilter : true;
-      return matchesTitle && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === "views") return b.views - a.views;
-      if (sortBy === "enrollments") return b.enrollments - a.enrollments;
-      if (sortBy === "oldest")
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      return new Date(b.createdAt) - new Date(a.createdAt); // newest
-    });
 
   if (loading) {
     return (
@@ -240,7 +224,7 @@ export default function InstructorTutorialsPage() {
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTutorials.map((tutorial) => (
-            <div
+            <TutorialCard
               key={tutorial.id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100"
             >
