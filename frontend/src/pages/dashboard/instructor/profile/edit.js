@@ -21,6 +21,8 @@ import {
   uploadInstructorAvatar,
   uploadInstructorDemo,
   toggleInstructorStatus,
+  deleteInstructorAvatar,
+  deleteInstructorDemo,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -291,6 +293,27 @@ export default function InstructorProfileEdit() {
     }
   };
 
+  const handleAvatarRemove = async () => {
+    try {
+      await deleteInstructorAvatar(user.id);
+      setUser({ ...user, avatar_url: null });
+      setFormData((prev) => ({ ...prev, avatarPreview: null }));
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to delete avatar';
+      toast.error(msg);
+    }
+  };
+
+  const handleDemoRemove = async () => {
+    try {
+      await deleteInstructorDemo(user.id);
+      setFormData((prev) => ({ ...prev, demoPreview: null }));
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to delete demo video';
+      toast.error(msg);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     try {
@@ -407,14 +430,14 @@ export default function InstructorProfileEdit() {
             isUploadingAvatar={isUploadingAvatar}
             t={t}
             onSelect={handleAvatarSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, avatarPreview: null }))}
+            onRemove={handleAvatarRemove}
           />
           <DemoVideoUploader
             demoPreview={formData.demoPreview}
             isUploadingDemo={isUploadingDemo}
             t={t}
             onSelect={handleDemoSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, demoPreview: null }))}
+            onRemove={handleDemoRemove}
           />
         </div>
 
