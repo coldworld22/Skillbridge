@@ -46,6 +46,7 @@ function AdminTutorialsPage() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
   const [categories, setCategories] = useState([]);
+  const [meta, setMeta] = useState({ total: 0 });
 
   // Modals and Selections
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,9 +57,9 @@ function AdminTutorialsPage() {
 
   useEffect(() => {
     setSelectedTutorials([]);
+    setCurrentPage(1);
   }, [searchQuery, filterCategory, filterStatus, filterApproval]);
-
-  // Load tutorials and categories from backend on mount
+  // Load tutorials and categories from backend
   useEffect(() => {
     const controller = new AbortController();
     let isMounted = true;
@@ -66,12 +67,21 @@ function AdminTutorialsPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [tuts, cats] = await Promise.all([
-          fetchAllTutorials({ signal: controller.signal }),
+        const [{ tutorials: tuts, meta }, cats] = await Promise.all([
+          fetchAllTutorials(currentPage, tutorialsPerPage, {
+            signal: controller.signal,
+            params: {
+              search: searchQuery || undefined,
+              category: filterCategory !== "All" ? filterCategory : undefined,
+              status: filterStatus !== "All" ? filterStatus : undefined,
+              approval: filterApproval !== "All" ? filterApproval : undefined,
+            },
+          }),
           fetchAllCategories({}, { signal: controller.signal }),
         ]);
         if (!isMounted) return;
         setTutorials(tuts);
+        setMeta(meta || {});
         setCategories(cats?.data || cats || []);
       } catch (err) {
         if (err.name === 'AbortError' || err.name === 'CanceledError') return;
@@ -88,35 +98,21 @@ function AdminTutorialsPage() {
       isMounted = false;
       controller.abort();
     };
-  }, []);
+  }, [currentPage, searchQuery, filterCategory, filterStatus, filterApproval]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const tutorialsPerPage = 10;
-
-  // Filtering
-  const filteredTutorials = tutorials.filter((tut) => {
-    const matchesSearch =
-      tut.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tut.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      filterCategory === "All" || tut.category === filterCategory;
-    const matchesStatus = filterStatus === "All" || tut.status === filterStatus;
-    const matchesApproval =
-      filterApproval === "All" || tut.approvalStatus === filterApproval;
-    return matchesSearch && matchesCategory && matchesStatus && matchesApproval;
-  });
-
-  const totalPages = Math.ceil(filteredTutorials.length / tutorialsPerPage);
+  const totalPages =
+    meta.totalPages ?? Math.ceil((meta.total || 0) / tutorialsPerPage);
+  const startIndex = (currentPage - 1) * tutorialsPerPage;
+  const endIndex = Math.min(startIndex + tutorials.length, meta.total || 0);
 
   useEffect(() => {
     if (currentPage > totalPages) {
-      setCurrentPage(Math.min(currentPage, totalPages) || 1);
+      setCurrentPage(totalPages || 1);
     }
   }, [currentPage, totalPages]);
-  const startIndex = (currentPage - 1) * tutorialsPerPage;
-  const endIndex = startIndex + tutorialsPerPage;
-  const paginatedTutorials = filteredTutorials.slice(startIndex, endIndex);
 
   // Functions
   const toggleSelectOne = (id) => {
@@ -127,14 +123,14 @@ function AdminTutorialsPage() {
 
   const toggleSelectAll = (isChecked) => {
     if (isChecked) {
-      const pageIds = paginatedTutorials.map((tut) => tut.id);
+      const pageIds = tutorials.map((tut) => tut.id);
       setSelectedTutorials((prevSelected) => [
-        ...new Set([...prevSelected, ...pageIds]), // Add only current page IDs
+        ...new Set([...prevSelected, ...pageIds]),
       ]);
     } else {
-      const pageIds = paginatedTutorials.map((tut) => tut.id);
-      setSelectedTutorials(
-        (prevSelected) => prevSelected.filter((id) => !pageIds.includes(id)), // Remove only current page IDs
+      const pageIds = tutorials.map((tut) => tut.id);
+      setSelectedTutorials((prevSelected) =>
+        prevSelected.filter((id) => !pageIds.includes(id)),
       );
     }
   };
@@ -429,7 +425,7 @@ function AdminTutorialsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
             <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
+            <p className="text-2xl font-bold">{meta.total ?? 0}</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p className="text-gray-600">Pending Approval</p>
@@ -454,7 +450,7 @@ function AdminTutorialsPage() {
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <TutorialsTable
-            paginatedTutorials={paginatedTutorials}
+            paginatedTutorials={tutorials}
             loading={loading}
             selectedTutorials={selectedTutorials}
             toggleSelectAll={toggleSelectAll}
@@ -470,16 +466,14 @@ function AdminTutorialsPage() {
             setCurrentPage={setCurrentPage}
             onEdit={(id) => router.push(`/dashboard/admin/tutorials/${id}/edit`)}
           />
-
-
-          {filteredTutorials.length > 0 && !loading && (
+          {meta.total > 0 && !loading && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               goToPage={goToPage}
               startIndex={startIndex}
-              endIndex={Math.min(endIndex, filteredTutorials.length)}
-              totalResults={filteredTutorials.length}
+              endIndex={endIndex}
+              totalResults={meta.total || 0}
             />
           )}
         </div>
