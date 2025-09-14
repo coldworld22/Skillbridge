@@ -1,4 +1,9 @@
 import nextI18NextConfig from './next-i18next.config.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const defaultApiBase = 'http://localhost:5002/api';
@@ -79,6 +84,11 @@ const nextConfig = {
   // larger translation bundles.
   experimental: {
     largePageDataBytes: 256 * 1024,
+    externalDir: true,
+  },
+  webpack(config) {
+    config.resolve.alias['@shared'] = path.resolve(__dirname, '../shared');
+    return config;
   },
   eslint: {
     ignoreDuringBuilds: true,
