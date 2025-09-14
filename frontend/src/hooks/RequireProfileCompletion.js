@@ -16,7 +16,9 @@ export default function RequireProfileCompletion({ children }) {
 
       // Avoid redirecting if already on the profile page
       if (router.pathname !== targetPath) {
-        toast.info("Please complete your profile to continue.");
+        toast.info(
+          "Please complete your profile (including expertise, bio, and pricing) to continue."
+        );
         router.replace(targetPath);
       }
     }

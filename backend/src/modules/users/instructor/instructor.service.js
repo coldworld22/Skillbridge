@@ -101,9 +101,18 @@ const updateInstructorProfile = async (
     userData.phone &&
     userData.gender &&
     userData.date_of_birth;
+  const hasExpertise = Array.isArray(instructorData.expertise)
+    ? instructorData.expertise.length > 0
+    : Boolean(instructorData.expertise);
   const hasInstructorFields =
     instructorData.experience !== undefined &&
-    instructorData.experience !== null;
+    instructorData.experience !== null &&
+    hasExpertise &&
+    typeof instructorData.bio === "string" &&
+    instructorData.bio.trim() !== "" &&
+    instructorData.pricing !== undefined &&
+    instructorData.pricing !== null &&
+    Number(instructorData.pricing) > 0;
   const isProfileComplete =
     hasUserFields && hasInstructorFields && sanitizedLinks.length > 0;
 
