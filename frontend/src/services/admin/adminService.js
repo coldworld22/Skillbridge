@@ -7,8 +7,9 @@ import { ensureCsrfToken } from "@/services/api/csrf";
  * 
  * @returns {Promise<Object>} Admin profile object
  */
-export const getAdminProfile = async () => {
-  const res = await api.get("/users/admin/profile");
+export const getAdminProfile = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+  const res = await api.get("/users/admin/profile", cfg);
   return res.data;
 };
 

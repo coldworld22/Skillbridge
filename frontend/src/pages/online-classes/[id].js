@@ -18,6 +18,7 @@ import useCartStore from '@/store/cart/cartStore';
 import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
+import DOMPurify from 'isomorphic-dompurify';
 import ClassReviews from '@/components/online-classes/detail/ClassReviews';
 import ClassComments from '@/components/online-classes/detail/ClassComments';
 
@@ -216,7 +217,7 @@ export default function ClassDetailsPage() {
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const plainDescription = classInfo.description
-    ? classInfo.description.replace(/<[^>]*>/g, '')
+    ? DOMPurify.sanitize(classInfo.description, { ALLOWED_TAGS: [] })
     : '';
   const classFull =
     typeof classInfo.spots_left === 'number' && classInfo.spots_left <= 0;

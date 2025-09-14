@@ -211,6 +211,42 @@ exports.getStatus = catchAsync(async (req, res) => {
   });
 });
 
+// Get enrollment status and progress for multiple tutorials
+exports.getStatusBatch = catchAsync(async (req, res) => {
+  const userId = requireUser(req);
+  const { tutorialIds } = req.body;
+
+  const ids = Array.isArray(tutorialIds) ? tutorialIds : [];
+  let enrollments = [];
+
+  if (ids.length) {
+    enrollments = await db("tutorial_enrollments")
+      .where({ user_id: userId })
+      .whereIn("tutorial_id", ids);
+  }
+
+  const map = {};
+  ids.forEach((id) => {
+    map[id] = { enrolled: false, status: null, progress: 0 };
+  });
+
+  enrollments.forEach((e) => {
+    const progress =
+      e.progress != null
+        ? Number(e.progress)
+        : e.status === "completed"
+        ? 100
+        : 0;
+    map[e.tutorial_id] = {
+      enrolled: true,
+      status: e.status,
+      progress,
+    };
+  });
+
+  sendSuccess(res, map);
+});
+
 // Update progress percentage for a tutorial
 exports.updateProgress = catchAsync(async (req, res) => {
   const { userId, tutorialId } = requireUserAndTutorial(req);

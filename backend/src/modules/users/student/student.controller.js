@@ -9,7 +9,7 @@ const db = require("../../../config/database");
 const notificationService = require("../../notifications/notifications.service");
 
 const messageService = require("../../messages/messages.service");
-const { allowedPlatforms } = require("../common/socialPlatforms");
+const studentService = require("./student.service");
 
 
 /**
@@ -101,68 +101,16 @@ exports.updateProfile = async (req, res) => {
 
   let trx;
   try {
-    trx = await db.transaction();
+    await studentService.updateStudentProfile(
+      userId,
+      { full_name, phone, gender, date_of_birth },
+      { education_level, topics, learning_goals },
+      social_links
+    );
 
-    await trx("users")
-      .where({ id: userId })
-      .update({
-        full_name,
-        phone,
-        gender,
-        date_of_birth,
-        profile_complete: isProfileComplete,
-      });
-
-    const exists = await trx("student_profiles").where({ user_id: userId }).first();
-    const studentData = { education_level, topics, learning_goals };
-    if (exists) {
-      await trx("student_profiles").where({ user_id: userId }).update(studentData);
-    } else {
-      await trx("student_profiles").insert({ user_id: userId, ...studentData });
-    }
-
-    await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of sanitizedLinks) {
-      await trx("user_social_links").insert({
-        user_id: userId,
-        platform: link.platform,
-        url: link.url,
-      });
-    }
-
-    await trx.commit();
-
-    const [user] = await db("users")
-      .where({ id: userId })
-      .select(
-        "id",
-        "full_name",
-        "email",
-        "phone",
-        "gender",
-        "date_of_birth",
-        "avatar_url",
-        "is_email_verified",
-        "is_phone_verified",
-        "profile_complete",
-        "created_at",
-        "updated_at"
-      );
-
-    const [student] = await db("student_profiles")
-      .where({ user_id: userId })
-      .select("education_level", "topics", "learning_goals", "identity_doc_url");
-
-    const socialLinks = await db("user_social_links")
-      .where({ user_id: userId })
-      .select("platform", "url");
-
-    res.json({ ...user, student, social_links: socialLinks });
+    const profile = await studentService.getStudentProfile(userId);
+    res.json(profile);
   } catch (err) {
-    if (trx) {
-      await trx.rollback();
-    }
-
     // Handle unique constraint violations for email and phone
     if (err.code === "23505") {
       if (err.constraint === "users_email_unique") {
@@ -199,8 +147,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar:", err)
+      );
     }
 
     res.json({ avatar_url: avatarUrl });
@@ -223,11 +174,25 @@ exports.updateIdentity = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No identity document uploaded" });
     }
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-    const exists = await db("student_profiles")
+    const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
-    if (exists) {
+
+    if (profile && profile.identity_doc_url) {
+      const oldPath = path.join(
+        __dirname,
+        "../../../../",
+        profile.identity_doc_url
+      );
+      fs.unlink(oldPath, (err) =>
+        err &&
+        logger.error("Failed to remove old identity document:", err)
+      );
+    }
+
+    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
+
+    if (profile) {
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
@@ -237,8 +202,12 @@ exports.updateIdentity = async (req, res) => {
         identity_doc_url: identityUrl,
       });
     }
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
     logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
