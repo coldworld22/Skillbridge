@@ -173,7 +173,18 @@ export default function MyEnrolledClassesPage() {
 
                 {cls.scheduleStatus === 'Upcoming' && (
                   <button
-                    onClick={() => handleNotify(cls.id)}
+                    onClick={async () => {
+                      try {
+                        await subscribeToClassReminder(cls.id);
+                        toast.success('Reminder set for this class');
+                      } catch (err) {
+                        console.error(err);
+                        const msg =
+                          err.response?.data?.message ||
+                          'Failed to set reminder';
+                        toast.error(msg);
+                      }
+                    }}
                     className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
                   >
                     <FaBell /> Notify Me
