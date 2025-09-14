@@ -98,8 +98,9 @@ const updateInstructorProfile = async (
         }))
     : [];
 
-  const nonEmptyLinks = sanitizedLinks.filter(
-    (link) => link.url && link.url.trim() !== ""
+  // Ensure each platform appears only once by using a Map keyed by platform
+  const uniqueLinks = Array.from(
+    new Map(sanitizedLinks.map((link) => [link.platform, link])).values()
   );
 
   const hasUserFields =
@@ -118,7 +119,7 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null;
   const isProfileComplete =
-    hasUserFields && hasInstructorFields && nonEmptyLinks.length > 0;
+    hasUserFields && hasInstructorFields && uniqueLinks.length > 0;
 
   await db.transaction(async (trx) => {
     // ✅ Update users table
@@ -143,9 +144,9 @@ const updateInstructorProfile = async (
       await trx("instructor_profiles").insert({ user_id: userId, ...data });
     }
 
-    // ✅ Replace social links
+    // ✅ Replace social links with unique platforms
     await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of sanitizedLinks) {
+    for (const link of uniqueLinks) {
       await trx("user_social_links").insert({
         user_id: userId,
         platform: link.platform,
