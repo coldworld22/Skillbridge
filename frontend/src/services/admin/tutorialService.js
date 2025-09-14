@@ -2,7 +2,7 @@
 // Admin specific API calls for managing tutorials
 
 import api from "@/services/api/api";
-import { TUTORIAL_STATUS } from "../../../../shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@/shared/tutorialStatus";
 
 /**
  * Create a new tutorial as an admin or instructor.

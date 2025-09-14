@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@/shared/tutorialStatus";
 import { FaSpinner, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 
 function TutorialsTable({
