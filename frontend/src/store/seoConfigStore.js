@@ -24,11 +24,11 @@ const useSEOConfigStore = create(
           const data = await fetchSEOConfig();
           set({ settings: data || {}, loaded: true, loading: false, retry: false });
         } catch (err) {
-          const message = err?.message || "Unknown error";
-          toast.error(`Failed to load SEO settings: ${message}`);
-          set({ loaded: false, loading: false, error: message, retry: true });
+          toast.error("Failed to load SEO settings");
+          set({ loaded: false, loading: false, error: err.message });
         }
       },
+      retry: () => get().fetch(),
       update: (newSettings) =>
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
       regenerate: async () => {
