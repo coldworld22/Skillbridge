@@ -1,11 +1,3 @@
-const allowedPlatforms = [
-  "linkedin",
-  "github",
-  "twitter",
-  "youtube",
-  "facebook",
-  "instagram",
-  "website",
-];
+const allowedPlatforms = require("../../../../../shared/socialPlatforms.json");
 
 module.exports = { allowedPlatforms };
