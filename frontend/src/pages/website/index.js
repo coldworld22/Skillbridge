@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, createRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import Navbar from "@/components/website/sections/Navbar";
@@ -33,10 +33,11 @@ export default function Home() {
   ], [planRole]);
 
   const sectionRefs = useRef([]);
-  sectionRefs.current = useMemo(
-    () => sections.map(() => createRef()),
-    [sections.length]
-  );
+  if (sectionRefs.current.length !== sections.length) {
+    sectionRefs.current = sections.map(
+      (_, i) => sectionRefs.current[i] || React.createRef()
+    );
+  }
   const [currentSection, setCurrentSection] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Intentionally no console logs to avoid leaking user data
@@ -64,9 +65,9 @@ export default function Home() {
 
   // Smooth scrolling to sections
   const scrollToSection = (index) => {
-    const section = sectionRefs.current[index];
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
+    const ref = sectionRefs.current[index];
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
       setCurrentSection(index);
     }
   };
