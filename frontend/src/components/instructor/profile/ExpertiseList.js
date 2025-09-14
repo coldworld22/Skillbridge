@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FaBriefcase, FaPlus } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
@@ -6,8 +7,15 @@ export default function ExpertiseList({ expertise, onChange, t }) {
   const [newExpertise, setNewExpertise] = useState("");
 
   const addExpertise = () => {
-    if (!newExpertise.trim()) return;
-    onChange([...expertise, newExpertise.trim()]);
+    const trimmed = newExpertise.trim();
+    if (!trimmed) return;
+    const exists = expertise.some((e) => e.toLowerCase() === trimmed.toLowerCase());
+    if (exists) {
+      toast.info("Tag already exists");
+      setNewExpertise("");
+      return;
+    }
+    onChange([...expertise, trimmed]);
     setNewExpertise("");
   };
 

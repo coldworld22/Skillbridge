@@ -1,4 +1,4 @@
-import { buildTutorialFormData } from "@/utils/tutorialForm";
+import { buildTutorialFormData } from "@/utils/tutorialDraft";
 
 describe("buildTutorialFormData", () => {
   it("builds form data with provided status", () => {
