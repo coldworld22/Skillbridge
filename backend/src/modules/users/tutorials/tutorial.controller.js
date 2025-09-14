@@ -22,6 +22,8 @@ const { parsePlanFeatures } = require("../../../utils/planFeatures");
 const { sendSuccess } = require("../../../utils/response");
 const { parseTags, parseChapters } = require("./tutorial.helpers");
 const { sendCreationNotifications } = require("./tutorial.notifications");
+const tutorialValidator = require("./tutorial.validator");
+const { ZodError } = require("zod");
 
 // Helper to resolve uploads subdirectory based on user role
 const getRoleDir = (req) => {
@@ -38,6 +40,19 @@ const assertInstructorOwnsTutorial = async (userId, tutorialId) => {
 };
 
 exports.createTutorial = catchAsync(async (req, res) => {
+  let body;
+  try {
+    ({ body } = await tutorialValidator.create.parseAsync({ body: req.body }));
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.errors,
+      });
+    }
+    throw err;
+  }
+
   const {
     title,
     description,
@@ -50,7 +65,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
     chapters: rawChapters,
     included_plans = [],
     instructor_id: bodyInstructorId,
-  } = req.body;
+  } = body;
 
   const parsedChapters = parseChapters(rawChapters);
   const tags = parseTags(rawTags);
@@ -166,7 +181,21 @@ exports.updateTutorial = catchAsync(async (req, res) => {
   if (req.user.role === "instructor") {
     await assertInstructorOwnsTutorial(req.user.id, req.params.id);
   }
-  const { tags: rawTags, ...data } = req.body;
+
+  let body;
+  try {
+    ({ body } = await tutorialValidator.update.parseAsync({ body: req.body }));
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: err.errors,
+      });
+    }
+    throw err;
+  }
+
+  const { tags: rawTags, ...data } = body;
   const roleDir = getRoleDir(req);
   if (req.files?.thumbnail) {
     data.cover_image = `/uploads/tutorials/${roleDir}/${req.files.thumbnail[0].filename}`;
