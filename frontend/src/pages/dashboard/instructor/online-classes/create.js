@@ -18,6 +18,7 @@ import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { toDateTimeISO } from '@/utils/date';
 import FloatingInput from '@/components/shared/FloatingInput';
+import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -52,14 +53,26 @@ function CreateOnlineClass() {
     lessons: [],
     lessonCount: ''
   });
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading,
+    handleImageUpload,
+    handleVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    onError: (msg) => toast.error(msg),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+  });
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })
@@ -102,69 +115,6 @@ function CreateOnlineClass() {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
-
-    setImageUploading(true);
-    setUploadProgress(0);
-
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error('Failed to load image preview.');
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error('Video must be less than 100MB');
-      return;
-    }
-
-    setVideoUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress (replace with actual upload logic)
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setVideoUploading(false);
-          setFormData(prev => ({
-            ...prev,
-            demoVideo: file,
-            demoPreview: URL.createObjectURL(file)
-          }));
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-  };
 
   const addTag = (tag) => {
     if (tag && !selectedTags.includes(tag)) {

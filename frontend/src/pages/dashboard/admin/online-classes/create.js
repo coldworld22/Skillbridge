@@ -8,7 +8,7 @@
 // Notifications and translations are also integrated.
 // ─────────────────────────────────────────────────────
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
@@ -30,6 +30,7 @@ import useNotificationStore from '@/store/notifications/notificationStore';
 import useMessageStore from '@/store/messages/messageStore';
 import FloatingInput from '@/components/shared/FloatingInput';
 import { toDateTimeISO } from '@/utils/date';
+import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -67,16 +68,28 @@ function CreateOnlineClass() {
     lessons: [],
     lessonCount: ''
   });
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const videoIntervalRef = useRef(null);
+
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading,
+    handleImageUpload,
+    handleVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    t,
+    onError: (msg) => toast.error(msg),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+  });
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -102,12 +115,6 @@ function CreateOnlineClass() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
     if (user?.full_name) {
       setFormData((prev) => ({ ...prev, instructor: user.full_name }));
     }
@@ -121,71 +128,6 @@ function CreateOnlineClass() {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('image_size_exceeded'));
-      return;
-    }
-
-    setImageUploading(true);
-    setUploadProgress(0);
-
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error(t('image_preview_failed'));
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error(t('video_size_exceeded'));
-      return;
-    }
-
-    setVideoUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress (replace with actual upload logic)
-    if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-    videoIntervalRef.current = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          if (videoIntervalRef.current) clearInterval(videoIntervalRef.current);
-          videoIntervalRef.current = null;
-          setVideoUploading(false);
-          setFormData((prev) => ({
-            ...prev,
-            demoVideo: file,
-            demoPreview: URL.createObjectURL(file),
-          }));
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-  };
 
   const addTag = (tag) => {
     if (tag && !selectedTags.includes(tag)) {
