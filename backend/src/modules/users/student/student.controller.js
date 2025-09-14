@@ -113,8 +113,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar:", err)
+      );
     }
 
     res.json({ avatar_url: avatarUrl });
