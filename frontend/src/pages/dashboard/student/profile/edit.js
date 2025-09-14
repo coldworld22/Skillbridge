@@ -21,7 +21,7 @@ import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
-  FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
+  FaUserCircle, FaIdCard, FaGlobe,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
   FaCheck
 } from "react-icons/fa";
@@ -656,45 +656,27 @@ const handleAvatarSelect = (e) => {
 
               {expanded.social && (
                 <div className="p-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaLinkedin className="w-4 h-4 mr-2 text-blue-700" />
-                      {t('linkedin_label')}
-                    </label>
-                  <input
-                      type="text"
-                      name="linkedin"
-                      value={formData.socialLinks.linkedin || ""}
-                      onChange={handleSocialChange}
-                      placeholder={t('linkedin_placeholder')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                    {errors['socialLinks.linkedin'] && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors['socialLinks.linkedin']}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                      <FaGithub className="w-4 h-4 mr-2 text-gray-800" />
-                      {t('github_label')}
-                    </label>
-                  <input
-                      type="text"
-                      name="github"
-                      value={formData.socialLinks.github || ""}
-                      onChange={handleSocialChange}
-                      placeholder={t('github_placeholder')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    />
-                    {errors['socialLinks.github'] && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors['socialLinks.github']}
-                      </p>
-                    )}
-                  </div>
+                  {allowedPlatforms.map(({ name, Icon, className }) => (
+                    <div key={name}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <Icon className={`w-4 h-4 mr-2 ${className}`} />
+                        {t(`${name}_label`)}
+                      </label>
+                      <input
+                        type="text"
+                        name={name}
+                        value={formData.socialLinks[name] || ""}
+                        onChange={handleSocialChange}
+                        placeholder={t(`${name}_placeholder`)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                      {errors[`socialLinks.${name}`] && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors[`socialLinks.${name}`]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
