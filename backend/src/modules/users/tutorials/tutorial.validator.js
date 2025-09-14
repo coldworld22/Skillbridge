@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { TUTORIAL_STATUS } = require("../../../../../shared/tutorialStatus");
+const { TUTORIAL_STATUS } = require("../../../shared/tutorialStatus");
 
 // Helper preprocessor for boolean values coming from multipart/form-data
 const toBoolean = (val) => {
