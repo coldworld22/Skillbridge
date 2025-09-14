@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import {
   getStudentProfile,
@@ -23,17 +26,15 @@ import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaLinkedin, FaGithub,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
+  FaGlobe,
   FaCheck
 } from "react-icons/fa";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
-
 export const studentProfileSchema = z.object({
   full_name: z.string().min(3, "full_name_min"),
-  phone: z.string().refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+  phone: z.string().refine((val) => isValidPhoneNumber(val, getUserCountry()), {
     message: "invalid_phone_number",
   }),
   gender: z.enum(['male', 'female']),
@@ -187,9 +188,9 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
-    if (!tempAvatar || !croppedAreaPixels) return;
     setIsUploadingAvatar(true);
     try {
+      if (!tempAvatar || !croppedAreaPixels) return;
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadStudentAvatar(user.id, file);
@@ -200,15 +201,17 @@ const handleAvatarSelect = (e) => {
         avatar_url,
         avatarPreview: `${process.env.NEXT_PUBLIC_API_BASE_URL}${avatar_url}?v=${Date.now()}`
       }));
-      toast.success("Avatar uploaded successfully!");
+      toast.success(t('avatar_upload_success'));
       setShowCropper(false);
-      URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
       console.error('Avatar upload error:', error.response);
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
+      if (tempAvatar) {
+        URL.revokeObjectURL(tempAvatar);
+      }
       setIsUploadingAvatar(false);
     }
   };
@@ -275,13 +278,19 @@ const handleAvatarSelect = (e) => {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach((error) => {
-        const key = error.path.join(".");
-        errs[key] = t(error.message);
-      });
-      setErrors(errs);
-      if (err.errors?.length) {
-        toast.error(t(err.errors[0].message));
+      if (err instanceof ZodError) {
+        err.errors.forEach((error) => {
+          const key = error.path.join(".");
+          errs[key] = t(error.message);
+        });
+        setErrors(errs);
+        if (err.errors?.length) {
+          toast.error(t(err.errors[0].message));
+        } else {
+          toast.error(t('fix_errors'));
+        }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }
@@ -465,7 +474,11 @@ const handleAvatarSelect = (e) => {
               {expanded.identity && (
                 <div className="p-4 space-y-4">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    {formData.identityPreview ? (
+                    {isUploadingIdentity ? (
+                      <div className="flex justify-center">
+                        <FaSpinner className="w-6 h-6 text-purple-600 animate-spin" />
+                      </div>
+                    ) : formData.identityPreview ? (
                       <div className="space-y-3">
                         <div className="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full">
                           <FaFilePdf className="w-8 h-8 text-purple-600" />
@@ -750,14 +763,14 @@ const handleAvatarSelect = (e) => {
                 onClick={handleCropCancel}
                 className="px-4 py-2 bg-gray-200 rounded"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCropUpload}
                 className="px-4 py-2 bg-yellow-600 text-white rounded flex items-center gap-2"
               >
                 {isUploadingAvatar ? <FaSpinner className="animate-spin" /> : <FaCheck />}
-                Upload
+                {t('upload')}
               </button>
             </div>
           </div>

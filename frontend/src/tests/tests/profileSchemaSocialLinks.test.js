@@ -27,7 +27,7 @@ describe('profile schema allows empty social link URLs', () => {
       experience: 1,
       socialLinks: { twitter: '' },
     };
-    expect(() => instructorProfileSchema.parse(data)).not.toThrow();
+    expect(() => instructorProfileSchema('US').parse(data)).not.toThrow();
   });
 
   test('student profile accepts empty social link', () => {

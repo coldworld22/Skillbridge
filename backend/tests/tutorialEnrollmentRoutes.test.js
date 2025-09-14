@@ -269,3 +269,31 @@ describe('POST /api/users/tutorials/enrollments/:id/complete', () => {
   });
 });
 
+describe('POST /api/users/tutorials/enrollments/status/batch', () => {
+  it('returns enrollment status map for provided tutorials', async () => {
+    db.mockImplementation((table) => {
+      if (table === 'tutorial_enrollments')
+        return {
+          where: () => ({
+            whereIn: () =>
+              Promise.resolve([
+                { tutorial_id: 1, status: 'completed', progress: null },
+                { tutorial_id: 2, status: 'enrolled', progress: 40 },
+              ]),
+          }),
+        };
+    });
+
+    const res = await request(app)
+      .post('/api/users/tutorials/enrollments/status/batch')
+      .send({ tutorialIds: [1, 2, 3] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({
+      1: { enrolled: true, status: 'completed', progress: 100 },
+      2: { enrolled: true, status: 'enrolled', progress: 40 },
+      3: { enrolled: false, status: null, progress: 0 },
+    });
+  });
+});
+

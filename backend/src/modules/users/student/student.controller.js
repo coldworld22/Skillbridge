@@ -4,12 +4,10 @@ const path = require("path");
 /**
  * Student controller
  */
-const bcrypt = require("bcrypt");
 const db = require("../../../config/database");
-const notificationService = require("../../notifications/notifications.service");
-
-const messageService = require("../../messages/messages.service");
+const userService = require("../user.service");
 const { allowedPlatforms } = require("../common/socialPlatforms");
+const { getStudentProfile, updateStudentProfile } = require("./student.service");
 
 
 /**
@@ -89,6 +87,14 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
+  const hasUserFields = [full_name, phone, gender, date_of_birth].every(Boolean);
+  const hasStudentFields =
+    education_level &&
+    (Array.isArray(topics) ? topics.length > 0 : !!topics) &&
+    (Array.isArray(learning_goals) ? learning_goals.length > 0 : !!learning_goals);
+  const hasSocialLinks = sanitizedLinks.length > 0;
+  const isProfileComplete = hasUserFields && hasStudentFields && hasSocialLinks;
+
   let trx;
   try {
     trx = await db.transaction();
@@ -139,20 +145,18 @@ exports.updateProfile = async (req, res) => {
         "updated_at"
       );
 
-    const [student] = await db("student_profiles")
-      .where({ user_id: userId })
-      .select("education_level", "topics", "learning_goals", "identity_doc_url");
+  try {
+    const result = await updateStudentProfile(
+      userId,
+      userData,
+      studentData,
+      sanitizedLinks
+    );
 
-    const socialLinks = await db("user_social_links")
-      .where({ user_id: userId })
-      .select("platform", "url");
+    const profile = await getStudentProfile(userId);
 
-    res.json({ ...user, student, social_links: socialLinks });
+    res.json({ ...profile, ...result });
   } catch (err) {
-    if (trx) {
-      await trx.rollback();
-    }
-
     // Handle unique constraint violations for email and phone
     if (err.code === "23505") {
       if (err.constraint === "users_email_unique") {
@@ -189,8 +193,11 @@ exports.updateAvatar = async (req, res) => {
       .update({ avatar_url: avatarUrl });
 
     if (oldAvatar) {
-      const oldPath = path.join(__dirname, "../../../../", oldAvatar);
-      fs.unlink(oldPath, (err) => err && logger.error("Failed to remove old avatar:", err));
+      const sanitizedOldAvatar = oldAvatar.replace(/^\//, "");
+      const oldPath = path.join(process.cwd(), sanitizedOldAvatar);
+      fs.unlink(oldPath, (err) =>
+        err && logger.error("Failed to remove old avatar:", err)
+      );
     }
 
     res.json({ avatar_url: avatarUrl });
@@ -213,11 +220,27 @@ exports.updateIdentity = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No identity document uploaded" });
     }
-    const identityUrl = `/uploads/identity/student/${req.file.filename}`;
-    const exists = await db("student_profiles")
+    const profile = await db("student_profiles")
       .where({ user_id: req.user.id })
       .first();
     if (exists) {
+      if (exists.identity_doc_url) {
+        const oldPath = path.join(
+          __dirname,
+          "../../../../",
+          exists.identity_doc_url
+        );
+        fs.unlink(oldPath, (err) => {
+          if (err) {
+            if (err.code === "ENOENT") {
+              logger.warn("Old identity document not found:", err);
+            } else {
+              logger.error("Failed to remove old identity document:", err);
+            }
+          }
+        });
+      }
+
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
@@ -227,8 +250,12 @@ exports.updateIdentity = async (req, res) => {
         identity_doc_url: identityUrl,
       });
     }
+
     res.json({ identity_doc_url: identityUrl });
   } catch (error) {
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => err && logger.error(err));
+    }
     logger.error(error);
     res.status(500).json({ message: "Failed to update identity document" });
   }
@@ -241,7 +268,7 @@ exports.updateIdentity = async (req, res) => {
  */
 exports.changePassword = async (req, res) => {
   const userId = req.user.id;
-  const { currentPassword, newPassword } = req.body;
+  const { newPassword } = req.body;
 
   if (!newPassword || newPassword.length < 8) {
     return res
@@ -249,34 +276,7 @@ exports.changePassword = async (req, res) => {
       .json({ message: "New password must be at least 8 characters." });
   }
 
-  const [user] = await db("users").where({ id: userId }).select("password_hash");
-  if (!user) {
-    return res.status(404).json({ message: "User not found." });
-  }
-
-  const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-  if (!isMatch) {
-    return res.status(401).json({ message: "Current password is incorrect." });
-  }
-
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db("users").where({ id: userId }).update({
-    password_hash: newHash,
-    updated_at: new Date(),
-  });
-
-  await notificationService.createNotification({
-    user_id: userId,
-    type: "security",
-    message: "Your password was changed successfully",
-  });
-
-  await messageService.createMessage({
-    sender_id: userId,
-    receiver_id: userId,
-    message: "Your password was changed successfully",
-  });
+  await userService.updateUser(userId, { password: newPassword });
 
   res.json({ message: "Password changed successfully." });
 };
