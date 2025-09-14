@@ -147,7 +147,10 @@ export default function MyEnrolledClassesPage() {
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    onClick={() => handleNotify(cls.id)}
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                  >
                     <FaBell /> Notify Me
                   </button>
                 )}
