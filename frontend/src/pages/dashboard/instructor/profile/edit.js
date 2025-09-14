@@ -40,7 +40,6 @@ import { MdOutlineWorkOutline } from "react-icons/md";
 
 import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
 import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
-import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
 import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
@@ -108,6 +107,25 @@ export default function InstructorProfileEdit() {
   const [tempFileName, setTempFileName] = useState("");
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [newExpertise, setNewExpertise] = useState("");
+
+  const addExpertise = () => {
+    const trimmed = newExpertise.trim();
+    if (!trimmed) return;
+    const exists = formData.expertise.some(
+      (e) => e.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      toast.info("Tag already exists");
+      setNewExpertise("");
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      expertise: [...prev.expertise, trimmed],
+    }));
+    setNewExpertise("");
+  };
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -607,12 +625,9 @@ export default function InstructorProfileEdit() {
                 value={newExpertise}
                 onChange={(e) => setNewExpertise(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && newExpertise.trim()) {
-                    setFormData(prev => ({
-                      ...prev,
-                      expertise: [...prev.expertise, newExpertise.trim()],
-                    }));
-                    setNewExpertise("");
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addExpertise();
                   }
                 }}
                 placeholder={t('add_expertise_placeholder')}
@@ -620,14 +635,7 @@ export default function InstructorProfileEdit() {
               />
               <button
                 type="button"
-                onClick={() => {
-                  if (!newExpertise.trim()) return;
-                  setFormData(prev => ({
-                    ...prev,
-                    expertise: [...prev.expertise, newExpertise.trim()]
-                  }));
-                  setNewExpertise("");
-                }}
+                onClick={addExpertise}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 flex items-center gap-2"
               >
                 <FaPlus size={14} /> {t('add')}
