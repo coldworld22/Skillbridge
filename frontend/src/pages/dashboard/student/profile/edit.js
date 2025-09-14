@@ -26,7 +26,6 @@ import {
   FaUpload, FaTrash, FaFilePdf, FaSpinner,
   FaUserCircle, FaIdCard, FaGlobe,
   FaChevronDown, FaChevronUp, FaTimesCircle, FaGraduationCap,
-  FaGlobe,
   FaCheck
 } from "react-icons/fa";
 import Cropper from "react-easy-crop";
