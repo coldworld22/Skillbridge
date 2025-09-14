@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   FaChalkboardTeacher,
@@ -24,14 +24,18 @@ export default function MyEnrolledClassesPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const list = await fetchMyEnrolledClasses();
         setClasses(list);
+        setError(null);
       } catch (err) {
         console.error('Failed to load classes', err);
+        toast.error('Failed to load classes');
+        setError('Failed to load classes');
       }
     };
     load();
@@ -58,6 +62,16 @@ export default function MyEnrolledClassesPage() {
 
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
+
+  if (error) {
+    return (
+      <StudentLayout>
+        <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
+          <p className="text-center text-red-500">{error}</p>
+        </div>
+      </StudentLayout>
+    );
+  }
 
   return (
     <StudentLayout>
