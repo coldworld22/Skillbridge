@@ -9,6 +9,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
+import handleApiError from "@/utils/apiError";
 
 const fetcher = url => api.get(url).then(res => res.data.data);
 
@@ -20,36 +21,58 @@ export default function LanguagesPage() {
   const ITEMS_PER_PAGE = 5;
 
   const toggleActive = async (lang) => {
+    const previous = languages;
+    const updated = languages?.map((l) =>
+      l.id === lang.id ? { ...l, is_active: !l.is_active } : l
+    );
+
+    mutate(updated, false);
+
     try {
       await api.put(`/languages/${lang.id}`, { ...lang, is_active: !lang.is_active });
       mutate();
       mutateGlobal("/app-config");
       toast.success(t('language_updated'));
     } catch (err) {
-      toast.error(t('failed_to_save'));
+      mutate(previous, false);
+      handleApiError(err, t('failed_to_save'));
     }
   };
 
   const setDefault = async (lang) => {
+    const previous = languages;
+    const updated = languages?.map((l) => ({
+      ...l,
+      is_default: l.id === lang.id
+    }));
+
+    mutate(updated, false);
+
     try {
       await api.put(`/languages/${lang.id}`, { ...lang, is_default: true });
       mutate();
       mutateGlobal("/app-config");
       toast.success(t('language_updated'));
     } catch (err) {
-      toast.error(t('failed_to_save'));
+      mutate(previous, false);
+      handleApiError(err, t('failed_to_save'));
     }
   };
 
   const remove = async (id) => {
     if (confirm(t('confirm_delete'))) {
+      const previous = languages;
+      const updated = languages?.filter((l) => l.id !== id);
+      mutate(updated, false);
+
       try {
         await api.delete(`/languages/${id}`);
         mutate();
         mutateGlobal("/app-config");
         toast.success(t('language_updated'));
       } catch (err) {
-        toast.error(t('failed_to_save'));
+        mutate(previous, false);
+        handleApiError(err, t('failed_to_save'));
       }
     }
   };

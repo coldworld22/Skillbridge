@@ -53,6 +53,10 @@ Visit `/admin/alerts` while logged in as an admin to monitor recent warnings and
 
 The invoice page allows students selecting bank transfer to upload payment proof. Files are sent to the backend `POST /api/payments/student/receipts` endpoint.
 
+### HTML Sanitization
+
+User-provided HTML such as class descriptions is sanitized with [DOMPurify](https://github.com/cure53/DOMPurify) before rendering. This prevents cross-site scripting by stripping all markup and dangerous attributes.
+
 ## Resources
 
 - [Next.js Documentation](https://nextjs.org/docs) – learn about Next.js features and API.

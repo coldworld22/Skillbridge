@@ -71,6 +71,7 @@ const getInstructorProfile = async (userId) => {
 
 const normalizeUrl = (url = "") => {
   const trimmed = url.trim();
+  if (!trimmed) return "";
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
@@ -87,6 +88,7 @@ const updateInstructorProfile = async (
           (link) =>
             link &&
             typeof link.url === "string" &&
+            link.url.trim() !== "" &&
             typeof link.platform === "string" &&
             allowedPlatforms.includes(link.platform.trim().toLowerCase())
         )
@@ -96,16 +98,37 @@ const updateInstructorProfile = async (
         }))
     : [];
 
+  // Ensure each platform appears only once by using a Map keyed by platform
+  const uniqueLinks = Array.from(
+    new Map(sanitizedLinks.map((link) => [link.platform, link])).values()
+  );
+
   const hasUserFields =
     userData.full_name &&
     userData.phone &&
     userData.gender &&
     userData.date_of_birth;
+  const hasExpertise = Array.isArray(instructorData.expertise)
+    ? instructorData.expertise.length > 0
+    : Boolean(instructorData.expertise);
   const hasInstructorFields =
+    Array.isArray(instructorData.expertise) &&
+    instructorData.expertise.length > 0 &&
+    typeof instructorData.bio === "string" &&
+    instructorData.bio.trim().length > 0 &&
+    instructorData.pricing !== undefined &&
+    instructorData.pricing !== null;
+  const hasExperience =
     instructorData.experience !== undefined &&
-    instructorData.experience !== null;
+    instructorData.experience !== null &&
+    hasExpertise &&
+    typeof instructorData.bio === "string" &&
+    instructorData.bio.trim() !== "" &&
+    instructorData.pricing !== undefined &&
+    instructorData.pricing !== null &&
+    Number(instructorData.pricing) > 0;
   const isProfileComplete =
-    hasUserFields && hasInstructorFields && sanitizedLinks.length > 0;
+    hasUserFields && hasInstructorFields && uniqueLinks.length > 0;
 
   await db.transaction(async (trx) => {
     // ✅ Update users table
@@ -130,9 +153,9 @@ const updateInstructorProfile = async (
       await trx("instructor_profiles").insert({ user_id: userId, ...data });
     }
 
-    // ✅ Replace social links
+    // ✅ Replace social links with unique platforms
     await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of sanitizedLinks) {
+    for (const link of uniqueLinks) {
       await trx("user_social_links").insert({
         user_id: userId,
         platform: link.platform,

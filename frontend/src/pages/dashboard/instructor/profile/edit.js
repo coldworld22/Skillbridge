@@ -7,7 +7,7 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { API_BASE_URL } from "@/config/config";
 import { getCurrencies } from "@/services/currencyService";
@@ -21,6 +21,8 @@ import {
   uploadInstructorAvatar,
   uploadInstructorDemo,
   toggleInstructorStatus,
+  uploadCertificateFile,
+  deleteCertificateFile,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -33,22 +35,25 @@ import {
   FaVenusMars,
   FaUser,
   FaCheck,
+  FaCertificate,
+  FaFilePdf,
+  FaFileImage,
+  FaTrash,
+  FaUpload,
+  FaPlus,
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
 
 import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
 import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
-import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
-export const instructorProfileSchema = z.object({
+export const instructorProfileSchema = (country) => z.object({
   full_name: z.string().min(3, "full_name_min"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, country), {
       message: "invalid_phone_number",
     }),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -68,7 +73,25 @@ export const instructorProfileSchema = z.object({
   socialLinks: z
     .record(z.string().url("invalid_url").or(z.literal("")))
     .optional(),
-});
+})
+  .superRefine((data, ctx) => {
+    const hasAmount = typeof data.pricing_amount === "number";
+    const hasCurrency = !!data.pricing_currency;
+    if (hasAmount && !hasCurrency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pricing_currency"],
+        message: "pricing_currency_required",
+      });
+    }
+    if (!hasAmount && hasCurrency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pricing_amount"],
+        message: "pricing_amount_required",
+      });
+    }
+  });
 // Currency options will be loaded from the backend configuration
 export default function InstructorProfileEdit() {
   const router = useRouter();
@@ -97,6 +120,9 @@ export default function InstructorProfileEdit() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingDemo, setIsUploadingDemo] = useState(false);
 
+  const [avatarInputKey, setAvatarInputKey] = useState(0);
+  const [demoInputKey, setDemoInputKey] = useState(0);
+
   const [showCropper, setShowCropper] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -105,6 +131,13 @@ export default function InstructorProfileEdit() {
   const [tempFileName, setTempFileName] = useState("");
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [available, setAvailable] = useState(user?.is_online ?? false);
+  const [newExpertise, setNewExpertise] = useState("");
+  const [newCertificate, setNewCertificate] = useState({
+    title: "",
+    file: null,
+    preview: null,
+  });
+  const [certificateUploading, setCertificateUploading] = useState(false);
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -205,7 +238,7 @@ export default function InstructorProfileEdit() {
       const sanitizedLinks = Object.fromEntries(
         Object.entries(formData.socialLinks || {}).filter(([, url]) => url.trim() !== "")
       );
-      instructorProfileSchema.parse({
+      instructorProfileSchema(user?.country).parse({
         ...formData,
         socialLinks: Object.keys(sanitizedLinks).length ? sanitizedLinks : undefined,
       });
@@ -213,15 +246,19 @@ export default function InstructorProfileEdit() {
       return true;
     } catch (err) {
       const errs = {};
-      err.errors.forEach(error => {
-        const key = error.path.join(".");
-        errs[key] = t(error.message);
-      });
-      setErrors(errs);
-      if (err.errors?.length) {
-        toast.error(t(err.errors[0].message));
-      } else {
+      if (err instanceof ZodError) {
+        err.errors.forEach(error => {
+          const key = error.path.join(".");
+          errs[key] = t(error.message);
+        });
+        setErrors(errs);
+        if (err.errors?.length) {
+          toast.error(t(err.errors[0].message));
+        } else {
           toast.error(t('fix_errors'));
+        }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }
@@ -288,6 +325,55 @@ export default function InstructorProfileEdit() {
     }
   };
 
+  const handleCertificateUpload = async () => {
+    if (!newCertificate.title || !newCertificate.file) {
+      toast.error(t('provide_title_and_file'));
+      return;
+    }
+    try {
+      setCertificateUploading(true);
+      const formDataPayload = new FormData();
+      formDataPayload.append('title', newCertificate.title);
+      formDataPayload.append('file', newCertificate.file);
+      const response = await uploadCertificateFile(formDataPayload);
+      setFormData((prev) => ({
+        ...prev,
+        certificates: [
+          ...prev.certificates,
+          {
+            id: response.id,
+            title: newCertificate.title,
+            file_url: response.file_url,
+          },
+        ],
+      }));
+      if (newCertificate.preview) {
+        URL.revokeObjectURL(newCertificate.preview);
+      }
+      setNewCertificate({ title: '', file: null, preview: null });
+      toast.success(t('certificate_upload_success'));
+    } catch (error) {
+      toast.error(t('certificate_upload_failed'));
+      console.error('Certificate upload error:', error);
+    } finally {
+      setCertificateUploading(false);
+    }
+  };
+
+  const handleRemoveCertificate = async (id) => {
+    try {
+      await deleteCertificateFile(id);
+      setFormData((prev) => ({
+        ...prev,
+        certificates: prev.certificates.filter((cert) => cert.id !== id),
+      }));
+      toast.success(t('certificate_removed'));
+    } catch (error) {
+      toast.error(t('certificate_remove_failed'));
+      console.error('Certificate removal error:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     try {
@@ -295,7 +381,7 @@ export default function InstructorProfileEdit() {
 
       // Combine pricing amount and currency
       const pricing =
-        typeof formData.pricing_amount === "number"
+        typeof formData.pricing_amount === "number" && formData.pricing_currency
           ? `${formData.pricing_amount} ${formData.pricing_currency}`
           : "";
       const social_links = toSocialLinksArray(formData.socialLinks);
@@ -400,18 +486,20 @@ export default function InstructorProfileEdit() {
         {/* Avatar and Demo Upload Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           <AvatarUploader
+            key={avatarInputKey}
             avatarPreview={formData.avatarPreview}
             isUploadingAvatar={isUploadingAvatar}
             t={t}
             onSelect={handleAvatarSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, avatarPreview: null }))}
+            onRemove={handleAvatarRemove}
           />
           <DemoVideoUploader
+            key={demoInputKey}
             demoPreview={formData.demoPreview}
             isUploadingDemo={isUploadingDemo}
             t={t}
             onSelect={handleDemoSelect}
-            onRemove={() => setFormData((prev) => ({ ...prev, demoPreview: null }))}
+            onRemove={handleDemoRemove}
           />
         </div>
 
@@ -572,6 +660,12 @@ export default function InstructorProfileEdit() {
                   ))}
                 </select>
               </div>
+              {errors.pricing_amount && (
+                <p className="text-sm text-red-600 mt-1">{errors.pricing_amount}</p>
+              )}
+              {errors.pricing_currency && (
+                <p className="text-sm text-red-600 mt-1">{errors.pricing_currency}</p>
+              )}
               <p className="text-sm text-gray-500 mt-1">e.g. 100 USD per hour</p>
             </div>
           </div>
@@ -595,42 +689,20 @@ export default function InstructorProfileEdit() {
             baseUrl={BASE_URL}
           />
 
-          {/* Social Links */}
-          <div>
-            <label className="block text-sm font-medium mb-2">{t('social_links')}</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allowedPlatforms.map(({ name, Icon, className }) => (
-                <div key={name} className="bg-gray-50 p-3 rounded-lg">
-                  <label className="text-sm flex items-center gap-2 font-medium mb-1">
-                    <Icon className={className} /> {name.charAt(0).toUpperCase() + name.slice(1)}
-                  </label>
-                  <input
-                    type="text"
-                    name={name}
-                    value={formData.socialLinks[name] || ""}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        socialLinks: { ...prev.socialLinks, [name]: e.target.value },
-                      }));
-                      setErrors((prev) => ({ ...prev, [`socialLinks.${name}`]: null }));
-                    }}
-                    placeholder={
-                      name === 'website'
-                        ? 'https://yourwebsite.com'
-                        : `https://${name}.com/yourprofile`
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                  {errors[`socialLinks.${name}`] && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors[`socialLinks.${name}`]}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <SocialLinksSection
+            socialLinks={formData.socialLinks}
+            onChange={(links) => {
+              setFormData((prev) => ({ ...prev, socialLinks: links }));
+              setErrors((prev) => {
+                const updated = { ...prev };
+                Object.keys(links).forEach((name) => {
+                  delete updated[`socialLinks.${name}`];
+                });
+                return updated;
+              });
+            }}
+            t={t}
+          />
 
           {/* Submit Button */}
           <div className="flex justify-end pt-6">

@@ -178,7 +178,9 @@
   "favoritesPage": {
     "heading": "My Favorite Tutorials",
     "empty": "You have no favorite tutorials.",
-    "remove": "Remove"
+    "remove": "Remove",
+    "load_error": "Failed to load favorite tutorials",
+    "loading": "Loading favorites..."
   }
 }
 
