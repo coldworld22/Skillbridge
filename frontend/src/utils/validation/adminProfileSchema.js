@@ -1,15 +1,13 @@
 // 📁 src/utils/validation/adminProfileSchema.js
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
-
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
+import { getUserCountry } from "@/utils/getUserCountry";
 
 export const adminProfileSchema = z.object({
   full_name: z.string().min(3, "Full name is required"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
       message: "Invalid phone number",
     }),
   gender: z.enum(["male", "female"]),

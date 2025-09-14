@@ -104,6 +104,7 @@
         "favicon_upload_failed": "Échec du téléversement du favicon",
         "background_upload_success": "Arrière-plan téléversé avec succès",
         "background_upload_failed": "Échec du téléversement de l'arrière-plan"
-      }
-  }
+    }
+  },
+  "file_size_limit": "La taille du fichier doit être de 10 Mo ou moins"
 }

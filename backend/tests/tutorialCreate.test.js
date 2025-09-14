@@ -1,16 +1,3 @@
-jest.mock('../src/config/database', () => {
-  const mockDb = jest.fn(() => ({
-    where: jest.fn().mockReturnThis(),
-    whereRaw: jest.fn().mockReturnThis(),
-    first: jest.fn().mockResolvedValue(null),
-  }));
-  mockDb.transaction = jest.fn(async (cb) => {
-    await cb({});
-  });
-  mockDb.raw = jest.fn();
-  return mockDb;
-});
-
 jest.mock('../src/modules/users/tutorials/tutorial.service', () => ({
   createTutorialWithRelations: jest.fn(),
   addTutorialTags: jest.fn(),
@@ -59,7 +46,6 @@ jest.mock('../src/modules/plans/plans.service', () => ({
 const controller = require('../src/modules/users/tutorials/tutorial.controller');
 const service = require('../src/modules/users/tutorials/tutorial.service');
 const userModel = require('../src/modules/users/user.model');
-const db = require('../src/config/database');
 const { getActiveInstructorPlan } = require('../src/modules/plans/instructor.helper');
 const planService = require('../src/modules/plans/plans.service');
 
@@ -170,9 +156,7 @@ describe('createTutorial', () => {
   });
 
   it('rejects duplicate titles regardless of case', async () => {
-    const whereRaw = jest.fn().mockReturnThis();
-    const first = jest.fn().mockResolvedValue({ id: 'existing' });
-    db.mockImplementationOnce(() => ({ whereRaw, first }));
+    service.createTutorialWithRelations.mockRejectedValue({ code: '23505' });
 
     const req = {
       body: {
@@ -188,9 +172,11 @@ describe('createTutorial', () => {
     await controller.createTutorial(req, res, jest.fn());
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(whereRaw).toHaveBeenCalledWith('LOWER(title) = ?', 'my unique');
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(service.createTutorialWithRelations).not.toHaveBeenCalled();
+    expect(service.createTutorialWithRelations).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Tutorial title already exists',
+    });
   });
 });
 

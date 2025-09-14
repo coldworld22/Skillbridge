@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FaCertificate,
   FaFilePdf,
@@ -21,6 +21,16 @@ export default function CertificatesSection({ certificates, onChange, t, baseUrl
     preview: null,
   });
   const [uploading, setUploading] = useState(false);
+  const previewUrlRef = useRef(null);
+
+  useEffect(() => {
+    previewUrlRef.current = newCertificate.preview;
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, [newCertificate.preview]);
 
   const handleUpload = async () => {
     if (!newCertificate.title || !newCertificate.file) {
@@ -37,9 +47,6 @@ export default function CertificatesSection({ certificates, onChange, t, baseUrl
         ...certificates,
         { id: response.id, title: newCertificate.title, file_url: response.file_url },
       ]);
-      if (newCertificate.preview) {
-        URL.revokeObjectURL(newCertificate.preview);
-      }
       setNewCertificate({ title: "", file: null, preview: null });
       toast.success(t('certificate_upload_success'));
     } catch (error) {
@@ -134,7 +141,7 @@ export default function CertificatesSection({ certificates, onChange, t, baseUrl
                   const file = e.target.files[0];
                   if (!file) return;
                   if (file.size > 10 * 1024 * 1024) {
-                    toast.error('File size must be 10MB or less');
+                    toast.error(t('file_size_limit'));
                     return;
                   }
                   let preview = null;

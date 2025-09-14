@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { TUTORIAL_STATUS } = require("../../../../../shared/tutorialStatus");
 
 // Helper preprocessor for boolean values coming from multipart/form-data
 const toBoolean = (val) => {
@@ -29,7 +30,7 @@ exports.create = z.object({
     instructor_id: z.string().uuid().optional(),
     level: z.string(),
     language: z.string().optional(),
-    status: z.enum(["draft", "published", "archived"]).optional(),
+    status: z.enum(Object.values(TUTORIAL_STATUS)).optional(),
     price: z.preprocess(
       (val) => (val === '' || val === undefined ? undefined : Number(val)),
       z.number().nonnegative()
