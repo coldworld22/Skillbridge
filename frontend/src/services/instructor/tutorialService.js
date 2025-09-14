@@ -1,6 +1,6 @@
 import api from "@/services/api/api";
 import { API_BASE_URL } from "@/config/config";
-import { TUTORIAL_STATUS } from "@/shared/tutorialStatus";
+import { TUTORIAL_STATUS } from "@shared/tutorialStatus";
 
 const formatBase = (tut) => ({
   ...tut,
