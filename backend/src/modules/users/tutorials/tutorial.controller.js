@@ -23,7 +23,6 @@ const tutorialValidator = require("./tutorial.validator");
 const { sendSuccess } = require("../../../utils/response");
 const { parseTags, parseChapters } = require("./tutorial.helpers");
 const { sendCreationNotifications } = require("./tutorial.notifications");
-const tutorialValidator = require("./tutorial.validator");
 const { ZodError } = require("zod");
 
 // Helper to resolve uploads subdirectory based on user role
