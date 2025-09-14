@@ -30,13 +30,16 @@ export default function OnlineClassList() {
     load();
   }, []);
 
+  // The backend should already scope results to the logged-in instructor.
+  // This client-side filter is a safeguard to exclude any unexpected records
+  // and avoids defaulting to true when instructor data is missing.
   const myClasses = classes.filter((cls) => {
     if (cls.instructor_id && user?.id) return cls.instructor_id === user.id;
     if (cls.instructor && (user?.full_name || user?.name)) {
       const name = user.full_name || user.name;
       return cls.instructor === name;
     }
-    return true;
+    return false;
   });
 
   const filteredClasses = myClasses
