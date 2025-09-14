@@ -7,6 +7,7 @@ import Filters from "@/components/dashboard/admin/tutorials/Filters";
 import TutorialsTable from "@/components/dashboard/admin/tutorials/TutorialsTable";
 import BulkActions from "@/components/dashboard/admin/tutorials/BulkActions";
 import PaginationControls from "@/components/dashboard/admin/tutorials/PaginationControls";
+import Stats from "@/components/dashboard/admin/tutorials/Stats";
 import { toast } from "react-toastify";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -14,27 +15,33 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ConfirmModal from "@/components/common/ConfirmModal";
 import RejectionReasonModal from "@/components/common/RejectionReasonModal";
-import { fetchAllCategories } from "@/services/admin/categoryService";
 import {
-  fetchAllTutorials,
   permanentlyDeleteTutorial,
   toggleTutorialStatus,
   approveTutorial,
   rejectTutorial,
-  bulkApproveTutorials,
-  bulkDeleteTutorials,
 } from "@/services/admin/tutorialService";
 import { createNotification } from "@/services/notificationService";
 import { sendChatMessage } from "@/services/messageService";
 import useAuthStore from "@/store/auth/authStore";
 import useNotificationStore from "@/store/notifications/notificationStore";
 import useMessageStore from "@/store/messages/messageStore";
+import useAdminTutorials from "@/hooks/useAdminTutorials";
 
 function AdminTutorialsPage() {
   const { t } = useTranslation("dashboard", { keyPrefix: "tutorialsPage" });
   const router = useRouter();
-  const [tutorials, setTutorials] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    tutorials,
+    setTutorials,
+    categories,
+    loading,
+    selectedTutorials,
+    setSelectedTutorials,
+    clearSelected,
+    handleBulkDelete,
+    handleBulkApprove,
+  } = useAdminTutorials(t);
 
   const user = useAuthStore((state) => state.user);
   const refreshNotifications = useNotificationStore((state) => state.fetch);
@@ -45,50 +52,16 @@ function AdminTutorialsPage() {
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterApproval, setFilterApproval] = useState("All");
-  const [categories, setCategories] = useState([]);
 
   // Modals and Selections
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [tutorialToDelete, setTutorialToDelete] = useState(null);
   const [tutorialToReject, setTutorialToReject] = useState(null);
-  const [selectedTutorials, setSelectedTutorials] = useState([]);
 
   useEffect(() => {
     setSelectedTutorials([]);
-  }, [searchQuery, filterCategory, filterStatus, filterApproval]);
-
-  // Load tutorials and categories from backend on mount
-  useEffect(() => {
-    const controller = new AbortController();
-    let isMounted = true;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [tuts, cats] = await Promise.all([
-          fetchAllTutorials({ signal: controller.signal }),
-          fetchAllCategories({}, { signal: controller.signal }),
-        ]);
-        if (!isMounted) return;
-        setTutorials(tuts);
-        setCategories(cats?.data || cats || []);
-      } catch (err) {
-        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
-        console.error(err);
-        if (isMounted) toast.error(t('load_error'));
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, []);
+  }, [searchQuery, filterCategory, filterStatus, filterApproval, setSelectedTutorials]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -139,7 +112,6 @@ function AdminTutorialsPage() {
     }
   };
 
-  const clearSelected = () => setSelectedTutorials([]);
 
   const togglePublishStatus = async (id) => {
     try {
@@ -338,45 +310,6 @@ function AdminTutorialsPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedTutorials.length === 0) return;
-    try {
-      await bulkDeleteTutorials(selectedTutorials);
-      setTutorials((prev) =>
-        prev.filter((tut) => !selectedTutorials.includes(tut.id)),
-      );
-      toast.success(t("bulk_deleted"));
-    } catch (err) {
-      console.error(err);
-      toast.error(t("bulk_delete_failed"));
-    } finally {
-      setSelectedTutorials([]);
-    }
-  };
-
-  const handleBulkApprove = async () => {
-    if (selectedTutorials.length === 0) return;
-    try {
-      await bulkApproveTutorials(selectedTutorials);
-      setTutorials((prev) =>
-        prev.map((tut) =>
-          selectedTutorials.includes(tut.id)
-            ? {
-                ...tut,
-                approvalStatus: "Approved",
-                updatedAt: new Date().toISOString(),
-              }
-            : tut,
-        ),
-      );
-      toast.success(t("bulk_approved"));
-    } catch (err) {
-      console.error(err);
-      toast.error(t("bulk_approve_failed"));
-    }
-    setSelectedTutorials([]);
-  };
-
   // Pagination controls
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -426,30 +359,7 @@ function AdminTutorialsPage() {
         />
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
-            <p className="text-gray-600">Total Tutorials</p>
-            <p className="text-2xl font-bold">{tutorials.length}</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-yellow-500">
-            <p className="text-gray-600">Pending Approval</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.approvalStatus === "Pending").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
-            <p className="text-gray-600">Published</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Published").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow border-l-4 border-red-500">
-            <p className="text-gray-600">Drafts</p>
-            <p className="text-2xl font-bold">
-              {tutorials.filter((t) => t.status === "Draft").length}
-            </p>
-          </div>
-        </div>
+        <Stats tutorials={tutorials} />
 
         {/* TABLE */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
