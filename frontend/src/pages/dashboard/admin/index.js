@@ -4,7 +4,7 @@ import { useTranslation } from "next-i18next";
 import nextI18NextConfig from "../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import useAuthStore from "@/store/auth/authStore";
-import withAuthProtection from "@/hooks/withAuthProtection";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import WelcomeBanner from "@/components/admin/WelcomeBanner";
 import StatsGrid from "@/components/admin/StatsGrid";
 import Link from "next/link";
@@ -221,7 +221,7 @@ function AdminDashboardHome() {
   );
 }
 
-const ProtectedAdminDashboard = withAuthProtection(AdminDashboardHome, ["admin", "superadmin"]);
+const ProtectedAdminDashboard = withAdminGuard(AdminDashboardHome);
 
 ProtectedAdminDashboard.getLayout = function getLayout(page) {
   return <AdminLayout>{page}</AdminLayout>;
