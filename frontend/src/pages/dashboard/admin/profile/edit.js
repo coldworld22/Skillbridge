@@ -7,8 +7,9 @@ import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import { toast } from "react-toastify";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { getUserCountry } from "@/utils/getUserCountry";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import withAuthProtection from "@/hooks/withAuthProtection";
 import dynamic from "next/dynamic";
@@ -35,9 +36,6 @@ import getCroppedImg from "@/utils/cropImage";
 import { toSocialLinksArray } from "@/utils/socialLinks";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 
-// Default country for phone validation
-const DEFAULT_COUNTRY = "US";
-
 // Add service imports as needed, e.g., getProfile, updateProfile, uploadAvatar, etc.
 
 export const profileSchema = z.object({
@@ -45,7 +43,7 @@ export const profileSchema = z.object({
   email: z.string().email("invalid_email_address"),
   phone: z
     .string()
-    .refine((val) => isValidPhoneNumber(val, DEFAULT_COUNTRY), {
+    .refine((val) => isValidPhoneNumber(val, getUserCountry()), {
       message: "invalid_phone_number",
     }),
   job_title: z.string().min(2, 'job_title_min'),
@@ -109,14 +107,23 @@ function ProfileEditTemplate() {
 
   useEffect(() => {
     if (!hasHydrated) return;
+    const controller = new AbortController();
+    let isMounted = true;
+
     if (!user) {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     }
 
     // Pre-fill with existing user info while fetching latest data
@@ -142,7 +149,7 @@ function ProfileEditTemplate() {
         if (!isMounted) return;
         setLoadingProfile(true);
 
-        const res = await getAdminProfile();
+        const res = await getAdminProfile({ signal: controller.signal });
         if (!isMounted) return;
         const {
           full_name,
@@ -180,6 +187,7 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         if (isMounted) toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
@@ -188,6 +196,11 @@ function ProfileEditTemplate() {
     };
 
     loadProfile();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
 
@@ -321,7 +334,7 @@ function ProfileEditTemplate() {
       setErrors({});
       return true;
     } catch (err) {
-      if (err instanceof z.ZodError) {
+      if (err instanceof ZodError) {
         const newErrors = {};
         err.errors.forEach((error) => {
           const key = error.path.join(".");
@@ -330,7 +343,11 @@ function ProfileEditTemplate() {
         setErrors(newErrors);
         if (err.errors?.length) {
           toast.error(t(err.errors[0].message));
+        } else {
+          toast.error(t('fix_errors'));
         }
+      } else {
+        toast.error(t('fix_errors'));
       }
       return false;
     }

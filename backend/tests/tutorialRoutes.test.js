@@ -58,13 +58,13 @@ beforeEach(() => {
 
 describe('GET /api/users/tutorials/category/:categoryId', () => {
   it('returns tutorials for the given category', async () => {
-    const mockTutorials = [{ id: '1', title: 'Test Tutorial' }];
-    service.getTutorialsByCategory.mockResolvedValue(mockTutorials);
+    const tutorialsFixture = [{ id: '1', title: 'Test Tutorial' }];
+    service.getTutorialsByCategory.mockResolvedValue(tutorialsFixture);
 
     const res = await request(app).get('/api/users/tutorials/category/123');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual(mockTutorials);
+    expect(res.body.data).toEqual(tutorialsFixture);
     expect(service.getTutorialsByCategory).toHaveBeenCalledWith('123');
   });
 });
