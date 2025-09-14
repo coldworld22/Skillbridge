@@ -38,6 +38,9 @@ const ReactQuill = dynamic(() => import('react-quill'), {
 });
 import 'react-quill/dist/quill.snow.css';
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
 function CreateOnlineClass() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -74,22 +77,6 @@ function CreateOnlineClass() {
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-
-  const {
-    uploadProgress,
-    imageUploading,
-    videoUploading,
-    handleImageUpload,
-    handleVideoUpload,
-    setUploadProgress,
-  } = useMediaUploader({
-    t,
-    onError: (msg) => toast.error(msg),
-    onImageSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
-    onVideoSelect: (file, preview) =>
-      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
-  });
 
   const filteredTagSuggestions = useMemo(
     () =>
@@ -128,6 +115,66 @@ function CreateOnlineClass() {
     }));
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error(t('invalid_image_type', { defaultValue: 'Unsupported image type' }));
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('image_size_exceeded'));
+      return;
+    }
+
+    setImageUploading(true);
+    setUploadProgress(0);
+
+    const reader = new FileReader();
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      }
+    };
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        image: file,
+        imagePreview: reader.result
+      }));
+      setImageUploading(false);
+    };
+    reader.onerror = () => {
+      toast.error(t('image_preview_failed'));
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      toast.error(t('invalid_video_type', { defaultValue: 'Unsupported video type' }));
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error(t('video_size_exceeded'));
+      return;
+    }
+
+    setVideoUploading(false);
+    setFormData((prev) => ({
+      ...prev,
+      demoVideo: file,
+      demoPreview: URL.createObjectURL(file),
+    }));
+  };
 
   const addTag = (tag) => {
     if (tag && !selectedTags.includes(tag)) {
@@ -179,6 +226,7 @@ function CreateOnlineClass() {
       }
       try {
         setIsSubmitting(true);
+        setVideoUploading(true);
         setUploadProgress(0);
 
         const payload = new FormData();
@@ -244,9 +292,10 @@ function CreateOnlineClass() {
         router.push('/dashboard/admin/online-classes');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || t('class_create_failed'));
+        toast.error(error.response?.data?.message || t('upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
       } finally {
         setIsSubmitting(false);
+        setVideoUploading(false);
       }
     }
   };
@@ -562,7 +611,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="image/*"
+                              accept={ALLOWED_IMAGE_TYPES.join(',')}
                               onChange={handleImageUpload}
                               className="hidden"
                             />
@@ -609,7 +658,7 @@ function CreateOnlineClass() {
                             )}
                             <input
                               type="file"
-                              accept="video/*"
+                              accept={ALLOWED_VIDEO_TYPES.join(',')}
                               onChange={handleVideoUpload}
                               className="hidden"
                             />
