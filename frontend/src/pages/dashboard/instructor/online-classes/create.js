@@ -1,11 +1,12 @@
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
 import { FaTrash, FaSpinner, FaUpload, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import debounce from 'lodash/debounce';
 
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import withAuthProtection from '@/hooks/withAuthProtection';
@@ -67,26 +68,31 @@ function CreateOnlineClass() {
       .catch(() => setCategories([]));
   }, []);
 
+  const debouncedFetchTags = useMemo(
+    () =>
+      debounce(async (input) => {
+        try {
+          const tags = await fetchClassTags(input);
+          const filtered = tags.filter((t) => !selectedTags.includes(t.name));
+          setTagSuggestions(filtered);
+        } catch {
+          setTagSuggestions([]);
+        }
+      }, 300),
+    [selectedTags]
+  );
+
   useEffect(() => {
     if (!tagInput) {
       setTagSuggestions([]);
+      debouncedFetchTags.cancel();
       return;
     }
-    let ignore = false;
-    fetchClassTags(tagInput)
-      .then((tags) => {
-        if (!ignore) {
-          const filtered = tags.filter((t) => !selectedTags.includes(t.name));
-          setTagSuggestions(filtered);
-        }
-      })
-      .catch(() => {
-        if (!ignore) setTagSuggestions([]);
-      });
+    debouncedFetchTags(tagInput);
     return () => {
-      ignore = true;
+      debouncedFetchTags.cancel();
     };
-  }, [tagInput, selectedTags]);
+  }, [tagInput, debouncedFetchTags]);
 
   useEffect(() => {
     if (user?.full_name) {
