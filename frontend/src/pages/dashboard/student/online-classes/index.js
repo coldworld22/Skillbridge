@@ -49,6 +49,16 @@ export default function MyEnrolledClassesPage() {
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
 
+  const handleNotify = async (classId) => {
+    try {
+      await subscribeToClassReminder(classId);
+      toast.success('You will be notified for this class.');
+    } catch (err) {
+      console.error('Failed to subscribe to class reminder', err);
+      toast.error('Failed to set reminder.');
+    }
+  };
+
   return (
     <StudentLayout>
       <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
@@ -131,7 +141,10 @@ export default function MyEnrolledClassesPage() {
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    onClick={() => handleNotify(cls.id)}
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                  >
                     <FaBell /> Notify Me
                   </button>
                 )}

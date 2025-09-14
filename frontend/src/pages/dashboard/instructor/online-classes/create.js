@@ -18,6 +18,7 @@ import useScheduleStore from '@/store/schedule/scheduleStore';
 import useNotificationStore from '@/store/notifications/notificationStore';
 import { toDateTimeISO } from '@/utils/date';
 import FloatingInput from '@/components/shared/FloatingInput';
+import useMediaUploader from '@/hooks/useMediaUploader';
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -52,15 +53,27 @@ function CreateOnlineClass() {
     lessons: [],
     lessonCount: ''
   });
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const videoIntervalRef = useRef(null);
+
+  const {
+    uploadProgress,
+    imageUploading,
+    videoUploading,
+    handleImageUpload,
+    handleVideoUpload,
+    setUploadProgress,
+  } = useMediaUploader({
+    onError: (msg) => toast.error(msg),
+    onImageSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, image: file, imagePreview: preview })),
+    onVideoSelect: (file, preview) =>
+      setFormData((prev) => ({ ...prev, demoVideo: file, demoPreview: preview })),
+  });
 
   useEffect(() => {
     fetchAllCategories({ status: 'active', limit: 100 })

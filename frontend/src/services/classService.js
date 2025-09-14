@@ -33,13 +33,19 @@ const formatEnrolledClass = (cls) => {
   };
 };
 
+export const formatClass = (cls) => {
+  const base = formatBaseClass(cls);
+  return {
+    ...base,
+    scheduleStatus: computeScheduleStatus(base.start_date, base.end_date),
+    trending: Boolean(cls.trending),
+  };
+};
+
 export const fetchPublishedClasses = async () => {
   const res = await api.get("/users/classes");
   const list = extractData(res);
-  const formatted = list.map((cls) => ({
-    ...formatClass(cls),
-    trending: Boolean(cls.trending),
-  }));
+  const formatted = list.map(formatClass);
   return { ...res.data, data: formatted };
 };
 
