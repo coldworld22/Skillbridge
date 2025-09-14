@@ -104,6 +104,7 @@
         "favicon_upload_failed": "Favicon upload failed",
         "background_upload_success": "Background uploaded successfully",
         "background_upload_failed": "Background upload failed"
-      }
-  }
+    }
+  },
+  "file_size_limit": "File size must be 10MB or less"
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "next-i18next";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import BookingCard from "@/components/student/instructors/BookingCard";
 import {
@@ -7,6 +8,7 @@ import {
 } from "@/services/student/bookingService";
 
 export default function StudentBookings() {
+  const { t } = useTranslation("dashboard", { keyPrefix: "studentInstructorsPage" });
   const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export default function StudentBookings() {
   }, []);
 
   const handleCancel = async (id) => {
-    const confirm = window.confirm("Are you sure you want to cancel this request?");
+    const confirm = window.confirm(t('cancel_confirm'));
     if (confirm) {
       await deleteStudentBooking(id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
@@ -32,10 +34,10 @@ export default function StudentBookings() {
   return (
     <StudentLayout>
       <section className="py-10 px-4">
-        <h1 className="text-2xl font-bold mb-6">My Bookings</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('bookings_title')}</h1>
 
         {bookings.length === 0 ? (
-          <p className="text-gray-600 text-center">No bookings yet.</p>
+          <p className="text-gray-600 text-center">{t('bookings_empty')}</p>
         ) : (
           <div className="space-y-4">
             {bookings.map((b) => (

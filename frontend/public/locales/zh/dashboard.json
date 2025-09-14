@@ -138,6 +138,13 @@
   "user_info_unavailable": "用户信息不可用",
   "step_of_total": "第 {{current}} 步，共 {{total}} 步",
   "preview_alt": "预览",
+  "dashboardPage": {
+    "progress": "进度",
+    "continue_learning": "继续学习",
+    "ai_recommendations_title": "🤖 基于AI的推荐",
+    "category": "类别",
+    "view_course": "查看课程"
+  },
   "categoriesPage": {
     "title": "类别",
     "new_category": "新建类别",
@@ -1345,6 +1352,40 @@
     "purchased_on": "在{{date}}上购买",
     "no_books": "您的图书馆没有书籍。"
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "管理员：管理所有优惠",
     "all_roles": "所有角色",
@@ -1896,6 +1937,21 @@
       "pending_payment": "待付款"
     }
   },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
+  },
   "studentSchedulePage": {
     "title": "我预订的课程",
     "failed_live_session": "加入直播课程失败",
@@ -1934,7 +1990,18 @@
     "linkedin_placeholder": "https://linkedin.com/in/yourprofile",
     "github_label": "GitHub Profile URL",
     "github_placeholder": "https://github.com/yourusername",
+    "twitter_label": "Twitter Profile URL",
+    "twitter_placeholder": "https://twitter.com/yourusername",
+    "youtube_label": "YouTube Channel URL",
+    "youtube_placeholder": "https://youtube.com/@yourchannel",
+    "facebook_label": "Facebook Profile URL",
+    "facebook_placeholder": "https://facebook.com/yourprofile",
+    "instagram_label": "Instagram Profile URL",
+    "instagram_placeholder": "https://instagram.com/yourprofile",
+    "website_label": "Personal Website URL",
+    "website_placeholder": "https://yourwebsite.com",
     "cancel": "Cancel",
+    "upload": "Upload",
     "saving": "Saving...",
     "save_changes": "Save Changes",
     "load_failed": "Failed to load profile data",
@@ -1958,5 +2025,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 我报名的课程",
+    "search_placeholder": "搜索课程...",
+    "sort_by_date": "按日期排序",
+    "status_all": "全部",
+    "status_live": "直播",
+    "status_upcoming": "即将开始",
+    "status_completed": "已完成",
+    "no_classes": "在此筛选下未找到课程。",
+    "instructor": "讲师：",
+    "progress_completed": "{{progress}}% 已完成",
+    "notify_me": "通知我",
+    "view_certificate": "查看证书",
+    "view_assignments": "查看作业",
+    "join_class": "加入课程",
+    "starts_soon": "即将开始",
+    "completed": "已完成",
+    "class_ended": "课程已结束",
+    "load_more": "加载更多"
   }
 }

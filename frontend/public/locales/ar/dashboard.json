@@ -138,6 +138,13 @@
   "user_info_unavailable": "معلومات المستخدم غير متاحة",
   "step_of_total": "الخطوة {{current}} من {{total}}",
   "preview_alt": "معاينة",
+  "dashboardPage": {
+    "progress": "التقدم",
+    "continue_learning": "متابعة التعلم",
+    "ai_recommendations_title": "🤖 توصيات تعتمد على الذكاء الاصطناعي",
+    "category": "الفئة",
+    "view_course": "عرض الدورة"
+  },
   "categoriesPage": {
     "title": "الفئات",
     "new_category": "فئة جديدة",
@@ -1345,6 +1352,40 @@
     "purchased_on": "تم شراؤها على {{date}}",
     "no_books": "لا توجد كتب في مكتبتك."
   },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
+  },
   "adminOffersPage": {
     "title": "المسؤول: إدارة جميع العروض",
     "all_roles": "جميع الأدوار",
@@ -1935,6 +1976,21 @@
       "pending_payment": "دفع معلق"
     }
   },
+  "onlineClassListPage": {
+    "search_placeholder": "Search classes...",
+    "all_schedule": "All Schedule",
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "all_approval": "All Approval",
+    "loading": "Loading classes...",
+    "published": "Published",
+    "draft": "Draft",
+    "go_to_class": "Go To Class",
+    "manage_class": "Manage Class",
+    "view_details": "View Details",
+    "no_classes": "No classes found."
+  },
   "studentSchedulePage": {
     "title": "دروسي المحجوزة",
     "failed_live_session": "فشل الانضمام إلى الجلسة المباشرة",
@@ -1973,7 +2029,18 @@
     "linkedin_placeholder": "https://linkedin.com/in/yourprofile",
     "github_label": "GitHub Profile URL",
     "github_placeholder": "https://github.com/yourusername",
+    "twitter_label": "Twitter Profile URL",
+    "twitter_placeholder": "https://twitter.com/yourusername",
+    "youtube_label": "YouTube Channel URL",
+    "youtube_placeholder": "https://youtube.com/@yourchannel",
+    "facebook_label": "Facebook Profile URL",
+    "facebook_placeholder": "https://facebook.com/yourprofile",
+    "instagram_label": "Instagram Profile URL",
+    "instagram_placeholder": "https://instagram.com/yourprofile",
+    "website_label": "Personal Website URL",
+    "website_placeholder": "https://yourwebsite.com",
     "cancel": "Cancel",
+    "upload": "Upload",
     "saving": "Saving...",
     "save_changes": "Save Changes",
     "load_failed": "Failed to load profile data",
@@ -1997,5 +2064,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 دوراتي المسجلة",
+    "search_placeholder": "ابحث عن الدورات...",
+    "sort_by_date": "ترتيب حسب التاريخ",
+    "status_all": "الكل",
+    "status_live": "مباشر",
+    "status_upcoming": "قادمة",
+    "status_completed": "مكتملة",
+    "no_classes": "لا توجد دورات تحت هذا الفلتر.",
+    "instructor": "المدرب:",
+    "progress_completed": "{{progress}}٪ مكتمل",
+    "notify_me": "أبلغني",
+    "view_certificate": "عرض الشهادة",
+    "view_assignments": "عرض الواجبات",
+    "join_class": "انضم إلى الدرس",
+    "starts_soon": "يبدأ قريباً",
+    "completed": "مكتمل",
+    "class_ended": "انتهى الدرس",
+    "load_more": "تحميل المزيد"
   }
 }

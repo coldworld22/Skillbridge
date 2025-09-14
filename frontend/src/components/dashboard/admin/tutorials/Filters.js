@@ -1,6 +1,7 @@
 import React from "react";
 import { FaSearch } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import { TUTORIAL_STATUS } from "../../../../../../shared/tutorialStatus";
 
 function Filters({
   searchQuery,
@@ -59,8 +60,8 @@ function Filters({
           className="p-2.5 border rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
         >
           <option value="All">All Status</option>
-          <option value="Published">Published</option>
-          <option value="Draft">Draft</option>
+          <option value={TUTORIAL_STATUS.PUBLISHED}>Published</option>
+          <option value={TUTORIAL_STATUS.DRAFT}>Draft</option>
         </select>
 
         <select

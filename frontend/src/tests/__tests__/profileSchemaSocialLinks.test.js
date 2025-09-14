@@ -33,9 +33,9 @@ describe('profile schema socialLinks URL validation', () => {
       experience: 1,
       socialLinks: { twitter: 'invalid-url' },
     };
-    expect(() => instructorProfileSchema.parse(data)).toThrow(ZodError);
+    expect(() => instructorProfileSchema('US').parse(data)).toThrow(ZodError);
     try {
-      instructorProfileSchema.parse(data);
+      instructorProfileSchema('US').parse(data);
     } catch (err) {
       expect(err.errors[0].message).toBe('invalid_url');
     }

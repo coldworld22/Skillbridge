@@ -61,6 +61,7 @@ jest.mock('../../store/cart/cartStore', () => ({
 jest.mock('../../services/tutorialService', () => ({
   fetchPublishedTutorials: jest.fn(),
   fetchTutorialProgress: jest.fn(),
+  fetchTutorialProgressBatch: jest.fn(),
 }));
 
 beforeAll(() => {
@@ -81,7 +82,7 @@ test('handles tutorials without instructor in search', async () => {
   tutorialService.fetchPublishedTutorials.mockResolvedValue([
     { id: 1, title: 'Tutorless', category_name: '', level: '', price: null },
   ]);
-  tutorialService.fetchTutorialProgress.mockResolvedValue(null);
+  tutorialService.fetchTutorialProgressBatch.mockResolvedValue({});
 
   render(<TutorialsSection />);
   const input = await screen.findByPlaceholderText('search_placeholder');
