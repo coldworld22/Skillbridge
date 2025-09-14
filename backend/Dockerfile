@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apk add --no-cache curl netcat-openbsd
 COPY package*.json ./
 RUN npm ci && npm cache clean --force
-COPY . ./
+COPY ./ ./
 COPY shared /shared
 
 # Production stage
