@@ -71,9 +71,11 @@ npm --prefix frontend install
 
     The frontend now reads its production settings from
      `frontend/.env.production`. When deploying, remove or override the root
-     `.env` and set `NEXT_PUBLIC_API_BASE_URL` in
-     `frontend/.env.production` so the build uses your public HTTPS domain (for
-     example `https://yourdomain.com/api`) instead of the internal
+     `.env` and set `APP_DOMAIN`, `NEXT_PUBLIC_API_BASE_URL` and
+     `NEXT_PUBLIC_PGADMIN_URL` in `frontend/.env.production`. Commit only
+     placeholder values and supply real production settings via environment
+     variables or a mounted file so the build uses your public HTTPS domain
+     (for example `https://yourdomain.com/api`) instead of the internal
      `http://backend:5002/api` value used for development.
 
    The backend's production configuration is loaded from
