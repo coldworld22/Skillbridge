@@ -83,20 +83,6 @@ export default function InstructorTutorialsPage() {
     };
   }, []);
 
-  const handleSearch = useCallback(
-    (query) => {
-      setSearchQuery(query.toLowerCase());
-    },
-    [setSearchQuery]
-  );
-
-  const handleFilter = useCallback(
-    (status) => {
-      setStatusFilter(status);
-    },
-    [setStatusFilter]
-  );
-
   const handleDelete = (id) => {
     openConfirmModal({
       title: t("dashboard:tutorialsPage.delete_confirm_title"),
@@ -115,22 +101,6 @@ export default function InstructorTutorialsPage() {
       },
     });
   };
-
-  const filteredTutorials = useMemo(() => {
-    return tutorials
-      .filter((tut) => {
-        const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
-        const matchesStatus = statusFilter ? tut.status === statusFilter : true;
-        return matchesTitle && matchesStatus;
-      })
-      .sort((a, b) => {
-        if (sortBy === "views") return b.views - a.views;
-        if (sortBy === "enrollments") return b.enrollments - a.enrollments;
-        if (sortBy === "oldest")
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        return new Date(b.createdAt) - new Date(a.createdAt); // newest
-      });
-  }, [tutorials, searchQuery, statusFilter, sortBy]);
 
   if (loading) {
     return (
@@ -252,12 +222,12 @@ export default function InstructorTutorialsPage() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTutorials.map((tutorial) => (
-            <TutorialCard
-              key={tutorial.id}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100"
-            >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTutorials.map((tutorial) => (
+              <div
+                key={tutorial.id}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl border border-gray-100"
+              >
               <div className="relative">
                 <img
                   src={tutorial.thumbnail || "/default-thumbnail.jpg"}
@@ -453,9 +423,9 @@ export default function InstructorTutorialsPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
 
         {/* No Tutorials */}
         {filteredTutorials.length === 0 && (

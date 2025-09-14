@@ -60,14 +60,13 @@ function CreateOnlineClass() {
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const videoIntervalRef = useRef(null);
 
   const {
     uploadProgress,
     imageUploading,
     videoUploading,
-    handleImageUpload,
-    handleVideoUpload,
+    handleImageUpload: mediaImageUpload,
+    handleVideoUpload: mediaVideoUpload,
     setUploadProgress,
   } = useMediaUploader({
     onError: (msg) => toast.error(msg),
@@ -115,14 +114,6 @@ function CreateOnlineClass() {
     }
   }, [user]);
 
-  useEffect(() => {
-    return () => {
-      if (videoIntervalRef.current) {
-        clearInterval(videoIntervalRef.current);
-      }
-    };
-  }, []);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -145,29 +136,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setImageUploading(true);
-    setUploadProgress(0);
-
-    const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result
-      }));
-      setImageUploading(false);
-    };
-    reader.onerror = () => {
-      toast.error('Failed to load image preview.');
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+    mediaImageUpload(e);
   };
 
   const handleVideoUpload = (e) => {
@@ -183,12 +152,7 @@ function CreateOnlineClass() {
       return;
     }
 
-    setVideoUploading(false);
-    setFormData(prev => ({
-      ...prev,
-      demoVideo: file,
-      demoPreview: URL.createObjectURL(file)
-    }));
+    mediaVideoUpload(e);
   };
 
   const addTag = (tag) => {

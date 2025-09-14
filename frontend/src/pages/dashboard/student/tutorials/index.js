@@ -37,10 +37,24 @@ export default function StudentTutorialsPage() {
           limit,
           signal: controller.signal,
         });
-        const enriched = data.map((tut) => {
-          const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
-          let progress = { completedChapters: [], completedQuiz: false };
-          if (saved) {
+        const enriched = await Promise.all(
+          data.map(async (tut) => {
+            const saved = localStorage.getItem(`progress-tutorial-${tut.id}`);
+            let local = { completedChapters: [], completedQuiz: false };
+            if (saved) {
+              try {
+                local = JSON.parse(saved);
+              } catch {}
+            }
+
+            const totalLessons = Array.isArray(tut.chapters)
+              ? tut.chapters.length
+              : tut.totalLessons || tut.total_chapters || tut.chapter_count || 0;
+            const localPercent = totalLessons
+              ? ((local.completedChapters?.length || 0) / totalLessons) * 100
+              : Number(local.percent || 0);
+
+            let server;
             try {
               server = await fetchTutorialProgress(tut.id);
             } catch {}

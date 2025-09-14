@@ -79,6 +79,7 @@ const nextConfig = {
   // larger translation bundles.
   experimental: {
     largePageDataBytes: 256 * 1024,
+    externalDir: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
