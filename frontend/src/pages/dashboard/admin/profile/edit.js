@@ -108,15 +108,23 @@ function ProfileEditTemplate() {
   }, [tempAvatar]);
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    let isMounted = true;
+
+    if (!hasHydrated) return () => {
+      isMounted = false;
+    };
     if (!user) {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+      };
     }
     const role = user.role?.toLowerCase();
     if (role !== "admin" && role !== "superadmin") {
       if (isMounted) setLoadingProfile(false);
-      return;
+      return () => {
+        isMounted = false;
+      };
     }
 
     // Pre-fill with existing user info while fetching latest data
@@ -180,14 +188,20 @@ function ProfileEditTemplate() {
           socialLinks: socialMap,
         }));
       } catch (err) {
-        if (isMounted) toast.error(t('load_profile_failed'));
+        if (!isMounted) return;
+        toast.error(t('load_profile_failed'));
         console.error("Profile load error:", err);
       } finally {
-        if (isMounted) setLoadingProfile(false);
+        if (!isMounted) return;
+        setLoadingProfile(false);
       }
     };
 
     loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
   }, [hasHydrated, user, fetchNotifications, fetchMessages]);
 
 
