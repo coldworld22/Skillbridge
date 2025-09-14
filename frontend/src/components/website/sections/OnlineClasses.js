@@ -19,6 +19,7 @@ import {
   getMyClassWishlist,
   getMyLikedClasses,
 } from "@/services/classService";
+import { computeScheduleStatus } from "@/utils/classSchedule";
 import useAuthStore from "@/store/auth/authStore";
 import { toast } from "react-toastify";
 
@@ -34,7 +35,6 @@ const computeStatus = (start, end) => {
   if (e && now > e) return "Completed";
   return "Upcoming";
 };
-
 const OnlineClasses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +56,7 @@ const OnlineClasses = () => {
         const list = res?.data ?? [];
         const formatted = list.map((c) => ({
           ...c,
-          status: computeStatus(c.start_date, c.end_date),
+          status: computeScheduleStatus(c.start_date, c.end_date),
         }));
         setClasses(formatted);
         const cats = Array.from(
