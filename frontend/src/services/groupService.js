@@ -128,8 +128,8 @@ const groupService = {
     return data?.data;
   },
 
-  getGroupMessages: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/messages`);
+  getGroupMessages: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/messages`, opts);
     const list = data?.data ?? [];
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL;
     return list.map((m) => ({
@@ -189,8 +189,8 @@ const groupService = {
     return true;
   },
 
-  getTypingStatus: async (groupId) => {
-    const { data } = await api.get(`/groups/${groupId}/typing`);
+  getTypingStatus: async (groupId, opts = {}) => {
+    const { data } = await api.get(`/groups/${groupId}/typing`, opts);
     return data?.data ?? [];
   },
 

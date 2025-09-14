@@ -6,8 +6,7 @@ import nextI18NextConfig from "../../../../../next-i18next.config.js";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import UserList from "@/components/admin/users/UserList";
 import { fetchAllUsers } from "@/services/admin/userService";
-import useAuthStore from "@/store/auth/authStore";
-import withAuthProtection from "@/hooks/withAuthProtection";
+import withAdminGuard from "@/hooks/withAdminGuard";
 import { toast } from "react-toastify";
 import logger from "@/utils/logger";
 
@@ -18,22 +17,8 @@ function UsersPage() {
   const [editUser, setEditUser] = useState(null);
 
   const router = useRouter();
-  const { accessToken, user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!hasHydrated) return;
-
-    if (!accessToken || !user) {
-      router.replace("/auth/login");
-      return;
-    }
-
-    const role = user.role?.toLowerCase() ?? "";
-    if (role !== "admin" && role !== "superadmin") {
-      router.replace("/error/403");
-      return;
-    }
-
     const loadUsers = async () => {
       try {
         const data = await fetchAllUsers(); // ✅ No token needed (cookie session)
@@ -60,15 +45,7 @@ function UsersPage() {
     };
 
     loadUsers();
-  }, [accessToken, hasHydrated, router, user]);
-
-  if (!hasHydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-500 text-lg">Loading...</p>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <AdminLayout>
@@ -113,9 +90,7 @@ function UsersPage() {
   );
 }
 
-const ProtectedUsersPage = withAuthProtection(UsersPage, ["admin", "superadmin"]);
-
-export default ProtectedUsersPage;
+export default withAdminGuard(UsersPage);
 
 export async function getStaticProps({ locale }) {
   return {

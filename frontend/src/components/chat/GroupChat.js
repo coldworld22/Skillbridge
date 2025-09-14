@@ -17,13 +17,18 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
 
   useEffect(() => {
     if (!groupId) return;
+    const controller = new AbortController();
     let isMounted = true;
 
     const fetchMessages = async () => {
       try {
-        const msgs = await groupService.getGroupMessages(groupId);
+        const msgs = await groupService.getGroupMessages(groupId, {
+          signal: controller.signal,
+        });
         if (isMounted) setMessages(msgs);
-      } catch (_) {}
+      } catch (err) {
+        if (err.name === "AbortError" || err.name === "CanceledError") return;
+      }
     };
 
     setMessages([]);
@@ -31,13 +36,18 @@ export default function GroupChat({ group, groupId: idProp, groupName: nameProp 
     const interval = setInterval(fetchMessages, 5000);
     const typingPoll = setInterval(async () => {
       try {
-        const names = await groupService.getTypingStatus(groupId);
-        setTypingUsers(names);
-      } catch (_) {}
+        const names = await groupService.getTypingStatus(groupId, {
+          signal: controller.signal,
+        });
+        if (isMounted) setTypingUsers(names);
+      } catch (err) {
+        if (err.name === "AbortError" || err.name === "CanceledError") return;
+      }
     }, 2000);
 
     return () => {
       isMounted = false;
+      controller.abort();
       clearInterval(interval);
       clearInterval(typingPoll);
     };

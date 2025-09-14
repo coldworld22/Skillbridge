@@ -88,7 +88,8 @@ const Hero = () => {
         const { data } = await fetchAds({ role: roleParam });
         setAds(data);
         setAdsError(false);
-      } catch (_err) {
+      } catch (err) {
+        console.error("Failed to load ads", err);
         setAds([]);
         setAdsError(true);
       } finally {
