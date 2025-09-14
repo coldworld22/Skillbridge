@@ -138,6 +138,13 @@
   "user_info_unavailable": "معلومات المستخدم غير متاحة",
   "step_of_total": "الخطوة {{current}} من {{total}}",
   "preview_alt": "معاينة",
+  "dashboardPage": {
+    "progress": "التقدم",
+    "continue_learning": "متابعة التعلم",
+    "ai_recommendations_title": "🤖 توصيات تعتمد على الذكاء الاصطناعي",
+    "category": "الفئة",
+    "view_course": "عرض الدورة"
+  },
   "categoriesPage": {
     "title": "الفئات",
     "new_category": "فئة جديدة",
