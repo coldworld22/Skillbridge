@@ -42,7 +42,6 @@ import AvatarUploader from "@/components/instructor/profile/AvatarUploader";
 import DemoVideoUploader from "@/components/instructor/profile/DemoVideoUploader";
 import ExpertiseList from "@/components/instructor/profile/ExpertiseList";
 import CertificatesSection from "@/components/instructor/profile/CertificatesSection";
-import SocialLinksSection from "@/components/instructor/profile/SocialLinksSection";
 
 // Default country for phone validation
 const DEFAULT_COUNTRY = "US";
