@@ -75,4 +75,60 @@ describe('instructor.service updateInstructorProfile', () => {
     const user = await mockDb('users').where({ id: userId }).first();
     expect(user.profile_complete).toBe(false);
   });
+
+  it('marks profile as incomplete when experience is missing or zero', async () => {
+    const userId1 = uuidv4();
+    await mockDb('users').insert({ id: userId1 });
+
+    await service.updateInstructorProfile(
+      userId1,
+      { full_name: 'No Exp', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { expertise: ['Math'], bio: 'Teacher', pricing: 50 },
+      [{ platform: 'facebook', url: 'facebook.com/noexp' }]
+    );
+
+    const user1 = await mockDb('users').where({ id: userId1 }).first();
+    expect(user1.profile_complete).toBe(false);
+
+    const userId2 = uuidv4();
+    await mockDb('users').insert({ id: userId2 });
+
+    await service.updateInstructorProfile(
+      userId2,
+      { full_name: 'Zero Exp', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { experience: 0, expertise: ['Math'], bio: 'Teacher', pricing: 50 },
+      [{ platform: 'facebook', url: 'facebook.com/zeroexp' }]
+    );
+
+    const user2 = await mockDb('users').where({ id: userId2 }).first();
+    expect(user2.profile_complete).toBe(false);
+  });
+
+  it('marks profile as incomplete when pricing is missing or zero', async () => {
+    const userId1 = uuidv4();
+    await mockDb('users').insert({ id: userId1 });
+
+    await service.updateInstructorProfile(
+      userId1,
+      { full_name: 'No Price', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { experience: 5, expertise: ['Math'], bio: 'Teacher' },
+      [{ platform: 'facebook', url: 'facebook.com/noprice' }]
+    );
+
+    const user1 = await mockDb('users').where({ id: userId1 }).first();
+    expect(user1.profile_complete).toBe(false);
+
+    const userId2 = uuidv4();
+    await mockDb('users').insert({ id: userId2 });
+
+    await service.updateInstructorProfile(
+      userId2,
+      { full_name: 'Zero Price', phone: '123', gender: 'male', date_of_birth: '1990-01-01' },
+      { experience: 5, expertise: ['Math'], bio: 'Teacher', pricing: 0 },
+      [{ platform: 'facebook', url: 'facebook.com/zeroprice' }]
+    );
+
+    const user2 = await mockDb('users').where({ id: userId2 }).first();
+    expect(user2.profile_complete).toBe(false);
+  });
 });
