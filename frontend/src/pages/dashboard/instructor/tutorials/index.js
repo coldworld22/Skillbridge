@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
 import InstructorLayout from '@/components/layouts/InstructorLayout';
 import { useTranslation } from "next-i18next";
@@ -76,13 +76,19 @@ export default function InstructorTutorialsPage() {
     };
   }, []);
 
-  const handleSearch = (query) => {
-    setSearchQuery(query.toLowerCase());
-  };
+  const handleSearch = useCallback(
+    (query) => {
+      setSearchQuery(query.toLowerCase());
+    },
+    [setSearchQuery]
+  );
 
-  const handleFilter = (status) => {
-    setStatusFilter(status);
-  };
+  const handleFilter = useCallback(
+    (status) => {
+      setStatusFilter(status);
+    },
+    [setStatusFilter]
+  );
 
   const handleDelete = (id) => {
     openConfirmModal({
@@ -103,19 +109,21 @@ export default function InstructorTutorialsPage() {
     });
   };
 
-  const filteredTutorials = tutorials
-    .filter((tut) => {
-      const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
-      const matchesStatus = statusFilter ? tut.status === statusFilter : true;
-      return matchesTitle && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === "views") return b.views - a.views;
-      if (sortBy === "enrollments") return b.enrollments - a.enrollments;
-      if (sortBy === "oldest")
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      return new Date(b.createdAt) - new Date(a.createdAt); // newest
-    });
+  const filteredTutorials = useMemo(() => {
+    return tutorials
+      .filter((tut) => {
+        const matchesTitle = tut.title.toLowerCase().includes(searchQuery);
+        const matchesStatus = statusFilter ? tut.status === statusFilter : true;
+        return matchesTitle && matchesStatus;
+      })
+      .sort((a, b) => {
+        if (sortBy === "views") return b.views - a.views;
+        if (sortBy === "enrollments") return b.enrollments - a.enrollments;
+        if (sortBy === "oldest")
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(b.createdAt) - new Date(a.createdAt); // newest
+      });
+  }, [tutorials, searchQuery, statusFilter, sortBy]);
 
   if (loading) {
     return (
