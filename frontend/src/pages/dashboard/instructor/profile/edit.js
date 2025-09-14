@@ -21,8 +21,8 @@ import {
   uploadInstructorAvatar,
   uploadInstructorDemo,
   toggleInstructorStatus,
-  deleteInstructorAvatar,
-  deleteInstructorDemo,
+  uploadCertificateFile,
+  deleteCertificateFile,
 } from "@/services/instructor/instructorService";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
@@ -37,6 +37,11 @@ import {
   FaVenusMars,
   FaUser,
   FaCheck,
+  FaCertificate,
+  FaFilePdf,
+  FaFileImage,
+  FaTrash,
+  FaUpload,
   FaPlus,
 } from "react-icons/fa";
 import { MdOutlineWorkOutline } from "react-icons/md";
@@ -129,24 +134,12 @@ export default function InstructorProfileEdit() {
   const [currencyOptions, setCurrencyOptions] = useState([]);
   const [available, setAvailable] = useState(user?.is_online ?? false);
   const [newExpertise, setNewExpertise] = useState("");
-
-  const addExpertise = () => {
-    const trimmed = newExpertise.trim();
-    if (!trimmed) return;
-    const exists = formData.expertise.some(
-      (e) => e.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (exists) {
-      toast.info("Tag already exists");
-      setNewExpertise("");
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      expertise: [...prev.expertise, trimmed],
-    }));
-    setNewExpertise("");
-  };
+  const [newCertificate, setNewCertificate] = useState({
+    title: "",
+    file: null,
+    preview: null,
+  });
+  const [certificateUploading, setCertificateUploading] = useState(false);
 
   useEffect(() => {
     setAvailable(user?.is_online ?? false);
@@ -334,26 +327,52 @@ export default function InstructorProfileEdit() {
     }
   };
 
-  const handleAvatarRemove = async () => {
+  const handleCertificateUpload = async () => {
+    if (!newCertificate.title || !newCertificate.file) {
+      toast.error(t('provide_title_and_file'));
+      return;
+    }
     try {
-      await deleteInstructorAvatar(user.id);
-      setUser({ ...user, avatar_url: null });
-      setFormData(prev => ({ ...prev, avatar_url: null, avatarPreview: null }));
-    } catch (err) {
-      toast.error("Failed to delete avatar");
+      setCertificateUploading(true);
+      const formDataPayload = new FormData();
+      formDataPayload.append('title', newCertificate.title);
+      formDataPayload.append('file', newCertificate.file);
+      const response = await uploadCertificateFile(formDataPayload);
+      setFormData((prev) => ({
+        ...prev,
+        certificates: [
+          ...prev.certificates,
+          {
+            id: response.id,
+            title: newCertificate.title,
+            file_url: response.file_url,
+          },
+        ],
+      }));
+      if (newCertificate.preview) {
+        URL.revokeObjectURL(newCertificate.preview);
+      }
+      setNewCertificate({ title: '', file: null, preview: null });
+      toast.success(t('certificate_upload_success'));
+    } catch (error) {
+      toast.error(t('certificate_upload_failed'));
+      console.error('Certificate upload error:', error);
     } finally {
-      setAvatarInputKey(k => k + 1);
+      setCertificateUploading(false);
     }
   };
 
-  const handleDemoRemove = async () => {
+  const handleRemoveCertificate = async (id) => {
     try {
-      await deleteInstructorDemo(user.id);
-      setFormData(prev => ({ ...prev, demoPreview: null }));
-    } catch (err) {
-      toast.error("Failed to delete demo video");
-    } finally {
-      setDemoInputKey(k => k + 1);
+      await deleteCertificateFile(id);
+      setFormData((prev) => ({
+        ...prev,
+        certificates: prev.certificates.filter((cert) => cert.id !== id),
+      }));
+      toast.success(t('certificate_removed'));
+    } catch (error) {
+      toast.error(t('certificate_remove_failed'));
+      console.error('Certificate removal error:', error);
     }
   };
 
