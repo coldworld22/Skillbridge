@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   FaChalkboardTeacher,
@@ -24,30 +24,60 @@ export default function MyEnrolledClassesPage() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const list = await fetchMyEnrolledClasses();
         setClasses(list);
+        setError(null);
       } catch (err) {
         console.error('Failed to load classes', err);
+        toast.error('Failed to load classes');
+        setError('Failed to load classes');
       }
     };
     load();
   }, []);
 
+  const handleNotify = async (classId) => {
+    try {
+      await subscribeToClassReminder(classId);
+      toast.success('Subscribed to class reminder');
+    } catch (err) {
+      console.error('Failed to subscribe to class reminder', err);
+      toast.error('Failed to subscribe to reminder');
+    }
+  };
+
   const filteredClasses = classes
-    .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
-    .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
+    .filter(
+      (cls) => filter === 'all' || cls.scheduleStatus?.toLowerCase() === filter,
+    )
+    .filter((cls) => (cls.title || '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      const dateA = new Date(a.startDate);
-      const dateB = new Date(b.startDate);
+      const dateA = new Date(
+        a.start_date || a.startDate || a.end_date || a.endDate || 0,
+      );
+      const dateB = new Date(
+        b.start_date || b.startDate || b.end_date || b.endDate || 0,
+      );
       return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
   const visibleClasses = filteredClasses.slice(0, visibleCount);
   const hasMore = visibleCount < filteredClasses.length;
+
+  if (error) {
+    return (
+      <StudentLayout>
+        <div className="min-h-screen px-6 py-10 bg-white text-gray-900">
+          <p className="text-center text-red-500">{error}</p>
+        </div>
+      </StudentLayout>
+    );
+  }
 
   return (
     <StudentLayout>
@@ -76,7 +106,7 @@ export default function MyEnrolledClassesPage() {
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {['all', 'live', 'upcoming', 'completed'].map((status) => (
+          {['all', 'ongoing', 'upcoming', 'completed'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -89,7 +119,9 @@ export default function MyEnrolledClassesPage() {
               {status.charAt(0).toUpperCase() + status.slice(1)} ({
                 status === 'all'
                   ? classes.length
-                  : classes.filter(c => c.scheduleStatus.toLowerCase() === status).length
+                  : classes.filter(
+                      (c) => c.scheduleStatus?.toLowerCase() === status,
+                    ).length
               })
             </button>
           ))}
@@ -110,7 +142,14 @@ export default function MyEnrolledClassesPage() {
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Instructor: {cls.instructor}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-2 mb-3">
-                  <FaCalendarAlt /> {new Date(cls.startDate).toLocaleString()}
+                  <FaCalendarAlt />
+                  {new Date(
+                    cls.start_date ||
+                      cls.startDate ||
+                      cls.end_date ||
+                      cls.endDate ||
+                      0,
+                  ).toLocaleString()}
                 </p>
                 <p className="flex items-center text-xs text-gray-500 mb-2">
                   <FaTags className="mr-1 text-gray-400" /> {cls.tags?.join(', ') || 'General'}
@@ -120,18 +159,23 @@ export default function MyEnrolledClassesPage() {
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{cls.progress || 0}% completed</p>
 
-                <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
-                  cls.scheduleStatus === 'Live'
-                    ? 'bg-green-100 text-green-800'
-                    : cls.scheduleStatus === 'Upcoming'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
+                <span
+                  className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-2 ${
+                    cls.scheduleStatus === 'Ongoing'
+                      ? 'bg-green-100 text-green-800'
+                      : cls.scheduleStatus === 'Upcoming'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
                   {cls.scheduleStatus}
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    onClick={() => handleNotify(cls.id)}
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                  >
                     <FaBell /> Notify Me
                   </button>
                 )}
@@ -149,7 +193,7 @@ export default function MyEnrolledClassesPage() {
                 >
                   <FaClipboardList className="inline mr-1" /> View Assignments
                 </Link>
-                {cls.scheduleStatus === 'Live' && cls.joined ? (
+                {cls.scheduleStatus === 'Ongoing' && cls.joined ? (
                   <Link
                     href={`/dashboard/student/online-classes/${cls.linkId || cls.id}`}
                     className="block bg-yellow-500 text-black text-center py-2 px-4 rounded hover:bg-yellow-600 font-semibold"

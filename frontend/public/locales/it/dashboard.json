@@ -138,6 +138,13 @@
   "user_info_unavailable": "Informazioni sull'utente non disponibile",
   "step_of_total": "Passaggio {{current}} di {{total}}",
   "preview_alt": "Anteprima",
+  "dashboardPage": {
+    "progress": "Progresso",
+    "continue_learning": "Continua a imparare",
+    "ai_recommendations_title": "🤖 Raccomandazioni basate sull'IA",
+    "category": "Categoria",
+    "view_course": "Vedi corso"
+  },
   "categoriesPage": {
     "title": "Categorie",
     "new_category": "Nuova categoria",
@@ -1358,6 +1365,40 @@
     "purchased_for": "Acquistato per $ {{price}}",
     "purchased_on": "Acquistato su {{date}}",
     "no_books": "Nessun libro nella tua biblioteca."
+  },
+  "studentInstructorsPage": {
+    "title": "Find Instructors",
+    "search_placeholder": "Search instructors...",
+    "filter_all": "All",
+    "only_available": "Only Available",
+    "sort": {
+      "highest_rated": "Highest Rated",
+      "most_experienced": "Most Experienced"
+    },
+    "loading": "Loading instructors...",
+    "load_error": "Failed to load instructors.",
+    "online": "Online",
+    "verified": "Verified",
+    "book": "Book",
+    "chat": "Chat",
+    "view_profile": "View Profile",
+    "cancel": "Cancel",
+    "favorites_title": "My Favorite Instructors",
+    "favorites_empty": "You haven’t favorited any instructors yet.",
+    "bookings_title": "My Bookings",
+    "bookings_empty": "No bookings yet.",
+    "cancel_confirm": "Are you sure you want to cancel this request?",
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "completed": "completed"
+    },
+    "chat_modal": {
+      "title": "Open Chat",
+      "message": "Start chatting with this instructor now?",
+      "confirm": "Yes, Open Chat",
+      "cancel": "Cancel"
+    }
   },
   "adminOffersPage": {
     "title": "Amministratore: gestisci tutte le offerte",
