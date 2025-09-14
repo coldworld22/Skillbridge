@@ -1,4 +1,4 @@
-const { z } = require("zod");
+const { z } = require('zod');
 const { isValidPhoneNumber } = require("libphonenumber-js");
 
 // 🔹 Full student profile update schema

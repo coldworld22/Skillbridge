@@ -87,86 +87,17 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
-  const hasUserFields = [full_name, phone, gender, date_of_birth].every(Boolean);
-  const hasStudentFields =
-    education_level &&
-    (Array.isArray(topics) ? topics.length > 0 : !!topics) &&
-    (Array.isArray(learning_goals) ? learning_goals.length > 0 : !!learning_goals);
-  const hasSocialLinks = sanitizedLinks.length > 0;
-  const isProfileComplete = hasUserFields && hasStudentFields && hasSocialLinks;
-
-  let trx;
-  try {
-    trx = await db.transaction();
-
-    await trx("users")
-      .where({ id: userId })
-      .update({
-        full_name,
-        phone,
-        gender,
-        date_of_birth,
-        profile_complete: isProfileComplete,
-      });
-
-    const exists = await trx("student_profiles").where({ user_id: userId }).first();
-    const studentData = { education_level, topics, learning_goals };
-    if (exists) {
-      await trx("student_profiles").where({ user_id: userId }).update(studentData);
-    } else {
-      await trx("student_profiles").insert({ user_id: userId, ...studentData });
-    }
-
-    await trx("user_social_links").where({ user_id: userId }).del();
-    for (const link of sanitizedLinks) {
-      await trx("user_social_links").insert({
-        user_id: userId,
-        platform: link.platform,
-        url: link.url,
-      });
-    }
-
-    await trx.commit();
-
-    const [user] = await db("users")
-      .where({ id: userId })
-      .select(
-        "id",
-        "full_name",
-        "email",
-        "phone",
-        "gender",
-        "date_of_birth",
-        "avatar_url",
-        "is_email_verified",
-        "is_phone_verified",
-        "profile_complete",
-        "created_at",
-        "updated_at"
-      );
+  const userData = { full_name, phone, gender, date_of_birth };
 
   try {
-    const result = await updateStudentProfile(
+    await updateStudentProfile(
       userId,
       userData,
-      studentData,
+      { education_level, topics, learning_goals },
       sanitizedLinks
     );
-
-    const profile = await getStudentProfile(userId);
-
-    res.json({ ...profile, ...result });
+    res.json(await getStudentProfile(userId));
   } catch (err) {
-    // Handle unique constraint violations for email and phone
-    if (err.code === "23505") {
-      if (err.constraint === "users_email_unique") {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      if (err.constraint === "users_phone_unique") {
-        return res.status(400).json({ message: "Phone number already exists" });
-      }
-    }
-
     logger.error("Failed to update student profile", err);
     res.status(500).json({ message: "Failed to update profile" });
   }
@@ -241,6 +172,7 @@ exports.updateIdentity = async (req, res) => {
         });
       }
 
+    if (profile) {
       await db("student_profiles")
         .where({ user_id: req.user.id })
         .update({ identity_doc_url: identityUrl });
