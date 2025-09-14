@@ -102,10 +102,20 @@ const updateInstructorProfile = async (
     userData.gender &&
     userData.date_of_birth;
   const hasInstructorFields =
+    Array.isArray(instructorData.expertise) &&
+    instructorData.expertise.length > 0 &&
+    typeof instructorData.bio === "string" &&
+    instructorData.bio.trim().length > 0 &&
+    instructorData.pricing !== undefined &&
+    instructorData.pricing !== null;
+  const hasExperience =
     instructorData.experience !== undefined &&
     instructorData.experience !== null;
   const isProfileComplete =
-    hasUserFields && hasInstructorFields && sanitizedLinks.length > 0;
+    hasUserFields &&
+    hasInstructorFields &&
+    hasExperience &&
+    sanitizedLinks.length > 0;
 
   await db.transaction(async (trx) => {
     // ✅ Update users table
