@@ -90,6 +90,11 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
     currentPage * itemsPerPage
   );
 
+  const formatCSVRow = (row) =>
+    row
+      .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+      .join(",");
+
   const exportCSV = () => {
     const headers = [
       "Title",
@@ -107,14 +112,9 @@ export default function AdminClassesTable({ classes = [], loading = false }) {
       cls.category,
       cls.publishStatus,
     ]);
-    const escapeCell = (cell) =>
-      `"${String(cell ?? "").replace(/"/g, '""')}"`;
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCell).join(","))
-      .join("\n");
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
+    const csvRows = [headers, ...rows].map(formatCSVRow);
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
