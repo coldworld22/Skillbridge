@@ -186,9 +186,9 @@ const handleAvatarSelect = (e) => {
 };
 
   const handleCropUpload = async () => {
-    if (!tempAvatar || !croppedAreaPixels) return;
     setIsUploadingAvatar(true);
     try {
+      if (!tempAvatar || !croppedAreaPixels) return;
       const blob = await getCroppedImg(tempAvatar, croppedAreaPixels);
       const file = new File([blob], tempFileName || "avatar.jpg", { type: blob.type });
       const res = await uploadStudentAvatar(user.id, file);
@@ -201,13 +201,15 @@ const handleAvatarSelect = (e) => {
       }));
       toast.success("Avatar uploaded successfully!");
       setShowCropper(false);
-      URL.revokeObjectURL(tempAvatar);
       setTempAvatar(null);
     } catch (error) {
       console.error('Avatar upload error:', error.response);
       const msg = error.response?.data?.message || t('avatar_upload_failed');
       toast.error(msg);
     } finally {
+      if (tempAvatar) {
+        URL.revokeObjectURL(tempAvatar);
+      }
       setIsUploadingAvatar(false);
     }
   };
