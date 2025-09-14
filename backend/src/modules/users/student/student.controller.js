@@ -89,6 +89,16 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
+  const hasUserFields =
+    full_name && phone && gender && date_of_birth;
+  const hasStudentFields =
+    education_level &&
+    Array.isArray(topics) &&
+    topics.length > 0 &&
+    learning_goals;
+  const isProfileComplete =
+    hasUserFields && hasStudentFields && sanitizedLinks.length > 0;
+
   let trx;
   try {
     trx = await db.transaction();
