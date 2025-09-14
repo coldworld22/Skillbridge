@@ -6,3 +6,4 @@ try {
 }
 
 module.exports = { allowedPlatforms };
+
