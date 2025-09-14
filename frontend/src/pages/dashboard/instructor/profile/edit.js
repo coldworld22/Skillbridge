@@ -29,8 +29,6 @@ import getCroppedImg from "@/utils/cropImage";
 import { allowedPlatforms } from "@/utils/socialPlatforms";
 import {
   FaSpinner,
-  FaUserCircle,
-  FaVideo,
   FaDollarSign,
   FaCalendarAlt,
   FaPhone,
@@ -673,55 +671,19 @@ export default function InstructorProfileEdit() {
           </div>
 
           {/* Expertise List */}
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-              <FaBriefcase className="text-gray-500" /> {t('expertise')}
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {formData.expertise.map((tag, i) => (
-                <span key={i} className="inline-flex items-center bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      expertise: prev.expertise.filter((_, idx) => idx !== i)
-                    }))}
-                    className="ml-2 text-yellow-600 hover:text-yellow-800"
-                  >
-                    <RiDeleteBin6Line size={14} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newExpertise}
-                onChange={(e) => setNewExpertise(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addExpertise();
-                  }
-                }}
-                placeholder={t('add_expertise_placeholder')}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-              />
-              <button
-                type="button"
-                onClick={addExpertise}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 flex items-center gap-2"
-              >
-                <FaPlus size={14} /> {t('add')}
-              </button>
-            </div>
-          </div>
+          <ExpertiseList
+            expertise={formData.expertise}
+            onChange={(updated) =>
+              setFormData({ ...formData, expertise: updated })
+            }
+            t={t}
+          />
 
+          {/* Certificates Section */}
           <CertificatesSection
             certificates={formData.certificates}
-            onChange={(certs) =>
-              setFormData((prev) => ({ ...prev, certificates: certs }))
+            onChange={(updated) =>
+              setFormData({ ...formData, certificates: updated })
             }
             t={t}
             baseUrl={BASE_URL}
