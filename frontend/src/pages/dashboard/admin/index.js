@@ -25,6 +25,7 @@ import { fetchLicenseStatus } from "@/services/admin/licenseService";
 
 function AdminDashboardHome() {
   const { user } = useAuthStore();
+  const [hydrated, setHydrated] = useState(false);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [alerts, setAlerts] = useState([]);
@@ -34,6 +35,10 @@ function AdminDashboardHome() {
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [licenseLoading, setLicenseLoading] = useState(false);
   const { t } = useTranslation("dashboard");
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -83,8 +88,14 @@ function AdminDashboardHome() {
         setLicenseLoading(false);
       }
     };
-    loadData();
-  }, []);
+    if (hydrated) {
+      loadData();
+    }
+  }, [hydrated]);
+
+  if (!hydrated) {
+    return null;
+  }
 
   const statsArray = stats
     ? [
