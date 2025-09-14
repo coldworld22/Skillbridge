@@ -98,6 +98,10 @@ const updateInstructorProfile = async (
         }))
     : [];
 
+  const nonEmptyLinks = sanitizedLinks.filter(
+    (link) => link.url && link.url.trim() !== ""
+  );
+
   const hasUserFields =
     userData.full_name &&
     userData.phone &&
@@ -114,10 +118,7 @@ const updateInstructorProfile = async (
     instructorData.experience !== undefined &&
     instructorData.experience !== null;
   const isProfileComplete =
-    hasUserFields &&
-    hasInstructorFields &&
-    hasExperience &&
-    sanitizedLinks.length > 0;
+    hasUserFields && hasInstructorFields && nonEmptyLinks.length > 0;
 
   await db.transaction(async (trx) => {
     // ✅ Update users table
