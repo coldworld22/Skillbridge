@@ -37,6 +37,16 @@ export default function MyEnrolledClassesPage() {
     load();
   }, []);
 
+  const handleNotify = async (classId) => {
+    try {
+      await subscribeToClassReminder(classId);
+      toast.success('Subscribed to class reminder');
+    } catch (err) {
+      console.error('Failed to subscribe to class reminder', err);
+      toast.error('Failed to subscribe to reminder');
+    }
+  };
+
   const filteredClasses = classes
     .filter(cls => filter === 'all' || cls.scheduleStatus.toLowerCase() === filter)
     .filter(cls => cls.title.toLowerCase().includes(search.toLowerCase()))
@@ -131,7 +141,10 @@ export default function MyEnrolledClassesPage() {
                 </span>
 
                 {cls.scheduleStatus === 'Upcoming' && (
-                  <button className="text-xs text-blue-600 underline mb-2 flex items-center gap-1">
+                  <button
+                    onClick={() => handleNotify(cls.id)}
+                    className="text-xs text-blue-600 underline mb-2 flex items-center gap-1"
+                  >
                     <FaBell /> Notify Me
                   </button>
                 )}
