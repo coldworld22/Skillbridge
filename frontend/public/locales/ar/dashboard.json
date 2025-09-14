@@ -2053,5 +2053,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 دوراتي المسجلة",
+    "search_placeholder": "ابحث عن الدورات...",
+    "sort_by_date": "ترتيب حسب التاريخ",
+    "status_all": "الكل",
+    "status_live": "مباشر",
+    "status_upcoming": "قادمة",
+    "status_completed": "مكتملة",
+    "no_classes": "لا توجد دورات تحت هذا الفلتر.",
+    "instructor": "المدرب:",
+    "progress_completed": "{{progress}}٪ مكتمل",
+    "notify_me": "أبلغني",
+    "view_certificate": "عرض الشهادة",
+    "view_assignments": "عرض الواجبات",
+    "join_class": "انضم إلى الدرس",
+    "starts_soon": "يبدأ قريباً",
+    "completed": "مكتمل",
+    "class_ended": "انتهى الدرس",
+    "load_more": "تحميل المزيد"
   }
 }

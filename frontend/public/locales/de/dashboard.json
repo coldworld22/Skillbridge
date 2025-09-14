@@ -2059,5 +2059,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 Meine eingeschriebenen Kurse",
+    "search_placeholder": "Kurse suchen...",
+    "sort_by_date": "Nach Datum sortieren",
+    "status_all": "Alle",
+    "status_live": "Live",
+    "status_upcoming": "Bevorstehend",
+    "status_completed": "Abgeschlossen",
+    "no_classes": "Keine Kurse unter diesem Filter gefunden.",
+    "instructor": "Dozent:",
+    "progress_completed": "{{progress}}% abgeschlossen",
+    "notify_me": "Benachrichtige mich",
+    "view_certificate": "Zertifikat ansehen",
+    "view_assignments": "Aufgaben anzeigen",
+    "join_class": "Kurs beitreten",
+    "starts_soon": "Beginnt bald",
+    "completed": "Abgeschlossen",
+    "class_ended": "Kurs beendet",
+    "load_more": "Mehr laden"
   }
 }

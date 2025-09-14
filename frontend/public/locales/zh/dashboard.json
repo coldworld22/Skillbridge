@@ -2014,5 +2014,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 我报名的课程",
+    "search_placeholder": "搜索课程...",
+    "sort_by_date": "按日期排序",
+    "status_all": "全部",
+    "status_live": "直播",
+    "status_upcoming": "即将开始",
+    "status_completed": "已完成",
+    "no_classes": "在此筛选下未找到课程。",
+    "instructor": "讲师：",
+    "progress_completed": "{{progress}}% 已完成",
+    "notify_me": "通知我",
+    "view_certificate": "查看证书",
+    "view_assignments": "查看作业",
+    "join_class": "加入课程",
+    "starts_soon": "即将开始",
+    "completed": "已完成",
+    "class_ended": "课程已结束",
+    "load_more": "加载更多"
   }
 }

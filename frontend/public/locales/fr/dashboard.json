@@ -2053,5 +2053,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 Mes cours inscrits",
+    "search_placeholder": "Rechercher des cours...",
+    "sort_by_date": "Trier par date",
+    "status_all": "Tous",
+    "status_live": "En direct",
+    "status_upcoming": "À venir",
+    "status_completed": "Terminés",
+    "no_classes": "Aucun cours trouvé pour ce filtre.",
+    "instructor": "Formateur :",
+    "progress_completed": "{{progress}}% terminé",
+    "notify_me": "Me notifier",
+    "view_certificate": "Voir le certificat",
+    "view_assignments": "Voir les devoirs",
+    "join_class": "Rejoindre le cours",
+    "starts_soon": "Commence bientôt",
+    "completed": "Terminé",
+    "class_ended": "Cours terminé",
+    "load_more": "Charger plus"
   }
 }

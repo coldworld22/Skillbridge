@@ -2045,5 +2045,25 @@
       "invalid_date": "Invalid date format",
       "education_required": "Education level is required"
     }
+  },
+  "studentOnlineClassesPage": {
+    "title": "🎓 मेरी नामांकित कक्षाएँ",
+    "search_placeholder": "कक्षाएँ खोजें...",
+    "sort_by_date": "तारीख के अनुसार क्रमबद्ध करें",
+    "status_all": "सभी",
+    "status_live": "लाइव",
+    "status_upcoming": "आगामी",
+    "status_completed": "पूर्ण",
+    "no_classes": "इस फ़िल्टर के अंतर्गत कोई कक्षा नहीं मिली।",
+    "instructor": "प्रशिक्षक:",
+    "progress_completed": "{{progress}}% पूरा हुआ",
+    "notify_me": "मुझे सूचित करें",
+    "view_certificate": "प्रमाणपत्र देखें",
+    "view_assignments": "असाइनमेंट देखें",
+    "join_class": "कक्षा में शामिल हों",
+    "starts_soon": "जल्द शुरू होगा",
+    "completed": "पूर्ण",
+    "class_ended": "कक्षा समाप्त",
+    "load_more": "और लोड करें"
   }
 }
