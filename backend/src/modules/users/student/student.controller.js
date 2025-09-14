@@ -89,6 +89,15 @@ exports.updateProfile = async (req, res) => {
         .filter((link) => allowedPlatforms.includes(link.platform))
     : [];
 
+  const isProfileComplete = Boolean(
+    full_name &&
+    phone &&
+    gender &&
+    date_of_birth &&
+    education_level &&
+    sanitizedLinks.length
+  );
+
   let trx;
   try {
     trx = await db.transaction();
@@ -101,6 +110,7 @@ exports.updateProfile = async (req, res) => {
         gender,
         date_of_birth,
         profile_complete: isProfileComplete,
+        updated_at: new Date(),
       });
 
     const exists = await trx("student_profiles").where({ user_id: userId }).first();
@@ -147,7 +157,12 @@ exports.updateProfile = async (req, res) => {
       .where({ user_id: userId })
       .select("platform", "url");
 
-    res.json({ ...user, student, social_links: socialLinks });
+    res.json({
+      ...user,
+      profile_complete: isProfileComplete,
+      student,
+      social_links: socialLinks,
+    });
   } catch (err) {
     if (trx) {
       await trx.rollback();
