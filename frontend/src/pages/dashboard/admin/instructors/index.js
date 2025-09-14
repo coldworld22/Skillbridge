@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import nextI18NextConfig from '../../../../../next-i18next.config.js';
@@ -13,11 +12,11 @@ import {
   updateInstructorStatus,
   deleteInstructor as apiDeleteInstructor,
 } from '@/services/admin/instructorService';
-import useAuthStore from '@/store/auth/authStore';
 import { toast } from 'react-toastify';
+import withAdminGuard from '@/hooks/withAdminGuard';
 
 
-export default function AdminInstructorsPage() {
+function AdminInstructorsPage() {
   const { t } = useTranslation('dashboard', { keyPrefix: 'instructorsPage' });
   const { t: tCommon } = useTranslation('common');
   const [instructors, setInstructors] = useState([]);
@@ -29,25 +28,9 @@ export default function AdminInstructorsPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const router = useRouter();
-  const { accessToken, user, hasHydrated } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasHydrated) return;
-
-    if (!accessToken || !user) {
-      router.replace('/auth/login');
-      return;
-    }
-
-    const role = user.role?.toLowerCase() ?? '';
-    if (role !== 'admin' && role !== 'superadmin') {
-      router.replace('/error/403');
-      return;
-    }
-
     const loadData = async () => {
       try {
         const { instructors: data, meta } = await fetchAllInstructors(1, 20);
@@ -77,7 +60,7 @@ export default function AdminInstructorsPage() {
     };
 
     loadData();
-  }, [accessToken, hasHydrated, router, user, t]);
+  }, [t]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -268,6 +251,8 @@ export default function AdminInstructorsPage() {
     </AdminLayout>
   );
 }
+
+export default withAdminGuard(AdminInstructorsPage);
 
 export async function getServerSideProps({ locale }) {
   return {

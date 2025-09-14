@@ -19,8 +19,9 @@ export const createTicket = async ({ subject, message }) => {
   return data?.data;
 };
 
-export const fetchMyTickets = async () => {
-  const { data } = await api.get("/support/my-tickets");
+export const fetchMyTickets = async (config = {}) => {
+  const cfg = Object.keys(config).length ? config : undefined;
+  const { data } = await api.get("/support/my-tickets", cfg);
   const list = data?.data ?? [];
   return list.map(({ created_at, user_avatar, ...rest }) => ({
     ...rest,
