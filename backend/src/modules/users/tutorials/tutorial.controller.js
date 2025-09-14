@@ -1,6 +1,5 @@
 const logger = require('../../../utils/logger.js');
 // 📁 src/modules/users/tutorials/tutorial.controller.js
-const db = require("../../../config/database");
 const service = require("./tutorial.service");
 const notificationService = require("../../notifications/notifications.service");
 const messageService = require("../../messages/messages.service");
@@ -57,9 +56,7 @@ exports.createTutorial = catchAsync(async (req, res) => {
   const tags = parseTags(rawTags);
 
   // 🚫 Prevent duplicate titles
-  const existing = await db("tutorials")
-    .whereRaw('LOWER(title) = ?', title.toLowerCase())
-    .first();
+  const existing = await service.findByTitle(title);
   if (existing) {
     return res.status(400).json({ message: "Tutorial title already exists" });
   }

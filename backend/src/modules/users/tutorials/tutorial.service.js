@@ -13,6 +13,12 @@ exports.createTutorial = async (data, trx = db) => {
   return tutorial;
 };
 
+exports.findByTitle = async (title) => {
+  return db("tutorials")
+    .whereRaw('LOWER(title) = ?', title.toLowerCase())
+    .first();
+};
+
 exports.countPublishedTutorials = async (instructorId) => {
   const row = await db("tutorials")
     .where({ instructor_id: instructorId, status: "published" })
